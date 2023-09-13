@@ -19,6 +19,7 @@ from models_library.resource_tracker import (
     ResourceTrackerServiceType,
     ServiceRunStatus,
 )
+from models_library.services import ServiceType
 from pydantic import parse_raw_as
 
 from .models.resource_tracker_credit_transactions import (
@@ -60,7 +61,7 @@ async def _process_start_event(
 ):
     service_type = (
         ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
-        if msg.service_type == "COMPUTATIONAL"
+        if msg.service_type == ServiceType.COMPUTATIONAL
         else ResourceTrackerServiceType.DYNAMIC_SERVICE
     )
 

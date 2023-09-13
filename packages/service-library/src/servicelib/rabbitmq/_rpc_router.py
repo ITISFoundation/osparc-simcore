@@ -1,14 +1,14 @@
+import asyncio
 import functools
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
-import orjson
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import SecretStr
 
-from ..logging_utils import log_catch, log_context
+from ..logging_utils import log_context
+from ._errors import RPCServerError
 from ._models import RPCMethodName
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
@@ -32,14 +32,18 @@ class RPCRouter:
                     _logger,
                     logging.INFO,
                     msg=f"calling {func.__name__} with {args}, {kwargs}",
-                ), log_catch(_logger, reraise=True):
-                    result = await func(*args, **kwargs)
-                    return orjson.dumps(
-                        jsonable_encoder(
-                            result,
-                            custom_encoder=_RPC_CUSTOM_ENCODER,
-                        )
-                    )
+                ):
+                    try:
+                        result = await func(*args, **kwargs)
+                        return result
+                    except asyncio.CancelledError:
+                        _logger.debug("call was cancelled")
+                        raise
+                    except Exception as exc:  # pylint: disable=broad-except
+                        _logger.exception("Unhandled exception:")
+                        raise RPCServerError(
+                            method_name=func.__name__, exc_type=type(exc), msg=f"{exc}"
+                        ) from exc
 
             self.routes[RPCMethodName(func.__name__)] = wrapper
             return func

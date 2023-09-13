@@ -9,7 +9,9 @@ alembic==1.11.2
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via requests
 click==8.1.6

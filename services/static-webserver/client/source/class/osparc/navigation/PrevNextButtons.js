@@ -96,7 +96,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
         icon: this.self().RUN_BUTTON,
         ...this.self().BUTTON_OPTIONS
       });
-      osparc.utils.Utils.setIdToWidget(nextBtn, "AppMode_RunBtn");
+      osparc.utils.Utils.setIdToWidget(runBtn, "AppMode_RunBtn");
       runBtn.addListener("execute", () => this.__runPressed(), this);
     },
 

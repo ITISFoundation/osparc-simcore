@@ -165,6 +165,7 @@ def runs(
             "iteration": 1,
             "result": StateType.NOT_STARTED,
             "metadata": run_metadata,
+            "use_on_demand_clusters": False,
         }
         run_config.update(**run_kwargs)
         with postgres_db.connect() as conn:

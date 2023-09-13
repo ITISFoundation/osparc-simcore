@@ -21,7 +21,9 @@ attrs==23.1.0
     #   jsonschema
     #   referencing
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c ../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via
     #   aiohttp

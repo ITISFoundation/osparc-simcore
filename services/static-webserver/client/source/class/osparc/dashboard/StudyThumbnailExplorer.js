@@ -88,7 +88,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getNodesTree: function() {
-      const nodesTree = new osparc.component.widget.NodesTree().set({
+      const nodesTree = new osparc.widget.NodesTree().set({
         hideRoot: false,
         simpleNodes: true
       });
@@ -100,7 +100,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getThumbnailSuggestions: function() {
-      const thumbnailSuggestions = new osparc.component.editor.ThumbnailSuggestions().set({
+      const thumbnailSuggestions = new osparc.editor.ThumbnailSuggestions().set({
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
@@ -161,7 +161,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getWorkbenchUIPreview: function() {
-      const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
       workbenchUIPreview.setStudy(this.__study);
       workbenchUIPreview.loadModel(this.__study.getWorkbench());
       workbenchUIPreview.addListener("appear", () => {
@@ -176,7 +176,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getThreeSceneViewer: function(fileUrl) {
-      const threeView = new osparc.component.widget.Three(fileUrl);
+      const threeView = new osparc.widget.Three(fileUrl);
       return threeView;
     },
 

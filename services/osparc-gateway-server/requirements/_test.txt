@@ -23,6 +23,7 @@ attrs==23.1.0
     #   aiohttp
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
 charset-normalizer==3.2.0

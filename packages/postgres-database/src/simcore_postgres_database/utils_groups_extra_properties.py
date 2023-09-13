@@ -6,11 +6,9 @@ from typing import Any
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.models.groups_extra_properties import (
-    groups_extra_properties,
-)
 
 from .models.groups import GroupType, groups, user_to_groups
+from .models.groups_extra_properties import groups_extra_properties
 from .utils_models import FromRowMixin
 
 _logger = logging.getLogger(__name__)
@@ -20,7 +18,7 @@ class GroupExtraPropertiesError(Exception):
     ...
 
 
-class GroupExtraPropertiesNotFound(GroupExtraPropertiesError):
+class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError):
     ...
 
 
@@ -30,6 +28,7 @@ class GroupExtraProperties(FromRowMixin):
     product_name: str
     internet_access: bool
     override_services_specifications: bool
+    use_on_demand_clusters: bool
     created: datetime.datetime
     modified: datetime.datetime
 
@@ -106,7 +105,8 @@ class GroupExtraPropertiesRepo:
         assert result  # nosec
         if row := await result.first():
             return GroupExtraProperties.from_row(row)
-        raise GroupExtraPropertiesNotFound(f"Properties for group {gid} not found")
+        msg = f"Properties for group {gid} not found"
+        raise GroupExtraPropertiesNotFoundError(msg)
 
     @staticmethod
     async def get_aggregated_properties_for_user(
@@ -149,6 +149,5 @@ class GroupExtraPropertiesRepo:
                     )
         if merged_standard_extra_properties:
             return merged_standard_extra_properties
-        raise GroupExtraPropertiesNotFound(
-            f"Properties for user {user_id} in {product_name} not found"
-        )
+        msg = f"Properties for user {user_id} in {product_name} not found"
+        raise GroupExtraPropertiesNotFoundError(msg)

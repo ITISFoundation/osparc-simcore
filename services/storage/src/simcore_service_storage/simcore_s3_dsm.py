@@ -839,6 +839,7 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         if not current_multipart_uploads:
             return
+        _logger.debug("found %s", f"{current_multipart_uploads=}")
 
         # there are some multipart uploads, checking if
         # there is a counterpart in file_meta_data
@@ -861,6 +862,8 @@ class SimcoreS3DataManager(BaseDataManager):
             ] = await db_file_meta_data.list_fmds(
                 conn, file_ids=list(set(directory_and_file_ids))
             )
+            _logger.debug("metadata entries %s", f"{list_of_known_metadata_entries=}")
+
         # known uploads do have an expiry date (regardless of upload ID that we do not always know)
         list_of_known_uploads = [
             fmd for fmd in list_of_known_metadata_entries if fmd.upload_expires_at
@@ -885,6 +888,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ):
                 list_of_valid_upload_ids.append(upload_id)
 
+        _logger.debug("found the following %s", f"{list_of_valid_upload_ids=}")
         list_of_invalid_uploads = [
             (
                 upload_id,

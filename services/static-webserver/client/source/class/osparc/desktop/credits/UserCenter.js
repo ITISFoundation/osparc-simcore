@@ -91,6 +91,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __getMiniProfileView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
+        minWidth: 120,
         maxWidth: 150
       });
 
@@ -222,7 +223,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const usageOverview = new osparc.component.resourceUsage.Overview();
+      const usageOverview = new osparc.resourceUsage.Overview();
       usageOverview.set({
         margin: 10
       });

@@ -123,8 +123,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
-          control = new osparc.component.widget.CollapsibleViewLight().set({
-            minWidth: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH,
+          control = new osparc.widget.CollapsibleViewLight().set({
+            minWidth: osparc.widget.CollapsibleViewLight.CARET_WIDTH,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
@@ -132,7 +132,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
           caretCollapsedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           control.bind("collapsed", control, "maxWidth", {
-            converter: collapsed => collapsed ? osparc.component.widget.CollapsibleViewLight.CARET_WIDTH : null
+            converter: collapsed => collapsed ? osparc.widget.CollapsibleViewLight.CARET_WIDTH : null
           });
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
@@ -142,7 +142,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             const collapsibleViewLeft = this.getChildControl("collapsible-view-right");
             // if both panes are collapsed set the maxWidth of the layout to 2*15
             if (collapsed && collapsibleViewLeft.isCollapsed()) {
-              sidePanels.setMaxWidth(2 * osparc.component.widget.CollapsibleViewLight.CARET_WIDTH);
+              sidePanels.setMaxWidth(2 * osparc.widget.CollapsibleViewLight.CARET_WIDTH);
             } else {
               sidePanels.setMaxWidth(null);
             }
@@ -153,7 +153,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "collapsible-view-right": {
           const sidePanels = this.getChildControl("side-panels");
-          control = new osparc.component.widget.CollapsibleViewLight().set({
+          control = new osparc.widget.CollapsibleViewLight().set({
             minWidth: 15,
             width: Math.min(parseInt(window.innerWidth * 0.24), 310)
           });
@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
           caretCollapsedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           control.bind("collapsed", control, "maxWidth", {
-            converter: collapsed => collapsed ? osparc.component.widget.CollapsibleViewLight.CARET_WIDTH : null
+            converter: collapsed => collapsed ? osparc.widget.CollapsibleViewLight.CARET_WIDTH : null
           });
           control.bind("collapsed", sidePanels, "width", {
             converter: collapsed => this.__getSidePanelsNewWidth(collapsed, sidePanels, control)
@@ -175,7 +175,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             control.setLayoutProperties({flex: collapsed ? 0 : 1});
             // if both panes are collapsed set the maxWidth of the layout to 2*15
             if (collapsed && collapsibleViewLeft.isCollapsed()) {
-              sidePanels.setMaxWidth(2 * osparc.component.widget.CollapsibleViewLight.CARET_WIDTH);
+              sidePanels.setMaxWidth(2 * osparc.widget.CollapsibleViewLight.CARET_WIDTH);
             } else {
               sidePanels.setMaxWidth(null);
             }
@@ -185,7 +185,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
+            contentPadding: osparc.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
             contentPaddingRight: 2,
             barPosition: "top"
           });
@@ -198,7 +198,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
+            contentPadding: osparc.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
             contentPaddingRight: 2,
             barPosition: "top"
           });
@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const content = collapsibleView.getChildControl("scroll-content");
         sidePanelsNewWidth = sidePanelsWidth - content.getBounds().width;
       } else if ("precollapseWidth" in collapsibleView) {
-        sidePanelsNewWidth = sidePanelsWidth + (collapsibleView.precollapseWidth - osparc.component.widget.CollapsibleViewLight.CARET_WIDTH);
+        sidePanelsNewWidth = sidePanelsWidth + (collapsibleView.precollapseWidth - osparc.widget.CollapsibleViewLight.CARET_WIDTH);
       }
       return sidePanelsNewWidth;
     },
@@ -310,7 +310,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
-        paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
+        paddingLeft: osparc.widget.CollapsibleViewLight.CARET_WIDTH
       });
       this.__addTopBarSpacer(topBar);
 
@@ -318,7 +318,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         backgroundColor: primaryColumnBGColor
       });
 
-      const studyTreeItem = this.__studyTreeItem = new osparc.component.widget.StudyTitleOnlyTree().set({
+      const studyTreeItem = this.__studyTreeItem = new osparc.widget.StudyTitleOnlyTree().set({
         alignY: "middle",
         minHeight: 32,
         maxHeight: 32,
@@ -327,7 +327,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
 
-      const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
+      const nodesTree = this.__nodesTree = new osparc.widget.NodesTree().set({
         backgroundColor: primaryColumnBGColor,
         allowGrowY: true,
         minHeight: 5
@@ -377,7 +377,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
-        paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
+        paddingLeft: osparc.widget.CollapsibleViewLight.CARET_WIDTH
       });
       this.__addTopBarSpacer(topBar);
 
@@ -436,7 +436,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(iframePage.getChildControl("button"), "iframeTabButton");
       tabViewMain.add(iframePage);
 
-      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
+      const loggerView = this.__loggerView = new osparc.widget.logger.LoggerView();
       const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
       osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(logsPage);
@@ -640,7 +640,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
           const nodeId = data["node_id"];
           const messages = data["messages"];
-          const logLevelMap = osparc.component.widget.logger.LoggerView.LOG_LEVEL_MAP;
+          const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
           const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
           switch (logLevel) {
             case "DEBUG":
@@ -708,7 +708,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             const node = workbench.getNode(nodeId);
             const label = node.getLabel();
             const text = `New inputs for service ${label}. Please reload to refresh service.`;
-            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+            osparc.FlashMessenger.getInstance().logAs(text, "INFO");
           }
         }, this);
       }
@@ -1087,7 +1087,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__settingsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
-      const view = new osparc.component.node.ParameterEditor(parameter);
+      const view = new osparc.node.ParameterEditor(parameter);
       view.buildForm(false);
       this.__settingsPage.add(view, {
         flex: 1
@@ -1110,7 +1110,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.hasOutputs()) {
-        const nodeOutputs = new osparc.component.widget.NodeOutputs(node, node.getMetaData().outputs).set({
+        const nodeOutputs = new osparc.widget.NodeOutputs(node, node.getMetaData().outputs).set({
           offerProbes: true
         });
         this.__outputsPage.add(nodeOutputs);
@@ -1120,7 +1120,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         allowGrowX: false
       });
       osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-      outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
+      outputFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
       const showPage = await this.__populateNodeOptionsPage(node);
@@ -1145,7 +1145,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         node.isDynamic() &&
         (node.isUpdatable() || node.isDeprecated() || node.isRetired())
       ) {
-        const lifeCycleView = new osparc.component.node.LifeCycleView(node);
+        const lifeCycleView = new osparc.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
         sections.push(lifeCycleView);
         showPage = true;
@@ -1154,7 +1154,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // Boot Options
       if (node.hasBootModes()) {
-        const bootOptionsView = new osparc.component.node.BootOptionsView(node);
+        const bootOptionsView = new osparc.node.BootOptionsView(node);
         node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
         sections.push(bootOptionsView);
         showPage = true;
@@ -1166,7 +1166,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         await osparc.data.Permissions.getInstance().checkCanDo("override_services_specifications") &&
         (node.isComputational() || node.isDynamic())
       ) {
-        const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);
+        const updateResourceLimitsView = new osparc.node.UpdateResourceLimitsView(node);
         node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
         sections.push(updateResourceLimitsView);
         showPage = true;
@@ -1190,7 +1190,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           introLayout.add(instructions);
 
-          const startStopButton = new osparc.component.node.StartStopButton();
+          const startStopButton = new osparc.node.StartStopButton();
           startStopButton.setNode(node);
           introLayout.add(startStopButton);
         }
@@ -1236,7 +1236,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const node = workbench.getNode(nodeId);
       if (node) {
         const avoidConfirmation = node.isFilePicker() && !osparc.file.FilePicker.hasOutputAssigned(node.getOutputs());
-        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
         if (!avoidConfirmation && preferencesSettings.getConfirmDeleteNode()) {
           const msg = this.tr("Are you sure you want to delete the selected node?");
           const win = new osparc.ui.window.Confirmation(msg).set({
@@ -1257,7 +1257,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __removeNodes: function(nodeIds) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
         const win = new osparc.ui.window.Confirmation(msg).set({

@@ -237,6 +237,7 @@ async def create_computation(  # noqa: C901, PLR0912
                     pricing_plan_id=None,
                     pricing_detail_id=None,
                 ),
+                use_on_demand_clusters=computation.use_on_demand_clusters,
             )
 
         # filter the tasks by the effective pipeline

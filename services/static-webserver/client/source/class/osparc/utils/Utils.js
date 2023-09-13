@@ -38,13 +38,6 @@ qx.Class.define("osparc.utils.Utils", {
         return window.localStorage.getItem(name);
       },
 
-      setTheme: function(themeName) {
-        this.setLocalStorageItem("themeName", themeName);
-      },
-      getTheme: function() {
-        return this.getLocalStorageItem("themeName");
-      },
-
       getLastCommitVcsRefUI: function() {
         return this.getLocalStorageItem("lastVcsRefUI");
       },
@@ -96,16 +89,21 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    resourceTypeToAlias: function(resourceType, options) {
-      switch (resourceType) {
-        case "study":
-          return osparc.product.Utils.getStudyAlias(options);
-        case "template":
-          return osparc.product.Utils.getTemplateAlias(options);
-        case "service":
-          return osparc.product.Utils.getServiceAlias(options);
+    getDefaultFont: function() {
+      const defaultFont = {
+        family: null,
+        size: null
+      };
+      const defFont = qx.theme.manager.Font.getInstance().resolve("default");
+      if (defFont) {
+        const family = defFont.getFamily();
+        if (family) {
+          defaultFont["family"] = family[0];
+        }
+        defaultFont["color"] = defFont.getColor();
+        defaultFont["size"] = defFont.getSize();
       }
-      return resourceType;
+      return defaultFont;
     },
 
     hardRefresh: function() {
@@ -695,7 +693,7 @@ qx.Class.define("osparc.utils.Utils", {
       document.body.removeChild(textArea);
 
       if (copied) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
+        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Copied to clipboard"));
       }
 
       return copied;
@@ -811,6 +809,11 @@ qx.Class.define("osparc.utils.Utils", {
       const labels = [];
       args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
       return labels.join(" ");
+    },
+
+    onlyFirstsUp: function(word) {
+      word = word.toLowerCase();
+      return this.firstsUp(word);
     },
 
     isObject: function(v) {

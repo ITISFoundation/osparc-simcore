@@ -444,7 +444,7 @@ qx.Class.define("osparc.file.FilePicker", {
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
       }
       return false;
     },

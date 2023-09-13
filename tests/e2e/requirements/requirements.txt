@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/requirements.txt --strip-extras requirements/requirements.in
 #
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via requests
 docker==6.1.3

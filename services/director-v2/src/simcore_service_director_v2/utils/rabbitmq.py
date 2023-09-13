@@ -5,6 +5,8 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessageNode,
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
@@ -14,6 +16,8 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import NonNegativeFloat
+from servicelib.logging_utils import LogLevelInt
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.comp_tasks import CompTaskAtDB
@@ -124,4 +128,39 @@ async def publish_service_resource_tracking_heartbeat(
     rabbitmq_client: RabbitMQClient, service_run_id: str
 ) -> None:
     message = RabbitResourceTrackingHeartbeatMessage(service_run_id=service_run_id)
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def publish_service_log(
+    rabbitmq_client: RabbitMQClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    log: str,
+    log_level: LogLevelInt,
+) -> None:
+    message = LoggerRabbitMessage.construct(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        messages=[log],
+        log_level=log_level,
+    )
+
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def publish_service_progress(
+    rabbitmq_client: RabbitMQClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    progress: NonNegativeFloat,
+) -> None:
+    message = ProgressRabbitMessageNode.construct(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        progress=progress,
+    )
     await rabbitmq_client.publish(message.channel_name, message)

@@ -8,7 +8,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.utils_groups_extra_properties import (
-    GroupExtraPropertiesNotFound,
+    GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
 )
 from simcore_service_webserver.users.exceptions import UserNotFoundError
@@ -51,7 +51,7 @@ async def list_user_permissions(
         name="override_services_specifications",
         allowed=False,
     )
-    with contextlib.suppress(GroupExtraPropertiesNotFound):
+    with contextlib.suppress(GroupExtraPropertiesNotFoundError):
         async with get_database_engine(app).acquire() as conn:
             user_group_extra_properties = (
                 await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(

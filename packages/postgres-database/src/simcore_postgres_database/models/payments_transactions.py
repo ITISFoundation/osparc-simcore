@@ -1,3 +1,5 @@
+import enum
+
 import sqlalchemy as sa
 
 from ._common import (
@@ -6,6 +8,15 @@ from ._common import (
     register_modified_datetime_auto_update_trigger,
 )
 from .base import metadata
+
+
+@enum.unique
+class PaymentTransactionState(str, enum.Enum):
+    PENDING = "PENDING"  # payment initiated
+    SUCCESS = "SUCCESS"  # payment completed with success
+    FAILED = "FAILED"  # payment failed
+    CANCELED = "CANCELED"  # payment explicitly aborted by user
+
 
 payments_transactions = sa.Table(
     "payments_transactions",
@@ -82,18 +93,18 @@ payments_transactions = sa.Table(
         doc="Timestamps when transaction completed (payment acked)",
     ),
     sa.Column(
-        "success",
-        sa.Boolean,
-        nullable=True,
-        doc="Transation still incomplete (=null) or "
-        "completed successfuly (=true) "
-        "completed with failures (=false).",
+        "state",
+        sa.Enum(PaymentTransactionState),
+        nullable=False,
+        default=PaymentTransactionState.PENDING,
+        doc="A transaction goes through through multiple states. "
+        "When initiated state=PENDING and is completed with SUCCESS/FAILURE/CANCELED",
     ),
     sa.Column(
-        "errors",
+        "state_message",
         sa.Text,
         nullable=True,
-        doc="Stores error messages in case of transaction failure",
+        doc="State message to with details on the state e.g. failure messages",
     ),
     # timestamps for this row
     column_created_datetime(timezone=True),

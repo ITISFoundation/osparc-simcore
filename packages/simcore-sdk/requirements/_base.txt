@@ -96,6 +96,10 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
+orjson==3.9.7
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 packaging==23.1
     # via -r requirements/_base.in
 pamqp==3.2.1

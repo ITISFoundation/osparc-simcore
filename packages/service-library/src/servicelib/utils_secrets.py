@@ -13,6 +13,16 @@ def generate_password(length: int = MIN_PASSWORD_LENGTH) -> str:
     return "".join(secrets.choice(_ALPHABET) for _ in range(length))
 
 
+_MIN_SECRET_NUM_BYTES = 32
+
+
+def generate_token_secret_key(nbytes: int = _MIN_SECRET_NUM_BYTES) -> str:
+    """Equivalent to generating a random password with openssl in hex format
+    openssl rand -hex 32
+    """
+    return secrets.token_hex(nbytes)
+
+
 MIN_PASSCODE_LENGTH = 6
 
 
@@ -29,3 +39,8 @@ def generate_passcode(number_of_digits: int = MIN_PASSCODE_LENGTH) -> str:
     number_of_digits = max(number_of_digits, MIN_PASSCODE_LENGTH)
     passcode = secrets.randbelow(10**number_of_digits)
     return f"{passcode}".zfill(number_of_digits)
+
+
+def are_secrets_equal(got: str, expected: str) -> bool:
+    """Constant-time evaluation of 'got == expected'"""
+    return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))

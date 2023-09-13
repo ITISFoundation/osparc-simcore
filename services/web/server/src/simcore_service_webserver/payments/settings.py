@@ -2,7 +2,7 @@ import os
 from functools import cached_property
 
 from aiohttp import web
-from pydantic import Field, SecretStr, parse_obj_as, validator
+from pydantic import Field, PositiveInt, SecretStr, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -31,7 +31,12 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     PAYMENTS_FAKE_COMPLETION: bool = Field(
-        default=False, description="ONLY for testing purposes"
+        default=False, description="Enables fake completion. ONLY for testing purposes"
+    )
+
+    PAYMENTS_FAKE_COMPLETION_DELAY_SEC: PositiveInt = Field(
+        default=10,
+        description="Delay in seconds sbefore completion. ONLY for testing purposes",
     )
 
     @cached_property

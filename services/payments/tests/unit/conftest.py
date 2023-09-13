@@ -1,76 +1,77 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
-from pathlib import Path
 
+from collections.abc import AsyncIterator, Callable, Iterator
+
+import httpx
 import pytest
-import simcore_service_payments
-from cryptography.fernet import Fernet
+import respx
+from asgi_lifespan import LifespanManager
 from faker import Faker
+from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-
-pytest_plugins = [
-    "pytest_simcore.cli_runner",
-    "pytest_simcore.repository_paths",
-]
-
-
-@pytest.fixture(scope="session")
-def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
-    # fixtures in pytest_simcore.environs
-    service_folder = osparc_simcore_root_dir / "services" / "payments"
-    assert service_folder.exists()
-    assert any(service_folder.glob("src/simcore_service_payments"))
-    return service_folder
-
-
-@pytest.fixture(scope="session")
-def installed_package_dir() -> Path:
-    dirpath = Path(simcore_service_payments.__file__).resolve().parent
-    assert dirpath.exists()
-    return dirpath
+from respx import MockRouter
+from simcore_service_payments.core.application import create_app
+from simcore_service_payments.core.settings import ApplicationSettings
+from simcore_service_payments.models.payments_gateway import (
+    InitPayment,
+    PaymentInitiated,
+)
 
 
 @pytest.fixture
-def secret_key() -> str:
-    key = Fernet.generate_key()
-    return key.decode()
+def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
+    def _doit():
+        # The following moduls are affected if rabbitmq is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
+        mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
+
+    return _doit
 
 
 @pytest.fixture
-def another_secret_key(secret_key: str) -> str:
-    other = Fernet.generate_key()
-    assert other.decode() != secret_key
-    return other.decode()
+async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
+    test_app = create_app()
+    async with LifespanManager(
+        test_app,
+        startup_timeout=None,  # for debugging
+        shutdown_timeout=10,
+    ):
+        yield test_app
 
 
 @pytest.fixture
-def fake_user_name(faker: Faker) -> str:
-    return faker.user_name()
+def mock_payments_gateway_service_api_base(
+    app: FastAPI,
+) -> Iterator[MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    with respx.mock(
+        base_url=settings.PAYMENTS_GATEWAY_URL,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as respx_mock:
+        yield respx_mock
 
 
 @pytest.fixture
-def fake_password(faker: Faker) -> str:
-    return faker.password(length=10)
+def mock_init_payment_route(faker: Faker) -> Callable:
+    def _mock(mock_router: MockRouter):
+        def _init_payment(request: httpx.Request):
+            assert InitPayment.parse_raw(request.content) is not None
+            return httpx.Response(
+                status.HTTP_200_OK,
+                json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
+            )
 
+        mock_router.post(
+            path="/init",
+            name="init_payment",
+        ).mock(side_effect=_init_payment)
 
-@pytest.fixture
-def app_environment(
-    monkeypatch: pytest.MonkeyPatch,
-    secret_key: str,
-    fake_user_name: str,
-    fake_password: str,
-) -> EnvVarsDict:
-
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            "PAYMENTS_SECRET_KEY": secret_key,
-            "PAYMENTS_GATEWAY_URL": "https://fake-payment-gateway.com",
-            "PAYMENTS_USERNAME": fake_user_name,
-            "PAYMENTS_PASSWORD": fake_password,
-        },
-    )
+    return _mock

@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Any, Coroutine, Final
+from collections.abc import Coroutine
+from typing import Any, Final
 
 import dask_gateway
 from aiohttp.client_exceptions import ClientError
@@ -22,15 +23,19 @@ async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
             auth=basic_auth,
             asynchronous=True,
         ) as gateway:
-            cluster_reports = await asyncio.wait_for(gateway.list_clusters(), timeout=5)
-        _logger.info("found %s clusters", len(cluster_reports))
+            await asyncio.wait_for(gateway.list_clusters(), timeout=5)
         return True
     except asyncio.TimeoutError:
-        _logger.debug("gateway ping timed-out, it is still starting...")
-    except ClientError:
+        _logger.info(
+            "osparc-gateway %s ping timed-out, the machine is likely still starting...",
+            url,
+        )
+    except (ClientError, ValueError):
         # this could happen if the gateway is not properly started, but it should not last
         # unless the wrong password is used.
-        _logger.info("dask-gateway is not reachable", exc_info=True)
+        _logger.info(
+            "Machine is up but osparc-gateway %s is not reachable...yet?!", url
+        )
 
     return False
 
@@ -66,9 +71,20 @@ async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) ->
                 client.list_datasets()
             )
             _logger.info(
-                "cluster currently has %s datasets, it is %s",
-                len(datasets_on_scheduler),
-                "BUSY" if len(datasets_on_scheduler) > 0 else "NOT BUSY",
+                "cluster currently has %s datasets", len(datasets_on_scheduler)
             )
-            currently_processing = await _wrap_client_async_routine(client.processing())
-            return bool(datasets_on_scheduler or currently_processing)
+            num_processing_tasks = 0
+            if worker_to_processing_tasks := await _wrap_client_async_routine(
+                client.processing()
+            ):
+                _logger.info(
+                    "cluster current workers: %s", worker_to_processing_tasks.keys()
+                )
+                num_processing_tasks = sum(
+                    len(tasks) for tasks in worker_to_processing_tasks.values()
+                )
+                _logger.info(
+                    "cluster currently processes %s tasks", num_processing_tasks
+                )
+
+            return bool(datasets_on_scheduler or num_processing_tasks)

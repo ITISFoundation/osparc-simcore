@@ -105,15 +105,15 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
         const statusIcon = new qx.ui.basic.Image();
         if (node.isFilePicker()) {
-          osparc.utils.StatusUI.setupFilePickerIcon(node, statusIcon);
+          osparc.service.StatusUI.setupFilePickerIcon(node, statusIcon);
         } else {
           const check = node.isDynamic() ? "interactive" : "output";
           node.getStatus().bind(check, statusIcon, "source", {
-            converter: output => osparc.utils.StatusUI.getIconSource(output),
-            onUpdate: (_, target) => osparc.utils.StatusUI.updateCircleAnimation(target)
+            converter: output => osparc.service.StatusUI.getIconSource(output),
+            onUpdate: (_, target) => osparc.service.StatusUI.updateCircleAnimation(target)
           });
           node.getStatus().bind(check, statusIcon, "textColor", {
-            converter: output => osparc.utils.StatusUI.getColor(output)
+            converter: output => osparc.service.StatusUI.getColor(output)
           }, this);
         }
         // eslint-disable-next-line no-underscore-dangle
@@ -145,12 +145,11 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
       const updateCurrentNodeId = currentNodeId => {
         if (nodeId === currentNodeId) {
-          btn.setFont("text-14");
           btn.setAppearance("strong-button");
         } else {
-          btn.resetFont();
           btn.resetAppearance();
         }
+        btn.setFont("text-14");
       };
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       updateCurrentNodeId(study.getUi().getCurrentNodeId());

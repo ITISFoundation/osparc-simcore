@@ -22,6 +22,7 @@ from pytest_simcore.helpers.rawdata_fakers import (
 )
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
     GroupType,
@@ -281,3 +282,21 @@ async def create_fake_project(pg_engine: Engine) -> AsyncIterator[Callable]:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )
+
+
+@pytest.fixture
+def create_fake_product(
+    connection: aiopg.sa.connection.SAConnection,
+) -> Callable[..., Awaitable[RowProxy]]:
+    async def _creator(product_name: str) -> RowProxy:
+        result = await connection.execute(
+            sa.insert(products)
+            .values(name=product_name, host_regex=".*")
+            .returning(sa.literal_column("*"))
+        )
+        assert result
+        row = await result.first()
+        assert row
+        return row
+
+    return _creator

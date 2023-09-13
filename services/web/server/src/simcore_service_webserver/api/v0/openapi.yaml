@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.27.1
+  version: 0.28.0
 servers:
 - url: ''
   description: webserver
@@ -3352,6 +3352,28 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/me/preferences/{preference_id}:
+    patch:
+      tags:
+      - user
+      summary: Set Frontend Preference
+      operationId: set_frontend_preference
+      parameters:
+      - required: true
+        schema:
+          title: Preference Id
+          type: string
+        name: preference_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRequestBody'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/me/tokens:
     get:
       tags:
@@ -3824,6 +3846,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_PaymentTransaction_'
+  /v0/wallets/{wallet_id}/payments/{payment_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Payment
+      operationId: cancel_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Id
+          minLength: 1
+          type: string
+        name: payment_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4653,14 +4700,10 @@ components:
       title: CreateWalletPayment
       required:
       - priceDollars
-      - osparcCredits
       type: object
       properties:
         priceDollars:
           title: Pricedollars
-          type: number
-        osparcCredits:
-          title: Osparccredits
           type: number
         comment:
           title: Comment
@@ -6630,6 +6673,12 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PatchRequestBody:
+      title: PatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
     PaymentTransaction:
       title: PaymentTransaction
       required:
@@ -6638,6 +6687,7 @@ components:
       - walletId
       - osparcCredits
       - createdAt
+      - completedStatus
       type: object
       properties:
         paymentId:
@@ -6666,6 +6716,17 @@ components:
           title: Completedat
           type: string
           format: date-time
+        completedStatus:
+          title: Completedstatus
+          enum:
+          - PENDING
+          - SUCCESS
+          - FAILED
+          - CANCELED
+          type: string
+        stateMessage:
+          title: Statemessage
+          type: string
         invoiceUrl:
           title: Invoiceurl
           maxLength: 2083
@@ -6747,6 +6808,19 @@ components:
           example:
           - '15'
       additionalProperties: false
+    Preference:
+      title: Preference
+      required:
+      - defaultValue
+      - value
+      type: object
+      properties:
+        defaultValue:
+          title: Defaultvalue
+          description: used by the frontend
+        value:
+          title: Value
+          description: preference value
     PresignedLink:
       title: PresignedLink
       required:
@@ -6765,6 +6839,7 @@ components:
       - id
       - login
       - role
+      - preferences
       type: object
       properties:
         first_name:
@@ -6802,6 +6877,11 @@ components:
           description: If user has a trial account, it sets the expiration date, otherwise
             None
           format: date
+        preferences:
+          title: Preferences
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Preference'
     ProfileUpdate:
       title: ProfileUpdate
       type: object
