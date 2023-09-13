@@ -129,21 +129,34 @@ class ApplicationSettings(BasicSettings):
         "TIP: use 'API_SERVER_DEV_HTTP_CALLS_LOGS_PATH=captures.ignore.keep.log'"
         "NOTE: only available in devel mode",
     )
+    API_SERVER_PROFILE: bool = Field(
+        default=False, description="Enable profiling of the api server"
+    )
 
     @cached_property
     def debug(self) -> bool:
         """If True, debug tracebacks should be returned on errors."""
         return self.SC_BOOT_MODE is not None and self.SC_BOOT_MODE.is_devel_mode()
 
+    @validator("API_SERVER_PROFILE")
+    @classmethod
+    def _validate_api_server_profile(cls, v, values):
+        msg: str = "API_SERVER_PROFILE only allowed in devel mode"
+        return cls._enable_only_in_devel_mode(v, values, msg)
+
     @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH")
     @classmethod
-    def _enable_only_in_devel_mode(cls, v, values):
+    def _validate_api_server_dev_http_calls_log_path(cls, v, values):
+        msg: str = "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
+        return cls._enable_only_in_devel_mode(v, values, msg)
+
+    @classmethod
+    def _enable_only_in_devel_mode(cls, v, values, msg):
         if v and not (
             values
             and (boot_mode := values.get("SC_BOOT_MODE"))
             and boot_mode.is_devel_mode()
         ):
-            msg = "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
             raise ValueError(msg)
         return v
 

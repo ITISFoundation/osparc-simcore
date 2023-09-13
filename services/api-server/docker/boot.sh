@@ -33,15 +33,31 @@ echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
 
-  exec sh -c "
-    cd services/api-server/src/simcore_service_api_server && \
-    uvicorn main:the_app \
-      --host 0.0.0.0 \
-      --reload \
-      $reload_dir_packages
-      --reload-dir . \
-      --log-level \"${SERVER_LOG_LEVEL}\"
-  "
+  if [ -n "${API_SERVER_PROFILE}" ]; then
+    echo "$INFO" "Running with pyinstrument profiler enabled"
+    exec sh -c "
+      cd services/api-server/src/simcore_service_api_server && \
+      pyinstrument \
+        --outfile=../../api_server_profile \
+        -m uvicorn main:the_app \
+        --host 0.0.0.0 \
+        --reload \
+        $reload_dir_packages
+        --reload-dir . \
+        --log-level \"${SERVER_LOG_LEVEL}\"
+    "
+  else
+    exec sh -c "
+      cd services/api-server/src/simcore_service_api_server && \
+      uvicorn main:the_app \
+        --host 0.0.0.0 \
+        --reload \
+        $reload_dir_packages
+        --reload-dir . \
+        --log-level \"${SERVER_LOG_LEVEL}\"
+    "
+  fi
+
 else
   exec uvicorn simcore_service_api_server.main:the_app \
     --host 0.0.0.0 \

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -23,7 +24,27 @@ from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 
+if os.environ.get("API_SERVER_PROFILE"):
+    from pyinstrument import Profiler
+
+
 _logger = logging.getLogger(__name__)
+
+
+class ApiServerProfilerMiddleware:
+    """Following
+    https://www.starlette.io/middleware/#cleanup-and-error-handling
+    https://fastapi.tiangolo.com/advanced/middleware/#advanced-middleware
+    """
+
+    def __init__(self, app: FastAPI):
+        self._app: FastAPI = app
+        self._profiler = Profiler(async_mode="enabled")
+
+    async def __call__(self, scope, receive, send):
+        self._profiler.start()
+        await self._app(scope=scope, receive=receive, send=send)
+        self._profiler.stop()
 
 
 def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
@@ -113,6 +134,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
             else None,
         ),
     )
+    if settings.API_SERVER_PROFILE:
+        app.add_middleware(ApiServerProfilerMiddleware)
 
     # routing
 
