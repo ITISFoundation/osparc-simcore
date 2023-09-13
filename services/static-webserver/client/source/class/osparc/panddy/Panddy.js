@@ -45,7 +45,7 @@ qx.Class.define("osparc.panddy.Panddy", {
           action: "open"
         },
         anchorEl: "osparc-test-id=userMenuMenu",
-        orientation: "left",
+        placement: "left",
         text: qx.locale.Manager.tr("You can always find me in the User Menu.")
       }]
     }]
@@ -201,8 +201,8 @@ qx.Class.define("osparc.panddy.Panddy", {
           targetWidget[step.action]();
         }
         stepWidget.setElement(targetWidget);
-        if (step.orientation) {
-          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.orientation));
+        if (step.placement) {
+          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
         }
       } else {
         const panddy = this.getChildControl("panddy");
