@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.tours.Panddy", {
+qx.Class.define("osparc.tours.Manager", {
   extend: qx.ui.core.Widget,
   type: "singleton",
 
@@ -39,7 +39,7 @@ qx.Class.define("osparc.tours.Panddy", {
         anchorEl: null,
         title: qx.locale.Manager.tr("Grüezi!"),
         text: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application."),
-        placement: "left"
+        placement: null
       }, {
         beforeClick: {
           selector: "osparc-test-id=userMenuBtn"
@@ -123,11 +123,7 @@ qx.Class.define("osparc.tours.Panddy", {
         return;
       }
 
-      if (tours.length === 1) {
-        this.__selectTour(tours[0]);
-      } else {
-        this.__showTours();
-      }
+      this.__showTours();
     },
 
     __showTours: function() {
@@ -135,7 +131,7 @@ qx.Class.define("osparc.tours.Panddy", {
       panddy.show();
       setTimeout(() => {
         const tours = this.getTours();
-        const toursWidget = new osparc.tours.Tours(panddy, tours);
+        const toursWidget = new osparc.tours.List(panddy, tours);
         toursWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
         toursWidget.addListener("tourSelected", e => {
           toursWidget.exclude();

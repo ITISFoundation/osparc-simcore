@@ -478,7 +478,7 @@ qx.Class.define("osparc.Application", {
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
       }
-      osparc.tours.Panddy.getInstance().stop();
+      osparc.tours.Manager.getInstance().stop();
       osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();
       this.__restart();

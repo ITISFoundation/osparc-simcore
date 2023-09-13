@@ -397,7 +397,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
       osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addPanddyToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
       return menuButton;
     },

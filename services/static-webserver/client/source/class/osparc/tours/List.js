@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.tours.Tours", {
+qx.Class.define("osparc.tours.List", {
   extend: osparc.ui.basic.FloatingHelper,
 
   construct: function(element, tours) {
@@ -83,16 +83,9 @@ qx.Class.define("osparc.tours.Tours", {
     __evaluateRequiredTarget: function(tour, seqButton) {
       if (this.__isSelectorVisible(document, tour.contextTarget)) {
         seqButton.setEnabled(true);
-        return;
+      } else {
+        seqButton.setEnabled(false);
       }
-      const iframes = document.querySelectorAll("iframe");
-      for (let i=0; i<iframes.length; i++) {
-        if (this.__isSelectorVisible(iframes[i].contentWindow.document, tour.contextTarget)) {
-          seqButton.setEnabled(true);
-          return;
-        }
-      }
-      seqButton.setEnabled(false);
     },
 
     __getTourButton: function(tour) {

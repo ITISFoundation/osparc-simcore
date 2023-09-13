@@ -177,7 +177,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       }
       if (osparc.product.tours.Utils.hasTours()) {
         this.getMenu().addSeparator();
-        osparc.store.Support.addPanddyToMenu(this.getMenu());
+        osparc.store.Support.addGuidedToursToMenu(this.getMenu());
       }
       this.getMenu().addSeparator();
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
@@ -234,7 +234,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     __addQuickStartToMenu: function() {
       const menu = this.getMenu();
       osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addPanddyToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
     },
 
     __addManualsToMenu: async function() {

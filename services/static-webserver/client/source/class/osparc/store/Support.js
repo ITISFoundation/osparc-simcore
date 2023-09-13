@@ -43,12 +43,12 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
-    addPanddyToMenu: function(menu) {
+    addGuidedToursToMenu: function(menu) {
       if (osparc.product.tours.Utils.hasTours()) {
-        const tours = osparc.product.tours.Utils.getTours();
-        const panddyButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Panddy"));
+        const panddyButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided tours"));
         panddyButton.addListener("execute", () => {
-          const panddy = osparc.tours.Panddy.getInstance();
+          const tours = osparc.product.tours.Utils.getTours();
+          const panddy = osparc.tours.Manager.getInstance();
           panddy.setTours(tours);
           panddy.start();
         });
