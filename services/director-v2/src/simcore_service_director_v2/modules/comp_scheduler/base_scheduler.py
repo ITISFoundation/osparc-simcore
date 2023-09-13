@@ -58,7 +58,6 @@ from ...utils.comp_scheduler import (
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
     publish_project_log,
-    publish_service_log,
     publish_service_resource_tracking_heartbeat,
     publish_service_resource_tracking_started,
     publish_service_started_metrics,
@@ -720,19 +719,14 @@ class BaseCompScheduler(ABC):
                 _logger.warning(
                     "The on demand computational backend is not ready yet: %s", r
                 )
-                await asyncio.gather(
-                    *(
-                        publish_service_log(
-                            self.rabbitmq_client,
-                            user_id,
-                            project_id,
-                            node_id,
-                            log="On demand cluster is currently starting...",
-                            log_level=logging.INFO,
-                        )
-                        for node_id in tasks_ready_to_start
-                    )
+                await publish_project_log(
+                    self.rabbitmq_client,
+                    user_id,
+                    project_id,
+                    log=f"{r}",
+                    log_level=logging.INFO,
                 )
+
                 await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     list(tasks_ready_to_start.keys()),
