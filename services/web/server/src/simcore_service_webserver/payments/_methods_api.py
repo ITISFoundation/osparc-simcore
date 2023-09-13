@@ -1,5 +1,7 @@
+import asyncio
 import logging
 from typing import Any
+from uuid import uuid4
 
 import arrow
 from aiohttp import web
@@ -12,9 +14,11 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
+from yarl import URL
 
 from ._api import check_wallet_permissions
-from ._methods_db import PaymentsMethodsDB
+from ._methods_db import PaymentsMethodsDB, insert_init_payment_method
+from .settings import PaymentsSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -40,13 +44,45 @@ def _to_api_model(
 async def init_creation_of_wallet_payment_method(
     app: web.Application, *, user_id: UserID, wallet_id: WalletID
 ) -> PaymentMethodInit:
+    """
+
+    Raises:
+        WalletAccessForbiddenError
+        PaymentMethodUniqueViolationError
+    """
+
     # check permissions
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
 
-    raise NotImplementedError
+    # FAKE -----
+    _logger.debug("init -> FAKE Payments Gateway: /payment-methods:init")
+    settings: PaymentsSettings = get_plugin_settings(app)
+    await asyncio.sleep(1)
+    payment_method_id = PaymentMethodID(f"{uuid4()}".upper())
+    form_link = (
+        URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
+        .with_path("/payment-methods/form")
+        .with_query(id=payment_method_id)
+    )
+    # -----
+
+    # annotate
+    await insert_init_payment_method(
+        app,
+        payment_method_id=payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        initiated_at=initiated_at,
+    )
+
+    return PaymentMethodInit(
+        wallet_id=wallet_id,
+        payment_method_id=payment_method_id,
+        payment_method_form_url=f"{form_link}",
+    )
 
 
 async def complete_create_of_wallet_payment_method(
