@@ -26,8 +26,8 @@ async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     async for row in conn.execute(
         sa.select(*_COLUMNS_IN_MODEL).order_by(products.c.priority)
     ):
-        if row is not None:
-            yield row
+        assert row  # nosec
+        yield row
 
 
 class ProductRepository(BaseRepository):
