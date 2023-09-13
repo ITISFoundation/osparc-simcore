@@ -1,3 +1,6 @@
+import datetime
+from typing import Final
+
 from models_library.clusters import SimpleAuthentication
 from models_library.rpc_schemas_clusters_keeper.clusters import (
     ClusterState,
@@ -39,6 +42,27 @@ def _convert_ec2_state_to_cluster_state(
             return ClusterState.STOPPED
 
 
+_EC2_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=3)
+_GATEWAY_READYNESS_MAX_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=3)
+
+
+def _create_eta(
+    instance_launch_time: datetime.datetime,
+    *,
+    gateway_ready: bool,
+) -> datetime.timedelta:
+    now = datetime.datetime.now(datetime.timezone.utc)
+    estimated_time_to_running = (
+        instance_launch_time
+        + _EC2_INSTANCE_MAX_START_TIME
+        + _GATEWAY_READYNESS_MAX_TIME
+        - now
+    )
+    if gateway_ready is True:
+        estimated_time_to_running = datetime.timedelta(seconds=0)
+    return estimated_time_to_running
+
+
 def create_cluster_from_ec2_instance(
     instance: EC2InstanceData,
     user_id: UserID,
@@ -56,4 +80,5 @@ def create_cluster_from_ec2_instance(
         user_id=user_id,
         wallet_id=wallet_id,
         gateway_ready=gateway_ready,
+        eta=_create_eta(instance.launch_time, gateway_ready=gateway_ready),
     )
