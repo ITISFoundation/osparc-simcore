@@ -109,6 +109,18 @@ qx.Class.define("osparc.product.Utils", {
       return alias;
     },
 
+    resourceTypeToAlias: function(resourceType, options) {
+      switch (resourceType) {
+        case "study":
+          return this.getStudyAlias(options);
+        case "template":
+          return this.getTemplateAlias(options);
+        case "service":
+          return this.getServiceAlias(options);
+      }
+      return resourceType;
+    },
+
     getLogoPath: function() {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();

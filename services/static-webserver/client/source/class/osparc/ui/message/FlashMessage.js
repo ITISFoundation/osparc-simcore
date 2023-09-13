@@ -17,7 +17,7 @@
 ************************************************************************ */
 
 /**
- * A FlashMessage provides brief messages about the app processes. It is used and handled by osparc.component.message.FlashMessenger.
+ * A FlashMessage provides brief messages about the app processes. It is used and handled by osparc.FlashMessenger.
  */
 qx.Class.define("osparc.ui.message.FlashMessage", {
   extend: qx.ui.core.Widget,

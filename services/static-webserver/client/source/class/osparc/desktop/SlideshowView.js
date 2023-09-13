@@ -251,16 +251,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNodeView: function(node) {
       let view;
       if (node.isParameter()) {
-        view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-        const renderer = new osparc.component.node.ParameterEditor(node);
+        view = osparc.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+        const renderer = new osparc.node.ParameterEditor(node);
         renderer.buildForm(false);
         view.add(renderer);
       } else {
         if (node.isFilePicker()) {
-          view = new osparc.component.node.FilePickerSSView();
+          view = new osparc.node.FilePickerSSView();
           view.getOutputsButton().hide();
         } else {
-          view = new osparc.component.node.NodeView();
+          view = new osparc.node.NodeView();
         }
         view.setNode(node);
         if (node.isDynamic()) {
@@ -391,7 +391,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
 
     __requestServiceBetween: function(leftNodeId, rightNodeId) {
-      const srvCat = new osparc.component.workbench.ServiceCatalog();
+      const srvCat = new osparc.workbench.ServiceCatalog();
       srvCat.setContext(leftNodeId, rightNodeId);
       srvCat.addListener("addService", e => {
         const data = e.getData();

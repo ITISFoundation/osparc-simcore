@@ -244,7 +244,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
-        return osparc.component.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
+        return osparc.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -254,7 +254,7 @@ qx.Class.define("osparc.data.model.Study", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
-        return osparc.component.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));
+        return osparc.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -289,7 +289,7 @@ qx.Class.define("osparc.data.model.Study", {
       let nCompNodes = 0;
       let overallProgress = 0;
       Object.values(nodes).forEach(node => {
-        const metaData = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const metaData = osparc.service.Utils.getMetaData(node["key"], node["version"]);
         if (osparc.data.model.Node.isComputational(metaData)) {
           const progress = "progress" in node ? node["progress"] : 0;
           overallProgress += progress;
