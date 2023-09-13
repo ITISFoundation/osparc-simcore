@@ -4,14 +4,21 @@
     "description": "Introduction to Dashboard tabs",
     "steps": [{
       "anchorEl": "osparc-test-id=studiesTabBtn",
-      "action": "execute",
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
       "title": "Projects",
-      "text": "Existing projects can be accessed and managed, and new projects can be created. Each project is represented by a card."
+      "text": "Existing projects can be accessed and managed, and new projects can be created. Each project is represented by a card.",
+      "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=templatesTabBtn",
-      "action": "execute",
+      "beforeClick": {
+        "selector": "osparc-test-id=templatesTabBtn",
+        "revertSequence": "osparc-test-id=studiesTabBtn"
+      },
       "title": "Tutorials",
-      "text": "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable."
+      "text": "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable.",
+      "placement": "right"
     }]
   }
 }
