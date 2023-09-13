@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def create_cluster(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
+    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> list[EC2InstanceData]:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
@@ -56,7 +56,7 @@ async def get_all_clusters(app: FastAPI) -> list[EC2InstanceData]:
 
 
 async def get_cluster(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
+    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2InstanceData:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
@@ -70,7 +70,7 @@ async def get_cluster(
 
 
 async def cluster_heartbeat(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
+    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> None:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
