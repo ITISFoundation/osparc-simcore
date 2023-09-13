@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -28,9 +27,13 @@ from ..application_settings import get_settings
 from ..login.decorators import login_required
 from ..payments import api
 from ..payments.api import (
+    cancel_creation_of_wallet_payment_method,
     create_payment_to_wallet,
+    delete_wallet_payment_method,
     get_user_payments_page,
-    init_creation_of_payment_method_to_wallet,
+    get_wallet_payment_method,
+    init_creation_of_wallet_payment_method,
+    list_wallet_payment_methods,
 )
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -156,6 +159,11 @@ async def cancel_payment(request: web.Request):
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
+#
+# Payment methods
+#
+
+
 class PaymentMethodsPathParams(WalletsPathParams):
     payment_method_id: PaymentID
 
@@ -168,7 +176,7 @@ class PaymentMethodsPathParams(WalletsPathParams):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 @requires_dev_feature_enabled
-async def init_create_payment_method(request: web.Request):
+async def init_creation_of_payment_method(request: web.Request):
     """Triggers the creation of a new payment method.
     Note that creating a payment-method follows the init-prompt-ack flow
     """
@@ -185,12 +193,34 @@ async def init_create_payment_method(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         initiated: CreatePaymentMethodInitiated = (
-            await init_creation_of_payment_method_to_wallet(
+            await init_creation_of_wallet_payment_method(
                 request.app, user_id=req_ctx.user_id, wallet_id=wallet_id
             )
         )
 
         return envelope_json_response(initiated, web.HTTPCreated)
+
+
+@routes.post(
+    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods/{{payment_method_id}}:cancel",
+    name="cancel_create_payment_method",
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+@requires_dev_feature_enabled
+async def cancel_creation_of_payment_method(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
+
+    await cancel_creation_of_wallet_payment_method(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        payment_method_id=path_params.payment_method_id,
+    )
+
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.get(
@@ -203,14 +233,11 @@ async def init_create_payment_method(request: web.Request):
 async def list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    payment_methods = parse_obj_as(
-        list[PaymentMethodGet],
-        [
-            {**p, "wallet_id": path_params.wallet_id}
-            for p in PaymentMethodGet.Config.schema_extra["examples"]
-        ],
+
+    list_payment_methods: list[PaymentMethodGet] = await list_wallet_payment_methods(
+        request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
     )
-    return envelope_json_response(payment_methods)
+    return envelope_json_response(list_payment_methods)
 
 
 @routes.get(
@@ -225,15 +252,13 @@ async def get_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
-    got = parse_obj_as(
-        PaymentMethodGet,
-        {
-            **PaymentMethodGet.Config.schema_extra["examples"][0],
-            "idr": path_params.payment_method_id,
-            "wallet_id": path_params.wallet_id,
-        },
+    payment_method: PaymentMethodGet = await get_wallet_payment_method(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        payment_method_id=path_params.payment_method_id,
     )
-    return envelope_json_response(got)
+    return envelope_json_response(payment_method)
 
 
 @routes.delete(
@@ -248,4 +273,10 @@ async def delete_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
+    await delete_wallet_payment_method(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        payment_method_id=path_params.payment_method_id,
+    )
     raise NotImplementedError

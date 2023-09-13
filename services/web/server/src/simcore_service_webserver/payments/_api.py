@@ -7,14 +7,16 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreatePaymentMethodInitiated,
     PaymentID,
+    PaymentMethodGet,
     PaymentMethodID,
     PaymentTransaction,
     WalletPaymentCreated,
 )
-from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
+from pydantic import parse_obj_as
+from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -186,7 +188,7 @@ async def complete_payment(
 async def cancel_payment_to_wallet(
     app: web.Application,
     *,
-    payment_id: IDStr,
+    payment_id: PaymentID,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentTransaction:
@@ -205,22 +207,99 @@ async def cancel_payment_to_wallet(
 #
 
 
-async def init_creation_of_payment_method_to_wallet(
+async def init_creation_of_wallet_payment_method(
     app: web.Application, *, user_id: UserID, wallet_id: WalletID
 ) -> CreatePaymentMethodInitiated:
     # check permissions
     await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
 
     raise NotImplementedError
 
 
-async def complete_payment_method(
+async def complete_create_of_wallet_payment_method(
     app: web.Application,
     *,
     payment_method_id: PaymentMethodID,
-    completion_state: PaymentTransactionState,
+    completion_state: InitPromptAckFlowState,
     message: str | None = None,
 ):
     raise NotImplementedError
+
+
+async def cancel_creation_of_wallet_payment_method(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+):
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+
+    acked = await complete_create_of_wallet_payment_method(
+        app,
+        payment_method_id=payment_method_id,
+        completion_state=InitPromptAckFlowState.CANCELED,
+        message="Creation of payment-method aborted by user",
+    )
+
+    # FIXME: delete???
+
+    return acked
+
+
+async def list_wallet_payment_methods(
+    app: web.Application, *, user_id: UserID, wallet_id: WalletID
+) -> list[PaymentMethodGet]:
+    # check permissions
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+
+    # FIXME: fake!!
+    return parse_obj_as(
+        list[PaymentMethodGet],
+        [
+            {**p, "wallet_id": wallet_id}
+            for p in PaymentMethodGet.Config.schema_extra["examples"]
+        ],
+    )
+
+
+async def get_wallet_payment_method(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+) -> PaymentMethodGet:
+    # check permissions
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+
+    # FIXME: fake!!
+    # TODO: call gateway to get payment-method
+    # NOTE: if not found? should I delete my database?
+    return parse_obj_as(
+        PaymentMethodGet,
+        {
+            **PaymentMethodGet.Config.schema_extra["examples"][0],
+            "idr": payment_method_id,
+            "wallet_id": wallet_id,
+        },
+    )
+
+
+async def delete_wallet_payment_method(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+):
+    # check permissions
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    assert payment_method_id  # nosec
+
+    # FIXME: fake!!
+    # TODO: call gateway to delete payment-method
+    # TODO: drop payment-method from db

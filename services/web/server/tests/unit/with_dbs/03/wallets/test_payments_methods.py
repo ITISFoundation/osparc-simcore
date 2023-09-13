@@ -23,7 +23,9 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.payments._api import complete_payment_method
+from simcore_service_webserver.payments._api import (
+    complete_create_of_wallet_payment_method,
+)
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
@@ -105,7 +107,7 @@ async def test_add_payment_method_worfklow(
     assert "complete" in error["errors"][0]["details"]
 
     # Complete
-    await complete_payment_method(
+    await complete_create_of_wallet_payment_method(
         client.app,
         payment_method_id=init.payment_method_id,
         completion_state=PaymentTransactionState.SUCCESS,
@@ -140,3 +142,6 @@ async def test_add_payment_method_worfklow(
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-method")
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data
+
+    # TODO: if you like to the new naming of entrypoints and models for the flow, make it uniform with payments
+    # TODO:

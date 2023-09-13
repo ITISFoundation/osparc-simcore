@@ -2,11 +2,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from models_library.api_schemas_webserver.wallets import PaymentsID
-from models_library.basic_types import IDStr
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import Field, HttpUrl
 
+from ..basic_types import IDStr
 from ..users import GroupID
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus
@@ -82,7 +80,7 @@ class PaymentTransaction(OutputSchema):
     invoice_url: HttpUrl = FieldNotRequired()
 
 
-PaymentMethodID: TypeAlias = PaymentsID
+PaymentMethodID: TypeAlias = IDStr
 
 
 class CreatePaymentMethodInitiated(OutputSchema):
