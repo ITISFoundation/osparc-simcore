@@ -3917,13 +3917,13 @@ paths:
         in: path
       responses:
         '204':
-          description: Successful Response
+          description: Successfully cancelled
   /v0/wallets/{wallet_id}/payments-methods:
     get:
       tags:
       - wallets
       summary: List Payments Methods
-      description: Lists all payments method associated to to `wallet_id`
+      description: Lists all payments method associated to `wallet_id`
       operationId: list_payments_methods
       parameters:
       - required: true
@@ -3992,12 +3992,8 @@ paths:
         name: payment_method_id
         in: path
       responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodGet_'
+        '204':
+          description: Successfully deleted
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:

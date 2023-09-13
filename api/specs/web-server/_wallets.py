@@ -107,6 +107,7 @@ async def init_creation_of_payment_method(wallet_id: WalletID):
 @router.post(
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_description="Successfully cancelled",
 )
 async def cancel_creation_of_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
@@ -119,7 +120,7 @@ async def cancel_creation_of_payment_method(
     response_model=Envelope[list[PaymentMethodGet]],
 )
 async def list_payments_methods(wallet_id: WalletID):
-    """Lists all payments method associated to to `wallet_id`"""
+    """Lists all payments method associated to `wallet_id`"""
 
 
 @router.get(
@@ -132,7 +133,8 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 
 @router.delete(
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
-    response_model=Envelope[PaymentMethodGet],
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_description="Successfully deleted",
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
