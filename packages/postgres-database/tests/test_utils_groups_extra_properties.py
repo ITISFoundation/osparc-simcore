@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import random
-from typing import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 import aiopg.sa
 import pytest
@@ -17,7 +17,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
 )
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
-    GroupExtraPropertiesNotFound,
+    GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
 )
 from sqlalchemy import literal_column
@@ -26,7 +26,7 @@ from sqlalchemy import literal_column
 async def test_get_raises_if_not_found(
     faker: Faker, connection: aiopg.sa.connection.SAConnection
 ):
-    with pytest.raises(GroupExtraPropertiesNotFound):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
         await GroupExtraPropertiesRepo.get(
             connection, gid=faker.pyint(min_value=1), product_name=faker.pystr()
         )
@@ -86,7 +86,7 @@ async def test_get(
     create_fake_product: Callable[..., Awaitable[RowProxy]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
 ):
-    with pytest.raises(GroupExtraPropertiesNotFound):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
         await GroupExtraPropertiesRepo.get(
             connection, gid=registered_user.primary_gid, product_name=product_name
         )
@@ -115,7 +115,7 @@ async def test_get_aggregated_properties_for_user_with_no_entries_raises(
     product_name: str,
     registered_user: RowProxy,
 ):
-    with pytest.raises(GroupExtraPropertiesNotFound):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
         await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             connection, user_id=registered_user.id, product_name=product_name
         )
@@ -265,6 +265,7 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
         product_name,
         internet_access=False,
         override_services_specifications=False,
+        use_on_demand_clusters=False,
     )
     # this should return the everyone group properties
     aggregated_group_properties = (
@@ -282,6 +283,7 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
             product_name,
             internet_access=False,
             override_services_specifications=False,
+            use_on_demand_clusters=False,
         )
         await _add_user_to_group(
             connection, user_id=registered_user.id, group_id=group.gid
@@ -295,9 +297,10 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     )
     assert aggregated_group_properties.internet_access is False
     assert aggregated_group_properties.override_services_specifications is False
+    assert aggregated_group_properties.use_on_demand_clusters is False
 
     # let's change one of these standard groups
-    random_standard_group = random.choice(standard_groups)
+    random_standard_group = random.choice(standard_groups)  # noqa: S311
     result = await connection.execute(
         groups_extra_properties.update()
         .where(groups_extra_properties.c.group_id == random_standard_group.gid)
@@ -313,9 +316,10 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     )
     assert aggregated_group_properties.internet_access is True
     assert aggregated_group_properties.override_services_specifications is False
+    assert aggregated_group_properties.use_on_demand_clusters is False
 
     # let's change another one of these standard groups
-    random_standard_group = random.choice(standard_groups)
+    random_standard_group = random.choice(standard_groups)  # noqa: S311
     result = await connection.execute(
         groups_extra_properties.update()
         .where(groups_extra_properties.c.group_id == random_standard_group.gid)
@@ -331,11 +335,15 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     )
     assert aggregated_group_properties.internet_access is True
     assert aggregated_group_properties.override_services_specifications is True
+    assert aggregated_group_properties.use_on_demand_clusters is False
 
     # and we can deny it again by setting a primary extra property
     # now create some personal extra properties
     personal_group_extra_properties = await create_fake_group_extra_properties(
-        registered_user.primary_gid, product_name, internet_access=False
+        registered_user.primary_gid,
+        product_name,
+        internet_access=False,
+        use_on_demand_clusters=True,
     )
     assert personal_group_extra_properties
 
@@ -346,3 +354,4 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     )
     assert aggregated_group_properties.internet_access is False
     assert aggregated_group_properties.override_services_specifications is False
+    assert aggregated_group_properties.use_on_demand_clusters is True

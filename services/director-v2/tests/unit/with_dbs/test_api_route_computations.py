@@ -36,7 +36,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -241,6 +241,52 @@ def mocked_catalog_service_fcts_deprecated(
 @pytest.fixture
 def product_name(faker: Faker) -> str:
     return faker.name()
+
+
+async def test_computation_create_validators(
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    fake_workbench_without_outputs: dict[str, Any],
+    faker: Faker,
+):
+    user = registered_user()
+    proj = await project(user, workbench=fake_workbench_without_outputs)
+    # cluster id and use_on_demand raises
+    with pytest.raises(ValidationError, match=r"cluster_id cannot be set.+"):
+        ComputationCreate(
+            user_id=user["id"],
+            project_id=proj.uuid,
+            product_name=faker.pystr(),
+            use_on_demand_clusters=True,
+            cluster_id=faker.pyint(),
+        )
+    # this should not raise
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=True,
+        cluster_id=None,
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=False,
+        cluster_id=faker.pyint(),
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=True,
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=False,
+    )
 
 
 async def test_create_computation(

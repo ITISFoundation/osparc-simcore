@@ -13,6 +13,7 @@ from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.utils.comp_scheduler import (
     COMPLETED_STATES,
     SCHEDULED_STATES,
+    TASK_TO_START_STATES,
     Iteration,
     create_service_resources_from_task,
     get_resource_tracking_run_id,
@@ -44,7 +45,7 @@ def test_scheduler_knows_these_are_completed_states(state: RunningState):
 
 
 def test_scheduler_knows_all_the_states():
-    assert COMPLETED_STATES.union(SCHEDULED_STATES).union(
+    assert COMPLETED_STATES.union(SCHEDULED_STATES).union(TASK_TO_START_STATES).union(
         {RunningState.NOT_STARTED, RunningState.UNKNOWN}
     ) == set(RunningState)
 

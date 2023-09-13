@@ -17,6 +17,8 @@ from simcore_service_webserver.db_listener._utils import convert_state_from_db
         (StateType.RUNNING, RunningState.STARTED),
         (StateType.SUCCESS, RunningState.SUCCESS),
         (StateType.NOT_STARTED, RunningState.NOT_STARTED),
+        (StateType.WAITING_FOR_RESOURCES, RunningState.WAITING_FOR_RESOURCES),
+        (StateType.WAITING_FOR_CLUSTER, RunningState.WAITING_FOR_CLUSTER),
     ],
 )
 def test_convert_state_from_db(db_state: StateType, expected_state: RunningState):

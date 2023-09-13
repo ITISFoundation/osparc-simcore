@@ -2,7 +2,11 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import (
+    RabbitMQClient,
+    RabbitMQRPCClient,
+    wait_till_rabbitmq_responsive,
+)
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
@@ -17,10 +21,15 @@ def setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="director-v2", settings=settings
         )
+        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
+            client_name="director-v2", settings=settings
+        )
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
+        if app.state.rabbitmq_rpc_client:
+            await app.state.rabbitmq_rpc_client.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -31,3 +40,12 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
         msg = "RabbitMQ client is not available. Please check the configuration."
         raise ConfigurationError(msg)
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+    if not hasattr(app.state, "rabbitmq_rpc_client"):
+        msg = (
+            "RabbitMQ client for RPC is not available. Please check the configuration."
+        )
+        raise ConfigurationError(msg)
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)

@@ -1,11 +1,13 @@
 import asyncio
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator
+from typing import TypeAlias
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, ClusterID
+from models_library.clusters import BaseCluster
+from pydantic import AnyUrl
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -20,12 +22,15 @@ from .dask_client import DaskClient
 logger = logging.getLogger(__name__)
 
 
+_ClusterUrl: TypeAlias = AnyUrl
+
+
 @dataclass
 class DaskClientsPool:
     app: FastAPI
     settings: ComputationalBackendSettings
     _client_acquisition_lock: asyncio.Lock = field(init=False)
-    _cluster_to_client_map: dict[ClusterID, DaskClient] = field(default_factory=dict)
+    _cluster_to_client_map: dict[_ClusterUrl, DaskClient] = field(default_factory=dict)
     _task_handlers: TaskHandlers | None = None
 
     def __post_init__(self):
@@ -44,9 +49,8 @@ class DaskClientsPool:
     @staticmethod
     def instance(app: FastAPI) -> "DaskClientsPool":
         if not hasattr(app.state, "dask_clients_pool"):
-            raise ConfigurationError(
-                "Dask clients pool is not available. Please check the configuration."
-            )
+            msg = "Dask clients pool is not available. Please check the configuration."
+            raise ConfigurationError(msg)
         dask_clients_pool: DaskClientsPool = app.state.dask_clients_pool
         return dask_clients_pool
 
@@ -57,15 +61,16 @@ class DaskClientsPool:
         )
 
     @asynccontextmanager
-    async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
+    async def acquire(self, cluster: BaseCluster) -> AsyncIterator[DaskClient]:
         async def _concurently_safe_acquire_client() -> DaskClient:
             async with self._client_acquisition_lock:
-                assert isinstance(cluster.id, int)  # nosec
-                dask_client = self._cluster_to_client_map.get(cluster.id)
+                dask_client = self._cluster_to_client_map.get(cluster.endpoint)
 
                 # we create a new client if that cluster was never used before
                 logger.debug(
-                    "acquiring connection to cluster %s:%s", cluster.id, cluster.name
+                    "acquiring connection to cluster %s:%s",
+                    cluster.endpoint,
+                    cluster.name,
                 )
                 if not dask_client:
                     tasks_file_link_type = (
@@ -76,7 +81,7 @@ class DaskClientsPool:
                             self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
                         )
                     self._cluster_to_client_map[
-                        cluster.id
+                        cluster.endpoint
                     ] = dask_client = await DaskClient.create(
                         app=self.app,
                         settings=self.settings,
@@ -108,7 +113,7 @@ class DaskClientsPool:
             ComputationalSchedulerChangedError,
         ):
             # cleanup and re-raise
-            if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
+            if dask_client := self._cluster_to_client_map.pop(cluster.endpoint, None):
                 await dask_client.delete()
             raise
 
