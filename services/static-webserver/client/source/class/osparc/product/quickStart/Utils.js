@@ -30,7 +30,7 @@ qx.Class.define("osparc.product.quickStart.Utils", {
       },
       "s4l": {
         localStorageStr: "s4lDontShowQuickStart",
-        tutorial: () => new osparc.product.quickStart.s4l.Slides()
+        tutorial: () => new osparc.product.quickStart.s4l.Welcome()
       }
     },
 
