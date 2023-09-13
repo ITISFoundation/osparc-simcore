@@ -9,7 +9,9 @@ from simcore_service_payments.core.settings import ApplicationSettings
 
 
 def test_valid_web_application_settings(app_environment: EnvVarsDict):
-    settings = ApplicationSettings()
+    settings = ApplicationSettings()  # type: ignore
     assert settings
 
     assert settings == ApplicationSettings.create_from_envs()
+
+    assert app_environment["PAYMENTS_LOGLEVEL"] == settings.LOG_LEVEL

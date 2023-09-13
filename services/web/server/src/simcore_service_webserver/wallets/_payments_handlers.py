@@ -17,6 +17,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .._constants import MSG_UNDER_DEVELOPMENT
 from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import login_required
@@ -39,8 +40,7 @@ routes = web.RouteTableDef()
 def _raise_if_not_dev_mode(app):
     app_settings = get_settings(app)
     if not app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        msg = "This feature is only available in development mode"
-        raise NotImplementedError(msg)
+        raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
 
 
 @routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")

@@ -1,47 +1,62 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
-import json
-from typing import Iterator
+
+from collections.abc import AsyncIterator, Callable
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
+from fastapi import FastAPI, status
+from httpx._transports.asgi import ASGITransport
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_payments.core.application import create_app
+from simcore_service_payments.core.settings import ApplicationSettings
+from simcore_service_payments.models.schemas.auth import Token
 
 
 @pytest.fixture
-def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
-    print(f"app_environment={json.dumps(app_environment)}")
+def app_environment(
+    app_environment: EnvVarsDict,
+    disable_rabbitmq_service: Callable,
+) -> EnvVarsDict:
+    # disables rabbit before creating app
+    disable_rabbitmq_service()
+    return app_environment
 
-    app = create_app()
-    print("settings:\n", app.state.settings.json(indent=1))
-    with TestClient(app, base_url="http://testserver.test") as client:
+
+@pytest.fixture
+async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    # - Needed for app to trigger start/stop event handlers
+    # -Prefer this client instead of fastapi.testclient.TestClient
+    async with httpx.AsyncClient(
+        app=app,
+        base_url="http://payments.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as client:
+        assert isinstance(client._transport, ASGITransport)
         yield client
 
 
-@pytest.fixture(params=["username", "password", "both", None])
-def invalid_basic_auth(
-    request: pytest.FixtureRequest, fake_user_name: str, fake_password: str
-) -> httpx.BasicAuth | None:
-    invalid_case = request.param
-
-    if invalid_case is None:
-        return None
-
-    kwargs = {"username": fake_user_name, "password": fake_password}
-
-    if invalid_case == "both":
-        kwargs = {key: "wrong" for key in kwargs}
-    else:
-        kwargs[invalid_case] = "wronggg"
-
-    return httpx.BasicAuth(**kwargs)
-
-
 @pytest.fixture
-def basic_auth(fake_user_name: str, fake_password: str) -> httpx.BasicAuth:
-    return httpx.BasicAuth(username=fake_user_name, password=fake_password)
+async def auth_headers(client: httpx.AsyncClient, app: FastAPI) -> dict[str, str]:
+    # get access token
+    settings: ApplicationSettings = app.state.settings
+    assert settings
+
+    form_data = {
+        "username": settings.PAYMENTS_USERNAME,
+        "password": settings.PAYMENTS_PASSWORD.get_secret_value(),
+    }
+
+    response = await client.post(
+        "/v1/token",
+        data=form_data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    token = Token(**response.json())
+    assert response.status_code == status.HTTP_200_OK
+    assert token.token_type == "bearer"
+
+    return {"Authorization": f"Bearer {token.access_token}"}
