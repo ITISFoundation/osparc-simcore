@@ -81,7 +81,6 @@ async def test_add_payment_method_worfklow(
 
     wallet = logged_user_wallet
 
-    # TEST create_payment_method
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-method:init",
     )
@@ -105,7 +104,7 @@ async def test_add_payment_method_worfklow(
         client.app,
         payment_method_id=init.payment_method_id,
         completion_state=PaymentTransactionState.SUCCESS,
-        message="Test",
+        message="set in test_add_payment_method_worfklow",
     )
 
     # check notification
