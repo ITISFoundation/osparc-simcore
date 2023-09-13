@@ -93,20 +93,20 @@ def test_cluster_fails_when_owner_has_no_user_rights_if_default_cluster(
 
 
 def test_cluster_type_in_model_includes_postgres_database_model():
-    models_libary_cluster_types_names: set[str] = {
+    models_library_cluster_types_names: set[str] = {
         t.name for t in set(ClusterTypeInModel)
     }
     postgres_library_cluster_types_names: set[str] = {t.name for t in set(ClusterType)}
     assert postgres_library_cluster_types_names.issubset(
-        models_libary_cluster_types_names
+        models_library_cluster_types_names
     )
 
-    models_libary_cluster_types_values: set[str] = {
+    models_library_cluster_types_values: set[str] = {
         t.value for t in set(ClusterTypeInModel)
     }  # type: ignore
     postgres_library_cluster_types_values: set[str] = {
         t.value for t in set(ClusterType)
     }
     assert postgres_library_cluster_types_values.issubset(
-        models_libary_cluster_types_values
+        models_library_cluster_types_values
     )
