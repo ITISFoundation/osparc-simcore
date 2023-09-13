@@ -62,7 +62,7 @@ qx.Class.define("osparc.product.tours.s4l.Tours", {
           },
           "title": "Projects",
           "text": "Existing projects can be accessed and managed, and new projects can be created. Each project is represented by a card.",
-          "placement": "left"
+          "placement": "bottom"
         }, {
           "anchorEl": "osparc-test-id=templatesTabBtn",
           "beforeClick": {
@@ -70,7 +70,7 @@ qx.Class.define("osparc.product.tours.s4l.Tours", {
           },
           "title": "Tutorials",
           "text": "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable.",
-          "placement": "right"
+          "placement": "bottom"
         }]
       }];
     }
