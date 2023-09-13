@@ -159,7 +159,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       if (
         osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
-        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+        osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
           label: this.tr("Quality"),
@@ -339,7 +339,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.getStudy().getName(), null, title);
+      const titleEditor = new osparc.widget.Renamer(this.getStudy().getName(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
@@ -364,8 +364,8 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize());
-      const win = osparc.component.form.tag.TagManager.popUpInWindow(tagManager);
+      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize());
+      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
         win.close();
         const updatedData = e.getData();
@@ -377,8 +377,8 @@ qx.Class.define("osparc.info.MergedLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.component.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
+      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
+      const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
@@ -392,7 +392,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
-      const textEditor = new osparc.component.editor.TextEditor(this.getStudy().getDescription());
+      const textEditor = new osparc.editor.TextEditor(this.getStudy().getDescription());
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();
@@ -414,7 +414,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         })
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
     }
   }

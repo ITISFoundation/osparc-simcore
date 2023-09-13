@@ -264,7 +264,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = this.tr("You need to be logged in to create a study");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.getInstance().logAs(msg);
       }
       return isLogged;
     },
@@ -313,8 +313,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       osparc.desktop.credits.Utils.areWalletsEnabled()
         .then(walletsEnabled => {
           if (walletsEnabled) {
-            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-            const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
+            const resourceSelector = new osparc.study.ResourceSelector(studyId);
+            const win = osparc.study.ResourceSelector.popUpInWindow(resourceSelector);
             resourceSelector.addListener("startStudy", () => {
               win.close();
               if (openCB) {

@@ -63,7 +63,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         showMinimize: false,
         contentPadding: 0
       });
-      activityWindow.add(new osparc.component.service.manager.ActivityManager());
+      activityWindow.add(new osparc.activityManager.ActivityManager());
       activityWindow.center();
       activityWindow.open();
     },
@@ -122,7 +122,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
                 }
               });
           }
-          control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
+          control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
         case "license":
@@ -177,7 +177,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
       this.getMenu().addSeparator();
-      const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
         this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
       }
@@ -214,7 +214,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getChildControl("theme-switcher");
 
           this.getMenu().addSeparator();
-          const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+          const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
           if (announcementUIFactory.hasUserMenuAnnouncement()) {
             this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
           }

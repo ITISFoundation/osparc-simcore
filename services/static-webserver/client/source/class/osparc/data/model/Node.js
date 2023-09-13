@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Node", {
   construct: function(study, key, version, uuid) {
     this.base(arguments);
 
-    this.__metaData = osparc.utils.Services.getMetaData(key, version);
+    this.__metaData = osparc.service.Utils.getMetaData(key, version);
     this.__innerNodes = {};
     this.setOutputs({});
 
@@ -169,14 +169,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     // GUI elements //
     propsForm: {
-      check: "osparc.component.form.renderer.PropForm",
+      check: "osparc.form.renderer.PropForm",
       init: null,
       nullable: true,
       apply: "__applyPropsForm"
     },
 
     propsFormEditor: {
-      check: "osparc.component.form.renderer.PropFormEditor",
+      check: "osparc.form.renderer.PropFormEditor",
       init: null,
       nullable: true
     },
@@ -209,13 +209,13 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     iFrame: {
-      check: "osparc.component.widget.PersistentIframe",
+      check: "osparc.widget.PersistentIframe",
       init: null,
       nullable: true
     },
 
     logger: {
-      check: "osparc.component.widget.logger.LoggerView",
+      check: "osparc.widget.logger.LoggerView",
       init: null,
       nullable: true
     }
@@ -265,15 +265,15 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isUpdatable: function(metaData) {
-      return osparc.utils.Services.isUpdatable(metaData);
+      return osparc.service.Utils.isUpdatable(metaData);
     },
 
     isDeprecated: function(metaData) {
-      return osparc.utils.Services.isDeprecated(metaData);
+      return osparc.service.Utils.isDeprecated(metaData);
     },
 
     isRetired: function(metaData) {
-      return osparc.utils.Services.isRetired(metaData);
+      return osparc.service.Utils.isRetired(metaData);
     },
 
     hasBootModes: function(metaData) {
@@ -398,7 +398,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __applyNewMetaData: function() {
-      this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
+      this.__metaData = osparc.service.Utils.getMetaData(this.getKey(), this.getVersion());
     },
 
     getMetaData: function() {
@@ -574,7 +574,7 @@ qx.Class.define("osparc.data.model.Node", {
             level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         });
     },
 
@@ -591,8 +591,8 @@ qx.Class.define("osparc.data.model.Node", {
      * Add settings widget with those inputs that can be represented in a form
      */
     __addSettings: function(inputs) {
-      const form = this.__settingsForm = new osparc.component.form.Auto(inputs);
-      const propsForm = new osparc.component.form.renderer.PropForm(form, this, this.getStudy());
+      const form = this.__settingsForm = new osparc.form.Auto(inputs);
+      const propsForm = new osparc.form.renderer.PropForm(form, this, this.getStudy());
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
@@ -646,9 +646,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     __addSettingsAccessLevelEditor: function(inputs) {
       const propsForm = this.getPropsForm();
-      const form = new osparc.component.form.Auto(inputs);
+      const form = new osparc.form.Auto(inputs);
       form.setData(this.__settingsForm.getData());
-      const propsFormEditor = new osparc.component.form.renderer.PropFormEditor(form, this);
+      const propsFormEditor = new osparc.form.renderer.PropFormEditor(form, this);
       this.__settingsForm.addListener("changeData", e => {
         // apply data
         const data = this.__settingsForm.getData();
@@ -849,7 +849,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
       if (autoConnections) {
-        const flashMessenger = osparc.component.message.FlashMessenger.getInstance();
+        const flashMessenger = osparc.FlashMessenger.getInstance();
         flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
       }
     },
@@ -968,7 +968,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(() => this.startDynamicService())
         .catch(err => {
           if ("status" in err && err.status === 409) {
-            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "WARNING");
+            osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
           } else {
             console.error(err);
           }
@@ -1010,7 +1010,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initLogger: function() {
-      this.setLogger(new osparc.component.widget.logger.LoggerView());
+      this.setLogger(new osparc.widget.logger.LoggerView());
     },
 
     __getLoadingPageHeader: function() {
@@ -1088,7 +1088,7 @@ qx.Class.define("osparc.data.model.Node", {
     __initIFrame: function() {
       this.__initLoadingPage();
 
-      const iframe = new osparc.component.widget.PersistentIframe();
+      const iframe = new osparc.widget.PersistentIframe();
       if (osparc.product.Utils.isProduct("s4llite")) {
         iframe.setShowToolbar(false);
       }
@@ -1127,7 +1127,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __initParameter: function() {
       if (this.isParameter() && this.__getOutputData("out_1") === null) {
-        const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
+        const type = osparc.node.ParameterEditor.getParameterOutputType(this);
         // set default values if none
         let val = null;
         switch (type) {
@@ -1143,7 +1143,7 @@ qx.Class.define("osparc.data.model.Node", {
             break;
         }
         if (val !== null) {
-          osparc.component.node.ParameterEditor.setParameterOutputValue(this, val);
+          osparc.node.ParameterEditor.setParameterOutputValue(this, val);
         }
       }
     },
@@ -1359,7 +1359,7 @@ qx.Class.define("osparc.data.model.Node", {
           if ("status" in err && err.status === 406) {
             errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
             this.getStatus().setInteractive("retired");
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1383,7 +1383,7 @@ qx.Class.define("osparc.data.model.Node", {
             setTimeout(() => this.__nodeState(), interval);
           } else {
             this.getStatus().setInteractive("failed");
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
           }
         });
     },
@@ -1549,7 +1549,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newMetadata = osparc.utils.Services.getParameterMetadata("integer");
+      const newMetadata = osparc.service.Utils.getParameterMetadata("integer");
       if (newMetadata) {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
@@ -1557,7 +1557,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
-        osparc.component.node.ParameterEditor.setParameterOutputValue(this, value);
+        osparc.node.ParameterEditor.setParameterOutputValue(this, value);
         this.fireEvent("keyChanged");
       }
     },
@@ -1567,7 +1567,7 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
       const newKey = "simcore/services/frontend/data-iterator/int-range";
-      if (newKey in osparc.utils.Services.servicesCached) {
+      if (newKey in osparc.service.Utils.servicesCached) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
         this.setKey(newKey);

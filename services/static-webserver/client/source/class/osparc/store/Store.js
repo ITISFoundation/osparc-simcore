@@ -44,7 +44,7 @@
  */
 qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
-  type : "singleton",
+  type: "singleton",
 
   properties: {
     currentStudy: {
@@ -368,15 +368,15 @@ qx.Class.define("osparc.store.Store", {
           .finally(() => {
             let servicesObj = {};
             if (includeRetired) {
-              servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
+              servicesObj = osparc.service.Utils.convertArrayToObject(allServices);
             } else {
-              const nonDepServices = allServices.filter(service => !(osparc.utils.Services.isRetired(service) || osparc.utils.Services.isDeprecated(service)));
-              servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
+              const nonDepServices = allServices.filter(service => !(osparc.service.Utils.isRetired(service) || osparc.service.Utils.isDeprecated(service)));
+              servicesObj = osparc.service.Utils.convertArrayToObject(nonDepServices);
             }
-            osparc.utils.Services.addTSRInfo(servicesObj);
-            osparc.utils.Services.addExtraTypeInfo(servicesObj);
+            osparc.service.Utils.addTSRInfo(servicesObj);
+            osparc.service.Utils.addExtraTypeInfo(servicesObj);
             if (includeRetired) {
-              osparc.utils.Services.servicesCached = servicesObj;
+              osparc.service.Utils.servicesCached = servicesObj;
             }
             resolve(servicesObj);
           });
@@ -400,7 +400,7 @@ qx.Class.define("osparc.store.Store", {
         this.getAllServices()
           .then(services => {
             nodes.forEach(node => {
-              if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
+              if (osparc.service.Utils.getFromObject(services, node.key, node.version)) {
                 const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
                 if (idx !== -1) {
                   inaccessibleServices.splice(idx, 1);

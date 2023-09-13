@@ -122,7 +122,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       const addStars = model => {
         tsrLayout.removeAll();
         const quality = model.getQuality();
-        if (osparc.component.metadata.Quality.isEnabled(quality)) {
+        if (osparc.metadata.Quality.isEnabled(quality)) {
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
             nStars: 4,
@@ -345,7 +345,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param studyData {Object} Serialized Study Object
       */
     openAccessRights: function(studyData) {
-      const permissionsView = new osparc.component.share.CollaboratorsStudy(studyData);
+      const permissionsView = new osparc.share.CollaboratorsStudy(studyData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       return permissionsView;
@@ -355,7 +355,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param resourceData {Object} Serialized Resource Object
       */
     openQuality: function(resourceData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
+      const qualityEditor = new osparc.metadata.QualityEditor(resourceData);
       const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;

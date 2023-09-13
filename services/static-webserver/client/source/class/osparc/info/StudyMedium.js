@@ -128,7 +128,7 @@ qx.Class.define("osparc.info.StudyMedium", {
 
       if (
         osparc.product.Utils.showQuality() &&
-        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+        osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
           label: this.tr("QUALITY"),
