@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -24,8 +25,9 @@ from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 
-if os.environ.get("API_SERVER_PROFILE"):
+if os.environ.get("API_SERVER_DEV_FEATURES_ENABLED"):
     from pyinstrument import Profiler
+    from starlette.requests import Request
 
 
 _logger = logging.getLogger(__name__)
@@ -34,17 +36,48 @@ _logger = logging.getLogger(__name__)
 class ApiServerProfilerMiddleware:
     """Following
     https://www.starlette.io/middleware/#cleanup-and-error-handling
+    https://www.starlette.io/middleware/#reusing-starlette-components
     https://fastapi.tiangolo.com/advanced/middleware/#advanced-middleware
     """
 
     def __init__(self, app: FastAPI):
         self._app: FastAPI = app
-        self._profiler = Profiler(async_mode="enabled")
 
     async def __call__(self, scope, receive, send):
-        self._profiler.start()
-        await self._app(scope=scope, receive=receive, send=send)
-        self._profiler.stop()
+        if scope["type"] != "http":
+            await self._app(scope, receive, send)
+            return
+
+        profiler = Profiler(async_mode="enabled")
+        request: Request = Request(scope)
+        headers = dict(request.headers)
+        if "x-profile-api-server" in headers:
+            del headers["x-profile-api-server"]
+            scope["headers"] = [
+                (k.encode("utf8"), v.encode("utf8")) for k, v in headers.items()
+            ]
+            profiler.start()
+
+        async def send_wrapper(message):
+            if profiler.is_running:
+                profiler.stop()
+            if profiler.last_session:
+                body: bytes = json.dumps(
+                    {"profile": profiler.output_text(unicode=True, color=True)}
+                ).encode("utf8")
+                if message["type"] == "http.response.start":
+                    for ii, header in enumerate(message["headers"]):
+                        key, _ = header
+                        if key.decode("utf8") == "content-length":
+                            message["headers"][ii] = (
+                                key,
+                                str(len(body)).encode("utf8"),
+                            )
+                elif message["type"] == "http.response.body":
+                    message = {"type": "http.response.body", "body": body}
+            await send(message)
+
+        await self._app(scope, receive, send_wrapper)
 
 
 def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
@@ -134,7 +167,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
             else None,
         ),
     )
-    if settings.API_SERVER_PROFILE:
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
         app.add_middleware(ApiServerProfilerMiddleware)
 
     # routing
