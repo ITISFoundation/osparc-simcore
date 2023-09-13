@@ -18,6 +18,11 @@ class PaymentTransactionState(str, enum.Enum):
     CANCELED = "CANCELED"  # payment explicitly aborted by user
 
 
+#
+# NOTE:
+#  - This table was designed to work in an isolated database. For that reason
+#    we do not use ForeignKeys to establish relations with other tables (e.g. user_id, product_name, etc).
+#
 payments_transactions = sa.Table(
     "payments_transactions",
     metadata,

@@ -10,7 +10,7 @@ from .base import metadata
 #
 # NOTE:
 #  - This table was designed to work in an isolated database. For that reason
-#    we do not use ForeignKeys to establish relations with other tables (e.g. user_id, ).
+#    we do not use ForeignKeys to establish relations with other tables (e.g. user_id).
 #  - Payment methods are owned by a user and associated to a wallet. When the same CC is added
 #    in the framework by different users, the gateway will produce  different payment_method_id for each
 #    of them (VERIFY assumption)
