@@ -35,7 +35,7 @@ async def create_cluster(
             InstanceTypeType,
             next(
                 iter(
-                    app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
+                    app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
                 )
             ),
         ),
