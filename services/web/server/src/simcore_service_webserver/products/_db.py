@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -10,7 +10,7 @@ from ..db.base_repository import BaseRepository
 from ..db.models import products
 from ._model import Product
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
