@@ -15,17 +15,20 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.panddy.Utils", {
+qx.Class.define("osparc.product.tours.Utils", {
   type: "static",
 
   statics: {
     TOURS: {
       "s4llite": {
-        getTours: () => osparc.product.panddy.s4llite.Tours.getTours()
+        getTours: () => osparc.product.tours.s4llite.Tours.getTours()
+      },
+      "s4l": {
+        getTours: () => osparc.product.tours.s4l.Tours.getTours()
       }
     },
 
-    hasPanddy: function() {
+    hasTours: function() {
       if (osparc.utils.Utils.isDevelEnv()) {
         const tours = this.TOURS;
         const pName = osparc.product.Utils.getProductName();
@@ -35,7 +38,7 @@ qx.Class.define("osparc.product.panddy.Utils", {
     },
 
     getTours: function() {
-      if (this.hasPanddy()) {
+      if (this.hasTours()) {
         const pName = osparc.product.Utils.getProductName();
         return this.TOURS[pName].getTours();
       }

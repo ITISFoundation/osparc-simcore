@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.panddy.s4llite.Tours", {
+qx.Class.define("osparc.product.tours.s4llite.Tours", {
   type: "static",
 
   statics: {
@@ -36,12 +36,16 @@ qx.Class.define("osparc.product.panddy.s4llite.Tours", {
     __getDashboardSteps: function() {
       return [{
         anchorEl: "osparc-test-id=studiesTabBtn",
-        action: "execute",
+        beforeClick: {
+          selector: "osparc-test-id=studiesTabBtn"
+        },
         title: "Projects",
         text: "Existing projects can be accessed and managed, and new projects can be created. Each project is represented by a card."
       }, {
         anchorEl: "osparc-test-id=templatesTabBtn",
-        action: "execute",
+        beforeClick: {
+          selector: "osparc-test-id=templatesTabBtn"
+        },
         title: "Tutorials",
         text: "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable."
       }];
@@ -49,11 +53,10 @@ qx.Class.define("osparc.product.panddy.s4llite.Tours", {
 
     __getStudiesSteps: function() {
       return [{
-        preStep: {
-          anchorEl: "osparc-test-id=studiesTabBtn",
-          action: "execute"
-        },
         anchorEl: "osparc-test-id=startS4LButton",
+        beforeClick: {
+          selector: "osparc-test-id=studiesTabBtn"
+        },
         title: "Starting a New Project",
         text: "Click here if you want to create a new Project."
       }, {

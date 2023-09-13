@@ -44,11 +44,11 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addPanddyToMenu: function(menu) {
-      if (osparc.product.panddy.Utils.hasPanddy()) {
-        const tours = osparc.product.panddy.Utils.getTours();
+      if (osparc.product.tours.Utils.hasTours()) {
+        const tours = osparc.product.tours.Utils.getTours();
         const panddyButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Panddy"));
         panddyButton.addListener("execute", () => {
-          const panddy = osparc.panddy.Panddy.getInstance();
+          const panddy = osparc.tours.Panddy.getInstance();
           panddy.setTours(tours);
           panddy.start();
         });

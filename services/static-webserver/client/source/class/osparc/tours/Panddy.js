@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.panddy.Panddy", {
+qx.Class.define("osparc.tours.Panddy", {
   extend: qx.ui.core.Widget,
   type: "singleton",
 
@@ -40,9 +40,8 @@ qx.Class.define("osparc.panddy.Panddy", {
         title: qx.locale.Manager.tr("Grüezi!"),
         text: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application.")
       }, {
-        preStep: {
-          anchorEl: "osparc-test-id=userMenuBtn",
-          action: "open"
+        beforeClick: {
+          selector: "osparc-test-id=userMenuBtn"
         },
         anchorEl: "osparc-test-id=userMenuMenu",
         placement: "left",
@@ -135,7 +134,7 @@ qx.Class.define("osparc.panddy.Panddy", {
       panddy.show();
       setTimeout(() => {
         const tours = this.getTours();
-        const toursWidget = new osparc.panddy.Tours(panddy, tours);
+        const toursWidget = new osparc.tours.Tours(panddy, tours);
         toursWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
         toursWidget.addListener("tourSelected", e => {
           toursWidget.exclude();
@@ -161,23 +160,18 @@ qx.Class.define("osparc.panddy.Panddy", {
       this.__removeCurrentBuble();
       this.__currentIdx = idx;
       const step = steps[idx];
-      if (step.preStep) {
-        const preStep = step.preStep;
-        if (preStep.anchorEl) {
-          const el = document.querySelector(`[${preStep.anchorEl}]`);
-          const widget = qx.ui.core.Widget.getWidgetByElement(el);
-          if (widget && preStep.action) {
-            widget[preStep.action]();
-          }
-          setTimeout(() => this.__toStep(steps, idx), 200);
-        }
+      if (step.beforeClick && step.beforeClick.selector) {
+        const el = document.querySelector(`[${step.beforeClick.selector}]`);
+        const widget = qx.ui.core.Widget.getWidgetByElement(el);
+        widget.execute();
+        setTimeout(() => this.__toStep(steps, idx), 200);
       } else {
         this.__toStep(steps, idx);
       }
     },
 
     __createStep: function(element, text) {
-      const stepWidget = new osparc.panddy.Step(element, text).set({
+      const stepWidget = new osparc.tours.Step(element, text).set({
         maxWidth: 400
       });
       [
@@ -197,9 +191,13 @@ qx.Class.define("osparc.panddy.Panddy", {
         targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
       }
       if (targetWidget) {
-        if (step.action) {
-          targetWidget[step.action]();
+        /*
+        if (step.beforeClick && step.beforeClick.selector) {
+          const el = document.querySelector(`[${step.beforeClick.selector}]`);
+          const widget = qx.ui.core.Widget.getWidgetByElement(el);
+          widget.execute();
         }
+        */
         stepWidget.setElement(targetWidget);
         if (step.placement) {
           stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));

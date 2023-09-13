@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.panddy.Step", {
+qx.Class.define("osparc.tours.Step", {
   extend: osparc.ui.basic.FloatingHelper,
 
   construct: function(element, title, message) {

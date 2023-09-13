@@ -13,8 +13,7 @@
     }, {
       "anchorEl": "osparc-test-id=templatesTabBtn",
       "beforeClick": {
-        "selector": "osparc-test-id=templatesTabBtn",
-        "revertSequence": "osparc-test-id=studiesTabBtn"
+        "selector": "osparc-test-id=templatesTabBtn"
       },
       "title": "Tutorials",
       "text": "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable.",

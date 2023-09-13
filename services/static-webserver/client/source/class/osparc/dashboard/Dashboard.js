@@ -40,8 +40,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
-    if (osparc.product.panddy.Utils.hasPanddy()) {
-      const panddy = osparc.panddy.Panddy.getInstance();
+    if (osparc.product.tours.Utils.hasTours()) {
+      const panddy = osparc.tours.Panddy.getInstance();
       const root = qx.core.Init.getApplication().getRoot();
       root.add(panddy, {
         bottom: 10,
