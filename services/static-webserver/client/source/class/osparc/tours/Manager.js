@@ -33,20 +33,21 @@ qx.Class.define("osparc.tours.Manager", {
 
   statics: {
     INTRO_TOUR: [{
-      name: "Panddy intro",
-      description: "Introduction to Panddy",
+      name: "Welcome",
+      description: "Welcome onboard",
       steps: [{
         anchorEl: null,
-        title: qx.locale.Manager.tr("Grüezi!"),
-        text: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application."),
+        title: qx.locale.Manager.tr("Welcome onboard!"),
+        text: qx.locale.Manager.tr("We have a collection of guided tours to show you how to use the framework"),
         placement: null
       }, {
         beforeClick: {
           selector: "osparc-test-id=userMenuBtn"
         },
         anchorEl: "osparc-test-id=userMenuMenu",
-        placement: "left",
-        text: qx.locale.Manager.tr("You can always find me in the User Menu.")
+        title: qx.locale.Manager.tr("Always available"),
+        text: qx.locale.Manager.tr("You can find me in the User Menu."),
+        placement: "left"
       }]
     }]
   },
