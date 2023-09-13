@@ -249,7 +249,9 @@ class ComputationalBackendOnDemandClustersKeeperNotReadyError(
 
 class ComputationalBackendOnDemandNotReadyError(PydanticErrorMixin, SchedulerError):
     code = "computational_backend.on_demand_cluster.not_ready"
-    msg_template = "The on demand computational cluster is not ready"
+    msg_template = (
+        "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
+    )
 
 
 #
