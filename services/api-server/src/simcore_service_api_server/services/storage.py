@@ -10,6 +10,7 @@ from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMet
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.generics import Envelope
 from pydantic import AnyUrl
+from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
@@ -46,6 +47,9 @@ class StorageApi(BaseServiceClientApi):
 
     async def list_files(self, user_id: int) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
+
+        # search_files_starting_with
+
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
             params={
@@ -91,19 +95,48 @@ class StorageApi(BaseServiceClientApi):
         link: AnyUrl = presigned_link.link
         return link
 
+    async def delete_file(self, user_id: int, quoted_storage_file_id: str) -> None:
+        response = await self.client.delete(
+            f"/locations/{self.SIMCORE_S3_ID}/files/{quoted_storage_file_id}",
+            params={"user_id": user_id},
+        )
+        response.raise_for_status()
+
     async def get_upload_links(
         self, user_id: int, file_id: UUID, file_name: str
     ) -> FileUploadSchema:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
+        # complete_upload_file
         response = await self.client.put(
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": user_id, "file_size": 0},
         )
+        response.raise_for_status()
 
         enveloped_data = Envelope[FileUploadSchema].parse_obj(response.json())
         assert enveloped_data.data  # nosec
         return enveloped_data.data
+
+    async def create_complete_upload_link(
+        self, file: File, query: dict[str, str] | None = None
+    ) -> URL:
+        url = URL(
+            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
+        )
+        if query is not None:
+            url = url.include_query_params(**query)
+        return url
+
+    async def create_abort_upload_link(
+        self, file: File, query: dict[str, str] | None = None
+    ) -> URL:
+        url = URL(
+            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
+        )
+        if query is not None:
+            url = url.include_query_params(**query)
+        return url
 
     async def create_soft_link(
         self, user_id: int, target_s3_path: str, as_file_id: UUID

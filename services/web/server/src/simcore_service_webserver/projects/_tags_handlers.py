@@ -6,11 +6,13 @@ import logging
 
 from aiohttp import web
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .models import ProjectDict
 
 _logger = logging.getLogger(__name__)
 
@@ -33,9 +35,10 @@ async def add_tag(request: web.Request):
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
-    return await db.add_tag(
+    project: ProjectDict = await db.add_tag(
         project_uuid=project_uuid, user_id=user_id, tag_id=int(tag_id)
     )
+    return envelope_json_response(project)
 
 
 @routes.delete(
@@ -51,6 +54,7 @@ async def remove_tag(request: web.Request):
         request.match_info["tag_id"],
         request.match_info["project_uuid"],
     )
-    return await db.remove_tag(
+    project: ProjectDict = await db.remove_tag(
         project_uuid=project_uuid, user_id=user_id, tag_id=int(tag_id)
     )
+    return envelope_json_response(project)

@@ -119,7 +119,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
         showAllBtn.show();
       } else {
         const spacing = osparc.dashboard.GridButtonBase.SPACING;
-        contentContainer = new osparc.component.widget.SlideBar(spacing);
+        contentContainer = new osparc.widget.SlideBar(spacing);
         contentContainer.setButtonsWidth(30);
 
         // show showAllBtn only if slidebar is full

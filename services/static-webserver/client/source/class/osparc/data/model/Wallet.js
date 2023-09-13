@@ -21,15 +21,17 @@ qx.Class.define("osparc.data.model.Wallet", {
   construct: function(walletData) {
     this.base(arguments);
 
+    const walletId = walletData["walletId"];
     this.set({
-      walletId: walletData["id"],
+      walletId,
       name: walletData["name"],
       description: walletData["description"] ? walletData["description"] : null,
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
-      walletType: walletData["type"] ? walletData["type"] : "personal",
-      accessRights: walletData["accessRights"],
-      credits: walletData["credits"] && walletData["credits"]["left"] ? walletData["credits"]["left"] : 0,
-      active: walletData["active"] ? walletData["active"] : false
+      owner: walletData["owner"] ? walletData["owner"] : null,
+      status: walletData["status"] ? walletData["status"] : "INACTIVE",
+      creditsAvailable: walletData["availableCredits"] ? walletData["availableCredits"] : 20,
+      accessRights: walletData["accessRights"] ? walletData["accessRights"] : [],
+      preferredWallet: osparc.Preferences.getInstance().getPreferredWalletId() === walletData["walletId"]
     });
   },
 
@@ -51,7 +53,7 @@ qx.Class.define("osparc.data.model.Wallet", {
     description: {
       check: "String",
       init: "",
-      nullable: false,
+      nullable: true,
       event: "changeDescription"
     },
 
@@ -62,32 +64,49 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeThumbnail"
     },
 
-    walletType: {
-      check: ["personal", "shared"],
-      init: "personal",
+    owner: {
+      check: "Number",
+      init: null,
       nullable: false,
-      event: "changeWalletType"
+      event: "changeOwner"
+    },
+
+    status: {
+      check: ["ACTIVE", "INACTIVE"],
+      init: false,
+      nullable: false,
+      event: "changeStatus"
+    },
+
+    creditsAvailable: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      event: "changeCreditsAvailable"
     },
 
     accessRights: {
-      check: "Object",
+      check: "Array",
       init: null,
       nullable: false,
       event: "changeAccessRights"
     },
 
-    credits: {
-      check: "Number",
-      init: 0,
-      nullable: false,
-      event: "changeCredits"
-    },
-
-    active: {
+    preferredWallet: {
       check: "Boolean",
       init: false,
       nullable: false,
-      event: "changeActive"
+      event: "changePreferredWallet"
+    }
+  },
+
+  members: {
+    getMyAccessRights: function() {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid && this.getAccessRights()) {
+        return this.getAccessRights().find(accessRight => accessRight["gid"] === myGid);
+      }
+      return null;
     }
   }
 });

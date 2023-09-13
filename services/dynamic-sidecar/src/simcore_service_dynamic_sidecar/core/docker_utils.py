@@ -1,21 +1,33 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, AsyncGenerator, Awaitable, Callable, Final, TypedDict
+from typing import Any, Final, TypedDict
 
 import aiodocker
 import yaml
+from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
+from models_library.generated_models.docker_rest_api import ContainerState
+from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
 from pydantic import PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_catch
+from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
+from starlette import status as http_status
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+_ACCEPTED_CONTAINER_STATUSES: set[str] = {
+    ContainerStatus.created,
+    ContainerStatus.running,
+}
 
 
 @asynccontextmanager
@@ -24,7 +36,7 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
-        logger.debug("An unexpected Docker error occurred", exc_info=True)
+        _logger.debug("An unexpected Docker error occurred", exc_info=True)
         raise UnexpectedDockerError(
             message=error.message, status=error.status
         ) from error
@@ -36,29 +48,81 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
     async with docker_client() as docker:
         filters = {"label": [f"source={label}", f"run_id={run_id}"]}
         params = {"filters": clean_filters(filters)}
-        data = await docker._query_json(  # pylint: disable=protected-access
+        data = await docker._query_json(  # pylint: disable=protected-access  # noqa: SLF001
             "volumes", method="GET", params=params
         )
         volumes = data["Volumes"]
-        logger.debug(  # pylint: disable=logging-fstring-interpolation
-            f"volumes query for {label=} {volumes=}"
-        )
+        _logger.debug("volumes query for label=%s volumes=%s", label, volumes)
         if len(volumes) != 1:
             raise VolumeNotFoundError(label, run_id, volumes)
-        volume_details = volumes[0]
-        return volume_details  # type: ignore
+        volume_details: dict[str, Any] = volumes[0]
+        return volume_details
 
 
-async def get_running_containers_count_from_names(
+async def _get_container(
+    docker: aiodocker.Docker, container_name: str
+) -> DockerContainer | None:
+    try:
+        return await docker.containers.get(container_name)
+    except aiodocker.DockerError as e:
+        if e.status == http_status.HTTP_404_NOT_FOUND:
+            return None
+        raise
+
+
+async def _get_containers_inspect_from_names(
     container_names: list[str],
-) -> PositiveInt:
+) -> dict[str, DockerContainer | None]:
+    # NOTE: returned objects have their associated Docker client session closed
     if len(container_names) == 0:
-        return 0
+        return {}
+
+    containers_inspect: dict[str, DockerContainer | None] = {
+        x: None for x in container_names
+    }
 
     async with docker_client() as docker:
-        filters = clean_filters({"name": container_names})
-        containers = await docker.containers.list(all=True, filters=filters)
-        return len(containers)
+        docker_containers: list[DockerContainer | None] = await logged_gather(
+            *(
+                _get_container(docker, container_name)
+                for container_name in container_names
+            )
+        )
+        for docker_container in docker_containers:
+            if docker_container is None:
+                continue
+
+            stripped_name = docker_container["Name"].lstrip("/")
+            if stripped_name in containers_inspect:
+                containers_inspect[stripped_name] = docker_container
+
+    return containers_inspect
+
+
+async def get_container_states(
+    container_names: list[str],
+) -> dict[str, ContainerState | None]:
+    """if a container is not found it's status is None"""
+    containers_inspect = await _get_containers_inspect_from_names(container_names)
+    return {
+        k: None if v is None else ContainerState(**v["State"])
+        for k, v in containers_inspect.items()
+    }
+
+
+def are_all_containers_in_expected_states(
+    states: Iterable[ContainerState | None],
+) -> bool:
+    return all(
+        s is not None and s.Status in _ACCEPTED_CONTAINER_STATUSES for s in states
+    )
+
+
+async def get_containers_count_from_names(
+    container_names: list[str],
+) -> PositiveInt:
+    # this one could handle the error
+    return len(await _get_containers_inspect_from_names(container_names))
 
 
 def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
@@ -108,7 +172,7 @@ ImageName = str
 _ImagesInfoDict = dict[ImageName, _LayersInfoDict]
 
 
-class _ProgressDetailDict(TypedDict, total=True):
+class _ProgressDetailDict(TypedDict, total=False):
     current: int
     total: int
 
@@ -151,6 +215,8 @@ def _parse_docker_pull_progress(
 
         if status == _TargetPullStatus.DOWNLOADING:
             # writes
+            assert "current" in docker_pull_progress["progressDetail"]  # nosec
+            assert "total" in docker_pull_progress["progressDetail"]  # nosec
             image_pulling_data[layer_id] = (
                 round(
                     _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"]
@@ -170,6 +236,7 @@ def _parse_docker_pull_progress(
             _, layer_total_size = image_pulling_data[layer_id]
 
             # writes
+            assert "current" in docker_pull_progress["progressDetail"]  # nosec
             image_pulling_data[layer_id] = (
                 round(
                     _DOWNLOAD_RATIO * layer_total_size
@@ -217,7 +284,7 @@ async def _pull_image_with_progress(
     if match:
         registry_host = match.group("registry_host")
     else:
-        logger.error(
+        _logger.error(
             "%s does not match typical docker image pattern, please check! Image pulling will still be attempted but may fail.",
             f"{image_name=}",
         )
@@ -234,7 +301,7 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
-        with log_catch(logger, reraise=False):
+        with log_catch(_logger, reraise=False):
             if _parse_docker_pull_progress(
                 parse_obj_as(_DockerProgressDict, pull_progress),
                 all_image_pulling_data[image_name],

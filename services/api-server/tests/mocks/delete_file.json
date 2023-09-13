@@ -1,0 +1,105 @@
+[
+  {
+    "name": "POST /simcore-s3/files/metadata:search",
+    "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api/cc3dd190-8c87-3686-b581-d9f7809d312e')>",
+    "method": "POST",
+    "host": "storage",
+    "path": {
+      "path": "/v0/simcore-s3/files/metadata:search",
+      "path_parameters": []
+    },
+    "query": "user_id=1&startswith=api/cc3dd190-8c87-3686-b581-d9f7809d312e",
+    "request_payload": null,
+    "response_body": {
+      "data": [
+        {
+          "file_uuid": "api/cc3dd190-8c87-3686-b581-d9f7809d312e/tmp.py",
+          "location_id": 0,
+          "project_name": null,
+          "node_name": null,
+          "file_name": "tmp.py",
+          "file_id": "api/cc3dd190-8c87-3686-b581-d9f7809d312e/tmp.py",
+          "created_at": "2023-09-04T08:03:26.191887",
+          "last_modified": "2023-09-04T08:03:26+00:00",
+          "file_size": 250,
+          "entity_tag": "c374e4caf73fc4cd39c0000d11d36de0",
+          "is_soft_link": false,
+          "is_directory": false
+        }
+      ]
+    },
+    "status_code": 200
+  },
+  {
+    "name": "DELETE http://storage:8080/v0/locations/0/files/api%2Fcc3dd190-8c87-3686-b581-d9f7809d312e%2Ftmp.py",
+    "description": "<Request('DELETE', 'http://storage:8080/v0/locations/0/files/api%2Fcc3dd190-8c87-3686-b581-d9f7809d312e%2Ftmp.py?user_id=1')>",
+    "method": "DELETE",
+    "host": "storage",
+    "path": {
+      "path": "/v0/locations/{location_id}/files/{file_id}",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "file_id",
+          "required": true,
+          "schema_": {
+            "title": "File Id",
+            "type_": null,
+            "pattern": null,
+            "format_": null,
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": [
+              {
+                "title": null,
+                "type_": "str",
+                "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
+                "format_": null,
+                "exclusiveMinimum": null,
+                "minimum": null,
+                "anyOf": null,
+                "allOf": null,
+                "oneOf": null
+              },
+              {
+                "title": null,
+                "type_": "str",
+                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$",
+                "format_": null,
+                "exclusiveMinimum": null,
+                "minimum": null,
+                "anyOf": null,
+                "allOf": null,
+                "oneOf": null
+              }
+            ],
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "api/cc3dd190-8c87-3686-b581-d9f7809d312e/tmp.py"
+        },
+        {
+          "in_": "path",
+          "name": "location_id",
+          "required": true,
+          "schema_": {
+            "title": "Location Id",
+            "type_": "int",
+            "pattern": null,
+            "format_": null,
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "0"
+        }
+      ]
+    },
+    "query": "user_id=1",
+    "request_payload": null,
+    "response_body": null,
+    "status_code": 204
+  }
+]

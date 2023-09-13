@@ -3,15 +3,18 @@
 """
 import asyncio
 import logging
+from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, Mapping
+from typing import Any, Literal
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
@@ -24,9 +27,14 @@ from sqlalchemy.sql.selectable import Select
 from ..db.models import GroupType, groups, study_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    NodeNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectInvalidUsageError,
+    ProjectNotFoundError,
+)
 from .models import ProjectDict, ProjectProxy
-from .utils import project_uses_available_services
+from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +114,7 @@ def check_project_permissions(
         standard_project_access = project_access_rights.get(
             group_id, {"read": False, "write": False, "delete": False}
         )
-        for operation in user_can.keys():
+        for operation in user_can:
             user_can[operation] = (
                 user_can[operation] or standard_project_access[operation]
             )
@@ -114,7 +122,7 @@ def check_project_permissions(
     primary_access_right = project_access_rights.get(
         primary_gid, {"read": False, "write": False, "delete": False}
     )
-    for operation in user_can.keys():
+    for operation in user_can:
         user_can[operation] = user_can[operation] or primary_access_right[operation]
 
     if any(not user_can[operation] for operation in operations_on_project):
@@ -183,8 +191,7 @@ class BaseProjectDB:
         result = await conn.execute(
             sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
         )
-        row = await result.first()
-        return row
+        return await result.first()
 
     @classmethod
     async def _list_user_groups(
@@ -370,3 +377,94 @@ class BaseProjectDB:
             project["tags"] = tags
 
         return project
+
+
+def update_workbench(old_project: ProjectDict, new_project: ProjectDict) -> ProjectDict:
+    """any non set entry in the new workbench is taken from the old one if available
+
+    Raises:
+        ProjectInvalidUsageError: it is not allowed to add/remove nodes
+
+    Returns:
+        udpated project
+    """
+
+    old_workbench: dict[NodeIDStr, Any] = old_project["workbench"]
+    updated_project = deepcopy(new_project)
+    new_workbench: dict[NodeIDStr, Any] = updated_project["workbench"]
+
+    if old_workbench.keys() != new_workbench.keys():
+        # it is forbidden to add/remove nodes here
+        raise ProjectInvalidUsageError
+    for node_key, node in new_workbench.items():
+        old_node = old_workbench.get(node_key)
+        if not old_node:
+            continue
+        for prop in old_node:
+            # check if the key is missing in the new node
+            if prop not in node:
+                # use the old value
+                node[prop] = old_node[prop]
+    return updated_project
+
+
+def patch_workbench(
+    project: ProjectDict,
+    *,
+    new_partial_workbench_data: dict[NodeIDStr, Any],
+    allow_workbench_changes: bool,
+) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
+    """patch the project workbench with the values in new_partial_workbench_data
+
+    - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
+    - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
+    - Example: to remove a node ```{node_id: None}```
+
+
+    Raises:
+        ProjectInvalidUsageError: if allow_workbench_changes is False and user tries to add/remove nodes
+        NodeNotFoundError: obviously the node does not exist and cannot be patched
+
+    Returns:
+        patched project and changed entries
+    """
+    patched_project = deepcopy(project)
+    changed_entries = {}
+    for (
+        node_key,
+        new_node_data,
+    ) in new_partial_workbench_data.items():
+        current_node_data: dict[str, Any] | None = patched_project.get(
+            "workbench", {}
+        ).get(node_key)
+
+        if current_node_data is None:
+            if not allow_workbench_changes:
+                raise ProjectInvalidUsageError
+            # if it's a new node, let's check that it validates
+            try:
+                Node.parse_obj(new_node_data)
+                patched_project["workbench"][node_key] = new_node_data
+                changed_entries.update({node_key: new_node_data})
+            except ValidationError as err:
+                raise NodeNotFoundError(patched_project["uuid"], node_key) from err
+        elif new_node_data is None:
+            if not allow_workbench_changes:
+                raise ProjectInvalidUsageError
+            # remove the node
+            patched_project["workbench"].pop(node_key)
+            changed_entries.update({node_key: None})
+        else:
+            # find changed keys
+            changed_entries.update(
+                {
+                    node_key: find_changed_node_keys(
+                        current_node_data,
+                        new_node_data,
+                        look_for_removed_keys=False,
+                    )
+                }
+            )
+            # patch
+            current_node_data.update(new_node_data)
+    return (patched_project, changed_entries)

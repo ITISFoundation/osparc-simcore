@@ -3,7 +3,6 @@
 """
 import re
 import warnings
-from copy import deepcopy
 from pathlib import Path
 
 import yaml
@@ -34,26 +33,6 @@ def _load_env(file_handler) -> dict:
             key, value = m.groups()
             environ[key] = str(value)
     return environ
-
-
-def eval_environs_in_docker_compose(
-    docker_compose: dict,
-    docker_compose_dir: Path,
-    host_environ: dict = None,
-    *,
-    use_env_devel=True,
-):
-    """Resolves environments in docker compose and sets them under 'environment' section
-
-    TODO: deprecated. Use instead docker-compose config in services/web/server/tests/integration/fixtures/docker_compose.py
-    SEE https://docs.docker.com/compose/environment-variables/
-    """
-    content = deepcopy(docker_compose)
-    for _name, service in content["services"].items():
-        replace_environs_in_docker_compose_service(
-            service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
-        )
-    return content
 
 
 def replace_environs_in_docker_compose_service(

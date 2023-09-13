@@ -4,18 +4,12 @@
 
 import json
 from collections import namedtuple
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Final,
-    Iterator,
-)
+from typing import Any, Final
+from unittest.mock import AsyncMock
 
 import aiodocker
 import faker
@@ -26,9 +20,10 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     TaskClientResultError,
@@ -39,7 +34,9 @@ from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
+from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_state_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
@@ -54,11 +51,7 @@ ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at"
 
 
 def _print_routes(app: FastAPI) -> None:
-    endpoints = []
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            endpoints.append(route.path)
-
+    endpoints = [route.path for route in app.routes if isinstance(route, APIRoute)]
     print("ROUTES\n", json.dumps(endpoints, indent=2))
 
 
@@ -123,24 +116,30 @@ def dynamic_sidecar_network_name() -> str:
             "version": "3",
             "services": {
                 "first-box": {
-                    "image": "busybox:latest",
+                    "image": "alpine:latest",
                     "networks": {
                         _get_dynamic_sidecar_network_name(): None,
                     },
                 },
-                "second-box": {"image": "busybox:latest"},
+                "second-box": {
+                    "image": "alpine:latest",
+                    "command": ["sh", "-c", "sleep 100000"],
+                },
             },
             "networks": {_get_dynamic_sidecar_network_name(): None},
         },
         {
             "version": "3",
             "services": {
-                "solo-box": {"image": "busybox:latest"},
+                "solo-box": {
+                    "image": "alpine:latest",
+                    "command": ["sh", "-c", "sleep 100000"],
+                },
             },
         },
     ]
 )
-def compose_spec(request: FixtureRequest) -> str:
+def compose_spec(request: pytest.FixtureRequest) -> str:
     spec_dict: dict[str, Any] = request.param  # type: ignore
     return json.dumps(spec_dict)
 
@@ -148,6 +147,11 @@ def compose_spec(request: FixtureRequest) -> str:
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
     return parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+
+
+@pytest.fixture
+def mock_environment(mock_rabbitmq_envs: EnvVarsDict) -> EnvVarsDict:
+    return mock_rabbitmq_envs
 
 
 @pytest.fixture
@@ -188,7 +192,7 @@ def client(
 @pytest.fixture
 def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
     # pylint: disable=protected-access
-    return httpx_async_client._transport.app.state.shared_store
+    return httpx_async_client._transport.app.state.shared_store  # noqa: SLF001
 
 
 @pytest.fixture
@@ -226,7 +230,9 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-async def mock_port_keys(request: FixtureRequest, client: Client) -> list[str] | None:
+async def mock_port_keys(
+    request: pytest.FixtureRequest, client: Client
+) -> list[str] | None:
     outputs_context: OutputsContext = client.app.state.outputs_context
     if request.param is not None:
         await outputs_context.set_file_type_port_keys(request.param)
@@ -255,10 +261,17 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
 
 
 async def _get_task_id_create_service_containers(
-    httpx_async_client: AsyncClient, compose_spec: str, *args, **kwargs
+    httpx_async_client: AsyncClient,
+    compose_spec: str,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    *args,
+    **kwargs,
 ) -> TaskId:
+    containers_create = ContainersCreate(
+        docker_compose_yaml=compose_spec, metrics_params=mock_metrics_params
+    )
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+        f"/{API_VTAG}/containers", json=containers_create.dict()
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -330,7 +343,7 @@ async def _get_task_id_task_containers_restart(
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers:restart",
-        params=dict(command_timeout=command_timeout),
+        params={"command_timeout": command_timeout},
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -345,6 +358,8 @@ async def test_create_containers_task(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
     last_progress_message: tuple[str, float] | None = None
@@ -357,7 +372,7 @@ async def test_create_containers_task(
     async with periodic_task_result(
         client=client,
         task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec
+            httpx_async_client, compose_spec, mock_metrics_params
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
@@ -369,13 +384,16 @@ async def test_create_containers_task(
 
 
 async def test_create_containers_task_invalid_yaml_spec(
-    httpx_async_client: AsyncClient, client: Client
+    httpx_async_client: AsyncClient,
+    client: Client,
+    mock_stop_heart_beat_task: AsyncMock,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     with pytest.raises(TaskClientResultError) as exec_info:
         async with periodic_task_result(
             client=client,
             task_id=await _get_task_id_create_service_containers(
-                httpx_async_client, ""
+                httpx_async_client, "", mock_metrics_params
             ),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
@@ -403,11 +421,14 @@ async def test_same_task_id_is_returned_if_task_exists(
     client: Client,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable],
+    mock_stop_heart_beat_task: AsyncMock,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> None:
     def _get_awaitable() -> Awaitable:
         return get_task_id_callable(
             httpx_async_client=httpx_async_client,
             compose_spec="",
+            mock_metrics_params=mock_metrics_params,
             port_keys=None,
             command_timeout=0,
         )
@@ -429,13 +450,17 @@ async def test_containers_down_after_starting(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    mocker: MockerFixture,
 ):
     # start containers
     async with periodic_task_result(
         client=client,
         task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec
+            httpx_async_client, compose_spec, mock_metrics_params
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
@@ -457,7 +482,7 @@ async def test_containers_down_after_starting(
 async def test_containers_down_missing_spec(
     httpx_async_client: AsyncClient,
     client: Client,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_info_debug: pytest.LogCaptureFixture,
 ):
     async with periodic_task_result(
         client=client,
@@ -496,12 +521,18 @@ async def test_container_save_state(
         assert result is None
 
 
+@pytest.mark.parametrize("inputs_pulling_enabled", [True, False])
 async def test_container_pull_input_ports(
     httpx_async_client: AsyncClient,
     client: Client,
+    inputs_pulling_enabled: bool,
+    app: FastAPI,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
+    if inputs_pulling_enabled:
+        enable_inputs_state_pulling(app)
+
     async with periodic_task_result(
         client=client,
         task_id=await _get_task_id_task_ports_inputs_pull(
@@ -511,7 +542,7 @@ async def test_container_pull_input_ports(
         status_poll_interval=FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
-        assert result == 42
+        assert result == (42 if inputs_pulling_enabled else 0)
 
 
 async def test_container_pull_output_ports(
@@ -585,12 +616,14 @@ async def test_containers_restart(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ):
     async with periodic_task_result(
         client=client,
         task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec
+            httpx_async_client, compose_spec, mock_metrics_params
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,

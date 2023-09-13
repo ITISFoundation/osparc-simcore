@@ -132,13 +132,11 @@ async def test_login_successfully_with_email_containing_uppercase_letters(
     client: TestClient,
     faker: Faker,
 ):
-
     assert client.app
     url = client.app.router["auth_login"].url_for()
 
     # Testing auth with upper case email for user registered with lower case email
     async with NewUser(app=client.app) as user:
-
         r = await client.post(
             f"{url}",
             json={

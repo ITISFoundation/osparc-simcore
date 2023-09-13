@@ -1,0 +1,5 @@
+# Extra reqs, besides webserver's
+
+fastapi==0.96.0
+jsonref
+python-multipart

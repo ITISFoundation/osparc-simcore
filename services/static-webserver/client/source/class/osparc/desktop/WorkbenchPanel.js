@@ -28,13 +28,12 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     toolbar.set({
       margin: 5
     });
-    toolbar.getChildControl("breadcrumbs-navigation").exclude();
     toolbar.getContentElement().setStyles({
       "border-radius": "12px"
     });
     this._add(toolbar);
 
-    const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
+    const workbenchUI = this.__workbenchUI = new osparc.workbench.WorkbenchUI();
     this._add(workbenchUI, {
       flex: 1
     });

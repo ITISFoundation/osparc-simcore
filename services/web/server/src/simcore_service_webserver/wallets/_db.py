@@ -47,33 +47,32 @@ async def create_wallet(
         return parse_obj_as(WalletDB, row)
 
 
+_SELECTION_ARGS = (
+    wallets.c.wallet_id,
+    wallets.c.name,
+    wallets.c.description,
+    wallets.c.owner,
+    wallets.c.thumbnail,
+    wallets.c.status,
+    wallets.c.created,
+    wallets.c.modified,
+    func.max(wallet_to_groups.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
+    func.max(wallet_to_groups.c.write.cast(INTEGER)).cast(BOOLEAN).label("write"),
+    func.max(wallet_to_groups.c.delete.cast(INTEGER)).cast(BOOLEAN).label("delete"),
+)
+
+_JOIN_TABLES = user_to_groups.join(
+    wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid
+).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id)
+
+
 async def list_wallets_for_user(
     app: web.Application,
     user_id: UserID,
 ) -> list[UserWalletDB]:
     stmt = (
-        select(
-            wallets.c.wallet_id,
-            wallets.c.name,
-            wallets.c.description,
-            wallets.c.owner,
-            wallets.c.thumbnail,
-            wallets.c.status,
-            wallets.c.created,
-            wallets.c.modified,
-            func.max(wallet_to_groups.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
-            func.max(wallet_to_groups.c.write.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("write"),
-            func.max(wallet_to_groups.c.delete.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("delete"),
-        )
-        .select_from(
-            user_to_groups.join(
-                wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid
-            ).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id)
-        )
+        select(*_SELECTION_ARGS)
+        .select_from(_JOIN_TABLES)
         .where(
             (user_to_groups.c.uid == user_id)
             & (user_to_groups.c.access_rights["read"].astext == "true")
@@ -92,9 +91,8 @@ async def list_wallets_for_user(
 
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
-        output: list[UserWalletDB] = []
-        for row in await result.fetchall():
-            output.append(parse_obj_as(UserWalletDB, row))
+        rows = await result.fetchall() or []
+        output: list[UserWalletDB] = [parse_obj_as(UserWalletDB, row) for row in rows]
         return output
 
 
@@ -104,28 +102,8 @@ async def get_wallet_for_user(
     wallet_id: WalletID,
 ) -> UserWalletDB:
     stmt = (
-        select(
-            wallets.c.wallet_id,
-            wallets.c.name,
-            wallets.c.description,
-            wallets.c.owner,
-            wallets.c.thumbnail,
-            wallets.c.status,
-            wallets.c.created,
-            wallets.c.modified,
-            func.max(wallet_to_groups.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
-            func.max(wallet_to_groups.c.write.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("write"),
-            func.max(wallet_to_groups.c.delete.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("delete"),
-        )
-        .select_from(
-            user_to_groups.join(
-                wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid
-            ).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id)
-        )
+        select(*_SELECTION_ARGS)
+        .select_from(_JOIN_TABLES)
         .where(
             (user_to_groups.c.uid == user_id)
             & (user_to_groups.c.access_rights["read"].astext == "true")
@@ -180,8 +158,8 @@ async def update_wallet(
     app: web.Application,
     wallet_id: WalletID,
     name: str,
-    description: str,
-    thumbnail: str,
+    description: str | None,
+    thumbnail: str | None,
     status: WalletStatus,
 ) -> WalletDB:
     async with get_database_engine(app).acquire() as conn:

@@ -6,3 +6,4 @@ services:
 volumes:
   postgres_data:
     name: ${POSTGRES_DATA_VOLUME}
+    external: true

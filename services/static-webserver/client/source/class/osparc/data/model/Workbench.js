@@ -351,8 +351,8 @@ qx.Class.define("osparc.data.model.Workbench", {
     getFreePosition: function(node, toTheLeft = true) {
       // do not overlap the new node2 with other nodes
       const pos = node.getPosition();
-      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
-      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      const nodeWidth = osparc.workbench.NodeUI.NODE_WIDTH;
+      const nodeHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
       const xPos = toTheLeft ? Math.max(0, pos.x-nodeWidth-30) : pos.x+nodeWidth+30;
       let yPos = pos.y;
       const allNodes = this.getNodes();
@@ -383,8 +383,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         x = Math.max(x, node.getPosition().x);
         y = Math.max(y, node.getPosition().y);
       });
-      x += osparc.component.workbench.NodeUI.NODE_WIDTH;
-      y += osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      x += osparc.workbench.NodeUI.NODE_WIDTH;
+      y += osparc.workbench.NodeUI.NODE_HEIGHT;
       return {
         x,
         y
@@ -397,7 +397,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const freePos = this.getFreePosition(requesterNode);
 
         // create a new FP
-        const filePickerMetadata = osparc.utils.Services.getFilePicker();
+        const filePickerMetadata = osparc.service.Utils.getFilePicker();
         const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
         filePicker.setPosition(freePos);
 
@@ -413,7 +413,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             } else {
               this.removeNode(filePickerId);
               const msg = qx.locale.Manager.tr("File couldn't be assigned");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
               reject();
             }
           });
@@ -443,7 +443,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // create a new ParameterNode
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
-      const pmMD = osparc.utils.Services.getParameterMetadata(type);
+      const pmMD = osparc.service.Utils.getParameterMetadata(type);
       if (pmMD) {
         const pm = this.createNode(pmMD["key"], pmMD["version"]);
 
@@ -458,7 +458,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
           this.removeNode(pmId);
           const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         }
         this.fireEvent("reloadModel");
       }
@@ -470,7 +470,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       // create a new ProbeNode
       const requesterPortMD = requesterNode.getMetaData()["outputs"][portId];
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
-      const probeMD = osparc.utils.Services.getProbeMetadata(type);
+      const probeMD = osparc.service.Utils.getProbeMetadata(type);
       if (probeMD) {
         const probeNode = this.createNode(probeMD["key"], probeMD["version"]);
         probeNode.setLabel(requesterPortMD.label);
@@ -486,7 +486,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
           this.removeNode(probeId);
           const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         }
         this.fireEvent("reloadModel");
       }
@@ -503,34 +503,35 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.fireEvent("pipelineChanged");
     },
 
-    removeNode: function(nodeId) {
+    removeNode: async function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
       }
 
-      // remove first the connected edges
-      const connectedEdges = this.getConnectedEdges(nodeId);
-      connectedEdges.forEach(connectedEdgeId => {
-        this.removeEdge(connectedEdgeId);
-      });
-
       let node = this.getNode(nodeId);
       if (node) {
-        node.removeNode();
+        const removed = await node.removeNode();
+        if (removed) {
+          // remove first the connected edges
+          const connectedEdges = this.getConnectedEdges(nodeId);
+          connectedEdges.forEach(connectedEdgeId => {
+            this.removeEdge(connectedEdgeId);
+          });
 
-        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
-        if (isTopLevel) {
-          delete this.__rootNodes[nodeId];
+          const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
+          if (isTopLevel) {
+            delete this.__rootNodes[nodeId];
+          }
+
+          // remove it from slideshow
+          if (this.getStudy()) {
+            this.getStudy().getUi().getSlideshow()
+              .removeNode(nodeId);
+          }
+
+          this.fireEvent("pipelineChanged");
+          return true;
         }
-
-        // remove it from slideshow
-        if (this.getStudy()) {
-          this.getStudy().getUi().getSlideshow()
-            .removeNode(nodeId);
-        }
-
-        this.fireEvent("pipelineChanged");
-        return true;
       }
       return false;
     },

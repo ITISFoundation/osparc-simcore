@@ -10,13 +10,13 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-pydantic==1.10.11
+pydantic==1.10.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pygments==2.15.1
+pygments==2.16.1
     # via rich
-rich==13.4.2
+rich==13.5.2
     # via -r requirements/_base.in
 typer==0.9.0
     # via -r requirements/_base.in

@@ -3,7 +3,8 @@
 #
 
 import logging
-from typing import Annotated, AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
+from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request

@@ -5,25 +5,14 @@ import json
 import logging
 import random
 import urllib.parse
-from collections.abc import (
-    AsyncIterable,
-    AsyncIterator,
-    Callable,
-    Iterable,
-    Iterator,
-    Mapping,
-)
+from collections.abc import AsyncIterable, Callable, Iterable, Iterator, Mapping
 from typing import Any
 from unittest import mock
 
 import aiodocker
 import pytest
 import respx
-import traitlets.config
-from _dask_helpers import DaskGatewayServer
 from dask.distributed import Scheduler, Worker
-from dask_gateway_server.app import DaskGateway
-from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
@@ -40,7 +29,6 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
 from pydantic import parse_obj_as
-from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -181,7 +169,7 @@ def cluster_id() -> ClusterID:
 
 @pytest.fixture
 async def dask_spec_local_cluster(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     unused_tcp_port_factory: Callable,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
@@ -232,57 +220,6 @@ async def dask_spec_local_cluster(
             f"{scheduler_address}" or "invalid",
         )
         yield cluster
-
-
-@pytest.fixture
-def local_dask_gateway_server_config(
-    unused_tcp_port_factory: Callable,
-) -> traitlets.config.Config:
-    c = traitlets.config.Config()
-    assert isinstance(c.DaskGateway, traitlets.config.Config)
-    assert isinstance(c.ClusterConfig, traitlets.config.Config)
-    assert isinstance(c.Proxy, traitlets.config.Config)
-    assert isinstance(c.SimpleAuthenticator, traitlets.config.Config)
-    c.DaskGateway.backend_class = UnsafeLocalBackend
-    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"
-    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"
-    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"
-    c.SimpleAuthenticator.password = "qweqwe"
-    c.ClusterConfig.worker_cmd = [
-        "dask-worker",
-        "--resources",
-        f"CPU=12,GPU=1,RAM={16e9}",
-    ]
-    # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
-    c.ClusterConfig.worker_cores = 12
-    c.ClusterConfig.worker_memory = "16G"
-    c.ClusterConfig.cluster_max_workers = 3
-
-    c.DaskGateway.log_level = "DEBUG"
-    return c
-
-
-@pytest.fixture
-async def local_dask_gateway_server(
-    local_dask_gateway_server_config: traitlets.config.Config,
-) -> AsyncIterator[DaskGatewayServer]:
-    print("--> creating local dask gateway server")
-    dask_gateway_server = DaskGateway(config=local_dask_gateway_server_config)
-    dask_gateway_server.initialize([])  # that is a shitty one!
-    print("--> local dask gateway server initialized")
-    await dask_gateway_server.setup()
-    await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
-
-    print("--> local dask gateway server setup completed")
-    yield DaskGatewayServer(
-        f"http://{dask_gateway_server.backend.proxy.address}",
-        f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
-        local_dask_gateway_server_config.SimpleAuthenticator.password,  # type: ignore
-        dask_gateway_server,
-    )
-    print("--> local dask gateway server switching off...")
-    await dask_gateway_server.cleanup()
-    print("...done")
 
 
 @pytest.fixture(params=list(FileLinkType))
@@ -421,13 +358,17 @@ def mocked_catalog_service_api(
 
 
 @pytest.fixture()
-def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_info_level(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.INFO):
         yield caplog
 
 
 @pytest.fixture()
-def caplog_debug_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_debug_level(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
 

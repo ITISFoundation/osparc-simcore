@@ -78,7 +78,7 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
                     len(result),
                 )
             except asyncio.TimeoutError:
-                log.error("Sync metadata table timed out (%s seconds)", timeout)
+                log.exception("Sync metadata table timed out (%s seconds)", timeout)
 
         fire_and_forget_task(
             _go(),

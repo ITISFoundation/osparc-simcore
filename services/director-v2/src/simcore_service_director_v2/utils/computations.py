@@ -15,10 +15,16 @@ from ..modules.db.tables import NodeClass
 log = logging.getLogger(__name__)
 
 _COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
-_RUNNING_STATES = (RunningState.STARTED, RunningState.RETRY)
+_RUNNING_STATES = (RunningState.STARTED,)
 _TASK_TO_PIPELINE_CONVERSIONS = {
     # tasks are initially in NOT_STARTED state, then they transition to published
     (RunningState.PUBLISHED, RunningState.NOT_STARTED): RunningState.PUBLISHED,
+    # if there are tasks waiting for clusters, then the pipeline is also waiting for a cluster
+    (
+        RunningState.PUBLISHED,
+        RunningState.NOT_STARTED,
+        RunningState.WAITING_FOR_CLUSTER,
+    ): RunningState.WAITING_FOR_CLUSTER,
     # if there are PENDING states that means the pipeline was published and is awaiting sidecars
     (
         RunningState.PENDING,
@@ -38,7 +44,7 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
     ): RunningState.NOT_STARTED,
     # if there are only completed states with FAILED --> FAILED
     (*_COMPLETED_STATES,): RunningState.FAILED,
-    # if there are only completed states with FAILED --> NOT_STARTED
+    # if there are only completed states with FAILED and not started ones --> NOT_STARTED
     (
         *_COMPLETED_STATES,
         RunningState.NOT_STARTED,
@@ -51,6 +57,7 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
         RunningState.PUBLISHED,
         RunningState.PENDING,
         RunningState.NOT_STARTED,
+        RunningState.WAITING_FOR_CLUSTER,
     ): RunningState.STARTED,
 }
 
@@ -63,8 +70,7 @@ def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningSta
     set_states: set[RunningState] = {task.state for task in tasks}
     if len(set_states) == 1:
         # there is only one state, so it's the one
-        the_state = next(iter(set_states))
-        return the_state
+        return next(iter(set_states))
 
     for option, result in _TASK_TO_PIPELINE_CONVERSIONS.items():
         if set_states.issubset(option):
@@ -132,10 +138,8 @@ async def find_deprecated_tasks(
             return is_deprecated
         return False
 
-    deprecated_tasks = [
+    return [
         task
         for task in task_key_versions
         if _is_service_deprecated(service_key_version_to_details[task])
     ]
-
-    return deprecated_tasks

@@ -10,7 +10,8 @@
 # Vulnerabilities -----------------------------------------------------------------------------------------
 #
 aiohttp>=3.7.4                                # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg
-cryptography>=39.0.1                          # https://github.com/advisories/GHSA-x4qr-2fvf-3mr5  Mar.2023
+certifi>=2023.7.22                            # https://github.com/advisories/GHSA-xqr8-7jwr-rhp7
+cryptography>=41.0.2                          # https://github.com/advisories/GHSA-cf7p-gm2m-833m
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
@@ -29,10 +30,6 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 #
 # Breaking changes -----------------------------------------------------------------------------------------
 #
-
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/4513
-# FAILED tests/rabbitmq/test_rabbitmq_rpc.py::test_replier_responds_with_not_locally_defined_object_instance - AttributeError: Can't pickle local object 'test_replier_responds_with_not_locally_defined_object_instance.<locals>._replier_scope.<locals>.Custom'
-aio-pika<9.1.3
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4481
@@ -57,9 +54,6 @@ minio==7.0.4
 # Compatibility/coordination -----------------------------------------------------------------------------------------
 #
 
-
-# Keeps all docker compose to the same version. TODO: remove when all synced
-docker-compose==1.29.1
 
 
 # constraint since https://github.com/MagicStack/uvloop/releases/tag/v0.15.0: drops support for 3.5/3.6  Feb.2021

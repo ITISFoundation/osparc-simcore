@@ -2,7 +2,7 @@
 
 import asyncio
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -34,7 +34,7 @@ async def test_regression_watchdog_blocks_on_handler_error(
     path_to_observe: Path, fail_once: bool
 ):
     raised_error = False
-    event_handler = AsyncMock()
+    event_handler = Mock()
 
     class MockedEventHandler(FileSystemEventHandler):
         def on_any_event(self, event: FileSystemEvent) -> None:
@@ -43,7 +43,8 @@ async def test_regression_watchdog_blocks_on_handler_error(
             nonlocal raised_error
             if not raised_error and fail_once:
                 raised_error = True
-                raise RuntimeError("raised as expected")
+                msg = "raised as expected"
+                raise RuntimeError(msg)
 
     observer = ExtendedInotifyObserver()
     observer.schedule(
@@ -75,7 +76,8 @@ async def test_safe_file_system_event_handler(
     class MockedEventHandler(SafeFileSystemEventHandler):
         def event_handler(self, _: FileSystemEvent) -> None:
             if user_code_raises_error:
-                raise RuntimeError("error was raised")
+                msg = "error was raised"
+                raise RuntimeError(msg)
 
     mocked_handler = MockedEventHandler()
     mocked_handler.on_any_event(mocked_file_system_event)

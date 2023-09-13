@@ -43,8 +43,20 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       this._setLayout(layout);
 
       this.setBackgroundColor("#025887");
+      let backgroundImage = "";
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4llite":
+          backgroundImage = "url(resource/osparc/s4llite_splitimage.png)";
+          break;
+        case "s4lacad":
+          backgroundImage = "url(resource/osparc/s4lacad_splitimage.png)";
+          break;
+        default:
+          backgroundImage = "url(resource/osparc/s4l_splitimage.jpeg)";
+          break;
+      }
       this.getContentElement().setStyles({
-        "background-image": osparc.product.Utils.isProduct("s4llite") ? "url(resource/osparc/s4llite_splitimage.png)" : "url(resource/osparc/s4l_splitimage.jpeg)",
+        "background-image": backgroundImage,
         "background-repeat": "no-repeat",
         "background-size": "auto 100%"
       });

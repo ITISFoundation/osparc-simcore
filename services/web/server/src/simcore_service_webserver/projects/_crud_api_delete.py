@@ -63,7 +63,7 @@ async def mark_project_as_deleted(
     # NOTE: if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
     # be able to detect that and resolve it.
-    await db.set_hidden_flag(project_uuid, enabled=True)
+    await db.set_hidden_flag(project_uuid, hidden=True)
 
 
 async def delete_project(

@@ -11,7 +11,7 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_down,
@@ -124,3 +124,21 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         return
 
     await docker_compose_down(app_state.compose_spec, app_state.settings)
+
+
+@pytest.fixture
+def mock_rabbitmq_envs(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    monkeypatch: pytest.MonkeyPatch,
+    mock_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "RABBIT_HOST": "mocked_host",
+            "RABBIT_SECURE": "false",
+            "RABBIT_USER": "mocked_user",
+            "RABBIT_PASSWORD": "mocked_password",
+        },
+    )
+    return mock_environment

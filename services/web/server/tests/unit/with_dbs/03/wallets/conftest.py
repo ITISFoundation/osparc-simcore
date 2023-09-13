@@ -2,86 +2,54 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
+from collections.abc import AsyncIterator, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable
 
 import pytest
+import sqlalchemy as sa
 from aioresponses import aioresponses
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db.plugin import setup_db
-from simcore_service_webserver.director_v2.plugin import setup_director_v2
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products.plugin import setup_products
-from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.rest.plugin import setup_rest
-from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.tags.plugin import setup_tags
-from simcore_service_webserver.wallets.plugin import setup_wallets
-
-API_VERSION = "v0"
-RESOURCE_NAME = "projects"
-API_PREFIX = "/" + API_VERSION
-
-
-DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
-DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
+from simcore_postgres_database.models.wallets import wallets
+from simcore_service_webserver.application_settings import ApplicationSettings
 
 
 @pytest.fixture
-def client(
-    event_loop,
-    aiohttp_client,
-    app_cfg,
-    postgres_db,
-    mocked_director_v2_api,
-    mock_orphaned_services,
-    redis_client,  # this ensure redis is properly cleaned
-    monkeypatch_setenv_from_app_config: Callable,
+def app_environment(
+    app_environment: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    # config app
-    cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
-    cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
-
-    monkeypatch_setenv_from_app_config(cfg)
-
-    app = create_safe_application(cfg)
-
-    assert setup_settings(app)
-
-    # setup app
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)  # needed for login_utils fixtures
-    setup_resource_manager(app)
-    setup_socketio(app)
-    setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
-    setup_products(app)
-    setup_wallets(app)
-
-    # server and client
-    yield event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+    new_envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            **env_devel_dict,
+            **app_environment,  # WARNING: AFTER env_devel_dict because HOST are set to 127.0.0.1 in here
+            "PAYMENTS_FAKE_COMPLETION": "0",  # Completion is done manually
+            "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        },
     )
 
-    # teardown here ...
+    settings = ApplicationSettings.create_from_envs()
+
+    new_envs_json = json.dumps(new_envs, sort_keys=True, indent=1)
+
+    assert settings.WEBSERVER_WALLETS is True, f"{new_envs_json}"
+    assert settings.WEBSERVER_PAYMENTS is not None, f"{new_envs_json}"
+
+    return new_envs
+
+
+@pytest.fixture
+def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    with postgres_db.connect() as con:
+        yield
+        con.execute(wallets.delete())
 
 
 @pytest.fixture
@@ -144,10 +112,9 @@ async def template_project(
 @pytest.fixture
 def fake_services():
     def create_fakes(number_services: int) -> list[dict]:
-        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-        return fake_services
+        return [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
 
-    yield create_fakes
+    return create_fakes
 
 
 @pytest.fixture
@@ -160,4 +127,4 @@ async def project_db_cleaner(client):
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
 ) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+    return director_v2_service_mock

@@ -135,7 +135,7 @@ up up-version: .stack-$(SWARM_STACK_NAME)-version.yml .init-swarm config ## Depl
 	@$(_show_endpoints)
 
 up-latest:
-	@export DOCKER_IMAGE_TAG=latest && \
+	@export DOCKER_IMAGE_TAG=release-github-latest && \
 	$(MAKE) up-version
 
 .PHONY: down

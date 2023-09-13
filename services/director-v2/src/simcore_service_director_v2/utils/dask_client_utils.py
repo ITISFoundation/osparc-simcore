@@ -1,9 +1,10 @@
 import logging
 import os
 import socket
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable, Final, Union
+from typing import Final, Union
 
 import dask_gateway
 import distributed
@@ -86,9 +87,8 @@ async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
             gateway_cluster=None,
         )
     except TypeError as exc:
-        raise ConfigurationError(
-            f"Scheduler has invalid configuration: {endpoint=}"
-        ) from exc
+        msg = f"Scheduler has invalid configuration: {endpoint=}"
+        raise ConfigurationError(msg) from exc
 
 
 async def _connect_with_gateway_and_create_cluster(
@@ -125,6 +125,7 @@ async def _connect_with_gateway_and_create_cluster(
             assert cluster  # nosec
             logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
             await check_maximize_workers(cluster)
+            logger.info("Cluster workers maximized")
             client = await cluster.get_client()
             assert client  # nosec
             return DaskSubSystem(
@@ -133,16 +134,15 @@ async def _connect_with_gateway_and_create_cluster(
                 gateway=gateway,
                 gateway_cluster=cluster,
             )
-        except Exception as exc:
+        except Exception:
             # cleanup
             with suppress(Exception):
                 await wrap_client_async_routine(gateway.close())
-            raise exc
+            raise
 
     except TypeError as exc:
-        raise ConfigurationError(
-            f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
-        ) from exc
+        msg = f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
+        raise ConfigurationError(msg) from exc
     except ValueError as exc:
         # this is when a 404=NotFound,422=MalformedData comes up
         raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
@@ -182,11 +182,11 @@ async def get_gateway_auth_from_params(
         if isinstance(auth_params, JupyterHubTokenAuthentication):
             return dask_gateway.JupyterHubAuth(auth_params.api_token)
     except (TypeError, ValueError) as exc:
-        raise ConfigurationError(
-            f"Cluster has invalid configuration: {auth_params}"
-        ) from exc
+        msg = f"Cluster has invalid configuration: {auth_params}"
+        raise ConfigurationError(msg) from exc
 
-    raise ConfigurationError(f"Cluster has invalid configuration: {auth_params=}")
+    msg = f"Cluster has invalid configuration: {auth_params=}"
+    raise ConfigurationError(msg)
 
 
 _PING_TIMEOUT_S: Final[int] = 5
@@ -205,8 +205,9 @@ async def test_scheduler_endpoint(
             async with distributed.Client(
                 address=endpoint, timeout=f"{_PING_TIMEOUT_S}", asynchronous=True
             ) as dask_client:
-                if not dask_client.status == _DASK_SCHEDULER_RUNNING_STATE:
-                    raise SchedulerError("internal scheduler is not running!")
+                if dask_client.status != _DASK_SCHEDULER_RUNNING_STATE:
+                    msg = "internal scheduler is not running!"
+                    raise SchedulerError(msg)
 
         else:
             gateway_auth = await get_gateway_auth_from_params(authentication)
@@ -236,6 +237,5 @@ async def test_scheduler_endpoint(
         SchedulerError,
     ) as exc:
         logger.debug("Pinging %s, failed: %s", f"{endpoint=}", f"{exc=!r}")
-        raise ConfigurationError(
-            f"Could not connect to cluster in {endpoint}: error: {exc}"
-        ) from exc
+        msg = f"Could not connect to cluster in {endpoint}: error: {exc}"
+        raise ConfigurationError(msg) from exc

@@ -49,6 +49,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       const iterationColor = "#e01a94";
       const colors = Array(50).fill(iterationColor);
       colors.unshift(masterColor);
+      const defaultFont = osparc.utils.Utils.getDefaultFont();
       return {
         colors: colors,
         commit: {
@@ -62,7 +63,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
             displayBranch: false,
             displayHash: false,
             color: textColor,
-            font: "normal 13px Roboto"
+            font: `normal ${defaultFont["size"]}px ${defaultFont["family"]}`
           }
         },
         branch: {
@@ -144,6 +145,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
     __commit: function(branch, commitData, isCurrent = false) {
       if (isCurrent) {
+        const defaultFont = osparc.utils.Utils.getDefaultFont();
         branch.commit({
           subject: commitData["tags"],
           style: {
@@ -151,7 +153,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
               size: 4 // default is 3
             },
             message: {
-              font: "bold 13px Roboto"
+              font: `normal ${defaultFont["size"]}px ${defaultFont["family"]}`
             }
           }
         });

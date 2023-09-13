@@ -2,10 +2,11 @@ import datetime
 import json
 import logging
 import urllib.parse
+from collections.abc import AsyncGenerator, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator, Callable, Final, TypeAlias, cast
+from typing import Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -15,9 +16,9 @@ from models_library.api_schemas_storage import UploadedPart
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -25,15 +26,14 @@ from types_aiobotocore_s3.type_defs import (
     PaginatorConfigTypeDef,
 )
 
-from .constants import EXPAND_DIR_MAX_ITEM_COUNT
+from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 _logger = logging.getLogger(__name__)
 
-_MAX_TOTAL_ITEMS: Final[NonNegativeInt] = 100
-_PAGE_MAX_ITEMS_UPPER_BOUND: Final[NonNegativeInt] = 1000
-_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS: Final[int] = 1000
+
+_MAX_ITEMS_PER_PAGE: Final[NonNegativeInt] = 500
 
 
 NextContinuationToken: TypeAlias = str
@@ -60,45 +60,23 @@ class S3MetaData:
         )
 
 
-async def _list_objects_v2_paginated(
+async def _list_objects_v2_paginated_gen(
     client: S3Client,
     bucket: S3BucketName,
     prefix: str,
     *,
-    max_total_items: int = _MAX_TOTAL_ITEMS,
-    next_continuation_token: NextContinuationToken | None = None,
-) -> tuple[list[ObjectTypeDef], NextContinuationToken | None]:
-    """Returns a list containing all the items in the bucket
-    filtered by the prefix
-
-    Keyword Arguments:
-        max_total_items -- how many items should the result contain (default: {_MAX_TOTAL_ITEMS})
-        next_continuation_token -- used to fetch more results (default: {None})
-
-    Returns:
-        list[ObjectTypeDef] and the NextContinuationToken
-    """
-
-    # ensuring at most _PAGE_MAX_ITEMS_UPPER_BOUND
-    # items per page at a time can be queried for
-    pagination_bound = min(max_total_items, _PAGE_MAX_ITEMS_UPPER_BOUND)
+    items_per_page: int = _MAX_ITEMS_PER_PAGE,
+) -> AsyncGenerator[list[ObjectTypeDef], None]:
     pagination_config: PaginatorConfigTypeDef = {
-        "PageSize": pagination_bound,
-        "MaxItems": pagination_bound,
+        "PageSize": items_per_page,
     }
-    if next_continuation_token is not None:
-        pagination_config["StartingToken"] = next_continuation_token
-
-    items_in_page: list[ObjectTypeDef] = []
 
     page: ListObjectsV2OutputTypeDef
     async for page in client.get_paginator("list_objects_v2").paginate(
         Bucket=bucket, Prefix=prefix, PaginationConfig=pagination_config
     ):
-        items_in_page.extend(page.get("Contents", []))
-        next_continuation_token = page.get("NextContinuationToken", None)
-
-    return items_in_page, next_continuation_token
+        items_in_page: list[ObjectTypeDef] = page.get("Contents", [])
+        yield items_in_page
 
 
 @dataclass
@@ -278,19 +256,12 @@ class StorageS3Client:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
     async def list_all_objects_gen(
-        self, bucket: S3BucketName, *, prefix: str, max_yield_result_size: int
+        self, bucket: S3BucketName, *, prefix: str
     ) -> AsyncGenerator[list[ObjectTypeDef], None]:
-        while True:
-            s3_objects, next_continuation_token = await _list_objects_v2_paginated(
-                self.client,
-                bucket=bucket,
-                prefix=prefix,
-                max_total_items=max_yield_result_size,
-            )
+        async for s3_objects in _list_objects_v2_paginated_gen(
+            self.client, bucket=bucket, prefix=prefix
+        ):
             yield s3_objects
-
-            if next_continuation_token is None:
-                break
 
     @s3_exception_handler(_logger)
     async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
@@ -302,16 +273,15 @@ class StorageS3Client:
 
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
-        async for s3_objects in self.list_all_objects_gen(
-            bucket,
-            prefix=prefix,
-            max_yield_result_size=_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS,
+        with log_context(
+            _logger, logging.INFO, f"deleting objects in {prefix=}", log_duration=True
         ):
-            if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
-                await self.client.delete_objects(
-                    Bucket=bucket,
-                    Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
-                )
+            async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
+                if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
+                    await self.client.delete_objects(
+                        Bucket=bucket,
+                        Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
+                    )
 
     @s3_exception_handler(_logger)
     async def delete_files_in_project_node(
@@ -350,14 +320,14 @@ class StorageS3Client:
         :type src_file: SimcoreS3FileID
         :type dst_file: SimcoreS3FileID
         """
-        copy_options = dict(
-            CopySource={"Bucket": bucket, "Key": src_file},
-            Bucket=bucket,
-            Key=dst_file,
-            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
-        )
+        copy_options = {
+            "CopySource": {"Bucket": bucket, "Key": src_file},
+            "Bucket": bucket,
+            "Key": dst_file,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
         if bytes_transfered_cb:
-            copy_options |= dict(Callback=bytes_transfered_cb)
+            copy_options |= {"Callback": bytes_transfered_cb}
         await self.client.copy(**copy_options)
 
     @s3_exception_handler(_logger)
@@ -372,14 +342,17 @@ class StorageS3Client:
         NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
         This endpoint is currently limited to only return EXPAND_DIR_MAX_ITEM_COUNT by default
         """
-
-        s3_objects, _ = await _list_objects_v2_paginated(
-            self.client, bucket, prefix, max_total_items=max_files_to_list
-        )
+        found_items: list[ObjectTypeDef] = []
+        async for s3_objects in _list_objects_v2_paginated_gen(
+            self.client, bucket, prefix, items_per_page=max_files_to_list
+        ):
+            found_items.extend(s3_objects)
+            # NOTE: stop immediately after listing after `max_files_to_list`
+            break
 
         return [
             S3MetaData.from_botocore_object(entry)
-            for entry in s3_objects
+            for entry in found_items
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]
 
@@ -387,10 +360,8 @@ class StorageS3Client:
     async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
         """Checks if an S3 object exists"""
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-        s3_objects, _ = await _list_objects_v2_paginated(
-            self.client, bucket, s3_object, max_total_items=EXPAND_DIR_MAX_ITEM_COUNT
-        )
-        return len(s3_objects) > 0
+        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=s3_object)
+        return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
     async def upload_file(
@@ -406,13 +377,13 @@ class StorageS3Client:
         :type file: Path
         :type file_id: SimcoreS3FileID
         """
-        upload_options = dict(
-            Bucket=bucket,
-            Key=file_id,
-            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
-        )
+        upload_options = {
+            "Bucket": bucket,
+            "Key": file_id,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
         if bytes_transfered_cb:
-            upload_options |= dict(Callback=bytes_transfered_cb)
+            upload_options |= {"Callback": bytes_transfered_cb}
         await self.client.upload_file(f"{file}", **upload_options)
 
     @staticmethod

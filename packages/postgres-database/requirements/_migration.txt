@@ -4,12 +4,14 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt --strip-extras requirements/_migration.in
 #
-alembic==1.11.1
+alembic==1.11.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
-certifi==2023.5.7
-    # via requests
+certifi==2023.7.22
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via requests
 click==8.1.6
@@ -37,14 +39,12 @@ packaging==23.1
     # via docker
 requests==2.31.0
     # via docker
-six==1.16.0
-    # via websocket-client
 sqlalchemy==1.4.49
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-tenacity==8.2.2
+tenacity==8.2.3
     # via -r requirements/_migration.in
 typing-extensions==4.7.1
     # via
@@ -56,7 +56,5 @@ urllib3==2.0.4
     #   -r requirements/_migration.in
     #   docker
     #   requests
-websocket-client==0.59.0
-    # via
-    #   -r requirements/_migration.in
-    #   docker
+websocket-client==1.6.1
+    # via docker

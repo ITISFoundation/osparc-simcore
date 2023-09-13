@@ -6,8 +6,9 @@
 
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 from unittest import mock
 
 import aio_pika
@@ -34,28 +35,19 @@ def rabbit_client_name(faker: Faker) -> str:
 async def test_rabbit_client(
     rabbit_client_name: str,
     rabbit_service: RabbitSettings,
-    cleanup_check_rabbitmq_server_has_no_errors: None,
 ):
     client = RabbitMQClient(rabbit_client_name, rabbit_service)
     assert client
     # check it is correctly initialized
-    assert client._connection_pool
-    assert not client._connection_pool.is_closed
-    assert client._channel_pool
-    assert not client._channel_pool.is_closed
+    assert client._connection_pool  # noqa: SLF001
+    assert not client._connection_pool.is_closed  # noqa: SLF001
+    assert client._channel_pool  # noqa: SLF001
+    assert not client._channel_pool.is_closed  # noqa: SLF001
     assert client.client_name == rabbit_client_name
     assert client.settings == rabbit_service
     await client.close()
-    assert client._connection_pool
-    assert client._connection_pool.is_closed
-
-
-@pytest.fixture
-def random_exchange_name(faker: Faker) -> Callable[[], str]:
-    def _creator() -> str:
-        return f"pytest_fake_exchange_{faker.pystr()}"
-
-    return _creator
+    assert client._connection_pool  # noqa: SLF001
+    assert client._connection_pool.is_closed  # noqa: SLF001
 
 
 @pytest.fixture
@@ -99,8 +91,9 @@ async def _assert_message_received(
         reraise=True,
     ):
         with attempt:
-            # NOTE: this sleep is here to ensure that there are not multiple messages coming in
-            await asyncio.sleep(1)
+            print(
+                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+            )
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
                 assert expected_message
@@ -112,10 +105,12 @@ async def _assert_message_received(
             else:
                 assert expected_message
                 mocked_message_parser.assert_any_call(expected_message.message.encode())
+            print(
+                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+            )
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -133,7 +128,6 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 
 
 async def test_rabbit_client_pub_sub(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -151,7 +145,6 @@ async def test_rabbit_client_pub_sub(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_rabbit_client_pub_many_subs(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -169,7 +162,7 @@ async def test_rabbit_client_pub_many_subs(
     await asyncio.gather(
         *(
             consumer.subscribe(exchange_name, parser)
-            for consumer, parser in zip(consumers, mocked_message_parsers)
+            for consumer, parser in zip(consumers, mocked_message_parsers, strict=True)
         )
     )
 
@@ -183,7 +176,6 @@ async def test_rabbit_client_pub_many_subs(
 
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -198,7 +190,8 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
         _raise_once_then_true.calls += 1
 
         if _raise_once_then_true.calls == 1:
-            raise KeyError("this is a test!")
+            msg = "this is a test!"
+            raise KeyError(msg)
         if _raise_once_then_true.calls == 2:
             return False
         return True
@@ -213,7 +206,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_pub_sub_with_non_exclusive_queue(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -231,7 +223,7 @@ async def test_pub_sub_with_non_exclusive_queue(
     await asyncio.gather(
         *(
             consumer.subscribe(exchange_name, parser, exclusive_queue=False)
-            for consumer, parser in zip(consumers, mocked_message_parsers)
+            for consumer, parser in zip(consumers, mocked_message_parsers, strict=True)
         )
     )
 
@@ -251,7 +243,6 @@ async def test_pub_sub_with_non_exclusive_queue(
 
 
 def test_rabbit_pub_sub_performance(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     benchmark,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -279,7 +270,6 @@ def test_rabbit_pub_sub_performance(
 
 
 async def test_rabbit_pub_sub_with_topic(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -332,7 +322,6 @@ async def test_rabbit_pub_sub_with_topic(
 
 
 async def test_rabbit_pub_sub_bind_and_unbind_topics(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -402,8 +391,8 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await _assert_message_received(mocked_message_parser, 0)
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_adding_topics_to_a_fanout_exchange(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -433,6 +422,7 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     await _assert_message_received(mocked_message_parser, 0)
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_not_using_the_same_exchange_type_raises(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],

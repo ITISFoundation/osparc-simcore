@@ -1,8 +1,11 @@
 """ Requests to catalog service API
 
 """
+import asyncio
 import logging
 import urllib.parse
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from aiohttp import ClientSession, ClientTimeout, web
@@ -23,10 +26,24 @@ from yarl import URL
 
 from .._constants import X_PRODUCT_NAME_HEADER
 from .._meta import api_version_prefix
-from ._utils import handle_client_exceptions
+from ._constants import MSG_CATALOG_SERVICE_UNAVAILABLE
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
+    try:
+        session: ClientSession = get_client_session(app)
+
+        yield session
+
+    except (asyncio.TimeoutError, ClientConnectionError, ClientResponseError) as err:
+        _logger.debug("Request to catalog service failed: %s", err)
+        raise web.HTTPServiceUnavailable(
+            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        ) from err
 
 
 async def is_catalog_service_responsive(app: web.Application) -> bool:
@@ -66,7 +83,7 @@ async def get_services_for_user_in_product(
         {"user_id": user_id, "details": f"{not only_key_versions}"}
     )
 
-    with handle_client_exceptions(app) as session:
+    with _handle_client_exceptions(app) as session:
         async with session.get(
             url,
             headers={X_PRODUCT_NAME_HEADER: product_name},
@@ -94,7 +111,7 @@ async def get_service(
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
     ).with_query({"user_id": user_id})
 
-    with handle_client_exceptions(app) as session:
+    with _handle_client_exceptions(app) as session:
         async with session.get(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}
         ) as response:
@@ -115,7 +132,7 @@ async def get_service_resources(
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/resources"
     ).with_query({"user_id": user_id})
 
-    with handle_client_exceptions(app) as session:
+    with _handle_client_exceptions(app) as session:
         async with session.get(url) as resp:
             resp.raise_for_status()
             dict_response = await resp.json()
@@ -135,7 +152,7 @@ async def get_service_access_rights(
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/accessRights"
     ).with_query({"user_id": user_id})
 
-    with handle_client_exceptions(app) as session:
+    with _handle_client_exceptions(app) as session:
         async with session.get(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}
         ) as resp:
@@ -159,7 +176,7 @@ async def update_service(
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
     ).with_query({"user_id": user_id})
 
-    with handle_client_exceptions(app) as session:
+    with _handle_client_exceptions(app) as session:
         async with session.patch(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
         ) as resp:

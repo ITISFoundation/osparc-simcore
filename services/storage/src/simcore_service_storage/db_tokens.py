@@ -16,20 +16,16 @@ async def _get_tokens_from_db(engine: Engine, user_id: UserID) -> dict[str, Any]
     async with engine.acquire() as conn:
         result = await conn.execute(
             sa.select(
-                [
-                    tokens,
-                ]
+                tokens,
             ).where(tokens.c.user_id == user_id)
         )
         row = await result.first()
-        data = dict(row) if row else {}
-        return data
+        return dict(row) if row else {}
 
 
 async def get_api_token_and_secret(
     app: web.Application, user_id: UserID
 ) -> tuple[str, str]:
-    # FIXME: this is a temporary solution. This information should be sent in some form
     # from the client side together with the userid?
     engine = app[APP_DB_ENGINE_KEY]
 

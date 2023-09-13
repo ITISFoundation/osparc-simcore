@@ -108,9 +108,32 @@ body:
         - [ ] `` make release-staging name=<sprint_name> version=<version> git_sha=<commit_sha>``
            - `https://github.com/ITISFoundation/osparc-simcore/releases/new?prerelease=1&target=<commit_sha>&tag=staging_<sprint_name><version>&title=Staging%20<sprint_name><version>`
         - [ ] Draft [pre-release](https://github.com/ITISFoundation/osparc-simcore/releases)
-        - [ ] Announce
+        - [ ] Announce (add redis key ```maintenance``` in every concerned deployment)
           ```json
           {"start": "2023-02-01T12:30:00.000Z", "end": "2023-02-01T13:00:00.000Z", "reason": "Release ResistanceIsFutile9 "}
+          ```
+        - [ ] Announce release in Mattermost
+          ```
+          :loud_sound:  Maintenance scheduled for **NAMED_DAY DD. MM from START_TIME - END_TIME**.
+          =========================================================================
+
+          @all Be aware that you will automatically be logged out and your projects stopped and saved during the maintenance time. Affected:
+          *   [https://staging.osparc.io](https://staging.osparc.io/)
+          *   [https://https://staging.s4l-lite.io/](https://https://staging.s4l-lite.io//)
+
+          and on premises:
+          *   [https://osparc-staging.speag.com](https://osparc-staging.speag.com/)
+          *   [https://tip-staging.speag.com](https://tip-staging.speag.com/)
+          *   [https://s4l-staging.speag.com](https://s4l-staging.speag.com/)
+          *   [https://s4l-lite-staging.speag.com](https://s4l-lite-staging.speag.com/)
+
+
+          Reason: Scheduled staging-release of STAGING_NAME_AND_VERSION.
+
+          Thanks for your understanding and sorry for the inconveniences,
+
+          Your friendly oSparc Team
+
           ```
   - type: textarea
     attributes:

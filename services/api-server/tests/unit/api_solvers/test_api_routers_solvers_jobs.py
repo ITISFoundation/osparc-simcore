@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import urllib.parse
 from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
@@ -318,7 +317,7 @@ async def test_run_solver_job(
 
     mocked_catalog_service_api.get(
         # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path=f"/v0/services/{urllib.parse.quote_plus(solver_key)}/{solver_version}",
+        path=f"/v0/services/{solver_key}/{solver_version}",
         name="get_service_v0_services__service_key___service_version__get",
     ).respond(
         status.HTTP_200_OK,
@@ -350,7 +349,7 @@ async def test_run_solver_job(
             }
         ).dict(),
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_201_CREATED
 
     assert mocked_webserver_service_api["create_projects"].called
     assert mocked_webserver_service_api["get_task_status"].called

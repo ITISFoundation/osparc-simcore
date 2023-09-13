@@ -7,3 +7,11 @@ class ResourceUsageTrackerRuntimeError(PydanticErrorMixin, RuntimeError):
 
 class ConfigurationError(ResourceUsageTrackerRuntimeError):
     msg_template: str = "Application misconfiguration: {msg}"
+
+
+class CreateServiceRunError(ResourceUsageTrackerRuntimeError):
+    msg_template: str = "Error during creation of new service run record in DB: {msg}"
+
+
+class CreateTransactionError(ResourceUsageTrackerRuntimeError):
+    msg_template: str = "Error during creation of new transaction record in DB: {msg}"

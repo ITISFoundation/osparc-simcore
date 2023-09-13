@@ -16,13 +16,13 @@ from ..core.errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
 
-_PROMETHEUS_INIT_RETRY = dict(
-    reraise=True,
-    stop=stop_after_delay(120),
-    wait=wait_random_exponential(max=30),
-    before_sleep=before_sleep_log(_logger, logging.WARNING),
-    retry=retry_if_exception_type(ConfigurationError),
-)
+_PROMETHEUS_INIT_RETRY = {
+    "reraise": True,
+    "stop": stop_after_delay(120),
+    "wait": wait_random_exponential(max=30),
+    "before_sleep": before_sleep_log(_logger, logging.WARNING),
+    "retry": retry_if_exception_type(ConfigurationError),
+}
 
 
 @retry(**_PROMETHEUS_INIT_RETRY)

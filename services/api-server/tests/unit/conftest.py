@@ -4,10 +4,10 @@
 # pylint: disable=unused-variable
 
 import json
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import aiohttp.test_utils
 import httpx
@@ -19,19 +19,37 @@ from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskProgress,
+    TaskStatus,
+)
 from models_library.api_schemas_storage import HealthCheck
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
+from models_library.projects import ProjectID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
+from simcore_service_api_server.utils.http_calls_capture_processing import (
+    PathDescription,
+)
+
+# (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
+SideEffectCallback: TypeAlias = Callable[
+    [httpx.Request, dict[str, Any], HttpApiCallCaptureModel], dict[str, Any]
+]
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
 
@@ -215,7 +233,6 @@ def mocked_directorv2_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-
         assert openapi
         assert (
             openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
@@ -255,9 +272,9 @@ def mocked_webserver_service_api_base(
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
-            "data": openapi["paths"]["/v0/"]["get"]["responses"]["200"]["content"][
-                "application/json"
-            ]["schema"]["properties"]["data"]["example"]
+            "name": "webserver",
+            "version": "1.0.0",
+            "api_version": "1.0.0",
         }
 
         respx_mock.get(path="/", name="healthcheck_readiness_probe").respond(
@@ -346,3 +363,174 @@ def mocked_catalog_service_api_base(
         )
 
         yield respx_mock
+
+
+@pytest.fixture
+def patch_webserver_long_running_project_tasks(
+    app: FastAPI, faker: Faker
+) -> Callable[[MockRouter], MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER is not None
+
+    class _LongRunningProjectTasks:
+        """
+        Preserves results per task_id
+        """
+
+        def __init__(self):
+            self._results: dict[str, Any] = {}
+
+        def _set_result_and_get_reponse(self, result: Any):
+            task_id = faker.uuid4()
+            self._results[task_id] = jsonable_encoder(result, by_alias=True)
+
+            return httpx.Response(
+                status.HTTP_202_ACCEPTED,
+                json={
+                    "data": TaskGet(
+                        task_id=task_id,
+                        task_name="fake-task-name",
+                        status_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
+                        result_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}/result",
+                        abort_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
+                    ).dict()
+                },
+            )
+
+        # SIDE EFFECT functions ---
+
+        def create_project_task(self, request: httpx.Request):
+            # create result: use the request-body
+            project_create = json.loads(request.content)
+            project_get = ProjectGet.parse_obj(
+                {
+                    "creationDate": "2018-07-01T11:13:43Z",
+                    "lastChangeDate": "2018-07-01T11:13:43Z",
+                    "prjOwner": "owner@email.com",
+                    **project_create,
+                }
+            )
+
+            return self._set_result_and_get_reponse(project_get)
+
+        def clone_project_task(self, request: httpx.Request, *, project_id: str):
+            assert GET_PROJECT.response_body
+
+            project_get = ProjectGet.parse_obj(
+                {
+                    "creationDate": "2018-07-01T11:13:43Z",
+                    "lastChangeDate": "2018-07-01T11:13:43Z",
+                    "prjOwner": "owner@email.com",
+                    **GET_PROJECT.response_body["data"],
+                }
+            )
+            project_get.uuid = ProjectID(project_id)
+
+            return self._set_result_and_get_reponse(project_get)
+
+        def get_result(self, request: httpx.Request, *, task_id: str):
+            return httpx.Response(
+                status.HTTP_200_OK, json={"data": self._results[task_id]}
+            )
+
+        # NOTE: Due to lack of time, i will leave it here but I believe
+        # it is possible to have a generic long-running task workflow
+        # that preserves the resultswith state
+
+    def _mock(webserver_mock_router: MockRouter) -> MockRouter:
+        long_running_task_workflow = _LongRunningProjectTasks()
+
+        webserver_mock_router.post(
+            path__regex="/projects$",
+            name="create_projects",
+        ).mock(side_effect=long_running_task_workflow.create_project_task)
+
+        webserver_mock_router.post(
+            path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+            name="project_clone",
+        ).mock(side_effect=long_running_task_workflow.clone_project_task)
+
+        # Tasks routes ----------------
+
+        webserver_mock_router.get(
+            path__regex=r"/tasks/(?P<task_id>[\w-]+)$",
+            name="get_task_status",
+        ).respond(
+            status.HTTP_200_OK,
+            json={
+                "data": jsonable_encoder(
+                    TaskStatus(
+                        task_progress=TaskProgress(message="fake job done", percent=1),
+                        done=True,
+                        started="2018-07-01T11:13:43Z",
+                    ),
+                    by_alias=True,
+                )
+            },
+        )
+
+        webserver_mock_router.get(
+            path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
+            name="get_task_result",
+        ).mock(side_effect=long_running_task_workflow.get_result)
+
+        return webserver_mock_router
+
+    return _mock
+
+
+@pytest.fixture
+@respx.mock(assert_all_mocked=False)
+def respx_mock_from_capture() -> Callable[
+    [respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter
+]:
+    def _generate_mock(
+        respx_mock: respx.MockRouter,
+        capture_path: Path,
+        side_effects_callbacks: list[SideEffectCallback] | None = None,
+    ) -> respx.MockRouter:
+        assert capture_path.is_file() and capture_path.suffix == ".json"
+        assert (
+            respx_mock._bases
+        ), "the base_url must be set before the fixture is extended"
+
+        side_effects_callbacks = (
+            [] if side_effects_callbacks is None else side_effects_callbacks
+        )
+        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
+            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
+        )
+
+        capture_iter = iter(captures)
+        side_effect_callback_iter = iter(side_effects_callbacks)
+        if len(side_effects_callbacks) > 0:
+            assert len(side_effects_callbacks) == len(captures)
+
+        def _side_effect(request: httpx.Request, **kwargs):
+            capture = next(capture_iter)
+            assert isinstance(capture.path, PathDescription)
+            status_code: int = capture.status_code
+            response_body: dict[str, Any] | list | None = capture.response_body
+            assert {param.name for param in capture.path.path_parameters} == set(
+                kwargs.keys()
+            )
+            if len(side_effects_callbacks) > 0:
+                callback = next(side_effect_callback_iter)
+                response_body = callback(request, kwargs, capture)
+            return httpx.Response(status_code=status_code, json=response_body)
+
+        for capture in captures:
+            url_path: PathDescription | str = capture.path
+            assert isinstance(url_path, PathDescription)
+            path_regex: str = str(url_path.path)
+            for param in url_path.path_parameters:
+                path_regex = path_regex.replace(
+                    "{" + param.name + "}", param.respx_lookup
+                )
+            respx_mock.request(
+                capture.method.upper(), url=None, path__regex=path_regex
+            ).mock(side_effect=_side_effect)
+
+        return respx_mock
+
+    return _generate_mock

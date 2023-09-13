@@ -1,10 +1,14 @@
 import functools
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import ProgressType
+from models_library.generated_models.docker_rest_api import ContainerState
+from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
+from pydantic import PositiveInt
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -24,7 +28,11 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import get_running_containers_count_from_names
+from ..core.docker_utils import (
+    are_all_containers_in_expected_states,
+    get_container_states,
+    get_containers_count_from_names,
+)
 from ..core.rabbitmq import (
     post_event_reload_iframe,
     post_progress_message,
@@ -38,7 +46,8 @@ from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
-from ..modules.outputs import OutputsManager, outputs_watcher_disabled
+from ..modules.outputs import OutputsManager, event_propagation_disabled
+from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
 
@@ -55,7 +64,7 @@ def _raise_for_errors(
 ) -> None:
     if not command_result.success:
         _logger.warning(
-            "docker-compose %s command finished with errors\n%s",
+            "docker compose %s command finished with errors\n%s",
             docker_compose_command,
             command_result.message,
         )
@@ -108,11 +117,22 @@ async def _retry_docker_compose_create(
     container_names = list(compose_spec_dict["services"].keys())
 
     expected_num_containers = len(container_names)
-    actual_num_containers = await get_running_containers_count_from_names(
-        container_names
-    )
+    actual_num_containers = await get_containers_count_from_names(container_names)
 
     return expected_num_containers == actual_num_containers
+
+
+@asynccontextmanager
+async def _reset_on_error(
+    shared_store: SharedStore,
+) -> AsyncGenerator[None, None]:
+    try:
+        yield None
+    except Exception:
+        async with shared_store:
+            shared_store.compose_spec = None
+            shared_store.container_names = []
+        raise
 
 
 async def task_create_service_containers(
@@ -140,7 +160,7 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    with outputs_watcher_disabled(app):
+    async with event_propagation_disabled(app), _reset_on_error(shared_store):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
@@ -164,13 +184,19 @@ async def task_create_service_containers(
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
 
         progress.update(message="ensure containers are started", percent=0.95)
-        r = await _retry_docker_compose_start(shared_store.compose_spec, settings)
+        compose_start_result = await _retry_docker_compose_start(
+            shared_store.compose_spec, settings
+        )
 
-    message = f"Finished docker-compose start with output\n{r.message}"
+    await send_service_started(app, metrics_params=containers_create.metrics_params)
 
-    if r.success:
+    message = (
+        f"Finished docker-compose start with output\n{compose_start_result.message}"
+    )
+
+    if compose_start_result.success:
         await post_sidecar_log_message(
-            app, "service containers started", log_level=logging.INFO
+            app, "user services started", log_level=logging.INFO
         )
         _logger.debug(message)
         for container_name in shared_store.container_names:
@@ -182,7 +208,7 @@ async def task_create_service_containers(
             "Marked sidecar as unhealthy, see below for details\n:%s", message
         )
         await post_sidecar_log_message(
-            app, "could not start service containers", log_level=logging.ERROR
+            app, "could not start user services", log_level=logging.ERROR
         )
 
     return shared_store.container_names
@@ -198,17 +224,58 @@ async def task_runs_docker_compose_down(
         _logger.warning("No compose-spec was found")
         return
 
-    progress.update(message="running docker-compose-down", percent=0.1)
-    result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
-    _raise_for_errors(result, "down")
+    container_states: dict[str, ContainerState | None] = await get_container_states(
+        shared_store.container_names
+    )
+    containers_were_ok = are_all_containers_in_expected_states(
+        container_states.values()
+    )
 
-    progress.update(message="stopping logs", percent=0.9)
-    for container_name in shared_store.container_names:
-        await stop_log_fetching(app, container_name)
+    container_count_before_down: PositiveInt = await get_containers_count_from_names(
+        shared_store.container_names
+    )
 
-    progress.update(message="removing pending resources", percent=0.95)
-    result = await docker_compose_rm(shared_store.compose_spec, settings)
-    _raise_for_errors(result, "rm")
+    async def _send_resource_tracking_stop(platform_status: SimcorePlatformStatus):
+        # NOTE: avoids sending a stop message without a start or any heartbeats,
+        # which makes no sense for the purpose of billing
+        if container_count_before_down > 0:
+            # if containers were not OK, we need to check their status
+            # only if oom killed we report as BAD
+            simcore_platform_status = platform_status
+            if not containers_were_ok:
+                any_container_oom_killed = any(
+                    c.OOMKilled is True
+                    for c in container_states.values()
+                    if c is not None
+                )
+                # if it's not an OOM killer (the user killed it) we set it as bad
+                # since the platform failed the container
+                if any_container_oom_killed:
+                    _logger.warning(
+                        "Containers killed to to OOMKiller: %s", container_states
+                    )
+                else:
+                    simcore_platform_status = SimcorePlatformStatus.BAD
+
+            await send_service_stopped(app, simcore_platform_status)
+
+    try:
+        progress.update(message="running docker-compose-down", percent=0.1)
+        result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
+        _raise_for_errors(result, "down")
+
+        progress.update(message="stopping logs", percent=0.9)
+        for container_name in shared_store.container_names:
+            await stop_log_fetching(app, container_name)
+
+        progress.update(message="removing pending resources", percent=0.95)
+        result = await docker_compose_rm(shared_store.compose_spec, settings)
+        _raise_for_errors(result, "rm")
+    except Exception:
+        await _send_resource_tracking_stop(SimcorePlatformStatus.BAD)
+        raise
+
+    await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
     # removing compose-file spec
     async with shared_store:
@@ -327,7 +394,13 @@ async def task_ports_inputs_pull(
     port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
+    *,
+    inputs_pulling_enabled: bool,
 ) -> int:
+    if not inputs_pulling_enabled:
+        _logger.info("Received request to pull inputs but was ignored")
+        return 0
+
     progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
     await post_sidecar_log_message(
@@ -421,7 +494,7 @@ async def task_containers_restart(
     async with app.state.container_restart_lock:
         progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
-            msg = "No spec for docker-compose command was found"
+            msg = "No spec for docker compose command was found"
             raise RuntimeError(msg)
 
         for container_name in shared_store.container_names:

@@ -1,15 +1,37 @@
 from mimetypes import guess_type
 from pathlib import Path
 from typing import Any, ClassVar
+from urllib.parse import quote as _quote
+from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
-from pydantic import BaseModel, Field, validator
+from models_library.projects_nodes_io import StorageFileID
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    ConstrainedStr,
+    Field,
+    parse_obj_as,
+    validator,
+)
 
 from ...utils.hash import create_md5_checksum
 
-NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
+_NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
+
+
+class FileName(ConstrainedStr):
+    strip_whitespace = True
+
+
+class ClientFile(BaseModel):
+    """Represents a file stored on the client side"""
+
+    filename: FileName = Field(..., description="File name")
+    filesize: ByteSize = Field(..., description="File size in bytes")
 
 
 class File(BaseModel):
@@ -91,11 +113,55 @@ class File(BaseModel):
 
         return cls(
             id=cls.create_id(md5check or file_size, file.filename, created_at),
-            filename=file.filename,
+            filename=file.filename or "Undefined",
             content_type=file.content_type,
             checksum=md5check,
         )
 
     @classmethod
+    async def create_from_client_file(
+        cls, client_file: ClientFile, created_at: str, checksum: str | None = None
+    ) -> "File":
+        return cls(
+            id=cls.create_id(client_file.filesize, client_file.filename, created_at),
+            filename=client_file.filename,
+            checksum=checksum,
+        )
+
+    @classmethod
+    async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
+        storage_file_id: StorageFileID = parse_obj_as(
+            StorageFileID, _unquote(quoted_storage_id)
+        )
+        _, fid, fname = Path(storage_file_id).parts
+        return cls(id=UUID(fid), filename=fname, checksum=None)
+
+    @classmethod
     def create_id(cls, *keys) -> UUID:
-        return uuid3(NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
+        return uuid3(_NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
+
+    @property
+    def storage_file_id(self) -> StorageFileID:
+        """Get the StorageFileId associated with this file"""
+        return parse_obj_as(StorageFileID, f"api/{self.id}/{self.filename}")
+
+    @property
+    def quoted_storage_file_id(self) -> str:
+        """Quoted version of the StorageFileId"""
+        return _quote(self.storage_file_id, safe="")
+
+
+class UploadLinks(BaseModel):
+    abort_upload: str
+    complete_upload: str
+
+
+class FileUploadData(BaseModel):
+    chunk_size: ByteSize
+    urls: list[AnyUrl]
+    links: UploadLinks
+
+
+class ClientFileUploadData(BaseModel):
+    file_id: UUID = Field(..., description="The file resource id")
+    upload_schema: FileUploadData = Field(..., description="Schema for uploading file")

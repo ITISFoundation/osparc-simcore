@@ -9,7 +9,7 @@ from aiohttp.typedefs import Handler
 from pydantic import BaseModel, ValidationError
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.aiopg_utils import DBAPIError
-from simcore_service_storage.db_access_layer import InvalidFileIdentifier
+from simcore_service_storage.db_access_layer import InvalidFileIdentifierError
 from simcore_service_storage.exceptions import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
@@ -42,7 +42,7 @@ class FakeErrorModel(BaseModel):
 @pytest.mark.parametrize(
     "handler_exception, expected_web_response",
     [
-        (InvalidFileIdentifier(identifier="x"), web.HTTPUnprocessableEntity),
+        (InvalidFileIdentifierError(identifier="x"), web.HTTPUnprocessableEntity),
         (FileMetaDataNotFoundError(file_id="x"), web.HTTPNotFound),
         (S3KeyNotFoundError(key="x", bucket="x"), web.HTTPNotFound),
         (ProjectNotFoundError(project_id="x"), web.HTTPNotFound),

@@ -6,18 +6,18 @@
 import json
 import logging
 import sys
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Awaitable, Callable
 
 import pytest
 import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import ProjectState
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
@@ -54,7 +54,6 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.hypothesis_type_strategies",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -135,23 +134,25 @@ async def logged_user(
 
 @pytest.fixture
 def monkeypatch_setenv_from_app_config(
-    monkeypatch: MonkeyPatch,
-) -> Callable[[ConfigDict], dict[str, str]]:
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[ConfigDict], EnvVarsDict]:
     # TODO: Change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch
-    def _patch(app_config: dict) -> dict[str, str]:
+    def _patch(app_config: dict) -> EnvVarsDict:
         assert isinstance(app_config, dict)
 
         print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))
-        envs = convert_to_environ_vars(app_config)
+        envs: EnvVarsDict = {
+            env_key: f"{env_value}"
+            for env_key, env_value in convert_to_environ_vars(app_config).items()
+        }
 
         print(
             "  - convert_to_environ_vars(app_cfg)=\n",
             json_dumps(envs, indent=1, sort_keys=True),
         )
-        for env_key, env_value in envs.items():
-            monkeypatch.setenv(env_key, f"{env_value}")
+        setenvs_from_dict(monkeypatch, envs)
 
         return envs
 
@@ -204,6 +205,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 
         if not from_study or project:
+            assert NEW_PROJECT.request_payload
             project_data = deepcopy(NEW_PROJECT.request_payload)
 
             if project:
@@ -343,7 +345,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 "permalink",
             ]
 
-            for key in new_project.keys():
+            for key in new_project:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 

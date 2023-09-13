@@ -10,8 +10,9 @@ anyio==3.6.2
     #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-certifi==2022.12.7
+certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
@@ -20,15 +21,15 @@ charset-normalizer==3.1.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.2.7
+coverage==7.3.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.2
+exceptiongroup==1.1.3
     # via pytest
 execnet==2.0.2
     # via pytest-xdist
-faker==19.1.0
+faker==19.3.0
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -93,7 +94,7 @@ python-dateutil==2.8.2
     #   faker
 requests==2.31.0
     # via -r requirements/_test.in
-respx==0.20.1
+respx==0.20.2
     # via -r requirements/_test.in
 six==1.16.0
     # via

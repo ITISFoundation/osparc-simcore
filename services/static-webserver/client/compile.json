@@ -70,6 +70,22 @@
     },
     {
       "class": "osparc.Application",
+      "theme": "osparc.theme.products.s4l.ThemeDark",
+      "name": "s4lacad",
+      "title": "S4L Academic",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.products.s4l.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "s4lacad"
+      },
+      "addTimestampsToUrls": true,
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
       "theme": "osparc.theme.products.tis.ThemeDark",
       "name": "tis",
       "title": "TI Plan - IT'IS",

@@ -212,10 +212,9 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
                 (RunningState.SUCCESS),
                 (RunningState.FAILED),
                 (RunningState.ABORTED),
-                (RunningState.RETRY),
             ],
-            RunningState.STARTED,
-            id="any number of success and 1 retry = started",
+            RunningState.FAILED,
+            id="any number of success",
         ),
         pytest.param(
             [
@@ -249,6 +248,15 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             RunningState.UNKNOWN,
             id="empty tasks (empty project or full of dynamic services) = unknown",
         ),
+        pytest.param(
+            [
+                (RunningState.WAITING_FOR_CLUSTER),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.WAITING_FOR_CLUSTER,
+            id="published and waiting for cluster = waiting for cluster",
+        ),
     ],
 )
 def test_get_pipeline_state_from_task_states(
@@ -274,7 +282,6 @@ def test_get_pipeline_state_from_task_states(
         (RunningState.NOT_STARTED, False),
         (RunningState.PENDING, True),
         (RunningState.STARTED, True),
-        (RunningState.RETRY, True),
         (RunningState.SUCCESS, False),
         (RunningState.FAILED, False),
         (RunningState.ABORTED, False),

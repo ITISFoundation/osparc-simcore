@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     this._resourceType = "service";
     this.base(arguments);
 
-    this.__sortBy = osparc.component.service.SortServicesButtons.DefaultSorting;
+    this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
   },
 
   members: {
@@ -68,7 +68,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           const favServices = osparc.utils.Utils.localCache.getFavServices();
           const servicesList = [];
           for (const key in services) {
-            const latestService = osparc.utils.Services.getLatest(services, key);
+            const latestService = osparc.service.Utils.getLatest(services, key);
             const found = Object.keys(favServices).find(favSrv => favSrv === key);
             latestService.hits = found ? favServices[found]["hits"] : 0;
             // do not list frontend services
@@ -96,7 +96,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __setResourcesToList: function(servicesList) {
       servicesList.forEach(service => service["resourceType"] = "service");
-      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
+      osparc.service.Utils.sortObjectsBasedOn(servicesList, this.__sortBy);
       this._resourcesList = servicesList;
       this._reloadCards();
     },
@@ -108,7 +108,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         card.addListener("execute", () => this.__itemClicked(card), this);
         this._populateCardMenu(card);
       });
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __itemClicked: function(card) {
@@ -122,51 +122,24 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         return;
       }
 
-      const isDevel = osparc.utils.Utils.isDevelopmentPlatform();
-      const isDevelAndS4L = isDevel && osparc.product.Utils.isProduct("s4l");
       this._showLoadingPage(this.tr("Creating Study"));
-      osparc.utils.Study.createStudyFromService(key, version)
+      osparc.study.Utils.createStudyFromService(key, version)
         .then(studyId => {
-          if (isDevelAndS4L) {
-            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-            const title = osparc.product.Utils.getStudyAlias({
-              firstUpperCase: true
-            }) + this.tr(" Options");
-            const width = 550;
-            const height = 400;
-            const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
-            resourceSelector.addListener("startStudy", () => {
-              win.close();
-              this._hideLoadingPage();
-              this._startStudyById(studyId);
-            });
-            const deleteStudy = () => {
-              const params = {
-                url: {
-                  "studyId": studyId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "delete", params, studyId);
-            };
-            resourceSelector.addListener("cancel", () => {
-              win.close();
-              this._hideLoadingPage();
-              deleteStudy();
-            });
-            win.getChildControl("close-button").addListener("execute", () => {
-              this._hideLoadingPage();
-              deleteStudy();
-            });
-            win.center();
-            win.open();
-          } else {
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
             this._hideLoadingPage();
-            this._startStudyById(studyId);
-          }
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          this._startStudyById(studyId, openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -211,7 +184,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addSortingButtons: function() {
-      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      const containterSortBtns = new osparc.service.SortServicesButtons();
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);
@@ -244,7 +217,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       });
       const scroll = new qx.ui.container.Scroll();
       addServiceWindow.add(scroll);
-      const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", formData);
+      const form = new osparc.form.json.JsonSchemaForm("/resource/form/service.json", formData);
       form.addListener("ready", () => {
         addServiceWindow.open();
       });
@@ -260,7 +233,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           const size = data.files[0].size;
           const maxSize = 10 * 1024 * 1024; // 10 MB
           if (size > maxSize) {
-            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
           }
           body.append("attachment", data.files[0], data.files[0].name);
@@ -273,10 +246,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         })
           .then(resp => {
             if (resp.ok) {
-              osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+              osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
               addServiceWindow.close();
             } else {
-              osparc.component.message.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
+              osparc.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
             }
           })
           .finally(() => form.setFetching(false));
