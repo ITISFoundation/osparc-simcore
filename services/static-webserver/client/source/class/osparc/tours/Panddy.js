@@ -38,7 +38,8 @@ qx.Class.define("osparc.tours.Panddy", {
       steps: [{
         anchorEl: null,
         title: qx.locale.Manager.tr("Grüezi!"),
-        text: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application.")
+        text: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application."),
+        placement: "left"
       }, {
         beforeClick: {
           selector: "osparc-test-id=userMenuBtn"
