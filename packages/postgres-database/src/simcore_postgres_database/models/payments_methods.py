@@ -1,3 +1,5 @@
+import enum
+
 import sqlalchemy as sa
 
 from ._common import (
@@ -6,6 +8,15 @@ from ._common import (
     register_modified_datetime_auto_update_trigger,
 )
 from .base import metadata
+
+
+@enum.unique
+class InitPromptAckFlowState(str, enum.Enum):
+    PENDING = "PENDING"  # initiated
+    SUCCESS = "SUCCESS"  # completed (ack) with success
+    FAILED = "FAILED"  # failed
+    CANCELED = "CANCELED"  # explicitly aborted by user
+
 
 #
 # NOTE:
@@ -41,6 +52,35 @@ payments_methods = sa.Table(
         doc="Unique identifier to the wallet owned by the user",
         index=True,
     ),
+    #
+    # States of Init-Prompt-Ack flow
+    #
+    sa.Column(
+        "initiated_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamps init step of the flow",
+    ),
+    sa.Column(
+        "completed_at",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="Timestamps ack step of the flow",
+    ),
+    sa.Column(
+        "state",
+        sa.Enum(InitPromptAckFlowState),
+        nullable=False,
+        default=InitPromptAckFlowState.PENDING,
+        doc="Current state of this row in the flow ",
+    ),
+    sa.Column(
+        "state_message",
+        sa.Text,
+        nullable=True,
+        doc="State message to with details on the state e.g. failure messages",
+    ),
+    # time-stamps
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
