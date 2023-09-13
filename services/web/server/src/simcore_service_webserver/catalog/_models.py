@@ -85,7 +85,8 @@ class ServiceOutputGetFactory:
         if "defaultValue" in data:
             data.pop("defaultValue")
 
-        port = ServiceOutputGet(key_id=output_key, **data)  # validated
+        # NOTE: catalog already validates the services so no need to do it once more
+        port = ServiceOutputGet.construct(key_id=output_key, **data)
 
         unit_html: UnitHtmlFormat | None
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
