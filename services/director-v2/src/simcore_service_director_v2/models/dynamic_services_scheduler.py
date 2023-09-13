@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import warnings
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
@@ -440,6 +441,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @root_validator(pre=True)
     @classmethod
     def _callbacks_mapping_legacy_migration(cls, values):
+        warnings.warn(
+            "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4745"
+        )
         if "callbacks_mapping" not in values:
             values["callbacks_mapping"] = {}
         return values

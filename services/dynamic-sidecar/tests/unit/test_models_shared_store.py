@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import json
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -112,14 +113,25 @@ async def test_init_from_disk_with_legacy_data_format(project_tests_dir: Path):
     MOCKS_DIR = project_tests_dir / "mocks"
     LEGACY_SHARED_STORE = "legacy_shared_store.json"
 
-    results = await SharedStore.init_from_disk(
+    # ensure stored legacy format is parsable
+    disk_shared_store = await SharedStore.init_from_disk(
         MOCKS_DIR, store_file_name=LEGACY_SHARED_STORE
     )
     # if file is missing it correctly loaded the storage_file
     assert (MOCKS_DIR / STORE_FILE_NAME).exists() is False
 
-    # ensure object content and disk content are the same
-    assert json.loads(results.json()) == json.loads(
+    # ensure object objects are compatible
+    parsed_legacy_format = json.loads(disk_shared_store.json())
+    warnings.warn(
+        "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4745"
+    )
+    # remove properties which have been added but did not exit
+    # when the legacy format was created
+    # NOTE this was already parsed so this check is a regression
+    # to check compatibility with very old formats
+    parsed_legacy_format.pop(" ")
+
+    assert parsed_legacy_format == json.loads(
         (MOCKS_DIR / LEGACY_SHARED_STORE).read_text()
     )
 

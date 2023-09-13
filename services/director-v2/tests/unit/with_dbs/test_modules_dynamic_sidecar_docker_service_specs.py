@@ -464,7 +464,6 @@ def test_get_dynamic_proxy_spec(
         dynamic_sidecar_spec_accumulated.dict()
         == expected_dynamic_sidecar_spec_model.dict()
     )
-    # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(

@@ -160,7 +160,7 @@ async def task_create_service_containers(
         )
         shared_store.compose_spec = compose_spec_validation.compose_spec
         shared_store.container_names = compose_spec_validation.current_container_names
-        shared_store.original_to_current_container_names = (
+        shared_store.original_to_container_names = (
             compose_spec_validation.original_to_current_container_names
         )
 
@@ -277,7 +277,7 @@ async def task_runs_docker_compose_down(
             container_name = user_service_command.service
             try:
                 await run_command_in_container(
-                    shared_store.original_to_current_container_names[container_name],
+                    shared_store.original_to_container_names[container_name],
                     command=user_service_command.command,
                     timeout=user_service_command.timeout,
                 )

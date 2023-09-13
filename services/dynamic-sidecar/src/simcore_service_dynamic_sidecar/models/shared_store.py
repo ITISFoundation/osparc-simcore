@@ -57,9 +57,7 @@ class SharedStore(_StoreMixin):
         default_factory=list,
         description="stores the container names from the compose_spec",
     )
-    original_to_current_container_names: dict[
-        ContainerNameStr, ContainerNameStr
-    ] = Field(
+    original_to_container_names: dict[ContainerNameStr, ContainerNameStr] = Field(
         default_factory=dict,
         description="original container names form the compose_spec",
     )

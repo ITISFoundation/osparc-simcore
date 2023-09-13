@@ -60,7 +60,7 @@ class UserServicesMetrics:
     async def _update_metrics(self):
         container_name = self.metrics_command.service
         self._metrics = await run_command_in_container(
-            self.shared_store.original_to_current_container_names[container_name],
+            self.shared_store.original_to_container_names[container_name],
             command=self.metrics_command.command,
             timeout=self.metrics_command.timeout,
         )
