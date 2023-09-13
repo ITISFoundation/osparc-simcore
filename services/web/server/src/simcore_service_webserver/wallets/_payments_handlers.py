@@ -170,7 +170,7 @@ class PaymentMethodsPathParams(WalletsPathParams):
 
 @routes.post(
     f"/{VTAG}/wallets/{{wallet_id}}/payments-methods:init",
-    name="init_create_payment_method",
+    name="init_creation_of_payment_method",
 )
 @login_required
 @permission_required("wallets.*")
@@ -203,7 +203,7 @@ async def init_creation_of_payment_method(request: web.Request):
 
 @routes.post(
     f"/{VTAG}/wallets/{{wallet_id}}/payments-methods/{{payment_method_id}}:cancel",
-    name="cancel_create_payment_method",
+    name="cancel_creation_of_payment_method",
 )
 @login_required
 @permission_required("wallets.*")

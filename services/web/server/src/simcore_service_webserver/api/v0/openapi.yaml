@@ -3875,9 +3875,8 @@ paths:
     post:
       tags:
       - wallets
-      summary: Init Create Payment Method
-      description: Inits creation of new payment method for `wallet_id` (pending completion)
-      operationId: init_create_payment_method
+      summary: Init Creation Of Payment Method
+      operationId: init_creation_of_payment_method
       parameters:
       - required: true
         schema:
@@ -3894,6 +3893,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CreatePaymentMethodInitiated_'
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Creation Of Payment Method
+      operationId: cancel_creation_of_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/wallets/{wallet_id}/payments-methods:
     get:
       tags:

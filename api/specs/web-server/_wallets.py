@@ -100,8 +100,18 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
     "/wallets/{wallet_id}/payments-methods:init",
     response_model=Envelope[CreatePaymentMethodInitiated],
 )
-async def init_create_payment_method(wallet_id: WalletID):
-    """Inits creation of new payment method for `wallet_id` (pending completion)"""
+async def init_creation_of_payment_method(wallet_id: WalletID):
+    ...
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def cancel_creation_of_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
+    ...
 
 
 @router.get(
