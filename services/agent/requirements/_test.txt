@@ -57,6 +57,7 @@ botocore==1.24.21
     #   s3transfer
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
     #   requests
