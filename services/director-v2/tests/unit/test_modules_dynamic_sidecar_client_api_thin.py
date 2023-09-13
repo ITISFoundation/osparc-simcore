@@ -2,14 +2,15 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
@@ -19,10 +20,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import
     ThinSidecarsClient,
 )
 
-# NOTE: typing and callables cannot
-MockRequestType = Callable[
-    [str, str, Optional[Response], Optional[SideEffectTypes]], Route
-]
+MockRequestType = Callable[[str, str, Response | None, SideEffectTypes | None], Route]
 
 
 # UTILS
@@ -36,7 +34,7 @@ def assert_responses(mocked: Response, result: Response | None) -> None:
 
 
 @pytest.fixture
-def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
+def mocked_app(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
     monkeypatch.setenv("S3_ENDPOINT", "")
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
@@ -125,7 +123,7 @@ async def test_get_containers(
 
 
 @pytest.mark.parametrize("is_enabled", [False, True])
-async def test_post_patch_containers_outputs_watcher(
+async def test_post_patch_containers_ports_io(
     thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
@@ -134,12 +132,12 @@ async def test_post_patch_containers_outputs_watcher(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PATCH",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/directory-watcher",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/io",
         mock_response,
         None,
     )
 
-    response = await thin_client.patch_containers_outputs_watcher(
+    response = await thin_client.patch_containers_ports_io(
         dynamic_sidecar_endpoint, is_enabled=is_enabled
     )
     assert_responses(mock_response, response)
@@ -176,10 +174,10 @@ async def test_get_containers_name(
     mock_response = Response(status.HTTP_200_OK)
 
     encoded_filters = json.dumps(
-        dict(
-            network=dynamic_sidecar_network_name,
-            exclude=SUFFIX_EGRESS_PROXY_NAME,
-        )
+        {
+            "network": dynamic_sidecar_network_name,
+            "exclude": SUFFIX_EGRESS_PROXY_NAME,
+        }
     )
     mock_request(
         "GET",
@@ -274,7 +272,13 @@ async def test_put_volumes(
         pytest.param(
             "post_containers_tasks",
             "/containers",
-            dict(compose_spec="some_fake_compose_as_str"),
+            {
+                "compose_spec": "some_fake_compose_as_str",
+                "metrics_params": parse_obj_as(
+                    CreateServiceMetricsAdditionalParams,
+                    CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+                ),
+            },
             id="post_containers_tasks",
         ),
         pytest.param(

@@ -51,7 +51,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
       osparc.data.Resources.get("tags")
         .then(tags => {
-          this.__tagItems = tags.map(tag => new osparc.component.form.tag.TagItem().set({...tag}));
+          this.__tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({...tag}));
           this.__renderLayout();
           this.__attachEventHandlers();
         })
@@ -76,8 +76,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     __attachEventHandlers: function() {
       this.__addTagButton.addListener("execute", () => {
         const itemCount = this.__container.getChildren().length;
-        const newItem = new osparc.component.form.tag.TagItem().set({
-          mode: osparc.component.form.tag.TagItem.modes.EDIT
+        const newItem = new osparc.form.tag.TagItem().set({
+          mode: osparc.form.tag.TagItem.modes.EDIT
         });
         this.__attachTagItemEvents(newItem);
         this.__container.addAt(newItem, Math.max(0, itemCount - 1));

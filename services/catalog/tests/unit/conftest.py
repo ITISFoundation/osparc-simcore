@@ -14,12 +14,10 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.schemas",
     "pytest_simcore.tmp_path_extra",
 ]
 
@@ -65,7 +63,7 @@ def testing_environ_vars(
     testing_environ_vars: EnvVarsDict, service_env_file: Path
 ) -> EnvVarsDict:
     # Extends packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars
-    # Environ seen by docker-compose (i.e. postgres_db)
+    # Environ seen by docker compose (i.e. postgres_db)
     app_envs = load_dotenv(service_env_file, verbose=True)
     return {**testing_environ_vars, **app_envs}
 

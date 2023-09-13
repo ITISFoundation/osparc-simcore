@@ -103,6 +103,15 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
           },
+          getWallet: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/wallet"
+          },
+          selectWallet: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/wallet/{walletId}"
+          },
           openDisableAutoStart: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
@@ -210,11 +219,20 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       "resourceUsage": {
-        useCache: true,
+        useCache: false,
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/containers?offset={offset}&limit={limit}"
+            url: statics.API + "/resource-usage/services?offset={offset}&limit={limit}"
+          }
+        }
+      },
+      "resourceUsagePerWallet": {
+        useCache: false,
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/resource-usage/services?wallet_id={walletId}&offset={offset}&limit={limit}"
           }
         }
       },
@@ -452,6 +470,17 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PREFERENCES
+       */
+      "preferences": {
+        endpoints: {
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/preferences/{preferenceId}"
+          }
+        }
+      },
+      /*
        * PERMISSIONS
        */
       "permissions": {
@@ -597,17 +626,48 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/wallets"
           },
-          getOne: {
-            method: "GET",
-            url: statics.API + "/wallets/{walletId}"
-          },
           post: {
             method: "POST",
             url: statics.API + "/wallets"
           },
-          patch: {
-            method: "PATCH",
+          put: {
+            method: "PUT",
             url: statics.API + "/wallets/{walletId}"
+          },
+          getAccessRights: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/groups"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          }
+        }
+      },
+      /*
+       * PAYMENTS
+       */
+      "payments": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/-/payments"
+          },
+          startPayment: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments"
+          },
+          cancelPayment: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments/{paymentId}:cancel"
           }
         }
       },
@@ -903,21 +963,23 @@ qx.Class.define("osparc.data.Resources", {
           if (data && endpoint.includes("get") && ["studies", "templates"].includes(resource)) {
             if (Array.isArray(data)) {
               data.forEach(std => {
-                osparc.component.metadata.Quality.attachQualityToObject(std);
+                osparc.metadata.Quality.attachQualityToObject(std);
               });
             } else {
-              osparc.component.metadata.Quality.attachQualityToObject(data);
+              osparc.metadata.Quality.attachQualityToObject(data);
             }
           }
-          if (endpoint.includes("delete")) {
-            this.__removeCached(resource, deleteId);
-          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
-            this.__addCached(resource, data);
-          } else if (useCache && endpointDef.method === "GET") {
-            if (endpoint.includes("getPage")) {
+          if (useCache) {
+            if (endpoint.includes("delete")) {
+              this.__removeCached(resource, deleteId);
+            } else if (endpointDef.method === "POST" && options.pollTask !== true) {
               this.__addCached(resource, data);
-            } else {
-              this.__setCached(resource, data);
+            } else if (endpointDef.method === "GET") {
+              if (endpoint.includes("getPage")) {
+                this.__addCached(resource, data);
+              } else {
+                this.__setCached(resource, data);
+              }
             }
           }
           res.dispose();
@@ -1098,112 +1160,15 @@ qx.Class.define("osparc.data.Resources", {
     dummy: {
       newWalletData: function() {
         return {
-          id: Math.floor(Math.random() * 1000),
+          "walletId": Math.floor(Math.random() * 1000),
           name: "New Wallet",
           description: "",
           thumbnail: null,
-          type: "shared",
           owner: null,
-          accessRights: {},
-          credits: {
-            left: 0
-          },
-          active: true
+          "availableCredits": 0,
+          status: "ACTIVE",
+          accessRights: []
         };
-      },
-
-      addWalletsToStore: function() {
-        const store = osparc.store.Store.getInstance();
-        osparc.data.Resources.dummy.getWallets()
-          .then(walletsData => {
-            if (walletsData && "wallets" in walletsData && walletsData["wallets"].length) {
-              const wallets = [];
-              walletsData["wallets"].forEach(walletData => {
-                const wallet = new osparc.data.model.Wallet(walletData);
-                wallets.push(wallet);
-              });
-              store.setWallets(wallets);
-              setInterval(() => {
-                store.getWallets().forEach(wallet => {
-                  wallet.setCredits(wallet.getCredits()-1);
-                });
-              }, 30000);
-            }
-          })
-          .catch(err => console.error(err));
-      },
-
-      getWallets: function() {
-        const myGid = osparc.auth.Data.getInstance().getGroupId();
-        return new Promise(resolve => {
-          resolve({
-            wallets: [{
-              id: 1,
-              name: "My Wallet",
-              description: "Personal Wallet",
-              thumbnail: null,
-              type: "personal",
-              owner: myGid,
-              accessRights: {
-                [myGid]: {
-                  delete: true,
-                  write: true,
-                  read: true
-                }
-              },
-              credits: {
-                left: 10
-              },
-              active: true
-            }, {
-              id: 2,
-              name: "Our Wallet",
-              description: "Organization wide Wallet",
-              thumbnail: null,
-              type: "shared",
-              owner: myGid,
-              accessRights: {
-                [myGid]: {
-                  delete: false,
-                  write: true,
-                  read: true
-                },
-                417: {
-                  delete: false,
-                  write: false,
-                  read: true
-                }
-              },
-              credits: {
-                left: 100
-              },
-              active: true
-            }, {
-              id: 3,
-              name: "Another Wallet",
-              description: "Organization wide Wallet 2",
-              thumbnail: null,
-              type: "shared",
-              owner: 417,
-              accessRights: {
-                417: {
-                  delete: true,
-                  write: true,
-                  read: true
-                },
-                [myGid]: {
-                  delete: false,
-                  write: false,
-                  read: true
-                }
-              },
-              credits: {
-                left: 1000
-              },
-              active: true
-            }]
-          });
-        });
       },
 
       getUsageDetailed: function() {

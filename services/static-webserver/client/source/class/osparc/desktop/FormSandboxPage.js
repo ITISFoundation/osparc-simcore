@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
       schemaAndData.add(this.__schema, {height: "50%"});
       schemaAndData.add(this.__data, {height: "50%"});
       this.add(schemaAndData, {width: "50%"});
-      this.__form = new osparc.component.form.json.JsonSchemaForm();
+      this.__form = new osparc.form.json.JsonSchemaForm();
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(this.__form);
       this.add(scrollContainer, {width: "50%"});

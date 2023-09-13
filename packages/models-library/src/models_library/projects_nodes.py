@@ -236,9 +236,9 @@ class Node(BaseModel):
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
         @staticmethod
         def schema_extra(schema, _model: "Node"):
-            # NOTE: the variant with anyOf[{type: null}, { other }] is compatible with OpenAPI
-            # The other as type = [null, other] is only jsonschema compatible
+            # SEE https://swagger.io/docs/specification/data-models/data-types/#Null
             for prop_name in ["parent", "runHash"]:
                 if prop_name in schema.get("properties", {}):
-                    was = deepcopy(schema["properties"][prop_name])
-                    schema["properties"][prop_name] = {"anyOf": [{"type": "null"}, was]}
+                    prop = deepcopy(schema["properties"][prop_name])
+                    prop["nullable"] = True
+                    schema["properties"][prop_name] = prop

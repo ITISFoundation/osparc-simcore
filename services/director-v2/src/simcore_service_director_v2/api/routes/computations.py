@@ -16,7 +16,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,6 +28,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -49,7 +50,7 @@ from ...core.errors import (
     SchedulerError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -58,6 +59,7 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
+from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...utils.computations import (
     find_deprecated_tasks,
@@ -96,19 +98,28 @@ router = APIRouter()
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
-async def create_computation(
+async def create_computation(  # noqa: C901, PLR0912
     computation: ComputationCreate,
     request: Request,
-    project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
-    comp_pipelines_repo: CompPipelinesRepository = Depends(
-        get_repository(CompPipelinesRepository)
-    ),
-    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
-    comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
-    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
-    director_client: DirectorV0Client = Depends(get_director_v0_client),
-    scheduler: BaseCompScheduler = Depends(get_scheduler),
-    catalog_client: CatalogClient = Depends(get_catalog_client),
+    project_repo: Annotated[
+        ProjectsRepository, Depends(get_repository(ProjectsRepository))
+    ],
+    comp_pipelines_repo: Annotated[
+        CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
+    ],
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
+    comp_runs_repo: Annotated[
+        CompRunsRepository, Depends(get_repository(CompRunsRepository))
+    ],
+    clusters_repo: Annotated[
+        ClustersRepository, Depends(get_repository(ClustersRepository))
+    ],
+    director_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
+    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
+    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
+    users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -212,8 +223,21 @@ async def create_computation(
                 computation.user_id,
                 computation.project_id,
                 computation.cluster_id or DEFAULT_CLUSTER_ID,
-                computation.product_name,
-                computation.simcore_user_agent,
+                RunMetadataDict(
+                    node_id_names_map={
+                        NodeID(node_idstr): node_data.label
+                        for node_idstr, node_data in project.workbench.items()
+                    },
+                    product_name=computation.product_name,
+                    project_name=project.name,
+                    simcore_user_agent=computation.simcore_user_agent,
+                    user_email=await users_repo.get_user_email(computation.user_id),
+                    wallet_id=None,
+                    wallet_name=None,
+                    pricing_plan_id=None,
+                    pricing_detail_id=None,
+                ),
+                use_on_demand_clusters=computation.use_on_demand_clusters,
             )
 
         # filter the tasks by the effective pipeline
@@ -279,12 +303,18 @@ async def get_computation(
     user_id: UserID,
     project_id: ProjectID,
     request: Request,
-    project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
-    comp_pipelines_repo: CompPipelinesRepository = Depends(
-        get_repository(CompPipelinesRepository)
-    ),
-    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
-    comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
+    project_repo: Annotated[
+        ProjectsRepository, Depends(get_repository(ProjectsRepository))
+    ],
+    comp_pipelines_repo: Annotated[
+        CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
+    ],
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
+    comp_runs_repo: Annotated[
+        CompRunsRepository, Depends(get_repository(CompRunsRepository))
+    ],
 ) -> ComputationGet:
     log.debug(
         "User %s getting computation status for project %s",
@@ -320,7 +350,7 @@ async def get_computation(
         last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
 
     self_url = request.url.remove_query_params("user_id")
-    task_out = ComputationGet(
+    return ComputationGet(
         id=project_id,
         state=pipeline_state,
         pipeline_details=pipeline_details,
@@ -335,7 +365,6 @@ async def get_computation(
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
         submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
     )
-    return task_out
 
 
 @router.post(
@@ -348,13 +377,19 @@ async def stop_computation(
     computation_stop: ComputationStop,
     project_id: ProjectID,
     request: Request,
-    project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
-    comp_pipelines_repo: CompPipelinesRepository = Depends(
-        get_repository(CompPipelinesRepository)
-    ),
-    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
-    comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
-    scheduler: BaseCompScheduler = Depends(get_scheduler),
+    project_repo: Annotated[
+        ProjectsRepository, Depends(get_repository(ProjectsRepository))
+    ],
+    comp_pipelines_repo: Annotated[
+        CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
+    ],
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
+    comp_runs_repo: Annotated[
+        CompRunsRepository, Depends(get_repository(CompRunsRepository))
+    ],
+    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> ComputationGet:
     log.debug(
         "User %s stopping computation for project %s",
@@ -420,12 +455,16 @@ async def stop_computation(
 async def delete_computation(
     computation_stop: ComputationDelete,
     project_id: ProjectID,
-    project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
-    comp_pipelines_repo: CompPipelinesRepository = Depends(
-        get_repository(CompPipelinesRepository)
-    ),
-    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
-    scheduler: BaseCompScheduler = Depends(get_scheduler),
+    project_repo: Annotated[
+        ProjectsRepository, Depends(get_repository(ProjectsRepository))
+    ],
+    comp_pipelines_repo: Annotated[
+        CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
+    ],
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
+    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> None:
     try:
         # get the project

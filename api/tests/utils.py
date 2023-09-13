@@ -36,7 +36,7 @@ def list_files_in_api_specs(wildcard: str) -> list[Path]:
     specs_dir = specs_folder()
 
     # NOTE: keep as string and not path, so it can be rendered
-    return list(Path(p) for p in specs_dir.rglob(wildcard))
+    return [Path(p) for p in specs_dir.rglob(wildcard)]
 
 
 def list_all_openapi() -> list[str]:

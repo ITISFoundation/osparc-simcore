@@ -10,11 +10,11 @@ from models_library.rabbitmq_messages import (
     ProgressType,
     RabbitEventMessageType,
     RabbitMessageBase,
+    RabbitResourceTrackingMessages,
 )
 from pydantic import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 
 from ..core.settings import ApplicationSettings
 
@@ -24,6 +24,12 @@ _logger = logging.getLogger(__file__)
 async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None:
     with log_catch(_logger, reraise=False):
         await get_rabbitmq_client(app).publish(message.channel_name, message)
+
+
+async def post_resource_tracking_message(
+    app: FastAPI, message: RabbitResourceTrackingMessages
+):
+    await _post_rabbit_message(app, message)
 
 
 async def post_log_message(
@@ -99,7 +105,6 @@ def _is_rabbitmq_initialized(app: FastAPI) -> bool:
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not _is_rabbitmq_initialized(app):
-        raise RuntimeError(
-            "RabbitMQ client is not available. Please check the configuration."
-        )
+        msg = "RabbitMQ client is not available. Please check the configuration."
+        raise RuntimeError(msg)
     return cast(RabbitMQClient, app.state.rabbitmq_client)

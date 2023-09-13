@@ -17,7 +17,7 @@ from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....core.errors import ClusterNotFoundError, ComputationalRunNotFoundError
-from ....models.comp_runs import CompRunsAtDB, MetadataDict
+from ....models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
@@ -80,7 +80,8 @@ class CompRunsRepository(BaseRepository):
         project_id: ProjectID,
         cluster_id: ClusterID,
         iteration: PositiveInt | None = None,
-        metadata: MetadataDict | None,
+        metadata: RunMetadataDict | None,
+        use_on_demand_clusters: bool,
     ) -> CompRunsAtDB:
         try:
             async with self.db_engine.acquire() as conn:
@@ -108,6 +109,7 @@ class CompRunsRepository(BaseRepository):
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         started=datetime.datetime.now(tz=datetime.timezone.utc),
                         metadata=jsonable_encoder(metadata) if metadata else None,
+                        use_on_demand_clusters=use_on_demand_clusters,
                     )
                     .returning(literal_column("*"))
                 )

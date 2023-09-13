@@ -3,7 +3,7 @@
     Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
 import logging
-from typing import Optional
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
@@ -21,16 +21,27 @@ from .s3 import setup_s3
 from .settings import Settings
 from .utils_handlers import dsm_exception_handler
 
-log = logging.getLogger(__name__)
+_ACCESS_LOG_FORMAT: Final[
+    str
+] = '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
+    "aiobotocore",
+    "aio_pika",
+    "aiormq",
+    "botocore",
+    "sqlalchemy",
+)
+_logger = logging.getLogger(__name__)
 
 
 def create(settings: Settings) -> web.Application:
-    log.debug(
+    _logger.debug(
         "Initializing app with settings:\n%s",
         settings.json(indent=2, sort_keys=True),
     )
 
-    # TODO: tmp using {} until webserver is also pydantic-compatible
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
 
@@ -65,17 +76,29 @@ def create(settings: Settings) -> web.Application:
     if settings.STORAGE_MONITORING_ENABLED:
         setup_monitoring(app, app_name, version=f"{version}")
 
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
+
     return app
 
 
-def run(settings: Settings, app: Optional[web.Application] = None):
-    log.debug("Serving application ")
+def run(settings: Settings, app: web.Application | None = None):
+    _logger.debug("Serving application ")
     if not app:
         app = create(settings)
 
     async def welcome_banner(_app: web.Application):
-        print(WELCOME_MSG, flush=True)
+        print(WELCOME_MSG, flush=True)  # noqa: T201
 
     app.on_startup.append(welcome_banner)
 
-    web.run_app(app, host=settings.STORAGE_HOST, port=settings.STORAGE_PORT)
+    web.run_app(
+        app,
+        host=settings.STORAGE_HOST,
+        port=settings.STORAGE_PORT,
+        access_log_format=_ACCESS_LOG_FORMAT,
+    )

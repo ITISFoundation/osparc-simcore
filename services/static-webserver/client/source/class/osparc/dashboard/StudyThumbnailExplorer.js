@@ -38,9 +38,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
   },
 
   statics: {
-    LAYOUT_HEIGHT: 300,
+    LAYOUT_HEIGHT: 320,
     NODES_TREE_WIDTH: 160,
-    THUMBNAIL_SLIDER_HEIGHT: 40
+    THUMBNAIL_SLIDER_HEIGHT: 60
   },
 
   members: {
@@ -88,7 +88,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getNodesTree: function() {
-      const nodesTree = new osparc.component.widget.NodesTree().set({
+      const nodesTree = new osparc.widget.NodesTree().set({
         hideRoot: false,
         simpleNodes: true
       });
@@ -100,7 +100,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getThumbnailSuggestions: function() {
-      const thumbnailSuggestions = new osparc.component.editor.ThumbnailSuggestions().set({
+      const thumbnailSuggestions = new osparc.editor.ThumbnailSuggestions().set({
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
@@ -123,31 +123,35 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       });
       */
       const scrollThumbnails = this.getChildControl("thumbnail-suggestions");
-      const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
-        let control = null;
-        switch (thumbnailData["type"]) {
-          case "workbenchUIPreview":
-            control = this.__getWorkbenchUIPreview();
-            break;
-          case null:
-            control = this.__getThreeSceneViewer(thumbnailData["source"]);
-            break;
-          default:
-            control = this.__getThumbnail(thumbnailData["source"]);
-            break;
-        }
-        if (control) {
-          thumbnailViewerLayout.removeAll();
-          thumbnailViewerLayout.add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-        }
+        this.__showInThumbnailViewer(thumbnailData["tpye"], thumbnailData["source"]);
       });
+    },
+
+    __showInThumbnailViewer: function(type, source) {
+      let control = null;
+      switch (type) {
+        case "workbenchUIPreview":
+          control = this.__getWorkbenchUIPreview();
+          break;
+        case null:
+          control = this.__getThreeSceneViewer(source);
+          break;
+        default:
+          control = this.__getThumbnail(source);
+          break;
+      }
+      if (control) {
+        const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
+        thumbnailViewerLayout.removeAll();
+        thumbnailViewerLayout.add(control, {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        });
+      }
     },
 
     __getThumbnail: function(thumbnailSource) {
@@ -157,7 +161,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getWorkbenchUIPreview: function() {
-      const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
       workbenchUIPreview.setStudy(this.__study);
       workbenchUIPreview.loadModel(this.__study.getWorkbench());
       workbenchUIPreview.addListener("appear", () => {
@@ -172,7 +176,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getThreeSceneViewer: function(fileUrl) {
-      const threeView = new osparc.component.widget.Three(fileUrl);
+      const threeView = new osparc.widget.Three(fileUrl);
       return threeView;
     },
 
@@ -203,9 +207,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
 
       // Do not add the preview if the study is in App Mode
       if (this.__showWorkbenchUIPreview()) {
-        const workbenchUIPreview = this.__getWorkbenchUIPreview();
-        const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
-        thumbnailViewerLayout.add(workbenchUIPreview);
+        this.__showInThumbnailViewer("workbenchUIPreview");
       }
     },
 

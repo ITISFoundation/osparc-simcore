@@ -44,15 +44,8 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       contentPadding: 0
     });
 
-    const profPage = new osparc.desktop.preferences.pages.ProfilePage();
-    const profBtn = profPage.getChildControl("button");
-    osparc.utils.Utils.setIdToWidget(profBtn, "preferencesProfileTabBtn");
-    tabView.add(profPage);
-
-    const secPage = new osparc.desktop.preferences.pages.SecurityPage();
-    const secBtn = secPage.getChildControl("button");
-    osparc.utils.Utils.setIdToWidget(secBtn, "preferencesSecurityTabBtn");
-    tabView.add(secPage);
+    const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
+    tabView.add(confirmPage);
 
     if (osparc.product.Utils.showPreferencesTokens()) {
       const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
@@ -60,9 +53,6 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       osparc.utils.Utils.setIdToWidget(tokensBtn, "preferencesTokensTabBtn");
       tabView.add(tokensPage);
     }
-
-    const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
-    tabView.add(confirmPage);
 
     if (osparc.data.Permissions.getInstance().canDo("user.tag")) {
       const tagsPage = new osparc.desktop.preferences.pages.TagsPage();

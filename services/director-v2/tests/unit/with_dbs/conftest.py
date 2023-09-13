@@ -7,12 +7,14 @@
 
 import datetime
 import json
-from typing import Any, Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
+from typing import Any
 from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
+from faker import Faker
 from models_library.clusters import Cluster
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
@@ -23,7 +25,7 @@ from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipel
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
@@ -134,7 +136,24 @@ def tasks(
 
 
 @pytest.fixture
-def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]:
+def run_metadata(
+    osparc_product_name: str, simcore_user_agent: str, faker: Faker
+) -> RunMetadataDict:
+    return RunMetadataDict(
+        node_id_names_map={},
+        project_name=faker.name(),
+        product_name=osparc_product_name,
+        simcore_user_agent=simcore_user_agent,
+        user_email=faker.email(),
+        wallet_id=faker.pyint(min_value=1),
+        wallet_name=faker.name(),
+    )
+
+
+@pytest.fixture
+def runs(
+    postgres_db: sa.engine.Engine, run_metadata: RunMetadataDict
+) -> Iterator[Callable[..., CompRunsAtDB]]:
     created_run_ids: list[int] = []
 
     def creator(
@@ -145,6 +164,8 @@ def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]
             "user_id": f"{user['id']}",
             "iteration": 1,
             "result": StateType.NOT_STARTED,
+            "metadata": run_metadata,
+            "use_on_demand_clusters": False,
         }
         run_config.update(**run_kwargs)
         with postgres_db.connect() as conn:
@@ -273,7 +294,16 @@ async def running_project(
             dag_adjacency_list=fake_workbench_adjacency,
         ),
         tasks=tasks(
-            user=user, project=created_project, state=StateType.RUNNING, progress=0.0
+            user=user,
+            project=created_project,
+            state=StateType.RUNNING,
+            progress=0.0,
+            start=datetime.datetime.now(tz=datetime.timezone.utc),
         ),
         runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )
+
+
+@pytest.fixture
+def simcore_user_agent(faker: Faker) -> str:
+    return faker.pystr()

@@ -56,8 +56,17 @@ attrs==21.4.0
     # via
     #   aiohttp
     #   jsonschema
-certifi==2022.12.7
+certifi==2023.7.22
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
 cffi==1.15.1
@@ -72,7 +81,7 @@ colorama==0.4.6
     # via typer
 commonmark==0.9.1
     # via rich
-cryptography==39.0.1
+cryptography==41.0.3
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -140,6 +149,11 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
+orjson==3.9.7
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/./../../../packages/models-library/requirements/_base.in
 packaging==23.0
     # via -r requirements/_base.in
 pamqp==3.2.1
@@ -235,6 +249,10 @@ starlette==0.27.0
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
 tenacity==8.1.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+toolz==0.12.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in

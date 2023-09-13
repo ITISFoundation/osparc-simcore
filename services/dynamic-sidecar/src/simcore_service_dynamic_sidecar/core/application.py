@@ -1,5 +1,6 @@
 import logging
 from asyncio import Lock
+from typing import Any, ClassVar
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
@@ -17,8 +18,10 @@ from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
+from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
+from ..modules.resource_tracking import setup_resource_tracking
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
@@ -57,7 +60,7 @@ class AppState:
     of the different app.state fields during the app's lifespan
     """
 
-    _STATES = {
+    _STATES: ClassVar[dict[str, Any]] = {
         "settings": ApplicationSettings,
         "mounted_volumes": MountedVolumes,
         "shared_store": SharedStore,
@@ -71,9 +74,8 @@ class AppState:
             if not isinstance(getattr(initialized_app.state, name, None), type_)
         ]
         if errors:
-            raise ValueError(
-                f"These app states were not properly initialized: {errors}"
-            )
+            msg = f"These app states were not properly initialized: {errors}"
+            raise ValueError(msg)
 
         self._app = initialized_app
 
@@ -149,9 +151,11 @@ def create_app():
     if app.state.settings.RABBIT_SETTINGS:
         setup_rabbitmq(app)
         setup_background_log_fetcher(app)
+        setup_resource_tracking(app)
 
     # also sets up mounted_volumes
     setup_mounted_fs(app)
+    setup_inputs(app)
     setup_outputs(app)
 
     setup_attribute_monitor(app)
@@ -169,7 +173,7 @@ def create_app():
         await login_registry(app_state.settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(app_state.mounted_volumes)
         # STARTED
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
         app_state = AppState(app)
@@ -187,7 +191,7 @@ def create_app():
         await cancel_sequential_workers()
 
         # FINISHED
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

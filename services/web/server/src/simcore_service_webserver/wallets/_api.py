@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     WalletGet,
+    WalletGetPermissions,
     WalletGetWithAvailableCredits,
 )
 from models_library.users import UserID
@@ -12,7 +13,7 @@ from ..users import api as users_api
 from . import _db as db
 from .errors import WalletAccessForbiddenError
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def create_wallet(
@@ -46,21 +47,20 @@ async def list_wallets_with_available_credits_for_user(
     available_credits: float = 0.0
 
     # Now we return the user wallets with available credits
-    wallets_api: list[WalletGetWithAvailableCredits] = []
-    for wallet in user_wallets:
-        wallets_api.append(
-            WalletGetWithAvailableCredits(
-                wallet_id=wallet.wallet_id,
-                name=wallet.name,
-                description=wallet.description,
-                owner=wallet.owner,
-                thumbnail=wallet.thumbnail,
-                status=wallet.status,
-                created=wallet.created,
-                modified=wallet.modified,
-                available_credits=available_credits,
-            )
+    wallets_api: list[WalletGetWithAvailableCredits] = [
+        WalletGetWithAvailableCredits(
+            wallet_id=wallet.wallet_id,
+            name=wallet.name,
+            description=wallet.description,
+            owner=wallet.owner,
+            thumbnail=wallet.thumbnail,
+            status=wallet.status,
+            created=wallet.created,
+            modified=wallet.modified,
+            available_credits=available_credits,
         )
+        for wallet in user_wallets
+    ]
 
     return wallets_api
 
@@ -70,8 +70,8 @@ async def update_wallet(
     user_id: UserID,
     wallet_id: WalletID,
     name: str,
-    description: str,
-    thumbnail: str,
+    description: str | None,
+    thumbnail: str | None,
     status: WalletStatus,
 ) -> WalletGet:
     wallet: UserWalletDB = await db.get_wallet_for_user(
@@ -111,10 +111,7 @@ async def delete_wallet(
     raise NotImplementedError
 
 
-### API that can be exposed
-
-
-async def can_wallet_be_used_by_user(
+async def get_wallet_by_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
@@ -124,7 +121,7 @@ async def can_wallet_be_used_by_user(
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
-            reason=f"Wallet {wallet_id} does not have read permission"
+            reason=f"User {user_id} does not have read permission on wallet {wallet_id}"
         )
 
     wallet_api: WalletGet = WalletGet(
@@ -138,3 +135,16 @@ async def can_wallet_be_used_by_user(
         modified=wallet.modified,
     )
     return wallet_api
+
+
+async def get_wallet_with_permissions_by_user(
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+) -> WalletGetPermissions:
+    wallet: UserWalletDB = await db.get_wallet_for_user(
+        app=app, user_id=user_id, wallet_id=wallet_id
+    )
+
+    permissions: WalletGetPermissions = WalletGetPermissions.construct(**wallet.dict())
+    return permissions

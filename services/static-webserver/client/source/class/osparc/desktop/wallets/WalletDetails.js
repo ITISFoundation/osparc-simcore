@@ -49,13 +49,13 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const walletListItem = this.__addWalletListItem();
       walletModel.bind("walletId", walletListItem, "key");
       walletModel.bind("walletId", walletListItem, "model");
+      walletModel.bind("accessRights", walletListItem, "accessRights");
       walletModel.bind("thumbnail", walletListItem, "thumbnail");
       walletModel.bind("name", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
-      walletModel.bind("accessRights", walletListItem, "accessRights");
-      walletModel.bind("walletType", walletListItem, "walletType");
-      walletModel.bind("credits", walletListItem, "credits");
-      walletModel.bind("active", walletListItem, "active");
+      walletModel.bind("creditsAvailable", walletListItem, "creditsAvailable");
+      walletModel.bind("status", walletListItem, "status");
+      walletModel.bind("preferredWallet", walletListItem, "preferredWallet");
 
       walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
 
@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Wallets list"),
+        toolTipText: this.tr("Back to Credit Accounts list"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
@@ -102,7 +102,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       wallet.bind("thumbnail", walletEditor, "thumbnail", {
         converter: val => val ? val : ""
       });
-      const title = this.tr("Wallet Details Editor");
+      const title = this.tr("Credit Account Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(walletEditor, title, 400, 250);
       walletEditor.addListener("updateWallet", () => this.__updateWallet(win, walletEditor.getChildControl("save"), walletEditor));
       walletEditor.addListener("cancel", () => win.close());
@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
     __updateWallet: function(win, button, walletEditor) {
       const walletId = walletEditor.getWalletId();
-      const name = walletEditor.getLabel();
+      const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
       const params = {
@@ -120,25 +120,30 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         data: {
           "name": name,
           "description": description,
-          "thumbnail": thumbnail || null
+          "thumbnail": thumbnail || null,
+          "status": this.__walletModel.getStatus()
         }
       };
-      osparc.data.Resources.fetch("wallets", "patch", params)
+      osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
-          osparc.store.Store.getInstance().reset("wallets");
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.store.Store.getInstance().invalidate("wallets");
+          const store = osparc.store.Store.getInstance();
+          store.reloadWallets();
           this.__walletModel.set({
-            label: name,
+            name: name,
             description: description,
             thumbnail: thumbnail || null
           });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
-          button.setFetching(false);
           console.error(err);
+          const msg = err.message || (this.tr("Something went wrong editing ") + name);
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        })
+        .finally(() => {
+          button.setFetching(false);
+          win.close();
         });
     },
 

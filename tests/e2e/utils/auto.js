@@ -109,7 +109,7 @@ async function __dashboardServicesBrowser(page) {
   await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]');
 }
 
-async function dashboardNewPlan(page) {
+async function dashboardNewTIPlan(page) {
   console.log("Creating New Plan");
 
   await dashboardStudiesBrowser(page);
@@ -285,7 +285,7 @@ async function runStudy(page) {
     await responsesQueue.waitUntilResponse(":start");
   }
   catch (err) {
-    console.error(err);
+    console.error("Error: running study", err);
     throw (err);
   }
 }
@@ -388,7 +388,7 @@ async function downloadSelectedFile(page) {
     console.log("valid output file value", value)
   }
   catch (err) {
-    console.error(err);
+    console.error("Error: downloading Selected File", err);
     throw (err);
   }
 }
@@ -405,7 +405,7 @@ module.exports = {
   dashboardAbout,
   dashboardStudiesBrowser,
   dashboardPreferences,
-  dashboardNewPlan,
+  dashboardNewTIPlan,
   dashboardStartSim4LifeLite,
   dashboardOpenFirstTemplate,
   dashboardOpenService,

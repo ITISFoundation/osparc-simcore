@@ -3,31 +3,29 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import AsyncIterator
-
 import pytest
 from aioresponses import aioresponses
 from faker import Faker
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from models_library.api_schemas_webserver.clusters import (
+    ClusterCreate,
+    ClusterPatch,
+    ClusterPing,
+)
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_service_webserver.director_v2 import api
-from simcore_service_webserver.director_v2._models import (
-    ClusterCreate,
-    ClusterPatch,
-    ClusterPing,
-)
 
 
 @pytest.fixture()
 async def mocked_director_v2(
     director_v2_service_mock: aioresponses,
-) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+) -> aioresponses:
+    return director_v2_service_mock
 
 
 @pytest.fixture

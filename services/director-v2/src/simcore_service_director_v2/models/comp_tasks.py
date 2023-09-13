@@ -28,13 +28,13 @@ class Image(BaseModel):
     tag: str = Field(..., regex=VERSION_RE)
 
     requires_gpu: bool | None = Field(
-        None, deprecated=True, description="Use instead node_requirements"
+        default=None, deprecated=True, description="Use instead node_requirements"
     )
     requires_mpi: bool | None = Field(
-        None, deprecated=True, description="Use instead node_requirements"
+        default=None, deprecated=True, description="Use instead node_requirements"
     )
     node_requirements: NodeRequirements | None = Field(
-        None, description="the requirements for the service to run on a node"
+        default=None, description="the requirements for the service to run on a node"
     )
     boot_mode: BootMode = BootMode.CPU
     command: list[str] = Field(
@@ -133,6 +133,11 @@ class CompTaskAtDB(BaseModel):
         le=1.0,
         description="current progress of the task if available",
     )
+    last_heartbeat: datetime.datetime | None = Field(
+        ..., description="Last time the running task was checked by the backend"
+    )
+    created: datetime.datetime
+    modified: datetime.datetime
 
     @validator("state", pre=True)
     @classmethod
@@ -206,6 +211,9 @@ class CompTaskAtDB(BaseModel):
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
                     "progress": 0.44,
+                    "last_heartbeat": None,
+                    "created": "2022-05-20 13:28:31.139+00",
+                    "modified": "2023-06-23 15:58:32.833081+00",
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]

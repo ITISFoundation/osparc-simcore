@@ -4,6 +4,7 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
+import arrow
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
@@ -166,7 +167,13 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     )
 
 
-class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
+class RabbitResourceTrackingMessageType(StrAutoEnum):
+    TRACKING_STARTED = auto()
+    TRACKING_HEARTBEAT = auto()
+    TRACKING_STOPPED = auto()
+
+
+class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.tracking"] = Field(
         default="io.simcore.service.tracking", const=True
     )
@@ -174,15 +181,25 @@ class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     service_run_id: str = Field(
         ..., description="uniquely identitifies the service run"
     )
-    created_at: datetime.datetime = Field(..., description="message creation datetime")
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
 
     def routing_key(self) -> str | None:
         return None
 
 
-class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
-    wallet_id: WalletID
-    wallet_name: str
+class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_STARTED, const=True
+    )
+
+    wallet_id: WalletID | None
+    wallet_name: str | None
+
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
     product_name: str
     simcore_user_agent: str
@@ -205,8 +222,10 @@ class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
     )
 
 
-class RabbitResourceTrackingHeartbeatMessage(_RabbitResourceTrackingBaseMessage):
-    ...
+class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT, const=True
+    )
 
 
 class SimcorePlatformStatus(StrAutoEnum):
@@ -214,8 +233,19 @@ class SimcorePlatformStatus(StrAutoEnum):
     BAD = auto()
 
 
-class RabbitResourceTrackingStoppedMessage(_RabbitResourceTrackingBaseMessage):
+class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_STOPPED, const=True
+    )
+
     simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
         description=f"{SimcorePlatformStatus.BAD} if simcore failed to run the service properly",
     )
+
+
+RabbitResourceTrackingMessages = (
+    RabbitResourceTrackingStartedMessage
+    | RabbitResourceTrackingStoppedMessage
+    | RabbitResourceTrackingHeartbeatMessage
+)

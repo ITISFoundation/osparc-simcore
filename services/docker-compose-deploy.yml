@@ -1,52 +1,40 @@
-version: "3.8"
+version: '3.8'
 services:
-  api-server:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
-
-  autoscaling:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
-
-  catalog:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
-
-  director:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
-
-  director-v2:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
-
-  webserver:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
-
-  dask-sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
-
-  datcore-adapter:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
-
-  storage:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
-
-  migration:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
-
-  osparc-gateway-server:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
-
-  resource-usage-tracker:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
-
-  service-integration:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/service-integration:${DOCKER_IMAGE_TAG:-latest}
-
-  invitations:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
-
-  static-webserver:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
-
-  dynamic-sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
-
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
+  api-server:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
+  autoscaling:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
+  catalog:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
+  clusters-keeper:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:${DOCKER_IMAGE_TAG:-latest}
+  dask-sidecar:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+  datcore-adapter:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
+  director:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
+  director-v2:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
+  dynamic-sidecar:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+  invitations:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
+  migration:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
+  osparc-gateway-server:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
+  payments:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
+  resource-usage-tracker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
+  service-integration:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/service-integration:${DOCKER_IMAGE_TAG:-latest}
+  static-webserver:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
+  storage:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
+  webserver:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}

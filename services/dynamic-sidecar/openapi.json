@@ -323,18 +323,19 @@
         }
       }
     },
-    "/v1/containers/directory-watcher": {
+    "/v1/containers/ports/io": {
       "patch": {
         "tags": [
           "containers"
         ],
-        "summary": "Enable/disable directory-watcher event propagation",
-        "operationId": "toggle_directory_watcher_v1_containers_directory_watcher_patch",
+        "summary": "Enable/disable ports i/o",
+        "description": "enables or disables the following:\n- output ports pushing data\n- inputs ports from pulling data",
+        "operationId": "toggle_ports_io_v1_containers_ports_io_patch",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
+                "$ref": "#/components/schemas/PatchPortsIOItem"
               }
             }
           },
@@ -766,16 +767,30 @@
         ],
         "title": "AttachContainerToNetworkItem"
       },
+      "BootMode": {
+        "type": "string",
+        "enum": [
+          "CPU",
+          "GPU",
+          "MPI"
+        ],
+        "title": "BootMode",
+        "description": "An enumeration."
+      },
       "ContainersCreate": {
         "properties": {
           "docker_compose_yaml": {
             "type": "string",
             "title": "Docker Compose Yaml"
+          },
+          "metrics_params": {
+            "$ref": "#/components/schemas/CreateServiceMetricsAdditionalParams"
           }
         },
         "type": "object",
         "required": [
-          "docker_compose_yaml"
+          "docker_compose_yaml",
+          "metrics_params"
         ],
         "title": "ContainersCreate"
       },
@@ -794,6 +809,97 @@
           "outputs_labels"
         ],
         "title": "CreateDirsRequestItem"
+      },
+      "CreateServiceMetricsAdditionalParams": {
+        "properties": {
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          },
+          "pricing_plan_id": {
+            "type": "integer",
+            "title": "Pricing Plan Id"
+          },
+          "pricing_detail_id": {
+            "type": "integer",
+            "title": "Pricing Detail Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "simcore_user_agent": {
+            "type": "string",
+            "title": "Simcore User Agent"
+          },
+          "user_email": {
+            "type": "string",
+            "title": "User Email"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "service_key": {
+            "type": "string",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key"
+          },
+          "service_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version"
+          },
+          "service_resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ImageResources"
+            },
+            "type": "object",
+            "title": "Service Resources"
+          },
+          "service_additional_metadata": {
+            "type": "object",
+            "title": "Service Additional Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "simcore_user_agent",
+          "user_email",
+          "project_name",
+          "node_name",
+          "service_key",
+          "service_version",
+          "service_resources",
+          "service_additional_metadata"
+        ],
+        "title": "CreateServiceMetricsAdditionalParams",
+        "example": {
+          "wallet_id": 1,
+          "wallet_name": "a private wallet for me",
+          "pricing_plan_id": 1,
+          "pricing_detail_id": 1,
+          "product_name": "osparc",
+          "simcore_user_agent": "undefined",
+          "user_email": "test@test.com",
+          "project_name": "_!New Study",
+          "node_name": "the service of a lifetime _ *!",
+          "service_key": "simcore/services/dynamic/test",
+          "service_version": "0.0.1",
+          "service_resources": {},
+          "service_additional_metadata": {}
+        }
       },
       "DetachContainerFromNetworkItem": {
         "properties": {
@@ -821,7 +927,65 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "PatchDirectoryWatcherItem": {
+      "ImageResources": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
+            "title": "Image",
+            "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
+          },
+          "resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ResourceValue"
+            },
+            "type": "object",
+            "title": "Resources"
+          },
+          "boot_modes": {
+            "items": {
+              "$ref": "#/components/schemas/BootMode"
+            },
+            "type": "array",
+            "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+            "default": [
+              "CPU"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "image",
+          "resources"
+        ],
+        "title": "ImageResources",
+        "example": {
+          "image": "simcore/service/dynamic/pretty-intense:1.0.0",
+          "resources": {
+            "CPU": {
+              "limit": 4,
+              "reservation": 0.1
+            },
+            "RAM": {
+              "limit": 103079215104,
+              "reservation": 536870912
+            },
+            "VRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
+            }
+          }
+        }
+      },
+      "PatchPortsIOItem": {
         "properties": {
           "is_enabled": {
             "type": "boolean",
@@ -832,7 +996,7 @@
         "required": [
           "is_enabled"
         ],
-        "title": "PatchDirectoryWatcherItem"
+        "title": "PatchPortsIOItem"
       },
       "PutVolumeItem": {
         "properties": {
@@ -845,6 +1009,44 @@
           "status"
         ],
         "title": "PutVolumeItem"
+      },
+      "ResourceValue": {
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Limit"
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Reservation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit",
+          "reservation"
+        ],
+        "title": "ResourceValue"
       },
       "SelectBox": {
         "properties": {

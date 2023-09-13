@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.SearchBarFilter", {
-  extend: osparc.component.filter.UIFilter,
+  extend: osparc.filter.UIFilter,
 
   construct: function(resourceType) {
     this.__resourceType = resourceType;
@@ -47,17 +47,20 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     getSharedWithOptions: function(resourceType) {
       return [{
         id: "show-all",
-        label: qx.locale.Manager.tr("All ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("All ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           plural: true
         })
       }, {
         id: "my-studies",
-        label: qx.locale.Manager.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("My ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           plural: true
         })
       }, {
         id: "shared-with-me",
-        label: qx.locale.Manager.tr("Shared with me")
+        label: qx.locale.Manager.tr("Shared with Me")
+      }, {
+        id: "shared-with-everyone",
+        label: qx.locale.Manager.tr("Shared with Everyone")
       }];
     }
   },

@@ -68,9 +68,6 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /
   && rm --recursive --force /var/lib/apt/lists/*
 
 
-RUN curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
-  chmod +x /usr/local/bin/docker-compose
-
 RUN grep --quiet mozilla/DST_Root_CA_X3.crt  "/etc/ca-certificates.conf" && sed --expression '/mozilla\/DST_Root_CA_X3.crt/s/^/!/g' --in-place /etc/ca-certificates.conf && update-ca-certificates
 
 SHELL [ "/bin/bash", "-c" ]

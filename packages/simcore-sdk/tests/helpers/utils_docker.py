@@ -3,7 +3,6 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 import docker
 import yaml
@@ -16,7 +15,7 @@ log = logging.getLogger(__name__)
     wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN)
 )
 def get_service_published_port(
-    service_name: str, target_port: Optional[int] = None
+    service_name: str, target_port: int | None = None
 ) -> str:
     """
     WARNING: ENSURE that service name exposes a port in  Dockerfile file or docker-compose config file
@@ -64,11 +63,11 @@ def get_service_published_port(
 
 
 def run_docker_compose_config(
-    docker_compose_paths: Union[List[Path], Path],
+    docker_compose_paths: list[Path] | Path,
     workdir: Path,
-    destination_path: Optional[Path] = None,
-) -> Dict:
-    """Runs docker-compose config to validate and resolve a compose file configuration
+    destination_path: Path | None = None,
+) -> dict:
+    """Runs docker compose config to validate and resolve a compose file configuration
 
     - Composes all configurations passed in 'docker_compose_paths'
     - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
@@ -93,7 +92,7 @@ def run_docker_compose_config(
     configs_prefix = " ".join(config_paths)
 
     subprocess.run(
-        f"docker-compose {configs_prefix} config > {destination_path}",
+        f"docker compose {configs_prefix} config > {destination_path}",
         shell=True,
         check=True,
         cwd=workdir,

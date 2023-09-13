@@ -6,27 +6,37 @@ from textwrap import dedent
 from typing import IO, Annotated, Final
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models_library.projects_nodes_io import StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
+from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
     UploadedFolder,
+    abort_upload,
+    complete_file_upload,
+    get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
+from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import File
+from ...models.schemas.files import (
+    ClientFile,
+    ClientFileUploadData,
+    File,
+    FileUploadData,
+    UploadLinks,
+)
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -50,7 +60,10 @@ _COMMON_ERROR_RESPONSES: Final[dict] = {
 }
 
 
-@router.get("", response_model=list[File])
+@router.get(
+    "",
+    response_model=list[File],
+)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -70,7 +83,7 @@ async def list_files(
 
             file_meta: File = to_file_api_model(stored_file_meta)
 
-        except (ValidationError, ValueError, AttributeError) as err:
+        except (ValidationError, ValueError, AttributeError) as err:  # noqa: PERF203
             _logger.warning(
                 "Skipping corrupted entry in storage '%s' (%s)"
                 "TIP: check this entry in file_meta_data table.",
@@ -108,7 +121,10 @@ def _get_spooled_file_size(file_io: IO) -> int:
     return file_size
 
 
-@router.put("/content", response_model=File)
+@router.put(
+    "/content",
+    response_model=File,
+)
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
@@ -124,6 +140,9 @@ async def upload_file(
     # avoiding the data trafic via this service
 
     assert request  # nosec
+
+    if file.filename is None:
+        file.filename = "Undefined"
 
     file_size = await asyncio.get_event_loop().run_in_executor(
         None, _get_spooled_file_size, file.file
@@ -146,19 +165,21 @@ async def upload_file(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
-        s3_object=parse_obj_as(
-            StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
+        s3_object=file_meta.storage_file_id,
+        path_to_upload=UploadableFileObject(
+            file_object=file.file,
+            file_name=file.filename,
+            file_size=file_size,
         ),
-        path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
         io_log_redirect_cb=None,
     )
-    assert isinstance(upload_result, UploadedFile)
+    assert isinstance(upload_result, UploadedFile)  # nosec
 
     file_meta.checksum = upload_result.etag
     return file_meta
 
 
-# MaG suggested a single function that can upload one or multiple files instead of having
+# NOTE: MaG suggested a single function that can upload one or multiple files instead of having
 # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
 # produces an error in the generated openapi.json
 #
@@ -170,7 +191,52 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     raise NotImplementedError
 
 
-@router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
+@router.post(
+    "/content",
+    response_model=ClientFileUploadData,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+@cancel_on_disconnect
+async def get_upload_links(
+    request: Request,
+    client_file: ClientFile,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    """Get upload links for uploading a file to storage"""
+    assert request  # nosec
+    file_meta: File = await File.create_from_client_file(
+        client_file,
+        datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    )
+    _, upload_links = await get_upload_links_from_s3(
+        user_id=user_id,
+        store_name=None,
+        store_id=SIMCORE_LOCATION,
+        s3_object=file_meta.storage_file_id,
+        client_session=None,
+        link_type=LinkType.PRESIGNED,
+        file_size=ByteSize(client_file.filesize),
+        is_directory=False,
+    )
+    completion_url: URL = request.url_for(
+        "complete_multipart_upload", file_id=file_meta.id
+    )
+    abort_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
+    upload_data: FileUploadData = FileUploadData(
+        chunk_size=upload_links.chunk_size,
+        urls=upload_links.urls,
+        links=UploadLinks(
+            complete_upload=completion_url.path, abort_upload=abort_url.path
+        ),
+    )
+    return ClientFileUploadData(file_id=file_meta.id, upload_schema=upload_data)
+
+
+@router.get(
+    "/{file_id}",
+    response_model=File,
+    responses={**_COMMON_ERROR_RESPONSES},
+)
 async def get_file(
     file_id: UUID,
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -202,19 +268,70 @@ async def get_file(
 
 @router.delete(
     "/{file_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_file(
     file_id: UUID,
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    assert storage_client  # nsoec
+    file: File = await get_file(
+        file_id=file_id, storage_client=storage_client, user_id=user_id
+    )
+    await storage_client.delete_file(
+        user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id
+    )
 
-    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
-    raise NotImplementedError(msg)
+
+@router.post(
+    "/{file_id}:abort",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def abort_multipart_upload(
+    request: Request,
+    file_id: UUID,
+    client_file: Annotated[ClientFile, Body(..., embed=True)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    assert request  # nosec
+    assert user_id  # nosec
+    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    abort_link: URL = await storage_client.create_abort_upload_link(
+        file, query={"user_id": str(user_id)}
+    )
+    await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
+
+
+@router.post(
+    "/{file_id}:complete",
+    response_model=File,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+@cancel_on_disconnect
+async def complete_multipart_upload(
+    request: Request,
+    file_id: UUID,
+    client_file: Annotated[ClientFile, Body(...)],
+    uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    assert request  # nosec
+    assert user_id  # nosec
+
+    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    complete_link: URL = await storage_client.create_complete_upload_link(
+        file, {"user_id": str(user_id)}
+    )
+
+    e_tag: ETag = await complete_file_upload(
+        uploaded_parts=uploaded_parts.parts,
+        upload_completion_link=parse_obj_as(AnyUrl, f"{complete_link}"),
+    )
+
+    file.checksum = e_tag
+    return file
 
 
 @router.get(
@@ -244,7 +361,9 @@ async def download_file(
 
     # download from S3 using pre-signed link
     presigned_download_link = await storage_client.get_download_link(
-        user_id, file_meta.id, file_meta.filename
+        user_id=user_id,
+        file_id=file_meta.id,
+        file_name=file_meta.filename,
     )
 
     _logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)

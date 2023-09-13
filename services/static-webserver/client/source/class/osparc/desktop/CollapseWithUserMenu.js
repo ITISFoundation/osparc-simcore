@@ -73,7 +73,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control.getContentElement().setStyles({
             "border-radius": "0px"
           });
-          osparc.io.WatchDog.getInstance().bind("online", control, "backgroundColor", {
+          osparc.WatchDog.getInstance().bind("online", control, "backgroundColor", {
             converter: on => on ? "background-main-4" : "red"
           });
           control.getChildControl("label").exclude();

@@ -125,7 +125,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
             maxWidth: 200
           });
           const walletNameTitle = new qx.ui.basic.Label().set({
-            value: this.tr("Wallet:"),
+            value: this.tr("Credit Account:"),
             font: "text-14"
           });
           walletNameHBox.add(walletNameTitle);

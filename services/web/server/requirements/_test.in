@@ -16,6 +16,7 @@ docker
 Faker
 flaky
 hypothesis
+jsonref
 jsonschema
 openapi-spec-validator
 pytest

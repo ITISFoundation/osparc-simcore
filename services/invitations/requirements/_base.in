@@ -13,7 +13,7 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-cryptography~=39.0.0 # security
+cryptography
 fastapi
 packaging
 typer[all]

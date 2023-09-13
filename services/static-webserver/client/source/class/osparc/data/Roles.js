@@ -100,7 +100,7 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("Accountant: Read/Write access"),
         canDo: [
           qx.locale.Manager.tr("- can Add/Delete members"),
-          qx.locale.Manager.tr("- can Edit Wallet details")
+          qx.locale.Manager.tr("- can Edit Credit Account details")
         ]
       }
     },

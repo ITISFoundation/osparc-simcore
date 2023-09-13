@@ -23,10 +23,10 @@ class RunningState(str, Enum):
     PENDING = "PENDING"
     WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
     STARTED = "STARTED"
-    RETRY = "RETRY"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     ABORTED = "ABORTED"
+    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
 
     def is_running(self) -> bool:
         return self in (
@@ -34,7 +34,7 @@ class RunningState(str, Enum):
             RunningState.PENDING,
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
-            RunningState.RETRY,
+            RunningState.WAITING_FOR_CLUSTER,
         )
 
 
