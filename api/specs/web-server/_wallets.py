@@ -11,12 +11,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import (
-    CreatePaymentMethodInitiated,
     CreateWalletBodyParams,
     CreateWalletPayment,
     PaymentID,
     PaymentMethodGet,
     PaymentMethodID,
+    PaymentMethodInit,
     PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
@@ -98,7 +98,7 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
 
 @router.post(
     "/wallets/{wallet_id}/payments-methods:init",
-    response_model=Envelope[CreatePaymentMethodInitiated],
+    response_model=Envelope[PaymentMethodInit],
 )
 async def init_creation_of_payment_method(wallet_id: WalletID):
     ...

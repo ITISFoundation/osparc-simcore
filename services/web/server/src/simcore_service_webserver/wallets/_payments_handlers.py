@@ -3,10 +3,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
-    CreatePaymentMethodInitiated,
     CreateWalletPayment,
     PaymentID,
     PaymentMethodGet,
+    PaymentMethodInit,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -191,10 +191,8 @@ async def init_creation_of_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        initiated: CreatePaymentMethodInitiated = (
-            await init_creation_of_wallet_payment_method(
-                request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
-            )
+        initiated: PaymentMethodInit = await init_creation_of_wallet_payment_method(
+            request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
         )
 
         return envelope_json_response(initiated, web.HTTPCreated)

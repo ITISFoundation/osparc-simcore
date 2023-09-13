@@ -11,8 +11,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
-    CreatePaymentMethodInitiated,
     PaymentMethodGet,
+    PaymentMethodInit,
     WalletGet,
 )
 from pydantic import parse_obj_as
@@ -91,7 +91,7 @@ async def test_payment_method_worfklow(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    init = CreatePaymentMethodInitiated.parse_obj(data)
+    init = PaymentMethodInit.parse_obj(data)
 
     assert init.payment_method_id
     assert init.payment_method_form_url.query
@@ -156,7 +156,7 @@ async def test_init_and_cancel_payment_method(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    init = CreatePaymentMethodInitiated.parse_obj(data)
+    init = PaymentMethodInit.parse_obj(data)
 
     # cancel Create
     response = await client.post(
