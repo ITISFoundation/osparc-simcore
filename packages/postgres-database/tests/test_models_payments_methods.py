@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import datetime
 from typing import Any
 
 import pytest
@@ -12,7 +13,14 @@ from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import FAKE
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.payments_methods import payments_methods
+from simcore_postgres_database.models.payments_methods import (
+    InitPromptAckFlowState,
+    payments_methods,
+)
+
+
+def _utcnow() -> datetime.datetime:
+    return datetime.datetime.now(tz=datetime.timezone.utc)
 
 
 def _random_payment_method(
@@ -22,6 +30,7 @@ def _random_payment_method(
         "payment_method_id": FAKE.uuid4(),
         "user_id": FAKE.pyint(),
         "wallet_id": FAKE.pyint(),
+        "initiated_at": _utcnow(),
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_methods.columns})
@@ -67,6 +76,7 @@ async def test_create_payment_method(
             & (
                 payments_methods.c.user_id == init_values["user_id"]
             )  # ensures ownership
+            & (payments_methods.c.state == InitPromptAckFlowState.PENDING)
         )
     )
     rows = await result.fetchall()
