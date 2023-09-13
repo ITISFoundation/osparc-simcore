@@ -14,6 +14,9 @@ from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
     PaymentID,
+    PaymentMethodCreated,
+    PaymentMethodGet,
+    PaymentMethodID,
     PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
@@ -87,6 +90,43 @@ async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
+    ...
+
+
+### Wallets payment-methods
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments-methods",
+    response_model=Envelope[PaymentMethodCreated],
+)
+async def create_payment_method(wallet_id: WalletID):
+    """Adds new payment method to `wallet_id`"""
+
+
+@router.get(
+    "/wallets/{wallet_id}/payments-methods",
+    response_model=Envelope[list[PaymentMethodGet]],
+)
+async def list_payments_methods(wallet_id: WalletID):
+    """Lists all payments method associated to to `wallet_id`"""
+
+
+@router.get(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
+    response_model=Envelope[PaymentMethodGet],
+)
+async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID):
+    ...
+
+
+@router.delete(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
+    response_model=Envelope[PaymentMethodGet],
+)
+async def delete_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
     ...
 
 

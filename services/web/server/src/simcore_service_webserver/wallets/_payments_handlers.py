@@ -178,13 +178,13 @@ async def create_payment_method(request: web.Request):
 
 
 @routes.get(
-    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods", name="list_payment_methods"
+    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods", name="list_payments_methods"
 )
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 @raise_if_not_dev_feature_enabled
-async def list_payment_methods(request: web.Request):
+async def list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     payment_methods = parse_obj_as(
