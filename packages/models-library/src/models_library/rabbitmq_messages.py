@@ -58,6 +58,7 @@ class NodeMessageBase(ProjectMessageBase):
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
+    node_id: NodeID | None
     messages: list[LogMessageStr]
     log_level: LogLevelInt = logging.INFO
 
