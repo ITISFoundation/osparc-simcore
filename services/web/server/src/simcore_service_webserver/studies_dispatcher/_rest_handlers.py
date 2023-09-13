@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info

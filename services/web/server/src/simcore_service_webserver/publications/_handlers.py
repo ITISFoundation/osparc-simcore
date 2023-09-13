@@ -13,7 +13,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils_email import AttachmentTuple, send_email_from_template, themed
-from ..products.plugin import get_current_product
+from ..products.api import get_current_product
 
 _logger = logging.getLogger(__name__)
 
