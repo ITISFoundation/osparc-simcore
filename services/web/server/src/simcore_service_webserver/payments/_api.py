@@ -5,6 +5,7 @@ from typing import Any
 import arrow
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
+    CreatePaymentMethodInitiated,
     PaymentID,
     PaymentMethodID,
     PaymentTransaction,
@@ -202,6 +203,17 @@ async def cancel_payment_to_wallet(
 #
 # Payment-methods
 #
+
+
+async def init_creation_of_payment_method_to_wallet(
+    app: web.Application, *, user_id: UserID, wallet_id: WalletID
+) -> CreatePaymentMethodInitiated:
+    # check permissions
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    # hold timestamp
+    initiated_at = arrow.utcnow().datetime
+
+    raise NotImplementedError
 
 
 async def complete_payment_method(

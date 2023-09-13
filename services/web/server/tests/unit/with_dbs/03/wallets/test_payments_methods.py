@@ -32,11 +32,15 @@ from simcore_service_webserver.payments.settings import (
 
 @pytest.fixture
 def user_role():
+    # TODO: refactor to common conftest.py
+
     return UserRole.USER
 
 
 @pytest.fixture
 def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
+    # TODO: refactor to common conftest.py
+
     assert client.app
     url = client.app.router["create_wallet"].url_for()
 
@@ -61,6 +65,7 @@ async def logged_user_wallet(
     wallets_clean_db: None,
     create_new_wallet: Callable,
 ) -> WalletGet:
+    # TODO: refactor to common conftest.py
     assert client.app
     return await create_new_wallet()
 

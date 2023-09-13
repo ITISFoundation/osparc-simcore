@@ -27,7 +27,11 @@ from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import login_required
 from ..payments import api
-from ..payments.api import create_payment_to_wallet, get_user_payments_page
+from ..payments.api import (
+    create_payment_to_wallet,
+    get_user_payments_page,
+    init_creation_of_payment_method_to_wallet,
+)
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (
@@ -165,20 +169,28 @@ class PaymentMethodsPathParams(WalletsPathParams):
 @handle_wallets_exceptions
 @requires_dev_feature_enabled
 async def init_create_payment_method(request: web.Request):
-    """Triggers the creation of a new payment method. Creating
-    a payment-method follows the init-prompt-ack workflow
+    """Triggers the creation of a new payment method.
+    Note that creating a payment-method follows the init-prompt-ack flow
     """
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
+    wallet_id = path_params.wallet_id
 
-    created = parse_obj_as(
-        CreatePaymentMethodInitiated,
-        {
-            **CreatePaymentMethodInitiated.Config.schema_extra["examples"][0],
-            "wallet_id": path_params.wallet_id,
-        },
-    )
-    return envelope_json_response(created, web.HTTPCreated)
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Initated the creation of a payment method for %s",
+        f"{wallet_id=}",
+        log_duration=True,
+        extra=get_log_record_extra(user_id=req_ctx.user_id),
+    ):
+        initiated: CreatePaymentMethodInitiated = (
+            await init_creation_of_payment_method_to_wallet(
+                request.app, user_id=req_ctx.user_id, wallet_id=wallet_id
+            )
+        )
+
+        return envelope_json_response(initiated, web.HTTPCreated)
 
 
 @routes.get(
