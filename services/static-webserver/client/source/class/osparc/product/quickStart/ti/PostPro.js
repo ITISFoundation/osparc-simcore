@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.ti.PostPro", {
-  extend: osparc.product.tutorial.SlideBase,
+qx.Class.define("osparc.product.quickStart.ti.PostPro", {
+  extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
     const title = this.tr("Post Processing");
@@ -30,7 +30,7 @@ qx.Class.define("osparc.product.tutorial.ti.PostPro", {
         user to interactively explore, using predefined quantification metrics and visualizations. Identified \
         conditions-of-interest can be documented and added to a report.\
       ");
-      const label1 = osparc.product.tutorial.Utils.createLabel(text1);
+      const label1 = osparc.product.quickStart.Utils.createLabel(text1);
       this._add(label1);
 
       const text2 = this.tr("\
@@ -39,7 +39,7 @@ qx.Class.define("osparc.product.tutorial.ti.PostPro", {
         of the maximum amplitude modulation (MAP) within the head are produced.<br>\
         Pressing the `Load` button on the right, the selected configuration will be loaded.\
       ");
-      const label2 = osparc.product.tutorial.Utils.createLabel(text2);
+      const label2 = osparc.product.quickStart.Utils.createLabel(text2);
       this._add(label2);
 
       const image1 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_1.gif").set({
@@ -56,7 +56,7 @@ qx.Class.define("osparc.product.tutorial.ti.PostPro", {
         and saved offline for further inspection and analysis.<br>\
         An isosurface of the TI stimulation distribution for the selected configuration can also be visualized within the head anatomy for inspection.\
       ");
-      const label3 = osparc.product.tutorial.Utils.createLabel(text3);
+      const label3 = osparc.product.quickStart.Utils.createLabel(text3);
       this._add(label3);
 
       const image2 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_2.gif").set({
@@ -73,7 +73,7 @@ qx.Class.define("osparc.product.tutorial.ti.PostPro", {
         of the optimized electrode configuration. The report includes electrode placement, current intensities, performance metrics, TI and maximum \
         high-frequency field distributions, cumulative dose histograms and all the graphs generated in the post-pro analysis tab.\
       ");
-      const label4 = osparc.product.tutorial.Utils.createLabel(text4);
+      const label4 = osparc.product.quickStart.Utils.createLabel(text4);
       this._add(label4);
 
       const image3 = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/postpro_gui_3.gif").set({

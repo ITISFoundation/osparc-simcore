@@ -219,7 +219,7 @@ qx.Class.define("osparc.tours.Manager", {
       }
 
       if (this.getTours() === this.self().INTRO_TOUR) {
-        const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("panddyDontShow");
+        const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("panddyDontShow");
         stepWidget.add(dontShowCB);
       }
 

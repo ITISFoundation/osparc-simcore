@@ -15,18 +15,18 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.Utils", {
+qx.Class.define("osparc.product.quickStart.Utils", {
   type: "static",
 
   statics: {
     TUTORIALS: {
       "tis": {
         localStorageStr: "tiDontShowQuickStart",
-        tutorial: () => new osparc.product.tutorial.ti.Slides()
+        tutorial: () => new osparc.product.quickStart.ti.Slides()
       },
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",
-        tutorial: () => new osparc.product.tutorial.s4llite.Slides()
+        tutorial: () => new osparc.product.quickStart.s4llite.Slides()
       }
     },
 

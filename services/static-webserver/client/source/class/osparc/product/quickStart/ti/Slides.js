@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.ti.Slides", {
-  extend: osparc.product.tutorial.SlidesBase,
+qx.Class.define("osparc.product.quickStart.ti.Slides", {
+  extend: osparc.product.quickStart.SlidesBase,
 
   construct: function() {
     this.base(arguments, "ti-slides", this.tr("Quick Start"));
@@ -26,11 +26,11 @@ qx.Class.define("osparc.product.tutorial.ti.Slides", {
     // overriden
     _getSlides: function() {
       return [
-        new osparc.product.tutorial.ti.Welcome(),
-        new osparc.product.tutorial.ti.Dashboard(),
-        new osparc.product.tutorial.ti.ElectrodeSelector(),
-        new osparc.product.tutorial.ti.PostPro(),
-        new osparc.product.tutorial.ti.S4LPostPro()
+        new osparc.product.quickStart.ti.Welcome(),
+        new osparc.product.quickStart.ti.Dashboard(),
+        new osparc.product.quickStart.ti.ElectrodeSelector(),
+        new osparc.product.quickStart.ti.PostPro(),
+        new osparc.product.quickStart.ti.S4LPostPro()
       ];
     },
 
@@ -67,7 +67,7 @@ qx.Class.define("osparc.product.tutorial.ti.Slides", {
       });
       footerItems.push(licenseLabel);
 
-      const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("tiDontShowQuickStart");
+      const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("tiDontShowQuickStart");
       footerItems.push(dontShowCB);
 
       return footerItems;

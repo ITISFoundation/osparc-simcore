@@ -212,7 +212,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           // Show Quick Start if studies.length === 0
-          const tutorial = osparc.product.tutorial.Utils.getTutorial();
+          const tutorial = osparc.product.quickStart.Utils.getTutorial();
           if (tutorial) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
