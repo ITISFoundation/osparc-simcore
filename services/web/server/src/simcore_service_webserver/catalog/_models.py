@@ -85,8 +85,8 @@ class ServiceOutputGetFactory:
         if "defaultValue" in data:
             data.pop("defaultValue")
 
-        # NOTE: catalog already validates the services so no need to do it once more
-        port = ServiceOutputGet.construct(key_id=output_key, **data)
+        # NOTE: this call must be validated if port property type is "ref_contentSchema"
+        port = ServiceOutputGet(key_id=output_key, **data)
 
         unit_html: UnitHtmlFormat | None
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
