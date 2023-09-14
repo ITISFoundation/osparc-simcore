@@ -8,7 +8,7 @@ from aiopg.sa.result import ResultProxy
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, PositiveInt, parse_obj_as
+from pydantic import BaseModel, parse_obj_as
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -63,56 +63,6 @@ async def insert_init_payment_method(
             raise PaymentMethodUniqueViolationError(
                 payment_method_id=payment_method_id
             ) from err
-
-
-async def list_payments_methods(
-    app,
-    *,
-    user_id: UserID,
-    wallet_id: WalletID,
-    offset: PositiveInt | None = None,
-    limit: PositiveInt | None = None,
-) -> tuple[int, list[PaymentsMethodsDB]]:
-    """List payments entries done by a give user (in any state)
-
-    Sorted by newest-first
-    """
-
-    async with get_database_engine(app).acquire() as conn:
-        total_number_of_items = await conn.scalar(
-            sa.select(sa.func.count())
-            .select_from(payments_methods)
-            .where(
-                (payments_methods.c.user_id == user_id)
-                & (payments_methods.c.wallet_id == wallet_id)
-            )
-        )
-        assert total_number_of_items is not None  # nosec
-
-        query = (
-            payments_methods.select()
-            .where(
-                (payments_methods.c.user_id == user_id)
-                & (payments_methods.c.wallet_id == wallet_id)
-            )
-            .order_by(payments_methods.c.created.desc())
-        )  # newest first
-
-        # NOTE: what if between these two calls there are new rows? can we get this in an atomic call?
-        if offset is not None:
-            if offset > total_number_of_items:
-                msg = f"{offset=} exceeds {total_number_of_items=}"
-                raise ValueError(msg)
-
-            query.offset(offset)
-
-            if limit is not None:
-                query.limit(limit)
-
-        result: ResultProxy = await conn.execute(query)
-        rows = await result.fetchall() or []
-        page = parse_obj_as(list[PaymentsMethodsDB], rows)
-        return total_number_of_items, page
 
 
 async def list_successful_payment_methods(
