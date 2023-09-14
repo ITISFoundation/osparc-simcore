@@ -129,7 +129,7 @@ async def test_init_from_disk_with_legacy_data_format(project_tests_dir: Path):
     # when the legacy format was created
     # NOTE this was already parsed so this check is a regression
     # to check compatibility with very old formats
-    parsed_legacy_format.pop(" ")
+    parsed_legacy_format.pop("original_to_container_names")
 
     assert parsed_legacy_format == json.loads(
         (MOCKS_DIR / LEGACY_SHARED_STORE).read_text()
