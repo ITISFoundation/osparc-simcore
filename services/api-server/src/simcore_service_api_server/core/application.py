@@ -98,15 +98,13 @@ def _label_info_with_state(title: str, version: str):
 
 
 def init_app() -> FastAPI:
-    assert isinstance(_settings, ApplicationSettings)  # nosec
+    settings = ApplicationSettings.create_from_envs()
+    assert settings  # nosec
 
-    assert hasattr(
-        logging, logging.getLevelName(_settings.log_level)
-    )  # make sonar cloud happy that log level is valid
-    logging.basicConfig(level=_settings.log_level)
-    logging.root.setLevel(_settings.log_level)
-    config_all_loggers(_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    _logger.debug("App _settings:\n%s", _settings.json(indent=2))
+    logging.basicConfig(level=settings.log_level)
+    logging.root.setLevel(settings.log_level)
+    config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    _logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # Labeling
     title = "osparc.io web API"
@@ -116,7 +114,7 @@ def init_app() -> FastAPI:
 
     # creates app instance
     app = FastAPI(
-        debug=_settings.debug,
+        debug=settings.debug,
         title=title,
         description=description,
         version=version,
@@ -127,23 +125,23 @@ def init_app() -> FastAPI:
     override_openapi_method(app)
     add_pagination(app)
 
-    app.state.settings = _settings
+    app.state.settings = settings
 
     # setup modules
-    if _settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
-    if _settings.API_SERVER_WEBSERVER:
-        webserver.setup(app, _settings.API_SERVER_WEBSERVER)
+    if settings.API_SERVER_WEBSERVER:
+        webserver.setup(app, settings.API_SERVER_WEBSERVER)
 
-    if _settings.API_SERVER_CATALOG:
-        catalog.setup(app, _settings.API_SERVER_CATALOG)
+    if settings.API_SERVER_CATALOG:
+        catalog.setup(app, settings.API_SERVER_CATALOG)
 
-    if _settings.API_SERVER_STORAGE:
-        storage.setup(app, _settings.API_SERVER_STORAGE)
+    if settings.API_SERVER_STORAGE:
+        storage.setup(app, settings.API_SERVER_STORAGE)
 
-    if _settings.API_SERVER_DIRECTOR_V2:
-        director_v2.setup(app, _settings.API_SERVER_DIRECTOR_V2)
+    if settings.API_SERVER_DIRECTOR_V2:
+        director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))
@@ -166,11 +164,11 @@ def init_app() -> FastAPI:
             Exception,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             override_detail_message="Internal error"
-            if _settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+            if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
             else None,
         ),
     )
-    if _settings.API_SERVER_DEV_FEATURES_ENABLED:
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
         app.add_middleware(ApiServerProfilerMiddleware)
 
     # routing
@@ -179,7 +177,7 @@ def init_app() -> FastAPI:
     app.include_router(health_router)
 
     # api under /v*
-    api_router = create_router(_settings)
+    api_router = create_router(settings)
     app.include_router(api_router, prefix=f"/{API_VTAG}")
 
     # NOTE: cleanup all OpenAPIs https://github.com/ITISFoundation/osparc-simcore/issues/3487
