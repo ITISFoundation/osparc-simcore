@@ -1,6 +1,6 @@
 import logging
 import string
-from typing import Any, Pattern
+from typing import Any, ClassVar, Pattern  # noqa: UP035
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -23,12 +23,7 @@ from simcore_postgres_database.models.products import (
 from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
 
-log = logging.getLogger(__name__)
-
-
-#
-# MODEL
-#
+_logger = logging.getLogger(__name__)
 
 
 class Product(BaseModel):
@@ -51,6 +46,7 @@ class Product(BaseModel):
     )
 
     host_regex: Pattern = Field(..., description="Host regex")
+    # NOTE: typing.Pattern is supported but not re.Pattern (SEE https://github.com/pydantic/pydantic/pull/4366)
 
     support_email: LowerCaseEmailStr = Field(
         ...,
@@ -104,9 +100,8 @@ class Product(BaseModel):
     @classmethod
     def validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
-            raise ValueError(
-                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
-            )
+            msg = f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
+            raise ValueError(msg)
         return v
 
     @property
@@ -119,7 +114,7 @@ class Product(BaseModel):
         frozen = True  # read-only
         orm_mode = True
         extra = Extra.ignore
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     # fake mandatory

@@ -20,6 +20,6 @@ class OnDemandCluster(BaseModel):
     authentication: ClusterAuthentication
     state: ClusterState
     user_id: UserID
-    wallet_id: WalletID
+    wallet_id: WalletID | None
     gateway_ready: bool
     eta: datetime.timedelta

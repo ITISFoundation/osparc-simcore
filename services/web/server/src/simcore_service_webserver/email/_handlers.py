@@ -8,7 +8,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.plugin import Product, get_current_product, get_product_template_path
+from ..products.api import Product, get_current_product, get_product_template_path
 from ..security.decorators import permission_required
 from ..utils import get_traceback_string
 from ..utils_aiohttp import envelope_json_response

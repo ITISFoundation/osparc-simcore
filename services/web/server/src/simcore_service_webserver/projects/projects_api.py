@@ -53,7 +53,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
