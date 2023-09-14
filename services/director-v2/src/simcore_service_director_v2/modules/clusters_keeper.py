@@ -51,7 +51,7 @@ async def get_or_create_on_demand_cluster(
 
         return BaseCluster(
             name=f"{user_id=}on-demand-cluster",
-            type=ClusterTypeInModel.AWS,
+            type=ClusterTypeInModel.ON_DEMAND,
             owner=user_id,
             endpoint=returned_cluster.endpoint,
             authentication=returned_cluster.authentication,

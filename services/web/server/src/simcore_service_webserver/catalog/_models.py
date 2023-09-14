@@ -85,7 +85,8 @@ class ServiceOutputGetFactory:
         if "defaultValue" in data:
             data.pop("defaultValue")
 
-        port = ServiceOutputGet(key_id=output_key, **data)  # validated
+        # NOTE: this call must be validated if port property type is "ref_contentSchema"
+        port = ServiceOutputGet(key_id=output_key, **data)
 
         unit_html: UnitHtmlFormat | None
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
