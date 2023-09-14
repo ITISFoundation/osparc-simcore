@@ -33,7 +33,7 @@ if os.environ.get("API_SERVER_DEV_FEATURES_ENABLED") == "1":
 _logger = logging.getLogger(__name__)
 
 
-def _generate_headers(content: bytes) -> list[tuple[bytes, bytes]]:
+def _generate_response_headers(content: bytes) -> list[tuple[bytes, bytes]]:
     headers: dict = dict()
     headers[b"content-length"] = str(len(content)).encode("utf8")
     headers[b"content-type"] = b"application/json"
@@ -73,7 +73,7 @@ class ApiServerProfilerMiddleware:
                     {"profile": profiler.output_text(unicode=True, color=True)}
                 ).encode("utf8")
                 if message["type"] == "http.response.start":
-                    message["headers"] = _generate_headers(body)
+                    message["headers"] = _generate_response_headers(body)
                 elif message["type"] == "http.response.body":
                     message["body"] = body
             await send(message)
