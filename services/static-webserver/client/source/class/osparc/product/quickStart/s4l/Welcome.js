@@ -55,20 +55,24 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
       const introText = this.tr("\
         In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.\
         <br>\
+        <br>\
         [Animation showing UserMenu -> Guided Tours]\
+        <br>\
         <br>\
         For more specific technical information, please refer to the Dashboard Manual and the S4L</i> Manual.\
       ");
       const intro = osparc.product.quickStart.Utils.createLabel(introText);
       content.add(intro);
 
-      content.add(new qx.ui.core.Spacer(null, 30));
+      content.add(new qx.ui.core.Spacer(null, 20));
 
       const logo = new osparc.ui.basic.Logo().set({
         width: 260,
         height: 110
       });
       content.add(logo);
+
+      content.add(new qx.ui.core.Spacer(null, 20));
 
       return content;
     },
