@@ -4,12 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
-
-import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodInit,
@@ -18,9 +14,7 @@ from models_library.api_schemas_webserver.wallets import (
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.payments._methods_api import (
     _complete_create_of_wallet_payment_method,
 )
@@ -28,45 +22,6 @@ from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
 )
-
-
-@pytest.fixture
-def user_role():
-    # TODO: refactor to common conftest.py
-    return UserRole.USER
-
-
-@pytest.fixture
-def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
-    # TODO: refactor to common conftest.py
-
-    assert client.app
-    url = client.app.router["create_wallet"].url_for()
-
-    async def _create():
-        resp = await client.post(
-            url.path,
-            json={
-                "name": f"wallet {faker.word()}",
-                "description": "Fake wallet from create_new_wallet",
-            },
-        )
-        data, _ = await assert_status(resp, web.HTTPCreated)
-        return WalletGet.parse_obj(data)
-
-    return _create
-
-
-@pytest.fixture
-async def logged_user_wallet(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    wallets_clean_db: None,
-    create_new_wallet: Callable,
-) -> WalletGet:
-    # TODO: refactor to common conftest.py
-    assert client.app
-    return await create_new_wallet()
 
 
 async def test_payment_method_worfklow(
