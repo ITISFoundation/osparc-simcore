@@ -109,7 +109,7 @@ def init_app() -> FastAPI:
     title = "osparc.io web API"
     version = API_VERSION
     description = "osparc-simcore public API specifications"
-    title, version = _label_info_with_state(_settings, title, version)
+    title, version = _label_info_with_state(title, version)
 
     # creates app instance
     app = FastAPI(
@@ -124,7 +124,7 @@ def init_app() -> FastAPI:
     override_openapi_method(app)
     add_pagination(app)
 
-    app.state._settings = _settings
+    app.state.settings = _settings
 
     # setup modules
     if _settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
