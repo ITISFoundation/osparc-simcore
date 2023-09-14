@@ -8,9 +8,9 @@ aio-pika==9.1.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aioboto3==11.2.0
+aioboto3==11.3.0
     # via -r requirements/_test.in
-aiobotocore==2.5.0
+aiobotocore==2.6.0
     # via aioboto3
 aiohttp==3.8.5
     # via
@@ -52,9 +52,9 @@ attrs==23.1.0
     #   pytest-docker
 bokeh==2.4.3
     # via dask
-boto3==1.26.76
+boto3==1.28.17
     # via aiobotocore
-botocore==1.29.76
+botocore==1.31.17
     # via
     #   aiobotocore
     #   boto3
@@ -86,7 +86,7 @@ cloudpickle==2.2.1
     #   distributed
 colorlog==6.7.0
     # via dask-gateway-server
-coverage==7.3.0
+coverage==7.3.1
     # via pytest-cov
 cryptography==41.0.3
     # via
@@ -112,7 +112,7 @@ exceptiongroup==1.1.2
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-faker==19.3.0
+faker==19.6.1
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -142,7 +142,7 @@ httpx==0.24.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-icdiff==2.0.6
+icdiff==2.0.7
     # via pytest-icdiff
 idna==3.4
     # via
@@ -197,7 +197,7 @@ multidict==6.0.4
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.5.0
+mypy==1.5.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -223,7 +223,7 @@ partd==1.4.0
     #   dask
 pillow==10.0.0
     # via bokeh
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
@@ -233,7 +233,7 @@ psutil==5.9.5
     #   distributed
 pycparser==2.21
     # via cffi
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -243,15 +243,15 @@ pytest==7.4.0
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-aiohttp==1.0.4
+pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
 pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==2.0.0
+pytest-docker==2.0.1
     # via -r requirements/_test.in
-pytest-icdiff==0.6
+pytest-icdiff==0.7
     # via -r requirements/_test.in
 pytest-mock==3.11.1
     # via -r requirements/_test.in
@@ -277,7 +277,7 @@ requests==2.31.0
     #   docker
 respx==0.20.2
     # via -r requirements/_test.in
-s3transfer==0.6.1
+s3transfer==0.6.2
     # via boto3
 six==1.16.0
     # via
@@ -341,7 +341,7 @@ urllib3==1.26.16
     #   docker
     #   minio
     #   requests
-websocket-client==1.6.1
+websocket-client==1.6.3
     # via docker
 wrapt==1.15.0
     # via aiobotocore

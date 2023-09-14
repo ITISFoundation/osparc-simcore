@@ -29,5 +29,5 @@ urllib3==2.0.4
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-websocket-client==1.6.1
+websocket-client==1.6.3
     # via docker

@@ -25,7 +25,7 @@ attrs==23.1.0
     #   jsonschema
     #   referencing
     #   sarif-om
-aws-sam-translator==1.73.0
+aws-sam-translator==1.74.0
     # via cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
@@ -60,7 +60,7 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.3.0
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -82,9 +82,9 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.3
     # via pytest
-faker==19.3.0
+faker==19.6.1
     # via -r requirements/_test.in
-flask==2.3.2
+flask==2.3.3
     # via
     #   flask-cors
     #   moto
@@ -97,7 +97,7 @@ frozenlist==1.4.0
     #   aiosignal
 graphql-core==3.2.3
     # via moto
-icdiff==2.0.6
+icdiff==2.0.7
     # via pytest-icdiff
 idna==3.4
     # via
@@ -152,7 +152,7 @@ markupsafe==2.1.3
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.1.14
+moto==4.2.2
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -179,7 +179,7 @@ pbr==5.11.1
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
@@ -202,7 +202,7 @@ pyopenssl==23.2.0
     # via pytest-localftpserver
 pyparsing==3.1.1
     # via moto
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -213,13 +213,13 @@ pytest==7.4.0
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
-pytest-aiohttp==1.0.4
+pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
 pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.6
+pytest-icdiff==0.7
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -313,7 +313,7 @@ urllib3==1.26.16
     #   docker
     #   requests
     #   responses
-websocket-client==1.6.1
+websocket-client==1.6.3
     # via docker
 werkzeug==2.3.7
     # via
