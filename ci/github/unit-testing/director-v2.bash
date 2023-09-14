@@ -23,7 +23,7 @@ test() {
   pushd services/director-v2
   make test-ci-unit pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
   # these tests cannot be run in parallel
-  make test-ci-unit test-subfolder=with_dbs
+  make test-ci-unit test-path=with_dbs
   popd
 }
 

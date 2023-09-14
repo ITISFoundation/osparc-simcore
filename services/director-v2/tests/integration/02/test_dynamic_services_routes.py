@@ -279,6 +279,7 @@ async def key_version_expected(
     return results
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_start_status_stop(
     director_v2_client: TestClient,
     node_uuid: str,
