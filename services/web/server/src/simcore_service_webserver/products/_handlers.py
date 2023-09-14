@@ -1,0 +1,36 @@
+import logging
+
+from aiohttp import web
+from models_library.api_schemas_webserver.product import ProductPriceGet
+from models_library.users import UserID
+from pydantic import Field
+from servicelib.aiohttp.requests_validation import RequestParams
+from servicelib.request_keys import RQT_USERID_KEY
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
+
+from .._constants import RQ_PRODUCT_KEY
+from .._meta import API_VTAG as VTAG
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
+from . import _api
+
+routes = web.RouteTableDef()
+
+
+_logger = logging.getLogger(__name__)
+
+
+class _ProductsRequestContext(RequestParams):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+
+
+@routes.post(f"/{VTAG}/price", name="get_current_product_price")
+@login_required
+@permission_required("products.price.read")
+async def get_current_product_price(request: web.Request):
+    req_ctx = _ProductsRequestContext.parse_obj(request)
+
+    product_price: ProductPriceGet = await _api.get_current_product_price(request)
+    assert req_ctx.product_name == product_price.product_name  # nosec
+    return envelope_json_response(product_price)

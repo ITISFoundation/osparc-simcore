@@ -2,6 +2,7 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import web
+from models_library.api_schemas_webserver.product import ProductPriceGet
 from models_library.products import ProductName
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
@@ -26,6 +27,17 @@ def get_current_product(request: web.Request) -> Product:
 def list_products(app: web.Application) -> list[Product]:
     products: list[Product] = app[APP_PRODUCTS_KEY].values()
     return products
+
+
+async def get_current_product_price(request: web.Request) -> ProductPriceGet:
+    current_product_name = get_product_name(request)
+
+    return ProductPriceGet(
+        product_name=current_product_name,
+        dollars_per_credit=await ProductRepository(request).get_product_price(
+            current_product_name
+        ),
+    )
 
 
 #

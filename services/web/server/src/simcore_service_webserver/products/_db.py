@@ -1,10 +1,12 @@
 import logging
 from collections.abc import AsyncIterator
+from decimal import Decimal
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.products import jinja2_templates
+from simcore_postgres_database.models.products_prices import products_prices
 
 from ..db.base_repository import BaseRepository
 from ..db.models import products
@@ -38,6 +40,15 @@ class ProductRepository(BaseRepository):
             )
             row: RowProxy | None = await result.first()
             return Product.from_orm(row) if row else None
+
+    async def get_product_price(self, product_name: str) -> Decimal:
+        async with self.engine.acquire() as conn:
+            dollars_per_credit = await conn.scalar(
+                sa.select(products_prices.c.dollars_per_credit).where(
+                    products_prices.c.product_name == product_name
+                )
+            )
+            return Decimal(0) if dollars_per_credit is None else dollars_per_credit
 
     async def get_template_content(
         self,
