@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aio-pika==9.2.2
+aio-pika==9.2.3
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
@@ -37,7 +37,7 @@ attrs==23.1.0
     #   referencing
 charset-normalizer==3.2.0
     # via aiohttp
-click==8.1.6
+click==8.1.7
     # via typer
 dnspython==2.4.2
     # via email-validator
@@ -77,7 +77,7 @@ pydantic==1.10.12
     #   -r requirements/_base.in
 pygments==2.16.1
     # via rich
-pyinstrument==4.5.1
+pyinstrument==4.5.3
     # via -r requirements/_base.in
 python-dateutil==2.8.2
     # via arrow
@@ -87,7 +87,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-redis==4.6.0
+redis==5.0.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -100,7 +100,7 @@ referencing==0.29.3
     #   jsonschema-specifications
 rich==13.5.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-rpds-py==0.9.2
+rpds-py==0.10.3
     # via
     #   jsonschema
     #   referencing
