@@ -5,7 +5,7 @@
 
 
 import asyncio
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 import sqlalchemy as sa
@@ -118,10 +118,10 @@ async def test_get_or_create_group_product_concurrent(
                 )
             ):
                 # get or create
-                product_group_id = await get_or_create_product_group(
+                return await get_or_create_product_group(
                     conn, product_name=product_row.name
                 )
-                return product_group_id
+            return None
 
     tasks = [asyncio.create_task(_auto_create_products_groups()) for _ in range(5)]
 

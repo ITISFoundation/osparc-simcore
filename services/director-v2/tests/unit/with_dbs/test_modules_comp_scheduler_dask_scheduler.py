@@ -9,6 +9,7 @@
 
 
 import asyncio
+import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -24,6 +25,7 @@ from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
@@ -1222,8 +1224,13 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
+    faker: Faker,
 ):
-    mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError
+    mocked_get_or_create_cluster.side_effect = (
+        ComputationalBackendOnDemandNotReadyError(
+            eta=faker.time_delta(datetime.timedelta(hours=1))
+        )
+    )
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
     await scheduler.run_new_pipeline(

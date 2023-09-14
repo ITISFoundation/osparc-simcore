@@ -13,7 +13,7 @@ from pydantic import BaseModel, parse_obj_as
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
 from .healthcheck import HealthCheck, HealthCheckError

@@ -12,6 +12,7 @@ asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
@@ -20,7 +21,7 @@ charset-normalizer==3.2.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.3.0
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -31,7 +32,7 @@ exceptiongroup==1.1.3
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==19.3.1
+faker==19.6.1
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -66,7 +67,7 @@ pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -78,7 +79,7 @@ pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.6
+pytest-icdiff==0.7
     # via -r requirements/_test.in
 pytest-mock==3.11.1
     # via -r requirements/_test.in
@@ -120,5 +121,5 @@ urllib3==2.0.4
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-websocket-client==1.6.2
+websocket-client==1.6.3
     # via docker

@@ -42,16 +42,16 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
 
-TEST_SUBFOLDER := $(if $(test-subfolder),/$(test-subfolder),)
-test-dev-unit test-ci-unit: _check_venv_active
+TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
+test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
 	# Targets tests/unit folder
-	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_SUBFOLDER)
+	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_PATH)
 
-test-dev-integration test-ci-integration:
+test-dev-integration test-ci-integration: ## run app integration tests (specifying test-path can restrict to a folder)
 	# Targets tests/integration folder using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration$(TEST_SUBFOLDER)
+	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration$(TEST_PATH)
 
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)

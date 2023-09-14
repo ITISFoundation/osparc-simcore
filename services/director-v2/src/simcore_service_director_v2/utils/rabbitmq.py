@@ -164,3 +164,20 @@ async def publish_service_progress(
         progress=progress,
     )
     await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def publish_project_log(
+    rabbitmq_client: RabbitMQClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    log: str,
+    log_level: LogLevelInt,
+) -> None:
+    message = LoggerRabbitMessage.construct(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=None,
+        messages=[log],
+        log_level=log_level,
+    )
+    await rabbitmq_client.publish(message.channel_name, message)

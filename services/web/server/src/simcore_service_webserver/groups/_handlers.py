@@ -24,7 +24,7 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from .._constants import RQT_USERID_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..products.plugin import Product, get_current_product
+from ..products.api import Product, get_current_product
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.errors import InvalidRRID, ScicrunchError
 from ..scicrunch.models import ResearchResource, ResourceHit
