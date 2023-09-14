@@ -66,7 +66,7 @@ def _create_eta(
 def create_cluster_from_ec2_instance(
     instance: EC2InstanceData,
     user_id: UserID,
-    wallet_id: WalletID,
+    wallet_id: WalletID | None,
     gateway_password: SecretStr,
     *,
     gateway_ready: bool,

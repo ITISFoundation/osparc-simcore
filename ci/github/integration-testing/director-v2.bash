@@ -21,7 +21,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/director-v2
-  make test-ci-integration test-subfolder="$1"
+  make test-ci-integration test-path="$1"
   popd
 }
 
