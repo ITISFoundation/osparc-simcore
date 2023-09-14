@@ -1,4 +1,3 @@
-import json
 import logging
 
 from fastapi import FastAPI
@@ -24,70 +23,15 @@ from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 
-_settings: ApplicationSettings = ApplicationSettings.create_from_envs()
-
-if _settings.API_SERVER_DEV_FEATURES_ENABLED:
-    from pyinstrument import Profiler
-    from starlette.requests import Request
-
-
 _logger = logging.getLogger(__name__)
 
 
-def _generate_response_headers(content: bytes) -> list[tuple[bytes, bytes]]:
-    headers: dict = dict()
-    headers[b"content-length"] = str(len(content)).encode("utf8")
-    headers[b"content-type"] = b"application/json"
-    return list(headers.items())
-
-
-class ApiServerProfilerMiddleware:
-    """Following
-    https://www.starlette.io/middleware/#cleanup-and-error-handling
-    https://www.starlette.io/middleware/#reusing-starlette-components
-    https://fastapi.tiangolo.com/advanced/middleware/#advanced-middleware
-    """
-
-    def __init__(self, app: FastAPI):
-        self._app: FastAPI = app
-
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self._app(scope, receive, send)
-            return
-
-        profiler = Profiler(async_mode="enabled")
-        request: Request = Request(scope)
-        headers = dict(request.headers)
-        if "x-profile-api-server" in headers:
-            headers.pop("x-profile-api-server")
-            scope["headers"] = [
-                (k.encode("utf8"), v.encode("utf8")) for k, v in headers.items()
-            ]
-            profiler.start()
-
-        async def send_wrapper(message):
-            if profiler.is_running:
-                profiler.stop()
-            if profiler.last_session:
-                body: bytes = json.dumps(
-                    {"profile": profiler.output_text(unicode=True, color=True)}
-                ).encode("utf8")
-                if message["type"] == "http.response.start":
-                    message["headers"] = _generate_response_headers(body)
-                elif message["type"] == "http.response.body":
-                    message["body"] = body
-            await send(message)
-
-        await self._app(scope, receive, send_wrapper)
-
-
-def _label_info_with_state(title: str, version: str):
+def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
     labels = []
-    if _settings.API_SERVER_DEV_FEATURES_ENABLED:
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
         labels.append("dev")
 
-    if _settings.debug:
+    if settings.debug:
         labels.append("debug")
 
     if suffix_label := "+".join(labels):
@@ -97,8 +41,9 @@ def _label_info_with_state(title: str, version: str):
     return title, version
 
 
-def init_app() -> FastAPI:
-    settings = ApplicationSettings.create_from_envs()
+def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
+    if settings is None:
+        settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
 
     logging.basicConfig(level=settings.log_level)
@@ -110,7 +55,7 @@ def init_app() -> FastAPI:
     title = "osparc.io web API"
     version = API_VERSION
     description = "osparc-simcore public API specifications"
-    title, version = _label_info_with_state(title, version)
+    title, version = _label_info_with_state(settings, title, version)
 
     # creates app instance
     app = FastAPI(
@@ -169,6 +114,8 @@ def init_app() -> FastAPI:
         ),
     )
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
+        from ._profiler_middleware import ApiServerProfilerMiddleware
+
         app.add_middleware(ApiServerProfilerMiddleware)
 
     # routing
