@@ -44,15 +44,22 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addGuidedToursToMenu: function(menu) {
-      if (osparc.product.tours.Utils.hasTours()) {
-        const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided tours"));
-        guidedToursButton.addListener("execute", () => {
-          const toursManager = new osparc.tours.Manager();
-          const tours = osparc.product.tours.Utils.getTours();
-          toursManager.setTours(tours);
-          toursManager.start();
-        });
-        menu.add(guidedToursButton);
+      const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided tours"));
+      guidedToursButton.exclude();
+      menu.add(guidedToursButton);
+      const fetchTours = osparc.product.tours.Utils.getTours();
+      if (fetchTours) {
+        fetchTours
+          .then(tours => {
+            if (tours) {
+              guidedToursButton.show();
+              guidedToursButton.addListener("execute", () => {
+                const toursManager = new osparc.tours.Manager();
+                toursManager.setTours(tours);
+                toursManager.start();
+              });
+            }
+          });
       }
     },
 

@@ -21,26 +21,18 @@ qx.Class.define("osparc.product.tours.Utils", {
   statics: {
     TOURS: {
       "s4llite": {
-        getTours: () => osparc.product.tours.s4llite.Tours.getTours()
+        fetchTours: () => osparc.product.tours.s4llite.Tours.fetchTours()
       },
       "s4l": {
-        getTours: () => osparc.product.tours.s4l.Tours.getTours()
+        fetchTours: () => osparc.product.tours.s4l.Tours.fetchTours()
       }
     },
 
-    hasTours: function() {
-      if (osparc.utils.Utils.isDevelEnv()) {
-        const tours = this.TOURS;
-        const pName = osparc.product.Utils.getProductName();
-        return Object.keys(tours).includes(pName);
-      }
-      return false;
-    },
-
+    // it returns a promise
     getTours: function() {
-      if (this.hasTours()) {
+      if (osparc.utils.Utils.isDevelEnv()) {
         const pName = osparc.product.Utils.getProductName();
-        return this.TOURS[pName].getTours();
+        return this.TOURS[pName].fetchTours();
       }
       return null;
     }
