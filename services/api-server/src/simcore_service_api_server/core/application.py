@@ -25,7 +25,7 @@ from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 
-if os.environ.get("API_SERVER_DEV_FEATURES_ENABLED"):
+if os.environ.get("API_SERVER_DEV_FEATURES_ENABLED") == 1:
     from pyinstrument import Profiler
     from starlette.requests import Request
 
