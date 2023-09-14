@@ -234,6 +234,10 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
+pyinstrument==4.5.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyparsing==3.1.1
     # via moto
 pyrsistent==0.19.3

@@ -72,10 +72,6 @@ platformdirs==3.10.0
     #   virtualenv
 pre-commit==3.3.3
     # via -r requirements/../../../requirements/devenv.txt
-pyinstrument==4.5.0
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_tools.in
 pylint==2.17.5
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.0.0
