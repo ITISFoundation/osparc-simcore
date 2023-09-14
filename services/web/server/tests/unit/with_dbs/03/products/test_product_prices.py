@@ -20,7 +20,7 @@ from simcore_service_webserver.db.models import UserRole
     ],
 )
 async def test_get_product_prize(client: TestClient, logged_user: UserInfoDict):
-    response = await client.get("/v0/prize")
+    response = await client.get("/v0/price")
     data, _ = await assert_status(response, web.HTTPOk)
 
     assert data["dollarsPerCredit"] >= 0
