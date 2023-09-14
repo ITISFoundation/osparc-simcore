@@ -100,6 +100,9 @@ def _label_info_with_state(title: str, version: str):
 def init_app() -> FastAPI:
     assert isinstance(_settings, ApplicationSettings)  # nosec
 
+    assert hasattr(
+        logging, logging.getLevelName(_settings.log_level)
+    )  # make sonar cloud happy that log level is valid
     logging.basicConfig(level=_settings.log_level)
     logging.root.setLevel(_settings.log_level)
     config_all_loggers(_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
