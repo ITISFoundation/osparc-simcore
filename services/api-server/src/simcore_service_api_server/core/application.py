@@ -43,6 +43,19 @@ class ApiServerProfilerMiddleware:
     def __init__(self, app: FastAPI):
         self._app: FastAPI = app
 
+    def _correct_content_length(
+        self, headers: list[tuple[bytes, bytes]], body: bytes
+    ) -> list[tuple[bytes, bytes]]:
+        for ii, header in enumerate(headers):
+            key, _ = header
+            if key.decode("utf8") == "content-length":
+                headers[ii] = (
+                    key,
+                    str(len(body)).encode("utf8"),
+                )
+                break
+        return headers
+
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             await self._app(scope, receive, send)
@@ -52,7 +65,7 @@ class ApiServerProfilerMiddleware:
         request: Request = Request(scope)
         headers = dict(request.headers)
         if "x-profile-api-server" in headers:
-            del headers["x-profile-api-server"]
+            headers.pop("x-profile-api-server")
             scope["headers"] = [
                 (k.encode("utf8"), v.encode("utf8")) for k, v in headers.items()
             ]
@@ -66,13 +79,9 @@ class ApiServerProfilerMiddleware:
                     {"profile": profiler.output_text(unicode=True, color=True)}
                 ).encode("utf8")
                 if message["type"] == "http.response.start":
-                    for ii, header in enumerate(message["headers"]):
-                        key, _ = header
-                        if key.decode("utf8") == "content-length":
-                            message["headers"][ii] = (
-                                key,
-                                str(len(body)).encode("utf8"),
-                            )
+                    message["headers"] = self._correct_content_length(
+                        message["headers"], body
+                    )
                 elif message["type"] == "http.response.body":
                     message = {"type": "http.response.body", "body": body}
             await send(message)
