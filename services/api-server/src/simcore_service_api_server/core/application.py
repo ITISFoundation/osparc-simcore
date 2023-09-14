@@ -98,7 +98,7 @@ def _label_info_with_state(title: str, version: str):
 
 
 def init_app() -> FastAPI:
-    assert _settings  # nosec
+    assert isinstance(_settings, ApplicationSettings)  # nosec
 
     logging.basicConfig(level=_settings.log_level)
     logging.root.setLevel(_settings.log_level)
