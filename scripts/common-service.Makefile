@@ -43,11 +43,11 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
 
 TEST_SUBFOLDER := $(if $(test-subfolder),/$(test-subfolder),)
-test-dev-unit test-ci-unit: _check_venv_active
+test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-subfolder can restrict to a folder)
 	# Targets tests/unit folder
 	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_SUBFOLDER)
 
-test-dev-integration test-ci-integration:
+test-dev-integration test-ci-integration: ## run app integration tests (specifying test-subfolder can restrict to a folder)
 	# Targets tests/integration folder using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
