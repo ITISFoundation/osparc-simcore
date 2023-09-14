@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -25,7 +24,9 @@ from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 
-if os.environ.get("API_SERVER_DEV_FEATURES_ENABLED") == "1":
+_settings: ApplicationSettings = ApplicationSettings.create_from_envs()
+
+if _settings.API_SERVER_DEV_FEATURES_ENABLED:
     from pyinstrument import Profiler
     from starlette.requests import Request
 
@@ -81,12 +82,12 @@ class ApiServerProfilerMiddleware:
         await self._app(scope, receive, send_wrapper)
 
 
-def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
+def _label_info_with_state(title: str, version: str):
     labels = []
-    if settings.API_SERVER_DEV_FEATURES_ENABLED:
+    if _settings.API_SERVER_DEV_FEATURES_ENABLED:
         labels.append("dev")
 
-    if settings.debug:
+    if _settings.debug:
         labels.append("debug")
 
     if suffix_label := "+".join(labels):
@@ -96,25 +97,23 @@ def _label_info_with_state(settings: ApplicationSettings, title: str, version: s
     return title, version
 
 
-def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
-    if settings is None:
-        settings = ApplicationSettings.create_from_envs()
-    assert settings  # nosec
+def init_app() -> FastAPI:
+    assert _settings  # nosec
 
-    logging.basicConfig(level=settings.log_level)
-    logging.root.setLevel(settings.log_level)
-    config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    _logger.debug("App settings:\n%s", settings.json(indent=2))
+    logging.basicConfig(level=_settings.log_level)
+    logging.root.setLevel(_settings.log_level)
+    config_all_loggers(_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    _logger.debug("App _settings:\n%s", _settings.json(indent=2))
 
     # Labeling
     title = "osparc.io web API"
     version = API_VERSION
     description = "osparc-simcore public API specifications"
-    title, version = _label_info_with_state(settings, title, version)
+    title, version = _label_info_with_state(_settings, title, version)
 
     # creates app instance
     app = FastAPI(
-        debug=settings.debug,
+        debug=_settings.debug,
         title=title,
         description=description,
         version=version,
@@ -125,23 +124,23 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     override_openapi_method(app)
     add_pagination(app)
 
-    app.state.settings = settings
+    app.state._settings = _settings
 
     # setup modules
-    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+    if _settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
-    if settings.API_SERVER_WEBSERVER:
-        webserver.setup(app, settings.API_SERVER_WEBSERVER)
+    if _settings.API_SERVER_WEBSERVER:
+        webserver.setup(app, _settings.API_SERVER_WEBSERVER)
 
-    if settings.API_SERVER_CATALOG:
-        catalog.setup(app, settings.API_SERVER_CATALOG)
+    if _settings.API_SERVER_CATALOG:
+        catalog.setup(app, _settings.API_SERVER_CATALOG)
 
-    if settings.API_SERVER_STORAGE:
-        storage.setup(app, settings.API_SERVER_STORAGE)
+    if _settings.API_SERVER_STORAGE:
+        storage.setup(app, _settings.API_SERVER_STORAGE)
 
-    if settings.API_SERVER_DIRECTOR_V2:
-        director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
+    if _settings.API_SERVER_DIRECTOR_V2:
+        director_v2.setup(app, _settings.API_SERVER_DIRECTOR_V2)
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))
@@ -164,11 +163,11 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
             Exception,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             override_detail_message="Internal error"
-            if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+            if _settings.SC_BOOT_MODE == BootModeEnum.DEBUG
             else None,
         ),
     )
-    if settings.API_SERVER_DEV_FEATURES_ENABLED:
+    if _settings.API_SERVER_DEV_FEATURES_ENABLED:
         app.add_middleware(ApiServerProfilerMiddleware)
 
     # routing
@@ -177,7 +176,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.include_router(health_router)
 
     # api under /v*
-    api_router = create_router(settings)
+    api_router = create_router(_settings)
     app.include_router(api_router, prefix=f"/{API_VTAG}")
 
     # NOTE: cleanup all OpenAPIs https://github.com/ITISFoundation/osparc-simcore/issues/3487
