@@ -115,7 +115,7 @@ async def list_payments_methods(
         return total_number_of_items, page
 
 
-async def get_successful_payment_methods(
+async def list_successful_payment_methods(
     app,
     *,
     user_id: UserID,
@@ -127,12 +127,35 @@ async def get_successful_payment_methods(
             .where(
                 (payments_methods.c.user_id == user_id)
                 & (payments_methods.c.wallet_id == wallet_id)
-                & (payments_methods.c.status == InitPromptAckFlowState.SUCCESS)
+                & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
             )
             .order_by(payments_methods.c.created.desc())
         )  # newest first
         rows = await result.fetchall() or []
         return parse_obj_as(list[PaymentsMethodsDB], rows)
+
+
+async def get_successful_payment_method(
+    app,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+) -> PaymentsMethodsDB:
+    async with get_database_engine(app).acquire() as conn:
+        result: ResultProxy = await conn.execute(
+            payments_methods.select().where(
+                (payments_methods.c.user_id == user_id)
+                & (payments_methods.c.wallet_id == wallet_id)
+                & (payments_methods.c.payment_method_id == payment_method_id)
+                & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
+            )
+        )
+        row = await result.first()
+        if row is None:
+            raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
+
+        return PaymentsMethodsDB.from_orm(row)
 
 
 async def get_pending_payment_methods_ids(
@@ -197,3 +220,20 @@ async def udpate_payment_method(
         assert row, "execute above should have caught this"  # nosec
 
         return PaymentsMethodsDB.from_orm(row)
+
+
+async def delete_payment_method(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+):
+    async with get_database_engine(app).acquire() as conn:
+        await conn.execute(
+            payments_methods.delete().where(
+                (payments_methods.c.user_id == user_id)
+                & (payments_methods.c.wallet_id == wallet_id)
+                & (payments_methods.c.payment_method_id == payment_method_id)
+            )
+        )

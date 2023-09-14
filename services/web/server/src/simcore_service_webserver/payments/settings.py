@@ -42,7 +42,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     PAYMENTS_FAKE_GATEWAY_URL: HttpUrl = Field(
-        default="https://fake-payment-gateway.com",
+        default=parse_obj_as(HttpUrl, "https://fake-payment-gateway.com"),
         description="FAKE Base url to the payment gateway",
     )
 

@@ -20,8 +20,10 @@ from yarl import URL
 from ._api import check_wallet_permissions
 from ._methods_db import (
     PaymentsMethodsDB,
-    get_successful_payment_methods,
+    delete_payment_method,
+    get_successful_payment_method,
     insert_init_payment_method,
+    list_successful_payment_methods,
     udpate_payment_method,
 )
 from .settings import PaymentsSettings, get_plugin_settings
@@ -66,7 +68,7 @@ async def init_creation_of_wallet_payment_method(
     initiated_at = arrow.utcnow().datetime
 
     # FAKE -----
-    _logger.debug("init -> FAKE Payments Gateway: /payment-methods:init")
+    _logger.debug("FAKE Payments Gateway: /payment-methods:init")
     settings: PaymentsSettings = get_plugin_settings(app)
     await asyncio.sleep(1)
     payment_method_id = PaymentMethodID(f"{uuid4()}".upper())
@@ -93,13 +95,14 @@ async def init_creation_of_wallet_payment_method(
     )
 
 
-async def complete_create_of_wallet_payment_method(
+async def _complete_create_of_wallet_payment_method(
     app: web.Application,
     *,
     payment_method_id: PaymentMethodID,
     completion_state: InitPromptAckFlowState,
     message: str | None = None,
 ) -> PaymentsMethodsDB:
+    """Acks as completed (i.e. SUCCESSFUL, FAILED, CANCELED )"""
     assert completion_state != InitPromptAckFlowState.PENDING  # nosec
 
     # annotate
@@ -120,16 +123,21 @@ async def cancel_creation_of_wallet_payment_method(
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
 ):
+    """Acks as CANCELED"""
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
-    return await complete_create_of_wallet_payment_method(
+    await _complete_create_of_wallet_payment_method(
         app,
         payment_method_id=payment_method_id,
         completion_state=InitPromptAckFlowState.CANCELED,
         message="Creation of payment-method aborted by user",
     )
-
-    # FIXME: delete???
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: DELETE /payment-methods/%s", payment_method_id
+    )
+    await asyncio.sleep(1)
+    # -----
 
 
 async def list_wallet_payment_methods(
@@ -139,7 +147,7 @@ async def list_wallet_payment_methods(
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     # get acked
-    entries = await get_successful_payment_methods(
+    entries = await list_successful_payment_methods(
         app,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -147,15 +155,15 @@ async def list_wallet_payment_methods(
 
     # FAKE -----
     _logger.debug(
-        "init -> FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
+        "FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
         json.dumps(
             {"payment_methods_ids": [p.payment_method_id for p in entries]}, indent=1
         ),
     )
     await asyncio.sleep(1)
-    # merge both updated and response
 
-    # FIXME: fake!!
+    # returns response bodies
+    # SEE services/payments/src/simcore_service_payments/models/payments_gateway.py
     payments_methods: list[PaymentMethodGet] = [
         _to_api_model(
             e,
@@ -180,17 +188,24 @@ async def get_wallet_payment_method(
     # check permissions
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
-    # FIXME: fake!!
-    # TODO: call gateway to get payment-method
-    # NOTE: if not found? should I delete my database?
+    acked = await get_successful_payment_method(
+        app, user_id=user_id, wallet_id=wallet_id, payment_method_id=payment_method_id
+    )
+
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: GET /payment-methods/%s", acked.payment_method_id
+    )
+    await asyncio.sleep(1)
     return parse_obj_as(
         PaymentMethodGet,
         {
             **PaymentMethodGet.Config.schema_extra["examples"][0],
-            "idr": payment_method_id,
-            "wallet_id": wallet_id,
+            "idr": acked.payment_method_id,
+            "wallet_id": acked.wallet_id,
         },
     )
+    # -----
 
 
 async def delete_wallet_payment_method(
@@ -204,6 +219,18 @@ async def delete_wallet_payment_method(
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
     assert payment_method_id  # nosec
 
-    # FIXME: fake!!
-    # TODO: call gateway to delete payment-method
-    # TODO: drop payment-method from db
+    acked = await get_successful_payment_method(
+        app, user_id=user_id, wallet_id=wallet_id, payment_method_id=payment_method_id
+    )
+
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: DELETE /payment-methods/%s", acked.payment_method_id
+    )
+    await asyncio.sleep(1)
+    # ------
+
+    # delete since it was deleted from gateway
+    await delete_payment_method(
+        app, user_id=user_id, wallet_id=wallet_id, payment_method_id=payment_method_id
+    )
