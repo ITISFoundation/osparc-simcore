@@ -119,7 +119,7 @@ qx.Class.define("osparc.tours.Manager", {
         const el = document.querySelector(`[${step.beforeClick.selector}]`);
         const widget = qx.ui.core.Widget.getWidgetByElement(el);
         widget.execute();
-        setTimeout(() => this.__toStep(steps, idx), 200);
+        setTimeout(() => this.__toStep(steps, idx), 100);
       } else {
         this.__toStep(steps, idx);
       }
