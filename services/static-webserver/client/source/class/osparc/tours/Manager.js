@@ -16,47 +16,30 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.tours.Manager", {
-  extend: qx.ui.core.Widget,
-  type: "singleton",
+  extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.Canvas());
+    this.base(arguments, "guided-torus", this.tr("Guided Tours"));
 
     this.set({
-      zIndex: 100000
+      layout: new qx.ui.layout.VBox(20),
+      contentPadding: 15,
+      modal: true,
+      width: 300,
+      height: 300,
+      showMaximize: false,
+      showMinimize: false
     });
 
-    this.setTours(this.self().INTRO_TOUR);
-  },
-
-  statics: {
-    INTRO_TOUR: [{
-      name: "Welcome",
-      description: "Welcome onboard",
-      steps: [{
-        anchorEl: null,
-        title: qx.locale.Manager.tr("Welcome onboard!"),
-        text: qx.locale.Manager.tr("We have a collection of guided tours to show you how to use the framework"),
-        placement: null
-      }, {
-        beforeClick: {
-          selector: "osparc-test-id=userMenuBtn"
-        },
-        anchorEl: "osparc-test-id=userMenuMenu",
-        title: qx.locale.Manager.tr("Always available"),
-        text: qx.locale.Manager.tr("You can find me in the User Menu."),
-        placement: "left"
-      }]
-    }]
+    this.__buildLayout();
   },
 
   properties: {
     tours: {
       check: "Array",
       init: [],
-      nullable: true
+      nullable: true,
+      event: "changeTours"
     },
 
     steps: {
@@ -71,41 +54,40 @@ qx.Class.define("osparc.tours.Manager", {
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
-      const pandiSize = 150;
       let control;
       switch (id) {
-        case "panddy": {
-          control = new qx.ui.basic.Image("osparc/panda.gif").set({
-            width: pandiSize,
-            height: pandiSize,
-            scale: true,
-            cursor: "pointer"
+        case "intro-text":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Here a collection of guided tours to show you how to use the framework:"),
+            rich: true,
+            wrap: true,
+            font: "text-14"
           });
-          control.addListener("tap", () => {
-            if (control.getSource().includes("pand")) {
-              control.setSource("osparc/crocky.gif");
-            } else {
-              control.setSource("osparc/panda.gif");
-            }
-          });
-          this._add(control, {
-            bottom: 0,
-            right: 0
-          });
+          this.add(control);
+          break;
+        case "guided-tours-list": {
+          control = new osparc.tours.List();
+          control.addListener("tourSelected", e => this.__selectTour(e.getData()));
+          this.bind("tours", control, "tours");
+          this.add(control);
           break;
         }
       }
       return control || this.base(arguments, id);
     },
 
+    __buildLayout: function() {
+      this.getChildControl("intro-text");
+      this.getChildControl("guided-tours-list");
+    },
+
     start: function() {
-      this.getChildControl("panddy").show();
-      setTimeout(() => this.__toTours(), 200);
+      this.center();
+      this.open();
     },
 
     stop: function() {
       this.__removeCurrentBuble();
-      this.getChildControl("panddy").exclude();
     },
 
     __removeCurrentBuble: function() {
@@ -116,33 +98,8 @@ qx.Class.define("osparc.tours.Manager", {
       }
     },
 
-    __toTours: function() {
-      const tours = this.getTours();
-      const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("panddyDontShow");
-      if (tours.length === 0 || (tours === this.self().INTRO_TOUR && dontShow === "true")) {
-        this.stop();
-        return;
-      }
-
-      this.__showTours();
-    },
-
-    __showTours: function() {
-      const panddy = this.getChildControl("panddy");
-      panddy.show();
-      setTimeout(() => {
-        const tours = this.getTours();
-        const toursWidget = new osparc.tours.List(panddy, tours);
-        toursWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-        toursWidget.addListener("tourSelected", e => {
-          toursWidget.exclude();
-          this.__selectTour(e.getData());
-        });
-        toursWidget.show();
-      }, 200);
-    },
-
     __selectTour: function(tour) {
+      this.close();
       if ("steps" in tour) {
         this.setSteps(tour.steps);
         this.__toStepCheck(0);
@@ -189,21 +146,12 @@ qx.Class.define("osparc.tours.Manager", {
         targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
       }
       if (targetWidget) {
-        /*
-        if (step.beforeClick && step.beforeClick.selector) {
-          const el = document.querySelector(`[${step.beforeClick.selector}]`);
-          const widget = qx.ui.core.Widget.getWidgetByElement(el);
-          widget.execute();
-        }
-        */
         stepWidget.setElement(targetWidget);
         if (step.placement) {
           stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
         }
       } else {
-        const panddy = this.getChildControl("panddy");
-        stepWidget.setElement(panddy);
-        stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+        // float it in center?
       }
       if (step.title) {
         stepWidget.setTitle(step.title);
@@ -216,11 +164,6 @@ qx.Class.define("osparc.tours.Manager", {
           stepIndex: idx+1,
           nSteps: steps.length
         });
-      }
-
-      if (this.getTours() === this.self().INTRO_TOUR) {
-        const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("panddyDontShow");
-        stepWidget.add(dontShowCB);
       }
 
       stepWidget.show();

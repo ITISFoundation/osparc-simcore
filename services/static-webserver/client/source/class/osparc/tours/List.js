@@ -16,20 +16,13 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.tours.List", {
-  extend: osparc.ui.basic.FloatingHelper,
+  extend: qx.ui.core.Widget,
 
-  construct: function(element, tours) {
-    this.base(arguments, element);
+  construct: function(tours) {
+    this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.VBox(8));
+    this._setLayout(new qx.ui.layout.VBox(8));
 
-    const hintContainer = this.getChildControl("hint-container");
-    hintContainer.setPadding(15);
-    hintContainer.getContentElement().setStyles({
-      "border-radius": "8px"
-    });
-
-    this.getChildControl("title");
     this.getChildControl("tours-layout");
 
     if (tours) {
@@ -46,6 +39,7 @@ qx.Class.define("osparc.tours.List", {
       check: "Array",
       init: [],
       nullable: true,
+      event: "changeTours",
       apply: "__applyTours"
     }
   },
@@ -54,16 +48,9 @@ qx.Class.define("osparc.tours.List", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "title":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("Guided tours:"),
-            font: "text-14"
-          });
-          this.add(control);
-          break;
         case "tours-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.add(control);
+          this._add(control);
           break;
       }
       return control || this.base(arguments, id);
