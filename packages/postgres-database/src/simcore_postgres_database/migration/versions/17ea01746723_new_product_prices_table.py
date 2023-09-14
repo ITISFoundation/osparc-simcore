@@ -1,16 +1,16 @@
 """New product-prices table
 
-Revision ID: 9e8be27a3e97
-Revises: e7b3d381efe4
-Create Date: 2023-09-14 20:06:17.280546+00:00
+Revision ID: 17ea01746723
+Revises: 624a029738b8
+Create Date: 2023-09-14 20:32:25.724092+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "9e8be27a3e97"
-down_revision = "e7b3d381efe4"
+revision = "17ea01746723"
+down_revision = "624a029738b8"
 branch_labels = None
 depends_on = None
 
@@ -27,6 +27,9 @@ def upgrade():
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
+        ),
+        sa.CheckConstraint(
+            "dollars_per_credit >= 0", name="non_negative_dollars_per_credit_constraint"
         ),
         sa.ForeignKeyConstraint(
             ["product_name"],

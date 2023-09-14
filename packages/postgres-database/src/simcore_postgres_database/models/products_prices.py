@@ -39,4 +39,7 @@ products_prices = sa.Table(
         doc="user_id of the product owner (PO) who authorized this price",
     ),
     column_created_datetime(timezone=True),
+    sa.CheckConstraint(
+        "dollars_per_credit >= 0", name="non_negative_dollars_per_credit_constraint"
+    ),
 )
