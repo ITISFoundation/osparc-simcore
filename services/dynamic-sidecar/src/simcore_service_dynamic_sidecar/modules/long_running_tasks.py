@@ -209,6 +209,8 @@ async def task_create_service_containers(
         _logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
+
+        # TODO: start the thing here as well?
     else:
         application_health.is_healthy = False
         application_health.error_message = message

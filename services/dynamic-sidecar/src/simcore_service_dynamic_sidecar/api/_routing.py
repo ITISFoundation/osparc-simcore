@@ -12,7 +12,7 @@ from . import (
     containers_extension,
     containers_long_running_tasks,
     health,
-    metrics,
+    prometheus_metrics,
     volumes,
 )
 
@@ -23,8 +23,8 @@ def get_main_router(app: FastAPI) -> APIRouter:
     main_router = APIRouter()
 
     main_router.include_router(health.router)
-    if settings.DY_SIDECAR_USER_SERVICES_METRICS_ENABLED:
-        main_router.include_router(metrics.router)
+    if settings.are_prometheus_metrics_enabled:
+        main_router.include_router(prometheus_metrics.router)
 
     main_router.include_router(
         containers.router,

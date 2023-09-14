@@ -5,7 +5,7 @@ from typing import Final
 import arrow
 import pytest
 from pydantic import NonNegativeFloat
-from simcore_service_dynamic_sidecar.modules.metrics import (
+from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     _MAX_DEFAULT_METRICS_SCRAPE_INTERVAL,
     _MAX_PROMETHEUS_SAMPLES,
     _get_user_services_scrape_interval,

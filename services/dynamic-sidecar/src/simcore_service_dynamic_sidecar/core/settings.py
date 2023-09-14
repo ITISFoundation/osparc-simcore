@@ -118,17 +118,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_RUN_ID: RunID
     DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS: bool
 
-    DY_SIDECAR_USER_SERVICES_METRICS_ENABLED: bool = Field(
-        default=False,
-        description="enable this if the user services expose metrics that the sidecar needs to scrape and forward",
-    )
-
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
     RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+
+    @property
+    def are_prometheus_metrics_enabled(self) -> bool:
+        return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
 
     @validator("LOG_LEVEL")
     @classmethod

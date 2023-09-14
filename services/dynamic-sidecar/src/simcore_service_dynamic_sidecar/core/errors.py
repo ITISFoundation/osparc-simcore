@@ -36,7 +36,7 @@ class BaseError(PydanticErrorMixin, BaseDynamicSidecarError):
 
 
 class ContainerExecContainerNotFoundError(BaseError):
-    msg_template = "Could not find specified container '{container_name}'"
+    msg_template = "Container '{container_name}' was not found"
 
 
 class ContainerExecTimeoutError(BaseError):

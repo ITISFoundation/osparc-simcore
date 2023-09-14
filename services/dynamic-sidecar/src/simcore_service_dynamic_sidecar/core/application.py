@@ -19,9 +19,9 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
-from ..modules.metrics import setup_metrics
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
+from ..modules.prometheus_metrics import setup_metrics
 from ..modules.resource_tracking import setup_resource_tracking
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
@@ -162,7 +162,7 @@ def create_app():
 
     setup_attribute_monitor(app)
 
-    if application_settings.DY_SIDECAR_USER_SERVICES_METRICS_ENABLED:
+    if application_settings.are_prometheus_metrics_enabled:
         setup_metrics(app)
 
     # ERROR HANDLERS  ------------
