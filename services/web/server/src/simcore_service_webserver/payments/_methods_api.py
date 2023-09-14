@@ -13,7 +13,6 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
@@ -147,7 +146,7 @@ async def list_wallet_payment_methods(
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     # get acked
-    entries = await list_successful_payment_methods(
+    acked = await list_successful_payment_methods(
         app,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -157,21 +156,23 @@ async def list_wallet_payment_methods(
     _logger.debug(
         "FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
         json.dumps(
-            {"payment_methods_ids": [p.payment_method_id for p in entries]}, indent=1
+            {"payment_methods_ids": [p.payment_method_id for p in acked]}, indent=1
         ),
     )
     await asyncio.sleep(1)
 
     # returns response bodies
     # SEE services/payments/src/simcore_service_payments/models/payments_gateway.py
+    payment_method_details_from_gateway = PaymentMethodGet.Config.schema_extra[
+        "examples"
+    ][0]
+
     payments_methods: list[PaymentMethodGet] = [
         _to_api_model(
-            e,
-            payment_method_details_from_gateway=PaymentMethodGet.Config.schema_extra[
-                "examples"
-            ][0],
+            ack,
+            payment_method_details_from_gateway,
         )
-        for e in entries
+        for ack in acked
     ]
     # -----
 
@@ -197,14 +198,10 @@ async def get_wallet_payment_method(
         "FAKE Payments Gateway: GET /payment-methods/%s", acked.payment_method_id
     )
     await asyncio.sleep(1)
-    return parse_obj_as(
-        PaymentMethodGet,
-        {
-            **PaymentMethodGet.Config.schema_extra["examples"][0],
-            "idr": acked.payment_method_id,
-            "wallet_id": acked.wallet_id,
-        },
-    )
+    payment_method_details_from_gateway = PaymentMethodGet.Config.schema_extra[
+        "examples"
+    ][0]
+    return _to_api_model(acked, payment_method_details_from_gateway)
     # -----
 
 

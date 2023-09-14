@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
 )
 from pydantic import parse_obj_as
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_service_webserver.payments._methods_api import (
@@ -27,7 +26,6 @@ from simcore_service_webserver.payments.settings import (
 async def test_payment_method_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
-    mocker: MockerFixture,
 ):
     # preamble
     assert client.app
@@ -35,9 +33,6 @@ async def test_payment_method_worfklow(
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
-    send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
-    )
     wallet = logged_user_wallet
 
     # init Create
@@ -66,10 +61,6 @@ async def test_payment_method_worfklow(
         message="ACKED by test_add_payment_method_worfklow",
     )
 
-    # # FIXME:  Ask OM!
-    # assert send_message.called
-    # send_message.assert_called_once()
-
     # Get
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
@@ -83,7 +74,7 @@ async def test_payment_method_worfklow(
     data, _ = await assert_status(response, web.HTTPOk)
 
     wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
-    # FIXME: assert wallet_payments_methods == [payment_method]
+    assert wallet_payments_methods == [payment_method]
 
     # Delete
     response = await client.delete(
@@ -95,13 +86,10 @@ async def test_payment_method_worfklow(
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data
 
-    # TODO: if you like to the new naming of entrypoints and models for the flow, make it uniform with payments
-
 
 async def test_init_and_cancel_payment_method(
     client: TestClient,
     logged_user_wallet: WalletGet,
-    mocker: MockerFixture,
 ):
     wallet = logged_user_wallet
 
