@@ -33,6 +33,13 @@ if os.environ.get("API_SERVER_DEV_FEATURES_ENABLED") == "1":
 _logger = logging.getLogger(__name__)
 
 
+def _generate_headers(content: bytes) -> list[tuple[bytes, bytes]]:
+    headers: dict = dict()
+    headers[b"content-length"] = str(len(content)).encode("utf8")
+    headers[b"content-type"] = b"application/json"
+    return list(headers.items())
+
+
 class ApiServerProfilerMiddleware:
     """Following
     https://www.starlette.io/middleware/#cleanup-and-error-handling
@@ -42,19 +49,6 @@ class ApiServerProfilerMiddleware:
 
     def __init__(self, app: FastAPI):
         self._app: FastAPI = app
-
-    def _correct_content_length(
-        self, headers: list[tuple[bytes, bytes]], body: bytes
-    ) -> list[tuple[bytes, bytes]]:
-        for ii, header in enumerate(headers):
-            key, _ = header
-            if key.decode("utf8") == "content-length":
-                headers[ii] = (
-                    key,
-                    str(len(body)).encode("utf8"),
-                )
-                break
-        return headers
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -79,11 +73,9 @@ class ApiServerProfilerMiddleware:
                     {"profile": profiler.output_text(unicode=True, color=True)}
                 ).encode("utf8")
                 if message["type"] == "http.response.start":
-                    message["headers"] = self._correct_content_length(
-                        message["headers"], body
-                    )
+                    message["headers"] = _generate_headers(body)
                 elif message["type"] == "http.response.body":
-                    message = {"type": "http.response.body", "body": body}
+                    message["body"] = body
             await send(message)
 
         await self._app(scope, receive, send_wrapper)
