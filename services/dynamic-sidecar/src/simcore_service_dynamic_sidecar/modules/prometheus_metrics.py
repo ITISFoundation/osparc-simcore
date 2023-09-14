@@ -164,7 +164,7 @@ class UserServicesMetrics:
                 )
 
 
-def setup_metrics(app: FastAPI) -> None:
+def setup_prometheus_metrics(app: FastAPI) -> None:
     async def on_startup() -> None:
         callbacks_mapping: CallbacksMapping = (
             app.state.settings.DY_SIDECAR_CALLBACKS_MAPPING
