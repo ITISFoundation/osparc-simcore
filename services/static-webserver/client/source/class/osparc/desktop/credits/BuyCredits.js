@@ -121,6 +121,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           control = this.__getSummaryView();
           this.getChildControl("one-time-payment-layout").add(control);
           break;
+        case "save-payment-method":
+          control = this.__getSavePaymentMethodButton();
+          this.getChildControl("one-time-payment-layout").add(control);
+          break;
         case "buy-button":
           control = this.__getBuyButton();
           this.getChildControl("one-time-payment-layout").add(control);
@@ -155,6 +159,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __builyOneTimePayment: function() {
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
+      this.getChildControl("save-payment-method");
       this.getChildControl("buy-button");
     },
 
@@ -368,6 +373,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       return layout;
     },
 
+    __getSavePaymentMethodButton: function() {
+      const buyBtn = new qx.ui.form.CheckBox().set({
+        value: false,
+        label: this.tr("Save Payment Method"),
+        font: "text-14"
+      });
+      return buyBtn;
+    },
+
     __getBuyButton: function() {
       const buyBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Buy credits"),
@@ -393,6 +407,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         const nCredits = this.getNCredits();
         const totalPrice = this.getTotalPrice();
         const wallet = this.getWallet();
+        const savePaymentMethod = this.getChildControl("save-payment-method").getValue();
         buyingBtn();
 
         const params = {
@@ -404,6 +419,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             osparcCredits: nCredits
           }
         };
+        if (savePaymentMethod) {
+          params.data["savePaymentMethod"] = true;
+        }
         osparc.data.Resources.fetch("payments", "startPayment", params)
           .then(data => {
             const paymentId = data["paymentId"];
