@@ -204,6 +204,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             paddingLeft: 10,
             font: "text-14"
           });
+          osparc.utils.Utils.setIdToWidget(control, "dashboardLabel");
           this.getChildControl("left-items").add(control);
           break;
         case "study-menu-info":
