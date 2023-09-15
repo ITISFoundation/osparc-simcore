@@ -4,6 +4,7 @@ from collections.abc import Coroutine
 from typing import Any, Final
 
 import dask_gateway
+import distributed
 from aiohttp.client_exceptions import ClientError
 from models_library.clusters import SimpleAuthentication
 from pydantic import AnyUrl, SecretStr
@@ -88,3 +89,36 @@ async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) ->
                 )
 
             return bool(datasets_on_scheduler or num_processing_tasks)
+
+
+async def ping_scheduler(url: AnyUrl) -> bool:
+    try:
+        async with distributed.Client(f"{url}", asynchronous=True, timeout="5"):
+            ...
+        return True
+    except OSError:
+        _logger.info(
+            "osparc-gateway %s ping timed-out, the machine is likely still starting...",
+            url,
+        )
+
+    return False
+
+
+async def is_scheduler_busy(url: AnyUrl) -> bool:
+    async with distributed.Client(f"{url}", asynchronous=True) as client:
+        datasets_on_scheduler = await _wrap_client_async_routine(client.list_datasets())
+        _logger.info("cluster currently has %s datasets", len(datasets_on_scheduler))
+        num_processing_tasks = 0
+        if worker_to_processing_tasks := await _wrap_client_async_routine(
+            client.processing()
+        ):
+            _logger.info(
+                "cluster current workers: %s", worker_to_processing_tasks.keys()
+            )
+            num_processing_tasks = sum(
+                len(tasks) for tasks in worker_to_processing_tasks.values()
+            )
+            _logger.info("cluster currently processes %s tasks", num_processing_tasks)
+
+        return bool(datasets_on_scheduler or num_processing_tasks)
