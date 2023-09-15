@@ -27,8 +27,10 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     layout.setColumnFlex(2, 0);
     layout.setColumnFlex(3, 0);
     layout.setColumnFlex(4, 0);
+    layout.setColumnFlex(5, 1);
+    layout.setColumnFlex(6, 0);
 
-    this.getChildControl("thumbnail").setSource("@FontAwesome5Solid/credit-card/16");
+    this.getChildControl("thumbnail").setSource("@FontAwesome5Solid/credit-card/18");
 
     const cardHolderName = this.getChildControl("card-holder-name");
     this.bind("cardHolderName", cardHolderName, "value");
@@ -52,9 +54,11 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     this.bind("walletId", walletName, "value", {
       converter: walletId => {
         const found = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
-        return found ? found.getName() : "Unknown Credit Account";
+        return found ? found.getName() : this.tr("Unknown Credit Account");
       }
     });
+
+    this.__getOptionsMenu();
   },
 
   properties: {
@@ -160,13 +164,33 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
             rowSpan: 2
           });
           break;
+        case "options-menu": {
+          const iconSize = 26;
+          control = new qx.ui.form.MenuButton().set({
+            maxWidth: iconSize,
+            maxHeight: iconSize,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
+            focusable: false
+          });
+          this._add(control, {
+            row: 0,
+            column: 6,
+            rowSpan: 2
+          });
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
     },
 
     // overridden
-    _getOptionsMenu: function() {
+    __getOptionsMenu: function() {
+      const optionsMenu = this.getChildControl("options-menu");
+      optionsMenu.show();
+
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
@@ -175,9 +199,24 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
       viewDetailsButton.addListener("execute", () => this.fireDataEvent("openPaymentMethodDetails", this.getKey()));
       menu.add(viewDetailsButton);
 
-      const editWalletButton = new qx.ui.menu.Button(this.tr("Edit details..."));
-      editWalletButton.addListener("execute", () => this.fireDataEvent("deletePaymentMethod", this.getKey()));
-      menu.add(editWalletButton);
+      const detelePMButton = new qx.ui.menu.Button(this.tr("Delete Payment Method"));
+      detelePMButton.addListener("execute", () => {
+        const msg = this.tr("Are you sure you want to delete the Payment Method?");
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.fireDataEvent("deletePaymentMethod", this.getKey());
+          }
+        });
+      }, this);
+      menu.add(detelePMButton);
+
+      optionsMenu.setMenu(menu);
 
       return menu;
     }

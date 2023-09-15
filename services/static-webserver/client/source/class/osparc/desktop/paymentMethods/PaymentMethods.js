@@ -171,17 +171,28 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       return scrollContainer;
     },
 
-    __openPaymentMethodDetails: function(idr) {
-      console.log(idr, this.__allPaymentMethods);
+    __findPaymentMethod: function(idr) {
+      return this.__allPaymentMethods.find(paymentMethod => paymentMethod["idr"] === idr);
     },
 
-    __deletePaymentMethod: function() {
-      const params = {
-        url: {
-          walletId: this.getWalletId()
-        }
-      };
-      osparc.data.Resources.fetch("payments-methods", "get", params);
+    __openPaymentMethodDetails: function(idr) {
+      const paymentMethod = this.__findPaymentMethod(idr);
+      if (paymentMethod) {
+        console.log(paymentMethod);
+      }
+    },
+
+    __deletePaymentMethod: function(idr) {
+      const paymentMethod = this.__findPaymentMethod(idr);
+      if (paymentMethod) {
+        const params = {
+          url: {
+            walletId: paymentMethod["walletId"],
+            paymentMethodId: paymentMethod["idr"]
+          }
+        };
+        osparc.data.Resources.fetch("payments-methods", "delete", params);
+      }
     }
   }
 });
