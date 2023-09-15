@@ -28,6 +28,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from starlette import status
 from starlette.testclient import TestClient
@@ -53,19 +54,21 @@ def mock_env(
     dask_scheduler_service: str,
 ) -> None:
     # used by the client fixture
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-    monkeypatch.setenv(
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-        dask_scheduler_service,
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
+            "COMPUTATIONAL_BACKEND_ENABLED": "1",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
+            "DYNAMIC_SIDECAR_IMAGE": dynamic_sidecar_docker_image_name,
+            "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
+            "SWARM_STACK_NAME": "test_mocked_stack_name",
+            "TRAEFIK_SIMCORE_ZONE": "test_mocked_simcore_zone",
+            "R_CLONE_PROVIDER": "MINIO",
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+        },
     )
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS", "{}")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
 @pytest.fixture
