@@ -7,7 +7,6 @@ from collections.abc import Callable
 import pytest
 from faker import Faker
 from models_library.rpc_schemas_clusters_keeper.clusters import ClusterState
-from pydantic import SecretStr
 from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.utils.clusters import (
     create_cluster_from_ec2_instance,
@@ -37,7 +36,6 @@ def test_create_cluster_from_ec2_instance(
         instance_data,
         faker.pyint(),
         faker.pyint(),
-        SecretStr(faker.password()),
         gateway_ready=faker.pybool(),
     )
     assert cluster_instance

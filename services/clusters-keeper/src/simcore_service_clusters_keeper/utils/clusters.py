@@ -3,20 +3,19 @@ import datetime
 import functools
 from typing import Final
 
-from models_library.clusters import SimpleAuthentication
+from models_library.clusters import NoAuthentication
 from models_library.rpc_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import SecretStr
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from .._meta import PACKAGE_DATA_FOLDER
 from ..core.settings import ApplicationSettings
 from ..models import EC2InstanceData
-from .dask import get_gateway_url
+from .dask import get_scheduler_url
 
 _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
 
@@ -76,15 +75,12 @@ def create_cluster_from_ec2_instance(
     instance: EC2InstanceData,
     user_id: UserID,
     wallet_id: WalletID | None,
-    gateway_password: SecretStr,
     *,
     gateway_ready: bool,
 ) -> OnDemandCluster:
     return OnDemandCluster(
-        endpoint=get_gateway_url(instance),
-        authentication=SimpleAuthentication(
-            username=f"{user_id}", password=gateway_password
-        ),
+        endpoint=get_scheduler_url(instance),
+        authentication=NoAuthentication(),
         state=_convert_ec2_state_to_cluster_state(instance.state),
         user_id=user_id,
         wallet_id=wallet_id,
