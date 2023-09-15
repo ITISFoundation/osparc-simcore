@@ -14,3 +14,8 @@ def get_gateway_authentication(
     user_id: UserID, password: SecretStr
 ) -> SimpleAuthentication:
     return SimpleAuthentication(username=f"{user_id}", password=password)
+
+
+def get_scheduler_url(ec2_instance: EC2InstanceData) -> AnyUrl:
+    url: AnyUrl = parse_obj_as(AnyUrl, f"tcp://{ec2_instance.aws_public_ip}:8786")
+    return url
