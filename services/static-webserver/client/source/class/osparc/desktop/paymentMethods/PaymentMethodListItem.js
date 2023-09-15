@@ -30,14 +30,14 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
 
     this.getChildControl("thumbnail").setSource("@FontAwesome5Solid/credit-card/16");
 
+    const cardHolderName = this.getChildControl("card-holder-name");
+    this.bind("cardHolderName", cardHolderName, "value");
+
     const cardType = this.getChildControl("card-type");
     this.bind("cardType", cardType, "value");
 
     const cardNumberMasked = this.getChildControl("card-number-masked");
     this.bind("cardNumberMasked", cardNumberMasked, "value");
-
-    const cardHolderName = this.getChildControl("card-holder-name");
-    this.bind("cardHolderName", cardHolderName, "value");
 
     const expirationDate = this.getChildControl("expiration-date");
     this.bind("expirationMonth", expirationDate, "value", {
@@ -46,19 +46,30 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     this.bind("expirationYear", expirationDate, "value", {
       converter: year => this.getExpirationMonth() + "/" + year
     });
+
+    const store = osparc.store.Store.getInstance();
+    const walletName = this.getChildControl("wallet-name");
+    this.bind("walletId", walletName, "value", {
+      converter: walletId => {
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
+        return found ? found.getName() : "Unknown Credit Account";
+      }
+    });
   },
 
   properties: {
     walletId: {
       check: "Number",
       init: null,
-      nullable: false
+      nullable: false,
+      event: "changeWalletId"
     },
 
-    idr: {
+    cardHolderName: {
       check: "String",
-      init: null,
-      nullable: false
+      init: "null",
+      nullable: false,
+      event: "changeCardHolderName"
     },
 
     cardType: {
@@ -73,13 +84,6 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
       init: "null",
       nullable: false,
       event: "changeCardNumberMasked"
-    },
-
-    cardHolderName: {
-      check: "String",
-      init: "null",
-      nullable: false,
-      event: "changeCardHolderName"
     },
 
     expirationMonth: {
@@ -106,7 +110,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "card-type":
+        case "card-holder-name":
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
@@ -116,7 +120,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
             rowSpan: 2
           });
           break;
-        case "card-number-masked":
+        case "card-type":
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
@@ -126,7 +130,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
             rowSpan: 2
           });
           break;
-        case "card-holder-name":
+        case "card-number-masked":
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
@@ -146,6 +150,16 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
             rowSpan: 2
           });
           break;
+        case "wallet-name":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          this._add(control, {
+            row: 0,
+            column: 5,
+            rowSpan: 2
+          });
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -153,9 +167,6 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
 
     // overridden
     _getOptionsMenu: function() {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.show();
-
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });

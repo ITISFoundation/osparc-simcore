@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
   },
 
   members: {
-    __paymentMethodsModel: null,
+    __allPaymentMethods: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -81,7 +81,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
               walletId: wallet.getWalletId()
             }
           };
-          osparc.data.Resources.fetch("payments-methods", "init", params);
+          osparc.data.Resources.fetch("payments-methods", "init", params)
+            .then(() => this.__fetchPaymentMethods());
         }
       });
     },
@@ -115,7 +116,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           paymentMethods.forEach(paymentMethod => allPaymentMethods.push(...paymentMethod));
           listLayout.removeAll();
           if (allPaymentMethods.length) {
-            listLayout.add(this.__getPaymentMethodsList(allPaymentMethods));
+            listLayout.add(this.__populatePaymentMethodsList(allPaymentMethods));
           } else {
             listLayout.add(new qx.ui.basic.Label().set({
               value: this.tr("No Payment Methods found"),
@@ -128,8 +129,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         .catch(err => console.error(err));
     },
 
-    __getPaymentMethodsList: function(allPaymentMethods) {
-      console.log(allPaymentMethods);
+    __populatePaymentMethodsList: function(allPaymentMethods) {
+      this.__allPaymentMethods = allPaymentMethods;
       const paymentMethodsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
@@ -146,9 +147,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           ctrl.bindProperty("idr", "key", null, item, id);
           ctrl.bindProperty("idr", "model", null, item, id);
           ctrl.bindProperty("walletId", "walletId", null, item, id);
+          ctrl.bindProperty("cardHolderName", "cardHolderName", null, item, id);
           ctrl.bindProperty("cardType", "cardType", null, item, id);
           ctrl.bindProperty("cardNumberMasked", "cardNumberMasked", null, item, id);
-          ctrl.bindProperty("cardHolderName", "cardHolderName", null, item, id);
           ctrl.bindProperty("expirationMonth", "expirationMonth", null, item, id);
           ctrl.bindProperty("expirationYear", "expirationYear", null, item, id);
         },
@@ -171,7 +172,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __openPaymentMethodDetails: function(idr) {
-
+      console.log(idr, this.__allPaymentMethods);
     },
 
     __deletePaymentMethod: function() {
