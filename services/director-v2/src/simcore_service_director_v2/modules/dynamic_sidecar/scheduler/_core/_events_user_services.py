@@ -140,8 +140,8 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         wallet_name=scheduler_data.wallet_info.wallet_name
         if scheduler_data.wallet_info
         else None,
-        pricing_plan_id=pricing_plan_id if scheduler_data.wallet_info else None,  # type: ignore
-        pricing_detail_id=pricing_detail_id if scheduler_data.wallet_info else None,  # type: ignore
+        pricing_plan_id=pricing_plan_id if scheduler_data.wallet_info else None,
+        pricing_detail_id=pricing_detail_id if scheduler_data.wallet_info else None,
         product_name=scheduler_data.product_name,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         user_email=user_email,

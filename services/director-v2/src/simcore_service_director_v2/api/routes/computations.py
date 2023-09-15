@@ -251,8 +251,12 @@ async def create_computation(  # noqa: C901, PLR0912
                     wallet_name=computation.wallet_info.wallet_name
                     if computation.wallet_info
                     else None,
-                    pricing_plan_id=pricing_plan_id if computation.wallet_info else None,  # type: ignore
-                    pricing_detail_id=pricing_detail_id if computation.wallet_info else None,  # type: ignore
+                    pricing_plan_id=pricing_plan_id
+                    if computation.wallet_info
+                    else None,
+                    pricing_detail_id=pricing_detail_id
+                    if computation.wallet_info
+                    else None,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )
