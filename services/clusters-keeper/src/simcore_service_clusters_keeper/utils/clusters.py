@@ -1,4 +1,6 @@
+import base64
 import datetime
+import functools
 from typing import Final
 
 from models_library.clusters import SimpleAuthentication
@@ -11,21 +13,28 @@ from models_library.wallets import WalletID
 from pydantic import SecretStr
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
+from .._meta import PACKAGE_DATA_FOLDER
 from ..core.settings import ApplicationSettings
 from ..models import EC2InstanceData
 from .dask import get_gateway_url
+
+_DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
+
+
+@functools.lru_cache
+def docker_compose_yml_base64_encoded() -> str:
+    file_path = PACKAGE_DATA_FOLDER / _DOCKER_COMPOSE_FILE_NAME
+    assert file_path.exists()  # nosec
+    with file_path.open("rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
 
 
 def create_startup_script(app_settings: ApplicationSettings) -> str:
     return "\n".join(
         [
-            "git clone --depth=1 https://github.com/ITISFoundation/osparc-simcore.git",
-            "cd osparc-simcore/services/osparc-gateway-server",
-            "make config",
-            f"echo 'c.Authenticator.password = \"{app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD.get_secret_value()}\"' >> .osparc-dask-gateway-config.py",
-            "make .env",
-            "echo 'COMPUTATION_SIDECAR_NUM_NON_USABLE_CPUS=0' >> .env",
-            f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG} make up",
+            f"echo '{docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
+            "docker swarm init",
+            f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
         ]
     )
 
