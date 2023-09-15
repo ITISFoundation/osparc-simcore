@@ -12,7 +12,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from models_library.service_settings_labels import CallbacksMapping
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict

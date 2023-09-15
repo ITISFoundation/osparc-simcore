@@ -13,10 +13,10 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
 )
 from models_library.basic_types import PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
-    CallbacksMapping,
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,

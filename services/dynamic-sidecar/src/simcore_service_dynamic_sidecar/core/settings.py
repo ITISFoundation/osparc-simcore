@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import cast
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.service_settings_labels import CallbacksMapping
 from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator

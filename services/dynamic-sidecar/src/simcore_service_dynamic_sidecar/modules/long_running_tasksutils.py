@@ -1,6 +1,6 @@
 import logging
 
-from models_library.service_settings_labels import UserServiceCommand
+from models_library.callbacks_mapping import UserServiceCommand
 from servicelib.logging_utils import log_context
 
 from ..core.errors import ContainerExecContainerNotFoundError

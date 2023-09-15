@@ -8,7 +8,7 @@ from typing import Final
 
 import arrow
 from fastapi import FastAPI, status
-from models_library.service_settings_labels import CallbacksMapping, UserServiceCommand
+from models_library.callbacks_mapping import CallbacksMapping, UserServiceCommand
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import cancel_task
 from servicelib.logging_utils import log_context

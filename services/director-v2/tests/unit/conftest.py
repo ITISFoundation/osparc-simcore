@@ -21,14 +21,12 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     ServiceDetails,
 )
 from models_library.basic_types import PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
-from models_library.service_settings_labels import (
-    CallbacksMapping,
-    SimcoreServiceLabels,
-)
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
 from pydantic import parse_obj_as

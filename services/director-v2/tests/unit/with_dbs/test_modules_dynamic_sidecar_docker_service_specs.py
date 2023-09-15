@@ -10,9 +10,9 @@ import pytest
 import respx
 from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.service_settings_labels import (
-    CallbacksMapping,
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )

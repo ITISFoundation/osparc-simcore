@@ -16,8 +16,8 @@ import logging
 from pathlib import Path
 from typing import Any, ClassVar, Literal, NamedTuple
 
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
-    CallbacksMapping,
     ContainerSpec,
     DynamicSidecarServiceLabels,
     NATRule,
