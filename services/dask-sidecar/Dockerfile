@@ -59,6 +59,8 @@ EXPOSE 8080
 EXPOSE 8786
 EXPOSE 8787
 
+# create dask configuration folder
+RUN mkdir --parents /home/${SC_USER_NAME}/.config/dask
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
