@@ -94,9 +94,15 @@ def check_simcore_running_sidecars(settings: Settings, services):
 def _generate_containers_map(containers):
     container_map = {}
     for container in containers:
-        container_map[container["Id"]] = {
-            "git_sha": container.get("Labels").get("org.label-schema.vcs-ref")
-        }
+        git_sha = (
+            container.get("Labels").get(
+                "org.label-schema.vcs-ref"
+            )  # NOTE: this is old stardard
+            if container.get("Labels").get("org.label-schema.vcs-ref")
+            else container.get("Labels").get("org.opencontainers.image.revision")
+        )
+
+        container_map[container["Id"]] = {"git_sha": git_sha}
     return container_map
 
 
