@@ -21,6 +21,13 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
   construct: function() {
     this.base(arguments);
 
+    const layout = this._getLayout();
+    layout.setSpacingX(15);
+    layout.setColumnFlex(1, 0);
+    layout.setColumnFlex(2, 0);
+    layout.setColumnFlex(3, 0);
+    layout.setColumnFlex(4, 0);
+
     this.getChildControl("thumbnail").setSource("@FontAwesome5Solid/credit-card/16");
 
     const cardType = this.getChildControl("card-type");
@@ -100,7 +107,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
       let control;
       switch (id) {
         case "card-type":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
           this._add(control, {
             row: 0,
             column: 1,
@@ -108,7 +117,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           break;
         case "card-number-masked":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
           this._add(control, {
             row: 0,
             column: 2,
@@ -116,7 +127,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           break;
         case "card-holder-name":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
           this._add(control, {
             row: 0,
             column: 3,
@@ -124,7 +137,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           break;
         case "expiration-date":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
           this._add(control, {
             row: 0,
             column: 4,
