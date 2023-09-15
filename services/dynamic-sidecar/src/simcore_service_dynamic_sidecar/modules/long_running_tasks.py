@@ -10,7 +10,6 @@ from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -34,7 +33,6 @@ from ..core.docker_utils import (
     get_container_states,
     get_containers_count_from_names,
 )
-from ..core.errors import ContainerExecContainerNotFoundError
 from ..core.rabbitmq import (
     post_event_reload_iframe,
     post_progress_message,
@@ -51,9 +49,9 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
-from ..modules.container_utils import run_command_in_container
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, event_propagation_disabled
+from .long_running_tasksutils import run_before_shutdown_actions
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -271,24 +269,9 @@ async def task_runs_docker_compose_down(
     try:
         progress.update(message="running docker-compose-down", percent=0.1)
 
-        for (
-            user_service_command
-        ) in settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown:
-            container_name = user_service_command.service
-            with log_context(
-                _logger, logging.INFO, f"running before_shutdown {user_service_command}"
-            ):
-                try:
-                    await run_command_in_container(
-                        shared_store.original_to_container_names[container_name],
-                        command=user_service_command.command,
-                        timeout=user_service_command.timeout,
-                    )
-                except ContainerExecContainerNotFoundError:
-                    _logger.warning(
-                        "Could not run before_shutdown commands because container %s was not found",
-                        container_name,
-                    )
+        await run_before_shutdown_actions(
+            shared_store, settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown
+        )
 
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
