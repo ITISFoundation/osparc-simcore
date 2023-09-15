@@ -672,6 +672,29 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PAYMENTS METHODS
+       */
+      "payments-methods": {
+        endpoints: {
+          init: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods:init"
+          },
+          cancel: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:cancel"
+          },
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/payments-methods"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}"
+          }
+        }
+      },
+      /*
        * CLUSTERS
        */
       "clusters": {
