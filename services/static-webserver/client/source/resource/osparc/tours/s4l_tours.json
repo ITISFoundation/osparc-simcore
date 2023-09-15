@@ -4,13 +4,23 @@
     "name": "Dashboard",
     "description": "Introduction to Dashboard tabs",
     "steps": [{
+      "anchorEl": "osparc-test-id=dashboardLabel",
+      "title": "Dashboard",
+      "text": "The Dashboard is your private hub which contains all of your simulation Projects, as well as Projects that have been shared with you.<br>From the Dashboard you are able to open your projects and create new ones.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=ADD_ID_TO_WIDGET",
+      "title": "Dashboard Menu",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials, Services and Data.",
+      "placement": "bottom"
+    }, {
       "anchorEl": "osparc-test-id=studiesTabBtn",
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "title": "Projects",
       "text": "Existing projects can be accessed and managed, and new projects can be created. Each project is represented by a card.",
-      "placement": "left"
+      "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=templatesTabBtn",
       "beforeClick": {
@@ -18,7 +28,7 @@
       },
       "title": "Tutorials",
       "text": "A set of pre-built tutorial projects with results is available to all users. When a tutorial is selected, a copy is automatically created and added to the user’s Projects tab. This new copy is editable.",
-      "placement": "right"
+      "placement": "bottom"
     }]
   }
 }
