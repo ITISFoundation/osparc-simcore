@@ -216,7 +216,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const paymentPethods = new osparc.desktop.credits.PaymentMethods();
+      const paymentPethods = new osparc.desktop.paymentMethods.PaymentMethods();
       paymentPethods.set({
         margin: 10
       });
