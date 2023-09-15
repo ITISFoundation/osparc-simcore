@@ -138,7 +138,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           break;
         case "auto-recharge-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("right-side").add(control);
           break;
         case "auto-recharge-title":
           control = new qx.ui.basic.Label().set({
@@ -150,7 +150,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         case "auto-recharge-description":
           control = new qx.ui.basic.Label().set({
             value: this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low."),
-            font: "text-16"
+            font: "text-14",
+            rich: true,
+            wrap: true
           });
           this.getChildControl("auto-recharge-layout").add(control);
           break;
@@ -181,9 +183,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
       this.__buildOneTimePayment();
-      this.__buildAutoRecharge();
 
       this.getChildControl("credits-explanation");
+      this.__buildAutoRecharge();
     },
 
     __buildOneTimePayment: function() {
@@ -583,7 +585,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(lowerThresholdLabel);
 
       const lowerThresholdField = new qx.ui.form.TextField().set({
-        width: 100,
+        maxWidth: 100,
         textAlign: "center",
         font: "text-14"
       });
@@ -596,7 +598,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(balanceBackLabel);
 
       const paymentAmountField = new qx.ui.form.TextField().set({
-        width: 100,
+        maxWidth: 100,
         textAlign: "center",
         font: "text-14"
       });
@@ -621,7 +623,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         label: this.tr("Enable Auto Recharge"),
         font: "text-16",
         appearance: "strong-button",
-        maxWidth: 150,
+        maxWidth: 200,
         center: true
       });
       return autoRechargeBtn;
