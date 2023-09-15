@@ -696,6 +696,26 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * AUTO RECHARGE
+       */
+      "auto-recharge": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          start: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          stop: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          }
+        }
+      },
+      /*
        * CLUSTERS
        */
       "clusters": {

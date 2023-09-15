@@ -21,7 +21,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   construct: function() {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(50, 50);
+    const grid = new qx.ui.layout.Grid(80, 50);
+    grid.setColumnMaxWidth(0, 400);
+    grid.setColumnMaxWidth(1, 400);
     this._setLayout(grid);
 
     this.__buildLayout();
@@ -135,6 +137,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           });
           this.getChildControl("one-time-payment-layout").add(control);
           break;
+        case "one-time-payment-description":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("A one-off, non-recurring payment."),
+            font: "text-14",
+            rich: true,
+            wrap: true
+          });
+          this.getChildControl("one-time-payment-layout").add(control);
+          break;
         case "credit-selector":
           control = this.__getCreditSelector();
           this.getChildControl("one-time-payment-layout").add(control);
@@ -201,6 +212,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     __buildOneTimePayment: function() {
       this.getChildControl("one-time-payment-title");
+      this.getChildControl("one-time-payment-description");
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
@@ -264,7 +276,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
-        value: this.tr("Payment amount:"),
+        value: this.tr("Payment amount ($):"),
         font: "text-14"
       });
       vLayout.add(label);
@@ -590,7 +602,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const lowerThresholdLabel = new qx.ui.basic.Label().set({
-        value: this.tr("When balance goes below:"),
+        value: this.tr("When balance goes below ($):"),
         font: "text-14"
       });
       layout.add(lowerThresholdLabel);
@@ -603,7 +615,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(lowerThresholdField);
 
       const balanceBackLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Balance back with:"),
+        value: this.tr("Balance back with ($):"),
         font: "text-14"
       });
       layout.add(balanceBackLabel);
