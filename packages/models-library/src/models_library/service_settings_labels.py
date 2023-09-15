@@ -492,11 +492,18 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
+    @root_validator
+    @classmethod
+    def _callbacks_mapping_cannot_be_none(cls, values):
+        if values.get("callbacks_mapping") is None:
+            values["callbacks_mapping"] = {}
+        return values
+
     @validator("callbacks_mapping")
     @classmethod
     def _callbacks_mapping_in_compose_spec(cls, v: CallbacksMapping, values):
         if v is None:
-            return v
+            return {}
 
         defined_services: set[str] = {x.service for x in v.before_shutdown}
         if v.metrics:

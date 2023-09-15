@@ -23,7 +23,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 
 class _Parametrization(NamedTuple):
@@ -80,16 +80,14 @@ def test_service_settings():
         service_setting._destination_containers = ["random_value1", "random_value2"]
 
 
-@pytest.mark.parametrize(
-    "model_cls",
-    (SimcoreServiceLabels,),
-)
+@pytest.mark.parametrize("model_cls", [SimcoreServiceLabels])
 def test_correctly_detect_dynamic_sidecar_boot(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
+        model_instance = parse_obj_as(model_cls, example)
+        assert model_instance.callbacks_mapping is not None
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
         )

@@ -224,6 +224,13 @@ class RuntimeConfig(BaseModel):
 
     settings: list[SettingsItem] = Field(default_factory=list)
 
+    @root_validator
+    @classmethod
+    def _callbacks_mapping_cannot_be_none(cls, values):
+        if values.get("callbacks_mapping") is None:
+            values["callbacks_mapping"] = {}
+        return values
+
     @root_validator(pre=True)
     @classmethod
     def ensure_compatibility(cls, v):
