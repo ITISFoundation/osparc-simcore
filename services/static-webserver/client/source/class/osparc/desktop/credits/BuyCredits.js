@@ -615,7 +615,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(lowerThresholdField);
 
       const balanceBackLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Balance back with ($):"),
+        value: this.tr("Top up with ($):"),
         font: "text-14"
       });
       layout.add(balanceBackLabel);
