@@ -5,8 +5,9 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from aiohttp import web
-from models_library.api_schemas_webserver.wallets import PaymentID
+from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
+from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -16,6 +17,10 @@ from tenacity.wait import wait_exponential
 
 from ._api import complete_payment
 from ._db import get_pending_payment_transactions_ids
+from ._methods_api import (
+    _complete_create_of_wallet_payment_method,  # pylint: disable=protected-access
+)
+from ._methods_db import get_pending_payment_methods_ids
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -35,14 +40,10 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     possible_outcomes = [
         # 1. Accepted
         {
-            "app": app,
-            "payment_id": payment_id,
             "completion_state": PaymentTransactionState.SUCCESS,
         },
         # 2. Rejected
         {
-            "app": app,
-            "payment_id": payment_id,
             "completion_state": PaymentTransactionState.FAILED,
             "message": "Payment rejected",
         },
@@ -53,7 +54,38 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     )
 
     _logger.info("Faking payment completion as %s", kwargs)
-    await complete_payment(**kwargs)
+    await complete_payment(app, payment_id=payment_id, **kwargs)
+
+
+async def _fake_payment_method_completion(
+    app: web.Application, payment_method_id: PaymentMethodID
+):
+    # Fakes processing time
+    settings = get_plugin_settings(app)
+    assert settings.PAYMENTS_FAKE_COMPLETION  # nosec
+    await asyncio.sleep(settings.PAYMENTS_FAKE_COMPLETION_DELAY_SEC)
+
+    # Three different possible outcomes
+    possible_outcomes = [
+        # 1. Accepted
+        {
+            "completion_state": InitPromptAckFlowState.SUCCESS,
+        },
+        # 2. Rejected
+        {
+            "completion_state": InitPromptAckFlowState.FAILED,
+            "message": "Payment method rejected",
+        },
+        # 3. does not complete ever ???
+    ]
+    kwargs: dict[str, Any] = random.choice(  # nosec # noqa: S311 # NOSONAR
+        possible_outcomes
+    )
+
+    _logger.info("Faking payment-method completion as %s", kwargs)
+    await _complete_create_of_wallet_payment_method(
+        app, payment_method_id=payment_method_id, **kwargs
+    )
 
 
 @retry(
@@ -67,6 +99,15 @@ async def _run_resilient_task(app: web.Application):
     if pending:
         asyncio.gather(
             *[_fake_payment_completion(app, payment_id) for payment_id in pending]
+        )
+
+    pending = await get_pending_payment_methods_ids(app)
+    if pending:
+        asyncio.gather(
+            *[
+                _fake_payment_method_completion(app, payment_id)
+                for payment_id in pending
+            ]
         )
 
 

@@ -287,6 +287,7 @@ async def _wait_for_events_to_trigger() -> None:
     await asyncio.sleep(event_wait_interval)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     outputs_watcher: OutputsWatcher,

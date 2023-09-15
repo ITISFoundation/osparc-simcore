@@ -17,7 +17,7 @@ router = RPCRouter()
 
 @router.expose()
 async def get_or_create_cluster(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
+    app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> OnDemandCluster:
     """Get or create cluster for user_id and wallet_id
     This function will create a new instance on AWS if needed or return the already running one.

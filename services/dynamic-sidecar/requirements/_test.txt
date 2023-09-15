@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aioboto3==11.2.0
+aioboto3==11.3.0
     # via -r requirements/_test.in
-aiobotocore==2.5.0
+aiobotocore==2.6.0
     # via aioboto3
 aiohttp==3.8.5
     # via
@@ -31,15 +31,16 @@ attrs==23.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-boto3==1.26.76
+boto3==1.28.17
     # via aiobotocore
-botocore==1.29.76
+botocore==1.31.17
     # via
     #   aiobotocore
     #   boto3
     #   s3transfer
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   minio
     #   requests
@@ -48,7 +49,7 @@ charset-normalizer==3.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-coverage==7.3.0
+coverage==7.3.1
     # via pytest-cov
 docker==6.1.3
     # via -r requirements/_test.in
@@ -56,7 +57,7 @@ exceptiongroup==1.1.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-faker==19.3.0
+faker==19.6.1
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -90,7 +91,7 @@ multidict==6.0.4
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.5.0
+mypy==1.5.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -99,9 +100,9 @@ packaging==23.1
     #   -c requirements/_base.txt
     #   docker
     #   pytest
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -124,7 +125,7 @@ requests==2.31.0
     # via
     #   async-asgi-testclient
     #   docker
-s3transfer==0.6.1
+s3transfer==0.6.2
     # via boto3
 six==1.16.0
     # via
@@ -148,7 +149,7 @@ tomli==2.0.1
     #   pytest
 types-aiobotocore-s3==2.6.0
     # via -r requirements/_test.in
-types-aiofiles==23.1.0.5
+types-aiofiles==23.2.0.0
     # via -r requirements/_test.in
 types-pkg-resources==0.1.3
     # via -r requirements/_test.in
@@ -166,7 +167,7 @@ urllib3==1.26.16
     #   docker
     #   minio
     #   requests
-websocket-client==1.6.1
+websocket-client==1.6.3
     # via docker
 wrapt==1.15.0
     # via aiobotocore

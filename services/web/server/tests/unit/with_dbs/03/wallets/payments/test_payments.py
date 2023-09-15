@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
 from typing import Any, TypeAlias
 
 import pytest
@@ -20,11 +19,10 @@ from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.payments._api import complete_payment
 from simcore_service_webserver.payments.errors import PaymentCompletedError
 from simcore_service_webserver.payments.settings import (
@@ -33,41 +31,6 @@ from simcore_service_webserver.payments.settings import (
 )
 
 OpenApiDict: TypeAlias = dict[str, Any]
-
-
-@pytest.fixture
-def user_role():
-    return UserRole.USER
-
-
-@pytest.fixture
-def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
-    assert client.app
-    url = client.app.router["create_wallet"].url_for()
-
-    async def _create():
-        resp = await client.post(
-            url.path,
-            json={
-                "name": f"wallet {faker.word()}",
-                "description": "Fake wallet from create_new_wallet",
-            },
-        )
-        data, _ = await assert_status(resp, web.HTTPCreated)
-        return WalletGet.parse_obj(data)
-
-    return _create
-
-
-@pytest.fixture
-async def logged_user_wallet(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    wallets_clean_db: None,
-    create_new_wallet: Callable,
-) -> WalletGet:
-    assert client.app
-    return await create_new_wallet()
 
 
 async def test_payment_on_invalid_wallet(

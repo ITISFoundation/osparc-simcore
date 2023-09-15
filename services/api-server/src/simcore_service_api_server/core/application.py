@@ -113,6 +113,10 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
             else None,
         ),
     )
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
+        from ._profiler_middleware import ApiServerProfilerMiddleware
+
+        app.add_middleware(ApiServerProfilerMiddleware)
 
     # routing
 

@@ -84,6 +84,10 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
+orjson==3.9.7
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 packaging==23.1
     # via -r requirements/_base.in
 pamqp==3.2.1
@@ -149,6 +153,8 @@ starlette==0.27.0
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
 tenacity==8.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
+toolz==0.12.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.64.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in

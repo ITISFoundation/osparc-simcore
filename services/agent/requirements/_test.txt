@@ -36,7 +36,7 @@ attrs==21.4.0
     #   jschema-to-python
     #   jsonschema
     #   sarif-om
-aws-sam-translator==1.73.0
+aws-sam-translator==1.74.0
     # via cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
@@ -57,12 +57,13 @@ botocore==1.24.21
     #   s3transfer
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
     #   requests
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.79.7
+cfn-lint==0.79.10
     # via moto
 charset-normalizer==2.1.1
     # via
@@ -73,7 +74,7 @@ click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.3.0
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -92,9 +93,9 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.3
     # via pytest
-faker==19.3.0
+faker==19.6.1
     # via -r requirements/_test.in
-flask==2.3.2
+flask==2.3.3
     # via
     #   flask-cors
     #   moto
@@ -111,9 +112,9 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.17.3
+httpcore==0.18.0
     # via httpx
-httpx==0.24.1
+httpx==0.25.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -160,7 +161,7 @@ markupsafe==2.1.3
     # via
     #   jinja2
     #   werkzeug
-moto==4.1.14
+moto==4.2.2
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -186,7 +187,7 @@ pbr==5.11.1
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 py-partiql-parser==0.3.6
     # via moto
@@ -207,7 +208,7 @@ pyrsistent==0.19.2
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -289,7 +290,7 @@ urllib3==1.26.16
     #   docker
     #   requests
     #   responses
-websocket-client==1.6.1
+websocket-client==1.6.3
     # via docker
 werkzeug==2.3.7
     # via

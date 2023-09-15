@@ -9,7 +9,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentCreated,
 )
-from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
@@ -29,7 +28,7 @@ from ._socketio import notify_payment_completed
 _logger = logging.getLogger(__name__)
 
 
-async def _check_wallet_permissions(
+async def check_wallet_permissions(
     app: web.Application, user_id: UserID, wallet_id: WalletID
 ):
     permissions = await get_wallet_with_permissions_by_user(
@@ -39,6 +38,31 @@ async def _check_wallet_permissions(
         raise WalletAccessForbiddenError(
             reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
         )
+
+
+def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
+    data: dict[str, Any] = {
+        "payment_id": transaction.payment_id,
+        "price_dollars": transaction.price_dollars,
+        "osparc_credits": transaction.osparc_credits,
+        "wallet_id": transaction.wallet_id,
+        "created_at": transaction.initiated_at,
+        "state": transaction.state,
+        "completed_at": transaction.completed_at,
+    }
+
+    if transaction.comment:
+        data["comment"] = transaction.comment
+
+    if transaction.state_message:
+        data["state_message"] = transaction.state_message
+
+    return PaymentTransaction.parse_obj(data)
+
+
+#
+# One-time Payments
+#
 
 
 async def create_payment_to_wallet(
@@ -61,7 +85,7 @@ async def create_payment_to_wallet(
     user = await get_user_name_and_email(app, user_id=user_id)
 
     # check permissions
-    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
@@ -94,26 +118,6 @@ async def create_payment_to_wallet(
         payment_id=payment_id,
         payment_form_url=f"{submission_link}",
     )
-
-
-def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
-    data: dict[str, Any] = dict(
-        payment_id=transaction.payment_id,
-        price_dollars=transaction.price_dollars,
-        osparc_credits=transaction.osparc_credits,
-        wallet_id=transaction.wallet_id,
-        created_at=transaction.initiated_at,
-        state=transaction.state,
-        completed_at=transaction.completed_at,
-    )
-
-    if transaction.comment:
-        data["comment"] = transaction.comment
-
-    if transaction.state_message:
-        data["state_message"] = transaction.state_message
-
-    return PaymentTransaction.parse_obj(data)
 
 
 async def get_user_payments_page(
@@ -179,11 +183,11 @@ async def complete_payment(
 async def cancel_payment_to_wallet(
     app: web.Application,
     *,
-    payment_id: IDStr,
+    payment_id: PaymentID,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentTransaction:
-    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     return await complete_payment(
         app,

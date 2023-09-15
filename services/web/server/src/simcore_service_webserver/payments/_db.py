@@ -7,7 +7,6 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy
 from models_library.api_schemas_webserver.wallets import PaymentID
-from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -34,7 +33,7 @@ _logger = logging.getLogger(__name__)
 # NOTE: this will be moved to the payments service
 # NOTE: with https://sqlmodel.tiangolo.com/ we would only define this once!
 class PaymentsTransactionsDB(BaseModel):
-    payment_id: IDStr
+    payment_id: PaymentID
     price_dollars: Decimal  # accepts negatives
     osparc_credits: Decimal  # accepts negatives
     product_name: ProductName
