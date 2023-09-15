@@ -217,6 +217,15 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "saved": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SavedPaymentMethod"
+              }
+            ],
+            "title": "Saved",
+            "description": "If not None, then the payment method usedin this payment was alos saved, returning its payment_method_id and ackThis happens when user marks 'save' during the payment prompt step."
           }
         },
         "type": "object",
@@ -310,6 +319,20 @@
           "version": "2.4.45",
           "docs_url": "https://foo.io/doc"
         }
+      },
+      "SavedPaymentMethod": {
+        "properties": {
+          "payment_method_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Payment Method Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "payment_method_id"
+        ],
+        "title": "SavedPaymentMethod"
       },
       "Token": {
         "properties": {
