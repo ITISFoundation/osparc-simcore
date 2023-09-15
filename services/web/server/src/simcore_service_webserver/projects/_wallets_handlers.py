@@ -5,7 +5,6 @@
 import functools
 import logging
 
-import _wallets_api as wallets_api
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.projects import ProjectID
@@ -20,6 +19,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..wallets import _api as wallet_api
 from ..wallets.errors import WalletAccessForbiddenError
+from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI

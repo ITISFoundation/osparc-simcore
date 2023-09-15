@@ -137,8 +137,8 @@ async def add_credits_to_wallet(
     }
     with handle_client_exceptions(app) as session:
         async with session.post(url, data=body) as response:
-            body: dict = await response.json()
-            return body
+            output: dict = await response.json()
+            return output
 
 
 async def is_resource_usage_tracking_service_responsive(app: web.Application) -> bool:
