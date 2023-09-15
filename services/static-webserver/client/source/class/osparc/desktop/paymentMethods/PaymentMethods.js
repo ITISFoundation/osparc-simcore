@@ -191,7 +191,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
             paymentMethodId: paymentMethod["idr"]
           }
         };
-        osparc.data.Resources.fetch("payments-methods", "delete", params);
+        osparc.data.Resources.fetch("payments-methods", "delete", params)
+          .then(() => this.__fetchPaymentMethods());
       }
     }
   }
