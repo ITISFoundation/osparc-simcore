@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       const promises = [];
       const wallets = osparc.store.Store.getInstance().getWallets();
       wallets.forEach(wallet => {
-        if (wallet.getMyAccessRights()["write"]) {
+        if (wallet.getMyAccessRights() && wallet.getMyAccessRights()["write"]) {
           const params = {
             url: {
               walletId: wallet.getWalletId()
@@ -178,7 +178,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     __openPaymentMethodDetails: function(idr) {
       const paymentMethod = this.__findPaymentMethod(idr);
       if (paymentMethod) {
-        console.log(paymentMethod);
+        osparc.desktop.paymentMethods.PaymentMethodDetails.popUpInWindow(paymentMethod);
       }
     },
 
