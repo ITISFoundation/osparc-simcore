@@ -16,7 +16,6 @@ def legacy_scheduler_data_format(mocks_dir: Path) -> Path:
     return fake_service_path
 
 
-@pytest.mark.testit  # MATUS: this needs to run!
 def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
     # old tested implementation
     scheduler_data_copy = deepcopy(scheduler_data)
@@ -31,7 +30,6 @@ def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
     assert parsed_json_encoded == parsed_label_data
 
 
-@pytest.mark.testit  # MATUS: this needs to run!
 def test_ensure_legacy_format_compatibility(legacy_scheduler_data_format: Path):
     # Ensure no further PRs can break this format
 

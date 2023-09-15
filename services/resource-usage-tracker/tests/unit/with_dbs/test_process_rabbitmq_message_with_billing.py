@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -10,6 +10,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
 )
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -35,6 +36,7 @@ from .conftest import assert_credit_transactions_db_row
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "rabbit",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -101,7 +103,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
 
 
 async def test_process_event_functions(
-    mocked_setup_rabbitmq,
+    rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
@@ -110,6 +112,7 @@ async def test_process_event_functions(
     initialized_app,
 ):
     engine = initialized_app.state.engine
+    publisher = rabbitmq_client("publisher")
 
     msg = random_rabbit_message_start(
         wallet_id=1, wallet_name="test", pricing_plan_id=1, pricing_detail_id=1
@@ -117,7 +120,7 @@ async def test_process_event_functions(
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=engine
     )
-    await _process_start_event(resource_tacker_repo, msg)
+    await _process_start_event(resource_tacker_repo, msg, publisher)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
     assert output[8] == 0.0
     assert output[9] == "PENDING"
@@ -129,7 +132,7 @@ async def test_process_event_functions(
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
     )
-    await _process_heartbeat_event(resource_tacker_repo, heartbeat_msg)
+    await _process_heartbeat_event(resource_tacker_repo, heartbeat_msg, publisher)
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
@@ -147,7 +150,7 @@ async def test_process_event_functions(
         created_at=datetime.now(tz=timezone.utc),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await _process_stop_event(resource_tacker_repo, stopped_msg)
+    await _process_stop_event(resource_tacker_repo, stopped_msg, publisher)
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )

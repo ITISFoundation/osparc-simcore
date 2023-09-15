@@ -90,7 +90,6 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_pricing_plans.delete())
 
 
-@pytest.mark.testit
 async def test_process_events_via_rabbit(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
