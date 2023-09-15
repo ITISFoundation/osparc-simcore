@@ -26,4 +26,5 @@ def main(deployment: Deployment, action: Action):
 
 
 if __name__ == "__main__":
+    # main(Deployment.aws_staging, Action.containers)
     typer.run(main)

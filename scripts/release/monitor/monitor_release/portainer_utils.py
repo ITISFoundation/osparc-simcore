@@ -112,6 +112,8 @@ def check_simcore_deployed_services(settings: Settings, services, tasks, contain
 
     for task in tasks:
         if task["ServiceID"] in service_task_map:
+            if task["Status"].get("ContainerStatus") is None:
+                continue
             container_id = task["Status"]["ContainerStatus"]["ContainerID"]
 
             service_task_map[task["ServiceID"]]["tasks"].append(
