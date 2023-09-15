@@ -135,6 +135,7 @@ class PaymentsGatewayApi:
         app_settings: ApplicationSettings = app.state.settings
 
         app.state.payment_gateway_api = api = cls.create(app_settings)
+        assert cls.get_from_state(app) == api  # nosec
 
         async def on_startup():
             await api.start()
