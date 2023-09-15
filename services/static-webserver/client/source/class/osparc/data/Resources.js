@@ -672,6 +672,50 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PAYMENTS METHODS
+       */
+      "payments-methods": {
+        useCache: false,
+        endpoints: {
+          init: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods:init"
+          },
+          cancel: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:cancel"
+          },
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/payments-methods"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}"
+          }
+        }
+      },
+      /*
+       * AUTO RECHARGE
+       */
+      "auto-recharge": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          start: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          stop: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          }
+        }
+      },
+      /*
        * CLUSTERS
        */
       "clusters": {
