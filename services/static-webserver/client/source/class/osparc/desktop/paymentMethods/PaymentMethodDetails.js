@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodDetails", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 10);
-    grid.setColumnAlign(0, "rightt", "middle"); // resource limit value
+    grid.setColumnAlign(0, "right", "middle"); // resource limit value
     this._setLayout(grid);
 
     this.__buildLayout(paymentMethodData);
@@ -32,6 +32,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodDetails", {
     popUpInWindow: function(paymentMethodData) {
       const title = qx.locale.Manager.tr("Payment Method details");
       const paymentMethodDetails = new osparc.desktop.paymentMethods.PaymentMethodDetails(paymentMethodData);
+      paymentMethodDetails.set({
+        padding: 10
+      });
       const viewWidth = 300;
       const viewHeight = 300;
       const win = osparc.ui.window.Window.popUpInWindow(paymentMethodDetails, title, viewWidth, viewHeight);
@@ -46,7 +49,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodDetails", {
       [
         [this.tr("Holder name"), paymentMethodData["cardHolderName"]],
         [this.tr("Type"), paymentMethodData["cardType"]],
-        [this.tr("Number"), paymentMethodData["cardHoldecardNumberMaskedrName"]],
+        [this.tr("Number"), paymentMethodData["cardNumberMasked"]],
         [this.tr("Expiration date"), paymentMethodData["expirationMonth"] + "/" + paymentMethodData["expirationYear"]],
         [this.tr("Address"), paymentMethodData["streetAddress"]],
         [this.tr("ZIP code"), paymentMethodData["zipcode"]],
