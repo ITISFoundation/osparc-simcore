@@ -2,7 +2,7 @@
 
 import json
 import re
-from collections.abc import Generator, Sequence
+from collections.abc import Generator
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -15,7 +15,6 @@ from pydantic import (
     Extra,
     Field,
     Json,
-    NonNegativeFloat,
     PrivateAttr,
     ValidationError,
     parse_obj_as,
@@ -24,6 +23,7 @@ from pydantic import (
 )
 
 from .basic_types import PortInt
+from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
@@ -162,60 +162,6 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
-
-
-class UserServiceCommand(BaseModel):
-    service: str = Field(
-        ..., description="name of the docker-compose service in the docker-compose spec"
-    )
-    command: str | Sequence[str] = Field(..., description="command to run in container")
-    timeout: NonNegativeFloat = Field(
-        ..., description="after this interval the command will be timed"
-    )
-
-    class Config(_BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"service": "rt-web", "command": "ls", "timeout": 1},
-                {"service": "s4l-core", "command": ["ls", "-lah"], "timeout": 1},
-            ]
-        }
-
-
-class CallbacksMapping(BaseModel):
-    metrics: UserServiceCommand | None = Field(
-        None,
-        description="command to recover prometheus metrics from a specific user service",
-    )
-    before_shutdown: list[UserServiceCommand] = Field(
-        default_factory=list,
-        description=(
-            "commands to run before shutting down the user services"
-            "commands get executed first to last, multiple commands for the same"
-            "user services are allowed"
-        ),
-    )
-
-    class Config(_BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    # empty validates
-                },
-                {
-                    "metrics": None,
-                    "before_shutdown": [],
-                },
-                {"metrics": UserServiceCommand.Config.schema_extra["examples"][0]},
-                {
-                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
-                    "before_shutdown": [
-                        UserServiceCommand.Config.schema_extra["examples"][0],
-                        UserServiceCommand.Config.schema_extra["examples"][1],
-                    ],
-                },
-            ]
-        }
 
 
 class PathMappingsLabel(BaseModel):
