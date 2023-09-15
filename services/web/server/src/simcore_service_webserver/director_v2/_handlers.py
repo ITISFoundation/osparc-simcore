@@ -109,20 +109,6 @@ async def start_computation(request: web.Request) -> web.Response:
             wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name
         )
 
-    # Get wallet information
-    wallet_info = None
-    project_wallet = await projects_api.get_project_wallet(
-        request.app, project_id=project_id
-    )
-    if project_wallet:
-        # Check whether user has access to the wallet
-        await wallets_api.get_wallet_by_user(
-            request.app, req_ctx.user_id, project_wallet.wallet_id
-        )
-        wallet_info = WalletInfo(
-            wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name
-        )
-
     options = {
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable

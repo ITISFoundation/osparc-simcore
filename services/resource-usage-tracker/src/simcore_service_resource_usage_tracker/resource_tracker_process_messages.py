@@ -2,7 +2,6 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Awaitable, Callable
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -62,7 +61,7 @@ async def process_message(
 async def _process_start_event(
     resource_tracker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingStartedMessage,
-    rabbitmq_client: RabbitMQClient,
+    rabbitmq_client: RabbitMQClient,  # pylint: disable=unused-argument
 ):
     service_type = (
         ResourceTrackerServiceType.COMPUTATIONAL_SERVICE

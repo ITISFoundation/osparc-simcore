@@ -1,3 +1,6 @@
+""" Interface to communicate with the resource usage tracker
+"""
+
 import contextlib
 import logging
 from dataclasses import dataclass
@@ -12,14 +15,6 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import parse_obj_as
 
 from ..core.settings import AppSettings
-
-""" Interface to communicate with the payment's gateway
-
-- httpx client with base_url to PAYMENTS_GATEWAY_URL
-- Fake gateway service in services/payments/scripts/fake_payment_gateway.py
-
-"""
-
 
 _logger = logging.getLogger(__name__)
 
