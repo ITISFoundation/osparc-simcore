@@ -1,0 +1,39 @@
+version: "3.8"
+services:
+  dask-sidecar:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
+    volumes:
+      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
+      DASK_NPROCS: 1
+      DASK_SCHEDULER_URL: ${DASK_SCHEDULER_URL:-tcp://dask-scheduler:8786}
+      DASK_SIDECAR_NON_USABLE_RAM: 0
+      DASK_SIDECAR_NUM_NON_USABLE_CPUS: 0
+      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+      SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
+    networks:
+      - default
+
+  dask-scheduler:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      DASK_START_AS_SCHEDULER: 1
+      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+
+    networks:
+      - default
+
+volumes:
+  computational_shared_data:
+
+
+networks:
+  default:
+    attachable: true
