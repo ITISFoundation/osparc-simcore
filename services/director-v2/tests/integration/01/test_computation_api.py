@@ -7,10 +7,11 @@
 
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -27,7 +28,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pytest import MonkeyPatch
 from settings_library.rabbit import RabbitSettings
 from starlette import status
 from starlette.testclient import TestClient
@@ -46,9 +46,9 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
 ) -> None:
@@ -60,6 +60,7 @@ def mock_env(
         dask_scheduler_service,
     )
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image_name)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS", "{}")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
@@ -67,7 +68,7 @@ def mock_env(
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_configuration(
     sleeper_service: dict[str, str],
     jupyter_service: dict[str, str],

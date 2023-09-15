@@ -331,6 +331,7 @@ def mock_env(
 
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS", "{}")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
 

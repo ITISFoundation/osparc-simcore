@@ -137,7 +137,10 @@ def start_request_data(
                 "value": ["node.platform.os == linux"],
             },
         ],
-        "paths_mapping": {"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
+        "paths_mapping": {
+            "outputs_path": "/tmp/outputs",  # noqa: S108
+            "inputs_path": "/tmp/inputs",  # noqa: S108
+        },
         "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
@@ -159,6 +162,7 @@ async def director_v2_client(
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS", "{}")
 
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
