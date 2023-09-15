@@ -82,11 +82,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       let control;
       switch (id) {
         case "left-side":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(30));
           this._add(control);
           break;
         case "right-side":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(30));
           this._add(control, {
             flex: 1
           });
@@ -113,16 +113,19 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
           this.getChildControl("left-side").add(control);
           break;
+        case "one-time-payment-title":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("One time payment:"),
+            font: "text-16"
+          });
+          this.getChildControl("one-time-payment-layout").add(control);
+          break;
         case "credit-selector":
           control = this.__getCreditSelector();
           this.getChildControl("one-time-payment-layout").add(control);
           break;
         case "summary-view":
           control = this.__getSummaryView();
-          this.getChildControl("one-time-payment-layout").add(control);
-          break;
-        case "save-payment-method":
-          control = this.__getSavePaymentMethodButton();
           this.getChildControl("one-time-payment-layout").add(control);
           break;
         case "buy-button":
@@ -132,6 +135,32 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         case "credits-explanation":
           control = this.__getCreditsExplanation();
           this.getChildControl("right-side").add(control);
+          break;
+        case "auto-recharge-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+          this.getChildControl("left-side").add(control);
+          break;
+        case "auto-recharge-title":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Auto recharge:"),
+            font: "text-16"
+          });
+          this.getChildControl("auto-recharge-layout").add(control);
+          break;
+        case "auto-recharge-description":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low."),
+            font: "text-16"
+          });
+          this.getChildControl("auto-recharge-layout").add(control);
+          break;
+        case "auto-recharge-options":
+          control = this.__getAutoRechargeOptions();
+          this.getChildControl("auto-recharge-layout").add(control);
+          break;
+        case "auto-recharge-button":
+          control = this.__getAutoRechargeButton();
+          this.getChildControl("auto-recharge-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -151,16 +180,24 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __buildLayout: function() {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
-      this.__builyOneTimePayment();
+      this.__buildOneTimePayment();
+      this.__buildAutoRecharge();
 
       this.getChildControl("credits-explanation");
     },
 
-    __builyOneTimePayment: function() {
+    __buildOneTimePayment: function() {
+      this.getChildControl("one-time-payment-title");
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
-      this.getChildControl("save-payment-method");
       this.getChildControl("buy-button");
+    },
+
+    __buildAutoRecharge: function() {
+      this.getChildControl("auto-recharge-title");
+      this.getChildControl("auto-recharge-description");
+      this.getChildControl("auto-recharge-options");
+      this.getChildControl("auto-recharge-button");
     },
 
     __applyTotalPrice: function(totalPrice) {
@@ -373,15 +410,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       return layout;
     },
 
-    __getSavePaymentMethodButton: function() {
-      const buyBtn = new qx.ui.form.CheckBox().set({
-        value: false,
-        label: this.tr("Save Payment Method"),
-        font: "text-14"
-      });
-      return buyBtn;
-    },
-
     __getBuyButton: function() {
       const buyBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Buy credits"),
@@ -407,7 +435,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         const nCredits = this.getNCredits();
         const totalPrice = this.getTotalPrice();
         const wallet = this.getWallet();
-        const savePaymentMethod = this.getChildControl("save-payment-method").getValue();
         buyingBtn();
 
         const params = {
@@ -419,9 +446,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             osparcCredits: nCredits
           }
         };
-        if (savePaymentMethod) {
-          params.data["savePaymentMethod"] = true;
-        }
         osparc.data.Resources.fetch("payments", "startPayment", params)
           .then(data => {
             const paymentId = data["paymentId"];
@@ -547,6 +571,60 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(label2);
 
       return layout;
+    },
+
+    __getAutoRechargeOptions: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const lowerThresholdLabel = new qx.ui.basic.Label().set({
+        value: this.tr("When balance goes below:"),
+        font: "text-14"
+      });
+      layout.add(lowerThresholdLabel);
+
+      const lowerThresholdField = new qx.ui.form.TextField().set({
+        width: 100,
+        textAlign: "center",
+        font: "text-14"
+      });
+      layout.add(lowerThresholdField);
+
+      const balanceBackLabel = new qx.ui.basic.Label().set({
+        value: this.tr("Balance back with:"),
+        font: "text-14"
+      });
+      layout.add(balanceBackLabel);
+
+      const paymentAmountField = new qx.ui.form.TextField().set({
+        width: 100,
+        textAlign: "center",
+        font: "text-14"
+      });
+      layout.add(paymentAmountField);
+
+      const label = new qx.ui.basic.Label().set({
+        value: this.tr("Payment Method:"),
+        font: "text-14"
+      });
+      layout.add(label);
+
+      const paymentMethods = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      layout.add(paymentMethods);
+
+      return layout;
+    },
+
+    __getAutoRechargeButton: function() {
+      const autoRechargeBtn = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Enable Auto Recharge"),
+        font: "text-16",
+        appearance: "strong-button",
+        maxWidth: 150,
+        center: true
+      });
+      return autoRechargeBtn;
     }
   }
 });
