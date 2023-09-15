@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   dask-sidecar:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     volumes:
@@ -18,15 +18,19 @@ services:
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
     networks:
       - default
+    deploy:
+      mode: global
 
   dask-scheduler:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       DASK_START_AS_SCHEDULER: 1
       LOG_LEVEL: ${LOG_LEVEL:-WARNING}
-
+    ports:
+      - 8786:8786
+      - 8787:8787
     networks:
       - default
 
