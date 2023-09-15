@@ -40,6 +40,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
   },
 
   members: {
+    __paymentMethodsModel: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -135,49 +137,50 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         width: 150,
         backgroundColor: "background-main-2"
       });
-      /*
-      paymentMethodsUIList.addListener("changeSelection", e => this.__walletSelected(e.getData()), this);
 
-      const walletsModel = this.__walletsModel = new qx.data.Array();
-      const walletsCtrl = new qx.data.controller.List(walletsModel, paymentMethodsUIList, "name");
-      walletsCtrl.setDelegate({
-        createItem: () => new osparc.desktop.wallets.WalletListItem(),
+      const paymentMethodsModel = this.__paymentMethodsModel = new qx.data.Array();
+      const paymentMethodsCtrl = new qx.data.controller.List(paymentMethodsModel, paymentMethodsUIList, "name");
+      paymentMethodsCtrl.setDelegate({
+        createItem: () => new osparc.desktop.paymentMethods.PaymentMethodListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("walletId", "key", null, item, id);
-          ctrl.bindProperty("walletId", "model", null, item, id);
-          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
-          ctrl.bindProperty("name", "title", null, item, id);
-          ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("creditsAvailable", "creditsAvailable", null, item, id);
-          ctrl.bindProperty("status", "status", null, item, id);
-          ctrl.bindProperty("preferredWallet", "preferredWallet", null, item, id);
+          ctrl.bindProperty("idr", "key", null, item, id);
+          ctrl.bindProperty("idr", "model", null, item, id);
+          ctrl.bindProperty("walletId", "walletId", null, item, id);
+          ctrl.bindProperty("cardType", "cardType", null, item, id);
+          ctrl.bindProperty("cardNumberMasked", "cardNumberMasked", null, item, id);
+          ctrl.bindProperty("cardHolderName", "cardHolderName", null, item, id);
+          ctrl.bindProperty("expirationMonth", "expirationMonth", null, item, id);
+          ctrl.bindProperty("expirationYear", "expirationYear", null, item, id);
         },
         configureItem: item => {
-          item.subscribeToFilterGroup("walletsList");
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement().setStyles({
-            "border-radius": "16px"
-          });
-
-          item.addListener("openEditWallet", e => this.__openEditWallet(e.getData()));
-          item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
-          item.addListener("toggleFavourite", e => {
-            const {
-              walletId
-            } = e.getData();
-            const preferencesSettings = osparc.Preferences.getInstance();
-            preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
-            preferencesSettings.requestChangePreferredWalletId(parseInt(walletId));
-          });
+          item.addListener("openPaymentMethodDetails", e => this.__openPaymentMethodDetails(e.getData()));
+          item.addListener("deletePaymentMethod", e => this.__deletePaymentMethod(e.getData()));
         }
       });
-      */
+
+      paymentMethodsModel.removeAll();
+      allPaymentMethods.forEach(paymentMethod => {
+        const paymentMethodModel = qx.data.marshal.Json.createModel(paymentMethod);
+        paymentMethodsModel.append(paymentMethodModel);
+      });
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(paymentMethodsUIList);
 
       return scrollContainer;
+    },
+
+    __openPaymentMethodDetails: function(idr) {
+
+    },
+
+    __deletePaymentMethod: function() {
+      const params = {
+        url: {
+          walletId: this.getWalletId()
+        }
+      };
+      osparc.data.Resources.fetch("payments-methods", "get", params);
     }
   }
 });
