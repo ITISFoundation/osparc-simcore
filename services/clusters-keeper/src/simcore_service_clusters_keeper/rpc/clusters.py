@@ -8,9 +8,9 @@ from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
 from ..modules import clusters
-from ..modules.dask import ping_gateway
+from ..modules.dask import ping_scheduler
 from ..utils.clusters import create_cluster_from_ec2_instance
-from ..utils.dask import get_gateway_url
+from ..utils.dask import get_scheduler_url
 
 router = RPCRouter()
 
@@ -46,9 +46,6 @@ async def get_or_create_cluster(
         app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
         gateway_ready=bool(
             ec2_instance.state == "running"
-            and await ping_gateway(
-                url=get_gateway_url(ec2_instance),
-                password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
-            )
+            and await ping_scheduler(url=get_scheduler_url(ec2_instance))
         ),
     )
