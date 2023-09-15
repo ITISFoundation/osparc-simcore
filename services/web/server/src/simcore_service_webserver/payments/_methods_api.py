@@ -35,8 +35,8 @@ _logger = logging.getLogger(__name__)
 def _generate_fake_card_number():
     # Generate a random 4-digit card number
     card_number = "".join(
-        [str(random.randint(0, 9)) for _ in range(4)]
-    )  # nosec # noqa: S311 # NOSONAR
+        [f"{random.randint(0, 9)}" for _ in range(4)]  # nosec # noqa: S311 # NOSONAR
+    )
     # Mask the card number
     return f"**** **** **** {card_number}"
 
@@ -172,7 +172,6 @@ async def cancel_creation_of_wallet_payment_method(
 async def list_wallet_payment_methods(
     app: web.Application, *, user_id: UserID, wallet_id: WalletID
 ) -> list[PaymentMethodGet]:
-
     # check permissions
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
