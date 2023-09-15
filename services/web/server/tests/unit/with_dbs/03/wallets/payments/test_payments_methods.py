@@ -39,7 +39,7 @@ async def test_payment_method_worfklow(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPCreated)
+    data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     inited = PaymentMethodInit.parse_obj(data)
 
@@ -97,7 +97,7 @@ async def test_init_and_cancel_payment_method(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPCreated)
+    data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     inited = PaymentMethodInit.parse_obj(data)
 

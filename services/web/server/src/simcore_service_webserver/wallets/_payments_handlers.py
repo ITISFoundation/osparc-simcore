@@ -195,7 +195,9 @@ async def init_creation_of_payment_method(request: web.Request):
             request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
         )
 
-        return envelope_json_response(initiated, web.HTTPCreated)
+        # NOTE: the request has been accepted to create a payment-method
+        # but it will not be completed until acked (init-promtp-ack flow)
+        return envelope_json_response(initiated, web.HTTPAccepted)
 
 
 @routes.post(

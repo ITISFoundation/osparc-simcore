@@ -3806,8 +3806,8 @@ paths:
               $ref: '#/components/schemas/CreateWalletPayment'
         required: true
       responses:
-        '200':
-          description: Successful Response
+        '202':
+          description: Successfully initialized
           content:
             application/json:
               schema:
@@ -3870,7 +3870,7 @@ paths:
         in: path
       responses:
         '204':
-          description: Successful Response
+          description: Successfully cancelled
   /v0/wallets/{wallet_id}/payments-methods:init:
     post:
       tags:
@@ -3887,12 +3887,12 @@ paths:
         name: wallet_id
         in: path
       responses:
-        '200':
-          description: Successful Response
+        '202':
+          description: Successfully initialized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_CreatePaymentMethodInitiated_'
+                $ref: '#/components/schemas/Envelope_PaymentMethodInit_'
   /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
     post:
       tags:
@@ -4777,6 +4777,7 @@ components:
       enum:
       - AWS
       - ON_PREMISE
+      - ON_DEMAND
       type: string
       description: An enumeration.
     CodePageParams:
@@ -4804,30 +4805,6 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
-    CreatePaymentMethodInitiated:
-      title: CreatePaymentMethodInitiated
-      required:
-      - walletId
-      - paymentMethodId
-      - paymentMethodFormUrl
-      type: object
-      properties:
-        walletId:
-          title: Walletid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        paymentMethodId:
-          title: Paymentmethodid
-          minLength: 1
-          type: string
-        paymentMethodFormUrl:
-          title: Paymentmethodformurl
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Link to external site that holds the payment submission form
-          format: uri
     CreateWalletBodyParams:
       title: CreateWalletBodyParams
       required:
@@ -4997,14 +4974,6 @@ components:
           $ref: '#/components/schemas/ComputationTaskGet'
         error:
           title: Error
-    Envelope_CreatePaymentMethodInitiated_:
-      title: Envelope[CreatePaymentMethodInitiated]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/CreatePaymentMethodInitiated'
-        error:
-          title: Error
     Envelope_Error_:
       title: Envelope[Error]
       type: object
@@ -5115,6 +5084,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PaymentMethodGet'
+        error:
+          title: Error
+    Envelope_PaymentMethodInit_:
+      title: Envelope[PaymentMethodInit]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PaymentMethodInit'
         error:
           title: Error
     Envelope_PresignedLink_:
@@ -6906,6 +6883,30 @@ components:
           title: Created
           type: string
           format: date-time
+    PaymentMethodInit:
+      title: PaymentMethodInit
+      required:
+      - walletId
+      - paymentMethodId
+      - paymentMethodFormUrl
+      type: object
+      properties:
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+        paymentMethodFormUrl:
+          title: Paymentmethodformurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Link to external site that holds the payment submission form
+          format: uri
     PaymentTransaction:
       title: PaymentTransaction
       required:

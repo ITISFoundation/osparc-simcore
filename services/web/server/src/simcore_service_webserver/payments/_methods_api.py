@@ -48,7 +48,7 @@ def _generate_fake_data(fake: Faker):
         "card_number_masked": _generate_fake_card_number(),
         "card_type": fake.credit_card_provider(),
         "expiration_month": fake.random_int(min=1, max=12),
-        "expiration_year": fake.future_year(),
+        "expiration_year": fake.future_date().year,
         "street_address": fake.street_address(),
         "zipcode": fake.zipcode(),
         "country": fake.country(),
