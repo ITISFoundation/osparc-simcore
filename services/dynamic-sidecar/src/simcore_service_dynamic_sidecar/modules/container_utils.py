@@ -42,7 +42,7 @@ async def _execute_command(container_name: str, command: str | Sequence[str]) ->
                 command=command, exit_code=exit_code, command_result=command_result
             )
 
-    _logger.debug("Command output:\n%s", command_result)
+    _logger.debug("Command result:\n$ '%s'\n%s", command, command_result)
     return command_result
 
 
