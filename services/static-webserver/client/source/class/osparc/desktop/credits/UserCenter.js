@@ -213,7 +213,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
 
     __getPaymentMethodsPage: function() {
       const title = this.tr("Payment Methods");
-      const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
+      const iconSrc = "@FontAwesome5Solid/credit-card/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
       const paymentPethods = new osparc.desktop.paymentMethods.PaymentMethods();
