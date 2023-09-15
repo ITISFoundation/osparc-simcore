@@ -23,7 +23,7 @@ def random_product(
         "name": FAKE.unique.word(),
         "display_name": FAKE.word(),
         "short_name": FAKE.word()[:11],
-        "host_regex": FAKE.regexify(r"[a-zA-Z0-9]+\.com"),
+        "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": FAKE.email(),
         "twilio_messaging_sid": FAKE.uuid4(),
         "vendor": {
@@ -40,6 +40,7 @@ def random_product(
         "registration_email_template": registration_email_template,
         "max_open_studies_per_user": random.randint(1, 10),  # noqa: S311
         "group_id": group_id,
+        "priority": random.randint(0, 5),  # noqa: S311
     }
     assert set(data.keys()).issubset({c.name for c in products.columns})
 
