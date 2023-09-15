@@ -44,3 +44,6 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
             msg="RabbitMQ client is not available. Please check the configuration."
         )
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+__all__ = ("RabbitMQClient",)
