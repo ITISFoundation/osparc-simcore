@@ -46,9 +46,12 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
         --pattern="*.py;*/src/*" \
         --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
         --ignore-directories -- \
-      dask scheduler
+        dask scheduler \
+        --preload simcore_service_dask_sidecar.scheduler
   else
-    exec dask scheduler
+    exec dask scheduler \
+    --preload simcore_service_dask_sidecar.scheduler
+
   fi
 
 else
