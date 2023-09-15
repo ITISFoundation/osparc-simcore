@@ -21,7 +21,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(80));
+    const grid = new qx.ui.layout.Grid(50, 50);
+    this._setLayout(grid);
 
     this.__buildLayout();
 
@@ -81,14 +82,32 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "left-side":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(30));
-          this._add(control);
-          break;
-        case "right-side":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(30));
+        case "wallet-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
           this._add(control, {
-            flex: 1
+            row: 0,
+            column: 0
+          });
+          break;
+        case "explanation-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this._add(control, {
+            row: 0,
+            column: 1
+          });
+          break;
+        case "one-time-payment-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+          this._add(control, {
+            row: 1,
+            column: 0
+          });
+          break;
+        case "auto-recharge-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+          this._add(control, {
+            row: 1,
+            column: 1
           });
           break;
         case "wallet-info": {
@@ -98,7 +117,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             font: "text-14"
           });
           control.add(label);
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("wallet-layout").add(control);
           break;
         }
         case "wallet-selector":
@@ -108,10 +127,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         case "credits-left-view":
           control = this.__getCreditsLeftView();
           this.getChildControl("wallet-info").add(control);
-          break;
-        case "one-time-payment-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-          this.getChildControl("left-side").add(control);
           break;
         case "one-time-payment-title":
           control = new qx.ui.basic.Label().set({
@@ -134,11 +149,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           break;
         case "credits-explanation":
           control = this.__getCreditsExplanation();
-          this.getChildControl("right-side").add(control);
-          break;
-        case "auto-recharge-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-          this.getChildControl("right-side").add(control);
+          this.getChildControl("explanation-layout").add(control);
           break;
         case "auto-recharge-title":
           control = new qx.ui.basic.Label().set({
