@@ -21,7 +21,16 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
+from models_library.wallets import WalletInfo
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    root_validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -409,6 +418,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     proxy_admin_api_port: PortInt | None = Field(
         default=None, description="used as the admin endpoint API port"
     )
+    wallet_info: WalletInfo | None = Field(
+        default=None,
+        description="contains information about the wallet used to bill the running service",
+    )
 
     @property
     def get_proxy_endpoint(self) -> AnyHttpUrl:
@@ -425,6 +438,16 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="Current product upon which this service is scheduled. "
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
+
+    @root_validator(pre=True)
+    @classmethod
+    def _wallet_info_legacy_migration(cls, values):
+        logger.warning(
+            "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4745"
+        )
+        if "wallet_info" not in values:
+            values["wallet_info"] = None
+        return values
 
     @classmethod
     def from_http_request(
@@ -464,6 +487,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "proxy_service_name": names_helper.proxy_service_name,
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
+            "wallet_info": service.wallet_info,
         }
         if run_id:
             obj_dict["run_id"] = run_id

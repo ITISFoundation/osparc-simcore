@@ -23,7 +23,7 @@ class WalletGet(OutputSchema):
 
 
 class WalletGetWithAvailableCredits(WalletGet):
-    available_credits: float
+    available_credits: Decimal
 
 
 class WalletGetPermissions(WalletGet):

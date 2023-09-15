@@ -14,6 +14,11 @@ class WalletStatus(StrAutoEnum):
     INACTIVE = auto()
 
 
+class WalletInfo(BaseModel):
+    wallet_id: WalletID
+    wallet_name: str
+
+
 ### DB
 
 

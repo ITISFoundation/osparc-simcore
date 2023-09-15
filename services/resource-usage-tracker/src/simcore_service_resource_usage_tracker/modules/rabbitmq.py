@@ -2,6 +2,7 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi.requests import Request
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
@@ -31,6 +32,10 @@ def setup(app: FastAPI) -> None:
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+def get_rabbitmq_client_from_request(request: Request):
+    return get_rabbitmq_client(request.app)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

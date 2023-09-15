@@ -1,4 +1,5 @@
-from datetime import datetime
+import asyncio
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated
 
@@ -7,6 +8,7 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.products import ProductName
+from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.resource_tracker import (
     CreditClassification,
     CreditTransactionId,
@@ -15,10 +17,12 @@ from models_library.resource_tracker import (
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel
+from servicelib.rabbitmq import RabbitMQClient
 
 from ..api.dependencies import get_repository
 from ..models.resource_tracker_credit_transactions import CreditTransactionCreate
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from ..modules.rabbitmq import get_rabbitmq_client_from_request
 
 
 class CreditTransactionCreateBody(BaseModel):
@@ -32,10 +36,33 @@ class CreditTransactionCreateBody(BaseModel):
     created_at: datetime
 
 
+async def _sum_credit_transactions_and_publish_to_rabbitmq(
+    resource_tracker_repo: ResourceTrackerRepository,
+    credit_transaction_create_body: CreditTransactionCreateBody,
+    wallet_id: WalletID,
+    rabbitmq_client: RabbitMQClient,
+):
+    wallet_total_credits = (
+        await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
+            credit_transaction_create_body.product_name,
+            credit_transaction_create_body.wallet_id,
+        )
+    )
+    publish_message = WalletCreditsMessage.construct(
+        wallet_id=wallet_id,
+        created_at=datetime.now(tz=timezone.utc),
+        credits=wallet_total_credits,
+    )
+    await rabbitmq_client.publish(publish_message.channel_name, publish_message)
+
+
 async def create_credit_transaction(
     credit_transaction_create_body: CreditTransactionCreateBody,
     resource_tracker_repo: Annotated[
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+    ],
+    rabbitmq_client: Annotated[
+        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
 ) -> CreditTransactionId:
     transaction_create = CreditTransactionCreate(
@@ -58,15 +85,15 @@ async def create_credit_transaction(
         transaction_create
     )
 
-    # NOTE: Implement fire and forget mechanism
-    wallet_total_credits = (
-        await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-            credit_transaction_create_body.product_name,
+    # Fire and forget mechanism to publish available credits
+    asyncio.create_task(
+        _sum_credit_transactions_and_publish_to_rabbitmq(
+            resource_tracker_repo,
+            credit_transaction_create_body,
             credit_transaction_create_body.wallet_id,
+            rabbitmq_client,
         )
     )
-    assert wallet_total_credits  # nosec
-    # NOTE: Publish wallet total credits to RabbitMQ
 
     return transaction_id
 
@@ -81,4 +108,3 @@ async def sum_credit_transactions_by_product_and_wallet(
     return await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
         product_name, wallet_id
     )
-    # NOTE: Publish wallet total credits to RabbitMQ

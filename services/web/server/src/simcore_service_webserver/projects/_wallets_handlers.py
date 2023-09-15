@@ -5,10 +5,11 @@
 import functools
 import logging
 
+import _wallets_api as wallets_api
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.projects import ProjectID
-from models_library.wallets import WalletDB, WalletID
+from models_library.wallets import WalletID
 from pydantic import BaseModel, Extra
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -50,7 +51,6 @@ routes = web.RouteTableDef()
 @permission_required("project.wallet.*")
 @_handle_project_wallet_exceptions
 async def get_project_wallet(request: web.Request):
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
@@ -61,11 +61,10 @@ async def get_project_wallet(request: web.Request):
         user_id=req_ctx.user_id,
         include_state=False,
     )
-
-    wallet_db: WalletDB | None = await db.get_project_wallet(
-        project_uuid=path_params.project_id
+    wallet: WalletGet | None = await wallets_api.get_project_wallet(
+        request.app, path_params.project_id
     )
-    wallet: WalletGet | None = WalletGet(**wallet_db.dict()) if wallet_db else None
+
     return envelope_json_response(wallet)
 
 

@@ -1,4 +1,6 @@
+import datetime
 import logging
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -10,14 +12,12 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentCreated,
 )
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from yarl import URL
 
-from ..application_settings import get_settings
+from ..resource_usage.resource_usage_tracker_client import add_credits_to_wallet
 from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
@@ -168,14 +168,24 @@ async def complete_payment(
     await notify_payment_completed(app, user_id=transaction.user_id, payment=payment)
 
     if completion_state == PaymentTransactionState.SUCCESS:
-        # notifying RUT
-        # TODO: connect with https://github.com/ITISFoundation/osparc-simcore/pull/4692
-        settings = get_settings(app)
-        assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
-        if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
-            url = URL(f"{base_url}/v1/credit-transaction")
-            body = (jsonable_encoder(payment, by_alias=False),)
-            _logger.debug("-> @RUTH  POST %s: %s", url, body)
+        await add_credits_to_wallet(
+            app=app,
+            product_name="",
+            wallet_id=1,
+            wallet_name="",
+            user_id=1,
+            user_email="",
+            osparc_credits=Decimal(100),
+            payment_transaction_id=payment_id,
+            created_at=datetime.now(tz=timezone.utc),
+        )
+
+        # settings = get_settings(app)
+        # assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
+        # if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
+        #     url = URL(f"{base_url}/v1/credit-transaction")
+        #     body = (jsonable_encoder(payment, by_alias=False),)
+        #     _logger.debug("-> @RUTH  POST %s: %s", url, body)
 
     return payment
 

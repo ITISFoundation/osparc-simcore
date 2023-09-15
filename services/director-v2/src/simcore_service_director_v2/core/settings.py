@@ -46,6 +46,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+    ResourceUsageTrackerSettings,
 )
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
@@ -587,6 +588,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+
+    DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
+        auto_default_from_env=True,
+        description="resource usage tracker service client's plugin",
+    )
 
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.

@@ -34,6 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.wallets import WalletInfo
 from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -70,8 +71,10 @@ from ..socketio.messages import (
 from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
+from ..wallets import api as wallets_api
 from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._wallets_api import get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -260,6 +263,18 @@ async def _start_dynamic_service(
             service_version=service_version,
         )
 
+        # Get wallet information
+        wallet_info = None
+        project_wallet = await get_project_wallet(request.app, project_id=project_uuid)
+        if project_wallet:
+            # Check whether user has access to the wallet
+            await wallets_api.get_wallet_by_user(
+                request.app, user_id, project_wallet.wallet_id
+            )
+            wallet_info = WalletInfo(
+                wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name
+            )
+
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
@@ -275,6 +290,7 @@ async def _start_dynamic_service(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
             service_resources=service_resources,
+            wallet_info=wallet_info,
         )
 
 

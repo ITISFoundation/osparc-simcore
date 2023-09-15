@@ -1,14 +1,19 @@
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
 from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetPermissions,
     WalletGetWithAvailableCredits,
 )
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 
+from ..resource_usage import resource_usage_tracker_client
 from ..users import api as users_api
 from . import _db as db
 from .errors import WalletAccessForbiddenError
@@ -37,30 +42,32 @@ async def create_wallet(
 
 async def list_wallets_with_available_credits_for_user(
     app: web.Application,
+    product_name: ProductName,
     user_id: UserID,
 ) -> list[WalletGetWithAvailableCredits]:
     user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
         app=app, user_id=user_id
     )
 
-    # TODO: Now we need to get current available credits from resource-usage-tracker for each wallet
-    available_credits: float = 0.0
-
     # Now we return the user wallets with available credits
-    wallets_api: list[WalletGetWithAvailableCredits] = [
-        WalletGetWithAvailableCredits(
-            wallet_id=wallet.wallet_id,
-            name=wallet.name,
-            description=wallet.description,
-            owner=wallet.owner,
-            thumbnail=wallet.thumbnail,
-            status=wallet.status,
-            created=wallet.created,
-            modified=wallet.modified,
-            available_credits=available_credits,
+    wallets_api = []
+    for wallet in user_wallets:
+        available_credits: WalletTotalCredits = await resource_usage_tracker_client.sum_total_available_credits_in_the_wallet(
+            app, product_name, wallet.wallet_id
         )
-        for wallet in user_wallets
-    ]
+        wallets_api.append(
+            WalletGetWithAvailableCredits(
+                wallet_id=wallet.wallet_id,
+                name=wallet.name,
+                description=wallet.description,
+                owner=wallet.owner,
+                thumbnail=wallet.thumbnail,
+                status=wallet.status,
+                created=wallet.created,
+                modified=wallet.modified,
+                available_credits=available_credits.available_osparc_credits,
+            )
+        )
 
     return wallets_api
 
