@@ -17,7 +17,6 @@
 
 aioboto3
 dask[distributed]
-dask-gateway
 fastapi
 packaging
 types-aiobotocore[ec2]
