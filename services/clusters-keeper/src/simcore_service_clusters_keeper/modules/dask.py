@@ -5,40 +5,12 @@ from typing import Any, Final
 
 import dask_gateway
 import distributed
-from aiohttp.client_exceptions import ClientError
 from models_library.clusters import SimpleAuthentication
-from pydantic import AnyUrl, SecretStr
+from pydantic import AnyUrl
 
 _logger = logging.getLogger(__name__)
 
 _PING_USERNAME: Final[str] = "osparc-cluster"
-
-
-async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
-    basic_auth = dask_gateway.BasicAuth(
-        username=_PING_USERNAME, password=password.get_secret_value()
-    )
-    try:
-        async with dask_gateway.Gateway(
-            address=f"{url}",
-            auth=basic_auth,
-            asynchronous=True,
-        ) as gateway:
-            await asyncio.wait_for(gateway.list_clusters(), timeout=5)
-        return True
-    except asyncio.TimeoutError:
-        _logger.info(
-            "osparc-gateway %s ping timed-out, the machine is likely still starting...",
-            url,
-        )
-    except (ClientError, ValueError):
-        # this could happen if the gateway is not properly started, but it should not last
-        # unless the wrong password is used.
-        _logger.info(
-            "Machine is up but osparc-gateway %s is not reachable...yet?!", url
-        )
-
-    return False
 
 
 async def _wrap_client_async_routine(
