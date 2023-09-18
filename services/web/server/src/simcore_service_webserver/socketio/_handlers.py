@@ -127,13 +127,13 @@ async def connect(
 
         _logger.info("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
-        # await emit(
-        #     app,
-        #     "SIGNAL_USER_CONNECTED",
-        #     user_id,
-        #     app,
-        #     "osparc",  # We need to add product
-        # )
+        await emit(
+            app,
+            "SIGNAL_USER_CONNECTED",
+            user_id,
+            app,
+            "osparc",  # We need to add product
+        )
 
         heart_beat_messages: list[SocketMessageDict] = [
             {
@@ -181,7 +181,6 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                     user_id,
                     client_session_id,
                     app,
-                    "osparc",  # We need to add product
                 )
 
         else:
