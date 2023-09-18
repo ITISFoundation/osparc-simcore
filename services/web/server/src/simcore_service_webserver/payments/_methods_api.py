@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInit,
+    PaymentMethodTransaction,
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -27,6 +28,7 @@ from ._methods_db import (
     list_successful_payment_methods,
     udpate_payment_method,
 )
+from ._socketio import notify_payment_method_acked
 from .settings import PaymentsSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -137,6 +139,17 @@ async def _complete_create_of_wallet_payment_method(
         state_message=message,
     )
 
+    # notify front-end
+    await notify_payment_method_acked(
+        app,
+        user_id=updated.user_id,
+        payment_method_transaction=PaymentMethodTransaction(
+            wallet_id=updated.wallet_id,
+            payment_method_id=updated.payment_method_id,
+            state=updated.state.value,
+        ),
+    )
+
     return updated
 
 
@@ -165,7 +178,10 @@ async def cancel_creation_of_wallet_payment_method(
     # -----
 
     await delete_payment_method(
-        app, user_id=user_id, wallet_id=wallet_id, payment_method_id=payment_method_id
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_method_id=payment_method_id,
     )
 
 

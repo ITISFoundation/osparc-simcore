@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
 )
 from pydantic import parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_service_webserver.payments._methods_api import (
@@ -26,12 +27,17 @@ from simcore_service_webserver.payments.settings import (
 async def test_payment_method_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mocker: MockerFixture,
 ):
     # preamble
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
+
+    send_message = mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
 
     wallet = logged_user_wallet
 
@@ -60,6 +66,9 @@ async def test_payment_method_worfklow(
         completion_state=InitPromptAckFlowState.SUCCESS,
         message="ACKED by test_add_payment_method_worfklow",
     )
+
+    assert send_message.called
+    send_message.assert_called_once()
 
     # Get
     response = await client.get(
