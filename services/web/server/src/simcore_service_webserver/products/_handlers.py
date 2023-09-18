@@ -27,7 +27,7 @@ class _ProductsRequestContext(RequestParams):
 
 @routes.get(f"/{VTAG}/price", name="get_current_product_price")
 @login_required
-@permission_required("products.price.read")
+@permission_required("product.price.read")
 async def get_current_product_price(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
 

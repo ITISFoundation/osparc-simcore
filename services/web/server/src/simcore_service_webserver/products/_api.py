@@ -34,9 +34,9 @@ async def get_current_product_price(request: web.Request) -> ProductPriceGet:
 
     return ProductPriceGet(
         product_name=current_product_name,
-        dollars_per_credit=await ProductRepository(request).get_product_price(
-            current_product_name
-        ),
+        dollars_per_credit=await ProductRepository(
+            request
+        ).get_product_latest_price_or_none(current_product_name),
     )
 
 

@@ -2,6 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.product import ProductPriceGet
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
     PaymentID,
@@ -38,6 +39,7 @@ from ..payments.api import (
 from ..products.api import get_current_product_price
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
 from ._handlers import (
     WalletsPathParams,
     WalletsRequestContext,
@@ -82,19 +84,17 @@ async def create_payment(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         # Conversion
-        dollars_per_credit = await get_current_product_price(request)
-        if dollars_per_credit == 0:
-            raise web.HTTPConflict(
-                reason="No payments are accepted in this product until a price is activated"
-            )
+        price: ProductPriceGet = await get_current_product_price(request)
+        if not price.dollars_per_credit:
+            # '0 or None' should raise
+            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-        osparc_credits = body_params.price_dollars / dollars_per_credit
         payment: WalletPaymentCreated = await create_payment_to_wallet(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=osparc_credits,
+            osparc_credits=body_params.price_dollars / price.dollars_per_credit,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
         )

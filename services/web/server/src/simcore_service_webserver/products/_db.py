@@ -41,7 +41,9 @@ class ProductRepository(BaseRepository):
             row: RowProxy | None = await result.first()
             return Product.from_orm(row) if row else None
 
-    async def get_product_price(self, product_name: str) -> Decimal:
+    async def get_product_latest_price_or_none(
+        self, product_name: str
+    ) -> Decimal | None:
         async with self.engine.acquire() as conn:
             # newest price of a product
             dollars_per_credit = await conn.scalar(
@@ -50,9 +52,9 @@ class ProductRepository(BaseRepository):
                 .order_by(sa.desc(products_prices.c.created))
                 .limit(1)
             )
-            if dollars_per_credit is None:
-                dollars_per_credit = Decimal(0)
-            return dollars_per_credit
+            if dollars_per_credit is not None:
+                return Decimal(dollars_per_credit)
+            return None
 
     async def get_template_content(
         self,

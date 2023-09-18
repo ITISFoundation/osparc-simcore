@@ -51,7 +51,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "clusters.read",
             "clusters.write",
             "groups.*",
-            "products.price.read",
+            "product.price.read",
             "project.access_rights.update",
             "project.classifier.*",
             "project.close",
