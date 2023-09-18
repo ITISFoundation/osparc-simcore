@@ -161,6 +161,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="defines the image tag to use for the computational backend",
     )
 
+    SWARM_STACK_NAME: str = Field(
+        ..., description="Stack name defined upon deploy (see main Makefile)"
+    )
+
     @cached_property
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.CLUSTERS_KEEPER_LOGLEVEL

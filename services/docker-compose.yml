@@ -94,6 +94,7 @@ services:
       - RABBIT_USER=${RABBIT_USER}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME}
 
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
@@ -221,7 +222,6 @@ services:
       - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_SECURE=${RABBIT_SECURE}
       - RABBIT_USER=${RABBIT_USER}
-
 
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
