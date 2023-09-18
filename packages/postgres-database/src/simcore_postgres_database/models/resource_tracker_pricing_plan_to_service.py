@@ -44,10 +44,4 @@ resource_tracker_pricing_plan_to_service = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     # ---------------------------
-    sa.UniqueConstraint(
-        "service_key",
-        "service_version",
-        "product",
-        name="rut_pricing_plan_to_service__service_product_unique_key",
-    ),
 )

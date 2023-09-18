@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import cast
 
 import sqlalchemy as sa
@@ -415,8 +416,9 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(sum_stmt)
         row = result.first()
         if row is None or row[0] is None:
-            msg = "product_name and wallet_id combination does not exists in DB"
-            raise ValueError(msg)
+            return WalletTotalCredits(
+                wallet_id=wallet_id, available_osparc_credits=Decimal(0)
+            )
         return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
     #################################
@@ -460,12 +462,12 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         return PricingPlanDB.from_orm(row)
 
-    async def get_pricing_plan_by_product_and_service(
+    async def list_active_pricing_plans_by_product_and_service(
         self,
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> PricingPlanId | None:
+    ) -> list[PricingPlanDB]:
         # NOTE: consilidate with utils_services_environmnets.py
         def _version(column_or_value):
             # converts version value string to array[integer] that can be compared
@@ -473,7 +475,8 @@ class ResourceTrackerRepository(BaseRepository):
 
         async with self.db_engine.begin() as conn:
             query = sa.select(
-                resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                resource_tracker_pricing_plan_to_service.c.service_key,
+                resource_tracker_pricing_plan_to_service.c.service_version,
             )
             query = (
                 query.where(
@@ -491,6 +494,7 @@ class ResourceTrackerRepository(BaseRepository):
                         resource_tracker_pricing_plan_to_service.c.product
                         == product_name
                     )
+                    & (resource_tracker_pricing_plans.c.is_active.is_(True))
                 )
                 .order_by(
                     _version(
@@ -501,10 +505,31 @@ class ResourceTrackerRepository(BaseRepository):
             )
 
             result = await conn.execute(query)
-        row = result.first()
-        if row is None:
-            return None
-        return PricingPlanId(row[0])
+            row = result.first()
+            if row is None:
+                return []
+            latest_service_key, latest_service_version = row
+
+            query = sa.select(
+                resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+            )
+            query = query.where(
+                (
+                    _version(resource_tracker_pricing_plan_to_service.c.service_version)
+                    == _version(latest_service_version)
+                )
+                & (
+                    resource_tracker_pricing_plan_to_service.c.service_key
+                    == latest_service_key
+                )
+                & (resource_tracker_pricing_plan_to_service.c.product == product_name)
+                & (resource_tracker_pricing_plans.c.is_active.is_(True))
+            ).order_by(
+                resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
+            )
+            result = await conn.execute(query)
+
+        return [PricingPlanDB.from_orm(row) for row in result.fetchall()]
 
     #################################
     # Pricing details
@@ -513,7 +538,7 @@ class ResourceTrackerRepository(BaseRepository):
     async def get_pricing_detail_cost_per_unit(
         self,
         pricing_detail_id: PricingDetailId,
-    ) -> float:
+    ) -> Decimal:
         async with self.db_engine.begin() as conn:
             query = sa.select(resource_tracker_pricing_details.c.cost_per_unit).where(
                 resource_tracker_pricing_details.c.pricing_detail_id
@@ -524,8 +549,7 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         if row is None:
             raise ValueError
-        output: float = row[0]
-        return output
+        return Decimal(row[0])
 
     async def list_pricing_details_by_pricing_plan(
         self,

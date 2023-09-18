@@ -26,7 +26,7 @@ class ServiceRunCreate(BaseModel):
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
     pricing_detail_id: PricingDetailId | None
-    pricing_detail_cost_per_unit: float | None
+    pricing_detail_cost_per_unit: Decimal | None
     simcore_user_agent: str
     user_id: UserID
     user_email: str
