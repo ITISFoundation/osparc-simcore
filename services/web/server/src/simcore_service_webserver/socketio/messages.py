@@ -26,6 +26,7 @@ SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
 SOCKET_IO_PAYMENT_COMPLETED_EVENT: Final[str] = "paymentCompleted"
 SOCKET_IO_PROJECT_PROGRESS_EVENT: Final[str] = "projectProgress"
 SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
+SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 
 
 class SocketMessageDict(TypedDict):

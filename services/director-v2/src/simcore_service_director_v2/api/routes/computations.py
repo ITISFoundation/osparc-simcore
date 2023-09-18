@@ -16,6 +16,7 @@ Therefore,
 
 import contextlib
 import logging
+import os
 from typing import Annotated, Any
 
 import networkx as nx
@@ -220,7 +221,17 @@ async def create_computation(  # noqa: C901, PLR0912
                     detail=f"Project {computation.project_id} has no computational services",
                 )
 
-            if computation.wallet_info:
+            # Billing info
+            wallet_id = None
+            wallet_name = None
+            pricing_plan_id = None
+            pricing_detail_id = None
+            if computation.wallet_info and os.environ.get(
+                "WEBSERVER_DEV_FEATURES_ENABLED", False
+            ):
+                wallet_id = computation.wallet_info.wallet_id
+                wallet_name = computation.wallet_info.wallet_name
+
                 resource_usage_api = ResourceUsageApi.get_from_state(request.app)
                 # NOTE: MD/SAN -> add real service version/key when it is more clear how we will proceed
                 (
@@ -245,18 +256,10 @@ async def create_computation(  # noqa: C901, PLR0912
                     project_name=project.name,
                     simcore_user_agent=computation.simcore_user_agent,
                     user_email=await users_repo.get_user_email(computation.user_id),
-                    wallet_id=computation.wallet_info.wallet_id
-                    if computation.wallet_info
-                    else None,
-                    wallet_name=computation.wallet_info.wallet_name
-                    if computation.wallet_info
-                    else None,
-                    pricing_plan_id=pricing_plan_id
-                    if computation.wallet_info
-                    else None,
-                    pricing_detail_id=pricing_detail_id
-                    if computation.wallet_info
-                    else None,
+                    wallet_id=wallet_id,
+                    wallet_name=wallet_name,
+                    pricing_plan_id=pricing_plan_id,
+                    pricing_detail_id=pricing_detail_id,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )

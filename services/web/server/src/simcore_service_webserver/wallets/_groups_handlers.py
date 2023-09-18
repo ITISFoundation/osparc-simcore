@@ -106,7 +106,9 @@ async def list_wallet_groups(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    wallets: list[WalletGroupGet] = await _groups_api.list_wallet_groups(
+    wallets: list[
+        WalletGroupGet
+    ] = await _groups_api.list_wallet_groups_by_user_and_wallet(
         request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
     )
 

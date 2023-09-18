@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
@@ -123,8 +124,16 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     users_repository = get_repository(app, UsersRepository)
     user_email = await users_repository.get_user_email(scheduler_data.user_id)
 
-    # Ask resource usage tracker for pricing plan
-    if scheduler_data.wallet_info:
+    # Billing info
+    wallet_id = None
+    wallet_name = None
+    pricing_plan_id = None
+    pricing_detail_id = None
+    if scheduler_data.wallet_info and os.environ.get(
+        "WEBSERVER_DEV_FEATURES_ENABLED", False
+    ):
+        wallet_id = scheduler_data.wallet_info.wallet_id
+        wallet_name = scheduler_data.wallet_info.wallet_name
         resource_usage_api = ResourceUsageApi.get_from_state(app)
         (
             pricing_plan_id,
@@ -134,14 +143,10 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         )
 
     metrics_params = CreateServiceMetricsAdditionalParams(
-        wallet_id=scheduler_data.wallet_info.wallet_id
-        if scheduler_data.wallet_info
-        else None,
-        wallet_name=scheduler_data.wallet_info.wallet_name
-        if scheduler_data.wallet_info
-        else None,
-        pricing_plan_id=pricing_plan_id if scheduler_data.wallet_info else None,
-        pricing_detail_id=pricing_detail_id if scheduler_data.wallet_info else None,
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        pricing_plan_id=pricing_plan_id,
+        pricing_detail_id=pricing_detail_id,
         product_name=scheduler_data.product_name,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         user_email=user_email,
