@@ -1,13 +1,11 @@
 import logging
 from collections.abc import Coroutine
-from typing import Any, Final
+from typing import Any
 
 import distributed
 from pydantic import AnyUrl
 
 _logger = logging.getLogger(__name__)
-
-_PING_USERNAME: Final[str] = "osparc-cluster"
 
 
 async def _wrap_client_async_routine(
