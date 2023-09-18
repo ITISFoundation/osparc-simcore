@@ -34,7 +34,7 @@ async def ping_scheduler(url: AnyUrl) -> bool:
 
 
 async def is_scheduler_busy(url: AnyUrl) -> bool:
-    async with distributed.Client(f"{url}", asynchronous=True) as client:
+    async with distributed.Client(url, asynchronous=True) as client:
         datasets_on_scheduler = await _wrap_client_async_routine(client.list_datasets())
         _logger.info("cluster currently has %s datasets", len(datasets_on_scheduler))
         num_processing_tasks = 0
