@@ -21,7 +21,7 @@ async def _wrap_client_async_routine(
 
 async def ping_scheduler(url: AnyUrl) -> bool:
     try:
-        async with distributed.Client(f"{url}", asynchronous=True, timeout="5"):
+        async with distributed.Client(url, asynchronous=True, timeout="5"):
             ...
         return True
     except OSError:
