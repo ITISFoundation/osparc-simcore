@@ -36,7 +36,7 @@ def test_create_cluster_from_ec2_instance(
         instance_data,
         faker.pyint(),
         faker.pyint(),
-        gateway_ready=faker.pybool(),
+        dask_scheduler_ready=faker.pybool(),
     )
     assert cluster_instance
     assert cluster_instance.state is expected_cluster_state

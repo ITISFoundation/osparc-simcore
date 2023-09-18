@@ -57,7 +57,7 @@ _GATEWAY_READYNESS_MAX_TIME: Final[datetime.timedelta] = datetime.timedelta(minu
 def _create_eta(
     instance_launch_time: datetime.datetime,
     *,
-    gateway_ready: bool,
+    dask_scheduler_ready: bool,
 ) -> datetime.timedelta:
     now = datetime.datetime.now(datetime.timezone.utc)
     estimated_time_to_running = (
@@ -66,7 +66,7 @@ def _create_eta(
         + _GATEWAY_READYNESS_MAX_TIME
         - now
     )
-    if gateway_ready is True:
+    if dask_scheduler_ready is True:
         estimated_time_to_running = datetime.timedelta(seconds=0)
     return estimated_time_to_running
 
@@ -76,7 +76,7 @@ def create_cluster_from_ec2_instance(
     user_id: UserID,
     wallet_id: WalletID | None,
     *,
-    gateway_ready: bool,
+    dask_scheduler_ready: bool,
 ) -> OnDemandCluster:
     return OnDemandCluster(
         endpoint=get_scheduler_url(instance),
@@ -84,6 +84,8 @@ def create_cluster_from_ec2_instance(
         state=_convert_ec2_state_to_cluster_state(instance.state),
         user_id=user_id,
         wallet_id=wallet_id,
-        gateway_ready=gateway_ready,
-        eta=_create_eta(instance.launch_time, gateway_ready=gateway_ready),
+        dask_scheduler_ready=dask_scheduler_ready,
+        eta=_create_eta(
+            instance.launch_time, dask_scheduler_ready=dask_scheduler_ready
+        ),
     )

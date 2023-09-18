@@ -41,7 +41,7 @@ async def get_or_create_cluster(
         ec2_instance,
         user_id,
         wallet_id,
-        gateway_ready=bool(
+        dask_scheduler_ready=bool(
             ec2_instance.state == "running"
             and await ping_scheduler(url=get_scheduler_url(ec2_instance))
         ),
