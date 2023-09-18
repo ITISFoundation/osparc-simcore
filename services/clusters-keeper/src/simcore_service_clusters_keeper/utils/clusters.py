@@ -51,7 +51,9 @@ def _convert_ec2_state_to_cluster_state(
 
 
 _EC2_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=3)
-_GATEWAY_READYNESS_MAX_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=3)
+_DASK_SCHEDULER_READYNESS_MAX_TIME: Final[datetime.timedelta] = datetime.timedelta(
+    minutes=3
+)
 
 
 def _create_eta(
@@ -63,7 +65,7 @@ def _create_eta(
     estimated_time_to_running = (
         instance_launch_time
         + _EC2_INSTANCE_MAX_START_TIME
-        + _GATEWAY_READYNESS_MAX_TIME
+        + _DASK_SCHEDULER_READYNESS_MAX_TIME
         - now
     )
     if dask_scheduler_ready is True:
