@@ -41,7 +41,7 @@ async def test_ping_scheduler(dask_spec_local_cluster: SpecCluster):
     retry=retry_if_exception_type(AssertionError),
 )
 async def _assert_scheduler_is_busy(url: AnyUrl, *, busy: bool) -> None:
-    print(f"--> waiting for gateway to become {busy=}")
+    print(f"--> waiting for osparc-dask-scheduler to become {busy=}")
     assert await is_scheduler_busy(url=url) is busy
     print(f"scheduler is now {busy=}")
 
