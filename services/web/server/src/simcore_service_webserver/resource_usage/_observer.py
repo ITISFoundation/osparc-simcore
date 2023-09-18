@@ -7,6 +7,7 @@
 import logging
 
 from aiohttp import web
+from models_library.products import ProductName
 from servicelib.aiohttp.observer import (
     registed_observers_report,
     register_observer,
@@ -21,11 +22,14 @@ _logger = logging.getLogger(__name__)
 
 
 async def _on_user_disconnected(
-    user_id: int, client_session_id: str, app: web.Application
+    user_id: int,
+    client_session_id: str,
+    app: web.Application,
+    product_name: ProductName,
 ) -> None:
     # Get all user wallets and unsubscribe
     user_wallet = await wallets_api.list_wallets_with_available_credits_for_user(
-        app, product_name="osparc", user_id=user_id
+        app, product_name=product_name, user_id=user_id
     )
     disconnect_tasks = [
         wallet_osparc_credits.unsubscribe(app, wallet.wallet_id)
