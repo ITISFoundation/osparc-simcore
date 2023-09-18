@@ -60,7 +60,8 @@ EXPOSE 8786
 EXPOSE 8787
 
 # create dask configuration folder
-RUN mkdir --parents /home/${SC_USER_NAME}/.config/dask
+RUN mkdir --parents /home/scu/.config/dask \
+  && chown -R scu:scu /home/scu/.config
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
