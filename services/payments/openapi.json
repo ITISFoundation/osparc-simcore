@@ -235,8 +235,20 @@
         "title": "AckPayment"
       },
       "AckPaymentMethod": {
-        "properties": {},
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
         "type": "object",
+        "required": [
+          "success"
+        ],
         "title": "AckPaymentMethod"
       },
       "Body_login_to_create_access_token": {
@@ -322,6 +334,14 @@
       },
       "SavedPaymentMethod": {
         "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
           "payment_method_id": {
             "type": "string",
             "format": "uuid",
@@ -330,6 +350,7 @@
         },
         "type": "object",
         "required": [
+          "success",
           "payment_method_id"
         ],
         "title": "SavedPaymentMethod"

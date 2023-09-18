@@ -8,7 +8,7 @@ class _BaseAck(BaseModel):
     message: str = Field(default=None)
 
 
-class AckPaymentMethod(BaseModel):
+class AckPaymentMethod(_BaseAck):
     ...
 
 
