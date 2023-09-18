@@ -95,6 +95,13 @@ async def test_payment_method_worfklow(
     )
     await assert_status(response, web.HTTPNoContent)
 
+    # Get -> NOT FOUND
+    response = await client.get(
+        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
+    )
+    data, _ = await assert_status(response, web.HTTPNotFound)
+
+    # List -> empty
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data
