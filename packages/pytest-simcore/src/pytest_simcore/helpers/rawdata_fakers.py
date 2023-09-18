@@ -20,7 +20,9 @@ from typing import Any, Final
 from uuid import uuid4
 
 import faker
+from faker import Faker
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.webserver_models import GroupType, UserStatus
@@ -138,3 +140,40 @@ def fake_task_factory(first_internal_id=1) -> Callable:
         return data
 
     return fake_task
+
+
+def random_product(
+    group_id: int | None = None,
+    registration_email_template: str | None = None,
+    fake: Faker = FAKE,
+    **overrides
+):
+
+    fake_vendor = {
+        "name": fake.company(),
+        "copyright": fake.company_suffix(),
+        "url": fake.url(),
+        "license_url": fake.url(),
+        "invitation_url": fake.url(),
+        "has_landing_page": fake.boolean(),
+    }
+
+    data = {
+        "name": fake.unique.first_name(),
+        "display_name": fake.company(),
+        "short_name": fake.user_name(),
+        "host_regex": r"[a-zA-Z0-9]+\.com",
+        "support_email": fake.email(),
+        "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4())),
+        "vendor": fake.random_element([None, fake_vendor]),
+        "registration_email_template": registration_email_template,
+        "created": fake.date_time_this_decade(),
+        "modified": fake.date_time_this_decade(),
+        "priority": fake.pyint(0, 10),
+        "max_open_studies_per_user": fake.pyint(1, 10),
+        "group_id": group_id,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in products.columns})
+    data.update(overrides)
+    return data

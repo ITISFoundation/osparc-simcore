@@ -3,50 +3,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import random
-from typing import Any
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from pytest_simcore.helpers.rawdata_fakers import FAKE, random_user
+from pytest_simcore.helpers.rawdata_fakers import random_product, random_user
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.models.users import users
-
-
-def random_product(
-    group_id: int | None = None,
-    registration_email_template: str | None = None,
-    **overrides
-) -> dict[str, Any]:
-    data = {
-        "name": FAKE.unique.word(),
-        "display_name": FAKE.word(),
-        "short_name": FAKE.word()[:11],
-        "host_regex": r"[a-zA-Z0-9]+\.com",
-        "support_email": FAKE.email(),
-        "twilio_messaging_sid": FAKE.uuid4(),
-        "vendor": {
-            "key1": FAKE.word(),
-            "key2": FAKE.word(),
-        },
-        "issues": [{"issue_key": FAKE.word()}],
-        "manuals": [{"title": FAKE.sentence()}],
-        "support": [{"type": "Forum"}],
-        "login_settings": {
-            "setting1": FAKE.word(),
-            "setting2": FAKE.word(),
-        },
-        "registration_email_template": registration_email_template,
-        "max_open_studies_per_user": random.randint(1, 10),  # noqa: S311
-        "group_id": group_id,
-        "priority": random.randint(0, 5),  # noqa: S311
-    }
-    assert set(data.keys()).issubset({c.name for c in products.columns})
-
-    data.update(overrides)
-
-    return data
 
 
 async def test_creating_product_prices(connection: SAConnection):
