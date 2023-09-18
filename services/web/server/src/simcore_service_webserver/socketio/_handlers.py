@@ -46,6 +46,7 @@ def auth_user_factory(socket_id: SocketID):
         """
         app = request.app
         user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
+        # product_name = ...
         client_session_id = request.query.get("client_session_id", None)
 
         _logger.debug(
@@ -65,13 +66,16 @@ def auth_user_factory(socket_id: SocketID):
             socketio_session["client_session_id"] = client_session_id
             socketio_session["request"] = request
 
-        with managed_resource(user_id, client_session_id, app) as resource_registry:
+        with managed_resource(
+            user_id, client_session_id, app
+        ) as resource_registry:  # REDIS
             _logger.info(
                 "socketio connection from user %s",
                 user_id,
                 extra=get_log_record_extra(user_id=user_id),
             )
             await resource_registry.set_socket_id(socket_id)
+            # .set_product_name ...
 
         return user_id
 
@@ -88,6 +92,8 @@ async def _set_user_in_group_rooms(
     sio = get_socket_server(app)
     for group in groups:
         sio.enter_room(socket_id, f"{group['gid']}")
+
+    # ? wallet_id group ?
 
 
 #
@@ -121,13 +127,13 @@ async def connect(
 
         _logger.info("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
-        await emit(
-            app,
-            "SIGNAL_USER_CONNECTED",
-            user_id,
-            app,
-            "osparc",  # We need to add product
-        )
+        # await emit(
+        #     app,
+        #     "SIGNAL_USER_CONNECTED",
+        #     user_id,
+        #     app,
+        #     "osparc",  # We need to add product
+        # )
 
         heart_beat_messages: list[SocketMessageDict] = [
             {

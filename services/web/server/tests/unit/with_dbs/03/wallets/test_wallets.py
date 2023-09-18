@@ -6,17 +6,36 @@
 
 
 from collections.abc import AsyncIterator
+from decimal import Decimal
+from unittest import mock
 
 import arrow
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
 
+@pytest.fixture
+def mock_rut_sum_total_available_credits_in_the_wallet(
+    mocker: MockerFixture,
+) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_webserver.wallets._api.resource_usage_tracker_client.sum_total_available_credits_in_the_wallet",
+        return_value=WalletTotalCredits(
+            wallet_id=1, available_osparc_credits=Decimal(10.2)
+        ),
+    )
+
+
+@pytest.mark.testit
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_wallets_full_workflow(
     client: TestClient,
@@ -24,6 +43,7 @@ async def test_wallets_full_workflow(
     user_project: ProjectDict,
     expected: type[web.HTTPException],
     wallets_clean_db: AsyncIterator[None],
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
 ):
     assert client.app
 
@@ -50,7 +70,9 @@ async def test_wallets_full_workflow(
     assert data[0]["description"] == "Custom description"
     assert data[0]["thumbnail"] is None
     assert data[0]["status"] == "ACTIVE"
-    assert data[0]["availableCredits"] == 0.0
+    assert data[0]["availableCredits"] == float(
+        mock_rut_sum_total_available_credits_in_the_wallet.return_value.available_osparc_credits
+    )
     store_modified_field = arrow.get(data[0]["modified"])
 
     # update user wallet

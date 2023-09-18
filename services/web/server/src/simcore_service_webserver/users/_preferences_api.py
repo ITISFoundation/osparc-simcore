@@ -57,15 +57,6 @@ async def _get_frontend_user_preferences(
     ]
 
 
-async def get_frontend_user_preference_by_class(
-    app: web.Application,  # pylint: disable=unused-argument
-    user_id: UserID,  # pylint: disable=unused-argument
-    product_name: ProductName,  # pylint: disable=unused-argument
-    preference_class: FrontendUserPreference,  # pylint: disable=unused-argument
-):
-    ...
-
-
 async def get_frontend_user_preferences_aggregation(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> AggregatedPreferences:

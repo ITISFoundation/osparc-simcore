@@ -35,7 +35,6 @@ def resource_tracker_credit_transactions_db(
 async def test_credit_transactions_workflow(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_redis_server: None,
-    # mocked_setup_rabbitmq: mock.Mock,
     postgres_db: sa.engine.Engine,
     async_client: httpx.AsyncClient,
     resource_tracker_credit_transactions_db: None,
@@ -101,6 +100,3 @@ async def test_credit_transactions_workflow(
     data = response.json()
     assert data["wallet_id"] == 1
     assert data["available_osparc_credits"] == Decimal(1340.04)
-
-
-# MATUS: add additional test with a consumer!
