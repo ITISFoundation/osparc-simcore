@@ -1,26 +1,28 @@
-from collections.abc import AsyncIterable, Callable
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
+
+from collections.abc import AsyncIterable, Callable
+from typing import Any, AsyncIterator
+
+import distributed
 import pytest
-from distributed import Scheduler, SpecCluster, Worker
 from yarl import URL
 
 
 @pytest.fixture
-async def dask_spec_local_cluster(
-    monkeypatch: pytest.MonkeyPatch,
-    unused_tcp_port_factory: Callable,
-) -> AsyncIterable[SpecCluster]:
-    # in this mode we can precisely create a specific cluster
-    workers = {
+def dask_workers_config() -> dict[str, Any]:
+    return {
         "cpu-worker": {
-            "cls": Worker,
+            "cls": distributed.Worker,
             "options": {
                 "nthreads": 2,
                 "resources": {"CPU": 2, "RAM": 48e9},
             },
         },
         "gpu-worker": {
-            "cls": Worker,
+            "cls": distributed.Worker,
             "options": {
                 "nthreads": 1,
                 "resources": {
@@ -30,8 +32,8 @@ async def dask_spec_local_cluster(
                 },
             },
         },
-        "bigcpu-worker": {
-            "cls": Worker,
+        "large-ram-worker": {
+            "cls": distributed.Worker,
             "options": {
                 "nthreads": 1,
                 "resources": {
@@ -41,16 +43,34 @@ async def dask_spec_local_cluster(
             },
         },
     }
-    scheduler = {
-        "cls": Scheduler,
+
+
+@pytest.fixture
+def dask_scheduler_config(
+    unused_tcp_port_factory: Callable,
+) -> dict[str, Any]:
+    return {
+        "cls": distributed.Scheduler,
         "options": {
             "port": unused_tcp_port_factory(),
             "dashboard_address": f":{unused_tcp_port_factory()}",
         },
     }
 
-    async with SpecCluster(
-        workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
+
+@pytest.fixture
+async def dask_spec_local_cluster(
+    monkeypatch: pytest.MonkeyPatch,
+    dask_workers_config: dict[str, Any],
+    dask_scheduler_config: dict[str, Any],
+) -> AsyncIterable[distributed.SpecCluster]:
+    # in this mode we can precisely create a specific cluster
+
+    async with distributed.SpecCluster(
+        workers=dask_workers_config,
+        scheduler=dask_scheduler_config,
+        asynchronous=True,
+        name="pytest_cluster",
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv(
@@ -58,3 +78,13 @@ async def dask_spec_local_cluster(
             f"{scheduler_address}" or "invalid",
         )
         yield cluster
+
+
+@pytest.fixture
+async def dask_spec_cluster_client(
+    dask_spec_local_cluster: distributed.SpecCluster,
+) -> AsyncIterator[distributed.Client]:
+    async with distributed.Client(
+        dask_spec_local_cluster.scheduler_address, asynchronous=True
+    ) as client:
+        yield client

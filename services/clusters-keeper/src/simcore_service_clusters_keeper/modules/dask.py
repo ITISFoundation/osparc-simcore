@@ -1,11 +1,8 @@
-import asyncio
 import logging
 from collections.abc import Coroutine
 from typing import Any, Final
 
-import dask_gateway
 import distributed
-from models_library.clusters import SimpleAuthentication
 from pydantic import AnyUrl
 
 _logger = logging.getLogger(__name__)
@@ -22,47 +19,6 @@ async def _wrap_client_async_routine(
     return await client_coroutine
 
 
-async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) -> bool:
-    basic_auth = dask_gateway.BasicAuth(
-        username=gateway_auth.username,
-        password=gateway_auth.password.get_secret_value(),
-    )
-    async with dask_gateway.Gateway(
-        address=f"{url}",
-        auth=basic_auth,
-        asynchronous=True,
-    ) as gateway:
-        cluster_reports = await asyncio.wait_for(gateway.list_clusters(), timeout=5)
-        if not cluster_reports:
-            _logger.info("no cluster in gateway, nothing going on")
-            return False
-        assert len(cluster_reports) == 1  # nosec
-        async with gateway.connect(
-            cluster_reports[0].name, shutdown_on_close=False
-        ) as dask_cluster, dask_cluster.get_client() as client:
-            datasets_on_scheduler = await _wrap_client_async_routine(
-                client.list_datasets()
-            )
-            _logger.info(
-                "cluster currently has %s datasets", len(datasets_on_scheduler)
-            )
-            num_processing_tasks = 0
-            if worker_to_processing_tasks := await _wrap_client_async_routine(
-                client.processing()
-            ):
-                _logger.info(
-                    "cluster current workers: %s", worker_to_processing_tasks.keys()
-                )
-                num_processing_tasks = sum(
-                    len(tasks) for tasks in worker_to_processing_tasks.values()
-                )
-                _logger.info(
-                    "cluster currently processes %s tasks", num_processing_tasks
-                )
-
-            return bool(datasets_on_scheduler or num_processing_tasks)
-
-
 async def ping_scheduler(url: AnyUrl) -> bool:
     try:
         async with distributed.Client(f"{url}", asynchronous=True, timeout="5"):
@@ -70,7 +26,7 @@ async def ping_scheduler(url: AnyUrl) -> bool:
         return True
     except OSError:
         _logger.info(
-            "osparc-gateway %s ping timed-out, the machine is likely still starting...",
+            "osparc-dask-scheduler %s ping timed-out, the machine is likely still starting...",
             url,
         )
 
