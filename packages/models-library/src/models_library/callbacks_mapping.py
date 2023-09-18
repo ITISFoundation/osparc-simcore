@@ -10,7 +10,7 @@ class UserServiceCommand(BaseModel):
     )
     command: str | Sequence[str] = Field(..., description="command to run in container")
     timeout: NonNegativeFloat = Field(
-        ..., description="after this interval the command will be timed"
+        ..., description="after this interval the command will be timed-out"
     )
 
     class Config:

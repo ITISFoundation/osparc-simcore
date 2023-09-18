@@ -213,7 +213,7 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    callbacks_mapping: CallbacksMapping | None = None
+    callbacks_mapping: CallbacksMapping | None = Field(default_factory=dict)
     paths_mapping: PathMappingsLabel | None = None
     boot_options: BootOptions = None
     min_visible_inputs: NonNegativeInt | None = None
@@ -223,13 +223,6 @@ class RuntimeConfig(BaseModel):
     containers_allowed_outgoing_internet: set[str] | None = None
 
     settings: list[SettingsItem] = Field(default_factory=list)
-
-    @root_validator
-    @classmethod
-    def _callbacks_mapping_cannot_be_none(cls, values):
-        if values.get("callbacks_mapping") is None:
-            values["callbacks_mapping"] = {}
-        return values
 
     @root_validator(pre=True)
     @classmethod
