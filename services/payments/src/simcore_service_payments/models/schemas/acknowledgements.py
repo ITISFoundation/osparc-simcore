@@ -19,9 +19,9 @@ class SavedPaymentMethod(AckPaymentMethod):
 class AckPayment(_BaseAck):
     saved: SavedPaymentMethod | None = Field(
         default=None,
-        description="If not None, then the payment method used"
-        "in this payment was alos saved, returning its payment_method_id and ack"
-        "This happens when user marks 'save' during the payment prompt step.",
+        description="If the user decided to save the payment method"
+        "after payment it returns the payment-method acknoledgement response."
+        "Otherwise it defaults to None.",
     )
 
 
