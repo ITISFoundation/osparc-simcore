@@ -8,14 +8,12 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
-from .._constants import RQ_PRODUCT_KEY
 from ..groups.api import list_user_groups
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import managed_resource
@@ -41,14 +39,13 @@ _EMIT_INTERVAL_S: int = 2
 
 def auth_user_factory(socket_id: SocketID):
     @login_required
-    async def _handler(request: web.Request) -> tuple[UserID, ProductName]:
+    async def _handler(request: web.Request) -> UserID:
         """
         Raises:
             web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
         """
         app = request.app
         user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
-        product_name = ProductName(request.get(RQ_PRODUCT_KEY))
         client_session_id = request.query.get("client_session_id", None)
 
         _logger.debug(
@@ -67,7 +64,6 @@ def auth_user_factory(socket_id: SocketID):
             socketio_session["user_id"] = user_id
             socketio_session["client_session_id"] = client_session_id
             socketio_session["request"] = request
-            socketio_session["product_name"] = product_name
 
         # REDIS wrapper
         with managed_resource(user_id, client_session_id, app) as resource_registry:
@@ -78,7 +74,7 @@ def auth_user_factory(socket_id: SocketID):
             )
             await resource_registry.set_socket_id(socket_id)
 
-        return user_id, product_name
+        return user_id
 
     return _handler
 
@@ -93,8 +89,6 @@ async def _set_user_in_group_rooms(
     sio = get_socket_server(app)
     for group in groups:
         sio.enter_room(socket_id, f"{group['gid']}")
-
-    # ? wallet_id group ?
 
 
 #
@@ -122,7 +116,7 @@ async def connect(
 
     try:
         auth_user_handler = auth_user_factory(socket_id)
-        user_id, product_name = await auth_user_handler(environ["aiohttp.request"])
+        user_id = await auth_user_handler(environ["aiohttp.request"])
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
 
@@ -133,7 +127,7 @@ async def connect(
             "SIGNAL_USER_CONNECTED",
             user_id,
             app,
-            product_name,
+            "s4l",  # NOTE: will be changed in upcoming PR
         )
 
         heart_beat_messages: list[SocketMessageDict] = [
@@ -164,7 +158,6 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
     sio = get_socket_server(app)
     async with sio.session(socket_id) as socketio_session:
         if user_id := socketio_session.get("user_id"):
-            product_name = socketio_session.get("product_name")
             client_session_id = socketio_session["client_session_id"]
 
             with log_context(
@@ -183,7 +176,6 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                     user_id,
                     client_session_id,
                     app,
-                    product_name,
                 )
 
         else:

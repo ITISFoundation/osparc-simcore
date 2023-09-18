@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from typing import Any
 
 from aiohttp import web
@@ -100,7 +101,7 @@ async def start_computation(request: web.Request) -> web.Response:
     project_wallet = await projects_api.get_project_wallet(
         request.app, project_id=project_id
     )
-    if project_wallet:
+    if project_wallet and os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", False):
         # Check whether user has access to the wallet
         await wallets_api.get_wallet_by_user(
             request.app, req_ctx.user_id, project_wallet.wallet_id

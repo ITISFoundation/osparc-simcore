@@ -72,6 +72,18 @@ async def list_wallets_with_available_credits_for_user(
     return wallets_api
 
 
+async def list_wallets_for_user(
+    app: web.Application,
+    user_id: UserID,
+) -> list[WalletGet]:
+    user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
+        app=app, user_id=user_id
+    )
+    wallets_api = [WalletGet.construct(**wallet.dict()) for wallet in user_wallets]
+
+    return wallets_api
+
+
 async def update_wallet(
     app: web.Application,
     user_id: UserID,
