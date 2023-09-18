@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import random
 from typing import Any
 from uuid import uuid4
 
@@ -34,20 +33,11 @@ from .settings import PaymentsSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-def _generate_fake_card_number():
-    # Generate a random 4-digit card number
-    card_number = "".join(
-        [f"{random.randint(0, 9)}" for _ in range(4)]  # nosec # noqa: S311 # NOSONAR
-    )
-    # Mask the card number
-    return f"**** **** **** {card_number}"
-
-
 def _generate_fake_data(fake: Faker):
     return {
         "idr": fake.uuid4(),
         "card_holder_name": fake.name(),
-        "card_number_masked": _generate_fake_card_number(),
+        "card_number_masked": f"**** **** **** {fake.credit_card_number()[:4]}",
         "card_type": fake.credit_card_provider(),
         "expiration_month": fake.random_int(min=1, max=12),
         "expiration_year": fake.future_date().year,

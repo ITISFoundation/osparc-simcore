@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import (
@@ -24,6 +25,9 @@ from simcore_service_webserver.payments.settings import (
 )
 
 
+@pytest.mark.acceptance_test(
+    "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
+)
 async def test_payment_method_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
