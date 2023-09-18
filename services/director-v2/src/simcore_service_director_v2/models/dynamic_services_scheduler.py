@@ -443,7 +443,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @classmethod
     def _wallet_info_legacy_migration(cls, values):
         logger.warning(
-            "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4745"
+            "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4766"
         )
         if "wallet_info" not in values:
             values["wallet_info"] = None
