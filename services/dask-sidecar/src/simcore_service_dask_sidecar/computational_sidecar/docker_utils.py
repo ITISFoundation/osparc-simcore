@@ -251,7 +251,7 @@ async def _parse_container_docker_logs(
                 async for log_line in cast(
                     AsyncGenerator[str, None],
                     container.log(
-                        stdout=True, stderr=True, follow=True, timestamp=True
+                        stdout=True, stderr=True, follow=True, timestamps=True
                     ),
                 ):
                     logger.info(
