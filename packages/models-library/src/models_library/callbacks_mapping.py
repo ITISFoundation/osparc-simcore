@@ -1,13 +1,7 @@
 from collections.abc import Sequence
-from functools import cached_property
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field, NonNegativeFloat
-
-
-class _BaseConfig:
-    extra = Extra.forbid
-    keep_untouched = (cached_property,)
+from pydantic import BaseModel, Field, NonNegativeFloat
 
 
 class UserServiceCommand(BaseModel):
@@ -19,7 +13,7 @@ class UserServiceCommand(BaseModel):
         ..., description="after this interval the command will be timed"
     )
 
-    class Config(_BaseConfig):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"service": "rt-web", "command": "ls", "timeout": 1},
@@ -42,7 +36,7 @@ class CallbacksMapping(BaseModel):
         ),
     )
 
-    class Config(_BaseConfig):
+    class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
