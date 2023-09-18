@@ -26,7 +26,6 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-#
 class PaymentsMethodsDB(BaseModel):
     payment_method_id: PaymentMethodID
     user_id: UserID

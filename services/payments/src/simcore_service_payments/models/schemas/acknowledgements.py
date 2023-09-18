@@ -8,12 +8,21 @@ class _BaseAck(BaseModel):
     message: str = Field(default=None)
 
 
+class AckPaymentMethod(_BaseAck):
+    ...
+
+
+class SavedPaymentMethod(AckPaymentMethod):
+    payment_method_id: PaymentMethodID
+
+
 class AckPayment(_BaseAck):
-    ...
-
-
-class AckPaymentMethod(BaseModel):
-    ...
+    saved: SavedPaymentMethod | None = Field(
+        default=None,
+        description="If the user decided to save the payment method"
+        "after payment it returns the payment-method acknoledgement response."
+        "Otherwise it defaults to None.",
+    )
 
 
 assert PaymentID  # nosec
