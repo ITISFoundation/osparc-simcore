@@ -20,8 +20,8 @@ def upgrade():
     op.create_table(
         "products_prices",
         sa.Column("product_name", sa.String(), nullable=False),
-        sa.Column("dollars_per_credit", sa.Numeric(scale=2), nullable=False),
-        sa.Column("authorized_by", sa.BigInteger(), nullable=False),
+        sa.Column("usd_per_credit", sa.Numeric(scale=2), nullable=False),
+        sa.Column("authorized_by", sa.String(), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -29,14 +29,7 @@ def upgrade():
             nullable=False,
         ),
         sa.CheckConstraint(
-            "dollars_per_credit >= 0", name="non_negative_dollars_per_credit_constraint"
-        ),
-        sa.ForeignKeyConstraint(
-            ["authorized_by"],
-            ["users.id"],
-            name="fk_products_prices_authorized_by",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
         ),
         sa.ForeignKeyConstraint(
             ["product_name"],

@@ -6,22 +6,12 @@
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from pytest_simcore.helpers.rawdata_fakers import random_product, random_user
+from pytest_simcore.helpers.rawdata_fakers import random_product
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
-from simcore_postgres_database.models.users import users
 
 
 async def test_creating_product_prices(connection: SAConnection):
-    # a user
-    result = await connection.execute(
-        users.insert()
-        .values(random_user(primary_gid=1))
-        .returning(sa.literal_column("*"))
-    )
-    user = await result.first()
-    assert user
-
     # a product
     result = await connection.execute(
         products.insert()
@@ -36,8 +26,8 @@ async def test_creating_product_prices(connection: SAConnection):
         products_prices.insert()
         .values(
             product_name=product.name,
-            dollars_per_credit=100,
-            authorized_by=user.id,
+            usd_per_credit=100,
+            authorized_by="PO Mr X",
         )
         .returning(sa.literal_column("*"))
     )

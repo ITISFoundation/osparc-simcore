@@ -3,7 +3,6 @@ import sqlalchemy as sa
 from ._common import NUMERIC_KWARGS, column_created_datetime
 from .base import metadata
 from .products import products
-from .users import users
 
 #
 # - Every product has an authorized price
@@ -28,25 +27,19 @@ products_prices = sa.Table(
         doc="Product name",
     ),
     sa.Column(
-        "dollars_per_credit",
+        "usd_per_credit",
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
-        doc="Price in dollars per credit >=0",
+        doc="Price in USD/credit >=0",
     ),
     sa.Column(
         "authorized_by",
-        sa.BigInteger,
-        sa.ForeignKey(
-            users.c.id,
-            name="fk_products_prices_authorized_by",
-            ondelete="RESTRICT",
-            onupdate="CASCADE",
-        ),
+        sa.String,
         nullable=False,
-        doc="user_id of the product owner (PO) who authorized this price",
+        doc="For the moment a comment on the product owner (PO) who authorized this price",
     ),
     column_created_datetime(timezone=True),
     sa.CheckConstraint(
-        "dollars_per_credit >= 0", name="non_negative_dollars_per_credit_constraint"
+        "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
     ),
 )
