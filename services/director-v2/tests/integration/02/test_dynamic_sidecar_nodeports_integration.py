@@ -846,6 +846,7 @@ async def _assert_retrieve_completed(
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,

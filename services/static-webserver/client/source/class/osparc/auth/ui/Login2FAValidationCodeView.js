@@ -96,13 +96,13 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserEmail())
           .then(data => {
             resendCodeSMSBtn.setFetching(false);
-            osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
+            osparc.FlashMessenger.logAs(data.reason, "INFO");
             introText.setValue(justSentText + this.getUserPhoneNumber());
             this.__restartTimers();
           })
           .catch(err => {
             resendCodeSMSBtn.setFetching(false);
-            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
           });
       }, this);
 
@@ -118,13 +118,13 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
           .then(data => {
             resendCodeEmailBtn.setFetching(false);
-            osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
+            osparc.FlashMessenger.logAs(data.reason, "INFO");
             introText.setValue(justSentText + this.getUserEmail());
             this.__restartTimers();
           })
           .catch(err => {
             resendCodeEmailBtn.setFetching(false);
-            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
           });
       }, this);
       this.add(resendLayout);
@@ -154,7 +154,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
           valid: false
         });
 
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       const manager = osparc.auth.Manager.getInstance();

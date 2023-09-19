@@ -4,41 +4,84 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-coverage==7.3.0
+anyio==3.7.1
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
+asgi-lifespan==2.1.0
+    # via -r requirements/_test.in
+certifi==2023.7.22
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   httpcore
+    #   httpx
+    #   requests
+charset-normalizer==3.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
+docker==6.1.3
+    # via -r requirements/_test.in
 exceptiongroup==1.1.3
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   pytest
-faker==19.3.1
+faker==19.6.1
     # via -r requirements/_test.in
+h11==0.14.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
+httpcore==0.17.3
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
+httpx==0.24.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   respx
 icdiff==2.0.7
     # via pytest-icdiff
+idna==3.4
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   httpx
+    #   requests
 iniconfig==2.0.0
     # via pytest
 packaging==23.1
     # via
     #   -c requirements/_base.txt
+    #   docker
     #   pytest
     #   pytest-sugar
 pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-icdiff
+    #   pytest-mock
     #   pytest-sugar
 pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.6
+pytest-icdiff==0.7
+    # via -r requirements/_test.in
+pytest-mock==3.11.1
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -52,13 +95,31 @@ python-dotenv==1.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+requests==2.31.0
+    # via docker
+respx==0.20.2
+    # via -r requirements/_test.in
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
+sniffio==1.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   asgi-lifespan
+    #   httpcore
+    #   httpx
 termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage
     #   pytest
+urllib3==2.0.4
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
+    #   requests
+websocket-client==1.6.3
+    # via docker

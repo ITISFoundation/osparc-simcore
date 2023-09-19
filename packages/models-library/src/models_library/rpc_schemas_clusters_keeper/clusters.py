@@ -1,3 +1,4 @@
+import datetime
 from enum import auto
 
 from pydantic import AnyUrl, BaseModel
@@ -19,5 +20,6 @@ class OnDemandCluster(BaseModel):
     authentication: ClusterAuthentication
     state: ClusterState
     user_id: UserID
-    wallet_id: WalletID
+    wallet_id: WalletID | None
     gateway_ready: bool
+    eta: datetime.timedelta

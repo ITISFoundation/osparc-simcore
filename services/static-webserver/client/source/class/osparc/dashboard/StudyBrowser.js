@@ -292,7 +292,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       loadMoreBtn.addListener("appear", () => this._moreResourcesRequired());
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     _reloadNewCards: function() {
@@ -300,7 +300,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cards = this._resourcesContainer.reloadNewCards();
       this.__configureCards(cards);
 
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __configureCards: function(cards) {
@@ -497,7 +497,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyFromServiceButtons: function(services, serviceKey, newButtonInfo) {
       const mode = this._resourcesContainer.getMode();
       // Make sure we have access to that service
-      const versions = osparc.utils.Services.getVersions(services, serviceKey);
+      const versions = osparc.service.Utils.getVersions(services, serviceKey);
       if (versions.length && newButtonInfo) {
         const title = newButtonInfo.title;
         const desc = newButtonInfo.description;
@@ -632,7 +632,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createImportButton: function() {
       const importButton = new qx.ui.form.Button(this.tr("Import"));
       importButton.addListener("execute", () => {
-        const importStudy = new osparc.component.study.Import();
+        const importStudy = new osparc.study.Import();
         const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
         win.set({
           clickAwayClose: false
@@ -646,7 +646,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const size = file.size;
           const maxSize = 10 * 1024 * 1024 * 1024; // 10 GB
           if (size > maxSize) {
-            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
           }
           this.__importStudy(file);
@@ -737,7 +737,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const title = osparc.utils.Utils.getUniqueStudyName(templateCopyData.name, this._resourcesList);
       templateCopyData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));
-      osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
+      osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
@@ -753,7 +753,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -761,7 +761,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
-      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
+      osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
@@ -777,7 +777,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -788,7 +788,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         data: minStudyData
       };
-      osparc.utils.Study.createStudyAndPoll(params)
+      osparc.study.Utils.createStudyAndPoll(params)
         .then(studyData => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
@@ -804,7 +804,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -879,7 +879,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getRenameStudyMenuButton: function(studyData) {
       const renameButton = new qx.ui.menu.Button(this.tr("Rename"));
       renameButton.addListener("execute", () => {
-        const renamer = new osparc.component.widget.Renamer(studyData["name"]);
+        const renamer = new osparc.widget.Renamer(studyData["name"]);
         renamer.addListener("labelChanged", e => {
           const newLabel = e.getData()["newLabel"];
           const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -904,7 +904,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(updatedStudyData => this._updateStudyData(updatedStudyData))
         .catch(err => {
           const msg = this.tr("Something went wrong updating the Service");
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
           console.error(err);
         });
     },
@@ -971,7 +971,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyName,
-        osparc.component.task.Duplicate.ICON + (isGrid ? "60" : "24"),
+        osparc.task.Duplicate.ICON + (isGrid ? "60" : "24"),
         null,
         true
       );
@@ -980,7 +980,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __duplicateStudy: function(studyData) {
       const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const params = {
         url: {
@@ -994,16 +994,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(task => this.taskDuplicateReceived(task, studyData["name"]))
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
 
     __exportStudy: function(studyData) {
-      const exportTask = new osparc.component.task.Export(studyData);
+      const exportTask = new osparc.task.Export(studyData);
       exportTask.start();
       exportTask.setSubtitle(this.tr("Preparing files"));
       const text = this.tr("Exporting process started and added to the background tasks");
-      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
       const progressCB = () => {
@@ -1013,7 +1013,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.downloadLink(url, "POST", null, progressCB)
         .catch(e => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Exporting the study");
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => {
           exportTask.stop();
@@ -1022,12 +1022,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __importStudy: function(file) {
       const uploadingLabel = this.tr("Uploading file");
-      const importTask = new osparc.component.task.Import();
+      const importTask = new osparc.task.Import();
       importTask.start();
       importTask.setSubtitle(uploadingLabel);
 
       const text = this.tr("Importing process started and added to the background tasks");
-      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const isGrid = this._resourcesContainer.getMode() === "grid";
       const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
@@ -1077,7 +1077,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .catch(err => {
               console.error(err);
               const msg = this.tr("Something went wrong Fetching the study");
-              osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+              osparc.FlashMessenger.logAs(msg, "ERROR");
             })
             .finally(() => {
               importTask.stop();
@@ -1087,7 +1087,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           importTask.stop();
           this._resourcesContainer.removeNonResourceCard(importingStudyCard);
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong Importing the study");
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         }
       });
       req.addEventListener("error", e => {
@@ -1095,14 +1095,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
       });
       req.addEventListener("abort", e => {
         // transferAborted
         importTask.stop();
         this._resourcesContainer.removeNonResourceCard(importingStudyCard);
         const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
-        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
@@ -1116,7 +1116,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
+        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         const params = {
           url: {
             "studyId": studyData.uuid
@@ -1132,7 +1132,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__removeFromStudyList(studyData.uuid, false))
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
         .finally(() => {
           this.resetSelection();
@@ -1175,7 +1175,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     taskDuplicateReceived: function(task, studyName) {
-      const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
+      const duplicateTaskUI = new osparc.task.Duplicate(studyName);
       duplicateTaskUI.setTask(task);
       duplicateTaskUI.start();
       const duplicatingStudyCard = this.__createDuplicateCard(studyName);
@@ -1188,7 +1188,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __attachDuplicateEventHandler: function(task, taskUI, duplicatingStudyCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
-          osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
+          osparc.FlashMessenger.logAs(msg, msgLevel);
         }
         taskUI.stop();
         this._resourcesContainer.removeNonResourceCard(duplicatingStudyCard);

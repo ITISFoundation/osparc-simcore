@@ -27,7 +27,7 @@ test_isolated() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/web/server
-  make test-ci-unit test-subfolder=isolated pytest-parameters="--numprocesses=auto"
+  make test-ci-unit test-path=isolated pytest-parameters="--numprocesses=auto"
   popd
 }
 
@@ -36,7 +36,7 @@ test_with_db() {
   source .venv/bin/activate
   pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
-  make test-ci-unit test-subfolder="with_dbs/$1"
+  make test-ci-unit test-path="with_dbs/$1"
   popd
 }
 

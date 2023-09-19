@@ -64,12 +64,6 @@ SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 
-ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
-    "org.label-schema.build-date": "build_date",
-    "org.label-schema.vcs-ref": "vcs_ref",
-    "org.label-schema.vcs-url": "vcs_url",
-}
-
 SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
 
@@ -470,6 +464,10 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: FileLinkType = Field(
         FileLinkType.PRESIGNED,
         description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
+    )
+    COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.PRESIGNED,
+        description=f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'",
     )
 
     @cached_property

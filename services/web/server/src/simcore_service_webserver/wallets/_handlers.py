@@ -25,6 +25,9 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..payments.errors import (
     PaymentCompletedError,
+    PaymentMethodAlreadyAckedError,
+    PaymentMethodNotFoundError,
+    PaymentMethodUniqueViolationError,
     PaymentNotFoundError,
     PaymentUniqueViolationError,
 )
@@ -45,12 +48,15 @@ def handle_wallets_exceptions(handler: Handler):
         except (
             WalletNotFoundError,
             PaymentNotFoundError,
+            PaymentMethodNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except (
             PaymentUniqueViolationError,
             PaymentCompletedError,
+            PaymentMethodAlreadyAckedError,
+            PaymentMethodUniqueViolationError,
         ) as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 

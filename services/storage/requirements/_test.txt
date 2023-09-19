@@ -29,7 +29,7 @@ attrs==23.1.0
     #   jsonschema
     #   referencing
     #   sarif-om
-aws-sam-translator==1.73.0
+aws-sam-translator==1.74.0
     # via cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
@@ -49,6 +49,7 @@ botocore==1.31.17
     #   s3transfer
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
     #   simcore-service-storage-sdk
@@ -65,7 +66,7 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.3.0
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -86,7 +87,7 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.3
     # via pytest
-faker==19.3.1
+faker==19.6.1
     # via -r requirements/_test.in
 flask==2.3.3
     # via
@@ -164,7 +165,7 @@ markupsafe==2.1.3
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.2.0
+moto==4.2.2
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -223,7 +224,7 @@ pydantic==1.10.12
     #   aws-sam-translator
 pyparsing==3.1.1
     # via moto
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -233,13 +234,13 @@ pytest==7.4.0
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-aiohttp==1.0.4
+pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
 pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.6
+pytest-icdiff==0.7
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -261,7 +262,7 @@ python-dotenv==1.0.0
     # via -r requirements/_test.in
 python-jose==3.3.0
     # via moto
-pytz==2023.3
+pytz==2023.3.post1
     # via pandas
 pyyaml==6.0.1
     # via
@@ -355,7 +356,7 @@ urllib3==1.26.16
     #   requests
     #   responses
     #   simcore-service-storage-sdk
-websocket-client==1.6.2
+websocket-client==1.6.3
     # via docker
 werkzeug==2.3.7
     # via

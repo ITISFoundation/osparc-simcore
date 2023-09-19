@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     });
     this._add(toolbar);
 
-    const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
+    const workbenchUI = this.__workbenchUI = new osparc.workbench.WorkbenchUI();
     this._add(workbenchUI, {
       flex: 1
     });

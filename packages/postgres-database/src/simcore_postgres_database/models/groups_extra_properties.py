@@ -49,6 +49,16 @@ groups_extra_properties = sa.Table(
         server_default=sa.sql.expression.false(),
         doc="allows group to override default service specifications.",
     ),
+    sa.Column(
+        "use_on_demand_clusters",
+        sa.Boolean(),
+        nullable=False,
+        server_default=sa.sql.expression.false(),
+        doc="If true, group will use on-demand clusters",
+    ),
+    sa.UniqueConstraint(
+        "group_id", "product_name", name="group_id_product_name_uniqueness"
+    ),
     # TIME STAMPS ----
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),

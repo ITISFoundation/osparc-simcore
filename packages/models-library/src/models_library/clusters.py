@@ -19,10 +19,11 @@ from .utils.enums import StrAutoEnum
 
 
 class ClusterTypeInModel(StrAutoEnum):
-    # This enum is equivalent to `simcore_postgres_database.models.clusters.ClusterType`
+    # This enum contains more types than its equivalent to `simcore_postgres_database.models.clusters.ClusterType`
     # SEE models-library/tests/test__pydantic_models_and_enums.py
     AWS = auto()
     ON_PREMISE = auto()
+    ON_DEMAND = auto()
 
 
 class ClusterAccessRights(BaseModel):

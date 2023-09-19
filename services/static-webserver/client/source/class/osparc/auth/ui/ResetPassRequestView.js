@@ -86,12 +86,12 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
 
       const successFun = function(log) {
         this.fireDataEvent("done", log.message);
-        osparc.component.message.FlashMessenger.getInstance().log(log);
+        osparc.FlashMessenger.getInstance().log(log);
       };
 
       const failFun = function(msg) {
         msg = msg || this.tr("Could not request password reset");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       manager.resetPasswordRequest(email.getValue(), successFun, failFun, this);

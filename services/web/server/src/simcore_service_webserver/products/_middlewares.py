@@ -7,10 +7,10 @@ from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .._meta import API_VTAG
 from ._model import Product
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def discover_product_by_hostname(request: web.Request) -> str | None:
+def _discover_product_by_hostname(request: web.Request) -> str | None:
     products: dict[str, Product] = request.app[APP_PRODUCTS_KEY]
     for product in products.values():
         if product.host_regex.search(request.host):
@@ -19,7 +19,7 @@ def discover_product_by_hostname(request: web.Request) -> str | None:
     return None
 
 
-def discover_product_by_request_header(request: web.Request) -> str | None:
+def _discover_product_by_request_header(request: web.Request) -> str | None:
     requested_product: str | None = request.headers.get(X_PRODUCT_NAME_HEADER)
     if requested_product:
         for product_name in request.app[APP_PRODUCTS_KEY]:
@@ -48,8 +48,8 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         or request.path == "/static-frontend-data.json"
     ):
         product_name = (
-            discover_product_by_request_header(request)
-            or discover_product_by_hostname(request)
+            _discover_product_by_request_header(request)
+            or _discover_product_by_hostname(request)
             or _get_app_default_product_name(request)
         )
         request[RQ_PRODUCT_KEY] = product_name
@@ -61,7 +61,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         or request.path.startswith("/view")
         or request.path == "/"
     ):
-        product_name = discover_product_by_hostname(
+        product_name = _discover_product_by_hostname(
             request
         ) or _get_app_default_product_name(request)
 

@@ -55,6 +55,11 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     }
 
     if (this.__walletsEnabled) {
+      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
+      tabViews.add(paymentMethodsPage);
+    }
+
+    if (this.__walletsEnabled) {
       const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
       tabViews.add(transactionsPage);
     }
@@ -83,6 +88,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __profilePage: null,
     __walletsPage: null,
     __buyCreditsPage: null,
+    __paymentMethodsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
     __buyCredits: null,
@@ -205,6 +211,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return page;
     },
 
+    __getPaymentMethodsPage: function() {
+      const title = this.tr("Payment Methods");
+      const iconSrc = "@FontAwesome5Solid/credit-card/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
+      const paymentPethods = new osparc.desktop.paymentMethods.PaymentMethods();
+      paymentPethods.set({
+        margin: 10
+      });
+      page.add(paymentPethods);
+      return page;
+    },
+
     __getTransactionsPage: function() {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
@@ -223,7 +242,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const usageOverview = new osparc.component.resourceUsage.Overview();
+      const usageOverview = new osparc.resourceUsage.Overview();
       usageOverview.set({
         margin: 10
       });

@@ -137,8 +137,8 @@ qx.Class.define("osparc.MaintenanceTracker", {
       const messageToRibbon = closable => {
         this.__removeRibbonMessage();
         const text = this.__getText();
-        const notification = new osparc.component.notification.RibbonNotification(text, "maintenance", closable);
-        osparc.component.notification.RibbonNotifications.getInstance().addNotification(notification);
+        const notification = new osparc.notification.RibbonNotification(text, "maintenance", closable);
+        osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
         this.__lastRibbonMessage = notification;
       };
       if (diffClosable < 0) {
@@ -155,7 +155,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
     __removeRibbonMessage: function() {
       if (this.__lastRibbonMessage) {
-        osparc.component.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
+        osparc.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
         this.__lastRibbonMessage = null;
       }
     },
@@ -172,7 +172,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
         let text = qx.locale.Manager.tr("We are under maintenance.");
         text += "<br>";
         text += qx.locale.Manager.tr("Please check back later");
-        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING");
+        osparc.FlashMessenger.getInstance().logAs(text, "WARNING");
         qx.core.Init.getApplication().logout();
       };
       const now = new Date();

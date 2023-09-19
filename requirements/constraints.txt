@@ -10,7 +10,8 @@
 # Vulnerabilities -----------------------------------------------------------------------------------------
 #
 aiohttp>=3.7.4                                # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg
-cryptography>=39.0.1                          # https://github.com/advisories/GHSA-x4qr-2fvf-3mr5  Mar.2023
+certifi>=2023.7.22                            # https://github.com/advisories/GHSA-xqr8-7jwr-rhp7
+cryptography>=41.0.2                          # https://github.com/advisories/GHSA-cf7p-gm2m-833m
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp

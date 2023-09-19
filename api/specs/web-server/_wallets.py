@@ -14,6 +14,9 @@ from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
     PaymentID,
+    PaymentMethodGet,
+    PaymentMethodID,
+    PaymentMethodInit,
     PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
@@ -69,6 +72,8 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 @router.post(
     "/wallets/{wallet_id}/payments",
     response_model=Envelope[WalletPaymentCreated],
+    response_description="Successfully initialized",
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
     """Creates payment to wallet `wallet_id`"""
@@ -84,9 +89,61 @@ async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
 
 @router.post(
     "/wallets/{wallet_id}/payments/{payment_id}:cancel",
+    response_description="Successfully cancelled",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
+    ...
+
+
+### Wallets payment-methods
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments-methods:init",
+    response_model=Envelope[PaymentMethodInit],
+    response_description="Successfully initialized",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def init_creation_of_payment_method(wallet_id: WalletID):
+    ...
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_description="Successfully cancelled",
+)
+async def cancel_creation_of_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
+    ...
+
+
+@router.get(
+    "/wallets/{wallet_id}/payments-methods",
+    response_model=Envelope[list[PaymentMethodGet]],
+)
+async def list_payments_methods(wallet_id: WalletID):
+    """Lists all payments method associated to `wallet_id`"""
+
+
+@router.get(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
+    response_model=Envelope[PaymentMethodGet],
+)
+async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID):
+    ...
+
+
+@router.delete(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_description="Successfully deleted",
+)
+async def delete_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
     ...
 
 
