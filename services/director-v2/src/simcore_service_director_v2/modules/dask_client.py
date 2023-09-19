@@ -126,9 +126,10 @@ class DaskClient:
         cluster_type: ClusterTypeInModel,
     ) -> "DaskClient":
         _logger.info(
-            "Initiating connection to %s with auth: %s",
+            "Initiating connection to %s with auth: %s, type: %s",
             f"dask-scheduler/gateway at {endpoint}",
             authentication,
+            cluster_type,
         )
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -256,14 +257,15 @@ class DaskClient:
             check_communication_with_scheduler_is_open(self.backend.client)
             check_scheduler_status(self.backend.client)
             await check_maximize_workers(self.backend.gateway_cluster)
-            # NOTE: in case it's a gateway we do not check a priori if the task
+            # NOTE: in case it's a gateway or it is an on-demand cluster
+            # we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            if (
-                not self.backend.gateway
-                and self.cluster_type is not ClusterTypeInModel.ON_DEMAND
+            if (self.cluster_type is not ClusterTypeInModel.ON_DEMAND) and (
+                self.backend.gateway is None
             ):
+                _logger.warning("cluster type: %s", self.cluster_type)
                 check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
