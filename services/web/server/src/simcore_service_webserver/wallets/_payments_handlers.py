@@ -2,7 +2,6 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.product import CreditPriceGet
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
     PaymentID,
@@ -84,8 +83,8 @@ async def create_payment(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         # Conversion
-        price: CreditPriceGet = await get_current_product_credit_price(request)
-        if not price.usd_per_credit:
+        usd_per_credit = await get_current_product_credit_price(request)
+        if not usd_per_credit:
             # '0 or None' should raise
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
@@ -94,7 +93,7 @@ async def create_payment(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=body_params.price_dollars / price.usd_per_credit,
+            osparc_credits=body_params.price_dollars / usd_per_credit,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
         )

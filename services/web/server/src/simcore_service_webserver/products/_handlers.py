@@ -25,7 +25,7 @@ class _ProductsRequestContext(RequestParams):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
-@routes.get(f"/{VTAG}/credit-price", name="get_current_product_price")
+@routes.get(f"/{VTAG}/credits-price", name="get_current_product_price")
 @login_required
 @permission_required("product.price.read")
 async def get_current_product_price(request: web.Request):

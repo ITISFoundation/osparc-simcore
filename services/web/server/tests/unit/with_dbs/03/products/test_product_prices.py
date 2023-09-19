@@ -28,7 +28,7 @@ async def test_get_product_price_when_undefined(
     expected: type[web.HTTPException],
     new_osparc_price: Decimal,
 ):
-    response = await client.get("/v0/price")
+    response = await client.get("/v0/credits-price")
     data, error = await assert_status(response, expected)
 
     if not error:
