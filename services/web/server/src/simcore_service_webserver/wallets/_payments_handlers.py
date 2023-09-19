@@ -35,8 +35,10 @@ from ..payments.api import (
     init_creation_of_wallet_payment_method,
     list_wallet_payment_methods,
 )
+from ..products.api import get_current_product_credit_price
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
 from ._handlers import (
     WalletsPathParams,
     WalletsRequestContext,
@@ -80,20 +82,23 @@ async def create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # WARNING: conversion here is 1 dollar = 1 credit. Follow up logic discussed in https://github.com/ITISFoundation/osparc-simcore/issues/4657
-        osparc_credits = body_params.price_dollars
+        # Conversion
+        usd_per_credit = await get_current_product_credit_price(request)
+        if not usd_per_credit:
+            # '0 or None' should raise
+            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
         payment: WalletPaymentCreated = await create_payment_to_wallet(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=osparc_credits,
+            osparc_credits=body_params.price_dollars / usd_per_credit,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
         )
 
-    return envelope_json_response(payment, web.HTTPCreated)
+        return envelope_json_response(payment, web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
