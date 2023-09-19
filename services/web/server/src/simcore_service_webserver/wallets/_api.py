@@ -13,7 +13,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 
-from ..resource_usage import resource_usage_tracker_client
+from ..resource_usage.api import get_wallet_total_available_credits
 from ..users import api as users_api
 from . import _db as db
 from .errors import WalletAccessForbiddenError
@@ -52,8 +52,10 @@ async def list_wallets_with_available_credits_for_user(
     # Now we return the user wallets with available credits
     wallets_api = []
     for wallet in user_wallets:
-        available_credits: WalletTotalCredits = await resource_usage_tracker_client.sum_total_available_credits_in_the_wallet(
-            app, product_name, wallet.wallet_id
+        available_credits: WalletTotalCredits = (
+            await get_wallet_total_available_credits(
+                app, product_name, wallet.wallet_id
+            )
         )
         wallets_api.append(
             WalletGetWithAvailableCredits(
