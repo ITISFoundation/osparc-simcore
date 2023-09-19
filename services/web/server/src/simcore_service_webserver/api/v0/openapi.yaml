@@ -1761,6 +1761,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__'
+  /v0/credits-price:
+    get:
+      tags:
+      - products
+      summary: Get Current Product Price
+      operationId: get_current_product_price
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
   /v0/projects/{project_uuid}/comments:
     get:
       tags:
@@ -4833,6 +4846,22 @@ components:
           title: Comment
           maxLength: 100
           type: string
+    CreditPriceGet:
+      title: CreditPriceGet
+      required:
+      - productName
+      - usdPerCredit
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        usdPerCredit:
+          title: Usdpercredit
+          minimum: 0.0
+          type: number
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -4972,6 +5001,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ComputationTaskGet'
+        error:
+          title: Error
+    Envelope_CreditPriceGet_:
+      title: Envelope[CreditPriceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreditPriceGet'
         error:
           title: Error
     Envelope_Error_:
