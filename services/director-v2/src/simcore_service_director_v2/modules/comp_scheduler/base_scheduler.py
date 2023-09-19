@@ -619,7 +619,11 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
-        tasks_to_stop = [t for t in comp_tasks.values() if t.state in PROCESSING_STATES]
+        tasks_to_stop = [
+            t
+            for t in comp_tasks.values()
+            if t.state in PROCESSING_STATES | {RunningState.WAITING_FOR_CLUSTER}
+        ]
         await self._stop_tasks(user_id, tasks_to_stop, pipeline_params)
 
     async def _schedule_tasks_to_start(

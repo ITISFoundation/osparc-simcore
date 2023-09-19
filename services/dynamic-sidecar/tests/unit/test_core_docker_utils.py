@@ -11,7 +11,6 @@ import yaml
 from aiodocker.containers import DockerContainer
 from faker import Faker
 from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
 from pydantic import PositiveInt, SecretStr, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
@@ -26,12 +25,9 @@ from simcore_service_dynamic_sidecar.core.docker_utils import (
     pull_images,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
-from tenacity import AsyncRetrying, TryAgain
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def volume_name() -> str:
     return "test_source_name"
 
@@ -98,21 +94,6 @@ async def test_volume_label_missing(run_id: RunID) -> None:
     error_msg = f"{exc_info.value}"
     assert run_id in error_msg
     assert "not_exist" in error_msg
-
-
-async def _wait_for_containers_to_be_running(container_names: list[str]) -> None:
-    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(4)):
-        with attempt:
-            containers_statuses = await get_container_states(container_names)
-
-            running_container_statuses = [
-                x
-                for x in containers_statuses.values()
-                if x is not None and x.Status == ContainerStatus.running
-            ]
-
-            if len(running_container_statuses) != len(container_names):
-                raise TryAgain
 
 
 async def test__get_containers_inspect_from_names(

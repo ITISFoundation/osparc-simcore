@@ -66,6 +66,7 @@ def mock_env(
     network_name: str,
 ) -> EnvVarsDict:
     env_vars: EnvVarsDict = {
+        "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         "SWARM_STACK_NAME": "test_swarm_name",
         "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",

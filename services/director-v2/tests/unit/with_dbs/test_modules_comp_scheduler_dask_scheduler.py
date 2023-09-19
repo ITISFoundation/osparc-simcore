@@ -92,6 +92,7 @@ def _assert_dask_client_correctly_initialized(
         endpoint=mock.ANY,
         authentication=mock.ANY,
         tasks_file_link_type=mock.ANY,
+        cluster_type=mock.ANY,
     )
     mocked_dask_client.register_handlers.assert_called_once_with(
         TaskHandlers(

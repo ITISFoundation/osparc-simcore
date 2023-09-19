@@ -46,6 +46,7 @@ def test_load_from_labels(
 ):
     meta_cfg = MetaConfig.from_labels_annotations(labels)
     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
+    assert runtime_cfg.callbacks_mapping is not None
 
     print(meta_cfg.json(exclude_unset=True, indent=2))
     print(runtime_cfg.json(exclude_unset=True, indent=2))
@@ -72,7 +73,6 @@ def test_load_from_labels(
 def test_settings_item_in_sync_with_service_settings_label(
     example_data: dict[str, Any]
 ):
-
     print(pformat(example_data))
 
     # First we parse with SimcoreServiceSettingLabelEntry since it also supports backwards compatibility

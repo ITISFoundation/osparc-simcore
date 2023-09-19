@@ -7,7 +7,6 @@ from collections.abc import Callable
 import pytest
 from faker import Faker
 from models_library.rpc_schemas_clusters_keeper.clusters import ClusterState
-from pydantic import SecretStr
 from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.utils.clusters import (
     create_cluster_from_ec2_instance,
@@ -24,6 +23,7 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType
         ("stopped", ClusterState.STOPPED),
         ("stopping", ClusterState.STOPPED),
         ("terminated", ClusterState.STOPPED),
+        ("whatever", ClusterState.STOPPED),
     ],
 )
 def test_create_cluster_from_ec2_instance(
@@ -37,8 +37,7 @@ def test_create_cluster_from_ec2_instance(
         instance_data,
         faker.pyint(),
         faker.pyint(),
-        SecretStr(faker.password()),
-        gateway_ready=faker.pybool(),
+        dask_scheduler_ready=faker.pybool(),
     )
     assert cluster_instance
     assert cluster_instance.state is expected_cluster_state
