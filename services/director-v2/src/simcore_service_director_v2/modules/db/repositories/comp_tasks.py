@@ -341,11 +341,18 @@ class CompTasksRepository(BaseRepository):
                     if str(comp_task_db.node_id) not in published_nodes
                     else set()
                 )
+                update_values = (
+                    {"progress": None}
+                    if f"{comp_task_db.node_id}" in published_nodes
+                    else {}
+                )
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                     exclusion_rule.add("outputs")
+                    update_values = {}
                 on_update_stmt = insert_stmt.on_conflict_do_update(
                     index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                    set_=comp_task_db.to_db_model(exclude=exclusion_rule),
+                    set_=comp_task_db.to_db_model(exclude=exclusion_rule)
+                    | update_values,
                 ).returning(literal_column("*"))
                 result = await conn.execute(on_update_stmt)
                 row = await result.fetchone()

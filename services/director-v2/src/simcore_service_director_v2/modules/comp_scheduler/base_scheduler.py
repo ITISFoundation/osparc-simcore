@@ -663,7 +663,7 @@ class BaseCompScheduler(ABC):
             project_id,
             list(tasks_ready_to_start.keys()),
             RunningState.PENDING,
-            optional_progress=0,
+            optional_progress=None,
             optional_started=arrow.utcnow().datetime,
         )
 
@@ -716,7 +716,7 @@ class BaseCompScheduler(ABC):
                     project_id,
                     list(tasks_ready_to_start.keys()),
                     RunningState.WAITING_FOR_CLUSTER,
-                    optional_progress=0,
+                    optional_progress=None,
                 )
                 comp_tasks[f"{t}"].state = RunningState.WAITING_FOR_CLUSTER
             elif isinstance(r, ComputationalBackendOnDemandNotReadyError):
@@ -735,7 +735,7 @@ class BaseCompScheduler(ABC):
                     project_id,
                     list(tasks_ready_to_start.keys()),
                     RunningState.WAITING_FOR_CLUSTER,
-                    optional_progress=0,
+                    optional_progress=None,
                 )
                 comp_tasks[f"{t}"].state = RunningState.WAITING_FOR_CLUSTER
             elif isinstance(r, Exception):

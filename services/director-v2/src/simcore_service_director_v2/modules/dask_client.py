@@ -15,6 +15,7 @@ import traceback
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
+from enum import auto
 from http.client import HTTPException
 from typing import Any
 
@@ -36,14 +37,15 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTag,
     LogFileUploadURL,
 )
+from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
 from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from models_library.services_resources import BootMode
 from models_library.users import UserID
+from models_library.utils.enums import StrAutoEnum
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
@@ -89,16 +91,34 @@ from ..utils.dask_client_utils import (
 _logger = logging.getLogger(__name__)
 
 
+# NOTE: processing does not mean the task is currently being computed, it means
+# the task was accepted by a worker, but might still be queud in it
 # see https://distributed.dask.org/en/stable/scheduling-state.html#task-state
-_DASK_TASK_STATUS_RUNNING_STATE_MAP = {
-    "new": RunningState.PENDING,
-    "released": RunningState.PENDING,
-    "waiting": RunningState.PENDING,
-    "no-worker": RunningState.WAITING_FOR_RESOURCES,
-    "processing": RunningState.STARTED,  # the scheduler doesn’t know whether it’s in a worker queue or actively being computed
-    "memory": RunningState.SUCCESS,
-    "erred": RunningState.FAILED,
+
+
+class DaskClientTaskState(StrAutoEnum):
+    PENDING = auto()
+    NO_WORKER = auto()
+    PENDING_OR_STARTED = auto()
+    LOST = auto()
+    ERRED = auto()
+    ABORTED = auto()
+    SUCCESS = auto()
+
+
+_DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[
+    DaskSchedulerTaskState, DaskClientTaskState
+] = {
+    "queued": DaskClientTaskState.PENDING,
+    "released": DaskClientTaskState.PENDING,
+    "waiting": DaskClientTaskState.PENDING,
+    "no-worker": DaskClientTaskState.NO_WORKER,
+    "processing": DaskClientTaskState.PENDING_OR_STARTED,
+    "memory": DaskClientTaskState.SUCCESS,
+    "erred": DaskClientTaskState.ERRED,
+    "forgotten": DaskClientTaskState.LOST,
 }
+
 
 _DASK_DEFAULT_TIMEOUT_S = 1
 
@@ -373,7 +393,7 @@ class DaskClient:
                 raise
         return list_of_node_id_to_job_id
 
-    async def get_tasks_status(self, job_ids: list[str]) -> list[RunningState]:
+    async def get_tasks_status(self, job_ids: list[str]) -> list[DaskClientTaskState]:
         check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
         )
@@ -394,7 +414,7 @@ class DaskClient:
         )
         _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
-        running_states: list[RunningState] = []
+        running_states: list[DaskClientTaskState] = []
         for job_id in job_ids:
             dask_status = task_statuses.get(job_id, "lost")
             if dask_status == "erred":
@@ -406,7 +426,7 @@ class DaskClient:
                 )
 
                 if isinstance(exception, TaskCancelledError):
-                    running_states.append(RunningState.ABORTED)
+                    running_states.append(DaskClientTaskState.ABORTED)
                 else:
                     assert exception  # nosec
                     _logger.warning(
@@ -415,11 +435,11 @@ class DaskClient:
                         exception,
                         "".join(traceback.format_exception(exception)),
                     )
-                    running_states.append(RunningState.FAILED)
+                    running_states.append(DaskClientTaskState.ERRED)
             else:
                 running_states.append(
-                    _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
-                        dask_status, RunningState.UNKNOWN
+                    _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP.get(
+                        dask_status, DaskClientTaskState.LOST
                     )
                 )
 
