@@ -136,7 +136,7 @@ async def test_price_history_of_a_product(
     result = await connection.execute(
         products_prices.select()
         .where(products_prices.c.product_name == fake_product.name)
-        .order_by(sa.desc(products_prices.c.created))
+        .order_by(sa.desc(products_prices.c.valid_from))
     )
     rows = await result.fetchall()
     assert rows

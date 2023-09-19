@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import NUMERIC_KWARGS, column_created_datetime
+from ._common import NUMERIC_KWARGS
 from .base import metadata
 from .products import products
 
@@ -38,7 +38,13 @@ products_prices = sa.Table(
         nullable=False,
         doc="For the moment a comment on the product owner (PO) who authorized this price",
     ),
-    column_created_datetime(timezone=True),
+    sa.Column(
+        "valid_from",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
     sa.CheckConstraint(
         "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
     ),

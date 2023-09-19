@@ -23,7 +23,7 @@ def upgrade():
         sa.Column("usd_per_credit", sa.Numeric(scale=2), nullable=False),
         sa.Column("comment", sa.String(), nullable=False),
         sa.Column(
-            "created",
+            "valid_from",
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
