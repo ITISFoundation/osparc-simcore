@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 @router.get(
-    "/price",
+    "/credits-price",
     response_model=Envelope[ProductPriceGet],
 )
 async def get_current_product_price():

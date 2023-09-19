@@ -38,7 +38,7 @@ async def test_creating_product_prices(
         .values(
             product_name=fake_product.name,
             usd_per_credit=100,
-            authorized_by="PO Mr X",
+            comment="PO Mr X",
         )
         .returning(sa.literal_column("*"))
     )
@@ -55,7 +55,7 @@ async def test_non_negative_price_not_allowed(
             products_prices.insert().values(
                 product_name=fake_product.name,
                 usd_per_credit=-100,  # <----- NEGATIVE
-                authorized_by="PO Mr X",
+                comment="PO Mr X",
             )
         )
 
@@ -66,7 +66,7 @@ async def test_non_negative_price_not_allowed(
         products_prices.insert().values(
             product_name=fake_product.name,
             usd_per_credit=0,  # <----- ZERO
-            authorized_by="PO Mr X",
+            comment="PO Mr X",
         )
     )
 
@@ -79,7 +79,7 @@ async def test_delete_price_constraints(
         products_prices.insert().values(
             product_name=fake_product.name,
             usd_per_credit=10,
-            authorized_by="PO Mr X",
+            comment="PO Mr X",
         )
     )
 
@@ -120,7 +120,7 @@ async def test_price_history_of_a_product(
         products_prices.insert().values(
             product_name=fake_product.name,
             usd_per_credit=1,
-            authorized_by="PO Mr X",
+            comment="PO Mr X",
         )
     )
 
@@ -129,7 +129,7 @@ async def test_price_history_of_a_product(
         products_prices.insert().values(
             product_name=fake_product.name,
             usd_per_credit=2,
-            authorized_by="Update by Mr X",
+            comment="Update by Mr X",
         )
     )
 

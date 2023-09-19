@@ -107,7 +107,7 @@ async def all_product_prices(
             products_prices.insert().values(
                 product_name=name,
                 usd_per_credit=credits_price[name],
-                authorized_by="MrK",
+                comment="MrK",
             )
         )
     return credits_price
@@ -123,7 +123,7 @@ async def new_osparc_price(
         .values(
             product_name="osparc",
             usd_per_credit=Decimal(1.0),
-            authorized_by="MrK",
+            comment="MrK",
         )
         .returning(products_prices.c.usd_per_credit)
     )

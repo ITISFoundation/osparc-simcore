@@ -21,7 +21,7 @@ def upgrade():
         "products_prices",
         sa.Column("product_name", sa.String(), nullable=False),
         sa.Column("usd_per_credit", sa.Numeric(scale=2), nullable=False),
-        sa.Column("authorized_by", sa.String(), nullable=False),
+        sa.Column("comment", sa.String(), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),

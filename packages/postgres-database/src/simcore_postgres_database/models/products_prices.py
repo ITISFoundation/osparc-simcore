@@ -33,7 +33,7 @@ products_prices = sa.Table(
         doc="Price in USD/credit >=0",
     ),
     sa.Column(
-        "authorized_by",
+        "comment",
         sa.String,
         nullable=False,
         doc="For the moment a comment on the product owner (PO) who authorized this price",
