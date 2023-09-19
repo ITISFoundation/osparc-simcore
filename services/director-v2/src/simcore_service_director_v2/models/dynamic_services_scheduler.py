@@ -13,6 +13,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
 )
 from models_library.basic_types import PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -372,6 +373,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
     user_preferences_path: Path | None = None
+    callbacks_mapping: CallbacksMapping = Field(default_factory=dict)
 
     dynamic_sidecar_network_name: str = Field(
         ...,
@@ -457,6 +459,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "service_resources": service.service_resources,
             "product_name": service.product_name,
             "paths_mapping": simcore_service_labels.paths_mapping,
+            "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json.dumps(simcore_service_labels.compose_spec),
             "container_http_entry": simcore_service_labels.container_http_entry,
             "restart_policy": simcore_service_labels.restart_policy,

@@ -306,10 +306,10 @@ def _merge_resources_in_settings(
     # merge all resources
     empty_resource_entry: SimcoreServiceSettingLabelEntry = (
         SimcoreServiceSettingLabelEntry.parse_obj(
-            dict(
-                name="Resources",
-                type="Resources",
-                value={
+            {
+                "name": "Resources",
+                "type": "Resources",
+                "value": {
                     "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
                     "Reservations": {
                         "NanoCPUs": 0,
@@ -317,11 +317,11 @@ def _merge_resources_in_settings(
                         "GenericResources": [],
                     },
                 },
-            )
+            }
         )
     )
 
-    for _, image_resources in service_resources.items():
+    for image_resources in service_resources.values():
         for resource_name, resource_value in image_resources.resources.items():
             if resource_name == "CPU":
                 empty_resource_entry.value["Limits"]["NanoCPUs"] += int(
@@ -372,7 +372,7 @@ def _patch_target_service_into_env_vars(
     def _format_env_var(env_var: str, destination_container: list[str]) -> str:
         var_name, var_payload = env_var.split("=")
         json_encoded = json.dumps(
-            dict(destination_containers=destination_container, env_var=var_payload)
+            {"destination_containers": destination_container, "env_var": var_payload}
         )
         return f"{var_name}={json_encoded}"
 
@@ -474,7 +474,7 @@ async def merge_settings_before_use(
 
     boot_options_settings_env_vars: SimcoreServiceSettingsLabel | None = None
     # search for boot options first and inject to all containers
-    for compose_spec_key, service_labels in labels_for_involved_services.items():
+    for service_labels in labels_for_involved_services.values():
         labels_boot_options = _get_boot_options(service_labels)
         if labels_boot_options:
             # create a new setting from SimcoreServiceSettingsLabel as env var

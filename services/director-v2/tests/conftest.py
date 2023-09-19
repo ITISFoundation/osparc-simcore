@@ -169,6 +169,7 @@ def mock_env(
         "POSTGRES_DB": "test",
         "R_CLONE_PROVIDER": "MINIO",
         "SC_BOOT_MODE": "production",
+        "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars

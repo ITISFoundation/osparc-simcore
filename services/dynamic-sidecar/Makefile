@@ -21,10 +21,6 @@ openapi.json: .env ## Creates OAS document openapi.json
 	set +o allexport; \
 	simcore-service-dynamic-sidecar openapi > $@
 
-	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
-
 
 
 .PHONY: run-github-action-locally

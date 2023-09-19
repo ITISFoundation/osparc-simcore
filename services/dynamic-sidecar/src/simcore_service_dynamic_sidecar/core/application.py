@@ -14,13 +14,14 @@ from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
-from ..api import main_router
+from ..api import get_main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
+from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
 from ..modules.user_services_preferences import setup_user_services_preferences
 from .docker_compose_utils import docker_compose_down
@@ -127,7 +128,7 @@ def create_base_app() -> FastAPI:
 
     long_running_tasks.server.setup(app)
 
-    app.include_router(main_router)
+    app.include_router(get_main_router(app))
 
     return app
 
@@ -145,11 +146,12 @@ def create_app():
 
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
+    application_settings: ApplicationSettings = app.state.settings
 
-    if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+    if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
-    if app.state.settings.RABBIT_SETTINGS:
+    if application_settings.RABBIT_SETTINGS:
         setup_rabbitmq(app)
         setup_background_log_fetcher(app)
         setup_resource_tracking(app)
@@ -162,6 +164,9 @@ def create_app():
     setup_attribute_monitor(app)
 
     setup_user_services_preferences(app)
+
+    if application_settings.are_prometheus_metrics_enabled:
+        setup_prometheus_metrics(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)

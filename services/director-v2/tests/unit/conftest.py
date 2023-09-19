@@ -21,6 +21,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     ServiceDetails,
 )
 from models_library.basic_types import PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
@@ -58,9 +59,11 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    return SimcoreServiceLabels.parse_obj(
+    simcore_service_labels = SimcoreServiceLabels.parse_obj(
         SimcoreServiceLabels.Config.schema_extra["examples"][1]
     )
+    simcore_service_labels.callbacks_mapping = parse_obj_as(CallbacksMapping, {})
+    return simcore_service_labels
 
 
 @pytest.fixture
