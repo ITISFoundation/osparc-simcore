@@ -15,7 +15,6 @@ import traceback
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
-from enum import auto
 from http.client import HTTPException
 from typing import Any
 
@@ -45,7 +44,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
 from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
@@ -64,6 +62,7 @@ from ..core.errors import (
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
+from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
@@ -94,16 +93,6 @@ _logger = logging.getLogger(__name__)
 # NOTE: processing does not mean the task is currently being computed, it means
 # the task was accepted by a worker, but might still be queud in it
 # see https://distributed.dask.org/en/stable/scheduling-state.html#task-state
-
-
-class DaskClientTaskState(StrAutoEnum):
-    PENDING = auto()
-    NO_WORKER = auto()
-    PENDING_OR_STARTED = auto()
-    LOST = auto()
-    ERRED = auto()
-    ABORTED = auto()
-    SUCCESS = auto()
 
 
 _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[

@@ -26,7 +26,8 @@ from ...core.errors import (
 )
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...modules.dask_client import DaskClient, DaskClientTaskState
+from ...models.dask_subsystem import DaskClientTaskState
+from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
