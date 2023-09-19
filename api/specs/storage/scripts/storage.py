@@ -5,7 +5,7 @@
 
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, Query, status
 from models_library.api_schemas_storage import (
@@ -347,9 +347,12 @@ async def delete_folders_of_project(
     operation_id="search_files",
 )
 async def search_files(
-    user_id: UserID, startswith: str = "", sha256_checksum: SHA256Str | None = None
+    user_id: UserID,
+    startswith: str = "",
+    sha256_checksum: SHA256Str | None = None,
+    access_right: Literal["read", "write"] = "read",
 ):
-    """search for files starting with `startswith` in the file_meta_data table"""
+    """search for files starting with `startswith` and/or matching a sha256_checksum in the file_meta_data table"""
 
 
 # long_running_tasks.py

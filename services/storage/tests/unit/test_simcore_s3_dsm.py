@@ -103,7 +103,7 @@ async def test_upload_n_search(
         file_size, "a_file_name", sha256_checksum=checksum
     )
 
-    files: list[FileMetaData] = await simcore_s3_dsm.search_files(
+    files: list[FileMetaData] = await simcore_s3_dsm.search_owned_files(
         user_id=user_id, file_id_prefix="", sha256_checksum=checksum
     )
     assert len(files) == 1

@@ -681,21 +681,47 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
-    async def search_files(
+    async def search_read_access_files(
         self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
+    ):
+        async with self.engine.acquire() as conn:
+            can_read_projects_ids = await get_readable_project_ids(conn, user_id)
+        return await self._search_files(
+            user_id=user_id,
+            project_ids=can_read_projects_ids,
+            file_id_prefix=file_id_prefix,
+            sha256_checksum=sha256_checksum,
+        )
+
+    async def search_owned_files(
+        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
+    ):
+        return await self._search_files(
+            user_id=user_id,
+            project_ids=[],
+            file_id_prefix=file_id_prefix,
+            sha256_checksum=sha256_checksum,
+        )
+
+    async def _search_files(
+        self,
+        *,
+        user_id: UserID,
+        project_ids: list[ProjectID],
+        file_id_prefix: str,
+        sha256_checksum: SHA256Str | None,
     ) -> list[FileMetaData]:
         # NOTE: this entrypoint is solely used by api-server. It is the exact
         # same as list_files but does not rename the found files with project
         # name/node name which filters out this files
         # TODO: unify, or use a query parameter?
         async with self.engine.acquire() as conn:
-            can_read_projects_ids = await get_readable_project_ids(conn, user_id)
             file_metadatas: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_id=user_id,
-                project_ids=can_read_projects_ids,
+                project_ids=project_ids,
                 file_id_prefix=file_id_prefix,
                 partial_file_id=None,
                 only_files=True,
