@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-payments web API",
     "description": " Service that manages creation and validation of registration payments",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "paths": {
     "/": {
@@ -217,6 +217,15 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "saved": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SavedPaymentMethod"
+              }
+            ],
+            "title": "Saved",
+            "description": "If the user decided to save the payment methodafter payment it returns the payment-method acknoledgement response.Otherwise it defaults to None."
           }
         },
         "type": "object",
@@ -226,8 +235,20 @@
         "title": "AckPayment"
       },
       "AckPaymentMethod": {
-        "properties": {},
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
         "type": "object",
+        "required": [
+          "success"
+        ],
         "title": "AckPaymentMethod"
       },
       "Body_login_to_create_access_token": {
@@ -310,6 +331,29 @@
           "version": "2.4.45",
           "docs_url": "https://foo.io/doc"
         }
+      },
+      "SavedPaymentMethod": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "payment_method_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Payment Method Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "payment_method_id"
+        ],
+        "title": "SavedPaymentMethod"
       },
       "Token": {
         "properties": {

@@ -72,6 +72,8 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 @router.post(
     "/wallets/{wallet_id}/payments",
     response_model=Envelope[WalletPaymentCreated],
+    response_description="Successfully initialized",
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
     """Creates payment to wallet `wallet_id`"""
@@ -87,6 +89,7 @@ async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
 
 @router.post(
     "/wallets/{wallet_id}/payments/{payment_id}:cancel",
+    response_description="Successfully cancelled",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
@@ -99,6 +102,8 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
 @router.post(
     "/wallets/{wallet_id}/payments-methods:init",
     response_model=Envelope[PaymentMethodInit],
+    response_description="Successfully initialized",
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def init_creation_of_payment_method(wallet_id: WalletID):
     ...
