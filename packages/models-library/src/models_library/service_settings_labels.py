@@ -347,6 +347,15 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
+    user_preferences_path: Path | None = Field(
+        None,
+        alias="simcore.service.user-preferences-path",
+        description=(
+            "path where the user user preferences folder "
+            "will be mounted in the user services"
+        ),
+    )
+
     restart_policy: RestartPolicy = Field(
         RestartPolicy.NO_RESTART,
         alias="simcore.service.restart-policy",

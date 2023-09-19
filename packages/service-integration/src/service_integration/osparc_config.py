@@ -196,6 +196,8 @@ class RuntimeConfig(BaseModel):
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
     paths_mapping: PathMappingsLabel | None = None
+
+    user_preferences_path: Path | None = None
     boot_options: BootOptions = None
     min_visible_inputs: NonNegativeInt | None = None
 
