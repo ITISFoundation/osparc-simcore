@@ -218,7 +218,7 @@ async def _generate_tasks_list_from_project(
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
-            task_progress = 0
+            task_progress = None
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
