@@ -315,7 +315,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     )
 
     callbacks_mapping: Json[CallbacksMapping] | None = Field(
-        default_factory=CallbacksMapping,  # type: ignore
+        default_factory=CallbacksMapping,
         alias="simcore.service.callbacks-mapping",
         description="exposes callbacks from user services to the sidecar",
     )
