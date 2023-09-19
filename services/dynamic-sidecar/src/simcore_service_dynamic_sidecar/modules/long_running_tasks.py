@@ -47,6 +47,10 @@ from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, event_propagation_disabled
+from ..modules.user_services_preferences import (
+    load_user_services_preferences,
+    save_user_services_preferences,
+)
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -161,6 +165,8 @@ async def task_create_service_containers(
     assert shared_store.compose_spec  # nosec
 
     async with event_propagation_disabled(app), _reset_on_error(shared_store):
+        await load_user_services_preferences(app)
+
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
@@ -260,6 +266,8 @@ async def task_runs_docker_compose_down(
             await send_service_stopped(app, simcore_platform_status)
 
     try:
+        await save_user_services_preferences(app)
+
         progress.update(message="running docker-compose-down", percent=0.1)
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
