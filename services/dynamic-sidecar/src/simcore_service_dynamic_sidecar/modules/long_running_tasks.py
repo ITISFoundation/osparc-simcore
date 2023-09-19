@@ -39,14 +39,19 @@ from ..core.rabbitmq import (
     post_sidecar_log_message,
 )
 from ..core.settings import ApplicationSettings
-from ..core.utils import CommandResult, assemble_container_names
-from ..core.validation import parse_compose_spec, validate_compose_spec
+from ..core.utils import CommandResult
+from ..core.validation import (
+    ComposeSpecValidation,
+    parse_compose_spec,
+    validate_compose_spec,
+)
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, event_propagation_disabled
+from .long_running_tasksutils import run_before_shutdown_actions
 from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -147,13 +152,15 @@ async def task_create_service_containers(
     progress.update(message="validating service spec", percent=0)
 
     async with shared_store:
-        shared_store.compose_spec = await validate_compose_spec(
+        compose_spec_validation: ComposeSpecValidation = await validate_compose_spec(
             settings=settings,
             compose_file_content=containers_create.docker_compose_yaml,
             mounted_volumes=mounted_volumes,
         )
-        shared_store.container_names = assemble_container_names(
-            shared_store.compose_spec
+        shared_store.compose_spec = compose_spec_validation.compose_spec
+        shared_store.container_names = compose_spec_validation.current_container_names
+        shared_store.original_to_container_names = (
+            compose_spec_validation.original_to_current_container_names
         )
 
     _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
@@ -261,6 +268,11 @@ async def task_runs_docker_compose_down(
 
     try:
         progress.update(message="running docker-compose-down", percent=0.1)
+
+        await run_before_shutdown_actions(
+            shared_store, settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown
+        )
+
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
 

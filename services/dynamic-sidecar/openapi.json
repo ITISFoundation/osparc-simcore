@@ -45,6 +45,28 @@
         }
       }
     },
+    "/metrics": {
+      "get": {
+        "summary": "Metrics Endpoint",
+        "description": "Exposes metrics form the underlying user service.\n\nPossible responses:\n- HTTP 200 & empty body: user services did not start\n- HTTP 200 & prometheus metrics: was able to fetch data from user service\n- HTTP 500 & error message: something went wrong when fetching data from user service",
+        "operationId": "metrics_endpoint_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "error in recovering data from user service"
+          }
+        }
+      }
+    },
     "/v1/containers": {
       "get": {
         "tags": [

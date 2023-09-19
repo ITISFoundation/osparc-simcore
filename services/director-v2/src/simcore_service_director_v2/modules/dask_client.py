@@ -38,7 +38,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
-from models_library.clusters import ClusterAuthentication, ClusterID
+from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -89,12 +89,13 @@ from ..utils.dask_client_utils import (
 _logger = logging.getLogger(__name__)
 
 
+# see https://distributed.dask.org/en/stable/scheduling-state.html#task-state
 _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "new": RunningState.PENDING,
     "released": RunningState.PENDING,
     "waiting": RunningState.PENDING,
     "no-worker": RunningState.WAITING_FOR_RESOURCES,
-    "processing": RunningState.STARTED,
+    "processing": RunningState.STARTED,  # the scheduler doesn’t know whether it’s in a worker queue or actively being computed
     "memory": RunningState.SUCCESS,
     "erred": RunningState.FAILED,
 }
@@ -111,6 +112,7 @@ class DaskClient:
     backend: DaskSubSystem
     settings: ComputationalBackendSettings
     tasks_file_link_type: FileLinkType
+    cluster_type: ClusterTypeInModel
 
     _subscribed_tasks: list[asyncio.Task] = field(default_factory=list)
 
@@ -122,11 +124,13 @@ class DaskClient:
         endpoint: AnyUrl,
         authentication: ClusterAuthentication,
         tasks_file_link_type: FileLinkType,
+        cluster_type: ClusterTypeInModel,
     ) -> "DaskClient":
         _logger.info(
-            "Initiating connection to %s with auth: %s",
+            "Initiating connection to %s with auth: %s, type: %s",
             f"dask-scheduler/gateway at {endpoint}",
             authentication,
+            cluster_type,
         )
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -149,6 +153,7 @@ class DaskClient:
                     backend=backend,
                     settings=settings,
                     tasks_file_link_type=tasks_file_link_type,
+                    cluster_type=cluster_type,
                 )
                 _logger.info(
                     "Connection to %s succeeded [%s]",
@@ -253,11 +258,15 @@ class DaskClient:
             check_communication_with_scheduler_is_open(self.backend.client)
             check_scheduler_status(self.backend.client)
             await check_maximize_workers(self.backend.gateway_cluster)
-            # NOTE: in case it's a gateway we do not check a priori if the task
+            # NOTE: in case it's a gateway or it is an on-demand cluster
+            # we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            if not self.backend.gateway:
+            if (self.cluster_type != ClusterTypeInModel.ON_DEMAND) and (
+                self.backend.gateway is None
+            ):
+                _logger.warning("cluster type: %s", self.cluster_type)
                 check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,

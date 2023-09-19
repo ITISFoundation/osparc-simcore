@@ -44,7 +44,7 @@ async def get_or_create_on_demand_cluster(
             raise ComputationalBackendOnDemandNotReadyError(
                 eta=_format_delta(returned_cluster.eta)
             )
-        if not returned_cluster.gateway_ready:
+        if not returned_cluster.dask_scheduler_ready:
             raise ComputationalBackendOnDemandNotReadyError(
                 eta=_format_delta(returned_cluster.eta)
             )

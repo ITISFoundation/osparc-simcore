@@ -10,20 +10,22 @@ from typing import Any, NamedTuple
 
 import pytest
 from models_library.service_settings_labels import (
-    DEFAULT_DNS_SERVER_ADDRESS,
-    DEFAULT_DNS_SERVER_PORT,
-    DNSResolver,
     DynamicSidecarServiceLabels,
     NATRule,
     PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
+)
+from models_library.service_settings_nat_rule import (
+    DEFAULT_DNS_SERVER_ADDRESS,
+    DEFAULT_DNS_SERVER_PORT,
+    DNSResolver,
     _PortRange,
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 
 class _Parametrization(NamedTuple):
@@ -40,12 +42,12 @@ SIMCORE_SERVICE_EXAMPLES = {
     ),
     "dynamic-service": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        items=3,
+        items=4,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        items=5,
+        items=6,
         uses_dynamic_sidecar=True,
     ),
 }
@@ -80,16 +82,14 @@ def test_service_settings():
         service_setting._destination_containers = ["random_value1", "random_value2"]
 
 
-@pytest.mark.parametrize(
-    "model_cls",
-    (SimcoreServiceLabels,),
-)
+@pytest.mark.parametrize("model_cls", [SimcoreServiceLabels])
 def test_correctly_detect_dynamic_sidecar_boot(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
+        model_instance = parse_obj_as(model_cls, example)
+        assert model_instance.callbacks_mapping is not None
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
         )

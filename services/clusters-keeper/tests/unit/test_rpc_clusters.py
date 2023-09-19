@@ -127,14 +127,14 @@ async def _assert_cluster_heartbeat_on_instance(
 
 @dataclass
 class MockedDaskModule:
-    ping_gateway: MagicMock
+    ping_scheduler: MagicMock
 
 
 @pytest.fixture
-def mocked_dask_ping_gateway(mocker: MockerFixture) -> MockedDaskModule:
+def mocked_dask_ping_scheduler(mocker: MockerFixture) -> MockedDaskModule:
     return MockedDaskModule(
-        ping_gateway=mocker.patch(
-            "simcore_service_clusters_keeper.rpc.clusters.ping_gateway",
+        ping_scheduler=mocker.patch(
+            "simcore_service_clusters_keeper.rpc.clusters.ping_scheduler",
             autospec=True,
             return_value=True,
         ),
@@ -149,7 +149,7 @@ async def test_get_or_create_cluster(
     user_id: UserID,
     wallet_id: WalletID,
     use_wallet_id: bool,
-    mocked_dask_ping_gateway: MockedDaskModule,
+    mocked_dask_ping_scheduler: MockedDaskModule,
 ):
     # send rabbitmq rpc to create_cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
@@ -166,8 +166,8 @@ async def test_get_or_create_cluster(
         ec2_client, user_id, wallet_id if use_wallet_id else None
     )
     # it is called once as moto server creates instances instantly
-    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
-    mocked_dask_ping_gateway.ping_gateway.reset_mock()
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
 
     # calling it again returns the existing cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
@@ -181,6 +181,6 @@ async def test_get_or_create_cluster(
     returned_cluster = rpc_response
     # check we still have only 1 instance
     await _assert_cluster_heartbeat_on_instance(ec2_client)
-    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
 
     assert created_cluster == returned_cluster

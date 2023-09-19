@@ -7,9 +7,9 @@ import yaml
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
-    NATRule,
     SimcoreServiceLabels,
 )
+from models_library.service_settings_nat_rule import NATRule
 from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
