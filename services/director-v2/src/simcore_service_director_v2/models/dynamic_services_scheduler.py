@@ -4,6 +4,7 @@ import re
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 from typing import Any, TypeAlias
 from uuid import UUID
 
@@ -370,6 +371,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
+    user_preferences_path: Path | None = None
+
     dynamic_sidecar_network_name: str = Field(
         ...,
         description="overlay network biding the proxy to the container spaned by the dynamic-sidecar",
@@ -461,6 +464,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "simcore_traefik_zone": names_helper.simcore_traefik_zone,
             "request_dns": request_dns,
             "request_scheme": request_scheme,
+            "user_preferences_path": simcore_service_labels.user_preferences_path,
             "proxy_service_name": names_helper.proxy_service_name,
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
