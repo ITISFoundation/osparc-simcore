@@ -7,8 +7,10 @@ from pathlib import Path
 # https://docs.python.org/3/library/os.html#os.remove
 from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
+from aiofiles.threadpool.binary import AsyncBufferedReader
+from starlette.datastructures import UploadFile
 
-CHUNK_4KB = 4 * 1024  # 4K blocks
+CHUNK_4KB: int = 4 * 1024  # 4K blocks
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 
@@ -31,7 +33,9 @@ async def remove_directory(
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
-async def create_sha256_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> str:
+async def create_sha256_checksum(
+    async_stream: AsyncBufferedReader | UploadFile, *, chunk_size: int = CHUNK_4KB
+) -> str:
     """
     Usage:
     import aiofiles
@@ -47,7 +51,11 @@ async def create_sha256_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> str:
     return sha256check
 
 
-async def _eval_hash_async(async_stream, hasher, chunk_size) -> str:
+async def _eval_hash_async(
+    async_stream: AsyncBufferedReader | UploadFile,
+    hasher: "hashlib._Hash",
+    chunk_size: int,
+) -> str:
     more_chunk = True
     while more_chunk:
         chunk = await async_stream.read(chunk_size)
