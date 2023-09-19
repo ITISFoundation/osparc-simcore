@@ -39,7 +39,12 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...services.storage import (
+    AccessRight,
+    StorageApi,
+    StorageFileMetaData,
+    to_file_api_model,
+)
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -60,6 +65,40 @@ _COMMON_ERROR_RESPONSES: Final[dict] = {
         "model": ErrorGet,
     },
 }
+
+
+async def _get_file(
+    *,
+    file_id: UUID,
+    storage_client: StorageApi,
+    user_id: int,
+    access_right: AccessRight,
+):
+    """Gets metadata for a given file resource"""
+
+    try:
+        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+            user_id=user_id,
+            file_id=file_id,
+            sha256_checksum=None,
+            access_right=access_right,
+        )
+        if not stored_files:
+            msg = "Not found in storage"
+            raise ValueError(msg)  # noqa: TRY301
+
+        stored_file_meta = stored_files[0]
+        assert stored_file_meta.file_id  # nosec
+
+        # Adapts storage API model to API model
+        return to_file_api_model(stored_file_meta)
+
+    except (ValueError, ValidationError) as err:
+        _logger.debug("File %d not found: %s", file_id, err)
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
 
 
 @router.get(
@@ -248,26 +287,12 @@ async def get_file(
 ):
     """Gets metadata for a given file resource"""
 
-    try:
-        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-            user_id=user_id, file_id=file_id, sha256_checksum=None
-        )
-        if not stored_files:
-            msg = "Not found in storage"
-            raise ValueError(msg)  # noqa: TRY301
-
-        stored_file_meta = stored_files[0]
-        assert stored_file_meta.file_id  # nosec
-
-        # Adapts storage API model to API model
-        return to_file_api_model(stored_file_meta)
-
-    except (ValueError, ValidationError) as err:
-        _logger.debug("File %d not found: %s", file_id, err)
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"File with identifier {file_id} not found",
-        ) from err
+    return await _get_file(
+        file_id=file_id,
+        storage_client=storage_client,
+        user_id=user_id,
+        access_right="read",
+    )
 
 
 @router.get(
@@ -286,7 +311,10 @@ async def search_files_page(
     # TODO implement the pagination of this method directly in storage(https://github.com/ITISFoundation/osparc-simcore/issues/4773)
     try:
         stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-            user_id=user_id, file_id=file_id, sha256_checksum=sha256_checksum
+            user_id=user_id,
+            file_id=file_id,
+            sha256_checksum=sha256_checksum,
+            access_right="read",
         )
         error_message: str = "Not found in storage"
         if not stored_files:
@@ -321,8 +349,11 @@ async def delete_file(
     user_id: Annotated[int, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    file: File = await get_file(
-        file_id=file_id, storage_client=storage_client, user_id=user_id
+    file: File = await _get_file(
+        file_id=file_id,
+        storage_client=storage_client,
+        user_id=user_id,
+        access_right="write",
     )
     await storage_client.delete_file(
         user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id

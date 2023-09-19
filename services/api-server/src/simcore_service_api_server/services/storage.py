@@ -2,6 +2,7 @@ import logging
 import re
 import urllib.parse
 from mimetypes import guess_type
+from typing import Literal
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -21,6 +22,7 @@ _logger = logging.getLogger(__name__)
 
 
 _FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+AccessRight = Literal["read", "write"]
 
 
 def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
@@ -66,7 +68,12 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     async def search_files(
-        self, *, user_id: int, file_id: UUID | None, sha256_checksum: SHA256Str | None
+        self,
+        *,
+        user_id: int,
+        file_id: UUID | None,
+        sha256_checksum: SHA256Str | None,
+        access_right: AccessRight,
     ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and
@@ -77,6 +84,7 @@ class StorageApi(BaseServiceClientApi):
             "sha256_checksum": None
             if sha256_checksum is None
             else str(sha256_checksum),
+            "access_right": access_right,
         }
 
         response = await self.client.post(

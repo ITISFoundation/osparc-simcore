@@ -367,7 +367,10 @@ async def get_job_outputs(
 
             # TODO: acquire_soft_link will halve calls
             found = await storage_client.search_files(
-                user_id=user_id, file_id=file_id, sha256_checksum=None
+                user_id=user_id,
+                file_id=file_id,
+                sha256_checksum=None,
+                access_right="read",
             )
             if found:
                 assert len(found) == 1  # nosec
