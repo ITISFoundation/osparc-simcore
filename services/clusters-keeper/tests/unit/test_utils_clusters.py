@@ -23,6 +23,7 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType
         ("stopped", ClusterState.STOPPED),
         ("stopping", ClusterState.STOPPED),
         ("terminated", ClusterState.STOPPED),
+        ("whatever", ClusterState.STOPPED),
     ],
 )
 def test_create_cluster_from_ec2_instance(
