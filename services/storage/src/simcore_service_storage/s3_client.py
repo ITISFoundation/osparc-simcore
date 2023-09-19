@@ -315,9 +315,7 @@ class StorageS3Client:
             file_id=file_id,
             last_modified=response["LastModified"],
             e_tag=json.loads(response["ETag"]),
-            sha256_checksum=SHA256Str(response.get("ChecksumSHA256"))
-            if response.get("ChecksumSHA256")
-            else None,
+            sha256_checksum=response.get("ChecksumSHA256"),
             size=response["ContentLength"],
         )
 
