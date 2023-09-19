@@ -25,7 +25,7 @@ from ...core.errors import (
     TaskSchedulingError,
 )
 from ...models.comp_runs import RunMetadataDict
-from ...models.comp_tasks import CompTaskAtDB, Image
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.dask_client import DaskClient, DaskClientTaskState
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
@@ -96,34 +96,46 @@ class DaskScheduler(BaseCompScheduler):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        scheduled_tasks: dict[NodeID, Image],
+        scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> None:
+    ) -> list:
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(user_id, pipeline_params, self) as client:
-            task_job_ids: list[
-                tuple[NodeID, str]
-            ] = await client.send_computation_tasks(
-                user_id=user_id,
-                project_id=project_id,
-                cluster_id=pipeline_params.cluster_id,
-                tasks=scheduled_tasks,
-                callback=self._wake_up_scheduler_now,
-                metadata=pipeline_params.run_metadata,
+            # Change the tasks state to PENDING
+            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+            await comp_tasks_repo.update_project_tasks_state(
+                project_id,
+                list(scheduled_tasks.keys()),
+                RunningState.PENDING,
+                optional_started=arrow.utcnow().datetime,
             )
-            _logger.debug(
-                "started following tasks (node_id, job_id)[%s] on cluster %s",
-                f"{task_job_ids=}",
-                f"{pipeline_params.cluster_id=}",
+            # each task is started independently
+            results: list[list[tuple[NodeID, str]] | Exception] = await asyncio.gather(
+                *(
+                    client.send_computation_tasks(
+                        user_id=user_id,
+                        project_id=project_id,
+                        cluster_id=pipeline_params.cluster_id,
+                        tasks={node_id: task.image},
+                        callback=self._wake_up_scheduler_now,
+                        metadata=pipeline_params.run_metadata,
+                    )
+                    for node_id, task in scheduled_tasks.items()
+                ),
+                return_exceptions=True,
             )
-        # update the database so we do have the correct job_ids there
-        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        await asyncio.gather(
-            *[
-                comp_tasks_repo.update_project_task_job_id(project_id, node_id, job_id)
-                for node_id, job_id in task_job_ids
-            ]
-        )
+
+            # update the database so we do have the correct job_ids there
+            await asyncio.gather(
+                *[
+                    comp_tasks_repo.update_project_task_job_id(
+                        project_id, tasks_sent[0][0], tasks_sent[0][1]
+                    )
+                    for tasks_sent in results
+                    if not isinstance(tasks_sent, Exception)
+                ]
+            )
+            return results
 
     async def _get_tasks_status(
         self,
