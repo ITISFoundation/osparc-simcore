@@ -89,12 +89,13 @@ from ..utils.dask_client_utils import (
 _logger = logging.getLogger(__name__)
 
 
+# see https://distributed.dask.org/en/stable/scheduling-state.html#task-state
 _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "new": RunningState.PENDING,
     "released": RunningState.PENDING,
     "waiting": RunningState.PENDING,
     "no-worker": RunningState.WAITING_FOR_RESOURCES,
-    "processing": RunningState.STARTED,
+    "processing": RunningState.STARTED,  # the scheduler doesn’t know whether it’s in a worker queue or actively being computed
     "memory": RunningState.SUCCESS,
     "erred": RunningState.FAILED,
 }
@@ -262,7 +263,7 @@ class DaskClient:
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            if (self.cluster_type is not ClusterTypeInModel.ON_DEMAND) and (
+            if (self.cluster_type == ClusterTypeInModel.ON_DEMAND) and (
                 self.backend.gateway is None
             ):
                 _logger.warning("cluster type: %s", self.cluster_type)
