@@ -92,6 +92,7 @@ class DaskClientsPool:
                         endpoint=cluster.endpoint,
                         authentication=cluster.authentication,
                         tasks_file_link_type=tasks_file_link_type,
+                        cluster_type=cluster.type,
                     )
                     if self._task_handlers:
                         dask_client.register_handlers(self._task_handlers)

@@ -45,7 +45,12 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import LinkType
-from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
+from models_library.clusters import (
+    ClusterID,
+    ClusterTypeInModel,
+    NoAuthentication,
+    SimpleAuthentication,
+)
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -165,6 +170,7 @@ async def create_dask_client_from_scheduler(
             endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
             authentication=NoAuthentication(),
             tasks_file_link_type=tasks_file_link_type,
+            cluster_type=ClusterTypeInModel.ON_PREMISE,
         )
         assert client
         assert client.app == minimal_app
@@ -208,6 +214,7 @@ async def create_dask_client_from_gateway(
                 password=SecretStr(local_dask_gateway_server.password),
             ),
             tasks_file_link_type=tasks_file_link_type,
+            cluster_type=ClusterTypeInModel.AWS,
         )
         assert client
         assert client.app == minimal_app

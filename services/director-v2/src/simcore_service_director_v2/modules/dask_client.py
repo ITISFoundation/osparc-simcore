@@ -38,7 +38,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
-from models_library.clusters import ClusterAuthentication, ClusterID
+from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -111,6 +111,7 @@ class DaskClient:
     backend: DaskSubSystem
     settings: ComputationalBackendSettings
     tasks_file_link_type: FileLinkType
+    cluster_type: ClusterTypeInModel
 
     _subscribed_tasks: list[asyncio.Task] = field(default_factory=list)
 
@@ -122,6 +123,7 @@ class DaskClient:
         endpoint: AnyUrl,
         authentication: ClusterAuthentication,
         tasks_file_link_type: FileLinkType,
+        cluster_type: ClusterTypeInModel,
     ) -> "DaskClient":
         _logger.info(
             "Initiating connection to %s with auth: %s",
@@ -149,6 +151,7 @@ class DaskClient:
                     backend=backend,
                     settings=settings,
                     tasks_file_link_type=tasks_file_link_type,
+                    cluster_type=cluster_type,
                 )
                 _logger.info(
                     "Connection to %s succeeded [%s]",
@@ -257,7 +260,10 @@ class DaskClient:
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            if not self.backend.gateway:
+            if (
+                not self.backend.gateway
+                and self.cluster_type is not ClusterTypeInModel.ON_DEMAND
+            ):
                 check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
