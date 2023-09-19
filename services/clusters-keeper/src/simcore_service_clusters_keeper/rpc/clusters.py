@@ -28,6 +28,7 @@ async def get_or_create_cluster(
     redis = get_redis_client(app)
     async with redis.lock_context(
         f"get_or_create_cluster-{user_id=}-{wallet_id=}",
+        blocking=True,
         blocking_timeout_s=10,
     ):
         try:
