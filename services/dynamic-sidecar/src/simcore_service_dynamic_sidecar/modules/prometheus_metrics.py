@@ -38,11 +38,11 @@ def _get_user_services_scrape_interval(
     if len(last_prometheus_query_times) < _MIN_ELEMENTS:
         return _MAX_DEFAULT_METRICS_SCRAPE_INTERVAL
 
-    time_paris: list[tuple[datetime, datetime]] = list(
+    time_pairs: list[tuple[datetime, datetime]] = list(
         pairwise(last_prometheus_query_times)
     )
     scrape_intervals: list[NonNegativeFloat] = [
-        (t2 - t1).total_seconds() for t1, t2 in time_paris
+        (t2 - t1).total_seconds() for t1, t2 in time_pairs
     ]
     average_prometheus_scrape_interval = sum(scrape_intervals) / len(scrape_intervals)
     return min(average_prometheus_scrape_interval, _MAX_DEFAULT_METRICS_SCRAPE_INTERVAL)
