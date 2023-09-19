@@ -234,7 +234,7 @@ async def create_computation(  # noqa: C901, PLR0912
                 wallet_name = computation.wallet_info.wallet_name
 
                 resource_usage_api = ResourceUsageApi.get_from_state(request.app)
-                # NOTE: MD/SAN -> add real service version/key when it is more clear how we will proceed
+                # NOTE: MD/SAN -> add real service version/key and store in DB, issue: https://github.com/ITISFoundation/osparc-issues/issues/1131
                 (
                     pricing_plan_id,
                     pricing_detail_id,
