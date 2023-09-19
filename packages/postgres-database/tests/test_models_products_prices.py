@@ -12,6 +12,9 @@ from pytest_simcore.helpers.rawdata_fakers import random_product
 from simcore_postgres_database.errors import CheckViolation, ForeignKeyViolation
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
+from simcore_postgres_database.utils_products_prices import (
+    get_product_latest_price_or_none,
+)
 
 
 @pytest.fixture
@@ -68,6 +71,47 @@ async def test_non_negative_price_not_allowed(
     )
 
 
+async def test_delete_price_constraints(
+    connection: SAConnection, fake_product: RowProxy
+):
+    # products_prices
+    await connection.execute(
+        products_prices.insert().values(
+            product_name=fake_product.name,
+            usd_per_credit=10,
+            authorized_by="PO Mr X",
+        )
+    )
+
+    # should not be able to delete a product w/o deleting price first
+    with pytest.raises(ForeignKeyViolation) as exc_info:
+        await connection.execute(products.delete())
+
+    assert "delete" in f"{exc_info.value}"
+
+    # this is the correct way to delete
+    await connection.execute(products_prices.delete())
+    await connection.execute(products.delete())
+
+
+async def test_get_product_latest_price_or_none(
+    connection: SAConnection, fake_product: RowProxy
+):
+    # undefined product
+    assert (
+        await get_product_latest_price_or_none(connection, product_name="undefined")
+        is None
+    )
+
+    # defined product but undefined price
+    assert (
+        await get_product_latest_price_or_none(
+            connection, product_name=fake_product.name
+        )
+        is None
+    )
+
+
 async def test_price_history_of_a_product(
     connection: SAConnection, fake_product: RowProxy
 ):
@@ -100,25 +144,10 @@ async def test_price_history_of_a_product(
     assert rows[0].usd_per_credit == 2, "Newest first"
     assert rows[1].usd_per_credit == 1
 
-
-async def test_delete_price_constraints(
-    connection: SAConnection, fake_product: RowProxy
-):
-    # products_prices
-    await connection.execute(
-        products_prices.insert().values(
-            product_name=fake_product.name,
-            usd_per_credit=10,
-            authorized_by="PO Mr X",
+    # latest is 2 USD!
+    assert (
+        await get_product_latest_price_or_none(
+            connection, product_name=fake_product.name
         )
+        == 2
     )
-
-    # should not be able to delete a product w/o deleting price first
-    with pytest.raises(ForeignKeyViolation) as exc_info:
-        await connection.execute(products.delete())
-
-    assert "delete" in f"{exc_info.value}"
-
-    # this is the correct way to delete
-    await connection.execute(products_prices.delete())
-    await connection.execute(products.delete())

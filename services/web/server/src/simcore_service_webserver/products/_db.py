@@ -6,7 +6,9 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.products import jinja2_templates
-from simcore_postgres_database.models.products_prices import products_prices
+from simcore_postgres_database.utils_products_prices import (
+    get_product_latest_price_or_none,
+)
 
 from ..db.base_repository import BaseRepository
 from ..db.models import products
@@ -46,15 +48,10 @@ class ProductRepository(BaseRepository):
     ) -> Decimal | None:
         async with self.engine.acquire() as conn:
             # newest price of a product
-            usd_per_credit = await conn.scalar(
-                sa.select(products_prices.c.usd_per_credit)
-                .where(products_prices.c.product_name == product_name)
-                .order_by(sa.desc(products_prices.c.created))
-                .limit(1)
+            usd_per_credit: Decimal | None = await get_product_latest_price_or_none(
+                conn, product_name=product_name
             )
-            if usd_per_credit is not None:
-                return Decimal(usd_per_credit)
-            return None
+            return usd_per_credit
 
     async def get_template_content(
         self,
