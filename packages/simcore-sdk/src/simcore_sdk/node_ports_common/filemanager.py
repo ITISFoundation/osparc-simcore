@@ -248,6 +248,20 @@ class UploadedFolder:
     ...
 
 
+async def _generate_checksum(
+    path_to_upload: Path | UploadableFileObject, is_directory: bool
+) -> SHA256Str | None:
+    checksum: SHA256Str | None = None
+    if is_directory:
+        return checksum
+    if isinstance(path_to_upload, Path):
+        async with open(path_to_upload, mode="rb") as f:
+            checksum = SHA256Str(await create_sha256_checksum(f))
+    elif isinstance(path_to_upload, UploadableFileObject):
+        checksum = path_to_upload.sha256_checksum
+    return checksum
+
+
 async def upload_path(
     *,
     user_id: UserID,
@@ -285,13 +299,7 @@ async def upload_path(
     if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
         msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
         raise exceptions.NodeportsException(msg)
-    checksum: SHA256Str | None = None
-    if not is_directory:
-        if isinstance(path_to_upload, Path):
-            async with open(path_to_upload, mode="rb") as f:
-                checksum = SHA256Str(await create_sha256_checksum(f))
-        elif isinstance(path_to_upload, UploadableFileObject):
-            checksum = path_to_upload.sha256_checksum
+    checksum: SHA256Str | None = await _generate_checksum(path_to_upload, is_directory)
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
 
