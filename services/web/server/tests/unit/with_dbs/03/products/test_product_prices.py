@@ -4,6 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
+from decimal import Decimal
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -21,33 +23,13 @@ from simcore_service_webserver.db.models import UserRole
     ],
 )
 async def test_get_product_price_when_undefined(
-    client: TestClient, expected: type[web.HTTPException], logged_user: UserInfoDict
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: type[web.HTTPException],
+    new_osparc_price: Decimal,
 ):
     response = await client.get("/v0/price")
     data, error = await assert_status(response, expected)
 
     if not error:
-        assert data["dollarsPerCredit"] == 0
-
-
-async def test_it():
-    # osparc 1
-    # foo 2
-    # bar 3
-    # osparc 2
-    # foo 1
-    assert False
-
-    # test adding negative price raise exceptio in the database
-    #
-
-    # Separate PR to introduce POs
-    #
-    # ONLY for POs
-    # /product
-    # as a section with price that includes all values
-    #
-    # check that authorization by PRODUCT_OWNER user
-    #
-
-    # tests create payment with defined/undefined price
+        assert data["dollarsPerCredit"] == new_osparc_price
