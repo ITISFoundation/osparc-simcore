@@ -263,7 +263,7 @@ class DaskClient:
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            if (self.cluster_type == ClusterTypeInModel.ON_DEMAND) and (
+            if (self.cluster_type == ClusterTypeInModel.ON_DEMAND.value) and (
                 self.backend.gateway is None
             ):
                 _logger.warning("cluster type: %s", self.cluster_type)
