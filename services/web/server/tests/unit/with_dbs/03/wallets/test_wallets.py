@@ -28,7 +28,7 @@ def mock_rut_sum_total_available_credits_in_the_wallet(
     mocker: MockerFixture,
 ) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.wallets._api.resource_usage_tracker_client.sum_total_available_credits_in_the_wallet",
+        "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
         return_value=WalletTotalCredits(
             wallet_id=1, available_osparc_credits=Decimal(10.2)
         ),
