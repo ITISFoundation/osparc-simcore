@@ -85,7 +85,7 @@ async def create_payment(request: web.Request):
     ):
         # Conversion
         price: ProductPriceGet = await get_current_product_price(request)
-        if not price.dollars_per_credit:
+        if not price.usd_per_credit:
             # '0 or None' should raise
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
@@ -94,7 +94,7 @@ async def create_payment(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=body_params.price_dollars / price.dollars_per_credit,
+            osparc_credits=body_params.price_dollars / price.usd_per_credit,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
         )

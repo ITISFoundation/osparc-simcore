@@ -8,13 +8,13 @@ from ._base import OutputSchema
 
 class ProductPriceGet(OutputSchema):
     product_name: str
-    dollars_per_credit: Decimal | None = Field(
+    usd_per_credit: Decimal | None = Field(
         ...,
-        description="Price of a credit in dollars. "
+        description="Price of a credit in USD. "
         "If None, then this product's price is UNDEFINED",
     )
 
-    @validator("dollars_per_credit")
+    @validator("usd_per_credit")
     @classmethod
     def non_negative(cls, v):
         if v < 0:
@@ -25,7 +25,7 @@ class ProductPriceGet(OutputSchema):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {"productName": "osparc", "dollarsPerCredit": "null"},
-                {"productName": "osparc", "dollarsPerCredit": "10"},
+                {"productName": "osparc", "usdPerCredit": "null"},
+                {"productName": "osparc", "usdPerCredit": "10"},
             ]
         }
