@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.product import ProductPriceGet
+from models_library.api_schemas_webserver.product import CreditPriceGet
 from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import RequestParams
@@ -25,12 +25,12 @@ class _ProductsRequestContext(RequestParams):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
-@routes.get(f"/{VTAG}/price", name="get_current_product_price")
+@routes.get(f"/{VTAG}/credit-price", name="get_current_product_price")
 @login_required
 @permission_required("product.price.read")
 async def get_current_product_price(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
 
-    product_price: ProductPriceGet = await _api.get_current_product_price(request)
-    assert req_ctx.product_name == product_price.product_name  # nosec
-    return envelope_json_response(product_price)
+    credit_price: CreditPriceGet = await _api.get_current_product_price(request)
+    assert req_ctx.product_name == credit_price.product_name  # nosec
+    return envelope_json_response(credit_price)

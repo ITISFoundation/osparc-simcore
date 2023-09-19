@@ -6,7 +6,7 @@ from ..basic_types import NonNegativeDecimal
 from ._base import OutputSchema
 
 
-class ProductPriceGet(OutputSchema):
+class CreditPriceGet(OutputSchema):
     product_name: str
     usd_per_credit: NonNegativeDecimal | None = Field(
         ...,
