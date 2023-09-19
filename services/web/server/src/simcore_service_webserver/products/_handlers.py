@@ -31,6 +31,8 @@ class _ProductsRequestContext(RequestParams):
 async def get_current_product_price(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
 
-    credit_price: CreditPriceGet = await _api.get_current_product_price(request)
-    assert req_ctx.product_name == credit_price.product_name  # nosec
+    credit_price = CreditPriceGet(
+        product_name=req_ctx.product_name,
+        usd_per_credit=await _api.get_current_product_credit_price(request),
+    )
     return envelope_json_response(credit_price)

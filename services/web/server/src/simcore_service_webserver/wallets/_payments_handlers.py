@@ -36,7 +36,7 @@ from ..payments.api import (
     init_creation_of_wallet_payment_method,
     list_wallet_payment_methods,
 )
-from ..products.api import get_current_product_price
+from ..products.api import get_current_product_credit_price
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
@@ -84,7 +84,7 @@ async def create_payment(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         # Conversion
-        price: CreditPriceGet = await get_current_product_price(request)
+        price: CreditPriceGet = await get_current_product_credit_price(request)
         if not price.usd_per_credit:
             # '0 or None' should raise
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)

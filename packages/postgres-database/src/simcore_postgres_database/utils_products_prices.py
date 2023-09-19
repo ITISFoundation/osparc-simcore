@@ -5,7 +5,7 @@ from aiopg.sa.connection import SAConnection
 from simcore_postgres_database.models.products_prices import products_prices
 
 
-async def get_product_latest_price_or_none(
+async def get_product_latest_credit_price_or_none(
     conn: SAConnection, product_name: str
 ) -> Decimal | None:
     # newest price of a product

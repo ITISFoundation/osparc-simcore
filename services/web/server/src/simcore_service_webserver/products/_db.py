@@ -1,13 +1,14 @@
 import logging
 from collections.abc import AsyncIterator
-from decimal import Decimal
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.basic_types import NonNegativeDecimal
+from pydantic import parse_obj_as
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
-    get_product_latest_price_or_none,
+    get_product_latest_credit_price_or_none,
 )
 
 from ..db.base_repository import BaseRepository
@@ -43,15 +44,15 @@ class ProductRepository(BaseRepository):
             row: RowProxy | None = await result.first()
             return Product.from_orm(row) if row else None
 
-    async def get_product_latest_price_or_none(
+    async def get_product_latest_credit_price_or_none(
         self, product_name: str
-    ) -> Decimal | None:
+    ) -> NonNegativeDecimal | None:
         async with self.engine.acquire() as conn:
             # newest price of a product
-            usd_per_credit: Decimal | None = await get_product_latest_price_or_none(
+            usd_per_credit = await get_product_latest_credit_price_or_none(
                 conn, product_name=product_name
             )
-            return usd_per_credit
+            return parse_obj_as(NonNegativeDecimal | None, usd_per_credit)
 
     async def get_template_content(
         self,
