@@ -87,7 +87,7 @@ async def test_delete_price_constraints(
     with pytest.raises(ForeignKeyViolation) as exc_info:
         await connection.execute(products.delete())
 
-    assert "delete" in f"{exc_info.value}"
+    assert exc_info.match("delete")
 
     # this is the correct way to delete
     await connection.execute(products_prices.delete())
