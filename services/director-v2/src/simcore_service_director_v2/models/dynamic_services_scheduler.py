@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-import warnings
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
@@ -23,15 +22,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    ConstrainedStr,
-    Extra,
-    Field,
-    parse_obj_as,
-    root_validator,
-)
+from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -380,7 +371,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
-    callbacks_mapping: CallbacksMapping
+    callbacks_mapping: CallbacksMapping = Field(default_factory=dict)
 
     dynamic_sidecar_network_name: str = Field(
         ...,
@@ -437,16 +428,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="Current product upon which this service is scheduled. "
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
-
-    @root_validator(pre=True)
-    @classmethod
-    def _callbacks_mapping_legacy_migration(cls, values):
-        warnings.warn(
-            "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4745"
-        )
-        if "callbacks_mapping" not in values:
-            values["callbacks_mapping"] = {}
-        return values
 
     @classmethod
     def from_http_request(
