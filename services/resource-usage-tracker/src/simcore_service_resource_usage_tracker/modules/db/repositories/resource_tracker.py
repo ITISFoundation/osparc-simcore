@@ -511,7 +511,12 @@ class ResourceTrackerRepository(BaseRepository):
             latest_service_key, latest_service_version = row
 
             query = sa.select(
-                resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.name,
+                resource_tracker_pricing_plans.c.description,
+                resource_tracker_pricing_plans.c.classification,
+                resource_tracker_pricing_plans.c.is_active,
+                resource_tracker_pricing_plans.c.created,
             )
             query = query.where(
                 (

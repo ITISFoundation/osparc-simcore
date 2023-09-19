@@ -460,7 +460,6 @@ def test_get_dynamic_proxy_spec(
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
-@pytest.mark.testit
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
