@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import cast
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
@@ -91,6 +92,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=3000, description="ptsvd remote debugger starting port"
     )
 
+    DY_SIDECAR_CALLBACKS_MAPPING: CallbacksMapping = Field(
+        ..., description="callbacks to use for this service"
+    )
     DY_SIDECAR_PATH_INPUTS: Path = Field(
         ..., description="path where to expect the inputs folder"
     )
@@ -120,6 +124,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+
+    @property
+    def are_prometheus_metrics_enabled(self) -> bool:
+        return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
 
     @validator("LOG_LEVEL")
     @classmethod

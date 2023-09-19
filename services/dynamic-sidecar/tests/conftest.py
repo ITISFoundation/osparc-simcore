@@ -204,6 +204,7 @@ def mock_environment(
 
     # envs on container
     envs["DYNAMIC_SIDECAR_COMPOSE_NAMESPACE"] = compose_namespace
+    envs["DY_SIDECAR_CALLBACKS_MAPPING"] = "{}"
 
     envs["REGISTRY_AUTH"] = "false"
     envs["REGISTRY_USER"] = "test"

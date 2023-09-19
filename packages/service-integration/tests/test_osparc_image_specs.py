@@ -32,6 +32,7 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
     )
     meta_cfg = MetaConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
     runtime_cfg = RuntimeConfig.from_yaml(tests_data_dir / "runtime.yml")
+    assert runtime_cfg.callbacks_mapping is not None
 
     # assemble docker-compose
     build_spec = BuildItem(
@@ -49,7 +50,7 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
     assert compose_spec.services is not None
     assert isinstance(compose_spec.services, dict)
 
-    service_name = list(compose_spec.services.keys())[0]
+    service_name = next(iter(compose_spec.services.keys()))
     # pylint: disable=unsubscriptable-object
     assert isinstance(compose_spec.services[service_name], Service)
     build_spec = compose_spec.services[service_name].build

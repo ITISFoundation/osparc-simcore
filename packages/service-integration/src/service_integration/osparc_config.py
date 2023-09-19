@@ -14,15 +14,16 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Any, Literal, NamedTuple
+from typing import Any, ClassVar, Literal, NamedTuple
 
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
     ContainerSpec,
     DynamicSidecarServiceLabels,
-    NATRule,
     PathMappingsLabel,
     RestartPolicy,
 )
+from models_library.service_settings_nat_rule import NATRule
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
@@ -42,7 +43,7 @@ from .labels_annotations import from_labels, to_labels
 from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 CONFIG_FOLDER_NAME = ".osparc"
 
@@ -108,7 +109,8 @@ class MetaConfig(ServiceDockerData):
         """catalog service relies on contact and author to define access rights"""
         authors_emails = {author.email for author in values["authors"]}
         if v not in authors_emails:
-            raise ValueError("Contact {v} must be registered as an author")
+            msg = "Contact {v} must be registered as an author"
+            raise ValueError(msg)
         return v
 
     @classmethod
@@ -127,12 +129,11 @@ class MetaConfig(ServiceDockerData):
         return model
 
     def to_labels_annotations(self) -> dict[str, str]:
-        labels = to_labels(
+        return to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
             trim_key_head=False,
         )
-        return labels
 
     def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
@@ -158,7 +159,13 @@ class SettingsItem(BaseModel):
 
     name: str = Field(..., description="The name of the service setting")
     type_: Literal[
-        "string", "int", "integer", "number", "object", "ContainerSpec", "Resources"
+        "string",
+        "int",
+        "integer",
+        "number",
+        "object",
+        "ContainerSpec",
+        "Resources",
     ] = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
@@ -169,12 +176,19 @@ class SettingsItem(BaseModel):
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
 
+    @validator("type_", pre=True)
+    @classmethod
+    def ensure_backwards_compatible_setting_type(cls, v):
+        if v == "resources":
+            # renamed in the latest version as
+            return "Resources"
+        return v
+
     @validator("value", pre=True)
     @classmethod
     def check_value_against_custom_types(cls, v, values):
-        if type_ := values.get("type_"):
-            if type_ == "ContainerSpec":
-                ContainerSpec.parse_obj(v)
+        if (type_ := values.get("type_")) and type_ == "ContainerSpec":
+            ContainerSpec.parse_obj(v)
         return v
 
 
@@ -182,6 +196,10 @@ class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
     class Config:
         extra = Extra.allow
         allow_population_by_field_name = True
+
+
+def _get_alias_generator(field_name: str) -> str:
+    return field_name.replace("_", "-")
 
 
 class RuntimeConfig(BaseModel):
@@ -195,6 +213,7 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
+    callbacks_mapping: CallbacksMapping | None = Field(default_factory=dict)
     paths_mapping: PathMappingsLabel | None = None
     boot_options: BootOptions = None
     min_visible_inputs: NonNegativeInt | None = None
@@ -203,7 +222,7 @@ class RuntimeConfig(BaseModel):
 
     containers_allowed_outgoing_internet: set[str] | None = None
 
-    settings: list[SettingsItem] = []
+    settings: list[SettingsItem] = Field(default_factory=list)
 
     @root_validator(pre=True)
     @classmethod
@@ -212,18 +231,18 @@ class RuntimeConfig(BaseModel):
         # these are also validated when ooil runs.
         try:
             ValidatingDynamicSidecarServiceLabels.parse_obj(v)
-        except ValidationError as e:
-            logger.exception(
+        except ValidationError:
+            _logger.exception(
                 "Could not validate %s via %s",
                 DynamicSidecarServiceLabels,
                 ValidatingDynamicSidecarServiceLabels,
             )
-            raise e
+            raise
 
         return v
 
     class Config:
-        alias_generator = lambda field_name: field_name.replace("_", "-")
+        alias_generator = _get_alias_generator
         allow_population_by_field_name = True
         extra = Extra.forbid
 
@@ -239,11 +258,10 @@ class RuntimeConfig(BaseModel):
         return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
-        labels = to_labels(
+        return to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
-        return labels
 
 
 ## FILES -----------------------------------------------------------
@@ -260,7 +278,7 @@ class ConfigFilesStructure:
     map to the models
     """
 
-    FILES_GLOBS = {
+    FILES_GLOBS: ClassVar[dict] = {
         DockerComposeOverwriteCfg.__name__: ConfigFileDescriptor(
             glob_pattern="docker-compose.overwrite.y*ml", required=False
         ),

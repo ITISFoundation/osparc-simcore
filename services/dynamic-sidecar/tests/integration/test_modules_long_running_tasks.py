@@ -23,7 +23,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
@@ -115,7 +114,7 @@ def mock_environment(
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
     minio_config: dict[str, Any],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
@@ -133,6 +132,7 @@ def mock_environment(
         "S3_BUCKET_NAME": minio_config["bucket_name"],
         "S3_SECURE": f"{minio_config['client']['secure']}",
         "R_CLONE_PROVIDER": "MINIO",
+        "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         **base_mock_envs,
     }
 
