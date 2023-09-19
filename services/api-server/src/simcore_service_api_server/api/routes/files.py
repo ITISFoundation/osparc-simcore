@@ -283,7 +283,8 @@ async def search_files_page(
     file_id: UUID | None = None,
 ):
     """Search files"""
-    # TODO currently this method builds the page itself. That should be implemented in storage
+    # TODO currently this method builds the page itself. That should be implemented in storage.
+    # See https://github.com/ITISFoundation/osparc-simcore/issues/4773
     try:
         stored_files: list[StorageFileMetaData] = await storage_client.search_files(
             user_id=user_id, file_id=file_id, sha256_checksum=sha256_checksum
