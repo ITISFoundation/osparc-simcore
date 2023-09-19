@@ -27,6 +27,7 @@ from starlette.testclient import ASGI3App, TestClient
 pytest_plugins = [
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.dask_gateway",
+    "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
