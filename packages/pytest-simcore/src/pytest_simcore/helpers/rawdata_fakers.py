@@ -148,6 +148,12 @@ def random_product(
     fake: Faker = FAKE,
     **overrides
 ):
+    """
+
+    Foreign keys are:
+        - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
+        - registration_email_template
+    """
 
     fake_vendor = {
         "name": fake.company(),
@@ -161,10 +167,10 @@ def random_product(
     data = {
         "name": fake.unique.first_name(),
         "display_name": fake.company(),
-        "short_name": fake.user_name(),
+        "short_name": fake.user_name()[:10],
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": fake.email(),
-        "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4())),
+        "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
         "vendor": fake.random_element([None, fake_vendor]),
         "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),

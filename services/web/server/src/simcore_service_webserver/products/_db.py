@@ -46,14 +46,14 @@ class ProductRepository(BaseRepository):
     ) -> Decimal | None:
         async with self.engine.acquire() as conn:
             # newest price of a product
-            dollars_per_credit = await conn.scalar(
-                sa.select(products_prices.c.dollars_per_credit)
+            usd_per_credit = await conn.scalar(
+                sa.select(products_prices.c.usd_per_credit)
                 .where(products_prices.c.product_name == product_name)
                 .order_by(sa.desc(products_prices.c.created))
                 .limit(1)
             )
-            if dollars_per_credit is not None:
-                return Decimal(dollars_per_credit)
+            if usd_per_credit is not None:
+                return Decimal(usd_per_credit)
             return None
 
     async def get_template_content(
