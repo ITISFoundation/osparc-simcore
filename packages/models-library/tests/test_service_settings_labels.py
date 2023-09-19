@@ -10,15 +10,17 @@ from typing import Any, NamedTuple
 
 import pytest
 from models_library.service_settings_labels import (
-    DEFAULT_DNS_SERVER_ADDRESS,
-    DEFAULT_DNS_SERVER_PORT,
-    DNSResolver,
     DynamicSidecarServiceLabels,
     NATRule,
     PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
+)
+from models_library.service_settings_nat_rule import (
+    DEFAULT_DNS_SERVER_ADDRESS,
+    DEFAULT_DNS_SERVER_PORT,
+    DNSResolver,
     _PortRange,
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME

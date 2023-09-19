@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, NonNegativeFloat
+from pydantic import BaseModel, Extra, Field, NonNegativeFloat
 
 
 class UserServiceCommand(BaseModel):
@@ -14,6 +14,7 @@ class UserServiceCommand(BaseModel):
     )
 
     class Config:
+        extra = Extra.forbid
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"service": "rt-web", "command": "ls", "timeout": 1},
@@ -37,6 +38,7 @@ class CallbacksMapping(BaseModel):
     )
 
     class Config:
+        extra = Extra.forbid
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {

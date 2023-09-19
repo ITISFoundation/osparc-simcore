@@ -20,10 +20,10 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
     ContainerSpec,
     DynamicSidecarServiceLabels,
-    NATRule,
     PathMappingsLabel,
     RestartPolicy,
 )
+from models_library.service_settings_nat_rule import NATRule
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,

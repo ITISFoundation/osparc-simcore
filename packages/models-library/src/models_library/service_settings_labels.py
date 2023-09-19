@@ -2,11 +2,10 @@
 
 import json
 import re
-from collections.abc import Generator
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Final, Literal, TypeAlias
+from typing import Any, ClassVar, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -22,16 +21,11 @@ from pydantic import (
     validator,
 )
 
-from .basic_types import PortInt
 from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
+from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
-
-# Cloudflare DNS server address
-DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
-
 
 # NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
 
@@ -261,59 +255,6 @@ class RestartPolicy(str, Enum):
 
     NO_RESTART = "no-restart"
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
-
-
-class _PortRange(BaseModel):
-    """`lower` and `upper` are included"""
-
-    lower: PortInt
-    upper: PortInt
-
-    @validator("upper")
-    @classmethod
-    def lower_less_than_upper(cls, v, values) -> PortInt:
-        upper = v
-        lower: PortInt | None = values.get("lower")
-        if lower is None or lower >= upper:
-            msg = f"Condition not satisfied: lower={lower!r} < upper={upper!r}"
-            raise ValueError(msg)
-        return PortInt(v)
-
-
-class DNSResolver(BaseModel):
-    address: str = Field(
-        ..., description="this is not an url address is derived from IP address"
-    )
-    port: PortInt
-
-    class Config(_BaseConfig):
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"address": "1.1.1.1", "port": 53},  # NOSONAR
-                {"address": "ns1.example.com", "port": 53},
-            ]
-        }
-
-
-class NATRule(BaseModel):
-    """Content of "simcore.service.containers-allowed-outgoing-permit-list" label"""
-
-    hostname: str
-    tcp_ports: list[_PortRange | PortInt]
-    dns_resolver: DNSResolver = Field(
-        default_factory=lambda: DNSResolver(
-            address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
-        ),
-        description="specify a DNS resolver address and port",
-    )
-
-    def iter_tcp_ports(self) -> Generator[PortInt, None, None]:
-        for port in self.tcp_ports:
-            if isinstance(port, _PortRange):
-                yield from (PortInt(i) for i in range(port.lower, port.upper + 1))
-            else:
-                yield port
 
 
 class DynamicSidecarServiceLabels(BaseModel):
