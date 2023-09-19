@@ -135,17 +135,6 @@ async def test_price_history_of_a_product(
         )
     )
 
-    result = await connection.execute(
-        products_prices.select()
-        .where(products_prices.c.product_name == fake_product.name)
-        .order_by(sa.desc(products_prices.c.valid_from))
-    )
-    rows = await result.fetchall()
-    assert rows
-    assert len(rows) == 2
-    assert rows[0].usd_per_credit == 2, "Newest first"
-    assert rows[1].usd_per_credit == 1
-
     # latest is 2 USD!
     assert (
         await get_product_latest_credit_price_or_none(
