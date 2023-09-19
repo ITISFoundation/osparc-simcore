@@ -61,7 +61,7 @@ class DynamicServiceCreate(ServiceDetails):
                 "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
                     "examples"
                 ][0],
-                "wallet_info": WalletInfo(wallet_id=1, wallet_name="My wallet"),
+                "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
             }
         }
 

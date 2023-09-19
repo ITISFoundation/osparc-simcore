@@ -176,6 +176,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                     user_id,
                     client_session_id,
                     app,
+                    "s4l",  # NOTE: will be changed in upcoming PR
                 )
 
         else:

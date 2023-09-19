@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import TypeAlias
+from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field, PositiveInt
 
@@ -17,6 +17,11 @@ class WalletStatus(StrAutoEnum):
 class WalletInfo(BaseModel):
     wallet_id: WalletID
     wallet_name: str
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [{"wallet_id": 1, "wallet_name": "My Wallet"}]
+        }
 
 
 ### DB
