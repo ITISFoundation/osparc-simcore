@@ -254,7 +254,7 @@ class StorageS3Client:
                     for part in uploaded_parts
                 ]
             },
-            "ChecksumSHA256": None if sha256_checksum is None else str(sha256_checksum),
+            "ChecksumSHA256": sha256_checksum,
         }
         response = await self.client.complete_multipart_upload(
             **{k: v for k, v in inputs.items() if v is not None}
