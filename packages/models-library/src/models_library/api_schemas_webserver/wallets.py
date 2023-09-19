@@ -102,6 +102,24 @@ class PaymentMethodInit(OutputSchema):
         }
 
 
+class PaymentMethodTransaction(OutputSchema):
+    # Used ONLY in socketio interface
+    wallet_id: WalletID
+    payment_method_id: PaymentMethodID
+    state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"]
+
+    class Config(OutputSchema.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "walletId": 1,
+                    "paymentMethodId": "pm_0987654321",
+                    "state": "SUCCESS",
+                }
+            ]
+        }
+
+
 class PaymentMethodGet(OutputSchema):
     idr: PaymentMethodID
     wallet_id: WalletID

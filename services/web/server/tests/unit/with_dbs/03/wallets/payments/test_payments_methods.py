@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import (
@@ -12,6 +13,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
 )
 from pydantic import parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_service_webserver.payments._methods_api import (
@@ -23,9 +25,13 @@ from simcore_service_webserver.payments.settings import (
 )
 
 
+@pytest.mark.acceptance_test(
+    "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
+)
 async def test_payment_method_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mocker: MockerFixture,
 ):
     # preamble
     assert client.app
@@ -33,13 +39,17 @@ async def test_payment_method_worfklow(
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
+    send_message = mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
+
     wallet = logged_user_wallet
 
     # init Create
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPCreated)
+    data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     inited = PaymentMethodInit.parse_obj(data)
 
@@ -60,6 +70,9 @@ async def test_payment_method_worfklow(
         completion_state=InitPromptAckFlowState.SUCCESS,
         message="ACKED by test_add_payment_method_worfklow",
     )
+
+    assert send_message.called
+    send_message.assert_called_once()
 
     # Get
     response = await client.get(
@@ -82,6 +95,13 @@ async def test_payment_method_worfklow(
     )
     await assert_status(response, web.HTTPNoContent)
 
+    # Get -> NOT FOUND
+    response = await client.get(
+        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
+    )
+    data, _ = await assert_status(response, web.HTTPNotFound)
+
+    # List -> empty
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data
@@ -97,7 +117,7 @@ async def test_init_and_cancel_payment_method(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPCreated)
+    data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     inited = PaymentMethodInit.parse_obj(data)
 

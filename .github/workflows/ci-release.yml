@@ -36,7 +36,7 @@ jobs:
         run: echo "BRANCH_NAME=$(git name-rev --refs="refs/remotes/origin/master" --refs="refs/remotes/origin/hotfix_v*" --refs="refs/remotes/origin/hotfix_staging_*" --name-only ${GITHUB_SHA})" >> $GITHUB_ENV
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           version: ${{ matrix.docker_buildx }}
       - name: set owner variable
