@@ -32,4 +32,4 @@ async def test_get_product_price_when_undefined(
     data, error = await assert_status(response, expected)
 
     if not error:
-        assert data["dollarsPerCredit"] == new_osparc_price
+        assert data["usdPerCredit"] == new_osparc_price
