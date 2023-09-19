@@ -32,11 +32,6 @@ def all_created_ec2_instances_filter() -> EC2Tags:
     return _DEFAULT_CLUSTERS_KEEPER_TAGS
 
 
-def get_user_id_from_tags(tags: EC2Tags) -> UserID:
-    assert "user_id" in tags  # nosec
-    return UserID(tags["user_id"])
-
-
 def ec2_instances_for_user_wallet_filter(
     user_id: UserID, wallet_id: WalletID | None
 ) -> EC2Tags:
