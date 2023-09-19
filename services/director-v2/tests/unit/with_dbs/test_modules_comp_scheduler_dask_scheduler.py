@@ -61,7 +61,8 @@ from simcore_service_director_v2.core.errors import (
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
-from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
+from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
 from simcore_service_director_v2.modules.comp_scheduler import background_task
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
@@ -433,8 +434,24 @@ async def _assert_schedule_pipeline_PENDING(
     for p in expected_pending_tasks:
         published_tasks.remove(p)
 
-    async def _return_tasks_pending(job_ids: list[str]) -> list[RunningState]:
-        return [RunningState.PENDING for job_id in job_ids]
+    node_id_to_job_id_map = {
+        task.node_id: task.job_id for task in expected_pending_tasks
+    }
+
+    async def _send_computation_tasks(
+        *args, tasks: dict[NodeID, Image], **kwargs
+    ) -> list[tuple[NodeID, str]]:
+        for node_id in tasks:
+            assert NodeID(f"{node_id}") in node_id_to_job_id_map
+        return [
+            (NodeID(f"{node_id}"), node_id_to_job_id_map[NodeID(f"{node_id}")])
+            for node_id in tasks
+        ]  # type: ignore
+
+    mocked_dask_client.send_computation_tasks.side_effect = _send_computation_tasks
+
+    async def _return_tasks_pending(job_ids: list[str]) -> list[DaskClientTaskState]:
+        return [DaskClientTaskState.PENDING for job_id in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_tasks_pending
     await run_comp_scheduler(scheduler)
@@ -445,7 +462,7 @@ async def _assert_schedule_pipeline_PENDING(
         published_project.project.uuid,
         [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
-        expected_progress=0,
+        expected_progress=None,
     )
     # the other tasks are still waiting in published state
     await _assert_comp_tasks_db(
@@ -481,14 +498,14 @@ async def _assert_schedule_pipeline_PENDING(
         published_project.project.uuid,
         [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
-        expected_progress=0,
+        expected_progress=None,
     )
     await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [p.node_id for p in published_tasks],
         expected_state=RunningState.PUBLISHED,
-        expected_progress=None,  # since we bypass the API entrypoint this is correct
+        expected_progress=None,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_has_calls(
@@ -583,11 +600,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     exp_started_task = expected_pending_tasks[0]
     expected_pending_tasks.remove(exp_started_task)
 
-    async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
+    async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            RunningState.STARTED
+            DaskClientTaskState.PENDING_OR_STARTED
             if job_id == exp_started_task.job_id
-            else RunningState.PENDING
+            else DaskClientTaskState.PENDING
             for job_id in job_ids
         ]
 
@@ -640,11 +657,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     # -------------------------------------------------------------------------------
     # 4. the "worker" completed the task successfully
-    async def _return_1st_task_success(job_ids: list[str]) -> list[RunningState]:
+    async def _return_1st_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            RunningState.SUCCESS
+            DaskClientTaskState.SUCCESS
             if job_id == exp_started_task.job_id
-            else RunningState.PENDING
+            else DaskClientTaskState.PENDING
             for job_id in job_ids
         ]
 
@@ -728,11 +745,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 6. the "worker" starts processing a task
     exp_started_task = next_pending_task
 
-    async def _return_2nd_task_running(job_ids: list[str]) -> list[RunningState]:
+    async def _return_2nd_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            RunningState.STARTED
+            DaskClientTaskState.PENDING_OR_STARTED
             if job_id == exp_started_task.job_id
-            else RunningState.PENDING
+            else DaskClientTaskState.PENDING
             for job_id in job_ids
         ]
 
@@ -768,11 +785,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     # -------------------------------------------------------------------------------
     # 7. the task fails
-    async def _return_2nd_task_failed(job_ids: list[str]) -> list[RunningState]:
+    async def _return_2nd_task_failed(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            RunningState.FAILED
+            DaskClientTaskState.ERRED
             if job_id == exp_started_task.job_id
-            else RunningState.PENDING
+            else DaskClientTaskState.PENDING
             for job_id in job_ids
         ]
 
@@ -811,11 +828,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 8. the last task shall succeed
     exp_started_task = expected_pending_tasks[0]
 
-    async def _return_3rd_task_success(job_ids: list[str]) -> list[RunningState]:
+    async def _return_3rd_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            RunningState.SUCCESS
+            DaskClientTaskState.SUCCESS
             if job_id == exp_started_task.job_id
-            else RunningState.PENDING
+            else DaskClientTaskState.PENDING
             for job_id in job_ids
         ]
 
