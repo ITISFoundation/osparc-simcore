@@ -225,7 +225,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: dict[str, str] = Field(
         ...,
-        description="provided by ops, are injected as service labels when starting the dy-sidecar",
+        description=(
+            "Provided by ops, are injected as service labels when starting the dy-sidecar, "
+            "and Prometheus identifies the service as to be scraped"
+        ),
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
