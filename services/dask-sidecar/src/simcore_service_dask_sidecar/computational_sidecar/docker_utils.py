@@ -260,8 +260,9 @@ async def _parse_container_docker_logs(
                         log_line,
                     )
                     await log_fp.write(log_line.encode("utf-8"))
+                    # NOTE: here we remove the timestamp, only needed for the file
                     await _parse_and_publish_logs(
-                        log_line,
+                        log_line.split(" ", maxsplit=1)[1],
                         task_publishers=task_publishers,
                     )
 
