@@ -2,9 +2,19 @@ import re
 from enum import Enum
 from typing import TypeAlias
 
-from pydantic import ConstrainedInt, ConstrainedStr, HttpUrl, PositiveInt
+from pydantic import (
+    ConstrainedDecimal,
+    ConstrainedInt,
+    ConstrainedStr,
+    HttpUrl,
+    PositiveInt,
+)
 
 from .basic_regex import UUID_RE, VERSION_RE
+
+
+class NonNegativeDecimal(ConstrainedDecimal):
+    ge = 0
 
 
 # port number range
