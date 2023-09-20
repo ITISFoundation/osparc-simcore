@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from servicelib.file_utils import remove_directory
+from servicelib.file_utils import get_temporary_path_name, remove_directory
 
 
 @pytest.fixture
@@ -80,3 +80,11 @@ async def test_remove_not_existing_directory_rasing_error(
         await remove_directory(
             path=missing_path, only_children=only_children, ignore_errors=False
         )
+
+
+def test_get_temporary_path_name_not_create_a_file_or_a_folder():
+    for _ in range(1000):
+        temp_path = get_temporary_path_name()
+        assert temp_path.exists() is False
+        assert temp_path.is_file() is False
+        assert temp_path.is_dir() is False
