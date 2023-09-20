@@ -92,7 +92,7 @@ def test_user_service_preferences(value: Any, mock_file_path: Path):
 def unregister_defined_classes() -> Iterator[None]:
     yield
     # pylint: disable=protected-access
-    _AutoRegisterMeta._registered_user_preference_classes.pop(  # noqa: SLF001
+    _AutoRegisterMeta.registered_user_preference_classes.pop(  # noqa: SLF001
         "Pref1", None
     )
 
