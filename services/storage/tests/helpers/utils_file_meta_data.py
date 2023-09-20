@@ -59,6 +59,6 @@ async def assert_file_meta_data_in_db(
             else:
                 assert (
                     row[file_meta_data.c.sha256_checksum] is None
-                ), "invalid sha256_checksum"
+                ), "expected sha256_checksum was None"
             upload_id = row[file_meta_data.c.upload_id]
     return upload_id
