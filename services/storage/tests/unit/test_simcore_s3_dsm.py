@@ -99,9 +99,7 @@ async def test_upload_n_search(
     faker: Faker,
 ):
     checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
-    _, simcore_file_id = await upload_file(
-        file_size, "a_file_name", sha256_checksum=checksum
-    )
+    _, _ = await upload_file(file_size, "a_file_name", sha256_checksum=checksum)
 
     files: list[FileMetaData] = await simcore_s3_dsm.search_owned_files(
         user_id=user_id, file_id_prefix="", sha256_checksum=checksum

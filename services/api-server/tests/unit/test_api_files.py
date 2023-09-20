@@ -291,12 +291,9 @@ async def test_search_file(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> dict[str, Any]:
-        request_query: dict[str, str] = {
-            k: v
-            for k, v in [
-                elm.split("=") for elm in request.url.query.decode("utf8").split("&")
-            ]
-        }
+        request_query: dict[str, str] = dict(
+            elm.split("=") for elm in request.url.query.decode("utf8").split("&")
+        )
         assert isinstance(capture.response_body, dict)
         response: dict[str, Any] = capture.response_body
         for key in query:

@@ -273,6 +273,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
         simcore_s3_dsm.location_name,
         upload_expires_at=later_than_now,
         is_directory=is_directory,
+        sha256_checksum=None,
     )
     # we create the entry in the db
     async with aiopg_engine.acquire() as conn:
@@ -355,6 +356,7 @@ async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_cor
         simcore_s3_dsm.location_id,
         simcore_s3_dsm.location_name,
         upload_expires_at=later_than_now,
+        sha256_checksum=None,
     )
     # we create the entry in the db
     async with aiopg_engine.acquire() as conn:
