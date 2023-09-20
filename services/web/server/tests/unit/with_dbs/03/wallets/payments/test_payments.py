@@ -87,6 +87,7 @@ async def test_payments_worfklow(
     payment = WalletPaymentCreated.parse_obj(data)
 
     assert payment.payment_id
+    assert payment.payment_form_url.host == "some-fake-gateway.com"
     assert payment.payment_form_url.query
     assert payment.payment_form_url.query.endswith(payment.payment_id)
 
