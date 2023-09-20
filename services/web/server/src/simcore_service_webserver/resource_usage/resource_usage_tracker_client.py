@@ -136,7 +136,7 @@ async def add_credits_to_wallet(
         "created_at": created_at,
     }
     with handle_client_exceptions(app) as session:
-        async with session.post(url, data=body) as response:
+        async with session.post(url, json=body) as response:
             output: dict = await response.json()
             return output
 
