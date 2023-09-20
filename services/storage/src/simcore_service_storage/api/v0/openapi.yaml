@@ -1,4 +1,4 @@
-openapi: 3.0.2
+openapi: 3.1.0
 info:
   title: simcore-service-storage API
   description: API definition for simcore-service-storage service
@@ -7,41 +7,41 @@ info:
     email: support@simcore.io
   license:
     name: MIT
-    url: 'https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE'
+    url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
   version: 0.3.0
 servers:
-  - url: /v0
-    description: 'Default server: requests directed to serving url'
-  - url: 'http://{host}:{port}/v0'
-    description: 'Development server: can configure any base url'
-    variables:
-      host:
-        default: 127.0.0.1
-      port:
-        default: '8000'
+- url: /v0
+  description: 'Default server: requests directed to serving url'
+- url: http://{host}:{port}/v0
+  description: 'Development server: can configure any base url'
+  variables:
+    host:
+      default: 127.0.0.1
+    port:
+      default: '8000'
 paths:
-  '/v0/locations/{location_id}/datasets':
+  /v0/locations/{location_id}/datasets:
     get:
       tags:
-        - datasets
+      - datasets
       summary: Get datasets metadata
       description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -49,43 +49,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
-  '/v0/locations/{location_id}/datasets/{dataset_id}/metadata':
+  /v0/locations/{location_id}/datasets/{dataset_id}/metadata:
     get:
       tags:
-        - datasets
+      - datasets
       summary: Get Files Metadata
       description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: Dataset Id
-            type: string
-          name: dataset_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
-        - description: Automatic directory expansion. This will be replaced by pagination the future
-          required: false
-          schema:
-            title: Expand Dirs
-            type: boolean
-            description: Automatic directory expansion. This will be replaced by pagination the future
-            default: true
-          name: expand_dirs
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          type: string
+          title: Dataset Id
+        name: dataset_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          type: boolean
+          title: Expand Dirs
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -96,57 +98,58 @@ paths:
   /v0/locations:
     get:
       tags:
-        - locations
+      - locations
       summary: Get available storage locations
       description: Returns the list of available storage locations
       operationId: get_storage_locations
       parameters:
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                title: Response Get Storage Locations
-                type: array
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
-  '/v0/locations/{location_id}:sync':
+                type: array
+                title: Response Get Storage Locations
+  /v0/locations/{location_id}:sync:
     post:
       tags:
-        - locations
-      summary: Manually triggers the synchronisation of the file meta data table in the database
-      description: 'Returns an object containing added, changed and removed paths'
+      - locations
+      summary: Manually triggers the synchronisation of the file meta data table in
+        the database
+      description: Returns an object containing added, changed and removed paths
       operationId: synchronise_meta_data_table
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: false
-          schema:
-            title: Dry Run
-            type: boolean
-            default: false
-          name: dry_run
-          in: query
-        - required: false
-          schema:
-            title: Fire And Forget
-            type: boolean
-            default: false
-          name: fire_and_forget
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: false
+        schema:
+          type: boolean
+          title: Dry Run
+          default: false
+        name: dry_run
+        in: query
+      - required: false
+        schema:
+          type: boolean
+          title: Fire And Forget
+          default: false
+        name: fire_and_forget
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -154,36 +157,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TableSynchronisation_'
-  '/v0/locations/{location_id}/files/metadata':
+  /v0/locations/{location_id}/files/metadata:
     get:
       tags:
-        - files
+      - files
       summary: Get datasets metadata
-      description: returns all the file meta data a user has access to (uuid_filter may be used)
+      description: returns all the file meta data a user has access to (uuid_filter
+        may be used)
       operationId: get_files_metadata
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: false
-          schema:
-            title: Uuid Filter
-            type: string
-            default: ''
-          name: uuid_filter
-          in: query
-        - description: Automatic directory expansion. This will be replaced by pagination the future
-          required: false
-          schema:
-            title: Expand Dirs
-            type: boolean
-            description: Automatic directory expansion. This will be replaced by pagination the future
-            default: true
-          name: expand_dirs
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: false
+        schema:
+          type: string
+          title: Uuid Filter
+          default: ''
+        name: uuid_filter
+        in: query
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          type: boolean
+          title: Expand Dirs
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -191,87 +197,88 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
-  '/v0/locations/{location_id}/files/{file_id}/metadata':
+  /v0/locations/{location_id}/files/{file_id}/metadata:
     get:
       tags:
-        - files
+      - files
       summary: Get File Metadata
-      description: returns the file meta data of file_id if user_id has the rights to
+      description: returns the file meta data of file_id if user_id has the rights
+        to
       operationId: get_file_metadata
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                title: Response Get File Metadata
                 anyOf:
-                  - $ref: '#/components/schemas/FileMetaData'
-                  - $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
-  '/v0/locations/{location_id}/files/{file_id}':
+                - $ref: '#/components/schemas/FileMetaData'
+                - $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
+                title: Response Get File Metadata
+  /v0/locations/{location_id}/files/{file_id}:
     get:
       tags:
-        - files
+      - files
       summary: Returns download link for requested file
       description: creates a download file link if user has the rights to
       operationId: download_file
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
-        - required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/LinkType'
-            default: PRESIGNED
-          name: link_type
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
+      - required: false
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/LinkType'
+          default: PRESIGNED
+        name: link_type
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -281,160 +288,161 @@ paths:
                 $ref: '#/components/schemas/Envelope_PresignedLink_'
     put:
       tags:
-        - files
+      - files
       summary: Returns upload link
-      description: 'creates one or more upload file links if user has the rights to, expects the client to complete/abort upload'
+      description: creates one or more upload file links if user has the rights to,
+        expects the client to complete/abort upload
       operationId: upload_file
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: File Size
-            type: integer
-          name: file_size
-          in: query
-        - required: false
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/LinkType'
-            default: PRESIGNED
-          name: link_type
-          in: query
-        - required: false
-          schema:
-            title: Is Directory
-            type: boolean
-            default: false
-          name: is_directory
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          title: File Size
+        name: file_size
+        in: query
+      - required: false
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/LinkType'
+          default: PRESIGNED
+        name: link_type
+        in: query
+      - required: false
+        schema:
+          type: boolean
+          title: Is Directory
+          default: false
+        name: is_directory
+        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                title: Response Upload File
                 anyOf:
-                  - $ref: '#/components/schemas/Envelope_FileUploadSchema_'
-                  - $ref: '#/components/schemas/Envelope_AnyUrl_'
+                - $ref: '#/components/schemas/Envelope_FileUploadSchema_'
+                - $ref: '#/components/schemas/Envelope_AnyUrl_'
+                title: Response Upload File
     delete:
       tags:
-        - files
+      - files
       summary: Deletes File
       description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '204':
           description: Successful Response
-  '/v0/locations/{location_id}/files/{file_id}:abort':
+  /v0/locations/{location_id}/files/{file_id}:abort:
     post:
       tags:
-        - files
+      - files
       summary: Abort Upload File
-      description: |-
-        aborts an upload if user has the rights to, and reverts
-        to the latest version if available, else will delete the file
+      description: 'aborts an upload if user has the rights to, and reverts
+
+        to the latest version if available, else will delete the file'
       operationId: abort_upload_file
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '204':
           description: Successful Response
-  '/v0/locations/{location_id}/files/{file_id}:complete':
+  /v0/locations/{location_id}/files/{file_id}:complete:
     post:
       tags:
-        - files
+      - files
       summary: Complete Upload File
       description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       requestBody:
         content:
           application/json:
@@ -448,44 +456,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteResponse_'
-  '/v0/locations/{location_id}/files/{file_id}:complete/futures/{future_id}':
+  /v0/locations/{location_id}/files/{file_id}:complete/futures/{future_id}:
     post:
       tags:
-        - files
+      - files
       summary: Check for upload completion
       description: Returns state of upload completion
       operationId: is_completed_upload_file
       parameters:
-        - required: true
-          schema:
-            title: Location Id
-            type: integer
-          name: location_id
-          in: path
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: Future Id
-            type: string
-          name: future_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          title: Location Id
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: string
+          title: Future Id
+        name: future_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -496,7 +504,7 @@ paths:
   /v0/:
     get:
       tags:
-        - health
+      - health
       summary: health check endpoint
       description: Current service health
       operationId: health_check
@@ -510,7 +518,7 @@ paths:
   /v0/status:
     get:
       tags:
-        - health
+      - health
       summary: returns the status of the services inside
       description: returns the status of all the external dependencies
       operationId: get_status
@@ -521,32 +529,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_AppStatusCheck_'
-  '/v0/files/{file_id}:soft-copy':
+  /v0/files/{file_id}:soft-copy:
     post:
       tags:
-        - files
+      - files
       summary: copy file as soft link
       description: creates and returns a soft link
       operationId: copy_as_soft_link
       parameters:
-        - required: true
-          schema:
-            title: File Id
-            anyOf:
-              - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-                type: string
-              - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-                type: string
-          name: file_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          anyOf:
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       requestBody:
         content:
           application/json:
@@ -560,22 +568,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileMetaDataGet'
-  '/v0/simcore-s3:access':
+  /v0/simcore-s3:access:
     post:
       tags:
-        - simcore-s3
+      - simcore-s3
       summary: gets or creates the a temporary access
       description: returns a set of S3 credentials
       operationId: get_or_create_temporary_s3_access
       parameters:
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -586,19 +594,19 @@ paths:
   /v0/simcore-s3/folders:
     post:
       tags:
-        - simcore-s3
+      - simcore-s3
       summary: copies folders from project
       description: copies folders from project
       operationId: copy_folders_from_project
       parameters:
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
       requestBody:
         content:
           application/json:
@@ -612,61 +620,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-  '/v0/simcore-s3/folders/{folder_id}':
+  /v0/simcore-s3/folders/{folder_id}:
     delete:
       tags:
-        - simcore-s3
+      - simcore-s3
       summary: delete folders from project
       description: removes folders from a project
       operationId: delete_folders_of_project
       parameters:
-        - required: true
-          schema:
-            title: Folder Id
-            type: string
-          name: folder_id
-          in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
-        - required: false
-          schema:
-            title: Node Id
-            type: string
-            format: uuid
-          name: node_id
-          in: query
+      - required: true
+        schema:
+          type: string
+          title: Folder Id
+        name: folder_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
+      - required: false
+        schema:
+          type: string
+          format: uuid
+          title: Node Id
+        name: node_id
+        in: query
       responses:
         '204':
           description: Successful Response
-  '/v0/simcore-s3/files/metadata:search':
+  /v0/simcore-s3/files/metadata:search:
     post:
       tags:
-        - simcore-s3
+      - simcore-s3
       summary: search for files starting with
-      description: search for files starting with `startswith` in the file_meta_data table
-      operationId: search_files_starting_with
+      description: search for files starting with `startswith` and/or matching a sha256_checksum
+        in the file_meta_data table
+      operationId: search_files
       parameters:
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
-        - required: false
-          schema:
-            title: Startswith
-            type: string
-            default: ''
-          name: startswith
-          in: query
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+        name: user_id
+        in: query
+      - required: false
+        schema:
+          type: string
+          title: Startswith
+          default: ''
+        name: startswith
+        in: query
+      - required: false
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{64}$
+          title: Sha256 Checksum
+        name: sha256_checksum
+        in: query
+      - required: false
+        schema:
+          type: string
+          enum:
+          - read
+          - write
+          title: Access Right
+          default: read
+        name: access_right
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -677,7 +703,7 @@ paths:
   /v0/futures:
     get:
       tags:
-        - tasks
+      - tasks
       summary: list current long running tasks
       description: list current long running tasks
       operationId: list_tasks
@@ -688,20 +714,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-  '/v0/futures/{task_id}':
+  /v0/futures/{task_id}:
     get:
       tags:
-        - tasks
+      - tasks
       summary: gets the status of the task
       description: gets the status of the task
       operationId: get_task_status
       parameters:
-        - required: true
-          schema:
-            title: Task Id
-            type: string
-          name: task_id
-          in: path
+      - required: true
+        schema:
+          type: string
+          title: Task Id
+        name: task_id
+        in: path
       responses:
         '200':
           description: Successful Response
@@ -711,34 +737,34 @@ paths:
                 $ref: '#/components/schemas/Envelope_TaskStatus_'
     delete:
       tags:
-        - tasks
+      - tasks
       summary: cancels and removes the task
       description: cancels and removes the task
       operationId: cancel_and_delete_task
       parameters:
-        - required: true
-          schema:
-            title: Task Id
-            type: string
-          name: task_id
-          in: path
+      - required: true
+        schema:
+          type: string
+          title: Task Id
+        name: task_id
+        in: path
       responses:
         '204':
           description: Successful Response
-  '/v0/futures/{task_id}/result':
+  /v0/futures/{task_id}/result:
     get:
       tags:
-        - tasks
+      - tasks
       summary: get result of the task
       description: get result of the task
       operationId: get_task_result
       parameters:
-        - required: true
-          schema:
-            title: Task Id
-            type: string
-          name: task_id
-          in: path
+      - required: true
+        schema:
+          type: string
+          title: Task Id
+        name: task_id
+        in: path
       responses:
         '200':
           description: Successful Response
@@ -749,641 +775,664 @@ paths:
 components:
   schemas:
     AppStatusCheck:
-      title: AppStatusCheck
-      required:
-        - app_name
-        - version
-      type: object
       properties:
         app_name:
-          title: App Name
           type: string
+          title: App Name
           description: Application name
         version:
-          title: Version
           type: string
+          title: Version
           description: Application's version
         services:
-          title: Services
           type: object
+          title: Services
           description: Other backend services connected from this service
           default: {}
         sessions:
-          title: Sessions
           type: object
-          description: 'Client sessions info. If single session per app, then is denoted as main'
+          title: Sessions
+          description: Client sessions info. If single session per app, then is denoted
+            as main
           default: {}
         url:
+          type: string
+          maxLength: 65536
+          minLength: 1
+          format: uri
           title: Url
-          maxLength: 65536
-          minLength: 1
-          type: string
           description: Link to current resource
-          format: uri
         diagnostics_url:
-          title: Diagnostics Url
+          type: string
           maxLength: 65536
           minLength: 1
-          type: string
-          description: Link to diagnostics report sub-resource. This MIGHT take some time to compute
           format: uri
-    DatasetMetaData:
-      title: DatasetMetaData
-      required:
-        - dataset_id
-        - display_name
+          title: Diagnostics Url
+          description: Link to diagnostics report sub-resource. This MIGHT take some
+            time to compute
       type: object
+      required:
+      - app_name
+      - version
+      title: AppStatusCheck
+    DatasetMetaData:
       properties:
         dataset_id:
-          title: Dataset Id
           anyOf:
-            - type: string
-              format: uuid
-            - pattern: '^N:dataset:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-              type: string
+          - type: string
+            format: uuid
+          - type: string
+            pattern: ^N:dataset:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: Dataset Id
         display_name:
-          title: Display Name
           type: string
+          title: Display Name
       additionalProperties: false
-    Envelope_AnyUrl_:
-      title: 'Envelope[AnyUrl]'
       type: object
+      required:
+      - dataset_id
+      - display_name
+      title: DatasetMetaData
+    Envelope_AnyUrl_:
       properties:
         data:
-          title: Data
+          type: string
           maxLength: 65536
           minLength: 1
-          type: string
           format: uri
+          title: Data
         error:
           title: Error
-    Envelope_AppStatusCheck_:
-      title: 'Envelope[AppStatusCheck]'
       type: object
+      title: Envelope[AnyUrl]
+    Envelope_AppStatusCheck_:
       properties:
         data:
           $ref: '#/components/schemas/AppStatusCheck'
         error:
           title: Error
-    Envelope_FileMetaDataGet_:
-      title: 'Envelope[FileMetaDataGet]'
       type: object
+      title: Envelope[AppStatusCheck]
+    Envelope_FileMetaDataGet_:
       properties:
         data:
           $ref: '#/components/schemas/FileMetaDataGet'
         error:
           title: Error
-    Envelope_FileUploadCompleteFutureResponse_:
-      title: 'Envelope[FileUploadCompleteFutureResponse]'
       type: object
+      title: Envelope[FileMetaDataGet]
+    Envelope_FileUploadCompleteFutureResponse_:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadCompleteFutureResponse'
         error:
           title: Error
-    Envelope_FileUploadCompleteResponse_:
-      title: 'Envelope[FileUploadCompleteResponse]'
       type: object
+      title: Envelope[FileUploadCompleteFutureResponse]
+    Envelope_FileUploadCompleteResponse_:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadCompleteResponse'
         error:
           title: Error
-    Envelope_FileUploadCompletionBody_:
-      title: 'Envelope[FileUploadCompletionBody]'
       type: object
+      title: Envelope[FileUploadCompleteResponse]
+    Envelope_FileUploadCompletionBody_:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadCompletionBody'
         error:
           title: Error
-    Envelope_FileUploadSchema_:
-      title: 'Envelope[FileUploadSchema]'
       type: object
+      title: Envelope[FileUploadCompletionBody]
+    Envelope_FileUploadSchema_:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
-    Envelope_HealthCheck_:
-      title: 'Envelope[HealthCheck]'
       type: object
+      title: Envelope[FileUploadSchema]
+    Envelope_HealthCheck_:
       properties:
         data:
           $ref: '#/components/schemas/HealthCheck'
         error:
           title: Error
-    Envelope_PresignedLink_:
-      title: 'Envelope[PresignedLink]'
       type: object
+      title: Envelope[HealthCheck]
+    Envelope_PresignedLink_:
       properties:
         data:
           $ref: '#/components/schemas/PresignedLink'
         error:
           title: Error
-    Envelope_S3Settings_:
-      title: 'Envelope[S3Settings]'
       type: object
+      title: Envelope[PresignedLink]
+    Envelope_S3Settings_:
       properties:
         data:
           $ref: '#/components/schemas/S3Settings'
         error:
           title: Error
-    Envelope_TableSynchronisation_:
-      title: 'Envelope[TableSynchronisation]'
       type: object
+      title: Envelope[S3Settings]
+    Envelope_TableSynchronisation_:
       properties:
         data:
           $ref: '#/components/schemas/TableSynchronisation'
         error:
           title: Error
-    Envelope_TaskGet_:
-      title: 'Envelope[TaskGet]'
       type: object
+      title: Envelope[TableSynchronisation]
+    Envelope_TaskGet_:
       properties:
         data:
           $ref: '#/components/schemas/TaskGet'
         error:
           title: Error
-    Envelope_TaskStatus_:
-      title: 'Envelope[TaskStatus]'
       type: object
+      title: Envelope[TaskGet]
+    Envelope_TaskStatus_:
       properties:
         data:
           $ref: '#/components/schemas/TaskStatus'
         error:
           title: Error
-    Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__:
-      title: 'Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]'
       type: object
+      title: Envelope[TaskStatus]
+    Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__:
       properties:
         data:
-          title: Data
-          type: array
           items:
             $ref: '#/components/schemas/FileMetaDataGet'
+          type: array
+          title: Data
         error:
           title: Error
-    Envelope_list_simcore_service_storage.models.DatasetMetaData__:
-      title: 'Envelope[list[simcore_service_storage.models.DatasetMetaData]]'
       type: object
+      title: Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]
+    Envelope_list_simcore_service_storage.models.DatasetMetaData__:
       properties:
         data:
-          title: Data
-          type: array
           items:
             $ref: '#/components/schemas/DatasetMetaData'
+          type: array
+          title: Data
         error:
           title: Error
-    FileMetaData:
-      title: FileMetaData
-      required:
-        - file_uuid
-        - location_id
-        - file_name
-        - file_id
-        - created_at
-        - last_modified
-        - location
-        - bucket_name
-        - object_name
       type: object
+      title: Envelope[list[simcore_service_storage.models.DatasetMetaData]]
+    FileMetaData:
       properties:
         file_uuid:
-          title: File Uuid
           type: string
-          description: 'NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure'
+          title: File Uuid
+          description: NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE
+            folder structure
         location_id:
-          title: Location Id
           type: integer
+          title: Location Id
           description: Storage location
         project_name:
+          type: string
           title: Project Name
-          type: string
-          description: 'optional project name, used by frontend to display path'
+          description: optional project name, used by frontend to display path
         node_name:
+          type: string
           title: Node Name
-          type: string
-          description: 'optional node name, used by frontend to display path'
+          description: optional node name, used by frontend to display path
         file_name:
-          title: File Name
           type: string
+          title: File Name
           description: Display name for a file
         file_id:
-          title: File Id
           anyOf:
-            - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-              type: string
-            - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-              type: string
-          description: 'THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore'
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+          description: THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext
+            for S3 and N:package:UUID for datcore
         created_at:
+          type: string
+          format: date-time
           title: Created At
-          type: string
-          format: date-time
         last_modified:
-          title: Last Modified
           type: string
           format: date-time
+          title: Last Modified
         file_size:
+          anyOf:
+          - type: integer
+          - type: integer
           title: File Size
-          type: integer
           description: File size in bytes (-1 means invalid)
           default: -1
         entity_tag:
-          title: Entity Tag
           type: string
-          description: 'Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore'
+          title: Entity Tag
+          description: Entity tag (or ETag), represents a specific version of the
+            file, None if invalid upload or datcore
         is_soft_link:
-          title: Is Soft Link
           type: boolean
-          description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
+          title: Is Soft Link
+          description: If true, this file is a soft link.i.e. is another entry with
+            the same object_name
           default: false
         is_directory:
-          title: Is Directory
           type: boolean
+          title: Is Directory
           description: if True this is a directory
           default: false
-        upload_id:
-          title: Upload Id
+        sha256_checksum:
           type: string
+          pattern: ^[a-fA-F0-9]{64}$
+          title: Sha256 Checksum
+        upload_id:
+          type: string
+          title: Upload Id
         upload_expires_at:
-          title: Upload Expires At
           type: string
           format: date-time
+          title: Upload Expires At
         location:
+          type: string
           title: Location
-          type: string
         bucket_name:
+          type: string
           title: Bucket Name
-          type: string
         object_name:
+          type: string
           title: Object Name
-          type: string
         project_id:
+          type: string
+          format: uuid
           title: Project Id
-          type: string
-          format: uuid
         node_id:
-          title: Node Id
           type: string
           format: uuid
+          title: Node Id
         user_id:
-          title: User Id
-          exclusiveMinimum: true
           type: integer
+          exclusiveMinimum: true
+          title: User Id
           minimum: 0
       additionalProperties: false
-    FileMetaDataGet:
-      title: FileMetaDataGet
-      required:
-        - file_uuid
-        - location_id
-        - file_name
-        - file_id
-        - created_at
-        - last_modified
       type: object
+      required:
+      - file_uuid
+      - location_id
+      - file_name
+      - file_id
+      - created_at
+      - last_modified
+      - location
+      - bucket_name
+      - object_name
+      title: FileMetaData
+    FileMetaDataGet:
       properties:
         file_uuid:
-          title: File Uuid
           type: string
-          description: 'NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure'
+          title: File Uuid
+          description: NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE
+            folder structure
         location_id:
-          title: Location Id
           type: integer
+          title: Location Id
           description: Storage location
         project_name:
+          type: string
           title: Project Name
-          type: string
-          description: 'optional project name, used by frontend to display path'
+          description: optional project name, used by frontend to display path
         node_name:
+          type: string
           title: Node Name
-          type: string
-          description: 'optional node name, used by frontend to display path'
+          description: optional node name, used by frontend to display path
         file_name:
-          title: File Name
           type: string
+          title: File Name
           description: Display name for a file
         file_id:
-          title: File Id
           anyOf:
-            - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
-              type: string
-            - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
-              type: string
-          description: 'THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore'
+          - type: string
+            pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          - type: string
+            pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+          title: File Id
+          description: THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext
+            for S3 and N:package:UUID for datcore
         created_at:
+          type: string
+          format: date-time
           title: Created At
-          type: string
-          format: date-time
         last_modified:
-          title: Last Modified
           type: string
           format: date-time
+          title: Last Modified
         file_size:
+          anyOf:
+          - type: integer
+          - type: integer
           title: File Size
-          type: integer
           description: File size in bytes (-1 means invalid)
           default: -1
         entity_tag:
-          title: Entity Tag
           type: string
-          description: 'Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore'
+          title: Entity Tag
+          description: Entity tag (or ETag), represents a specific version of the
+            file, None if invalid upload or datcore
         is_soft_link:
-          title: Is Soft Link
           type: boolean
-          description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
+          title: Is Soft Link
+          description: If true, this file is a soft link.i.e. is another entry with
+            the same object_name
           default: false
         is_directory:
-          title: Is Directory
           type: boolean
+          title: Is Directory
           description: if True this is a directory
           default: false
+        sha256_checksum:
+          type: string
+          pattern: ^[a-fA-F0-9]{64}$
+          title: Sha256 Checksum
+          description: 'SHA256 message digest of the file content. Main purpose: cheap
+            lookup.'
       additionalProperties: false
-    FileUploadCompleteFutureResponse:
-      title: FileUploadCompleteFutureResponse
-      required:
-        - state
       type: object
+      required:
+      - file_uuid
+      - location_id
+      - file_name
+      - file_id
+      - created_at
+      - last_modified
+      title: FileMetaDataGet
+    FileUploadCompleteFutureResponse:
       properties:
         state:
           $ref: '#/components/schemas/FileUploadCompleteState'
         e_tag:
-          title: E Tag
           type: string
-    FileUploadCompleteLinks:
-      title: FileUploadCompleteLinks
-      required:
-        - state
+          title: E Tag
       type: object
+      required:
+      - state
+      title: FileUploadCompleteFutureResponse
+    FileUploadCompleteLinks:
       properties:
         state:
-          title: State
+          type: string
           maxLength: 65536
           minLength: 1
-          type: string
           format: uri
-    FileUploadCompleteResponse:
-      title: FileUploadCompleteResponse
-      required:
-        - links
+          title: State
       type: object
+      required:
+      - state
+      title: FileUploadCompleteLinks
+    FileUploadCompleteResponse:
       properties:
         links:
           $ref: '#/components/schemas/FileUploadCompleteLinks'
+      type: object
+      required:
+      - links
+      title: FileUploadCompleteResponse
     FileUploadCompleteState:
-      title: FileUploadCompleteState
       enum:
-        - ok
-        - nok
+      - ok
+      - nok
+      title: FileUploadCompleteState
       description: An enumeration.
     FileUploadCompletionBody:
-      title: FileUploadCompletionBody
-      required:
-        - parts
-      type: object
       properties:
         parts:
-          title: Parts
-          type: array
           items:
             $ref: '#/components/schemas/UploadedPart'
-    FileUploadLinks:
-      title: FileUploadLinks
-      required:
-        - abort_upload
-        - complete_upload
+          type: array
+          title: Parts
       type: object
+      required:
+      - parts
+      title: FileUploadCompletionBody
+    FileUploadLinks:
       properties:
         abort_upload:
+          type: string
+          maxLength: 65536
+          minLength: 1
+          format: uri
           title: Abort Upload
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
         complete_upload:
-          title: Complete Upload
+          type: string
           maxLength: 65536
           minLength: 1
-          type: string
           format: uri
-    FileUploadSchema:
-      title: FileUploadSchema
-      required:
-        - chunk_size
-        - urls
-        - links
+          title: Complete Upload
       type: object
+      required:
+      - abort_upload
+      - complete_upload
+      title: FileUploadLinks
+    FileUploadSchema:
       properties:
         chunk_size:
-          title: Chunk Size
           type: integer
+          title: Chunk Size
         urls:
-          title: Urls
-          type: array
           items:
+            type: string
             maxLength: 65536
             minLength: 1
-            type: string
             format: uri
+          type: array
+          title: Urls
         links:
           $ref: '#/components/schemas/FileUploadLinks'
-    FoldersBody:
-      title: FoldersBody
       type: object
+      required:
+      - chunk_size
+      - urls
+      - links
+      title: FileUploadSchema
+    FoldersBody:
       properties:
         source:
+          type: object
           title: Source
-          type: object
         destination:
+          type: object
           title: Destination
-          type: object
         nodes_map:
-          title: Nodes Map
-          type: object
           additionalProperties:
             type: string
             format: uuid
-    HealthCheck:
-      title: HealthCheck
+          type: object
+          title: Nodes Map
       type: object
+      title: FoldersBody
+    HealthCheck:
       properties:
         name:
+          type: string
           title: Name
-          type: string
         status:
+          type: string
           title: Status
-          type: string
         api_version:
+          type: string
           title: Api Version
-          type: string
         version:
-          title: Version
           type: string
+          title: Version
+      type: object
+      title: HealthCheck
     LinkType:
-      title: LinkType
-      enum:
-        - PRESIGNED
-        - S3
       type: string
+      enum:
+      - PRESIGNED
+      - S3
+      title: LinkType
       description: An enumeration.
     PresignedLink:
-      title: PresignedLink
-      required:
-        - link
-      type: object
       properties:
         link:
-          title: Link
+          type: string
           maxLength: 65536
           minLength: 1
-          type: string
           format: uri
-    S3Settings:
-      title: S3Settings
-      required:
-        - S3_ENDPOINT
-        - S3_ACCESS_KEY
-        - S3_SECRET_KEY
-        - S3_BUCKET_NAME
+          title: Link
       type: object
+      required:
+      - link
+      title: PresignedLink
+    S3Settings:
       properties:
         S3_SECURE:
-          title: S3 Secure
           type: boolean
+          title: S3 Secure
           default: false
         S3_ENDPOINT:
+          type: string
           title: S3 Endpoint
-          type: string
         S3_ACCESS_KEY:
+          type: string
           title: S3 Access Key
-          type: string
         S3_SECRET_KEY:
+          type: string
           title: S3 Secret Key
-          type: string
         S3_ACCESS_TOKEN:
+          type: string
           title: S3 Access Token
-          type: string
         S3_BUCKET_NAME:
+          type: string
           title: S3 Bucket Name
-          type: string
         S3_REGION:
-          title: S3 Region
           type: string
+          title: S3 Region
           default: us-east-1
       additionalProperties: false
-      description: |-
-        - Customized configuration for all settings
-        - If a field is a BaseCustomSettings subclass, it allows creating a default from env vars setting the Field
-          option 'auto_default_from_env=True'.
-
-        SEE tests for details.
-    SoftCopyBody:
-      title: SoftCopyBody
-      required:
-        - link_id
       type: object
+      required:
+      - S3_ENDPOINT
+      - S3_ACCESS_KEY
+      - S3_SECRET_KEY
+      - S3_BUCKET_NAME
+      title: S3Settings
+      description: "- Customized configuration for all settings\n- If a field is a\
+        \ BaseCustomSettings subclass, it allows creating a default from env vars\
+        \ setting the Field\n  option 'auto_default_from_env=True'.\n\nSEE tests for\
+        \ details."
+    SoftCopyBody:
       properties:
         link_id:
-          title: Link Id
-          pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
           type: string
-    TableSynchronisation:
-      title: TableSynchronisation
-      required:
-        - removed
+          pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+          title: Link Id
       type: object
+      required:
+      - link_id
+      title: SoftCopyBody
+    TableSynchronisation:
       properties:
         dry_run:
+          type: boolean
           title: Dry Run
-          type: boolean
         fire_and_forget:
-          title: Fire And Forget
           type: boolean
+          title: Fire And Forget
         removed:
-          title: Removed
-          type: array
           items:
             type: string
-    TaskGet:
-      title: TaskGet
-      required:
-        - task_id
-        - task_name
-        - status_href
-        - result_href
-        - abort_href
+          type: array
+          title: Removed
       type: object
+      required:
+      - removed
+      title: TableSynchronisation
+    TaskGet:
       properties:
         task_id:
+          type: string
           title: Task Id
-          type: string
         task_name:
+          type: string
           title: Task Name
-          type: string
         status_href:
+          type: string
           title: Status Href
-          type: string
         result_href:
+          type: string
           title: Result Href
-          type: string
         abort_href:
-          title: Abort Href
           type: string
-    TaskProgress:
-      title: TaskProgress
+          title: Abort Href
       type: object
+      required:
+      - task_id
+      - task_name
+      - status_href
+      - result_href
+      - abort_href
+      title: TaskGet
+    TaskProgress:
       properties:
         message:
-          title: Message
           type: string
+          title: Message
           default: ''
         percent:
-          title: Percent
-          maximum: 1
-          minimum: 0
           type: number
-          default: 0
-      description: |-
-        Helps the user to keep track of the progress. Progress is expected to be
-        defined as a float bound between 0.0 and 1.0
-    TaskStatus:
-      title: TaskStatus
-      required:
-        - task_progress
-        - done
-        - started
+          maximum: 1.0
+          minimum: 0.0
+          title: Percent
+          default: 0.0
       type: object
+      title: TaskProgress
+      description: 'Helps the user to keep track of the progress. Progress is expected
+        to be
+
+        defined as a float bound between 0.0 and 1.0'
+    TaskStatus:
       properties:
         task_progress:
           $ref: '#/components/schemas/TaskProgress'
         done:
-          title: Done
           type: boolean
+          title: Done
         started:
-          title: Started
           type: string
           format: date-time
-    UploadedPart:
-      title: UploadedPart
-      required:
-        - number
-        - e_tag
+          title: Started
       type: object
+      required:
+      - task_progress
+      - done
+      - started
+      title: TaskStatus
+    UploadedPart:
       properties:
         number:
-          title: Number
-          exclusiveMinimum: true
           type: integer
+          exclusiveMinimum: true
+          title: Number
           minimum: 0
         e_tag:
-          title: E Tag
           type: string
+          title: E Tag
+      type: object
+      required:
+      - number
+      - e_tag
+      title: UploadedPart
 tags:
-  - name: datasets
-  - name: files
-  - name: health
-  - name: locations
-  - name: tasks
-  - name: simcore-s3
+- name: datasets
+- name: files
+- name: health
+- name: locations
+- name: tasks
+- name: simcore-s3
