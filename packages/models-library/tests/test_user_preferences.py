@@ -82,7 +82,6 @@ def test_user_service_preferences(value: Any, mock_file_path: Path):
     )
     instance = parse_obj_as(UserServiceUserPreference, base_data)
     assert set(instance.to_db().keys()) == {
-        "file_path",
         "value",
         "service_key",
         "service_version",
@@ -120,7 +119,6 @@ def test__user_service__user_preference(
             "value": value,
             "service_key": service_key,
             "service_version": service_version,
-            "file_path": mock_file_path,
         }
     )
     assert isinstance(pref1, UserServiceUserPreference)

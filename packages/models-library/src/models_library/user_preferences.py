@@ -1,5 +1,4 @@
 from enum import auto
-from pathlib import Path
 from typing import Annotated, Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
@@ -103,9 +102,6 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
     )
     service_version: ServiceVersion = Field(
         ..., description="version of the service which manages the preference"
-    )
-    file_path: Path = Field(
-        ..., description="path of the file where the preference is stored"
     )
 
     def to_db(self) -> dict:
