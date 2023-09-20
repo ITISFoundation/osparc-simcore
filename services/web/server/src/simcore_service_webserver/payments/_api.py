@@ -22,7 +22,7 @@ from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _db
-from ._client import get_payments_service_api
+from ._client import create_fake_payment, get_payments_service_api
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -91,8 +91,9 @@ async def create_payment_to_wallet(
     initiated_at = arrow.utcnow().datetime
 
     # payment service
-    payment_service_api = get_payments_service_api(app)
-    submission_link, payment_id = await payment_service_api.create_payment(
+    # FAKE ------------
+    submission_link, payment_id = await create_fake_payment(
+        app,
         price_dollars=price_dollars,
         product_name=product_name,
         user_id=user_id,
@@ -100,6 +101,7 @@ async def create_payment_to_wallet(
         email=user.email,
         osparc_credits=osparc_credits,
     )
+    # -----
     # gateway responded, we store the transaction
     await _db.create_payment_transaction(
         app,
