@@ -47,6 +47,10 @@ async def assert_file_meta_data_in_db(
                 assert row[
                     file_meta_data.c.upload_expires_at
                 ], "no upload expiration date!"
+            else:
+                assert (
+                    row[file_meta_data.c.upload_expires_at] is None
+                ), "expiration date should be NULL"
             if expected_sha256_checksum:
                 assert (
                     SHA256Str(row[file_meta_data.c.sha256_checksum])
@@ -54,7 +58,7 @@ async def assert_file_meta_data_in_db(
                 ), "invalid sha256_checksum"
             else:
                 assert (
-                    row[file_meta_data.c.upload_expires_at] is None
-                ), "expiration date should be NULL"
+                    row[file_meta_data.c.sha256_checksum] is None
+                ), "invalid sha256_checksum"
             upload_id = row[file_meta_data.c.upload_id]
     return upload_id
