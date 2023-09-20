@@ -1,16 +1,16 @@
-"""add sha256 checksum to file entries
+"""add checksum to database
 
-Revision ID: c1a2b2cbd656
-Revises: fc6ea424f586
-Create Date: 2023-09-06 11:05:00.056225+00:00
+Revision ID: 5649397a81bf
+Revises: e3334cced752
+Create Date: 2023-09-20 08:39:58.776281+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "c1a2b2cbd656"
-down_revision = "fc6ea424f586"
+revision = "5649397a81bf"
+down_revision = "e3334cced752"
 branch_labels = None
 depends_on = None
 
