@@ -54,7 +54,7 @@ async def create_wallet_group(
     return wallet_group_api
 
 
-async def list_wallet_groups(
+async def list_wallet_groups_by_user_and_wallet(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
@@ -73,6 +73,23 @@ async def list_wallet_groups(
 
     wallet_groups_api: list[WalletGroupGet] = [
         parse_obj_as(WalletGroupGet, group) for group in wallet_groups_db
+    ]
+
+    return wallet_groups_api
+
+
+async def list_wallet_groups_with_read_access_by_wallet(
+    app: web.Application,
+    wallet_id: WalletID,
+) -> list[WalletGroupGet]:
+    wallet_groups_db: list[
+        WalletGroupGetDB
+    ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+
+    wallet_groups_api: list[WalletGroupGet] = [
+        parse_obj_as(WalletGroupGet, group)
+        for group in wallet_groups_db
+        if group.read is True
     ]
 
     return wallet_groups_api

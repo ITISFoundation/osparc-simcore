@@ -14,7 +14,6 @@ from .._meta import (
 )
 from ..api.routes import setup_api_routes
 from ..modules.db import setup as setup_db
-from ..modules.prometheus import setup as setup_prometheus_api_client
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..resource_tracker import setup as setup_resource_tracker
@@ -47,7 +46,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # ERROR HANDLERS
     # ... add here ...
-    setup_prometheus_api_client(app)
+
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)
     setup_redis(app)

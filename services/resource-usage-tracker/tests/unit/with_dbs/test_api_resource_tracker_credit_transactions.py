@@ -1,10 +1,11 @@
 from collections.abc import Iterator
 from decimal import Decimal
-from unittest import mock
+from typing import Callable
 
 import httpx
 import pytest
 import sqlalchemy as sa
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -13,6 +14,7 @@ from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "rabbit",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -20,7 +22,7 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture()
-def resource_tracker_crdit_transactions_db(
+def resource_tracker_credit_transactions_db(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
@@ -31,11 +33,11 @@ def resource_tracker_crdit_transactions_db(
 
 
 async def test_credit_transactions_workflow(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_redis_server: None,
-    mocked_setup_rabbitmq: mock.Mock,
     postgres_db: sa.engine.Engine,
     async_client: httpx.AsyncClient,
-    resource_tracker_crdit_transactions_db: None,
+    resource_tracker_credit_transactions_db: None,
 ):
     url = URL("/v1/credit-transactions")
 
