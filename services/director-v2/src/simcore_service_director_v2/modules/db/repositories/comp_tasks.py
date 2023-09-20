@@ -84,7 +84,8 @@ def _compute_node_requirements(node_resources: dict[str, Any]) -> NodeRequiremen
 def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
     for image_data in node_resources.values():
         return BootMode(image_data.get("boot_modes")[0])
-    raise RuntimeError("No BootMode")
+    msg = "No BootMode"
+    raise RuntimeError(msg)
 
 
 def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
