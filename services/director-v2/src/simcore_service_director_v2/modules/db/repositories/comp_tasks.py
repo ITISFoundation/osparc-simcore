@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import aiopg.sa
 import arrow
@@ -88,13 +88,16 @@ def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
     raise RuntimeError(msg)
 
 
+_VALID_ENV_VALUE_NUM_PARTS: Final[int] = 2
+
+
 def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
     node_envs = {}
     for service_setting in cast(SimcoreServiceSettingsLabel, node_labels.settings):
         if service_setting.name == "env":
             for complete_env in service_setting.value:
                 parts = complete_env.split("=")
-                if len(parts) == 2:
+                if len(parts) == _VALID_ENV_VALUE_NUM_PARTS:
                     node_envs[parts[0]] = parts[1]
 
     return node_envs
