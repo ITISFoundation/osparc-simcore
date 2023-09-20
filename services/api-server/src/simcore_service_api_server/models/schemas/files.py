@@ -64,7 +64,7 @@ class File(BaseModel):
                     "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
                     "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
                     "content_type": "application/pdf",
-                    "checksum": "de47d0e1229aa2dfb80097389094eadd-1",
+                    "checksum": "1a512547e3ce3427482da14e8c914ecf61da76ad5f749ff532efe906e6bba128",
                 },
                 # minimum
                 {
