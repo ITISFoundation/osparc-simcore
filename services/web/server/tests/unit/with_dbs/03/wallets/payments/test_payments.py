@@ -72,6 +72,9 @@ async def test_payments_worfklow(
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
+    mock_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.payments._api.add_credits_to_wallet", autospec=True
+    )
 
     wallet = logged_user_wallet
 
@@ -96,6 +99,10 @@ async def test_payments_worfklow(
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
     )
+
+    # check notification to RUT
+    assert mock_add_credits_to_wallet.called
+    mock_add_credits_to_wallet.assert_called_once()
 
     # check notification
     assert send_message.called
@@ -132,6 +139,9 @@ async def test_multiple_payments(
 
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
+    mock_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.payments._api.add_credits_to_wallet", autospec=True
     )
 
     wallet = logged_user_wallet

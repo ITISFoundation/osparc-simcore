@@ -374,6 +374,7 @@ async def test_open_project(
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
+                    wallet_info=None,
                 )
             )
         mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
@@ -448,6 +449,7 @@ async def test_open_template_project_for_edition(
                         mock_service_resources
                     ),
                     product_name=osparc_product_name,
+                    wallet_info=None,
                 )
             )
         mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
