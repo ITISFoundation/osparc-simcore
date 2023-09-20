@@ -17,6 +17,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.wallets import WalletInfo
 from pydantic import BaseModel
 from pydantic.types import NonNegativeFloat, PositiveInt
 from servicelib.common_headers import (
@@ -94,6 +95,7 @@ async def run_dynamic_service(
     request_scheme: str,
     simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
+    wallet_info: WalletInfo | None,
 ) -> DataType:
     """
     Requests to run (i.e. create and start) a dynamic service:
@@ -112,6 +114,7 @@ async def run_dynamic_service(
         "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
+        "wallet_info": wallet_info,
     }
 
     headers = {

@@ -12,6 +12,7 @@ Therefore,
 
 """
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 
 
 import contextlib
@@ -29,7 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKeyVersion
+from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
@@ -61,6 +62,7 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
+from ...modules.resource_usage_client import ResourceUsageApi
 from ...utils.computations import (
     find_deprecated_tasks,
     get_pipeline_state_from_task_states,
@@ -219,6 +221,26 @@ async def create_computation(  # noqa: C901, PLR0912
                     detail=f"Project {computation.project_id} has no computational services",
                 )
 
+            # Billing info
+            wallet_id = None
+            wallet_name = None
+            pricing_plan_id = None
+            pricing_detail_id = None
+            if computation.wallet_info:
+                wallet_id = computation.wallet_info.wallet_id
+                wallet_name = computation.wallet_info.wallet_name
+
+                resource_usage_api = ResourceUsageApi.get_from_state(request.app)
+                # NOTE: MD/SAN -> add real service version/key and store in DB, issue: https://github.com/ITISFoundation/osparc-issues/issues/1131
+                (
+                    pricing_plan_id,
+                    pricing_detail_id,
+                ) = await resource_usage_api.get_default_pricing_plan_and_pricing_detail_for_service(
+                    computation.product_name,
+                    ServiceKey("simcore/services/comp/itis/sleeper"),
+                    ServiceVersion("2.1.6"),
+                )
+
             await scheduler.run_new_pipeline(
                 computation.user_id,
                 computation.project_id,
@@ -232,10 +254,10 @@ async def create_computation(  # noqa: C901, PLR0912
                     project_name=project.name,
                     simcore_user_agent=computation.simcore_user_agent,
                     user_email=await users_repo.get_user_email(computation.user_id),
-                    wallet_id=None,
-                    wallet_name=None,
-                    pricing_plan_id=None,
-                    pricing_detail_id=None,
+                    wallet_id=wallet_id,
+                    wallet_name=wallet_name,
+                    pricing_plan_id=pricing_plan_id,
+                    pricing_detail_id=pricing_detail_id,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )

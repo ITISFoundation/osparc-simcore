@@ -10,19 +10,17 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentCreated,
 )
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from yarl import URL
 
-from ..application_settings import get_settings
+from ..resource_usage.api import add_credits_to_wallet
 from ..users.api import get_user_name_and_email
-from ..wallets.api import get_wallet_with_permissions_by_user
+from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _db
-from ._client import get_payments_service_api
+from ._client import create_fake_payment, get_payments_service_api
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -91,8 +89,9 @@ async def create_payment_to_wallet(
     initiated_at = arrow.utcnow().datetime
 
     # payment service
-    payment_service_api = get_payments_service_api(app)
-    submission_link, payment_id = await payment_service_api.create_payment(
+    # FAKE ------------
+    submission_link, payment_id = await create_fake_payment(
+        app,
         price_dollars=price_dollars,
         product_name=product_name,
         user_id=user_id,
@@ -100,6 +99,7 @@ async def create_payment_to_wallet(
         email=user.email,
         osparc_credits=osparc_credits,
     )
+    # -----
     # gateway responded, we store the transaction
     await _db.create_payment_transaction(
         app,
@@ -169,13 +169,20 @@ async def complete_payment(
 
     if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
-        # TODO: connect with https://github.com/ITISFoundation/osparc-simcore/pull/4692
-        settings = get_settings(app)
-        assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
-        if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
-            url = URL(f"{base_url}/v1/credit-transaction")
-            body = (jsonable_encoder(payment, by_alias=False),)
-            _logger.debug("-> @RUTH  POST %s: %s", url, body)
+        user_wallet = await get_wallet_by_user(
+            app, transaction.user_id, transaction.wallet_id
+        )
+        await add_credits_to_wallet(
+            app=app,
+            product_name=transaction.product_name,
+            wallet_id=transaction.wallet_id,
+            wallet_name=user_wallet.name,
+            user_id=transaction.user_id,
+            user_email=transaction.user_email,
+            osparc_credits=transaction.osparc_credits,
+            payment_id=transaction.payment_id,
+            created_at=transaction.completed_at,
+        )
 
     return payment
 

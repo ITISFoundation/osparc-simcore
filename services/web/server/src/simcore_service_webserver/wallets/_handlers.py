@@ -111,7 +111,7 @@ async def list_wallets(request: web.Request):
     wallets: list[
         WalletGetWithAvailableCredits
     ] = await _api.list_wallets_with_available_credits_for_user(
-        request.app, user_id=req_ctx.user_id
+        request.app, req_ctx.product_name, user_id=req_ctx.user_id
     )
 
     return envelope_json_response(wallets)
