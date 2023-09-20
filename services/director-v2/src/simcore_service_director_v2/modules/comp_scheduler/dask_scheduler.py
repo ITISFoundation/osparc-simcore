@@ -19,6 +19,10 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_utils import log_catch
+from simcore_service_director_v2.modules.db.repositories.comp_runs import (
+    CompRunsRepository,
+)
 
 from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
@@ -108,7 +112,6 @@ class DaskScheduler(BaseCompScheduler):
                 project_id,
                 list(scheduled_tasks.keys()),
                 RunningState.PENDING,
-                optional_started=arrow.utcnow().datetime,
             )
             # each task is started independently
             results: list[list[tuple[NodeID, str]] | Exception] = await asyncio.gather(
@@ -309,40 +312,47 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _task_progress_change_handler(self, event: str) -> None:
-        task_progress_event = TaskProgressEvent.parse_raw(event)
-        _logger.debug("received task progress update: %s", task_progress_event)
-        *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
-
-        comp_tasks_repo = CompTasksRepository(self.db_engine)
-
-        if task_progress_event.progress == 0:
-            await comp_tasks_repo.update_project_tasks_state(
-                project_id,
-                [node_id],
-                RunningState.STARTED,
-                optional_progress=task_progress_event.progress,
+        with log_catch(_logger, reraise=False):
+            task_progress_event = TaskProgressEvent.parse_raw(event)
+            _logger.debug("received task progress update: %s", task_progress_event)
+            *_, user_id, project_id, node_id = parse_dask_job_id(
+                task_progress_event.job_id
             )
-        else:
-            await comp_tasks_repo.update_project_task_progress(
-                project_id, node_id, task_progress_event.progress
+
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            task = await comp_tasks_repo.get_task(project_id, node_id)
+            if task.progress is None:
+                task.state = RunningState.STARTED
+                task.progress = task_progress_event.progress
+                run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
+                await self._process_started_tasks(
+                    [task],
+                    user_id=user_id,
+                    iteration=run.iteration,
+                    run_metadata=run.metadata,
+                )
+            else:
+                await comp_tasks_repo.update_project_task_progress(
+                    project_id, node_id, task_progress_event.progress
+                )
+            await publish_service_progress(
+                self.rabbitmq_client,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                progress=task_progress_event.progress,
             )
-        await publish_service_progress(
-            self.rabbitmq_client,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            progress=task_progress_event.progress,
-        )
 
     async def _task_log_change_handler(self, event: str) -> None:
-        task_log_event = TaskLogEvent.parse_raw(event)
-        _logger.debug("received task log update: %s", task_log_event)
-        *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
-        await publish_service_log(
-            self.rabbitmq_client,
-            user_id,
-            project_id,
-            node_id,
-            task_log_event.log,
-            task_log_event.log_level,
-        )
+        with log_catch(_logger, reraise=False):
+            task_log_event = TaskLogEvent.parse_raw(event)
+            _logger.debug("received task log update: %s", task_log_event)
+            *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
+            await publish_service_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                node_id,
+                task_log_event.log,
+                task_log_event.log_level,
+            )

@@ -28,6 +28,7 @@ from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -250,6 +251,19 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
+    async def get_task(self, project_id: ProjectID, node_id: NodeID) -> CompTaskAtDB:
+        async with self.db_engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(comp_tasks).where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{node_id}")
+                )
+            )
+            row = await result.fetchone()
+            if not row:
+                raise ComputationalTaskNotFoundError(node_id=node_id)
+            return CompTaskAtDB.from_orm(row)
+
     async def list_tasks(
         self,
         project_id: ProjectID,

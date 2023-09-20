@@ -34,6 +34,7 @@ from servicelib.utils import logged_gather
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
     InvalidPipelineError,
@@ -430,6 +431,7 @@ class BaseCompScheduler(ABC):
                     [t.node_id],
                     t.state,
                     optional_started=utc_now,
+                    optional_progress=t.progress,
                 )
                 for t in tasks
             )
@@ -478,6 +480,11 @@ class BaseCompScheduler(ABC):
 
         # now process the tasks
         if tasks_started:
+            # NOTE: the dask-scheduler cannot differentiate between tasks that are effectively computing and
+            # tasks that are only queued and accepted by a dask-worker.
+            # tasks_started should therefore be mostly empty but for cases where
+            # - dask Pub/Sub mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
+            # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
                 tasks_started,
                 user_id=user_id,
@@ -744,6 +751,28 @@ class BaseCompScheduler(ABC):
             )
             for task in comp_tasks.values():
                 task.state = RunningState.WAITING_FOR_CLUSTER
+        except ComputationalBackendOnDemandClustersKeeperNotReadyError:
+            _logger.exception("Unexpected error while starting tasks:")
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log="Unexpected error while scheduling computational tasks! TIP: contact osparc support.",
+                log_level=logging.ERROR,
+            )
+
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                list(tasks_ready_to_start.keys()),
+                RunningState.FAILED,
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+            for task in comp_tasks.values():
+                task.state = RunningState.FAILED
+
         return comp_tasks
 
     def _wake_up_scheduler_now(self) -> None:
