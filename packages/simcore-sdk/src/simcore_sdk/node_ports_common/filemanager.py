@@ -3,7 +3,7 @@ from asyncio import CancelledError
 from dataclasses import dataclass
 from pathlib import Path
 
-from aiofiles import open
+import aiofiles
 from aiohttp import ClientSession
 from models_library.api_schemas_storage import (
     ETag,
@@ -255,7 +255,7 @@ async def _generate_checksum(
     if is_directory:
         return checksum
     if isinstance(path_to_upload, Path):
-        async with open(path_to_upload, mode="rb") as f:
+        async with aiofiles.open(path_to_upload, mode="rb") as f:
             checksum = SHA256Str(await create_sha256_checksum(f))
     elif isinstance(path_to_upload, UploadableFileObject):
         checksum = path_to_upload.sha256_checksum
