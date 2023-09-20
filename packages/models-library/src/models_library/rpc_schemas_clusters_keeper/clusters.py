@@ -21,5 +21,5 @@ class OnDemandCluster(BaseModel):
     state: ClusterState
     user_id: UserID
     wallet_id: WalletID | None
-    gateway_ready: bool
+    dask_scheduler_ready: bool
     eta: datetime.timedelta
