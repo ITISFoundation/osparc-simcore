@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import FastAPI
@@ -12,6 +12,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
+    WalletCreditsMessage,
 )
 from models_library.resource_tracker import (
     CreditClassification,
@@ -33,6 +34,7 @@ from .models.resource_tracker_service_run import (
     ServiceRunStoppedAtUpdate,
 )
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
 from .resource_tracker_utils import make_negative
 
 _logger = logging.getLogger(__name__)
@@ -46,9 +48,10 @@ async def process_message(
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=app.state.engine
     )
+    rabbitmq_client = get_rabbitmq_client(app)
 
     await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
-        resource_tacker_repo, rabbit_message
+        resource_tacker_repo, rabbit_message, rabbitmq_client
     )
 
     _logger.debug("%s", data)
@@ -58,6 +61,7 @@ async def process_message(
 async def _process_start_event(
     resource_tracker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingStartedMessage,
+    rabbitmq_client: RabbitMQClient,  # pylint: disable=unused-argument
 ):
     service_type = (
         ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
@@ -122,6 +126,7 @@ async def _process_start_event(
 async def _process_heartbeat_event(
     resource_tracker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingHeartbeatMessage,
+    rabbitmq_client: RabbitMQClient,
 ):
     update_service_run_last_heartbeat = ServiceRunLastHeartbeatUpdate(
         service_run_id=msg.service_run_id, last_heartbeat_at=msg.created_at
@@ -150,20 +155,25 @@ async def _process_heartbeat_event(
         await resource_tracker_repo.update_credit_transaction_credits(
             update_credit_transaction
         )
-
+        # Publish wallet total credits to RabbitMQ
         wallet_total_credits = (
             await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
                 running_service.product_name,
                 running_service.wallet_id,
             )
         )
-        assert wallet_total_credits  # nosec
-        # NOTE: Publish wallet total credits to RabbitMQ
+        publish_message = WalletCreditsMessage.construct(
+            wallet_id=running_service.wallet_id,
+            created_at=datetime.now(tz=timezone.utc),
+            credits=wallet_total_credits,
+        )
+        await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
 
 async def _process_stop_event(
     resource_tracker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingStoppedMessage,
+    rabbitmq_client: RabbitMQClient,
 ):
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=msg.service_run_id,
@@ -199,15 +209,19 @@ async def _process_stop_event(
         await resource_tracker_repo.update_credit_transaction_credits_and_status(
             update_credit_transaction
         )
-
+        # Publish wallet total credits to RabbitMQ
         wallet_total_credits = (
             await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
                 running_service.product_name,
                 running_service.wallet_id,
             )
         )
-        assert wallet_total_credits  # nosec
-        # NOTE: Publish wallet total credits to RabbitMQ
+        publish_message = WalletCreditsMessage.construct(
+            wallet_id=running_service.wallet_id,
+            created_at=datetime.now(tz=timezone.utc),
+            credits=wallet_total_credits,
+        )
+        await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
 
 RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] = {

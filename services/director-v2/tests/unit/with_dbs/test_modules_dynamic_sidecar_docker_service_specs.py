@@ -17,6 +17,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import RunID, ServiceKeyVersion
+from models_library.wallets import WalletInfo
 from pydantic import BaseModel
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -151,6 +152,7 @@ def expected_dynamic_sidecar_spec(
                     "request_scheme": "http",
                     "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
+                    "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
                     "service_resources": {

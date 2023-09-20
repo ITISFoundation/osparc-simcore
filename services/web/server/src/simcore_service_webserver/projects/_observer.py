@@ -5,6 +5,7 @@
 import logging
 
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from servicelib.aiohttp.observer import (
     registed_observers_report,
@@ -21,7 +22,10 @@ _logger = logging.getLogger(__name__)
 
 
 async def _on_user_disconnected(
-    user_id: int, client_session_id: str, app: web.Application
+    user_id: int,
+    client_session_id: str,
+    app: web.Application,
+    product_name: ProductName,  # pylint: disable=unused-argument
 ) -> None:
     # check if there is a project resource
     with managed_resource(user_id, client_session_id, app) as user_session:
