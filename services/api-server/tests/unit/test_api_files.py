@@ -188,10 +188,30 @@ async def test_delete_file(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
+    def search_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> dict[str, Any]:
+        request_query: dict[str, str] = dict(
+            pair.split("=") for pair in request.url.query.decode("utf8").split("&")
+        )
+        assert request_query.get("access_right") == "write"
+        assert isinstance(capture.response_body, dict)
+        response: dict[str, Any] = capture.response_body
+        return response
+
+    def delete_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
     respx_mock = respx_mock_from_capture(
         mocked_storage_service_api_base,
         project_tests_dir / "mocks" / "delete_file.json",
-        None,
+        [search_side_effect, delete_side_effect],
     )
 
     response = await client.delete(
