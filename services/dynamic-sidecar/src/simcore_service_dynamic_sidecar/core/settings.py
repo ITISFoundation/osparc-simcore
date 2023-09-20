@@ -6,6 +6,7 @@ from typing import cast
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
@@ -13,6 +14,7 @@ from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import (
@@ -123,11 +125,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DY_SIDECAR_SERVICE_KEY: DynamicServiceKey | None = None
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
+    DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
     RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    POSTGRES_SETTINGS: PostgresSettings | None = Field(auto_default_from_env=True)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 

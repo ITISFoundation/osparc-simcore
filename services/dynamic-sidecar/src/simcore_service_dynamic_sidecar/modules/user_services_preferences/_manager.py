@@ -3,32 +3,46 @@ from pathlib import Path
 
 from attr import dataclass
 from fastapi import FastAPI
+from models_library.products import ProductName
+from models_library.services import ServiceKey, ServiceVersion
+from models_library.users import UserID
 
+from . import _db
 from ._utils import is_feature_enabled
 
 _logger = logging.getLogger(__name__)
 
 
-# TODO: connect to the database on demand, since we do not have a global connection
-# and we don't want to have connections lying around
-# same pattern is applied in nodeports
-
-
 @dataclass
 class UserServicesPreferencesManager:
     user_preferences_path: Path
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    user_id: UserID
+    product_name: ProductName
     _preferences_already_saved: bool = False
 
     async def load_preferences(self) -> None:
-        ...
-        # TODO: finish implementation
+        await _db.load_preferences(
+            user_preferences_path=self.user_preferences_path,
+            service_key=self.service_key,
+            service_version=self.service_version,
+            user_id=self.user_id,
+            product_name=self.product_name,
+        )
 
     async def save_preferences(self) -> None:
         if self._preferences_already_saved:
-            _logger.warning("Preferences were already saved, skipping save")
+            _logger.warning("Preferences were already saved, will not save them again")
             return
 
-        # TODO: finish implementation
+        await _db.save_preferences(
+            user_preferences_path=self.user_preferences_path,
+            service_key=self.service_key,
+            service_version=self.service_version,
+            user_id=self.user_id,
+            product_name=self.product_name,
+        )
 
         self._preferences_already_saved = True
 
