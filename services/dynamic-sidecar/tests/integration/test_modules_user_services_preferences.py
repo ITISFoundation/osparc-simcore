@@ -155,6 +155,3 @@ async def test_user_service_workflow(app: FastAPI, user_preferences_path: Path):
     # reopen service which had saved preferences
     await load_user_services_preferences(app)
     assert _get_files_preferences_path(user_preferences_path) == file_names
-
-
-# TODO: do something with the versions, one before and one after, check that the settings are restorted or not as expected
