@@ -376,7 +376,7 @@ async def abort_multipart_upload(
     file: File = File(
         id=file_id,
         filename=client_file.filename,
-        checksum=client_file.sha256_checksum,
+        sha256_checksum=client_file.sha256_checksum,
         e_tag=None,
     )
     abort_link: URL = await storage_client.create_abort_upload_link(
@@ -405,7 +405,7 @@ async def complete_multipart_upload(
     file: File = File(
         id=file_id,
         filename=client_file.filename,
-        checksum=client_file.sha256_checksum,
+        sha256_checksum=client_file.sha256_checksum,
         e_tag=None,
     )
     complete_link: URL = await storage_client.create_complete_upload_link(

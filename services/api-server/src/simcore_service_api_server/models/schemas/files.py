@@ -92,7 +92,7 @@ class File(BaseModel):
         return cls(
             id=cls.create_id(sha256check, path.name),
             filename=path.name,
-            checksum=SHA256Str(sha256check),
+            sha256_checksum=SHA256Str(sha256check),
         )
 
     @classmethod
@@ -116,7 +116,7 @@ class File(BaseModel):
             id=cls.create_id(sha256check or file_size, file.filename, created_at),
             filename=file.filename or "Undefined",
             content_type=file.content_type,
-            checksum=SHA256Str(sha256check),
+            sha256_checksum=SHA256Str(sha256check),
         )
 
     @classmethod
@@ -128,7 +128,7 @@ class File(BaseModel):
         return cls(
             id=cls.create_id(client_file.filesize, client_file.filename, created_at),
             filename=client_file.filename,
-            checksum=client_file.sha256_checksum,
+            sha256_checksum=client_file.sha256_checksum,
         )
 
     @classmethod
@@ -137,7 +137,7 @@ class File(BaseModel):
             StorageFileID, _unquote(quoted_storage_id)
         )
         _, fid, fname = Path(storage_file_id).parts
-        return cls(id=UUID(fid), filename=fname, checksum=None)
+        return cls(id=UUID(fid), filename=fname, sha256_checksum=None)
 
     @classmethod
     def create_id(cls, *keys) -> UUID:
