@@ -1,17 +1,19 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
+from typing import Final
 
-from servicelib.archiving_utils import archive_dir
+from pydantic import ByteSize, parse_obj_as
+from servicelib.archiving_utils import archive_dir, unarchive_dir
 from servicelib.file_utils import get_temporary_path_name, remove_directory
 
+from ._errors import DestinationIsNotADirectoryError, PreferencesAreTooBigError
 
-async def to_binary(source_path: Path) -> bytes:
-    ...
+_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "512kib")
 
 
 @asynccontextmanager
-async def temporary_path_name() -> AsyncIterator[Path]:
+async def _temporary_path_name() -> AsyncIterator[Path]:
     temporary_path = get_temporary_path_name()
     try:
         yield temporary_path
@@ -23,16 +25,26 @@ async def temporary_path_name() -> AsyncIterator[Path]:
                 await remove_directory(temporary_path)
 
 
-async def from_bytes(payload: bytes, destination_to: Path) -> None:
-    if not destination_to.is_dir():
-        msg = f"Provided {destination_to=} must be a directory"
-        raise RuntimeError(msg)
+async def dir_to_bytes(source: Path) -> bytes:
+    if not source.is_dir():
+        raise DestinationIsNotADirectoryError(source)
 
-    await remove_directory(destination_to, only_children=True)
+    async with _temporary_path_name() as archive_path:
+        await archive_dir(source, archive_path, compress=True, store_relative_path=True)
 
-    async with temporary_path_name() as tmp_path:
-        await archive_dir(
-            destination_to, tmp_path, compress=True, store_relative_path=True
-        )
+        archive_size = archive_path.stat().st_size
+        if archive_size > _MAX_PREFERENCES_TOTAL_SIZE:
+            raise PreferencesAreTooBigError(archive_size, _MAX_PREFERENCES_TOTAL_SIZE)
 
-        # check size of file and raise error if too big!
+        return archive_path.read_bytes()
+
+
+async def dir_from_bytes(payload: bytes, destination: Path) -> None:
+    if not destination.is_dir():
+        raise DestinationIsNotADirectoryError(destination)
+
+    await remove_directory(destination, only_children=True)
+
+    async with _temporary_path_name() as archive_path:
+        archive_path.write_bytes(payload)
+        await unarchive_dir(archive_path, destination)
