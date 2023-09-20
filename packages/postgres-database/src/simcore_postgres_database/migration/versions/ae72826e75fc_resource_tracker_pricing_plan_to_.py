@@ -1,7 +1,7 @@
 """resource tracker pricing plan to service remo unique constrain
 
 Revision ID: ae72826e75fc
-Revises: 624a029738b8
+Revises: e3334cced752
 Create Date: 2023-09-18 17:25:32.499378+00:00
 
 """
@@ -9,7 +9,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "ae72826e75fc"
-down_revision = "624a029738b8"
+down_revision = "e3334cced752"
 branch_labels = None
 depends_on = None
 
