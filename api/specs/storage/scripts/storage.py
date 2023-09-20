@@ -53,11 +53,11 @@ app = FastAPI(
     },
     servers=[
         {
-            "url": "/v0",
+            "url": "/",
             "description": "Default server: requests directed to serving url",
         },
         {
-            "url": "http://{host}:{port}/v0",
+            "url": "http://{host}:{port}/",
             "description": "Development server: can configure any base url",
             "variables": {
                 "host": {"default": "127.0.0.1"},
