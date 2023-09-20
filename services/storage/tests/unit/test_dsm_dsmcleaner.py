@@ -106,6 +106,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     is_directory: bool,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    faker: Faker,
 ):
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
@@ -117,6 +118,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         file_or_directory_id,
         link_type,
         file_size,
+        sha256_checksum=faker.sha256(),
         is_directory=is_directory,
     )
     # ensure the database is correctly set up
