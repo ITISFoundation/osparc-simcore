@@ -35,6 +35,7 @@ def mock_rut_sum_total_available_credits_in_the_wallet(
     )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_wallets_full_workflow(
     client: TestClient,

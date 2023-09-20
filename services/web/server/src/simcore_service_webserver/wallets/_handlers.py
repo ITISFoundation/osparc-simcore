@@ -96,6 +96,7 @@ async def create_wallet(request: web.Request):
         wallet_name=body_params.name,
         description=body_params.description,
         thumbnail=body_params.thumbnail,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(wallet, web.HTTPCreated)
@@ -111,7 +112,7 @@ async def list_wallets(request: web.Request):
     wallets: list[
         WalletGetWithAvailableCredits
     ] = await _api.list_wallets_with_available_credits_for_user(
-        request.app, req_ctx.product_name, user_id=req_ctx.user_id
+        app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
     return envelope_json_response(wallets)
@@ -137,5 +138,6 @@ async def update_wallet(request: web.Request):
         description=body_params.description,
         thumbnail=body_params.thumbnail,
         status=body_params.status,
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(updated_wallet)

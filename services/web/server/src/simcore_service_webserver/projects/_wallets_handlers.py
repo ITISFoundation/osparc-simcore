@@ -97,7 +97,10 @@ async def connect_wallet_to_project(request: web.Request):
     )
     # ensure the wallet can be used by the user
     wallet: WalletGet = await wallet_api.get_wallet_by_user(
-        request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        product_name=req_ctx.product_name,
     )
 
     await db.connect_wallet_to_project(

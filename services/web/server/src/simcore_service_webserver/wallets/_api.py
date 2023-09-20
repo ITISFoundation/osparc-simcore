@@ -28,6 +28,7 @@ async def create_wallet(
     wallet_name: str,
     description: str | None,
     thumbnail: str | None,
+    product_name: ProductName,
 ) -> WalletGet:
     user: dict = await users_api.get_user(app, user_id)
     wallet_db: WalletDB = await db.create_wallet(
@@ -36,6 +37,7 @@ async def create_wallet(
         wallet_name=wallet_name,
         description=description,
         thumbnail=thumbnail,
+        product_name=product_name,
     )
     wallet_api: WalletGet = parse_obj_as(WalletGet, wallet_db)
     return wallet_api
@@ -43,11 +45,11 @@ async def create_wallet(
 
 async def list_wallets_with_available_credits_for_user(
     app: web.Application,
-    product_name: ProductName,
     user_id: UserID,
+    product_name: ProductName,
 ) -> list[WalletGetWithAvailableCredits]:
     user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
-        app=app, user_id=user_id
+        app=app, user_id=user_id, product_name=product_name
     )
 
     # Now we return the user wallets with available credits
@@ -78,9 +80,10 @@ async def list_wallets_with_available_credits_for_user(
 async def list_wallets_for_user(
     app: web.Application,
     user_id: UserID,
+    product_name: ProductName,
 ) -> list[WalletGet]:
     user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
-        app=app, user_id=user_id
+        app=app, user_id=user_id, product_name=product_name
     )
     wallets_api = parse_obj_as(list[WalletGet], user_wallets)
 
@@ -95,9 +98,10 @@ async def update_wallet(
     description: str | None,
     thumbnail: str | None,
     status: WalletStatus,
+    product_name: ProductName,
 ) -> WalletGet:
     wallet: UserWalletDB = await db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
@@ -111,6 +115,7 @@ async def update_wallet(
         description=description,
         thumbnail=thumbnail,
         status=status,
+        product_name=product_name,
     )
 
     wallet_api: WalletGet = parse_obj_as(WalletGet, wallet_db)
@@ -121,9 +126,10 @@ async def delete_wallet(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> None:
     wallet: UserWalletDB = await db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.delete is False:
         raise WalletAccessForbiddenError(
@@ -137,9 +143,10 @@ async def get_wallet_by_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> WalletGet:
     wallet: UserWalletDB = await db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
@@ -163,9 +170,10 @@ async def get_wallet_with_permissions_by_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> WalletGetPermissions:
     wallet: UserWalletDB = await db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
     permissions: WalletGetPermissions = parse_obj_as(WalletGetPermissions, wallet)
