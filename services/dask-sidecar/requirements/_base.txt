@@ -172,8 +172,6 @@ packaging==23.1
     #   distributed
 pamqp==3.2.1
     # via aiormq
-parse==1.19.1
-    # via -r requirements/_base.in
 partd==1.4.0
     # via dask
 pillow==10.0.0

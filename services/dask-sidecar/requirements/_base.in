@@ -24,5 +24,4 @@ dask[distributed, diagnostics]
 dask-gateway # needed for the osparc-dask-gateway to preload the module
 fsspec[http, s3] # sub types needed as we acces http and s3 here
 lz4 # for compression
-parse
 pydantic[email,dotenv]
