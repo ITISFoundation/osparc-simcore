@@ -29,6 +29,7 @@ openapi_modules = [
         "_metamodeling",
         "_nih_sparc_redirections",
         "_nih_sparc",
+        "_products",
         "_projects_comments",
         "_projects_crud",
         "_projects_metadata",
