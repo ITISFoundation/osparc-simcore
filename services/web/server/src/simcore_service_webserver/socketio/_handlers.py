@@ -127,7 +127,7 @@ async def connect(
             "SIGNAL_USER_CONNECTED",
             user_id,
             app,
-            "s4l",  # NOTE: will be changed in upcoming PR
+            "s4l",  # NOTE: will be changed after https://github.com/ITISFoundation/osparc-simcore/issues/4776
         )
 
         heart_beat_messages: list[SocketMessageDict] = [
@@ -176,7 +176,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                     user_id,
                     client_session_id,
                     app,
-                    "s4l",  # NOTE: will be changed in upcoming PR
+                    "s4l",  # NOTE: will be changed after https://github.com/ITISFoundation/osparc-simcore/issues/4776
                 )
 
         else:

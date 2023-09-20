@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
+from pydantic import parse_obj_as
 
 from ..resource_usage.api import get_wallet_total_available_credits
 from ..users import api as users_api
@@ -36,7 +37,7 @@ async def create_wallet(
         description=description,
         thumbnail=thumbnail,
     )
-    wallet_api: WalletGet = WalletGet(**wallet_db.dict())
+    wallet_api: WalletGet = parse_obj_as(WalletGet, wallet_db)
     return wallet_api
 
 
@@ -81,7 +82,7 @@ async def list_wallets_for_user(
     user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
         app=app, user_id=user_id
     )
-    wallets_api = [WalletGet.construct(**wallet.dict()) for wallet in user_wallets]
+    wallets_api = parse_obj_as(list[WalletGet], user_wallets)
 
     return wallets_api
 
@@ -112,7 +113,7 @@ async def update_wallet(
         status=status,
     )
 
-    wallet_api: WalletGet = WalletGet(**wallet_db.dict())
+    wallet_api: WalletGet = parse_obj_as(WalletGet, wallet_db)
     return wallet_api
 
 
@@ -167,5 +168,5 @@ async def get_wallet_with_permissions_by_user(
         app=app, user_id=user_id, wallet_id=wallet_id
     )
 
-    permissions: WalletGetPermissions = WalletGetPermissions.construct(**wallet.dict())
+    permissions: WalletGetPermissions = parse_obj_as(WalletGetPermissions, wallet)
     return permissions

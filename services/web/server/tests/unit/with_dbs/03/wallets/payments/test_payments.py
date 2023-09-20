@@ -55,7 +55,6 @@ async def test_payment_on_invalid_wallet(
     assert error
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
