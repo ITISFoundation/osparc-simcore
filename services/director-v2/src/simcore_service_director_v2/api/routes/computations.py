@@ -17,7 +17,6 @@ Therefore,
 
 import contextlib
 import logging
-import os
 from typing import Annotated, Any
 
 import networkx as nx
@@ -227,9 +226,7 @@ async def create_computation(  # noqa: C901, PLR0912
             wallet_name = None
             pricing_plan_id = None
             pricing_detail_id = None
-            if computation.wallet_info and os.environ.get(
-                "WEBSERVER_DEV_FEATURES_ENABLED", False
-            ):
+            if computation.wallet_info:
                 wallet_id = computation.wallet_info.wallet_id
                 wallet_name = computation.wallet_info.wallet_name
 

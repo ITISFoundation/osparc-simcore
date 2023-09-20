@@ -1,6 +1,7 @@
 import datetime
 import logging
 from abc import abstractmethod
+from decimal import Decimal
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
@@ -261,7 +262,7 @@ class WalletCreditsMessage(RabbitMessageBase):
         description="message creation datetime",
     )
     wallet_id: WalletID
-    credits: float
+    credits: Decimal
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}"

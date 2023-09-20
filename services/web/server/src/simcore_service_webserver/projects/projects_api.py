@@ -52,6 +52,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
+from ..application_settings import get_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..products.api import get_product_name
@@ -266,7 +267,8 @@ async def _start_dynamic_service(
         # Get wallet information
         wallet_info = None
         project_wallet = await get_project_wallet(request.app, project_id=project_uuid)
-        if project_wallet:
+        app_settings = get_settings(request.app)
+        if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
             # Check whether user has access to the wallet
             await wallets_api.get_wallet_by_user(
                 request.app, user_id, project_wallet.wallet_id

@@ -1,5 +1,4 @@
 import logging
-import os
 
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
@@ -129,9 +128,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     wallet_name = None
     pricing_plan_id = None
     pricing_detail_id = None
-    if scheduler_data.wallet_info and os.environ.get(
-        "WEBSERVER_DEV_FEATURES_ENABLED", False
-    ):
+    if scheduler_data.wallet_info:
         wallet_id = scheduler_data.wallet_info.wallet_id
         wallet_name = scheduler_data.wallet_info.wallet_name
         resource_usage_api = ResourceUsageApi.get_from_state(app)

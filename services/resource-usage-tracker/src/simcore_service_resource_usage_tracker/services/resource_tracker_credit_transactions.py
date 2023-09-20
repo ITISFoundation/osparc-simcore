@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated
@@ -85,14 +84,11 @@ async def create_credit_transaction(
         transaction_create
     )
 
-    # Fire and forget mechanism to publish available credits
-    asyncio.create_task(
-        _sum_credit_transactions_and_publish_to_rabbitmq(
-            resource_tracker_repo,
-            credit_transaction_create_body,
-            credit_transaction_create_body.wallet_id,
-            rabbitmq_client,
-        )
+    await _sum_credit_transactions_and_publish_to_rabbitmq(
+        resource_tracker_repo,
+        credit_transaction_create_body,
+        credit_transaction_create_body.wallet_id,
+        rabbitmq_client,
     )
 
     return transaction_id

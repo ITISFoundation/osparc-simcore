@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 from typing import Any
 
 from aiohttp import web
@@ -25,6 +24,7 @@ from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import login_required
 from ..projects import api as projects_api
 from ..security.decorators import permission_required
@@ -101,7 +101,8 @@ async def start_computation(request: web.Request) -> web.Response:
     project_wallet = await projects_api.get_project_wallet(
         request.app, project_id=project_id
     )
-    if project_wallet and os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", False):
+    app_settings = get_settings(request.app)
+    if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
         # Check whether user has access to the wallet
         await wallets_api.get_wallet_by_user(
             request.app, req_ctx.user_id, project_wallet.wallet_id

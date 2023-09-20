@@ -23,15 +23,7 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    ConstrainedStr,
-    Extra,
-    Field,
-    parse_obj_as,
-    root_validator,
-)
+from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -441,16 +433,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="Current product upon which this service is scheduled. "
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
-
-    @root_validator(pre=True)
-    @classmethod
-    def _wallet_info_legacy_migration(cls, values):
-        logger.warning(
-            "check notes for deprecation at https://github.com/ITISFoundation/osparc-simcore/issues/4766"
-        )
-        if "wallet_info" not in values:
-            values["wallet_info"] = None
-        return values
 
     @classmethod
     def from_http_request(
