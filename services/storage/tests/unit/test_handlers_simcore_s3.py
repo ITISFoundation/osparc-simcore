@@ -11,7 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 from random import randint
 from secrets import choice
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Literal
 
 import pytest
 import sqlalchemy as sa
@@ -503,30 +503,27 @@ async def test_create_and_delete_folders_from_project_burst(
     )
 
 
-def _generate_query_params(
-    user_id: UserID, startswith: str | None, sha256_checksum: SHA256Str | None
-) -> dict[str, Any]:
-    return {k: v for k, v in locals().items() if v is not None}
-
-
-@pytest.mark.parametrize(
-    "query_params", [{"startswith": ""}, {"sha256_checksum": "something"}]
-)
+@pytest.mark.parametrize("search_startswith", [True, False])
+@pytest.mark.parametrize("search_sha256_checksum", [True, False])
+@pytest.mark.parametrize("access_right", ["read", "write"])
 async def test_search_files(
     client: TestClient,
     user_id: UserID,
-    upload_file: Callable[
-        [ByteSize, str, str | None], Awaitable[tuple[Path, SimcoreS3FileID]]
-    ],
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
-    query_params: dict[str, Any],
+    search_startswith: bool,
+    search_sha256_checksum: bool,
+    access_right: Literal["read", "write"],
 ):
     assert client.app
-    url = (
-        client.app.router["search_files"]
-        .url_for()
-        .with_query(user_id=user_id, startswith="")
-    )
+    _file_name: str = faker.file_name()
+    _sha256_checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
+    _query_params: dict[str, Any] = {
+        "user_id": user_id,
+        "access_right": access_right,
+        "startswith": "",
+    }
+    url = client.app.router["search_files"].url_for().with_query(**_query_params)
 
     response = await client.post(f"{url}")
     data, error = await assert_status(response, web.HTTPOk)
@@ -536,7 +533,9 @@ async def test_search_files(
 
     # let's upload some files now
     file, file_id = await upload_file(
-        parse_obj_as(ByteSize, "10Mib"), faker.file_name(), None
+        file_size=parse_obj_as(ByteSize, "10Mib"),
+        file_name=_file_name,
+        sha256_checksum=_sha256_checksum,
     )
     # search again should return something
     response = await client.post(f"{url}")
@@ -546,8 +545,13 @@ async def test_search_files(
     assert len(list_fmds) == 1
     assert list_fmds[0].file_id == file_id
     assert list_fmds[0].file_size == file.stat().st_size
+    assert list_fmds[0].sha256_checksum == _sha256_checksum
+
     # search again with part of the file uuid shall return the same
-    url.update_query(startswith=file_id[0:5])
+    if search_startswith:
+        url.update_query(startswith=file_id[0:5])
+    if search_sha256_checksum:
+        url.update_query(sha256_checksum=_sha256_checksum)
     response = await client.post(f"{url}")
     data, error = await assert_status(response, web.HTTPOk)
     assert not error
@@ -555,10 +559,19 @@ async def test_search_files(
     assert len(list_fmds) == 1
     assert list_fmds[0].file_id == file_id
     assert list_fmds[0].file_size == file.stat().st_size
+    assert list_fmds[0].sha256_checksum == _sha256_checksum
+
     # search again with some other stuff shall return empty
-    url = url.update_query(startswith="Iamlookingforsomethingthatdoesnotexist")
-    response = await client.post(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
-    assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
-    assert not list_fmds
+    if search_startswith:
+        url = url.update_query(startswith="Iamlookingforsomethingthatdoesnotexist")
+    if search_sha256_checksum:
+        dummy_sha256 = faker.sha256()
+        while dummy_sha256 == _sha256_checksum:
+            dummy_sha256 = faker.sha256()
+        url = url.update_query(sha256_checksum=dummy_sha256)
+    if search_startswith or search_sha256_checksum:
+        response = await client.post(f"{url}")
+        data, error = await assert_status(response, web.HTTPOk)
+        assert not error
+        list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+        assert not list_fmds
