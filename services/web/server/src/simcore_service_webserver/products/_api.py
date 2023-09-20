@@ -2,6 +2,7 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import web
+from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
@@ -26,6 +27,14 @@ def get_current_product(request: web.Request) -> Product:
 def list_products(app: web.Application) -> list[Product]:
     products: list[Product] = app[APP_PRODUCTS_KEY].values()
     return products
+
+
+async def get_current_product_credit_price(
+    request: web.Request,
+) -> NonNegativeDecimal | None:
+    current_product_name = get_product_name(request)
+    repo = ProductRepository(request)
+    return await repo.get_product_latest_credit_price_or_none(current_product_name)
 
 
 #

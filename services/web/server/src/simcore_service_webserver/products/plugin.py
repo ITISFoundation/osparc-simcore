@@ -15,6 +15,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_SETTINGS_KEY
+from . import _handlers
 from ._events import (
     auto_create_products_groups,
     load_products_on_startup,
@@ -38,6 +39,9 @@ def setup_products(app: web.Application):
 
     # middlewares
     app.middlewares.append(discover_product_middleware)
+
+    # routes
+    app.router.add_routes(_handlers.routes)
 
     # events
     app.on_startup.append(
