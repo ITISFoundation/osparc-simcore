@@ -1,18 +1,15 @@
 import asyncio
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Final, Iterator
 
 from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from servicelib.aiohttp.client_session import get_client_session
 
+from ._constants import MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
+
 _logger = logging.getLogger(__name__)
-
-
-MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE: Final[
-    str
-] = "Currently resource usage tracker service is unavailable, please try again later"
 
 
 @contextmanager
