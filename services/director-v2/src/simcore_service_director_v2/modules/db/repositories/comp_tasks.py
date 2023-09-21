@@ -29,6 +29,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
+from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -217,13 +218,14 @@ async def _generate_tasks_list_from_project(
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
-        task_progress = node.state.progress
+        task_progress = None
+        if task_state in COMPLETED_STATES:
+            task_progress = node.state.progress
         if (
             NodeID(node_id) in published_nodes
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
-            task_progress = None
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
