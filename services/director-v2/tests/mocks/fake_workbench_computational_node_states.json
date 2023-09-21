@@ -3,13 +3,13 @@
     "modified": true,
     "dependencies": [],
     "currentStatus": "PUBLISHED",
-    "progress": 0
+    "progress": null
   },
   "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": {
     "modified": true,
     "dependencies": [],
     "currentStatus": "PUBLISHED",
-    "progress": 0
+    "progress": null
   },
   "415fefd1-d08b-53c1-adb0-16bed3a687ef": {
     "modified": true,
@@ -17,7 +17,7 @@
       "3a710d8b-565c-5f46-870b-b45ebe195fc7"
     ],
     "currentStatus": "PUBLISHED",
-    "progress": 0
+    "progress": null
   },
   "6ede1209-b459-5735-91fc-761aa584808d": {
     "modified": true,
@@ -26,6 +26,6 @@
       "415fefd1-d08b-53c1-adb0-16bed3a687ef"
     ],
     "currentStatus": "PUBLISHED",
-    "progress": 0
+    "progress": null
   }
 }
