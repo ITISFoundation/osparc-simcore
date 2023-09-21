@@ -366,8 +366,10 @@ class CompTasksRepository(BaseRepository):
                     if comp_task_db.node_id in published_nodes
                     else {}
                 )
+
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                     exclusion_rule.add("outputs")
+                else:
                     update_values = {}
                 on_update_stmt = insert_stmt.on_conflict_do_update(
                     index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
