@@ -219,7 +219,7 @@ async def _generate_tasks_list_from_project(
         task_state = node.state.current_status
         task_progress = node.state.progress
         if (
-            node_id in published_nodes
+            NodeID(node_id) in published_nodes
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
@@ -356,12 +356,12 @@ class CompTasksRepository(BaseRepository):
 
                 exclusion_rule = (
                     {"state", "progress"}
-                    if str(comp_task_db.node_id) not in published_nodes
+                    if comp_task_db.node_id not in published_nodes
                     else set()
                 )
                 update_values = (
                     {"progress": None}
-                    if f"{comp_task_db.node_id}" in published_nodes
+                    if comp_task_db.node_id in published_nodes
                     else {}
                 )
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
