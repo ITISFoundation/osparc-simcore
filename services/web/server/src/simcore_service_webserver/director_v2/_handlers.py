@@ -105,7 +105,7 @@ async def start_computation(request: web.Request) -> web.Response:
     if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
         # Check whether user has access to the wallet
         await wallets_api.get_wallet_by_user(
-            request.app, req_ctx.user_id, project_wallet.wallet_id
+            request.app, req_ctx.user_id, project_wallet.wallet_id, req_ctx.product_name
         )
         wallet_info = WalletInfo(
             wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name

@@ -28,7 +28,9 @@ async def _on_user_disconnected(
     product_name: ProductName,
 ) -> None:
     # Get all user wallets and unsubscribe
-    user_wallet = await wallets_api.list_wallets_for_user(app, user_id=user_id)
+    user_wallet = await wallets_api.list_wallets_for_user(
+        app, user_id=user_id, product_name=product_name
+    )
     disconnect_tasks = [
         wallet_osparc_credits.unsubscribe(app, wallet.wallet_id)
         for wallet in user_wallet
@@ -40,7 +42,9 @@ async def _on_user_connected(
     user_id: int, app: web.Application, product_name: str
 ) -> None:
     # Get all user wallets and subscribe
-    user_wallet = await wallets_api.list_wallets_for_user(app, user_id=user_id)
+    user_wallet = await wallets_api.list_wallets_for_user(
+        app, user_id=user_id, product_name=product_name
+    )
     connect_tasks = [
         wallet_osparc_credits.subscribe(app, wallet.wallet_id) for wallet in user_wallet
     ]
