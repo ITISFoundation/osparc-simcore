@@ -9,7 +9,7 @@ from servicelib.file_utils import get_temporary_path_name, remove_directory
 
 from ._errors import DestinationIsNotADirectoryError, PreferencesAreTooBigError
 
-_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "512kib")
+_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "128kib")
 
 
 @asynccontextmanager

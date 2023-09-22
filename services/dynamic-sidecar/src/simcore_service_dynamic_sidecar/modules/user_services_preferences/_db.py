@@ -1,9 +1,9 @@
-import logging
 from pathlib import Path
 
 import umsgpack
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.user_preferences import PreferenceName
 from models_library.users import UserID
 from packaging.version import Version
 from pydantic import parse_obj_as
@@ -18,7 +18,12 @@ from simcore_sdk.node_ports_common.dbmanager import DBContextManager
 from ._packaging import dir_from_bytes, dir_to_bytes
 from ._user_preference import get_model_class
 
-_logger = logging.getLogger(__name__)
+
+def _get_db_preference_name(
+    preference_name: PreferenceName, service_version: ServiceVersion
+) -> str:
+    version = Version(service_version)
+    return f"{preference_name}/{version.major}.{version.minor}"
 
 
 async def save_preferences(
@@ -40,7 +45,9 @@ async def save_preferences(
             conn,
             user_id=user_id,
             product_name=product_name,
-            preference_name=preference_class.get_preference_name(),
+            preference_name=_get_db_preference_name(
+                preference_class.get_preference_name(), service_version
+            ),
             payload=umsgpack.packb(preference.to_db()),
         )
 
@@ -59,24 +66,12 @@ async def load_preferences(
             conn,
             user_id=user_id,
             product_name=product_name,
-            preference_name=preference_class.get_preference_name(),
+            preference_name=_get_db_preference_name(
+                preference_class.get_preference_name(), service_version
+            ),
         )
     if payload is None:
         return
 
     preference = parse_obj_as(preference_class, umsgpack.unpackb(payload))
-
-    stored_version = preference.service_version
-    if Version(service_version) < Version(stored_version):
-        _logger.warning(
-            (
-                "Did not restore user preferences for service "
-                "%s since %s (current version) < %s (stored version)"
-            ),
-            service_key,
-            service_version,
-            stored_version,
-        )
-        return
-
     await dir_from_bytes(preference.value, user_preferences_path)
