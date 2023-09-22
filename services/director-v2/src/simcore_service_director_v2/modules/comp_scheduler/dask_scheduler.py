@@ -19,13 +19,18 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_utils import log_catch
+from simcore_service_director_v2.modules.db.repositories.comp_runs import (
+    CompRunsRepository,
+)
 
 from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
 from ...models.comp_runs import RunMetadataDict
-from ...models.comp_tasks import CompTaskAtDB, Image
+from ...models.comp_tasks import CompTaskAtDB
+from ...models.dask_subsystem import DaskClientTaskState
 from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
@@ -47,6 +52,18 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 
 _logger = logging.getLogger(__name__)
+
+
+_DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP: dict[
+    DaskClientTaskState, RunningState
+] = {
+    DaskClientTaskState.PENDING: RunningState.PENDING,
+    DaskClientTaskState.NO_WORKER: RunningState.WAITING_FOR_RESOURCES,
+    DaskClientTaskState.LOST: RunningState.UNKNOWN,
+    DaskClientTaskState.ERRED: RunningState.FAILED,
+    DaskClientTaskState.ABORTED: RunningState.ABORTED,
+    DaskClientTaskState.SUCCESS: RunningState.SUCCESS,
+}
 
 
 @asynccontextmanager
@@ -84,34 +101,45 @@ class DaskScheduler(BaseCompScheduler):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        scheduled_tasks: dict[NodeID, Image],
+        scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> None:
+    ) -> list:
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(user_id, pipeline_params, self) as client:
-            task_job_ids: list[
-                tuple[NodeID, str]
-            ] = await client.send_computation_tasks(
-                user_id=user_id,
-                project_id=project_id,
-                cluster_id=pipeline_params.cluster_id,
-                tasks=scheduled_tasks,
-                callback=self._wake_up_scheduler_now,
-                metadata=pipeline_params.run_metadata,
+            # Change the tasks state to PENDING
+            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+            await comp_tasks_repo.update_project_tasks_state(
+                project_id,
+                list(scheduled_tasks.keys()),
+                RunningState.PENDING,
             )
-            _logger.debug(
-                "started following tasks (node_id, job_id)[%s] on cluster %s",
-                f"{task_job_ids=}",
-                f"{pipeline_params.cluster_id=}",
+            # each task is started independently
+            results: list[list[tuple[NodeID, str]] | Exception] = await asyncio.gather(
+                *(
+                    client.send_computation_tasks(
+                        user_id=user_id,
+                        project_id=project_id,
+                        cluster_id=pipeline_params.cluster_id,
+                        tasks={node_id: task.image},
+                        callback=self._wake_up_scheduler_now,
+                        metadata=pipeline_params.run_metadata,
+                    )
+                    for node_id, task in scheduled_tasks.items()
+                ),
+                return_exceptions=True,
             )
-        # update the database so we do have the correct job_ids there
-        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        await asyncio.gather(
-            *[
-                comp_tasks_repo.update_project_task_job_id(project_id, node_id, job_id)
-                for node_id, job_id in task_job_ids
-            ]
-        )
+
+            # update the database so we do have the correct job_ids there
+            await asyncio.gather(
+                *[
+                    comp_tasks_repo.update_project_task_job_id(
+                        project_id, tasks_sent[0][0], tasks_sent[0][1]
+                    )
+                    for tasks_sent in results
+                    if not isinstance(tasks_sent, Exception)
+                ]
+            )
+            return results
 
     async def _get_tasks_status(
         self,
@@ -121,10 +149,29 @@ class DaskScheduler(BaseCompScheduler):
     ) -> list[RunningState]:
         try:
             async with _cluster_dask_client(user_id, pipeline_params, self) as client:
-                return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
+                tasks_statuses = await client.get_tasks_status(
+                    [f"{t.job_id}" for t in tasks]
+                )
+                # process dask states
+            running_states: list[RunningState] = []
+            for dask_task_state, task in zip(tasks_statuses, tasks, strict=True):
+                if dask_task_state is DaskClientTaskState.PENDING_OR_STARTED:
+                    running_states += [
+                        RunningState.STARTED
+                        if task.progress is not None
+                        else RunningState.PENDING
+                    ]
+                else:
+                    running_states += [
+                        _DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP.get(
+                            dask_task_state, RunningState.UNKNOWN
+                        )
+                    ]
+            return running_states
+
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")
-            return [RunningState.WAITING_FOR_RESOURCES] * len(tasks)
+            return [RunningState.WAITING_FOR_CLUSTER] * len(tasks)
 
     async def _stop_tasks(
         self,
@@ -265,30 +312,47 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _task_progress_change_handler(self, event: str) -> None:
-        task_progress_event = TaskProgressEvent.parse_raw(event)
-        _logger.debug("received task progress update: %s", task_progress_event)
-        *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
+        with log_catch(_logger, reraise=False):
+            task_progress_event = TaskProgressEvent.parse_raw(event)
+            _logger.debug("received task progress update: %s", task_progress_event)
+            *_, user_id, project_id, node_id = parse_dask_job_id(
+                task_progress_event.job_id
+            )
 
-        await CompTasksRepository(self.db_engine).update_project_task_progress(
-            project_id, node_id, task_progress_event.progress
-        )
-        await publish_service_progress(
-            self.rabbitmq_client,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            progress=task_progress_event.progress,
-        )
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            task = await comp_tasks_repo.get_task(project_id, node_id)
+            if task.progress is None:
+                task.state = RunningState.STARTED
+                task.progress = task_progress_event.progress
+                run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
+                await self._process_started_tasks(
+                    [task],
+                    user_id=user_id,
+                    iteration=run.iteration,
+                    run_metadata=run.metadata,
+                )
+            else:
+                await comp_tasks_repo.update_project_task_progress(
+                    project_id, node_id, task_progress_event.progress
+                )
+            await publish_service_progress(
+                self.rabbitmq_client,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                progress=task_progress_event.progress,
+            )
 
     async def _task_log_change_handler(self, event: str) -> None:
-        task_log_event = TaskLogEvent.parse_raw(event)
-        _logger.debug("received task log update: %s", task_log_event)
-        *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
-        await publish_service_log(
-            self.rabbitmq_client,
-            user_id,
-            project_id,
-            node_id,
-            task_log_event.log,
-            task_log_event.log_level,
-        )
+        with log_catch(_logger, reraise=False):
+            task_log_event = TaskLogEvent.parse_raw(event)
+            _logger.debug("received task log update: %s", task_log_event)
+            *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
+            await publish_service_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                node_id,
+                task_log_event.log,
+                task_log_event.log_level,
+            )

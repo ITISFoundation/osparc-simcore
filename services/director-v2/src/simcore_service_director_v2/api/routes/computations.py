@@ -195,13 +195,14 @@ async def create_computation(  # noqa: C901, PLR0912
             publish=computation.start_pipeline or False,
         )
         assert computation.product_name  # nosec
+        min_computation_nodes: list[NodeID] = [
+            NodeID(n) for n in minimal_computational_dag.nodes()
+        ]
         inserted_comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
             project,
             catalog_client,
             director_client,
-            published_nodes=list(minimal_computational_dag.nodes())
-            if computation.start_pipeline
-            else [],
+            published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,
         )
