@@ -34,16 +34,18 @@ class RPCRouter:
                     msg=f"calling {func.__name__} with {args}, {kwargs}",
                 ):
                     try:
-                        result = await func(*args, **kwargs)
-                        return result
+                        return await func(*args, **kwargs)
                     except asyncio.CancelledError:
                         _logger.debug("call was cancelled")
                         raise
                     except Exception as exc:  # pylint: disable=broad-except
                         _logger.exception("Unhandled exception:")
+                        # NOTE: we do not return internal exceptions over RPC
                         raise RPCServerError(
-                            method_name=func.__name__, exc_type=type(exc), msg=f"{exc}"
-                        ) from exc
+                            method_name=func.__name__,
+                            exc_type=f"{type(exc)}",
+                            msg=f"{exc}",
+                        ) from None
 
             self.routes[RPCMethodName(func.__name__)] = wrapper
             return func
