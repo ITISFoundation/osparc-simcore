@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
 from typing import Any
+from unittest import mock
 from zipfile import ZipFile
 
 import arrow
@@ -17,6 +18,7 @@ from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
@@ -203,6 +205,20 @@ async def test_solver_logs(
     pprint(dict(resp.headers))
 
 
+@pytest.fixture
+def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
+    from simcore_service_api_server.db.repositories.groups_extra_properties import (
+        GroupsExtraPropertiesRepository,
+    )
+
+    return mocker.patch.object(
+        GroupsExtraPropertiesRepository,
+        "use_on_demand_clusters",
+        autospec=True,
+        return_value=False,
+    )
+
+
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
@@ -217,6 +233,7 @@ async def test_run_solver_job(
     project_id: str,
     solver_key: str,
     solver_version: str,
+    mocked_groups_extra_properties: mock.Mock,
 ):
     oas = directorv2_service_openapi_specs
 
@@ -370,3 +387,4 @@ async def test_run_solver_job(
 
     job_status = JobStatus.parse_obj(resp.json())
     assert job_status.progress == 0.0
+    mocked_groups_extra_properties.assert_called_once()
