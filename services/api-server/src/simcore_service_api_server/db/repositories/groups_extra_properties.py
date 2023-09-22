@@ -20,7 +20,7 @@ class GroupsExtraPropertiesRepository(BaseRepository):
                         conn, user_id=user_id, product_name=product_name
                     )
                 )
-            return group_properties.use_on_demand_clusters
+            return bool(group_properties.use_on_demand_clusters)
 
         except DatabaseError:
             _logger.exception("Unexpected error while access DB:")
