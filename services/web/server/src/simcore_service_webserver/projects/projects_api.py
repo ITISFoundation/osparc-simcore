@@ -271,7 +271,7 @@ async def _start_dynamic_service(
         if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
             # Check whether user has access to the wallet
             await wallets_api.get_wallet_by_user(
-                request.app, user_id, project_wallet.wallet_id
+                request.app, user_id, project_wallet.wallet_id, product_name
             )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name

@@ -30,7 +30,7 @@ async def list_usage_services(
     else:
         wallet: WalletGetPermissions = (
             await wallet_api.get_wallet_with_permissions_by_user(
-                app=app, user_id=user_id, wallet_id=wallet_id
+                app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
             )
         )
         access_all_wallet_usage = wallet.write is True
