@@ -50,9 +50,7 @@ wallets = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.Column(
-        "product_name", sa.String, nullable=False, doc="Product name", primary_key=True
-    ),
+    sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
 )
 
 # ------------------------ TRIGGERS
