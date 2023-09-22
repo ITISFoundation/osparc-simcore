@@ -12,7 +12,7 @@ from .database import get_repository
 basic_scheme = HTTPBasic()
 
 
-def _create_exception():
+def _create_exception() -> HTTPException:
     _unauthorized_headers = {
         "WWW-Authenticate": f'Basic realm="{basic_scheme.realm}"'
         if basic_scheme.realm
@@ -49,8 +49,3 @@ async def get_active_user_email(
         exc = _create_exception()
         raise exc
     return email
-
-
-# alias
-get_active_user_id = get_current_user_id
-get_active_user_id = get_current_user_id
