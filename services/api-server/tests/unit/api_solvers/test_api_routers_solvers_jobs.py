@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -66,7 +67,7 @@ def presigned_download_link(
         "s3",
         endpoint_url=mocked_s3_server_url,
         # Some fake auth, otherwise botocore.exceptions.NoCredentialsError: Unable to locate credentials
-        aws_secret_access_key="xxx",
+        aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
     )
     s3_client.create_bucket(Bucket=bucket_name)
@@ -202,7 +203,7 @@ async def test_solver_logs(
     assert resp0.headers["location"] == presigned_download_link
 
     assert resp.url == presigned_download_link
-    pprint(dict(resp.headers))
+    pprint(dict(resp.headers))  # noqa: T203
 
 
 @pytest.fixture
@@ -215,7 +216,7 @@ def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
         GroupsExtraPropertiesRepository,
         "use_on_demand_clusters",
         autospec=True,
-        return_value=False,
+        return_value=True,
     )
 
 
