@@ -1,11 +1,12 @@
 from enum import Enum
 
 import typer
-from models import Deployment
-from portainer import check_containers_deploys, check_running_sidecars
+from monitor_release.models import Deployment
+from monitor_release.portainer import check_containers_deploys, check_running_sidecars
+from monitor_release.settings import get_settings
 from rich.console import Console
-from settings import get_settings
 
+app = typer.Typer()
 console = Console()
 
 
@@ -14,6 +15,7 @@ class Action(str, Enum):
     sidecars = "sidecars"
 
 
+@app.command()
 def main(deployment: Deployment, action: Action):
     settings = get_settings(deployment)
     console.print(f"Deployment: {deployment}")
@@ -25,6 +27,6 @@ def main(deployment: Deployment, action: Action):
         check_running_sidecars(settings, deployment)
 
 
-if __name__ == "__main__":
-    # main(Deployment.aws_staging, Action.containers)
-    typer.run(main)
+# if __name__ == "__main__":
+#     # main(Deployment.aws_staging, Action.containers)
+#     typer.run(main)

@@ -1,6 +1,0 @@
-python-dotenv
-pydantic
-typer[all]
-rich
-requests
-arrow

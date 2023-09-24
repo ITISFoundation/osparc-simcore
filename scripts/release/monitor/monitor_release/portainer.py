@@ -1,5 +1,5 @@
-from models import RunningSidecar
-from portainer_utils import (
+from monitor_release.models import RunningSidecar
+from monitor_release.portainer_utils import (
     check_simcore_deployed_services,
     check_simcore_running_sidecars,
     get_bearer_token,

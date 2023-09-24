@@ -1,7 +1,35 @@
 # Helper for monitoring of release
-`python monitor_release/cli.py --help`
+`pip install .`
+`monitor-release --help`
 
 Check current status of containers
-`python monitor_release/cli.py master containers`
+`monitor-release master containers`
 Check running sidecars:
-`python monitor_release/cli.py master sidecars`
+`monitor-release master sidecars`
+
+# Create .env file
+```
+MASTER_PORTAINER_URL=
+MASTER_PORTAINER_USERNAME=
+MASTER_PORTAINER_PASSWORD=
+
+DALCO_STAGING_PORTAINER_URL=
+DALCO_STAGING_PORTAINER_USERNAME=
+DALCO_STAGING_PORTAINER_PASSWORD=
+
+DALCO_PRODUCTION_PORTAINER_URL=
+DALCO_PRODUCTION_PORTAINER_USERNAME=
+DALCO_PRODUCTION_PORTAINER_PASSWORD=
+
+TIP_PRODUCTION_PORTAINER_URL=
+TIP_PRODUCTION_PORTAINER_USERNAME=
+TIP_PRODUCTION_PORTAINER_PASSWORD=
+
+AWS_STAGING_PORTAINER_URL=
+AWS_STAGING_PORTAINER_USERNAME=
+AWS_STAGING_PORTAINER_PASSWORD=
+
+AWS_PRODUCTION_PORTAINER_URL=
+AWS_PRODUCTION_PORTAINER_USERNAME=
+AWS_PRODUCTION_PORTAINER_PASSWORD=
+```

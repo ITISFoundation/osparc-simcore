@@ -2,8 +2,8 @@ import json
 
 import arrow
 import requests
-from models import RunningSidecar
-from settings import Settings
+from monitor_release.models import RunningSidecar
+from monitor_release.settings import Settings
 
 
 def get_bearer_token(settings: Settings):
