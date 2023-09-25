@@ -159,6 +159,7 @@ async def cancel_payment(request: web.Request):
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
         payment_id=path_params.payment_id,
+        product_name=req_ctx.product_name,
     )
 
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
@@ -197,7 +198,10 @@ async def init_creation_of_payment_method(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         initiated: PaymentMethodInit = await init_creation_of_wallet_payment_method(
-            request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
+            request.app,
+            user_id=req_ctx.user_id,
+            wallet_id=path_params.wallet_id,
+            product_name=req_ctx.product_name,
         )
 
         # NOTE: the request has been accepted to create a payment-method
@@ -231,6 +235,7 @@ async def cancel_creation_of_payment_method(request: web.Request):
             user_id=req_ctx.user_id,
             wallet_id=path_params.wallet_id,
             payment_method_id=path_params.payment_method_id,
+            product_name=req_ctx.product_name,
         )
 
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
@@ -248,7 +253,10 @@ async def list_payments_methods(request: web.Request):
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     payments_methods: list[PaymentMethodGet] = await list_wallet_payment_methods(
-        request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(payments_methods)
 
@@ -270,6 +278,7 @@ async def get_payment_method(request: web.Request):
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
         payment_method_id=path_params.payment_method_id,
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(payment_method)
 
@@ -291,5 +300,6 @@ async def delete_payment_method(request: web.Request):
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
         payment_method_id=path_params.payment_method_id,
+        product_name=req_ctx.product_name,
     )
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

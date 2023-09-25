@@ -80,7 +80,12 @@ def setup_wallets_db(
         for name in ["My wallet 1", "My wallet 2"]:
             result = con.execute(
                 wallets.insert()
-                .values(name=name, owner=logged_user["primary_gid"], status="ACTIVE")
+                .values(
+                    name=name,
+                    owner=logged_user["primary_gid"],
+                    status="ACTIVE",
+                    product_name="osparc",
+                )
                 .returning(sa.literal_column("*"))
             )
             output.append(parse_obj_as(WalletGet, result.fetchone()))

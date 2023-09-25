@@ -9,6 +9,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentCreated,
 )
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_transactions import (
@@ -27,10 +28,13 @@ _logger = logging.getLogger(__name__)
 
 
 async def check_wallet_permissions(
-    app: web.Application, user_id: UserID, wallet_id: WalletID
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
 ):
     permissions = await get_wallet_with_permissions_by_user(
-        app, user_id=user_id, wallet_id=wallet_id
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if not permissions.read or not permissions.write:
         raise WalletAccessForbiddenError(
@@ -83,7 +87,9 @@ async def create_payment_to_wallet(
     user = await get_user_name_and_email(app, user_id=user_id)
 
     # check permissions
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
 
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
@@ -170,7 +176,7 @@ async def complete_payment(
     if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
         user_wallet = await get_wallet_by_user(
-            app, transaction.user_id, transaction.wallet_id
+            app, transaction.user_id, transaction.wallet_id, transaction.product_name
         )
         await add_credits_to_wallet(
             app=app,
@@ -193,8 +199,11 @@ async def cancel_payment_to_wallet(
     payment_id: PaymentID,
     user_id: UserID,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> PaymentTransaction:
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
 
     return await complete_payment(
         app,

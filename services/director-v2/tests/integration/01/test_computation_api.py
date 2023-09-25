@@ -127,6 +127,7 @@ def fake_workbench_computational_pipeline_details_not_started(
     for node_state in completed_pipeline_details.node_states.values():
         node_state.modified = True
         node_state.current_status = RunningState.NOT_STARTED
+        node_state.progress = None
     return completed_pipeline_details
 
 
@@ -222,22 +223,22 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
                 exp_node_states_after_run={
@@ -250,17 +251,17 @@ class PartialComputationParams:
                     2: {
                         "modified": True,
                         "dependencies": [],
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
                 exp_pipeline_adj_list_after_force_run={1: []},
@@ -269,25 +270,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.NOT_STARTED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.NOT_STARTED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.NOT_STARTED,
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
             ),
@@ -302,25 +303,25 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
                 exp_node_states_after_run={
@@ -355,13 +356,13 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": False,
@@ -373,7 +374,7 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
             ),
