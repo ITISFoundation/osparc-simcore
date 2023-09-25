@@ -62,11 +62,7 @@ async def _eval_hash_async(
     hasher: "hashlib._Hash",
     chunk_size: ByteSize,
 ) -> str:
-    more_chunk = True
-    while more_chunk:
-        chunk = await async_stream.read(chunk_size)
-        more_chunk = len(chunk) == chunk_size
-
+    while chunk := await async_stream.read(chunk_size):
         hasher.update(chunk)
     digest = hasher.hexdigest()
     return f"{digest}"
