@@ -47,6 +47,8 @@ $$ LANGUAGE plpgsql;
     """
 )
 
+_NOW_STR: Final[str] = "now()"
+
 
 def upgrade():
     op.execute("ALTER TYPE userrole ADD VALUE 'PRODUCT_OWNER'")
@@ -58,7 +60,7 @@ def upgrade():
         existing_type=postgresql.TIMESTAMP(),
         type_=sa.DateTime(timezone=True),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.text(_NOW_STR),
     )
     op.alter_column(
         "users",
@@ -66,7 +68,7 @@ def upgrade():
         existing_type=postgresql.TIMESTAMP(),
         type_=sa.DateTime(timezone=True),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.text(_NOW_STR),
     )
     op.alter_column(
         "users",
@@ -84,7 +86,18 @@ def upgrade():
 
 def downgrade():
     # custom
-    op.execute("ALTER TYPE userrole DROP VALUE 'PRODUCT_OWNER'")
+    # NOTE: Downgrade new updates requires re-building the entire enum!
+    op.execute("ALTER TYPE userrole RENAME TO userrole_old")
+    op.execute(
+        "CREATE TYPE userrole AS ENUM('ANONYMOUS', 'GUEST', 'USER', 'TESTER', 'ADMIN')"
+    )
+    op.execute(
+        "ALTER TABLE users ALTER COLUMN role TYPE userrole USING "
+        "role::text::userrole"
+    )
+    op.execute("DROP TYPE userrole_old")
+
+    # triggers
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")
 
@@ -102,7 +115,7 @@ def downgrade():
         existing_type=sa.DateTime(timezone=True),
         type_=postgresql.TIMESTAMP(),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.text(_NOW_STR),
     )
     op.alter_column(
         "users",
@@ -110,6 +123,6 @@ def downgrade():
         existing_type=sa.DateTime(timezone=True),
         type_=postgresql.TIMESTAMP(),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.text(_NOW_STR),
     )
     # ### end Alembic commands ###
