@@ -53,15 +53,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       init: 50,
       nullable: false,
       event: "changeTotalPrice",
-      apply: "__applyTotalPrice"
+      apply: "__updateNCredits"
     },
 
     creditPrice: {
       check: "Number",
-      init: 1,
+      init: null,
       nullable: false,
       event: "changeCreditPrice",
-      apply: "__applyCreditPrice"
+      apply: "__updateNCredits"
     },
 
     nCredits: {
@@ -77,8 +77,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   members: {
-    __creditPrice: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -223,15 +221,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("auto-recharge-button");
     },
 
-    __applyTotalPrice: function(totalPrice) {
+    __updateNCredits: function() {
+      const totalPrice = this.getTotalPrice();
       const creditPrice = this.getCreditPrice();
-      if (creditPrice) {
+      if (totalPrice !== null && creditPrice !== null) {
         this.setNCredits(totalPrice / creditPrice);
       }
-    },
-
-    __applyCreditPrice: function(creditPrice) {
-      this.setNCredits(creditPrice * this.getTotalPrice());
     },
 
     __getWalletSelector: function() {
