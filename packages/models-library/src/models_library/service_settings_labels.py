@@ -513,7 +513,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                             }
                         }
                     ),
-                    "simcore.service.user-preferences-path": "/tmp/path_to_preferences",  # noqa: S108
+                    "simcore.service.user-preferences-path": json.dumps(
+                        "/tmp/path_to_preferences"  # noqa: S108
+                    ),
                 },
                 # dynamic-service with compose spec
                 {
