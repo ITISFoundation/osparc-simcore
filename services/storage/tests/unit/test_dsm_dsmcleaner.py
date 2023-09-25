@@ -94,6 +94,7 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
         (LinkType.PRESIGNED, False),
     ],
 )
+@pytest.mark.parametrize("add_checksum", [True, False])
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
@@ -107,6 +108,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     faker: Faker,
+    add_checksum: bool,
 ):
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
@@ -118,7 +120,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
         file_or_directory_id,
         link_type,
         file_size,
-        sha256_checksum=faker.sha256(),
+        sha256_checksum=faker.sha256() if add_checksum else None,
         is_directory=is_directory,
     )
     # ensure the database is correctly set up
@@ -170,6 +172,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
+@pytest.mark.parametrize("add_checksum", [True, False])
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     upload_file: Callable[
@@ -184,6 +187,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     faker: Faker,
+    add_checksum: bool,
 ):
     """In this test we first upload a file to have a valid entry, then we trigger
     a new upload of the VERY SAME FILE, expire it, and make sure the cleaner reverts
@@ -194,7 +198,12 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 
     # now create a new link to the VERY SAME FILE UUID
     await simcore_s3_dsm.create_file_upload_links(
-        user_id, file_id, link_type, file_size, sha256_checksum=None, is_directory=False
+        user_id,
+        file_id,
+        link_type,
+        file_size,
+        sha256_checksum=faker.sha256() if add_checksum else None,
+        is_directory=False,
     )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
@@ -250,6 +259,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("is_directory", [True, False])
+@pytest.mark.parametrize("add_checksum", [True, False])
 async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
@@ -261,6 +271,8 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     is_directory: bool,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    faker: Faker,
+    add_checksum: bool,
 ):
     """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
@@ -275,7 +287,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
         simcore_s3_dsm.location_name,
         upload_expires_at=later_than_now,
         is_directory=is_directory,
-        sha256_checksum=None,
+        sha256_checksum=faker.sha256() if add_checksum else None,
     )
     # we create the entry in the db
     async with aiopg_engine.acquire() as conn:
@@ -347,6 +359,8 @@ async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_cor
     file_size: ByteSize,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    faker: Faker,
+    add_checksum: bool,
 ):
     """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
@@ -358,7 +372,7 @@ async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_cor
         simcore_s3_dsm.location_id,
         simcore_s3_dsm.location_name,
         upload_expires_at=later_than_now,
-        sha256_checksum=None,
+        sha256_checksum=faker.sha256() if add_checksum else None,
     )
     # we create the entry in the db
     async with aiopg_engine.acquire() as conn:

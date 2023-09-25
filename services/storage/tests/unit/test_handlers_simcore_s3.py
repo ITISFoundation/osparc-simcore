@@ -195,13 +195,15 @@ async def random_project_with_files(
     create_simcore_file_id: Callable[
         [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
     ],
-    upload_file: Callable[
-        [ByteSize, str, str], Awaitable[tuple[Path, SimcoreS3FileID]]
-    ],
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
 ) -> Callable[
     [int, tuple[ByteSize, ...]],
-    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]],
+    Awaitable[
+        tuple[
+            dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]
+        ]
+    ],
 ]:
     async def _creator(
         num_nodes: int = 12,
@@ -210,9 +212,28 @@ async def random_project_with_files(
             parse_obj_as(ByteSize, "110Mib"),
             parse_obj_as(ByteSize, "1Mib"),
         ),
-    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]:
+        file_checksums: tuple[SHA256Str, ...] = (
+            parse_obj_as(
+                SHA256Str,
+                "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd",
+            ),
+            parse_obj_as(
+                SHA256Str,
+                "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e",
+            ),
+            parse_obj_as(
+                SHA256Str,
+                "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3",
+            ),
+        ),
+    ) -> tuple[
+        dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]
+    ]:
+        assert len(file_sizes) == len(file_checksums)
         project = await create_project()
-        src_projects_list: dict[NodeID, dict[SimcoreS3FileID, Path]] = {}
+        src_projects_list: dict[
+            NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]
+        ] = {}
         upload_tasks: deque[Awaitable] = deque()
         for _node_index in range(num_nodes):
             # NOTE: we put some more outputs in there to simulate a real case better
@@ -236,20 +257,34 @@ async def random_project_with_files(
 
             # upload the output 3 and some random other files at the root of each node
             src_projects_list[src_node_id] = {}
+            checksum: SHA256Str = choice(file_checksums)
             src_file, _ = await upload_file(
-                choice(file_sizes), Path(output3_file_id).name, output3_file_id
+                file_size=choice(file_sizes),
+                file_name=Path(output3_file_id).name,
+                file_id=output3_file_id,
+                sha256_checksum=checksum,
             )
-            src_projects_list[src_node_id][output3_file_id] = src_file
+            src_projects_list[src_node_id][output3_file_id] = {
+                "path": src_file,
+                "sha256_checksum": checksum,
+            }
 
             async def _upload_file_and_update_project(project, src_node_id):
                 src_file_name = faker.file_name()
                 src_file_uuid = create_simcore_file_id(
                     ProjectID(project["uuid"]), src_node_id, src_file_name, None
                 )
+                checksum: SHA256Str = choice(file_checksums)
                 src_file, _ = await upload_file(
-                    choice(file_sizes), src_file_name, src_file_uuid
+                    file_size=choice(file_sizes),
+                    file_name=src_file_name,
+                    file_id=src_file_uuid,
+                    sha256_checksum=checksum,
                 )
-                src_projects_list[src_node_id][src_file_uuid] = src_file
+                src_projects_list[src_node_id][src_file_uuid] = {
+                    "path": src_file,
+                    "sha256_checksum": checksum,
+                }
 
             # add a few random files in the node storage
             upload_tasks.extend(
@@ -280,12 +315,23 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     aiopg_engine: Engine,
     random_project_with_files: Callable[
-        ..., Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]]
+        ...,
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+            ]
+        ],
     ],
 ):
     # 1. create a src project with 1 large file
+    sha256_checksum: SHA256Str = parse_obj_as(
+        SHA256Str, "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
+    )
     src_project, src_projects_list = await random_project_with_files(
-        num_nodes=1, file_sizes=(parse_obj_as(ByteSize, "210Mib"),)
+        num_nodes=1,
+        file_sizes=tuple([parse_obj_as(ByteSize, "210Mib")]),
+        file_checksums=tuple([sha256_checksum]),
     )
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
@@ -306,6 +352,10 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         dst_node_id = nodes_map.get(NodeIDStr(f"{src_node_id}"))
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
+            path: Any = src_file["path"]
+            assert isinstance(path, Path)
+            checksum: Any = src_file["sha256_checksum"]
+            assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
                 aiopg_engine,
                 file_id=parse_obj_as(
@@ -315,10 +365,10 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
                     ).replace(f"{src_node_id}", f"{dst_node_id}"),
                 ),
                 expected_entry_exists=True,
-                expected_file_size=src_file.stat().st_size,
+                expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=None,
+                expected_sha256_checksum=SHA256Str(checksum),
             )
 
 
@@ -330,7 +380,13 @@ async def test_copy_folders_from_valid_project(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     aiopg_engine: Engine,
     random_project_with_files: Callable[
-        ..., Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, Path]]]]
+        ...,
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | SHA256Str]]],
+            ]
+        ],
     ],
 ):
     # 1. create a src project with some files
@@ -355,6 +411,10 @@ async def test_copy_folders_from_valid_project(
         dst_node_id = nodes_map.get(NodeIDStr(f"{src_node_id}"))
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
+            path: Any = src_file["path"]
+            assert isinstance(path, Path)
+            checksum: Any = src_file["sha256_checksum"]
+            assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
                 aiopg_engine,
                 file_id=parse_obj_as(
@@ -364,10 +424,10 @@ async def test_copy_folders_from_valid_project(
                     ).replace(f"{src_node_id}", f"{dst_node_id}"),
                 ),
                 expected_entry_exists=True,
-                expected_file_size=src_file.stat().st_size,
+                expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=None,
+                expected_sha256_checksum=SHA256Str(checksum),
             )
 
 

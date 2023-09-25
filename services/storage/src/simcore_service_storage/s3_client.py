@@ -254,11 +254,10 @@ class StorageS3Client:
                     for part in uploaded_parts
                 ]
             },
-            "ChecksumSHA256": sha256_checksum,
         }
-        response = await self.client.complete_multipart_upload(
-            **{k: v for k, v in inputs.items() if v is not None}
-        )
+        if sha256_checksum:
+            inputs["ChecksumSHA256"] = sha256_checksum
+        response = await self.client.complete_multipart_upload(**inputs)
         return response["ETag"]
 
     @s3_exception_handler(_logger)
