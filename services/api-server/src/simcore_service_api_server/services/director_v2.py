@@ -10,6 +10,9 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
+from simcore_service_api_server.db.repositories.groups_extra_properties import (
+    GroupsExtraPropertiesRepository,
+)
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -109,11 +112,19 @@ class DirectorV2Api(BaseServiceClientApi):
         project_id: UUID,
         user_id: PositiveInt,
         product_name: str,
+        groups_extra_properties_repository: GroupsExtraPropertiesRepository,
         cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
         with _handle_errors_context(project_id):
             extras = {}
-            if cluster_id is not None:
+
+            use_on_demand_clusters = (
+                await groups_extra_properties_repository.use_on_demand_clusters(
+                    user_id, product_name
+                )
+            )
+
+            if cluster_id is not None and not use_on_demand_clusters:
                 extras["cluster_id"] = cluster_id
 
             response = await self.client.post(
@@ -123,6 +134,7 @@ class DirectorV2Api(BaseServiceClientApi):
                     "project_id": str(project_id),
                     "start_pipeline": True,
                     "product_name": product_name,
+                    "use_on_demand_clusters": use_on_demand_clusters,
                     **extras,
                 },
             )
