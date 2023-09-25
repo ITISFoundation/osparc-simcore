@@ -47,6 +47,7 @@ services:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+      - DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS=${DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS:-{}}
     ports:
       - "8000"
       - "3009:3000"
