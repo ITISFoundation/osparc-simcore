@@ -15,6 +15,7 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -42,7 +43,7 @@ from ...services.storage import StorageApi, to_file_api_model
 from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
-from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.database import Engine, get_db_engine, get_repository
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -272,6 +273,10 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     product_name: Annotated[str, Depends(get_product_name)],
+    groups_extra_properties_repository: Annotated[
+        GroupsExtraPropertiesRepository,
+        Depends(get_repository(GroupsExtraPropertiesRepository)),
+    ],
     cluster_id: ClusterID | None = None,
 ):
     """Starts job job_id created with the solver solver_key:version
@@ -287,6 +292,7 @@ async def start_job(
         user_id=user_id,
         product_name=product_name,
         cluster_id=cluster_id,
+        groups_extra_properties_repository=groups_extra_properties_repository,
     )
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
