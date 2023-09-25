@@ -619,11 +619,6 @@ qx.Class.define("osparc.store.Store", {
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
               promises.push(this.reloadWalletAccessRights(wallet));
-
-              // trick to get a countdown
-              setInterval(() => {
-                wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
-              }, 30000);
             });
             store.setWallets(wallets);
             Promise.all(promises)
