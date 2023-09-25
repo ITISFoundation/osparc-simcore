@@ -213,7 +213,7 @@ async def test_update_profile(
 
         assert data["first_name"] == logged_user["name"]
         assert data["last_name"] == "Foo"
-        assert data["role"] == user_role.name.capitalize()
+        assert data["role"] == user_role.name
 
 
 # Test CRUD on tokens --------------------------------------------
