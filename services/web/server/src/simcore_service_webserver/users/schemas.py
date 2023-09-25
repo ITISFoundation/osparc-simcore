@@ -71,7 +71,7 @@ class ProfileUpdate(_ProfileCommon):
 class ProfileGet(_ProfileCommon):
     id: IdInt
     login: LowerCaseEmailStr
-    role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
+    role: Literal["Anonymous", "Guest", "User", "Tester", "Product_owner", "Admin"]
     groups: AllUsersGroups | None = None
     gravatar_id: str | None = None
     expiration_date: date | None = Field(
