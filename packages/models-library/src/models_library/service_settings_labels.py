@@ -289,7 +289,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    user_preferences_path: Path | None = Field(
+    user_preferences_path: Json[Path] | None = Field(
         None,
         alias="simcore.service.user-preferences-path",
         description=(

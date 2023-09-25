@@ -149,6 +149,7 @@ class DynamicSidecarVolumesPathsResolver:
         project_id: ProjectID,
         user_id: UserID,
         swarm_stack_name: str,
+        *,
         has_quota_support: bool,
     ) -> dict[str, Any]:
         return cls.mount_entry(
@@ -159,6 +160,28 @@ class DynamicSidecarVolumesPathsResolver:
             project_id=project_id,
             user_id=user_id,
             volume_size_limit="1M" if has_quota_support else None,
+        )
+
+    @classmethod
+    def mount_user_preferences(
+        cls,
+        user_preferences_path: Path,
+        run_id: RunID,
+        node_uuid: NodeID,
+        project_id: ProjectID,
+        user_id: UserID,
+        swarm_stack_name: str,
+        *,
+        has_quota_support: bool,
+    ):
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=user_preferences_path,
+            node_uuid=node_uuid,
+            run_id=run_id,
+            project_id=project_id,
+            user_id=user_id,
+            volume_size_limit="128k" if has_quota_support else None,
         )
 
     @classmethod

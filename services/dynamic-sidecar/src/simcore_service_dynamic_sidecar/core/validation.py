@@ -259,6 +259,13 @@ async def validate_compose_spec(
         ):
             service_volumes.append(state_paths_docker_volume)
 
+        if settings.DY_SIDECAR_USER_PREFERENCES_PATH is not None and (
+            user_preferences_volume := await mounted_volumes.get_user_preferences_path_volume(
+                settings.DY_SIDECAR_RUN_ID
+            )
+        ):
+            service_volumes.append(user_preferences_volume)
+
         service_content["volumes"] = service_volumes
 
     _connect_user_services(

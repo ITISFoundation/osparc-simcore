@@ -20,9 +20,13 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                 assert settings.DY_SIDECAR_SERVICE_VERSION  # nosec
                 assert settings.DY_SIDECAR_PRODUCT_NAME  # nosec
 
+                user_preferences_path = (
+                    settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR
+                    / settings.DY_SIDECAR_USER_PREFERENCES_PATH.relative_to("/")
+                )
                 app.state.user_services_preferences_manager = (
                     UserServicesPreferencesManager(
-                        user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
+                        user_preferences_path=user_preferences_path,
                         service_key=settings.DY_SIDECAR_SERVICE_KEY,
                         service_version=settings.DY_SIDECAR_SERVICE_VERSION,
                         user_id=settings.DY_SIDECAR_USER_ID,

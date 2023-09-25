@@ -238,6 +238,19 @@ def get_dynamic_sidecar_spec(
             }
         )
 
+    if scheduler_data.user_preferences_path:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_user_preferences(
+                user_preferences_path=scheduler_data.user_preferences_path,
+                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                node_uuid=scheduler_data.node_uuid,
+                run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
+                has_quota_support=has_quota_support,
+            )
+        )
+
     # PORTS -----------
     ports = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
