@@ -9,8 +9,8 @@ from functools import total_ordering
 from typing import Final, NamedTuple
 
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
+from ._common import register_modified_datetime_auto_update_trigger
 from .base import metadata
 
 _USER_ROLE_TO_LEVEL = {
@@ -18,6 +18,7 @@ _USER_ROLE_TO_LEVEL = {
     "GUEST": 10,
     "USER": 20,
     "TESTER": 30,
+    "PRODUCT_OWNER": 40,
     "ADMIN": 100,
 }
 
@@ -44,6 +45,7 @@ class UserRole(Enum):
     GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
+    PRODUCT_OWNER = "PRODUCT_OWNER"
     ADMIN = "ADMIN"
 
     @property
@@ -125,22 +127,22 @@ users = sa.Table(
     ),
     sa.Column(
         "created_at",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
+        server_default=sa.func.now(),
         doc="Registration timestamp",
     ),
     sa.Column(
         "modified",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),  # this will auto-update on modification
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),  # this will auto-update on modification
         doc="Last modification timestamp",
     ),
     sa.Column(
         "expires_at",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=True,
         doc="Sets the expiration date for trial accounts."
         "If set to NULL then the account does not expire.",
@@ -160,6 +162,9 @@ users = sa.Table(
         # NOTE: that cannot use same phone for two user accounts
     ),
 )
+
+
+register_modified_datetime_auto_update_trigger(users)
 
 
 class FullNameTuple(NamedTuple):
