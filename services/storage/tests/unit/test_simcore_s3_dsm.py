@@ -91,7 +91,7 @@ async def test__copy_path_s3_s3(
     await _copy_s3_path(simcore_file_id)
 
 
-async def test_upload_n_search(
+async def test_upload_and_search(
     simcore_s3_dsm: SimcoreS3DataManager,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
