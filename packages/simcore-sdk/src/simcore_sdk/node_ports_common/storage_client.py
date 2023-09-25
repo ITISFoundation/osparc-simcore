@@ -131,7 +131,7 @@ async def get_upload_file_links(
         "is_directory": f"{is_directory}".lower(),
     }
     if sha256_checksum:
-        query_params.update(sha256_checksum=str(sha256_checksum))
+        query_params["sha256_checksum"] = f"{sha256_checksum}"
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         params=query_params,
