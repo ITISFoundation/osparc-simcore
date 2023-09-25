@@ -379,39 +379,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       row++;
 
-      const savingTitle = new qx.ui.basic.Label().set({
-        value: "Saving",
-        font: "text-14"
-      });
-      layout.add(savingTitle, {
-        row,
-        column: 0
-      });
-      const savingLabel = new qx.ui.basic.Label("0 %").set({
-        font: "text-14"
-      });
-      layout.add(savingLabel, {
-        row,
-        column: 1
-      });
-      this.addListener("changeTotalPrice", e => {
-        const totalPrice = e.getData();
-        const oneCreditPrice = this.self().CREDIT_PRICES[0][1];
-        const saving = this.getNCredits()*oneCreditPrice - totalPrice;
-        if (saving > 0) {
-          savingLabel.set({
-            value: "-" + saving.toFixed(2) + " $",
-            textColor: "failed-red"
-          });
-        } else {
-          savingLabel.set({
-            value: "0 $",
-            textColor: "text"
-          });
-        }
-      });
-      row++;
-
       const walletTitle = new qx.ui.basic.Label().set({
         value: "Credit Account",
         font: "text-14"
