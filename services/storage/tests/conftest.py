@@ -468,7 +468,7 @@ def upload_file(
         # get an upload link
         query_params: dict = {}
         if sha256_checksum:
-            query_params["sha256_checksum"] = str(sha256_checksum)
+            query_params["sha256_checksum"] = f"{sha256_checksum}"
         file_upload_link = await create_upload_file_link_v2(
             file_id, link_type="presigned", file_size=file_size, **query_params
         )
