@@ -83,7 +83,7 @@ class StorageApi(BaseServiceClientApi):
             "startswith": None if file_id is None else f"api/{file_id}",
             "sha256_checksum": None
             if sha256_checksum is None
-            else str(sha256_checksum),
+            else f"{sha256_checksum}",
             "access_right": access_right,
         }
 
