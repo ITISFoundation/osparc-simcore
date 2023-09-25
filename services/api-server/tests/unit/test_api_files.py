@@ -12,6 +12,7 @@ from uuid import UUID
 import httpx
 import pytest
 import respx
+import yarl
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
@@ -311,9 +312,8 @@ async def test_search_file(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> dict[str, Any]:
-        request_query: dict[str, str] = dict(
-            elm.split("=") for elm in request.url.query.decode("utf8").split("&")
-        )
+        url: yarl.URL = yarl.URL(f"{request.url}")
+        request_query: dict[str, str] = dict(url.query)
         assert isinstance(capture.response_body, dict)
         response: dict[str, Any] = capture.response_body
         for key in query:
