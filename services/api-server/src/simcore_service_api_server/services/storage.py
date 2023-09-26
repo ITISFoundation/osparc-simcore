@@ -2,12 +2,14 @@ import logging
 import re
 import urllib.parse
 from mimetypes import guess_type
+from typing import Literal
 from uuid import UUID
 
 from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaDataArray
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
+from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from pydantic import AnyUrl
 from starlette.datastructures import URL
@@ -20,6 +22,7 @@ _logger = logging.getLogger(__name__)
 
 
 _FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+AccessRight = Literal["read", "write"]
 
 
 def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
@@ -35,7 +38,8 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         id=file_id,  # type: ignore
         filename=filename,
         content_type=guess_type(filename)[0] or "application/octet-stream",
-        checksum=stored_file_meta.entity_tag,
+        e_tag=stored_file_meta.entity_tag,
+        checksum=stored_file_meta.sha256_checksum,
     )
 
 
@@ -64,17 +68,28 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     async def search_files(
-        self, user_id: int, file_id: UUID
+        self,
+        *,
+        user_id: int,
+        file_id: UUID | None,
+        sha256_checksum: SHA256Str | None,
+        access_right: AccessRight,
     ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and
         # here there is no project, so it would always returns an empty
+        params: dict = {
+            "user_id": f"{user_id}",
+            "startswith": None if file_id is None else f"api/{file_id}",
+            "sha256_checksum": None
+            if sha256_checksum is None
+            else f"{sha256_checksum}",
+            "access_right": access_right,
+        }
+
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
-            params={
-                "user_id": str(user_id),
-                "startswith": f"api/{file_id}",
-            },
+            params={k: v for k, v in params.items() if v is not None},
         )
 
         files_metadata = FileMetaDataArray(__root__=response.json()["data"] or [])

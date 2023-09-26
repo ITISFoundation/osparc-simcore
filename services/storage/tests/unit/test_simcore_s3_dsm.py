@@ -7,11 +7,14 @@ from typing import AsyncContextManager
 
 import pytest
 from aiopg.sa.engine import Engine
+from faker import Faker
 from models_library.api_schemas_storage import FileUploadSchema
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from simcore_service_storage import db_file_meta_data
+from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -86,3 +89,23 @@ async def test__copy_path_s3_s3(
 
     _, simcore_file_id = await upload_file(file_size, "a_file_name")
     await _copy_s3_path(simcore_file_id)
+
+
+async def test_upload_and_search(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    faker: Faker,
+):
+    checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
+    _, _ = await upload_file(file_size, "file1", sha256_checksum=checksum)
+    _, _ = await upload_file(file_size, "file2", sha256_checksum=checksum)
+
+    files: list[FileMetaData] = await simcore_s3_dsm.search_owned_files(
+        user_id=user_id, file_id_prefix="", sha256_checksum=checksum
+    )
+    assert len(files) == 2
+    for file in files:
+        assert file.sha256_checksum == checksum
+        assert file.file_name in {"file1", "file2"}

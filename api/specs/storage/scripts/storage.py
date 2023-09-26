@@ -5,7 +5,7 @@
 
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, Query, status
 from models_library.api_schemas_storage import (
@@ -22,6 +22,7 @@ from models_library.api_schemas_storage import (
     TableSynchronisation,
 )
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, StorageFileID
@@ -52,11 +53,11 @@ app = FastAPI(
     },
     servers=[
         {
-            "url": "/v0",
+            "url": "/",
             "description": "Default server: requests directed to serving url",
         },
         {
-            "url": "http://{host}:{port}/v0",
+            "url": "http://{host}:{port}/",
             "description": "Development server: can configure any base url",
             "variables": {
                 "host": {"default": "127.0.0.1"},
@@ -343,10 +344,15 @@ async def delete_folders_of_project(
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
     summary="search for files starting with",
-    operation_id="search_files_starting_with",
+    operation_id="search_files",
 )
-async def search_files_starting_with(user_id: UserID, startswith: str = ""):
-    """search for files starting with `startswith` in the file_meta_data table"""
+async def search_files(
+    user_id: UserID,
+    startswith: str = "",
+    sha256_checksum: SHA256Str | None = None,
+    access_right: Literal["read", "write"] = "read",
+):
+    """search for files starting with `startswith` and/or matching a sha256_checksum in the file_meta_data table"""
 
 
 # long_running_tasks.py

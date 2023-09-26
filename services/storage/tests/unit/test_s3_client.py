@@ -239,7 +239,7 @@ async def test_create_multipart_presigned_upload_link(
 
     # now complete it
     received_e_tag = await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
     )
 
     # check that the multipart upload is not listed anymore
@@ -284,18 +284,23 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
             file_id,
             upload_links.upload_id,
             uploaded_parts,
+            None,
         )
 
     wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
     # with pytest.raises(S3KeyNotFoundError):
     # NOTE: this does not raise... and it returns the file_id of the original file...
     await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
+        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts, None
     )
     # call it again triggers
     with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
+            storage_s3_bucket,
+            wrong_file_id,
+            upload_links.upload_id,
+            uploaded_parts,
+            None,
         )
 
 
@@ -351,12 +356,12 @@ async def test_multiple_completion_of_multipart_upload(
 
     # first completion
     await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
     )
 
     with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
         )
 
 
@@ -379,7 +384,7 @@ async def test_break_completion_of_multipart_upload(
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(
             storage_s3_client.complete_multipart_upload(
-                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
             ),
             timeout=VERY_SHORT_TIMEOUT,
         )
