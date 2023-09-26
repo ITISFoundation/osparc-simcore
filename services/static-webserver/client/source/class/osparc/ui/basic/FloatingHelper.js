@@ -68,6 +68,12 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       apply: "__applyOrientation"
     },
 
+    caretSize: {
+      check: "Integer",
+      nullable: false,
+      init: 5
+    },
+
     active: {
       check: "Boolean",
       nullable: false,
@@ -126,16 +132,17 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           break;
         }
       }
+      const caretSize = this.getCaretSize();
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.RIGHT:
         case this.self().ORIENTATION.LEFT:
           caret.setHeight(0);
-          caret.setWidth(5);
+          caret.setWidth(caretSize);
           break;
         case this.self().ORIENTATION.TOP:
         case this.self().ORIENTATION.BOTTOM:
           caret.setWidth(0);
-          caret.setHeight(5);
+          caret.setHeight(caretSize);
           break;
       }
     },
