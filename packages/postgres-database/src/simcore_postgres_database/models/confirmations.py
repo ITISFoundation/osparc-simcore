@@ -50,6 +50,7 @@ confirmations = sa.Table(
         "created_at",
         sa.DateTime(),
         nullable=False,
+        # NOTE: that here it would be convenient to have a server_default=now()!
         doc="Creation date of this code."
         "Can be used as reference to determine the expiration date. SEE ${ACTION}_CONFIRMATION_LIFETIME",
     ),

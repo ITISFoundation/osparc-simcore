@@ -85,25 +85,18 @@ class AsyncpgStorage:
                     break
             # insert confirmation
             # NOTE: returns timestamp generated at the server-side
-            created_at: datetime = await _sql.insert(
-                conn,
-                self.confirm_tbl,
-                {
-                    "code": code,
-                    "user_id": user_id,
-                    "action": action,
-                    "data": data,
-                },
-                returning="created_at",
+            confirmation = ConfirmationTokenDict(
+                code=code,
+                action=action,
+                user_id=user_id,
+                data=data,
+                created_at=datetime.utcnow(),
             )
-            assert isinstance(created_at, datetime)  # nosec
-        return ConfirmationTokenDict(
-            code=code,
-            action=action,
-            user_id=user_id,
-            data=data,
-            created_at=created_at,
-        )
+            c = await _sql.insert(
+                conn, self.confirm_tbl, confirmation, returning="code"
+            )
+            assert code == c  # nosec
+            return confirmation
 
     async def get_confirmation(self, filter_dict) -> ConfirmationTokenDict | None:
         if "user" in filter_dict:
