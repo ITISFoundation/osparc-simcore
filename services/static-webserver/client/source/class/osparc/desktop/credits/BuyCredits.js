@@ -29,7 +29,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     this.__buildLayout();
 
     this.initTotalPrice();
-    this.initCreditPrice();
+    osparc.data.Resources.fetch("credits-price", "get")
+      .then(data => {
+        if (data && data["usdPerCredit"]) {
+          this.setCreditPrice(data["usdPerCredit"]);
+        } else {
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Credit price couldn't be fetched"), "ERROR");
+        }
+      });
   },
 
   properties: {
@@ -46,15 +53,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       init: 50,
       nullable: false,
       event: "changeTotalPrice",
-      apply: "__applyTotalPrice"
+      apply: "__updateNCredits"
     },
 
     creditPrice: {
       check: "Number",
-      init: 1,
+      init: null,
       nullable: false,
       event: "changeCreditPrice",
-      apply: "__applyCreditPrice"
+      apply: "__updateNCredits"
     },
 
     nCredits: {
@@ -69,18 +76,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     "transactionCompleted": "qx.event.type.Event"
   },
 
-  statics: {
-    CREDIT_PRICES: [
-      [1, 1],
-      [10, 1],
-      [100, 1],
-      [1000, 1]
-    ]
-  },
-
   members: {
-    __creditPrice: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -146,8 +142,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           });
           this.getChildControl("one-time-payment-layout").add(control);
           break;
-        case "credit-selector":
-          control = this.__getCreditSelector();
+        case "amount-selector":
+          control = this.__getAmountSelector();
           this.getChildControl("one-time-payment-layout").add(control);
           break;
         case "summary-view":
@@ -213,7 +209,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __buildOneTimePayment: function() {
       this.getChildControl("one-time-payment-title");
       this.getChildControl("one-time-payment-description");
-      this.getChildControl("credit-selector");
+      this.getChildControl("amount-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
     },
@@ -225,24 +221,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("auto-recharge-button");
     },
 
-    __applyTotalPrice: function(totalPrice) {
-      let creditPrice = this.self().CREDIT_PRICES[0][1];
-
-      if (totalPrice >= this.self().CREDIT_PRICES[1][0]) {
-        creditPrice = this.self().CREDIT_PRICES[1][1];
+    __updateNCredits: function() {
+      const totalPrice = this.getTotalPrice();
+      const creditPrice = this.getCreditPrice();
+      if (totalPrice !== null && creditPrice !== null) {
+        this.setNCredits(totalPrice / creditPrice);
       }
-      if (totalPrice >= this.self().CREDIT_PRICES[2][0]) {
-        creditPrice = this.self().CREDIT_PRICES[2][1];
-      }
-      if (totalPrice >= this.self().CREDIT_PRICES[3][0]) {
-        creditPrice = this.self().CREDIT_PRICES[3][1];
-      }
-      this.setCreditPrice(creditPrice);
-      this.setNCredits(totalPrice / creditPrice);
-    },
-
-    __applyCreditPrice: function(creditPrice) {
-      this.setNCredits(creditPrice * this.getTotalPrice());
     },
 
     __getWalletSelector: function() {
@@ -272,7 +256,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       return creditsLeftView;
     },
 
-    __getCreditSelector: function() {
+    __getAmountSelector: function() {
       const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
@@ -376,39 +360,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(creditPriceLabel, {
         row,
         column: 1
-      });
-      row++;
-
-      const savingTitle = new qx.ui.basic.Label().set({
-        value: "Saving",
-        font: "text-14"
-      });
-      layout.add(savingTitle, {
-        row,
-        column: 0
-      });
-      const savingLabel = new qx.ui.basic.Label("0 %").set({
-        font: "text-14"
-      });
-      layout.add(savingLabel, {
-        row,
-        column: 1
-      });
-      this.addListener("changeTotalPrice", e => {
-        const totalPrice = e.getData();
-        const oneCreditPrice = this.self().CREDIT_PRICES[0][1];
-        const saving = this.getNCredits()*oneCreditPrice - totalPrice;
-        if (saving > 0) {
-          savingLabel.set({
-            value: "-" + saving.toFixed(2) + " $",
-            textColor: "failed-red"
-          });
-        } else {
-          savingLabel.set({
-            value: "0 $",
-            textColor: "text"
-          });
-        }
       });
       row++;
 
