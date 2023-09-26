@@ -2,14 +2,11 @@ import asyncio
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Final
 
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
 from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
-
-USER_PREFERENCES_MAX_SIZE_KB: Final[str] = "128"
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 
