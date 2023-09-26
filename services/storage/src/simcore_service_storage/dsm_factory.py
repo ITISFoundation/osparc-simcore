@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from aiohttp import web
 from models_library.api_schemas_storage import LinkType, UploadedPart
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
@@ -66,6 +67,7 @@ class BaseDataManager(ABC):
         link_type: LinkType,
         file_size_bytes: ByteSize,
         *,
+        sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
         """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""

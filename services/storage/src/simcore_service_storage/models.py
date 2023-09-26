@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Literal
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -11,6 +11,7 @@ from models_library.api_schemas_storage import (
     LinkType,
     S3BucketName,
 )
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import (
@@ -65,6 +66,7 @@ class FileMetaDataAtDB(BaseModel):
     upload_id: UploadID | None = None
     upload_expires_at: datetime.datetime | None = None
     is_directory: bool
+    sha256_checksum: SHA256Str | None = None
 
     class Config:
         orm_mode = True
@@ -81,6 +83,7 @@ class FileMetaData(FileMetaDataGet):
     project_id: ProjectID | None
     node_id: NodeID | None
     user_id: UserID | None
+    sha256_checksum: SHA256Str | None
 
     @classmethod
     @validate_arguments
@@ -91,6 +94,7 @@ class FileMetaData(FileMetaDataGet):
         bucket: S3BucketName,
         location_id: LocationID,
         location_name: LocationName,
+        sha256_checksum: SHA256Str | None,
         **file_meta_data_kwargs,
     ):
         parts = file_id.split("/")
@@ -115,6 +119,7 @@ class FileMetaData(FileMetaDataGet):
             "is_soft_link": False,
             "upload_id": None,
             "upload_expires_at": None,
+            "sha256_checksum": sha256_checksum,
             "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
@@ -170,6 +175,7 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
     file_size: ByteSize | None
     is_directory: bool = False
+    sha256_checksum: SHA256Str | None = None
 
     @validator("link_type", pre=True)
     @classmethod
@@ -195,6 +201,8 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
     startswith: str = ""
+    sha256_checksum: SHA256Str | None = None
+    access_right: Literal["read", "write"] = "read"
 
 
 class LocationPathParams(BaseModel):

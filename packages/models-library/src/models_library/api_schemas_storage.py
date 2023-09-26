@@ -13,6 +13,7 @@ from re import Pattern
 from typing import Any, ClassVar
 from uuid import UUID
 
+from models_library.basic_types import SHA256Str
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -144,6 +145,10 @@ class FileMetaDataGet(BaseModel):
         "i.e. is another entry with the same object_name",
     )
     is_directory: bool = Field(default=False, description="if True this is a directory")
+    sha256_checksum: SHA256Str | None = Field(
+        default=None,
+        description="SHA256 message digest of the file content. Main purpose: cheap lookup.",
+    )
 
     @validator("location_id", pre=True)
     @classmethod
