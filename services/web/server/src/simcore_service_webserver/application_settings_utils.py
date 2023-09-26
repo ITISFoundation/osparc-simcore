@@ -5,12 +5,16 @@
 # refactoring would report very little. E.g. many test fixtures were based on given configs
 #
 
+import functools
 import logging
 from typing import Any
 
+from aiohttp import web
 from pydantic.types import SecretStr
+from servicelib.aiohttp.typing_extension import Handler
 
-from .application_settings import ApplicationSettings
+from ._constants import MSG_UNDER_DEVELOPMENT
+from .application_settings import ApplicationSettings, get_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -18,7 +22,7 @@ _logger = logging.getLogger(__name__)
 def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
     """Maps current ApplicationSettings object into former trafaret-based config"""
 
-    cfg = {
+    return {
         "version": "1.0",
         "main": {
             "host": app_settings.WEBSERVER_SERVER_HOST,
@@ -33,7 +37,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         },
         "tracing": {
             "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
-            #     "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
         },
         "socketio": {"enabled": app_settings.WEBSERVER_SOCKETIO},
         "db": {
@@ -166,10 +169,10 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
     }
 
-    return cfg
 
-
-def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
+def convert_to_environ_vars(
+    cfg: dict[str, Any]
+) -> dict[str, Any]:  # noqa: C901, PLR0915, PLR0912
     """Creates envs dict out of config dict"""
     # NOTE: maily used for testing traferet vs settings_library
     # pylint:disable=too-many-branches
@@ -182,9 +185,8 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         field = ApplicationSettings.__fields__[field_name]
         if not enabled:
             envs[field_name] = "null" if field.allow_none else "0"
-        else:
-            if field.type_ == bool:
-                envs[field_name] = "1"
+        elif field.type_ == bool:
+            envs[field_name] = "1"
 
     if main := cfg.get("main"):
         envs["WEBSERVER_PORT"] = main.get("port")
@@ -193,7 +195,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if section := cfg.get("tracing"):
         _set_if_disabled("WEBSERVER_TRACING", section)
-        # envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
 
     if db := cfg.get("db"):
         if section := db.get("postgres"):
@@ -312,3 +313,19 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     # NOTE: The final envs list prunes all env vars set to None
     return {k: v for k, v in envs.items() if v is not None}
+
+
+#
+# decorators
+#
+
+
+def requires_dev_feature_enabled(handler: Handler):
+    @functools.wraps(handler)
+    async def _handler_under_dev(request: web.Request):
+        app_settings = get_settings(request.app)
+        if not app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
+            raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
+        return await handler(request)
+
+    return _handler_under_dev
