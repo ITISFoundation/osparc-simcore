@@ -58,29 +58,32 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=manualsButton"
+        "selector": "osparc-test-id=manualsButton",
+        "action": "open"
       },
       "anchorEl": "osparc-test-id=manualsMenu",
       "text": "The Manuals menu groups the oSPARC Manual and oSPARC Z43 Manual. It also provides quick access to other interactive Guides.",
-      "placement": "right"
+      "placement": "left"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=feedbackButton"
+        "selector": "osparc-test-id=feedbackButton",
+        "action": "open"
       },
       "anchorEl": "osparc-test-id=feedbackMenu",
       "text": "The Support menu gives you a way of providing feedback or quistions, via the ZMT Forum or the official Sim4Life Support.",
-      "placement": "right"
+      "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=themeSwitcher",
-      "text": "Switch theme betweendark and light modes.",
+      "text": "Switch between dark and light modes.",
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=userMenuButton"
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
       "text": "The User menu gives you access to the User Center, Preferences, Organizations and more.",
-      "placement": "right"
+      "placement": "left"
     }]
   }
 }

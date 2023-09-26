@@ -118,7 +118,12 @@ qx.Class.define("osparc.tours.Manager", {
       if (step.beforeClick && step.beforeClick.selector) {
         const el = document.querySelector(`[${step.beforeClick.selector}]`);
         const widget = qx.ui.core.Widget.getWidgetByElement(el);
-        widget.execute();
+        if (step.beforeClick.action) {
+          widget.open();
+        } else {
+          widget.execute();
+        }
+        // el.click();
         setTimeout(() => this.__toStep(steps, idx), 100);
       } else {
         this.__toStep(steps, idx);
@@ -140,15 +145,14 @@ qx.Class.define("osparc.tours.Manager", {
     __toStep: async function(steps, idx) {
       const step = steps[idx];
       const stepWidget = this.__currentBuble = this.__createStep();
-      let targetWidget = null;
       if (step.anchorEl) {
         const el = document.querySelector(`[${step.anchorEl}]`);
-        targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
-      }
-      if (targetWidget) {
-        stepWidget.setElement(targetWidget);
-        if (step.placement) {
-          stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
+        const targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
+        if (targetWidget) {
+          stepWidget.setElement(targetWidget);
+          if (step.placement) {
+            stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
+          }
         }
       } else {
         // float it in center?
