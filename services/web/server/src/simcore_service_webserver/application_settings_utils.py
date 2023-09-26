@@ -170,13 +170,16 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
     }
 
 
-def convert_to_environ_vars(
+def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
     cfg: dict[str, Any]
-) -> dict[str, Any]:  # noqa: C901, PLR0915, PLR0912
-    """Creates envs dict out of config dict"""
-    # NOTE: maily used for testing traferet vs settings_library
+) -> dict[str, Any]:
+    """Creates envs dict out of config dict
+
+    NOTE: ONLY used to support legacy introduced by traferet vs settings_library.
+    """
     # pylint:disable=too-many-branches
     # pylint:disable=too-many-statements
+
     envs = {}
 
     def _set_if_disabled(field_name, section):
