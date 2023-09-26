@@ -66,7 +66,8 @@
       "placement": "left"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=feedbackButton"
+        "selector": "osparc-test-id=feedbackButton",
+        "action": "open"
       },
       "anchorEl": "osparc-test-id=feedbackMenu",
       "text": "The Support menu gives you a way of providing feedback or quistions, via the ZMT Forum or the official Sim4Life Support.",
