@@ -6,13 +6,14 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, TypeAlias, cast
+from typing import Any, Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
@@ -44,6 +45,7 @@ class S3MetaData:
     file_id: SimcoreS3FileID
     last_modified: datetime.datetime
     e_tag: ETag
+    sha256_checksum: SHA256Str | None
     size: int
 
     @staticmethod
@@ -56,6 +58,9 @@ class S3MetaData:
             file_id=SimcoreS3FileID(obj["Key"]),
             last_modified=obj["LastModified"],
             e_tag=json.loads(obj["ETag"]),
+            sha256_checksum=SHA256Str(obj.get("ChecksumSHA256"))
+            if obj.get("ChecksumSHA256")
+            else None,
             size=obj["Size"],
         )
 
@@ -237,18 +242,22 @@ class StorageS3Client:
         file_id: SimcoreS3FileID,
         upload_id: UploadID,
         uploaded_parts: list[UploadedPart],
+        sha256_checksum: SHA256Str | None,
     ) -> ETag:
-        response = await self.client.complete_multipart_upload(
-            Bucket=bucket,
-            Key=file_id,
-            UploadId=upload_id,
-            MultipartUpload={
+        inputs: dict[str, Any] = {
+            "Bucket": bucket,
+            "Key": file_id,
+            "UploadId": upload_id,
+            "MultipartUpload": {
                 "Parts": [
                     {"ETag": part.e_tag, "PartNumber": part.number}
                     for part in uploaded_parts
                 ]
             },
-        )
+        }
+        if sha256_checksum:
+            inputs["ChecksumSHA256"] = sha256_checksum
+        response = await self.client.complete_multipart_upload(**inputs)
         return response["ETag"]
 
     @s3_exception_handler(_logger)
@@ -298,11 +307,14 @@ class StorageS3Client:
     async def get_file_metadata(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> S3MetaData:
-        response = await self.client.head_object(Bucket=bucket, Key=file_id)
+        response = await self.client.head_object(
+            Bucket=bucket, Key=file_id, ChecksumMode="ENABLED"
+        )
         return S3MetaData(
             file_id=file_id,
             last_modified=response["LastModified"],
             e_tag=json.loads(response["ETag"]),
+            sha256_checksum=response.get("ChecksumSHA256"),
             size=response["ContentLength"],
         )
 
