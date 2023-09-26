@@ -14,10 +14,7 @@ from simcore_service_webserver.users.schemas import ProfileGet, Token
 
 @pytest.mark.parametrize(
     "model_cls",
-    (
-        ProfileGet,
-        Token,
-    ),
+    [ProfileGet, Token],
 )
 def test_user_models_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
@@ -26,13 +23,6 @@ def test_user_models_examples(
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
-
-        #
-        # TokenEnveloped
-        # TokensArrayEnveloped
-        # TokenIdEnveloped
-        # ProfileEnveloped
-        #
 
         model_enveloped = Envelope[model_cls].parse_data(
             model_instance.dict(by_alias=True)
@@ -61,7 +51,6 @@ def test_profile_get_expiration_date(faker: Faker):
 
     assert fake_expiration.date() == profile.expiration_date
 
-    # TODO: encoding in body!? UTC !! ??
     body = jsonable_encoder(profile.dict(exclude_unset=True, by_alias=True))
     assert body["expirationDate"] == fake_expiration.date().isoformat()
 

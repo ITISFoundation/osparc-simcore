@@ -23,6 +23,7 @@ def upgrade():
 
 
 def downgrade():
+    # NOTE: Downgrade new updates requires re-building the entire enum!
     op.execute("ALTER TYPE userrole RENAME TO userrole_old")
     op.execute("CREATE TYPE userrole AS ENUM('ANONYMOUS', 'GUEST', 'USER', 'TESTER')")
     op.execute(
