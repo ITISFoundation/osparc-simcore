@@ -87,6 +87,7 @@ async def _get_file(
             msg = "Not found in storage"
             raise ValueError(msg)  # noqa: TRY301
 
+        assert len(stored_files) == 1
         stored_file_meta = stored_files[0]
         assert stored_file_meta.file_id  # nosec
 
@@ -308,7 +309,6 @@ async def search_files_page(
     file_id: UUID | None = None,
 ):
     """Search files"""
-    # TODO implement the pagination of this method directly in storage(https://github.com/ITISFoundation/osparc-simcore/issues/4773)
     try:
         stored_files: list[StorageFileMetaData] = await storage_client.search_files(
             user_id=user_id,
