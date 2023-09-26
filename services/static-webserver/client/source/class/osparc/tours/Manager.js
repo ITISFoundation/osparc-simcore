@@ -157,7 +157,8 @@ qx.Class.define("osparc.tours.Manager", {
           this.__toStepCheck(this.__currentIdx+1);
         }
       } else {
-        // float it in center?
+        stepWidget.getChildControl("caret").exclude();
+        stepWidget.moveToTheCenter();
       }
       if (step.title) {
         stepWidget.setTitle(step.title);

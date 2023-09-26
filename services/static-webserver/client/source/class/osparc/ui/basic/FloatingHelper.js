@@ -191,6 +191,14 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       }
     },
 
+    moveToTheCenter: function() {
+      const properties = {};
+      const selfBounds = this.getHintBounds();
+      properties.top = Math.floor((window.innerHeight - selfBounds.width) / 2);
+      properties.left = Math.floor((window.innerWidth - selfBounds.height) / 2);
+      this.setLayoutProperties(properties);
+    },
+
     getHintBounds: function() {
       return this.getBounds() || this.getSizeHint();
     },
