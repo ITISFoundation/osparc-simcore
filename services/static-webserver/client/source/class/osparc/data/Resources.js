@@ -653,6 +653,17 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * CREDITS PRICE
+       */
+      "credits-price": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/credits-price"
+          }
+        }
+      },
+      /*
        * PAYMENTS
        */
       "payments": {

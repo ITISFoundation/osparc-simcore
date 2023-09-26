@@ -619,13 +619,20 @@ qx.Class.define("osparc.store.Store", {
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
               promises.push(this.reloadWalletAccessRights(wallet));
-
-              // trick to get a countdown
-              setInterval(() => {
-                wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
-              }, 30000);
             });
             store.setWallets(wallets);
+
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "walletOsparcCreditsUpdated";
+            socket.removeSlot(slotName);
+            socket.on(slotName, jsonString => {
+              const data = JSON.parse(jsonString);
+              const walletFound = wallets.find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+              if (walletFound) {
+                walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+              }
+            }, this);
+
             Promise.all(promises)
               .then(() => resolve())
               .catch(err => {
