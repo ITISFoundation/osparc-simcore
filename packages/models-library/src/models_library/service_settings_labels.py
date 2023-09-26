@@ -27,10 +27,10 @@ from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
-# NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
 
-
-class OEnvSubstitutionStr(ConstrainedStr):
+class OsparcVariableIdentifier(ConstrainedStr):
+    # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
+    # It is important that this is the fist value or it will nto be captured
     regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
 

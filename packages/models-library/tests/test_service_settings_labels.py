@@ -501,7 +501,7 @@ def service_labels() -> dict[str, str]:
     }
 
 
-@pytest.mark.xfail(reason="Needs enabling OEnvSubstitutionStr (coming PR)")
+@pytest.mark.xfail(reason="Needs enabling OsparcVariableIdentifier (coming PR)")
 def test_can_parse_labels_with_osparc_identifiers(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
@@ -523,7 +523,7 @@ def test_can_parse_labels_with_osparc_identifiers(
     assert "$" not in service_meta_str
 
 
-@pytest.mark.xfail(reason="Needs enabling OEnvSubstitutionStr (coming PR)")
+@pytest.mark.xfail(reason="Needs enabling OsparcVariableIdentifier (coming PR)")
 def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
