@@ -10,7 +10,6 @@ from typing import Final, NamedTuple
 
 import sqlalchemy as sa
 
-from ._common import register_modified_datetime_auto_update_trigger
 from .base import metadata
 
 _USER_ROLE_TO_LEVEL = {
@@ -127,14 +126,14 @@ users = sa.Table(
     ),
     sa.Column(
         "created_at",
-        sa.DateTime(timezone=True),
+        sa.DateTime(),
         nullable=False,
         server_default=sa.func.now(),
         doc="Registration timestamp",
     ),
     sa.Column(
         "modified",
-        sa.DateTime(timezone=True),
+        sa.DateTime(),
         nullable=False,
         server_default=sa.func.now(),
         onupdate=sa.func.now(),  # this will auto-update on modification
@@ -142,7 +141,7 @@ users = sa.Table(
     ),
     sa.Column(
         "expires_at",
-        sa.DateTime(timezone=True),
+        sa.DateTime(),
         nullable=True,
         doc="Sets the expiration date for trial accounts."
         "If set to NULL then the account does not expire.",
@@ -162,9 +161,6 @@ users = sa.Table(
         # NOTE: that cannot use same phone for two user accounts
     ),
 )
-
-
-register_modified_datetime_auto_update_trigger(users)
 
 
 class FullNameTuple(NamedTuple):

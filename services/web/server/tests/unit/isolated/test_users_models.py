@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime
 from pprint import pformat
 from typing import Any
 
@@ -39,7 +39,7 @@ def test_user_models_examples(
 
 
 def test_profile_get_expiration_date(faker: Faker):
-    fake_expiration = datetime.now(tz=timezone.utc)
+    fake_expiration = datetime.utcnow()
 
     profile = ProfileGet(
         id=1,
