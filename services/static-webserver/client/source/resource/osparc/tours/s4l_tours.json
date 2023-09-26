@@ -2,7 +2,7 @@
   "dashboard": {
     "id": "dashboard",
     "name": "Dashboard",
-    "description": "Introduction to Dashboard tabs",
+    "description": "Introduction to the Dashboard tabs",
     "steps": [{
       "anchorEl": "osparc-test-id=dashboardLabel",
       "title": "Dashboard",
@@ -14,31 +14,31 @@
       "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials, Services and Data.",
       "placement": "bottom"
     }, {
-      "anchorEl": "osparc-test-id=studiesTabBtn",
       "beforeClick": {
         "selector": "osparc-test-id=studiesTabBtn"
       },
+      "anchorEl": "osparc-test-id=studiesTabBtn",
       "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here.",
       "placement": "bottom"
     }, {
-      "anchorEl": "osparc-test-id=templatesTabBtn",
       "beforeClick": {
         "selector": "osparc-test-id=templatesTabBtn"
       },
+      "anchorEl": "osparc-test-id=templatesTabBtn",
       "text": "Clicking on a Tutorial will create a copy of that Study, which will appear in your own Projec ts tab with thee same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
       "placement": "bottom"
     }, {
-      "anchorEl": "osparc-test-id=servicesTabBtn",
       "beforeClick": {
         "selector": "osparc-test-id=servicesTabBtn"
       },
+      "anchorEl": "osparc-test-id=servicesTabBtn",
       "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebools or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }, {
-      "anchorEl": "osparc-test-id=dataTabBtn",
       "beforeClick": {
         "selector": "osparc-test-id=dataTabBtn"
       },
+      "anchorEl": "osparc-test-id=dataTabBtn",
       "text": "The Data tab allow you to browse the output files of all of your active pipelines in one place. This is most useful for downloading the data created on the online platform.",
       "placement": "bottom"
     }]
@@ -46,7 +46,7 @@
   "navbar": {
     "id": "navbar",
     "name": "Navigation Bar",
-    "description": "Introduction to Navigation Bar",
+    "description": "Introduction to the Navigation Bar",
     "steps": [{
       "anchorEl": "osparc-test-id=walletsMiniViewer",
       "title": "Credits",
@@ -83,6 +83,37 @@
       "anchorEl": "osparc-test-id=userMenuMenu",
       "text": "The User menu gives you access to the User Center, Preferences, Organizations and more.",
       "placement": "left"
+    }]
+  },
+  "projects": {
+    "id": "projects",
+    "name": "Projects",
+    "description": "All you need to know about Project handling",
+    "steps": [{
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Search and Filter",
+      "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=startS4LButton",
+      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
+      "placement": "right"
+    }, {
+      "anchorEl": "osparc-test-id=startJSmashButton",
+      "text": "Clicking on this (+) Start Sim4Life lab button, allows you to create and open a new Sim4Life powered Jupyter notebook.",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studyItemMenuButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=updateStudyBtn",
+      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
+      "placement": "bottom"
     }]
   }
 }
