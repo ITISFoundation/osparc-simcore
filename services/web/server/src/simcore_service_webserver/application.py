@@ -119,9 +119,6 @@ def create_application() -> web.Application:
     setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    # # resource tracking / billing
-    # setup_resource_tracker(app)
-
     # users
     setup_users(app)
     setup_groups(app)
