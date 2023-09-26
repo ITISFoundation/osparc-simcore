@@ -23,6 +23,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this._setLayout(new qx.ui.layout.VBox(3));
 
+    osparc.utils.Utils.setIdToWidget(this, "walletsMiniViewer");
+
     this.set({
       cursor: "pointer",
       padding: 5,

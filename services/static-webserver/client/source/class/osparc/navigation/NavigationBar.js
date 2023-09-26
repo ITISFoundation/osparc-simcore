@@ -400,6 +400,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addGuidedToursToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
+      osparc.utils.Utils.setIdToWidget(menuButton, "manualsButton");
+      osparc.utils.Utils.setIdToWidget(menu, "manualsMenu");
       return menuButton;
     },
 
@@ -412,6 +414,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
+      osparc.utils.Utils.setIdToWidget(menuButton, "feedbackButton");
+      osparc.utils.Utils.setIdToWidget(menu, "feedbackMenu");
       return menuButton;
     },
 
