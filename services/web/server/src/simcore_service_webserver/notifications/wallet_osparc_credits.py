@@ -21,7 +21,7 @@ async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
 
     for exchange in _SUBSCRIBABLE_EXCHANGES:
         exchange_name = exchange.get_channel_name()
-        await rabbit_client.add_topics(exchange_name, topics=[f"{wallet_id}.*"])
+        await rabbit_client.add_topics(exchange_name, topics=[f"{wallet_id}"])
 
 
 async def unsubscribe(app: web.Application, wallet_id: WalletID) -> None:
@@ -31,4 +31,4 @@ async def unsubscribe(app: web.Application, wallet_id: WalletID) -> None:
         with log_catch(_logger, reraise=False):
             # NOTE: in case something bad happenned with the connection to the RabbitMQ server
             # such as a network disconnection. this call can fail.
-            await rabbit_client.remove_topics(exchange_name, topics=[f"{wallet_id}.*"])
+            await rabbit_client.remove_topics(exchange_name, topics=[f"{wallet_id}"])
