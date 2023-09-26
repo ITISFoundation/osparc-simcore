@@ -220,6 +220,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
             ) as container, managed_monitor_container_log_task(
                 container=container,
+                container_labels=self.task_labels,
                 service_key=self.service_key,
                 service_version=self.service_version,
                 task_publishers=self.task_publishers,
