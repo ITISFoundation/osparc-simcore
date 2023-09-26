@@ -152,6 +152,9 @@ qx.Class.define("osparc.tours.Manager", {
           if (step.placement) {
             stepWidget.setOrientation(osparc.ui.basic.FloatingHelper.textToOrientation(step.placement));
           }
+        } else {
+          // target not found, move to the next step
+          this.__toStepCheck(this.__currentIdx+1);
         }
       } else {
         // float it in center?

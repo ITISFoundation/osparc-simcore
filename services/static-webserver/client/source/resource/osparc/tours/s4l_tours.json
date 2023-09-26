@@ -91,15 +91,17 @@
     "description": "All you need to know about Project handling",
     "steps": [{
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
-      "title": "Search and Filter",
+      "title": "Project Filter and Search",
       "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "anchorEl": "osparc-test-id=startS4LButton",
+      "title": "Start Sim4Life",
       "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
       "placement": "right"
     }, {
       "anchorEl": "osparc-test-id=startJSmashButton",
+      "title": "Start Sim4Life lab",
       "text": "Clicking on this (+) Start Sim4Life lab button, allows you to create and open a new Sim4Life powered Jupyter notebook.",
       "placement": "right"
     }, {
@@ -108,10 +110,12 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "title": "More options button",
       "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=updateStudyBtn",
+      "title": "Update Services",
       "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
       "placement": "bottom"
     }]
