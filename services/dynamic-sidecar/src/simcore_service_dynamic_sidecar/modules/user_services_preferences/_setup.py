@@ -24,6 +24,8 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                     settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR
                     / settings.DY_SIDECAR_USER_PREFERENCES_PATH.relative_to("/")
                 )
+                user_preferences_path.mkdir(parents=True, exist_ok=True)
+
                 app.state.user_services_preferences_manager = (
                     UserServicesPreferencesManager(
                         user_preferences_path=user_preferences_path,

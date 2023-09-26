@@ -21,6 +21,9 @@ from simcore_service_dynamic_sidecar.modules.user_services_preferences import (
     load_user_services_preferences,
     save_user_services_preferences,
 )
+from simcore_service_dynamic_sidecar.modules.user_services_preferences._manager import (
+    UserServicesPreferencesManager,
+)
 from simcore_service_dynamic_sidecar.modules.user_services_preferences._utils import (
     is_feature_enabled,
 )
@@ -40,12 +43,8 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def user_preferences_path(tmp_path: Path) -> Path:
-    preferences_path = tmp_path / "user_prefernces"
-    preferences_path.mkdir(parents=True, exist_ok=True)
-    assert preferences_path.is_dir()
-    assert preferences_path.exists()
-    return preferences_path
+def dy_sidecar_user_preferences_path(tmp_path: Path) -> Path:
+    return Path("/tmp/service-owner/defined/path")  # noqa: S108
 
 
 @pytest.fixture
@@ -70,7 +69,7 @@ def mock_environment(
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
-    user_preferences_path: Path,
+    dy_sidecar_user_preferences_path: Path,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: ProductName,
@@ -87,7 +86,7 @@ def mock_environment(
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         "DY_SIDECAR_SERVICE_KEY": service_key,
         "DY_SIDECAR_SERVICE_VERSION": service_version,
-        "DY_SIDECAR_USER_PREFERENCES_PATH": f"{user_preferences_path}",
+        "DY_SIDECAR_USER_PREFERENCES_PATH": f"{dy_sidecar_user_preferences_path}",
         "DY_SIDECAR_PRODUCT_NAME": product_name,
         **base_mock_envs,
     }
@@ -105,6 +104,14 @@ async def app(
     app = create_app()
     async with LifespanManager(app):
         yield app
+
+
+@pytest.fixture
+def user_preferences_path(app: FastAPI) -> Path:
+    user_services_preferences_manager: UserServicesPreferencesManager = (
+        app.state.user_services_preferences_manager
+    )
+    return user_services_preferences_manager.user_preferences_path
 
 
 def _get_files_preferences_path(user_preferences_path: Path) -> set[Path]:
