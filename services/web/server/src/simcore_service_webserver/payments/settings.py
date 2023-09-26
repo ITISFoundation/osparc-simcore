@@ -31,6 +31,9 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     # NOTE: PAYMENTS_FAKE_* settings are temporary until some features are moved to the payments service
+    PAYMENTGS_PLUGIN_ENABLED: bool = Field(
+        default=True,
+    )
 
     PAYMENTS_FAKE_COMPLETION: bool = Field(
         default=False, description="Enables fake completion. ONLY for testing purposes"
