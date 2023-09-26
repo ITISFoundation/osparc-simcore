@@ -11,7 +11,6 @@ from ..rabbitmq import setup_rabbitmq
 from ..wallets.plugin import setup_wallets
 from . import _service_runs_handlers
 from ._observer import setup_resource_usage_observer_events
-from ._rabbitmq_consumers import setup_rabbitmq_consumers
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +27,6 @@ def setup_resource_tracker(app: web.Application):
 
     setup_rabbitmq(app)
     setup_wallets(app)
-    setup_rabbitmq_consumers(app)
     setup_resource_usage_observer_events(app)
 
     app.router.add_routes(_service_runs_handlers.routes)
