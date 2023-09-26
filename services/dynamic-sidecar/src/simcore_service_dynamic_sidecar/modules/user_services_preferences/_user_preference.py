@@ -8,8 +8,12 @@ def get_model_class(service_key: ServiceKey) -> type[UserServiceUserPreference]:
     base_model_name = snake_to_upper_camel(
         service_key.replace("/", "_").replace("-", "_")
     )
-    class_name = f"{base_model_name}UserServiceUserPreference"
+    model_class_name = f"{base_model_name}UserServiceUserPreference"
 
-    if class_name in UserServiceUserPreference.registered_user_preference_classes:
-        return UserServiceUserPreference.registered_user_preference_classes[class_name]
-    return create_model(class_name, __base__=UserServiceUserPreference)
+    model_type: type[UserServiceUserPreference] = (
+        UserServiceUserPreference.registered_user_preference_classes[model_class_name]
+        if model_class_name
+        in UserServiceUserPreference.registered_user_preference_classes
+        else create_model(model_class_name, __base__=UserServiceUserPreference)
+    )
+    return model_type
