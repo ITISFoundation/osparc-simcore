@@ -3,8 +3,6 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-# pylint: disable=too-many-return-statements
-
 
 class Settings(BaseModel):
     portainer_url: str
@@ -16,6 +14,7 @@ class Settings(BaseModel):
 
 
 def get_settings(deployment):
+    # pylint: disable=too-many-return-statements
     load_dotenv("/home/matus/Projects/osparc-simcore/scripts/release/monitor/.env")
 
     if deployment == "master":
