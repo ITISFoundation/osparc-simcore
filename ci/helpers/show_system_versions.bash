@@ -6,7 +6,7 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 echo "------------------------------ environs -----------------------------------"
-env
+env | sort
 
 echo "------------------------------ uname -----------------------------------"
 uname -a
@@ -35,4 +35,9 @@ fi
 echo "------------------------------ docker-compose -----------------------------------"
 if command -v docker-compose; then
     docker-compose version
+fi
+
+echo "------------------------------ docker compose -----------------------------------"
+if command -v docker; then
+    docker compose version
 fi

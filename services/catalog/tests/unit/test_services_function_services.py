@@ -4,7 +4,7 @@
 # pylint:disable=protected-access
 
 import pytest
-from simcore_service_catalog.models.schemas.services import ServiceDockerData
+from models_library.api_schemas_catalog.services import ServiceDockerData
 from simcore_service_catalog.services.function_services import (
     is_function_service,
     iter_service_docker_data,

@@ -12,7 +12,6 @@ from pathlib import Path
 import openapi_core
 import pytest
 import yaml
-from openapi_core.spec.paths import SpecPath as OpenApiSpec
 from utils import list_all_openapi
 
 
@@ -24,7 +23,7 @@ def test_can_create_specs_from_path(openapi_path: str):
         spec_dict = yaml.safe_load(fh)
 
     # will raise if openapi_core cannot handle OAS
-    specs = openapi_core.create_spec(spec_dict, oas_path.as_uri())
+    specs = openapi_core.Spec.from_dict(spec_dict, base_uri=oas_path.as_uri())
 
     assert specs
-    assert isinstance(specs, OpenApiSpec)
+    assert isinstance(specs, openapi_core.Spec)

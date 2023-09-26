@@ -18,6 +18,11 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.comp_tasks import (
+    ComputationCreate,
+    ComputationGet,
+)
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
@@ -31,20 +36,15 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import (
-    ComputationCreate,
-    ComputationGet,
-)
-from simcore_service_director_v2.models.schemas.services import ServiceExtras
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -70,7 +70,6 @@ def minimal_configuration(
     mocked_rabbit_mq_client: None,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
@@ -242,6 +241,52 @@ def mocked_catalog_service_fcts_deprecated(
 @pytest.fixture
 def product_name(faker: Faker) -> str:
     return faker.name()
+
+
+async def test_computation_create_validators(
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    fake_workbench_without_outputs: dict[str, Any],
+    faker: Faker,
+):
+    user = registered_user()
+    proj = await project(user, workbench=fake_workbench_without_outputs)
+    # cluster id and use_on_demand raises
+    with pytest.raises(ValidationError, match=r"cluster_id cannot be set.+"):
+        ComputationCreate(
+            user_id=user["id"],
+            project_id=proj.uuid,
+            product_name=faker.pystr(),
+            use_on_demand_clusters=True,
+            cluster_id=faker.pyint(),
+        )
+    # this should not raise
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=True,
+        cluster_id=None,
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=False,
+        cluster_id=faker.pyint(),
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=True,
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=False,
+    )
 
 
 async def test_create_computation(

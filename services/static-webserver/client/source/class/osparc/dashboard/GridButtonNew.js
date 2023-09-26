@@ -48,7 +48,9 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
   members: {
     _buildLayout: function() {
       const title = this.getChildControl("title");
-      title.setValue(this.tr("Empty Study"));
+      title.setValue(this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      }));
 
       const desc = this.getChildControl("subtitle-text");
       desc.setValue(this.tr("Start with an empty study").toString());

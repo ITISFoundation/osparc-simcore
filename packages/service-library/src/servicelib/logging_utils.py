@@ -10,9 +10,11 @@ import logging
 import os
 import sys
 from asyncio import iscoroutinefunction
+from collections.abc import Callable
 from contextlib import contextmanager
+from datetime import datetime
 from inspect import getframeinfo, stack
-from typing import Callable, TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -225,25 +227,17 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
         logger.debug("call was cancelled")
         raise
     except Exception as exc:  # pylint: disable=broad-except
-        logger.error("Unhandled exception: %s", f"{exc}", exc_info=True)
+        logger.exception("Unhandled exception:")
         if reraise:
             raise exc from exc
 
 
-un_capitalize = lambda s: s[:1].lower() + s[1:] if s else ""
-
-
-@contextmanager
-def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
-    # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
-    msg = un_capitalize(msg.strip())
-    logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
-    yield
-    logger.log(level, "Finished " + msg, *args, **kwargs)
-
-
 class LogExtra(TypedDict, total=False):
     log_uid: str
+
+
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
 
 
 def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
@@ -254,8 +248,35 @@ def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None
     return extra or None
 
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
+def _un_capitalize(s):
+    return s[:1].lower() + s[1:] if s else ""
+
+
+@contextmanager
+def log_context(
+    logger: logging.Logger,
+    level: LogLevelInt,
+    msg: LogMessageStr,
+    *args,
+    log_duration: bool = False,
+    extra: LogExtra | None = None,
+):
+    # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
+    start = datetime.now()  # noqa: DTZ005
+    msg = _un_capitalize(msg.strip())
+
+    kwargs: dict[str, Any] = {}
+    if extra:
+        kwargs["extra"] = extra
+
+    logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
+    yield
+    duration = (
+        f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
+        if log_duration
+        else ""
+    )
+    logger.log(level, "Finished " + msg + duration, *args, **kwargs)
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:

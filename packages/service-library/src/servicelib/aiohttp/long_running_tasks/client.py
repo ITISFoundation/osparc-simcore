@@ -1,9 +1,9 @@
 import asyncio
+from collections.abc import AsyncGenerator, Coroutine
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Coroutine, Final, Optional
+from typing import Any, Final, TypeAlias
 
 from aiohttp import ClientConnectionError, ClientSession, web
-from pydantic import Json
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -14,30 +14,27 @@ from yarl import URL
 from ..rest_responses import unwrap_envelope
 from .server import TaskGet, TaskId, TaskProgress, TaskStatus
 
-RequestBody = Json
+RequestBody: TypeAlias = Any
 
-_MINUTE: Final[int] = 60
-_HOUR: Final[int] = 60 * _MINUTE
+_MINUTE: Final[int] = 60  # in secs
+_HOUR: Final[int] = 60 * _MINUTE  # in secs
 _DEFAULT_POLL_INTERVAL_S: Final[float] = 1
-_DEFAULT_AIOHTTP_RETRY_POLICY = dict(
-    retry=retry_if_exception_type(ClientConnectionError),
-    wait=wait_random_exponential(max=20),
-    stop=stop_after_delay(60),
-    reraise=True,
-)
+_DEFAULT_AIOHTTP_RETRY_POLICY = {
+    "retry": retry_if_exception_type(ClientConnectionError),
+    "wait": wait_random_exponential(max=20),
+    "stop": stop_after_delay(60),
+    "reraise": True,
+}
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
-async def _start(
-    session: ClientSession, url: URL, json: Optional[RequestBody]
-) -> TaskGet:
+async def _start(session: ClientSession, url: URL, json: RequestBody | None) -> TaskGet:
     async with session.post(url, json=json) as response:
         response.raise_for_status()
         data, error = unwrap_envelope(await response.json())
     assert not error  # nosec
     assert data is not None  # nosec
-    task = TaskGet.parse_obj(data)
-    return task
+    return TaskGet.parse_obj(data)
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -48,7 +45,6 @@ async def _wait_for_completion(
     client_timeout: int,
 ) -> AsyncGenerator[TaskProgress, None]:
     try:
-
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(client_timeout),
             reraise=True,
@@ -70,16 +66,13 @@ async def _wait_for_completion(
                             )
                         )
                     )
-                    raise TryAgain(
-                        f"{task_id=}, {task_status.started=} has "
-                        f"status: '{task_status.task_progress.message}'"
-                        f" {task_status.task_progress.percent}%"
-                    )
+                    msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
+                    raise TryAgain(msg)  # noqa: TRY301
+
     except TryAgain as exc:
         # this is a timeout
-        raise asyncio.TimeoutError(
-            f"Long running task {task_id}, calling to {status_url} timed-out after {client_timeout} seconds"
-        ) from exc
+        msg = f"Long running task {task_id}, calling to {status_url} timed-out after {client_timeout} seconds"
+        raise asyncio.TimeoutError(msg) from exc
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -91,6 +84,7 @@ async def _task_result(session: ClientSession, result_url: URL) -> Any:
             assert not error  # nosec
             assert data  # nosec
             return data
+        return None
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -105,21 +99,22 @@ async def _abort_task(session: ClientSession, abort_url: URL) -> None:
 @dataclass(frozen=True)
 class LRTask:
     progress: TaskProgress
-    _result: Optional[Coroutine[Any, Any, Any]] = None
+    _result: Coroutine[Any, Any, Any] | None = None
 
     def done(self) -> bool:
         return self._result is not None
 
     async def result(self) -> Any:
         if not self._result:
-            raise ValueError("No result ready!")
+            msg = "No result ready!"
+            raise ValueError(msg)
         return await self._result
 
 
 async def long_running_task_request(
     session: ClientSession,
     url: URL,
-    json: Optional[RequestBody] = None,
+    json: RequestBody | None = None,
     client_timeout: int = 1 * _HOUR,
 ) -> AsyncGenerator[LRTask, None]:
     """Will use the passed `ClientSession` to call an oSparc long

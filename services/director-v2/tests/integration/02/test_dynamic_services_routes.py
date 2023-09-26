@@ -4,9 +4,10 @@
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
-from unittest.mock import Mock
+from typing import Any
+from unittest.mock import MagicMock
 
 import aiodocker
 import pytest
@@ -25,6 +26,7 @@ from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -61,6 +63,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def minimal_configuration(
+    mock_env: EnvVarsDict,
     redis_settings: RedisSettings,
     postgres_db,
     postgres_host_config: dict[str, str],
@@ -110,17 +113,19 @@ def start_request_data(
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
 ) -> dict[str, Any]:
-    return dict(
-        user_id=user_id,
-        project_id=project_id,
-        product_name=osparc_product_name,
-        service_uuid=node_uuid,
-        service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
-        service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
-        request_scheme="http",
-        request_dns="localhost:50000",
-        can_save=True,
-        settings=[
+    return {
+        "user_id": user_id,
+        "project_id": project_id,
+        "product_name": osparc_product_name,
+        "service_uuid": node_uuid,
+        "service_key": dy_static_file_server_dynamic_sidecar_service["image"]["name"],
+        "service_version": dy_static_file_server_dynamic_sidecar_service["image"][
+            "tag"
+        ],
+        "request_scheme": "http",
+        "request_dns": "localhost:50000",
+        "can_save": True,
+        "settings": [
             {
                 "name": "resources",
                 "type": "Resources",
@@ -133,11 +138,14 @@ def start_request_data(
                 "value": ["node.platform.os == linux"],
             },
         ],
-        paths_mapping={"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
-        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+        "paths_mapping": {
+            "outputs_path": "/tmp/outputs",  # noqa: S108
+            "inputs_path": "/tmp/inputs",  # noqa: S108
+        },
+        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
-    )
+    }
 
 
 @pytest.fixture
@@ -148,31 +156,33 @@ async def director_v2_client(
     redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterable[TestClient]:
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
+            "SIMCORE_SERVICES_NETWORK_NAME": network_name,
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+            "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+            "DIRECTOR_V2_LOGLEVEL": "DEBUG",
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_ENABLED": "false",
+            "R_CLONE_PROVIDER": "MINIO",
+            "S3_ENDPOINT": "endpoint",
+            "S3_ACCESS_KEY": "access_key",
+            "S3_SECRET_KEY": "secret_key",
+            "S3_BUCKET_NAME": "bucket_name",
+            "S3_SECURE": "false",
+            # patch host for dynamic-sidecar, not reachable via localhost
+            # the dynamic-sidecar (running inside a container) will use
+            # this address to reach the rabbit service
+            "RABBIT_HOST": f"{get_localhost_ip()}",
+            "REDIS_HOST": redis_settings.REDIS_HOST,
+            "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
+        },
+    )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
-    monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
-
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "true")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
-
-    # patch host for dynamic-sidecar, not reachable via localhost
-    # the dynamic-sidecar (running inside a container) will use
-    # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
-
-    monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
-    monkeypatch.setenv("REDIS_PORT", f"{redis_settings.REDIS_PORT}")
 
     settings = AppSettings.create_from_envs()
 
@@ -209,9 +219,18 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_project_repository(mocker: MockerFixture) -> None:
+    class ExtendedMagicMock(MagicMock):
+        @property
+        def name(self) -> str:
+            return "test_name"
+
+        @property
+        def label(self) -> str:
+            return "test_label"
+
     mocker.patch(
         f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
-        side_effect=lambda *args, **kwargs: Mock(),
+        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),
     )
 
 
@@ -267,6 +286,7 @@ async def key_version_expected(
     return results
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_start_status_stop(
     director_v2_client: TestClient,
     node_uuid: str,

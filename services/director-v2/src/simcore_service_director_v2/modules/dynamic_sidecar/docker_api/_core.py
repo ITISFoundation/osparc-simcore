@@ -1,6 +1,5 @@
 import json
 import logging
-import warnings
 from collections.abc import Mapping
 from typing import Any, Final
 
@@ -11,6 +10,7 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_enums import ServiceState
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
@@ -20,13 +20,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_random_exponential
 
-from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.constants import (
+from ....constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....models.schemas.dynamic_services import SchedulerData, ServiceId, ServiceState
-from ....models.schemas.dynamic_services.scheduler import NetworkId
+from ....core.settings import DynamicSidecarSettings
+from ....models.dynamic_services_scheduler import NetworkId, SchedulerData, ServiceId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
@@ -75,7 +74,7 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             # The environment is trashed because there seems to be an issue
             # when stopping previous services.
             # It is not possible to immediately remove the network after
-            # a docker-compose down involving and external overlay network
+            # a docker compose down involving and external overlay network
             # has removed a container; it results as already attached
             for network_details in await client.networks.list():
                 if network_name == network_details["Name"]:
@@ -136,7 +135,7 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
                 filters={"service": f"{service_id}"}
             )
             if not service_associated_tasks:
-                raise DockerServiceNotFoundError(service_id=service_id)  # noqa: TRY301
+                raise DockerServiceNotFoundError(service_id=service_id)
 
             # The service might have more then one task because the
             # previous might have died out.
@@ -184,7 +183,7 @@ async def get_dynamic_sidecar_placement(
         service_state = task["Status"]["State"]
 
         if service_state not in TASK_STATES_RUNNING:
-            raise TryAgain()
+            raise TryAgain
         return task
 
     task = await _get_task_data_when_service_running(service_id=service_id)
@@ -250,28 +249,21 @@ async def _list_docker_services(
     # shall be removed after 1-2 releases without issues
     # backwards compatibility part
 
-    def _make_filters(*, backwards_compatible: bool) -> Mapping[str, Any]:
+    def _make_filters() -> Mapping[str, Any]:
         filters = {
             "label": [
-                f"{'swarm_stack_name' if backwards_compatible else to_simcore_runtime_docker_label_key('swarm_stack_name')}={swarm_stack_name}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={swarm_stack_name}",
             ],
         }
         if node_id:
             filters["label"].append(
-                f"{'uuid'  if backwards_compatible else to_simcore_runtime_docker_label_key('node_id')}={node_id}"
+                f"{to_simcore_runtime_docker_label_key('node_id')}={node_id}"
             )
         if return_only_sidecars:
             filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
         return filters
 
-    warnings.warn(
-        "After PR#4453 [https://github.com/ITISFoundation/osparc-simcore/pull/4453] reaches"
-        " production, the backwards compatible code may be removed",
-        stacklevel=2,
-    )
-    services_list: list[Mapping] = await client.services.list(
-        filters=_make_filters(backwards_compatible=True)
-    ) + await client.services.list(filters=_make_filters(backwards_compatible=False))
+    services_list: list[Mapping] = await client.services.list(filters=_make_filters())
     return services_list
 
 
@@ -465,7 +457,7 @@ async def _update_service_spec(
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and "out of sequence" in e.message
                     ):
-                        raise TryAgain() from e
+                        raise TryAgain from e
                     raise
 
 

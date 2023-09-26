@@ -63,7 +63,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         showMinimize: false,
         contentPadding: 0
       });
-      activityWindow.add(new osparc.component.service.manager.ActivityManager());
+      activityWindow.add(new osparc.activityManager.ActivityManager());
       activityWindow.center();
       activityWindow.open();
     },
@@ -87,6 +87,18 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
+        case "account":
+          control = new qx.ui.menu.Button(this.tr("User Center"));
+          control.addListener("execute", () => {
+            osparc.desktop.credits.Utils.areWalletsEnabled()
+              .then(walletsEnabled => {
+                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+                creditsWindow.openOverview();
+              });
+            // osparc.desktop.MainPageHandler.getInstance().showUserCenter();
+          }, this);
+          this.getMenu().add(control);
+          break;
         case "preferences":
           control = new qx.ui.menu.Button(this.tr("Preferences"));
           control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
@@ -97,11 +109,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("Organizations"));
           osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-          this.getMenu().add(control);
-          break;
-        case "usage-overview":
-          control = new qx.ui.menu.Button(this.tr("Usage Overview"));
-          control.addListener("execute", () => osparc.component.resourceUsage.Overview.popUpInWindow(), this);
           this.getMenu().add(control);
           break;
         case "clusters":
@@ -115,7 +122,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
                 }
               });
           }
-          control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
+          control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
         case "license":
@@ -159,11 +166,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       if (authData.isGuest()) {
         this.getChildControl("log-in");
       } else {
+        this.getChildControl("account");
         this.getChildControl("preferences");
         this.getChildControl("organizations");
-        if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-          this.getChildControl("usage-overview");
-        }
         this.getChildControl("clusters");
       }
       if (osparc.product.tutorial.Utils.getTutorial()) {
@@ -172,7 +177,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
       this.getMenu().addSeparator();
-      const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
         this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
       }
@@ -193,11 +198,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           if (authData.isGuest()) {
             this.getChildControl("log-in");
           } else {
+            this.getChildControl("account");
             this.getChildControl("preferences");
             this.getChildControl("organizations");
-            if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-              this.getChildControl("usage-overview");
-            }
             this.getChildControl("clusters");
           }
           this.getMenu().addSeparator();
@@ -211,7 +214,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getChildControl("theme-switcher");
 
           this.getMenu().addSeparator();
-          const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+          const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
           if (announcementUIFactory.hasUserMenuAnnouncement()) {
             this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
           }

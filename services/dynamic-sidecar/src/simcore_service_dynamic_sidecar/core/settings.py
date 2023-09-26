@@ -1,9 +1,11 @@
 import warnings
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
@@ -13,7 +15,17 @@ from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.resource_usage_tracker import (
+    DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+)
 from settings_library.utils_logging import MixinLoggingSettings
+
+
+class ResourceTrackingSettings(BaseCustomSettings):
+    RESOURCE_TRACKING_HEARTBEAT_INTERVAL: timedelta = Field(
+        default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+        description="each time the status of the service is propagated",
+    )
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -80,6 +92,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=3000, description="ptsvd remote debugger starting port"
     )
 
+    DY_SIDECAR_CALLBACKS_MAPPING: CallbacksMapping = Field(
+        ..., description="callbacks to use for this service"
+    )
     DY_SIDECAR_PATH_INPUTS: Path = Field(
         ..., description="path where to expect the inputs folder"
     )
@@ -108,22 +123,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
+    RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+
+    @property
+    def are_prometheus_metrics_enabled(self) -> bool:
+        return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
+
     @validator("LOG_LEVEL")
     @classmethod
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
-
-    @property
-    def rclone_settings_for_nodeports(self) -> RCloneSettings | None:
-        """
-        If R_CLONE_ENABLED is False it returns None which indicates
-        nodeports to disable rclone and fallback to the previous storage mechanim.
-        """
-        return (
-            self.DY_SIDECAR_R_CLONE_SETTINGS
-            if self.DY_SIDECAR_R_CLONE_SETTINGS.R_CLONE_ENABLED
-            else None
-        )
 
 
 @lru_cache

@@ -28,6 +28,7 @@ from ..modules import (
     osparc_variables_substitutions,
     rabbitmq,
     remote_debug,
+    resource_usage_client,
     storage,
 )
 from .errors import (
@@ -90,6 +91,7 @@ _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
+    "httpcore",
 )
 
 
@@ -146,8 +148,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_CATALOG:
         catalog.setup(app, settings.DIRECTOR_V2_CATALOG)
 
-    if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
-        db.setup(app, settings.POSTGRES)
+    db.setup(app, settings.POSTGRES)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
@@ -173,6 +174,9 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if computational_backend_enabled:
         comp_scheduler.setup(app)
+
+    if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
+        resource_usage_client.setup(app)
 
     node_rights.setup(app)
 

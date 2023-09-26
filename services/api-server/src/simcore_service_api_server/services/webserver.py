@@ -20,6 +20,7 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
+from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.error_codes import create_error_code
 from starlette import status
@@ -32,14 +33,24 @@ from tenacity.wait import wait_fixed
 from ..core.settings import WebServerSettings
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
-from ..models.types import JSON
+from ..models.types import AnyJson
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
 
 
+class WebServerValueError(PydanticErrorMixin, ValueError):
+    ...
+
+
+class ProjectNotFoundError(WebServerValueError):
+    code = "webserver.project_not_found"
+    msg_template = "Project '{project_id}' not found"
+
+
 @contextmanager
 def _handle_webserver_api_errors():
+    # Transforms httpx.errors and ValidationError -> fastapi.HTTPException
     try:
         yield
 
@@ -60,7 +71,6 @@ def _handle_webserver_api_errors():
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
 
     except httpx.HTTPStatusError as exc:
-
         resp = exc.response
         if resp.is_server_error:
             _logger.exception(
@@ -116,10 +126,21 @@ class AuthSession:
         )
 
     @classmethod
-    def _get_data_or_raise_http_exception(cls, resp: Response) -> JSON | None:
+    def _get_data_or_raise(
+        cls,
+        resp: Response,
+        client_status_code_to_exception_map: dict[int, WebServerValueError]
+        | None = None,
+    ) -> AnyJson | None:
+        """
+        Raises:
+            WebServerValueError: any client error converted to module error
+            HTTPException: the rest are pre-process and raised as http errors
+
+        """
         # enveloped answer
-        data: JSON | None = None
-        error: JSON | None = None
+        data: AnyJson | None = None
+        error: AnyJson | None = None
 
         if resp.status_code != status.HTTP_204_NO_CONTENT:
             try:
@@ -142,7 +163,17 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if resp.is_client_error:
-            # NOTE: error is can be a dict
+            # Maps client status code to webserver local module error
+            if client_status_code_to_exception_map and (
+                exc := client_status_code_to_exception_map.get(resp.status_code)
+            ):
+                raise exc
+
+            # Otherwise, go thru with some pre-processing to make
+            # message cleaner
+            if isinstance(error, dict):
+                error = error.get("message")
+
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
@@ -154,7 +185,7 @@ class AuthSession:
     def client(self):
         return self._api.client
 
-    async def get(self, path: str) -> JSON | None:
+    async def get(self, path: str) -> AnyJson | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
@@ -162,9 +193,9 @@ class AuthSession:
             _logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._get_data_or_raise_http_exception(resp)
+        return self._get_data_or_raise(resp)
 
-    async def put(self, path: str, body: dict) -> JSON | None:
+    async def put(self, path: str, body: dict) -> AnyJson | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
@@ -172,25 +203,39 @@ class AuthSession:
             _logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._get_data_or_raise_http_exception(resp)
+        return self._get_data_or_raise(resp)
 
-    # PROJECTS resource ---
+    async def _page_projects(
+        self, *, limit: int, offset: int, show_hidden: bool, search: str | None = None
+    ):
+        assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
+        assert offset >= 0  # nosec
 
-    async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
-        # POST /projects --> 202
-        resp = await self.client.post(
-            "/projects",
-            params={"hidden": True},
-            json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
-            cookies=self.session_cookies,
-        )
-        data: JSON | None = self._get_data_or_raise_http_exception(resp)
-        assert data  # nosec
-        assert isinstance(data, dict)  # nosec
+        optional: dict[str, Any] = {}
+        if search is not None:
+            optional["search"] = search
 
+        with _handle_webserver_api_errors():
+            resp = await self.client.get(
+                "/projects",
+                params={
+                    "type": "user",
+                    "show_hidden": show_hidden,
+                    "limit": limit,
+                    "offset": offset,
+                    **optional,
+                },
+                cookies=self.session_cookies,
+            )
+            resp.raise_for_status()
+
+            return Page[ProjectGet].parse_raw(resp.text)
+
+    async def _wait_for_long_running_task_results(self, data):
         # NOTE: /v0 is already included in the http client base_url
         status_url = data["status_href"].lstrip(f"/{self.vtag}")
         result_url = data["result_href"].lstrip(f"/{self.vtag}")
+
         # GET task status now until done
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.5),
@@ -199,52 +244,84 @@ class AuthSession:
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
-                data = await self.get(status_url)
-                task_status = TaskStatus.parse_obj(data)
+                status_data = await self.get(status_url)
+                task_status = TaskStatus.parse_obj(status_data)
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
 
-        data = await self.get(f"{result_url}")
-        return ProjectGet.parse_obj(data)
+        return await self.get(f"{result_url}")
+
+    # PROJECTS -------------------------------------------------
+
+    async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
+        # POST /projects --> 202 Accepted
+        response = await self.client.post(
+            "/projects",
+            params={"hidden": True},
+            json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
+            cookies=self.session_cookies,
+        )
+        data = self._get_data_or_raise(response)
+        assert data is not None  # nosec
+
+        result = await self._wait_for_long_running_task_results(data)
+        return ProjectGet.parse_obj(result)
+
+    async def clone_project(self, project_id: UUID) -> ProjectGet:
+        response = await self.client.post(
+            f"/projects/{project_id}:clone",
+            cookies=self.session_cookies,
+        )
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
+        assert data is not None  # nosec
+
+        result = await self._wait_for_long_running_task_results(data)
+        return ProjectGet.parse_obj(result)
 
     async def get_project(self, project_id: UUID) -> ProjectGet:
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
         )
 
-        data: JSON | None = self._get_data_or_raise_http_exception(resp)
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
         return ProjectGet.parse_obj(data)
 
-    async def list_projects(
+    async def get_projects_w_solver_page(
         self, solver_name: str, limit: int, offset: int
     ) -> Page[ProjectGet]:
-        assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
-        assert offset >= 0  # nosec
-        with _handle_webserver_api_errors():
-            resp = await self.client.get(
-                "/projects",
-                params={
-                    "type": "user",
-                    "show_hidden": True,
-                    "limit": limit,
-                    "offset": offset,
-                    # WARNING: better way to match jobs with projects (Next PR if this works fine!)
-                    "search": urllib.parse.quote(solver_name, safe=""),
-                    # WARNING: search text has a limit that I needed to increas for the example!
-                },
-                cookies=self.session_cookies,
-            )
-            resp.raise_for_status()
+        return await self._page_projects(
+            limit=limit,
+            offset=offset,
+            show_hidden=True,
+            # WARNING: better way to match jobs with projects (Next PR if this works fine!)
+            # WARNING: search text has a limit that I needed to increase for the example!
+            search=urllib.parse.quote(solver_name, safe=""),
+        )
 
-            return Page[ProjectGet].parse_raw(resp.text)
+    async def get_projects_page(self, limit: int, offset: int):
+        return await self._page_projects(
+            limit=limit,
+            offset=offset,
+            show_hidden=False,
+        )
 
     async def delete_project(self, project_id: ProjectID) -> None:
-        resp = await self.client.delete(
+        response = await self.client.delete(
             f"/projects/{project_id}", cookies=self.session_cookies
         )
-        self._get_data_or_raise_http_exception(resp)
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
+        assert data is None  # nosec
 
     async def get_project_metadata_ports(
         self, project_id: ProjectID
@@ -253,12 +330,16 @@ class AuthSession:
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
         and returns data
         """
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
         )
-        data = self._get_data_or_raise_http_exception(resp)
-        assert data
+
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
+        assert data is not None
         assert isinstance(data, list)
         return data
 

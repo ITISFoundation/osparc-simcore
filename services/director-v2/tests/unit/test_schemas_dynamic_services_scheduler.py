@@ -1,14 +1,12 @@
 # pylint: disable=redefined-outer-name
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Iterator
 
 import pytest
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
-)
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 
 @pytest.fixture(

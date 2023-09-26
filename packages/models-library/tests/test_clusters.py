@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -9,16 +9,20 @@ from models_library.clusters import (
     CLUSTER_USER_RIGHTS,
     DEFAULT_CLUSTER_ID,
     Cluster,
+    ClusterTypeInModel,
 )
 from pydantic import BaseModel, ValidationError
+from simcore_postgres_database.models.clusters import ClusterType
 
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Cluster,),
+    [
+        Cluster,
+    ],
 )
 def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_present(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for example in model_cls_examples.values():
         modified_example = deepcopy(example)
@@ -35,11 +39,13 @@ def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_pr
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Cluster,),
+    [
+        Cluster,
+    ],
 )
 def test_cluster_fails_when_owner_has_no_admin_rights_unless_default_cluster(
-    model_cls: Type[BaseModel],
-    model_cls_examples: Dict[str, Dict[str, Any]],
+    model_cls: type[BaseModel],
+    model_cls_examples: dict[str, dict[str, Any]],
     faker: Faker,
 ):
     for example in model_cls_examples.values():
@@ -61,11 +67,13 @@ def test_cluster_fails_when_owner_has_no_admin_rights_unless_default_cluster(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Cluster,),
+    [
+        Cluster,
+    ],
 )
 def test_cluster_fails_when_owner_has_no_user_rights_if_default_cluster(
-    model_cls: Type[BaseModel],
-    model_cls_examples: Dict[str, Dict[str, Any]],
+    model_cls: type[BaseModel],
+    model_cls_examples: dict[str, dict[str, Any]],
 ):
     for example in model_cls_examples.values():
         modified_example = deepcopy(example)
@@ -82,3 +90,23 @@ def test_cluster_fails_when_owner_has_no_user_rights_if_default_cluster(
         modified_example["access_rights"][owner_gid] = CLUSTER_ADMIN_RIGHTS
         with pytest.raises(ValidationError):
             model_cls(**modified_example)
+
+
+def test_cluster_type_in_model_includes_postgres_database_model():
+    models_library_cluster_types_names: set[str] = {
+        t.name for t in set(ClusterTypeInModel)
+    }
+    postgres_library_cluster_types_names: set[str] = {t.name for t in set(ClusterType)}
+    assert postgres_library_cluster_types_names.issubset(
+        models_library_cluster_types_names
+    )
+
+    models_library_cluster_types_values: set[str] = {
+        t.value for t in set(ClusterTypeInModel)
+    }  # type: ignore
+    postgres_library_cluster_types_values: set[str] = {
+        t.value for t in set(ClusterType)
+    }
+    assert postgres_library_cluster_types_values.issubset(
+        models_library_cluster_types_values
+    )

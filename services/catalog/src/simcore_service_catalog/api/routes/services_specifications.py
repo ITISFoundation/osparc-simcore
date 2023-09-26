@@ -1,22 +1,22 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+    ServiceSpecificationsGet,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.constants import RESPONSE_MODEL_POLICY
-from ...models.schemas.services_specifications import (
-    ServiceSpecifications,
-    ServiceSpecificationsGet,
-)
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.services import get_default_service_specifications
+from ._constants import RESPONSE_MODEL_POLICY
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @router.get(
@@ -38,7 +38,7 @@ async def get_service_specifications(
         get_default_service_specifications
     ),
 ):
-    logger.debug("getting specifications for '%s:%s'", service_key, service_version)
+    _logger.debug("getting specifications for '%s:%s'", service_key, service_version)
 
     if is_function_service(service_key):
         # There is no specification for these, return empty specs
@@ -64,5 +64,5 @@ async def get_service_specifications(
         # nothing found, let's return the default then
         service_specs = default_service_specifications.copy()
 
-    logger.debug("returning %s", f"{service_specs=}")
+    _logger.debug("returning %s", f"{service_specs=}")
     return service_specs

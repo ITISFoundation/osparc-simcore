@@ -2,10 +2,12 @@ import datetime
 import logging
 import mimetypes
 import urllib.parse
-from typing import Final
+from pathlib import Path
+from typing import Final, NamedTuple
 
 from aiohttp import web
 from aiohttp.client import ClientError
+from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import SimCoreFileLink
@@ -20,14 +22,20 @@ from pydantic import (
     parse_obj_as,
     root_validator,
 )
+from servicelib.utils import logged_gather
 
-from .._constants import APP_SETTINGS_KEY, RQT_USERID_KEY
 from ..application_settings import get_settings
-from ..storage.api import get_download_link
+from ..storage.api import get_download_link, get_files_in_node_folder
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
+
 _NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
+
+_SUPPORTED_THUMBNAIL_EXTENSIONS: set[str] = {".png", ".jpeg", ".jpg"}
+_SUPPORTED_PREVIEW_FILE_EXTENSIONS: set[str] = {".gltf", ".png", ".jpeg", ".jpg"}
+
+ASSETS_FOLDER: Final[str] = "assets"
 
 
 def get_service_start_lock_key(user_id: UserID, project_uuid: ProjectID) -> str:
@@ -68,6 +76,19 @@ def get_total_project_dynamic_nodes_creation_interval(
 #
 
 
+def _guess_mimetype_from_name(name: str) -> str | None:
+    """Tries to guess the mimetype provided a name
+
+    Arguments:
+        name -- path of a file or the file url
+    """
+    _type, _ = mimetypes.guess_type(name)
+    # NOTE: mimetypes.guess_type works differently in our image, therefore made it nullable if
+    # cannot guess type
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4385
+    return _type
+
+
 class NodeScreenshot(BaseModel):
     thumbnail_url: HttpUrl
     file_url: HttpUrl
@@ -86,24 +107,113 @@ class NodeScreenshot(BaseModel):
             file_url = values["file_url"]
             assert file_url  # nosec
 
-            _type, _encoding = mimetypes.guess_type(file_url)
-            # NOTE: mimetypes.guess_type works differently in our image, therefore made it nullable if
-            # cannot guess type
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4385
-            values["mimetype"] = _type
+            values["mimetype"] = _guess_mimetype_from_name(file_url)
 
         return values
 
 
-async def fake_screenshots_factory(
-    request: web.Request, node_id: NodeID, node: Node
-) -> list[NodeScreenshot]:
-    """
-    ONLY for testing purposes
+def __get_search_key(meta_data: FileMetaDataGet) -> str:
+    return f"{meta_data.file_id}".lower()
 
-    """
-    assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
-    screenshots = []
+
+class _FileWithThumbnail(NamedTuple):
+    file: FileMetaDataGet
+    thumbnail: FileMetaDataGet
+
+
+def _get_files_with_thumbnails(
+    assets_files: list[FileMetaDataGet],
+) -> list[_FileWithThumbnail]:
+    """returns a list of tuples where the second entry is the thumbnails"""
+
+    selected_file_entries: dict[str, FileMetaDataGet] = {
+        __get_search_key(f): f
+        for f in assets_files
+        if not f.file_id.endswith(".hidden_do_not_remove")
+        and Path(f.file_id).suffix.lower() in _SUPPORTED_PREVIEW_FILE_EXTENSIONS
+    }
+
+    with_thumbnail_image: list[_FileWithThumbnail] = []
+
+    for selected_file in set(selected_file_entries.keys()):
+        # search for thumbnail
+        thumbnail: FileMetaDataGet | None = None
+        for extension in _SUPPORTED_THUMBNAIL_EXTENSIONS:
+            thumbnail_search_file_name = f"{selected_file}{extension}"
+            if thumbnail_search_file_name in selected_file_entries:
+                thumbnail = selected_file_entries[thumbnail_search_file_name]
+                break
+        if not thumbnail:
+            continue
+
+        # since there is a thumbnail it can be associated to a file
+        with_thumbnail_image.append(
+            _FileWithThumbnail(
+                file=selected_file_entries[selected_file],
+                thumbnail=thumbnail,
+            )
+        )
+        # remove entries which have been used
+        selected_file_entries.pop(
+            __get_search_key(selected_file_entries[selected_file]), None
+        )
+        selected_file_entries.pop(__get_search_key(thumbnail), None)
+
+    no_thumbnail_image: list[_FileWithThumbnail] = [
+        _FileWithThumbnail(file=x, thumbnail=x) for x in selected_file_entries.values()
+    ]
+
+    return with_thumbnail_image + no_thumbnail_image
+
+
+async def __get_link(
+    app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
+) -> tuple[str, HttpUrl]:
+    return __get_search_key(file_meta_data), await get_download_link(
+        app,
+        user_id,
+        parse_obj_as(SimCoreFileLink, {"store": "0", "path": file_meta_data.file_id}),
+    )
+
+
+async def _get_node_screenshots(
+    app: web.Application,
+    user_id: UserID,
+    files_with_thumbnails: list[_FileWithThumbnail],
+) -> list[NodeScreenshot]:
+    """resolves links concurrently before returning all the NodeScreenshots"""
+
+    search_map: dict[str, FileMetaDataGet] = {}
+
+    for entry in files_with_thumbnails:
+        search_map[__get_search_key(entry.file)] = entry.file
+        search_map[__get_search_key(entry.thumbnail)] = entry.thumbnail
+
+    resolved_links: list[tuple[str, HttpUrl]] = await logged_gather(
+        *[__get_link(app, user_id, x) for x in search_map.values()],
+        max_concurrency=10,
+    )
+
+    mapped_http_url: dict[str, HttpUrl] = dict(resolved_links)
+
+    return [
+        NodeScreenshot(
+            mimetype=_guess_mimetype_from_name(e.file.file_id),
+            file_url=mapped_http_url[__get_search_key(e.file)],
+            thumbnail_url=mapped_http_url[__get_search_key(e.thumbnail)],
+        )
+        for e in files_with_thumbnails
+    ]
+
+
+async def get_node_screenshots(
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node: Node,
+) -> list[NodeScreenshot]:
+    screenshots: list[NodeScreenshot] = []
 
     if (
         "file-picker" in node.key
@@ -113,17 +223,16 @@ async def fake_screenshots_factory(
         # Example of file that can be added in file-picker:
         # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
         try:
-            user_id = request[RQT_USERID_KEY]
             text = urllib.parse.quote(node.label)
 
             assert node.outputs is not None  # nosec
 
             filelink = parse_obj_as(SimCoreFileLink, node.outputs["outFile"])
 
-            file_url = await get_download_link(request.app, user_id, filelink)
+            file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
                     file_url=file_url,
                 )
             )
@@ -135,33 +244,22 @@ async def fake_screenshots_factory(
             )
 
     elif node.key.startswith("simcore/services/dynamic"):
-        # For dynamic services, just create fake images
+        # when dealing with dynamic service scan the assets directory and
+        # pull in all the assets that have been dropped in there
 
-        # References:
-        # - https://github.com/Ybalrid/Ogre_glTF
-        # - https://placehold.co/
-        # - https://picsum.photos/
-        #
-        count = int(str(node_id.int)[0])
-        text = urllib.parse.quote(node.label)
+        assets_files: list[FileMetaDataGet] = await get_files_in_node_folder(
+            app=app,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            folder_name=ASSETS_FOLDER,
+        )
 
-        screenshots = [
-            *(
-                NodeScreenshot(
-                    thumbnail_url=f"https://picsum.photos/seed/{node_id.int + n}/170/120",
-                    file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",
-                    mimetype="image/jpeg",
-                )
-                for n in range(count)
-            ),
-            *(
-                NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
-                    file_url=f"https://placehold.co/500x500?text={text}",
-                    mimetype="image/svg+xml",
-                )
-                for n in range(count)
-            ),
-        ]
+        resolved_screenshots: list[NodeScreenshot] = await _get_node_screenshots(
+            app=app,
+            user_id=user_id,
+            files_with_thumbnails=_get_files_with_thumbnails(assets_files),
+        )
+        screenshots.extend(resolved_screenshots)
 
     return screenshots

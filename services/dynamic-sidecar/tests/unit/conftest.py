@@ -4,15 +4,14 @@
 
 import asyncio
 import logging
-from typing import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from pytest_mock import MockerFixture
-from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_down,
@@ -36,44 +35,13 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable",
-        autospec=True,
-    )
-
-
-@pytest.fixture
-def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
-    """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient member functions"""
-    return {
-        "wait_till_rabbitmq_responsive": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.wait_till_rabbitmq_responsive",
-            return_value=None,
-            autospec=True,
-        ),
-        "post_log_message": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
-            return_value=None,
-            autospec=True,
-        ),
-        "close": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient.close",
-            return_value=None,
-            autospec=True,
-        ),
-    }
-
-
-@pytest.fixture
 def app(
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> FastAPI:
     """creates app with registry and rabbitMQ services mocked"""
-    app = create_app()
-    return app
+    return create_app()
 
 
 @pytest.fixture
@@ -108,47 +76,23 @@ async def ensure_external_volumes(
     volume_labels_source = [
         app_state.mounted_volumes.volume_name_inputs,
         app_state.mounted_volumes.volume_name_outputs,
-    ] + list(app_state.mounted_volumes.volume_name_state_paths())
+        *list(app_state.mounted_volumes.volume_name_state_paths()),
+    ]
 
     async with docker_client() as docker:
-
         volumes = await asyncio.gather(
             *[
                 docker.volumes.create(
                     {
                         "Labels": {
                             "source": source,
-                            "run_id": f"{app_state.settings.DY_SIDECAR_RUN_ID}",
+                            "run_id": app_state.settings.DY_SIDECAR_RUN_ID,
                         }
                     }
                 )
                 for source in volume_labels_source
             ]
         )
-
-        #
-        #
-        # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
-        #
-        #
-        # Example
-        #   {
-        #     "CreatedAt": "2022-06-23T03:22:08+02:00",
-        #     "Driver": "local",
-        #     "Labels": {
-        #         "run_id": "f7c1bd87-4da5-4709-9471-3d60c8a70639",
-        #         "source": "dy-sidecar_e3e70682-c209-4cac-a29f-6fbed82c07cd_data_dir_2"
-        #     },
-        #     "Mountpoint": "/var/lib/docker/volumes/22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034/_data",
-        #     "Name": "22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034",
-        #     "Options": null,
-        #     "Scope": "local",
-        #     "CreatedTime": 1655947328000,
-        #     "Containers": {}
-        #   }
-        #
-        # CLEAN:
-        #    docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
 
         yield tuple(volumes)
 
@@ -159,7 +103,7 @@ async def ensure_external_volumes(
             after=after_log(logger, logging.WARNING),
         )
         async def _delete(volume):
-            # Ocasionally might raise because volumes are mount to closing containers
+            # Occasionally might raise because volumes are mounted to closing containers
             await volume.delete()
 
         deleted = await asyncio.gather(
@@ -170,7 +114,6 @@ async def ensure_external_volumes(
 
 @pytest.fixture
 async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
-
     app_state = AppState(app)
 
     yield
@@ -181,3 +124,21 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         return
 
     await docker_compose_down(app_state.compose_spec, app_state.settings)
+
+
+@pytest.fixture
+def mock_rabbitmq_envs(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    monkeypatch: pytest.MonkeyPatch,
+    mock_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "RABBIT_HOST": "mocked_host",
+            "RABBIT_SECURE": "false",
+            "RABBIT_USER": "mocked_user",
+            "RABBIT_PASSWORD": "mocked_password",
+        },
+    )
+    return mock_environment

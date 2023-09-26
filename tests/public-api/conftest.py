@@ -40,11 +40,11 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.pytest_global_environs",
 ]
 
 
@@ -89,7 +89,7 @@ def simcore_docker_stack_and_registry_ready(
     event_loop: asyncio.AbstractEventLoop,
     docker_registry: UrlStr,
     docker_stack: StacksDeployedDict,
-    simcore_services_ready: None,
+    simcore_services_ready_module: None,
 ) -> StacksDeployedDict:
     # At this point `simcore_services_ready` waited until all services
     # are running. Let's make one more check on the web-api

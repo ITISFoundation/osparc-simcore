@@ -208,7 +208,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
         groupByMenu.add(tagByGroup);
         groupOptions.add(tagByGroup);
-        if (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4llite")) {
+        if (
+          osparc.product.Utils.isProduct("s4l") ||
+          osparc.product.Utils.isProduct("s4llite") ||
+          osparc.product.Utils.isProduct("s4lacad")
+        ) {
           tagByGroup.execute();
         }
       }
@@ -260,7 +264,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = this.tr("You need to be logged in to create a study");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.getInstance().logAs(msg);
       }
       return isLogged;
     },
@@ -301,19 +305,51 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _startStudyById: function(studyId) {
+    _startStudyById: function(studyId, openCB, cancelCB) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      osparc.desktop.credits.Utils.areWalletsEnabled()
+        .then(walletsEnabled => {
+          if (walletsEnabled) {
+            const resourceSelector = new osparc.study.ResourceSelector(studyId);
+            const win = osparc.study.ResourceSelector.popUpInWindow(resourceSelector);
+            resourceSelector.addListener("startStudy", () => {
+              win.close();
+              if (openCB) {
+                openCB();
+              }
+              osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+            });
+            resourceSelector.addListener("cancel", () => {
+              win.close();
+              if (cancelCB) {
+                cancelCB();
+              }
+            });
+            win.getChildControl("close-button").addListener("execute", () => {
+              cancelCB();
+            });
+          } else {
+            if (openCB) {
+              openCB();
+            }
+            osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+          }
+        })
+        .catch(() => {
+          if (cancelCB) {
+            cancelCB();
+          }
+        });
     },
 
     _createStudyFromTemplate: function() {
       throw new Error("Abstract method called!");
     },
 
-    _createStudyFromService: function() {
+    _createStudyFromService: async function() {
       throw new Error("Abstract method called!");
     },
 
@@ -323,6 +359,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _getOpenMenuButton: function(resourceData) {
       const openButton = new qx.ui.menu.Button(this.tr("Open"));
+      openButton.openResource = true;
       openButton.addListener("execute", () => {
         switch (resourceData["resourceType"]) {
           case "study":
@@ -349,7 +386,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openingStudy", () => win.close());
+      moreOpts.addListener("openStudy", e => {
+        const openCB = () => win.close();
+        const studyId = e.getData();
+        this._startStudyById(studyId, openCB, null);
+      });
       moreOpts.addListener("openTemplate", e => {
         win.close();
         const templateData = e.getData();

@@ -1,12 +1,16 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import aiopg.sa
 import arrow
 import sqlalchemy as sa
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_directorv2.services import (
+    NodeRequirements,
+    ServiceExtras,
+)
 from models_library.errors import ErrorDict
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
@@ -24,11 +28,12 @@ from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
+from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.schemas.services import NodeRequirements, ServiceExtras
+from ....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
 from ...catalog import CatalogClient, ServiceResourcesDict
@@ -81,7 +86,11 @@ def _compute_node_requirements(node_resources: dict[str, Any]) -> NodeRequiremen
 def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
     for image_data in node_resources.values():
         return BootMode(image_data.get("boot_modes")[0])
-    raise RuntimeError("No BootMode")
+    msg = "No BootMode"
+    raise RuntimeError(msg)
+
+
+_VALID_ENV_VALUE_NUM_PARTS: Final[int] = 2
 
 
 def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
@@ -90,7 +99,7 @@ def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
         if service_setting.name == "env":
             for complete_env in service_setting.value:
                 parts = complete_env.split("=")
-                if len(parts) == 2:
+                if len(parts) == _VALID_ENV_VALUE_NUM_PARTS:
                     node_envs[parts[0]] = parts[1]
 
     return node_envs
@@ -209,13 +218,14 @@ async def _generate_tasks_list_from_project(
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
-        task_progress = node.state.progress
+        task_progress = None
+        if task_state in COMPLETED_STATES:
+            task_progress = node.state.progress
         if (
-            node_id in published_nodes
+            NodeID(node_id) in published_nodes
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
-            task_progress = 0
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
@@ -233,6 +243,9 @@ async def _generate_tasks_list_from_project(
             internal_id=internal_id,
             node_class=to_node_class(node.key),
             progress=task_progress,
+            last_heartbeat=None,
+            created=arrow.utcnow().datetime,
+            modified=arrow.utcnow().datetime,
         )
 
         list_comp_tasks.append(task_db)
@@ -240,6 +253,19 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
+    async def get_task(self, project_id: ProjectID, node_id: NodeID) -> CompTaskAtDB:
+        async with self.db_engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(comp_tasks).where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{node_id}")
+                )
+            )
+            row = await result.fetchone()
+            if not row:
+                raise ComputationalTaskNotFoundError(node_id=node_id)
+            return CompTaskAtDB.from_orm(row)
+
     async def list_tasks(
         self,
         project_id: ProjectID,
@@ -326,18 +352,29 @@ class CompTasksRepository(BaseRepository):
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
-                insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
+                insert_stmt = insert(comp_tasks).values(
+                    **comp_task_db.to_db_model(exclude={"created", "modified"})
+                )
 
                 exclusion_rule = (
                     {"state", "progress"}
-                    if str(comp_task_db.node_id) not in published_nodes
+                    if comp_task_db.node_id not in published_nodes
                     else set()
                 )
+                update_values = (
+                    {"progress": None}
+                    if comp_task_db.node_id in published_nodes
+                    else {}
+                )
+
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                     exclusion_rule.add("outputs")
+                else:
+                    update_values = {}
                 on_update_stmt = insert_stmt.on_conflict_do_update(
                     index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                    set_=comp_task_db.to_db_model(exclude=exclusion_rule),
+                    set_=comp_task_db.to_db_model(exclude=exclusion_rule)
+                    | update_values,
                 ).returning(literal_column("*"))
                 result = await conn.execute(on_update_stmt)
                 row = await result.fetchone()
@@ -431,6 +468,11 @@ class CompTasksRepository(BaseRepository):
         self, project_id: ProjectID, node_id: NodeID, progress: float
     ) -> None:
         await self._update_task(project_id, node_id, progress=progress)
+
+    async def update_project_task_last_heartbeat(
+        self, project_id: ProjectID, node_id: NodeID, heartbeat_time: datetime
+    ) -> None:
+        await self._update_task(project_id, node_id, last_heartbeat=heartbeat_time)
 
     async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.acquire() as conn:

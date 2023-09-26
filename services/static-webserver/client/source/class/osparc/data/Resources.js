@@ -103,6 +103,15 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
           },
+          getWallet: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/wallet"
+          },
+          selectWallet: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/wallet/{walletId}"
+          },
           openDisableAutoStart: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
@@ -210,11 +219,20 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       "resourceUsage": {
-        useCache: true,
+        useCache: false,
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/containers?offset={offset}&limit={limit}"
+            url: statics.API + "/resource-usage/services?offset={offset}&limit={limit}"
+          }
+        }
+      },
+      "resourceUsagePerWallet": {
+        useCache: false,
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/resource-usage/services?wallet_id={walletId}&offset={offset}&limit={limit}"
           }
         }
       },
@@ -452,6 +470,17 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PREFERENCES
+       */
+      "preferences": {
+        endpoints: {
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/preferences/{preferenceId}"
+          }
+        }
+      },
+      /*
        * PERMISSIONS
        */
       "permissions": {
@@ -585,6 +614,115 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/groups/{gid}/users/{uid}"
+          }
+        }
+      },
+      /*
+       * WALLETS
+       */
+      "wallets": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/wallets"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}"
+          },
+          getAccessRights: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/groups"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          }
+        }
+      },
+      /*
+       * CREDITS PRICE
+       */
+      "credits-price": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/credits-price"
+          }
+        }
+      },
+      /*
+       * PAYMENTS
+       */
+      "payments": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/-/payments"
+          },
+          startPayment: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments"
+          },
+          cancelPayment: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments/{paymentId}:cancel"
+          }
+        }
+      },
+      /*
+       * PAYMENTS METHODS
+       */
+      "payments-methods": {
+        useCache: false,
+        endpoints: {
+          init: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods:init"
+          },
+          cancel: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:cancel"
+          },
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/payments-methods"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}"
+          }
+        }
+      },
+      /*
+       * AUTO RECHARGE
+       */
+      "auto-recharge": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          start: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          stop: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
       },
@@ -880,21 +1018,23 @@ qx.Class.define("osparc.data.Resources", {
           if (data && endpoint.includes("get") && ["studies", "templates"].includes(resource)) {
             if (Array.isArray(data)) {
               data.forEach(std => {
-                osparc.component.metadata.Quality.attachQualityToObject(std);
+                osparc.metadata.Quality.attachQualityToObject(std);
               });
             } else {
-              osparc.component.metadata.Quality.attachQualityToObject(data);
+              osparc.metadata.Quality.attachQualityToObject(data);
             }
           }
-          if (endpoint.includes("delete")) {
-            this.__removeCached(resource, deleteId);
-          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
-            this.__addCached(resource, data);
-          } else if (useCache && endpointDef.method === "GET") {
-            if (endpoint.includes("getPage")) {
+          if (useCache) {
+            if (endpoint.includes("delete")) {
+              this.__removeCached(resource, deleteId);
+            } else if (endpointDef.method === "POST" && options.pollTask !== true) {
               this.__addCached(resource, data);
-            } else {
-              this.__setCached(resource, data);
+            } else if (endpointDef.method === "GET") {
+              if (endpoint.includes("getPage")) {
+                this.__addCached(resource, data);
+              } else {
+                this.__setCached(resource, data);
+              }
             }
           }
           res.dispose();
@@ -1070,6 +1210,54 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
+    },
+
+    dummy: {
+      newWalletData: function() {
+        return {
+          "walletId": Math.floor(Math.random() * 1000),
+          name: "New Wallet",
+          description: "",
+          thumbnail: null,
+          owner: null,
+          "availableCredits": 0,
+          status: "ACTIVE",
+          accessRights: []
+        };
+      },
+
+      getUsageDetailed: function() {
+        return new Promise(resolve => {
+          resolve([{
+            "studyName": "Prj_1",
+            "jobType": "MESH",
+            "start": "2023-06-05T09:35:29.026Z",
+            "end": "2023-06-05T09:40:29.026Z",
+            "duration": 277233,
+            "computingTime": 1200000,
+            "numberOfCores": 4,
+            "status": "FINISHED"
+          }, {
+            "studyName": "Prj_1",
+            "jobType": "SIMULATION",
+            "start": "2023-06-06T09:35:29.026Z",
+            "end": "2023-06-06T09:40:29.026Z",
+            "duration": 1429861,
+            "computingTime": 11520000,
+            "numberOfCores": 8,
+            "status": "FINISHED"
+          }, {
+            "studyName": "Prj_2",
+            "jobType": "SIMULATION",
+            "start": "2023-06-06T10:37:29.026Z",
+            "end": "2023-06-06T10:42:29.026Z",
+            "duration": 1182460,
+            "computingTime": 9600000,
+            "numberOfCores": 8,
+            "status": "CANCELED"
+          }]);
+        });
+      }
     },
 
     getServiceUrl: function(key, version) {

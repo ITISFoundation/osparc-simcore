@@ -17,8 +17,8 @@
 
 qx.Class.define("osparc.dashboard.CardBase", {
   extend: qx.ui.form.ToggleButton,
-  implement: [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
+  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
   type: "abstract",
 
   construct: function() {
@@ -112,6 +112,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
             return !totalAccess;
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;
+          } else if (sharedWith === "shared-with-everyone") {
+            return !Object.keys(checks).includes("1");
           }
           return false;
         }
@@ -377,7 +379,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyQuality: function(quality) {
-      if (osparc.product.Utils.showQuality() && osparc.component.metadata.Quality.isEnabled(quality)) {
+      if (osparc.product.Utils.showQuality() && osparc.metadata.Quality.isEnabled(quality)) {
         const tsrRatingLayout = this.getChildControl("tsr-rating");
         const tsrRating = tsrRatingLayout.getChildren()[1];
         tsrRating.set({
@@ -430,12 +432,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Updatable study
-      if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
         this.setUpdatable("retired");
-      } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.utils.Study.isWorkbenchUpdatable(workbench)
+        osparc.study.Utils.isWorkbenchUpdatable(workbench)
           .then(updatable => {
             if (updatable) {
               this.setUpdatable("updatable");
@@ -444,16 +446,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      osparc.utils.Study.getUnaccessibleServices(workbench)
+      osparc.study.Utils.getInaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
-            this.setLocked(true);
+            this.__enableCard(false);
             const image = "@FontAwesome5Solid/ban/";
             let toolTipText = this.tr("Service info missing");
             unaccessibleServices.forEach(unSrv => {
               toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
             });
-            this.__blockCard(image, toolTipText);
+            this.__showBlockedCard(image, toolTipText);
           }
         });
     },
@@ -476,11 +478,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       switch (updatable) {
         case "retired":
           toolTipText = this.tr("Service(s) retired, please update");
-          textColor = osparc.utils.StatusUI.getColor("retired");
+          textColor = osparc.service.StatusUI.getColor("retired");
           break;
         case "deprecated":
           toolTipText = this.tr("Service(s) deprecated, please update");
-          textColor = osparc.utils.StatusUI.getColor("deprecated");
+          textColor = osparc.service.StatusUI.getColor("deprecated");
           break;
         case "updatable":
           toolTipText = this.tr("Update available");
@@ -498,13 +500,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setLocked(locked);
       if (locked) {
-        this.__setLockedStatus(state["locked"]);
+        this.__showBlockedCardFromStatus(state["locked"]);
       }
+      this.setLocked(locked);
     },
 
-    __setLockedStatus: function(lockedStatus) {
+    __showBlockedCardFromStatus: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
       let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
@@ -519,7 +521,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTip += this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          image = osparc.component.task.Export.ICON+"/";
+          image = osparc.task.Export.ICON+"/";
           toolTip += this.tr(" is exporting it...");
           break;
         case "OPENING":
@@ -534,10 +536,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
           image = "@FontAwesome5Solid/lock/";
           break;
       }
-      this.__blockCard(image, toolTip);
+      this.__showBlockedCard(image, toolTip);
     },
 
-    __blockCard: function(lockImageSrc, toolTipText) {
+    __showBlockedCard: function(lockImageSrc, toolTipText) {
+      this.getChildControl("lock-status").set({
+        opacity: 1.0,
+        visibility: "visible"
+      });
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
       lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
       lockImage.setSource(lockImageSrc);
@@ -554,18 +560,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         opacity: 1.0,
         visibility: locked ? "visible" : "excluded"
       });
-    },
 
-    __enableCard: function(enabled) {
       this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-      if (enabled) {
-        this.resetToolTipText();
-      }
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
+        cursor: locked ? "not-allowed" : "pointer"
       });
 
       [
@@ -575,9 +572,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
-          enabled
+          enabled: !locked
         });
       });
+    },
+
+    __enableCard: function(enabled) {
+      if (enabled) {
+        this.resetToolTipText();
+      }
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(enabled ? 1.0 : 0.7);
+      });
+
+      if (this.getMenu() && this.getMenu().getChildren()) {
+        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
+        if (openButton) {
+          openButton.setEnabled(enabled);
+        }
+      }
     },
 
     _applyFetching: function(value) {

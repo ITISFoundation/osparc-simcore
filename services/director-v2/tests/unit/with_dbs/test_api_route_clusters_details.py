@@ -3,7 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import Any, AsyncIterator, Callable
+from collections.abc import Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -12,13 +13,11 @@ from _dask_helpers import DaskGatewayServer
 from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
-from faker import Faker
+from models_library.api_schemas_directorv2.clusters import ClusterDetailsGet
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
 from pydantic import SecretStr
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsGet
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -37,10 +36,9 @@ def clusters_config(
     mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
@@ -48,54 +46,6 @@ def clusters_config(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
-
-
-@pytest.fixture
-async def dask_gateway(
-    local_dask_gateway_server: DaskGatewayServer,
-) -> Gateway:
-    async with Gateway(
-        local_dask_gateway_server.address,
-        local_dask_gateway_server.proxy_address,
-        asynchronous=True,
-        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
-    ) as gateway:
-        print(f"--> {gateway=} created")
-        cluster_options = await gateway.cluster_options()
-        gateway_versions = await gateway.get_versions()
-        clusters_list = await gateway.list_clusters()
-        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
-        for option in cluster_options.items():
-            print(f"--> {option=}")
-        return gateway
-
-
-@pytest.fixture
-async def dask_gateway_cluster(dask_gateway: Gateway) -> AsyncIterator[GatewayCluster]:
-    async with dask_gateway.new_cluster() as cluster:
-        yield cluster
-
-
-@pytest.fixture
-async def dask_gateway_cluster_client(
-    dask_gateway_cluster: GatewayCluster,
-) -> AsyncIterator[DaskClient]:
-    async with dask_gateway_cluster.get_client() as client:
-        yield client
-
-
-@pytest.fixture
-def cluster_simple_authentication(faker: Faker) -> Callable[[], dict[str, Any]]:
-    def creator() -> dict[str, Any]:
-        simple_auth = {
-            "type": "simple",
-            "username": faker.user_name(),
-            "password": faker.password(),
-        }
-        assert SimpleAuthentication.parse_obj(simple_auth)
-        return simple_auth
-
-    return creator
 
 
 @pytest.mark.skip(
@@ -260,7 +210,7 @@ async def test_get_cluster_details(
     # let's wait for the result
     result = task.result(timeout=_TASK_SLEEP_TIME + 5)
     assert result
-    assert await result == True
+    assert await result is True
     # wait for the computation to effectively stop
     async for attempt in AsyncRetrying(
         reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)

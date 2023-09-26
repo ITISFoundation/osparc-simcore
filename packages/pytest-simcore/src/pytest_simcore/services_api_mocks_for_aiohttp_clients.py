@@ -7,13 +7,18 @@ import random
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
+from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
+    FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
+    FileUploadCompleteState,
     FileUploadLinks,
     FileUploadSchema,
     LinkType,
@@ -30,7 +35,6 @@ from yarl import URL
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
-
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
@@ -197,7 +201,10 @@ def get_cluster_details_cb(url, **kwargs) -> CallbackResult:
     assert cluster_id
     return CallbackResult(
         status=200,
-        payload={"scheduler": {}, "cluster": {}, "dashboard_link": "some_faked_link"},
+        payload={
+            "scheduler": {"status": "RUNNING"},
+            "dashboard_link": "https://dashboard.link.com",
+        },
     )
 
 
@@ -391,7 +398,7 @@ def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
 
 @pytest.fixture
 async def storage_v0_service_mock(
-    aioresponses_mocker: AioResponsesMock,
+    aioresponses_mocker: AioResponsesMock, faker: Faker
 ) -> AioResponsesMock:
     """mocks responses of storage API"""
 
@@ -411,6 +418,18 @@ async def storage_v0_service_mock(
 
     list_file_meta_data_pattern = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/metadata.+$"
+    )
+
+    storage_complete_link = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete"
+    )
+
+    storage_complete_link_futures = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
+    )
+
+    storage_abort_link = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+abort"
     )
 
     aioresponses_mocker.get(
@@ -439,6 +458,47 @@ async def storage_v0_service_mock(
         status=web.HTTPOk.status_code,
         payload={"data": [{"name": "simcore.s3", "id": 0}]},
         repeat=True,
+    )
+
+    def generate_future_link(url, **kwargs):
+        parsed_url = urlparse(str(url))
+        stripped_url = urlunparse(
+            (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
+        )
+
+        payload: FileUploadCompleteResponse = parse_obj_as(
+            FileUploadCompleteResponse,
+            {
+                "links": {
+                    "state": stripped_url + ":complete/futures/" + str(faker.uuid4())
+                },
+            },
+        )
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload=jsonable_encoder(
+                Envelope[FileUploadCompleteResponse](data=payload)
+            ),
+        )
+
+    aioresponses_mocker.post(storage_complete_link, callback=generate_future_link)
+
+    aioresponses_mocker.post(
+        storage_complete_link_futures,
+        status=web.HTTPOk.status_code,
+        payload=jsonable_encoder(
+            Envelope[FileUploadCompleteFutureResponse](
+                data=FileUploadCompleteFutureResponse(
+                    state=FileUploadCompleteState.OK,
+                    e_tag="07d1c1a4-b073-4be7-b022-f405d90e99aa",
+                )
+            )
+        ),
+    )
+
+    aioresponses_mocker.post(
+        storage_abort_link,
+        status=web.HTTPOk.status_code,
     )
 
     return aioresponses_mocker

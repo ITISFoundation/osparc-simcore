@@ -4,12 +4,11 @@
 # pylint:disable=protected-access
 
 from pathlib import Path
-from typing import List
 
 import faker
 import pytest
 from models_library.projects_state import RunningState
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -213,10 +212,9 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
                 (RunningState.SUCCESS),
                 (RunningState.FAILED),
                 (RunningState.ABORTED),
-                (RunningState.RETRY),
             ],
-            RunningState.STARTED,
-            id="any number of success and 1 retry = started",
+            RunningState.FAILED,
+            id="any number of success",
         ),
         pytest.param(
             [
@@ -250,14 +248,23 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             RunningState.UNKNOWN,
             id="empty tasks (empty project or full of dynamic services) = unknown",
         ),
+        pytest.param(
+            [
+                (RunningState.WAITING_FOR_CLUSTER),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.WAITING_FOR_CLUSTER,
+            id="published and waiting for cluster = waiting for cluster",
+        ),
     ],
 )
 def test_get_pipeline_state_from_task_states(
-    task_states: List[RunningState],
+    task_states: list[RunningState],
     exp_pipeline_state: RunningState,
     fake_task: CompTaskAtDB,
 ):
-    tasks: List[CompTaskAtDB] = [
+    tasks: list[CompTaskAtDB] = [
         fake_task.copy(deep=True, update={"state": s}) for s in task_states
     ]
 
@@ -275,7 +282,6 @@ def test_get_pipeline_state_from_task_states(
         (RunningState.NOT_STARTED, False),
         (RunningState.PENDING, True),
         (RunningState.STARTED, True),
-        (RunningState.RETRY, True),
         (RunningState.SUCCESS, False),
         (RunningState.FAILED, False),
         (RunningState.ABORTED, False),

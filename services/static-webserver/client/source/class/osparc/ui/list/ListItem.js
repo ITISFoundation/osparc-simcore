@@ -42,8 +42,8 @@
 
 qx.Class.define("osparc.ui.list.ListItem", {
   extend: qx.ui.core.Widget,
-  implement : [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include : [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  implement : [qx.ui.form.IModel, osparc.filter.IFilterable],
+  include : [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
 
   construct: function() {
     this.base(arguments);
@@ -94,7 +94,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     subtitleMD: {
       check : "String",
-      apply : "__applySubtitleMD",
+      apply : "_applySubtitleMD",
       nullable : true
     },
 
@@ -168,6 +168,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
+        // or
         case "subtitle-md":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
@@ -231,7 +232,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       label.setValue(value);
     },
 
-    __applySubtitleMD: function(value) {
+    _applySubtitleMD: function(value) {
       if ([null, undefined, ""].includes(value)) {
         return;
       }

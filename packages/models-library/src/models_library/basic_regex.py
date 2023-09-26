@@ -61,7 +61,6 @@ TWILIO_ALPHANUMERIC_SENDER_ID_RE = r"(?!^\d+$)^[a-zA-Z0-9\s]{2,11}$"
 #   Accepted characters include both upper- and lower-case Ascii letters,
 #   the digits 0 through 9, and the space character.
 #   They may not be only numerals.
-# SEE # https://www.twilio.com/docs/glossary/what-alphanumeric-sender-id
 
 
 # Docker

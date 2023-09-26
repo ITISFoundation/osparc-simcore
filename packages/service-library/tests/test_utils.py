@@ -3,10 +3,10 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+from collections.abc import Awaitable, Coroutine
 from copy import copy
 from pathlib import Path
 from random import randint
-from typing import Awaitable, Coroutine
 
 import pytest
 from faker import Faker
@@ -15,12 +15,14 @@ from servicelib.utils import ensure_ends_with, fire_and_forget_task, logged_gath
 
 async def _value_error(uid, *, delay=1):
     await _succeed(delay)
-    raise ValueError(f"task#{uid}")
+    msg = f"task#{uid}"
+    raise ValueError(msg)
 
 
 async def _runtime_error(uid, *, delay=1):
     await _succeed(delay)
-    raise RuntimeError(f"task#{uid}")
+    msg = f"task#{uid}"
+    raise RuntimeError(msg)
 
 
 async def _succeed(uid, *, delay=1):
@@ -32,7 +34,7 @@ async def _succeed(uid, *, delay=1):
 
 @pytest.fixture
 def coros():
-    coros = [
+    return [
         _succeed(0),
         _value_error(1, delay=2),
         _succeed(2),
@@ -40,7 +42,6 @@ def coros():
         _value_error(4, delay=0),
         _succeed(5),
     ]
-    return coros
 
 
 @pytest.fixture
@@ -57,7 +58,7 @@ def mock_logger(mocker):
 
 
 async def test_logged_gather(event_loop, coros, mock_logger):
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:  # noqa: PT011
         await logged_gather(*coros, reraise=True, log=mock_logger)
 
     # NOTE: #4 fails first, the one raised in #1
@@ -100,7 +101,8 @@ def print_tree(path: Path, level=0):
 async def coroutine_that_cancels() -> asyncio.Future | Awaitable:
     async def _self_cancelling() -> None:
         await asyncio.sleep(0)  # NOTE: this forces a context switch
-        raise asyncio.CancelledError("manual cancellation")
+        msg = "manual cancellation"
+        raise asyncio.CancelledError(msg)
 
     return _self_cancelling()
 

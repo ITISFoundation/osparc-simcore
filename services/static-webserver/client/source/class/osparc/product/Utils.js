@@ -38,6 +38,7 @@ qx.Class.define("osparc.product.Utils", {
       switch (product) {
         case "s4l":
         case "s4llite":
+        case "s4lacad":
           if (options.plural) {
             alias = qx.locale.Manager.tr("projects");
           } else {
@@ -68,6 +69,7 @@ qx.Class.define("osparc.product.Utils", {
       switch (product) {
         case "s4l":
         case "s4llite":
+        case "s4lacad":
           if (options.plural) {
             alias = qx.locale.Manager.tr("tutorials");
           } else {
@@ -107,6 +109,18 @@ qx.Class.define("osparc.product.Utils", {
       return alias;
     },
 
+    resourceTypeToAlias: function(resourceType, options) {
+      switch (resourceType) {
+        case "study":
+          return this.getStudyAlias(options);
+        case "template":
+          return this.getTemplateAlias(options);
+        case "service":
+          return this.getServiceAlias(options);
+      }
+      return resourceType;
+    },
+
     getLogoPath: function() {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -119,6 +133,9 @@ qx.Class.define("osparc.product.Utils", {
           break;
         case "s4llite":
           logosPath = lightLogo ? "osparc/s4llite-white.png" : "osparc/s4llite-black.png";
+          break;
+        case "s4lacad":
+          logosPath = lightLogo ? "osparc/s4lacad-white.png" : "osparc/s4lacad-black.png";
           break;
         case "tis":
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
@@ -138,21 +155,21 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad") || this.isProduct("tis")) {
         return true;
       }
       return false;
     },
 
     showStudyPreview: function() {
-      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite")) {
+      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
         return true;
       }
       return false;
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
         return true;
       }
       return false;
@@ -187,14 +204,14 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showQuality: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
         return false;
       }
       return true;
     },
 
     showClassifiers: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
         return false;
       }
       return true;

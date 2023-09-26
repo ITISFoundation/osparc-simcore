@@ -1,7 +1,7 @@
 import os
+from collections.abc import AsyncGenerator, Generator, Iterator
 from functools import cached_property
 from pathlib import Path
-from typing import AsyncGenerator, Generator, Iterator
 
 from fastapi import FastAPI
 from models_library.projects_nodes import NodeID
@@ -86,22 +86,22 @@ class MountedVolumes:
     def disk_outputs_path(self) -> Path:
         return _ensure_path(self._dy_volumes / self.outputs_path.relative_to("/"))
 
-    def disk_state_paths(self) -> Iterator[Path]:
+    def disk_state_paths_iter(self) -> Iterator[Path]:
         for state_path in self.state_paths:
             yield _ensure_path(self._dy_volumes / state_path.relative_to("/"))
 
-    def all_disk_paths(self) -> Iterator[Path]:
+    def all_disk_paths_iter(self) -> Iterator[Path]:
         # PC: keeps iterator to follow same style as disk_state_paths but IMO it is overreaching
         yield self.disk_inputs_path
         yield self.disk_outputs_path
-        yield from self.disk_state_paths()
+        yield from self.disk_state_paths_iter()
 
     def _ensure_directories(self) -> None:
         """
         Creates directories on its file system, these will be mounted by the user services.
         """
         _ensure_path(self._dy_volumes)
-        for path in self.all_disk_paths():
+        for path in self.all_disk_paths_iter():
             _ensure_path(path)
 
     @staticmethod
@@ -125,7 +125,7 @@ class MountedVolumes:
         self, run_id: RunID
     ) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
-            self.volume_name_state_paths(), self.state_paths
+            self.volume_name_state_paths(), self.state_paths, strict=True
         ):
             bind_path: Path = await self._get_bind_path_from_label(
                 volume_state_path, run_id
@@ -148,6 +148,3 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
     )
 
     return app.state.mounted_volumes
-
-
-__all__: tuple[str, ...] = ("MountedVolumes",)

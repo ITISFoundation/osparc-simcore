@@ -1,13 +1,5 @@
-from typing import (
-    Any,
-    Generic,
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
-    TypeVar,
-    ValuesView,
-)
+from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
+from typing import Any, Generic, TypeVar
 
 from pydantic import validator
 from pydantic.generics import GenericModel
@@ -37,7 +29,7 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
     def update(self, *s: Iterable[tuple[DictKey, DictValue]]) -> None:
         return self.__root__.update(*s)
 
-    def __iter__(self) -> Iterator[DictKey]:
+    def __iter__(self) -> Iterator[DictKey]:  # type: ignore
         return self.__root__.__iter__()
 
     def get(self, key: DictKey, default: DictValue | None = None):

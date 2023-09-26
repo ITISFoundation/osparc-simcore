@@ -34,6 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.wallets import WalletInfo
 from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -51,11 +52,12 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
+from ..application_settings import get_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
-from ..resource_manager.websocket_manager import (
+from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
     UserSessionID,
     managed_resource,
@@ -70,8 +72,10 @@ from ..socketio.messages import (
 from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
-from . import _crud_delete_utils, _nodes_api
+from ..wallets import api as wallets_api
+from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._wallets_api import get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -176,12 +180,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _crud_delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
+    await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _crud_delete_utils.schedule_task(
+        task = _crud_api_delete.schedule_task(
             app,
             project_uuid,
             user_id,
@@ -195,7 +199,7 @@ async def submit_delete_project_task(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _crud_delete_utils.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
         return task
@@ -260,6 +264,19 @@ async def _start_dynamic_service(
             service_version=service_version,
         )
 
+        # Get wallet information
+        wallet_info = None
+        project_wallet = await get_project_wallet(request.app, project_id=project_uuid)
+        app_settings = get_settings(request.app)
+        if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
+            # Check whether user has access to the wallet
+            await wallets_api.get_wallet_by_user(
+                request.app, user_id, project_wallet.wallet_id, product_name
+            )
+            wallet_info = WalletInfo(
+                wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name
+            )
+
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
@@ -275,6 +292,7 @@ async def _start_dynamic_service(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
             service_resources=service_resources,
+            wallet_info=wallet_info,
         )
 
 
@@ -363,6 +381,30 @@ async def start_project_node(
     )
 
 
+async def _remove_service_and_its_data_folders(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_uuid: NodeIDStr,
+    user_agent: str,
+    stop_service: bool,
+) -> None:
+    if stop_service:
+        # no need to save the state of the node when deleting it
+        await director_v2_api.stop_dynamic_service(
+            app,
+            node_uuid,
+            simcore_user_agent=user_agent,
+            save_state=False,
+        )
+
+    # remove the node's data if any
+    await storage_api.delete_data_folders_of_project_node(
+        app, f"{project_uuid}", node_uuid, user_id
+    )
+
+
 async def delete_project_node(
     request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: NodeIDStr
 ) -> None:
@@ -373,20 +415,22 @@ async def delete_project_node(
     list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
-    if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
-        # no need to save the state of the node when deleting it
-        await director_v2_api.stop_dynamic_service(
+
+    fire_and_forget_task(
+        _remove_service_and_its_data_folders(
             request.app,
-            node_uuid,
-            simcore_user_agent=request.headers.get(
+            user_id=user_id,
+            project_uuid=project_uuid,
+            node_uuid=node_uuid,
+            user_agent=request.headers.get(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
-            save_state=False,
-        )
-
-    # remove the node's data if any
-    await storage_api.delete_data_folders_of_project_node(
-        request.app, f"{project_uuid}", node_uuid, user_id
+            stop_service=any(
+                s["service_uuid"] == node_uuid for s in list_running_dynamic_services
+            ),
+        ),
+        task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
+        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
     # remove the node from the db
@@ -409,7 +453,11 @@ async def update_project_linked_product(
 
 
 async def update_project_node_state(
-    app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    new_state: str,
 ) -> dict:
     log.debug(
         "updating node %s current state in project %s for user %s",
@@ -417,20 +465,18 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    partial_workbench_data: dict[str, Any] = {
-        node_id: {"state": {"currentStatus": new_state}},
-    }
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, _ = await db.update_project_workbench(
-        partial_workbench_data=partial_workbench_data,
+    updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
+        node_id=node_id,
+        product_name=None,
+        new_node_data={"state": {"currentStatus": new_state}},
     )
-    updated_project = await add_project_states_for_user(
+    return await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
-    return updated_project
 
 
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
@@ -440,9 +486,9 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
 
 async def update_project_node_outputs(
     app: web.Application,
-    user_id: int,
-    project_id: str,
-    node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
     new_outputs: dict | None,
     new_run_hash: str | None,
 ) -> tuple[dict, list[str]]:
@@ -460,16 +506,15 @@ async def update_project_node_outputs(
     )
     new_outputs = new_outputs or {}
 
-    partial_workbench_data = {
-        node_id: {"outputs": new_outputs, "runHash": new_run_hash},
-    }
-
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, changed_entries = await db.update_project_workbench(
-        partial_workbench_data=partial_workbench_data,
+    updated_project, changed_entries = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
+        node_id=node_id,
+        product_name=None,
+        new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
+
     log.debug(
         "patched project %s, following entries changed: %s",
         project_id,
@@ -481,7 +526,7 @@ async def update_project_node_outputs(
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
     # we do want only the key names
-    changed_keys = changed_entries.get(node_id, {}).get("outputs", {}).keys()
+    changed_keys = changed_entries.get(f"{node_id}", {}).get("outputs", {}).keys()
     return updated_project, changed_keys
 
 
@@ -550,10 +595,19 @@ async def _trigger_connected_service_retrieve(
 
 
 async def post_trigger_connected_service_retrieve(
-    app: web.Application, **kwargs
+    app: web.Application,
+    *,
+    project: dict,
+    updated_node_uuid: str,
+    changed_keys: list[str],
 ) -> None:
     await fire_and_forget_task(
-        _trigger_connected_service_retrieve(app, **kwargs),
+        _trigger_connected_service_retrieve(
+            app,
+            project=project,
+            updated_node_uuid=updated_node_uuid,
+            changed_keys=changed_keys,
+        ),
         task_suffix_name="trigger_connected_service_retrieve",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
@@ -565,32 +619,28 @@ async def post_trigger_connected_service_retrieve(
 
 
 async def _user_has_another_client_open(
-    user_session_id_list: list[UserSessionID], app: web.Application
+    users_sessions_ids: list[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
-    for user_session in user_session_id_list:
-        with managed_resource(
-            user_session.user_id, user_session.client_session_id, app
-        ) as rt:
-            if await rt.get_socket_id() is not None:
+    for u in users_sessions_ids:
+        with managed_resource(u.user_id, u.client_session_id, app) as user_session:
+            if await user_session.get_socket_id() is not None:
                 return True
     return False
 
 
 async def _clean_user_disconnected_clients(
-    user_session_id_list: list[UserSessionID], app: web.Application
+    users_sessions_ids: list[UserSessionID], app: web.Application
 ):
-    for user_session in user_session_id_list:
-        with managed_resource(
-            user_session.user_id, user_session.client_session_id, app
-        ) as rt:
-            if await rt.get_socket_id() is None:
+    for u in users_sessions_ids:
+        with managed_resource(u.user_id, u.client_session_id, app) as user_session:
+            if await user_session.get_socket_id() is None:
                 log.debug(
                     "removing disconnected project of user %s/%s",
-                    user_session.user_id,
-                    user_session.client_session_id,
+                    u.user_id,
+                    u.client_session_id,
                 )
-                await rt.remove(PROJECT_ID_KEY)
+                await user_session.remove(PROJECT_ID_KEY)
 
 
 async def try_open_project_for_user(
@@ -600,6 +650,13 @@ async def try_open_project_for_user(
     app: web.Application,
     max_number_of_studies_per_user: int | None,
 ) -> bool:
+    """
+    Raises:
+        ProjectTooManyProjectOpenedError: maximum limit of projects (`max_number_of_studies_per_user`) reached
+
+    Returns:
+        False if cannot be opened (e.g. locked, )
+    """
     try:
         async with lock_with_notification(
             app,
@@ -609,14 +666,14 @@ async def try_open_project_for_user(
             await get_user_name(app, user_id),
             notify_users=False,
         ):
-            with managed_resource(user_id, client_session_id, app) as rt:
+            with managed_resource(user_id, client_session_id, app) as user_session:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
                 if max_number_of_studies_per_user is not None and (
                     len(
                         {
                             uuid
-                            for uuid in await rt.find_all_resources_of_user(
+                            for uuid in await user_session.find_all_resources_of_user(
                                 PROJECT_ID_KEY
                             )
                             if uuid != project_uuid
@@ -628,34 +685,37 @@ async def try_open_project_for_user(
                         max_num_projects=max_number_of_studies_per_user
                     )
 
-                user_session_id_list: list[
+                # Assign project_id to current_session
+                current_session: UserSessionID = user_session.get_id()
+                sessions_with_project: list[
                     UserSessionID
-                ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
-
-                if not user_session_id_list:
-                    # no one has the project so we lock it
-                    await rt.add(PROJECT_ID_KEY, project_uuid)
+                ] = await user_session.find_users_of_resource(
+                    app, PROJECT_ID_KEY, project_uuid
+                )
+                if not sessions_with_project:
+                    # no one has the project so we assign it
+                    await user_session.add(PROJECT_ID_KEY, project_uuid)
                     return True
 
-                set_user_ids = {
-                    user_session.user_id for user_session in user_session_id_list
-                }
-                if set_user_ids.issubset({user_id}):
-                    # we are the only user, remove this session from the list
+                # Otherwise if this is the only user (NOTE: a session = user_id + client_seesion_id !)
+                user_ids: set[int] = {s.user_id for s in sessions_with_project}
+                if user_ids.issubset({user_id}):
+                    other_sessions_with_project = [
+                        usid
+                        for usid in sessions_with_project
+                        if usid != current_session
+                    ]
                     if not await _user_has_another_client_open(
-                        [
-                            uid
-                            for uid in user_session_id_list
-                            if uid != UserSessionID(user_id, client_session_id)
-                        ],
+                        other_sessions_with_project,
                         app,
                     ):
                         # steal the project
-                        await rt.add(PROJECT_ID_KEY, project_uuid)
+                        await user_session.add(PROJECT_ID_KEY, project_uuid)
                         await _clean_user_disconnected_clients(
-                            user_session_id_list, app
+                            sessions_with_project, app
                         )
                         return True
+
             return False
 
     except ProjectLockError:
@@ -675,29 +735,35 @@ async def try_close_project_for_user(
     app: web.Application,
     simcore_user_agent: str,
 ):
-    with managed_resource(user_id, client_session_id, app) as rt:
-        user_to_session_ids: list[UserSessionID] = await rt.find_users_of_resource(
-            PROJECT_ID_KEY, project_uuid
+    with managed_resource(user_id, client_session_id, app) as user_session:
+        current_session: UserSessionID = user_session.get_id()
+        all_sessions_with_project: list[
+            UserSessionID
+        ] = await user_session.find_users_of_resource(
+            app, key=PROJECT_ID_KEY, value=project_uuid
         )
-        # first check we have it opened now
-        if UserSessionID(user_id, client_session_id) not in user_to_session_ids:
-            # nothing to do the project is already closed
+
+        # first check whether other sessions registered this project
+        if current_session not in all_sessions_with_project:
+            # nothing to do, I do not have this project registered
             log.warning(
-                "project [%s] is already closed for user [%s].",
-                project_uuid,
-                user_id,
+                "%s is not registered as resource of %s. Skipping close project",
+                f"{project_uuid=}",
+                f"{user_id}",
                 extra=get_log_record_extra(user_id=user_id),
             )
             return
+
         # remove the project from our list of opened ones
         log.debug(
             "removing project [%s] from user [%s] resources", project_uuid, user_id
         )
-        await rt.remove(PROJECT_ID_KEY)
+        await user_session.remove(key=PROJECT_ID_KEY)
+
     # check it is not opened by someone else
-    user_to_session_ids.remove(UserSessionID(user_id, client_session_id))
-    log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
-    if not user_to_session_ids:
+    all_sessions_with_project.remove(current_session)
+    log.debug("remaining user_to_session_ids: %s", all_sessions_with_project)
+    if not all_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
             remove_project_dynamic_services(
@@ -707,10 +773,10 @@ async def try_close_project_for_user(
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
     else:
-        log.warning(
+        log.error(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
-            {user_session.user_id for user_session in user_to_session_ids},
+            {user_session.user_id for user_session in all_sessions_with_project},
         )
 
 
@@ -748,7 +814,7 @@ async def _get_project_lock_state(
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
         user_session_id_list: list[UserSessionID] = await rt.find_users_of_resource(
-            PROJECT_ID_KEY, project_uuid
+            app, PROJECT_ID_KEY, project_uuid
         )
     set_user_ids = {user_session.user_id for user_session in user_session_id_list}
 
@@ -973,21 +1039,22 @@ async def run_project_dynamic_services(
 ) -> None:
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
-    running_service_uuids: list[NodeIDStr] = [
+    running_services_uuids: list[NodeIDStr] = [
         d["service_uuid"]
         for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]
+
     # find what needs to be started
-    project_missing_services: dict[NodeIDStr, dict[str, Any]] = {
+    services_to_start_uuids: dict[NodeIDStr, dict[str, Any]] = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"])
-        and service_uuid not in running_service_uuids
+        and service_uuid not in running_services_uuids
     }
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        (len(project_missing_services) + len(running_service_uuids))
+        (len(services_to_start_uuids) + len(running_services_uuids))
         > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         # we cannot start so many services so we are done
@@ -995,16 +1062,17 @@ async def run_project_dynamic_services(
             user_id=user_id, project_uuid=ProjectID(project["uuid"])
         )
 
+    # avoid starting deprecated services
     deprecated_services: list[bool] = await logged_gather(
         *(
             is_service_deprecated(
                 request.app,
                 user_id,
-                project_missing_services[service_uuid]["key"],
-                project_missing_services[service_uuid]["version"],
+                services_to_start_uuids[service_uuid]["key"],
+                services_to_start_uuids[service_uuid]["version"],
                 product_name,
             )
-            for service_uuid in project_missing_services
+            for service_uuid in services_to_start_uuids
         ),
         reraise=True,
     )
@@ -1013,15 +1081,15 @@ async def run_project_dynamic_services(
         *(
             _start_dynamic_service(
                 request,
-                service_key=project_missing_services[service_uuid]["key"],
-                service_version=project_missing_services[service_uuid]["version"],
+                service_key=services_to_start_uuids[service_uuid]["key"],
+                service_version=services_to_start_uuids[service_uuid]["version"],
                 product_name=product_name,
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),
             )
             for service_uuid, is_deprecated in zip(
-                project_missing_services, deprecated_services
+                services_to_start_uuids, deprecated_services, strict=True
             )
             if not is_deprecated
         ),
@@ -1034,6 +1102,7 @@ async def remove_project_dynamic_services(
     project_uuid: str,
     app: web.Application,
     simcore_user_agent: str,
+    *,
     notify_users: bool = True,
     user_name: UserNameDict | None = None,
 ) -> None:
@@ -1109,7 +1178,7 @@ async def notify_project_state_update(
     ]
 
     if notify_only_user:
-        await send_messages(app, user_id=str(notify_only_user), messages=messages)
+        await send_messages(app, user_id=f"{notify_only_user}", messages=messages)
     else:
         rooms_to_notify = [
             f"{gid}"
@@ -1123,7 +1192,7 @@ async def notify_project_state_update(
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
-    node_id: str,
+    node_id: NodeID,
     errors: list[ErrorDict] | None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
@@ -1138,9 +1207,9 @@ async def notify_project_node_update(
             "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
             "data": {
                 "project_id": project["uuid"],
-                "node_id": node_id,
+                "node_id": f"{node_id}",
                 # as GET projects/{project_id}/nodes/{node_id}
-                "data": project["workbench"][node_id],
+                "data": project["workbench"][f"{node_id}"],
                 # as GET projects/{project_id}/nodes/{node_id}/errors
                 "errors": errors,
             },
@@ -1170,6 +1239,7 @@ async def lock_with_notification(
     status: ProjectStatus,
     user_id: int,
     user_name: UserNameDict,
+    *,
     notify_users: bool = True,
 ):
     try:
@@ -1180,25 +1250,17 @@ async def lock_with_notification(
             user_id,
             user_name,
         ):
-            log.debug(
-                "Project [%s] lock acquired",
-                f"{project_uuid=}",
-            )
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
             yield
-        log.debug(
-            "Project [%s] lock released",
-            f"{project_uuid=}",
-        )
     except ProjectLockError:
         # someone else has already the lock?
         prj_states: ProjectState = await get_project_states_for_user(
             user_id, project_uuid, app
         )
-        log.error(
+        log.exception(
             "Project [%s] already locked in state '%s'. Please check with support.",
             f"{project_uuid=}",
             f"{prj_states.locked.status=}",

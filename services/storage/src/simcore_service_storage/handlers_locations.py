@@ -64,7 +64,7 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
     sync_results: list[StorageFileID] = []
-    sync_coro = dsm.synchronise_meta_data_table(query_params.dry_run)
+    sync_coro = dsm.synchronise_meta_data_table(dry_run=query_params.dry_run)
 
     if query_params.fire_and_forget:
         settings: Settings = request.app[APP_CONFIG_KEY]
@@ -78,7 +78,7 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
                     len(result),
                 )
             except asyncio.TimeoutError:
-                log.error("Sync metadata table timed out (%s seconds)", timeout)
+                log.exception("Sync metadata table timed out (%s seconds)", timeout)
 
         fire_and_forget_task(
             _go(),

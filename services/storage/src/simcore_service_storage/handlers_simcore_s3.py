@@ -22,7 +22,6 @@ from settings_library.s3 import S3Settings
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
-# Exclusive for simcore-s3 storage -----------------------
 from . import sts
 from ._meta import api_vtag
 from .models import (
@@ -119,13 +118,11 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(
-    f"/{api_vtag}/simcore-s3/files/metadata:search", name="search_files_starting_with"
-)
-async def search_files_starting_with(request: web.Request) -> web.Response:
+@routes.post(f"/{api_vtag}/simcore-s3/files/metadata:search", name="search_files")
+async def search_files(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
     log.debug(
-        "received call to search_files_starting_with with %s",
+        "received call to search_files with %s",
         f"{query_params=}",
     )
 
@@ -133,10 +130,26 @@ async def search_files_starting_with(request: web.Request) -> web.Response:
         SimcoreS3DataManager,
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
-    data: list[FileMetaData] = await dsm.search_files_starting_with(
-        query_params.user_id, prefix=query_params.startswith
+    data: list[FileMetaData]
+    if query_params.access_right == "read":
+        data = await dsm.search_read_access_files(
+            query_params.user_id,
+            file_id_prefix=query_params.startswith,
+            sha256_checksum=query_params.sha256_checksum,
+        )
+    elif query_params.access_right == "write":
+        data = await dsm.search_owned_files(
+            query_params.user_id,
+            file_id_prefix=query_params.startswith,
+            sha256_checksum=query_params.sha256_checksum,
+        )
+    else:
+        raise ValueError(f"The query param {query_params.access_right=} is unexpected")
+    log.debug(
+        "Found %d files starting with '%s'",
+        len(data),
+        f"{query_params.startswith=}, {query_params.sha256_checksum=}",
     )
-    log.debug("Found %d files starting with '%s'", len(data), query_params.startswith)
 
     return web.json_response(
         {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},

@@ -93,7 +93,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
         score,
         targetScore,
         maxScore
-      } = osparc.component.metadata.Quality.computeTSRScore(currentTSR, targetTSR);
+      } = osparc.metadata.Quality.computeTSRScore(currentTSR, targetTSR);
 
       starsRating.set({
         score,

@@ -1,7 +1,8 @@
 import logging
 from collections import deque
+from collections.abc import Coroutine
 from functools import cached_property
-from typing import Any, Coroutine, Final
+from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -9,6 +10,7 @@ from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
@@ -23,21 +25,21 @@ from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
 from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.dynamic_services import SchedulerData
+from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinSidecarsClient
 
-STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
+_logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
+_STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
 
 
 async def _debug_progress_callback(
     message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
 ) -> None:
-    logger.debug("%s: %.2f %s", task_id, percent, message)
+    _logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
 class SidecarsClient:
@@ -92,7 +94,7 @@ class SidecarsClient:
         result: dict[str, Any] = response.json()
         return result
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, dict[str, str]]:
@@ -105,23 +107,23 @@ class SidecarsClient:
         except UnexpectedStatusError:
             return {}
 
-    @log_decorator(logger=logger)
-    async def disable_service_outputs_watcher(
+    @log_decorator(logger=_logger)
+    async def disable_service_ports_io(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.patch_containers_outputs_watcher(
+        await self._thin_client.patch_containers_ports_io(
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
-    @log_decorator(logger=logger)
-    async def enable_service_outputs_watcher(
+    @log_decorator(logger=_logger)
+    async def enable_service_ports_io(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.patch_containers_outputs_watcher(
+        await self._thin_client.patch_containers_ports_io(
             dynamic_sidecar_endpoint, is_enabled=True
         )
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def service_outputs_create_dirs(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, outputs_labels: dict[str, Any]
     ) -> None:
@@ -129,7 +131,7 @@ class SidecarsClient:
             dynamic_sidecar_endpoint, outputs_labels=outputs_labels
         )
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def get_entrypoint_container_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, dynamic_sidecar_network_name: str
     ) -> str:
@@ -280,19 +282,22 @@ class SidecarsClient:
             task_id,
             task_timeout=task_timeout,
             progress_callback=progress_callback,
-            status_poll_interval=STATUS_POLL_INTERVAL,
+            status_poll_interval=_STATUS_POLL_INTERVAL,
         ) as result:
-            logger.debug("Task %s finished", task_id)
+            _logger.debug("Task %s finished", task_id)
             return result
 
     async def create_containers(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         compose_spec: str,
+        metrics_params: CreateServiceMetricsAdditionalParams,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks(
-            dynamic_sidecar_endpoint, compose_spec=compose_spec
+            dynamic_sidecar_endpoint,
+            compose_spec=compose_spec,
+            metrics_params=metrics_params,
         )
         task_id: TaskId = response.json()
 
@@ -472,12 +477,12 @@ def _get_proxy_configuration(
 
 
 async def setup(app: FastAPI) -> None:
-    with log_context(logger, logging.DEBUG, "dynamic-sidecar api client setup"):
+    with log_context(_logger, logging.DEBUG, "dynamic-sidecar api client setup"):
         app.state.sidecars_api_clients = {}
 
 
 async def shutdown(app: FastAPI) -> None:
-    with log_context(logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
+    with log_context(_logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
         await logged_gather(
             *(
                 x._thin_client.close()  # pylint: disable=protected-access

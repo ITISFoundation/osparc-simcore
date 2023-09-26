@@ -1,10 +1,10 @@
 import re
-from typing import Final
+from typing import Any, ClassVar, Final
 
-from models_library.projects import ProjectID
 from pydantic import BaseModel, ConstrainedStr, Field
 
 from .generics import DictModel
+from .projects import ProjectID
 from .projects_nodes_io import NodeIDStr
 
 SERVICE_NETWORK_RE: Final[re.Pattern] = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$")
@@ -26,7 +26,7 @@ class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
 
 class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "network_one": {
@@ -50,7 +50,7 @@ class ProjectsNetworks(BaseModel):
 
     class Config:
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "project_uuid": "ec5cdfea-f24e-4aa1-83b8-6dccfdc8cf4d",
                 "networks_with_aliases": {

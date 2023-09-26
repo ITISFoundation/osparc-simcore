@@ -7,10 +7,14 @@ IMPORTANT: lowest level module
 import asyncio
 import logging
 import os
+from collections.abc import Awaitable, Coroutine, Iterable
 from pathlib import Path
-from typing import Any, Awaitable, Coroutine
+from typing import Any, Generator
 
-logger = logging.getLogger(__name__)
+import toolz
+from pydantic import NonNegativeInt
+
+_logger = logging.getLogger(__name__)
 
 
 def is_production_environ() -> bool:
@@ -74,9 +78,9 @@ def fire_and_forget_task(
         try:
             fut.result()
         except asyncio.CancelledError:
-            logger.warning("%s spawned as fire&forget was cancelled", fut)
+            _logger.warning("%s spawned as fire&forget was cancelled", fut)
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error occurred while running task %s!", task.get_name())
+            _logger.exception("Error occurred while running task %s!", task.get_name())
 
     task.add_done_callback(log_exception_callback)
     task.add_done_callback(fire_and_forget_tasks_collection.discard)
@@ -87,7 +91,7 @@ def fire_and_forget_task(
 async def logged_gather(
     *tasks: Awaitable[Any],
     reraise: bool = True,
-    log: logging.Logger = logger,
+    log: logging.Logger = _logger,
     max_concurrency: int = 0,
 ) -> list[Any]:
     """
@@ -103,7 +107,7 @@ async def logged_gather(
     :param log: passing the logger gives a chance to identify the origin of the gather call, defaults to current submodule's logger
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
     """
-
+    wrapped_tasks: tuple | list
     if max_concurrency > 0:
         semaphore = asyncio.Semaphore(max_concurrency)
 
@@ -141,3 +145,23 @@ def ensure_ends_with(input_string: str, char: str) -> str:
     if not input_string.endswith(char):
         input_string += char
     return input_string
+
+
+def partition_gen(
+    input_list: Iterable, *, slice_size: NonNegativeInt
+) -> Generator[tuple[Any, ...], None, None]:
+    """
+    Given an iterable and the slice_size yields tuples containing
+    slice_size elements in them.
+
+    Inputs:
+        input_list= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        slice_size = 5
+    Outputs:
+        [(1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (11, 12, 13)]
+
+    """
+    if not input_list:
+        yield ()
+
+    yield from toolz.partition_all(slice_size, input_list)

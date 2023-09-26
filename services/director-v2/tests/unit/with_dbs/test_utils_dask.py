@@ -8,6 +8,7 @@
 
 
 from collections.abc import Callable
+from copy import deepcopy
 from random import choice
 from typing import Any
 from unittest import mock
@@ -28,6 +29,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.clusters import ClusterID
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -40,13 +42,12 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.constants import UNDEFINED_DOCKER_LABEL
+from simcore_service_director_v2.models.comp_runs import RunMetadataDict
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
-    _UNDEFINED_METADATA,
     _to_human_readable_resource_values,
     check_if_cluster_is_able_to_run_pipeline,
     clean_task_output_and_log_files_if_invalid,
@@ -96,7 +97,7 @@ async def mocked_node_ports_filemanager_fcts(
                     urls=[
                         parse_obj_as(
                             AnyUrl,
-                            f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",
+                            f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",  # noqa: S311
                         )
                     ],
                     chunk_size=parse_obj_as(ByteSize, "5GiB"),
@@ -166,7 +167,7 @@ def test_dask_job_id_serialization(
 @pytest.fixture()
 def fake_io_config(faker: Faker) -> dict[str, str]:
     return {
-        f"pytest_io_key_{faker.pystr()}": choice(
+        f"pytest_io_key_{faker.pystr()}": choice(  # noqa: S311
             ["integer", "data:*/*", "boolean", "number", "string"]
         )
         for n in range(20)
@@ -284,7 +285,6 @@ def _app_config_with_db(
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
 ):
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -472,7 +472,15 @@ async def test_clean_task_output_and_log_files_if_invalid(
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
         )
     ]
-    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(expected_calls)
+
+    def _add_is_directory(entry: mock._Call) -> mock._Call:  # noqa: SLF001
+        new_kwargs: dict[str, Any] = deepcopy(entry.kwargs)
+        new_kwargs["is_directory"] = False
+        return mock.call(**new_kwargs)
+
+    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(
+        [_add_is_directory(x) for x in expected_calls]
+    )
     if entry_exists_returns:
         mocked_node_ports_filemanager_fcts["delete_file"].assert_not_called()
     else:
@@ -566,8 +574,8 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
         (
             {},
             {
-                f"{to_simcore_runtime_docker_label_key('product-name')}": _UNDEFINED_METADATA,
-                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": _UNDEFINED_METADATA,
+                f"{to_simcore_runtime_docker_label_key('product-name')}": UNDEFINED_DOCKER_LABEL,
+                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": UNDEFINED_DOCKER_LABEL,
             },
         ),
         (
@@ -577,7 +585,7 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
             },
             {
                 f"{to_simcore_runtime_docker_label_key('product-name')}": "the awesome osparc",
-                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": _UNDEFINED_METADATA,
+                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": UNDEFINED_DOCKER_LABEL,
                 "some-crazy-additional-label": "with awesome value",
             },
         ),
@@ -589,7 +597,7 @@ async def test_compute_task_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    run_metadata: MetadataDict,
+    run_metadata: RunMetadataDict,
     expected_additional_task_labels: ContainerLabelsDict,
     initialized_app: FastAPI,
 ):
@@ -600,14 +608,14 @@ async def test_compute_task_labels(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        metadata=run_metadata,
+        run_metadata=run_metadata,
         node_requirements=sleeper_task.image.node_requirements,
     )
     expected_task_labels = {
         f"{to_simcore_runtime_docker_label_key('user-id')}": f"{user_id}",
         f"{to_simcore_runtime_docker_label_key('project-id')}": f"{project_id}",
         f"{to_simcore_runtime_docker_label_key('node-id')}": f"{node_id}",
-        f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": f"{_UNDEFINED_METADATA}",
+        f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": f"{UNDEFINED_DOCKER_LABEL}",
         f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{sleeper_task.image.node_requirements.cpu}",
         f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{sleeper_task.image.node_requirements.ram}",
     } | expected_additional_task_labels
@@ -640,7 +648,7 @@ async def test_compute_task_envs(
     _app_config_with_db: None,
     published_project: PublishedProject,
     initialized_app: FastAPI,
-    run_metadata: MetadataDict,
+    run_metadata: RunMetadataDict,
     input_task_envs: ContainerEnvsDict,
     expected_computed_task_envs: ContainerEnvsDict,
 ):

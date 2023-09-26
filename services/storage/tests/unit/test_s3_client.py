@@ -7,11 +7,12 @@
 
 import asyncio
 import json
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from typing import AsyncIterator, Awaitable, Callable, Final
+from typing import Final
 from uuid import uuid4
 
 import botocore.exceptions
@@ -32,9 +33,8 @@ from simcore_service_storage.exceptions import (
 )
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
-    NextContinuationToken,
     StorageS3Client,
-    _list_objects_v2_paginated,
+    _list_objects_v2_paginated_gen,
 )
 from simcore_service_storage.settings import Settings
 from tests.helpers.file_utils import (
@@ -239,7 +239,7 @@ async def test_create_multipart_presigned_upload_link(
 
     # now complete it
     received_e_tag = await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
     )
 
     # check that the multipart upload is not listed anymore
@@ -284,18 +284,23 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
             file_id,
             upload_links.upload_id,
             uploaded_parts,
+            None,
         )
 
     wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
     # with pytest.raises(S3KeyNotFoundError):
     # NOTE: this does not raise... and it returns the file_id of the original file...
     await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
+        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts, None
     )
     # call it again triggers
     with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
+            storage_s3_bucket,
+            wrong_file_id,
+            upload_links.upload_id,
+            uploaded_parts,
+            None,
         )
 
 
@@ -351,12 +356,12 @@ async def test_multiple_completion_of_multipart_upload(
 
     # first completion
     await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
     )
 
     with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
         )
 
 
@@ -379,7 +384,7 @@ async def test_break_completion_of_multipart_upload(
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(
             storage_s3_client.complete_multipart_upload(
-                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
+                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
             ),
             timeout=VERY_SHORT_TIMEOUT,
         )
@@ -846,6 +851,13 @@ async def test_list_files(
 
     list_files = await storage_s3_client.list_files(storage_s3_bucket, prefix="")
     assert len(list_files) == NUM_FILES
+
+    # check with limits
+    list_files = await storage_s3_client.list_files(
+        storage_s3_bucket, prefix="", max_files_to_list=NUM_FILES - 2
+    )
+    assert len(list_files) == NUM_FILES - 2
+
     # test with prefix
     file, file_id = choice(uploaded_files)
     list_files = await storage_s3_client.list_files(storage_s3_bucket, prefix=file_id)
@@ -867,7 +879,6 @@ async def test_list_files_invalid_bucket_raises(
 class PaginationCase:
     total_files: int
     items_per_page: int
-    expected_queried_pages: int
     mock_upper_bound: int
 
 
@@ -878,7 +889,6 @@ class PaginationCase:
             PaginationCase(
                 total_files=10,
                 items_per_page=2,
-                expected_queried_pages=5,
                 mock_upper_bound=1000,
             ),
             id="normal_query",
@@ -887,14 +897,21 @@ class PaginationCase:
             PaginationCase(
                 total_files=10,
                 items_per_page=10,
-                expected_queried_pages=5,
                 mock_upper_bound=2,
             ),
             id="page_too_big",
         ),
+        pytest.param(
+            PaginationCase(
+                total_files=100,
+                items_per_page=2,
+                mock_upper_bound=2,
+            ),
+            id="regression_more_files_than_limit",
+        ),
     ],
 )
-async def test_list_objects_v2_paginated(
+async def test_list_objects_v2_paginated_and_list_all_objects_gen(
     mocker: MockFixture,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
@@ -904,14 +921,14 @@ async def test_list_objects_v2_paginated(
     pagination_case: PaginationCase,
 ):
     mocker.patch(
-        "simcore_service_storage.s3_client._PAGE_MAX_ITEMS_UPPER_BOUND",
+        "simcore_service_storage.s3_client._MAX_ITEMS_PER_PAGE",
         pagination_case.mock_upper_bound,
     )
 
     FILE_SIZE: ByteSize = parse_obj_as(ByteSize, "1")
 
     # create some files
-    await asyncio.gather(
+    created_files_data: list[tuple[Path, str]] = await asyncio.gather(
         *[
             upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
             for _ in range(pagination_case.total_files)
@@ -920,24 +937,30 @@ async def test_list_objects_v2_paginated(
 
     # fetch all items using pagination
     listing_requests: list[ObjectTypeDef] = []
-    next_continuation_token: NextContinuationToken | None = None
-    pages_queried: int = 0
-    while True:
-        pages_queried += 1
-        page_items, next_continuation_token = await _list_objects_v2_paginated(
-            client=storage_s3_client.client,
-            bucket=storage_s3_bucket,
-            prefix="",  # all items
-            max_total_items=pagination_case.items_per_page,
-            next_continuation_token=next_continuation_token,
-        )
+
+    async for page_items in _list_objects_v2_paginated_gen(
+        client=storage_s3_client.client,
+        bucket=storage_s3_bucket,
+        prefix="",  # all items
+    ):
         listing_requests.extend(page_items)
 
-        if next_continuation_token is None:
-            break
-
     assert len(listing_requests) == pagination_case.total_files
-    assert pages_queried == pagination_case.expected_queried_pages
+
+    created_files = [x[1] for x in created_files_data]
+    queried_files = [x["Key"] for x in listing_requests]
+    assert len(created_files) == len(queried_files)
+    assert set(created_files) == set(queried_files)
+
+    # fetch all items using the generator make sure it does not break
+    generator_query = []
+    async for s3_objects in storage_s3_client.list_all_objects_gen(
+        storage_s3_bucket,
+        prefix="",
+    ):
+        generator_query.extend(s3_objects)
+
+    assert len(generator_query) == len(created_files)
 
 
 async def test_file_exists(

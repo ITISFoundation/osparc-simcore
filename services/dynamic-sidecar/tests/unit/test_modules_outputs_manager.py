@@ -14,6 +14,7 @@ import pytest
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
+from models_library.services import RunID
 from pydantic import PositiveFloat
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
@@ -70,7 +71,7 @@ def mock_upload_outputs(
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         await asyncio.sleep(upload_duration)
 
-    yield mocker.patch(
+    return mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mock_upload_outputs,
     )
@@ -272,7 +273,6 @@ async def test_port_key_tracker_add_pending(
 async def test_port_key_tracker_are_pending_ports_uploading(
     port_key_tracker_with_ports: _PortKeyTracker, port_keys: list[str]
 ):
-
     await port_key_tracker_with_ports.move_all_ports_to_uploading()
 
     assert await port_key_tracker_with_ports.are_pending_ports_uploading() is False
@@ -355,7 +355,7 @@ async def test_port_key_tracker_workflow(
 async def test_regression_io_log_redirect_cb(
     mock_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
 ):
-    for mock_empty_str in {
+    for mock_empty_str in (
         "RABBIT_HOST",
         "RABBIT_USER",
         "RABBIT_PASSWORD",
@@ -363,11 +363,12 @@ async def test_regression_io_log_redirect_cb(
         "POSTGRES_USER",
         "POSTGRES_PASSWORD",
         "POSTGRES_DB",
-    }:
+    ):
         monkeypatch.setenv(mock_empty_str, "")
+    monkeypatch.setenv("RABBIT_SECURE", "false")
 
     mounted_volumes = MountedVolumes(
-        run_id=faker.uuid4(cast_to=None),
+        run_id=RunID.create(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
@@ -389,7 +390,6 @@ async def test_regression_io_log_redirect_cb(
     setup_outputs_manager(app)
 
     async with TestClient(app):  # runs setup handlers
-
         outputs_manager: OutputsManager = app.state.outputs_manager
         assert outputs_manager.io_log_redirect_cb is not None
 

@@ -10,13 +10,15 @@ from aiohttp import ClientSession, web
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from pytest_mock import MockerFixture
-from simcore_service_webserver.garbage_collector_core import (
+from simcore_service_webserver.garbage_collector._core_orphans import (
     _remove_single_service_if_orphan,
     remove_orphaned_services,
 )
 from yarl import URL
 
-MODULE_GC_CORE: Final[str] = "simcore_service_webserver.garbage_collector_core"
+MODULE_GC_CORE_ORPHANS: Final[
+    str
+] = "simcore_service_webserver.garbage_collector._core_orphans"
 
 
 @pytest.fixture
@@ -37,7 +39,7 @@ def mock_get_workbench_node_ids_from_project_uuid(
     mocker: MockerFixture, faker: Faker
 ) -> None:
     mocker.patch(
-        f"{MODULE_GC_CORE}.get_workbench_node_ids_from_project_uuid",
+        f"{MODULE_GC_CORE_ORPHANS}.get_workbench_node_ids_from_project_uuid",
         return_value={faker.uuid4(), faker.uuid4(), faker.uuid4()},
     )
 
@@ -45,12 +47,12 @@ def mock_get_workbench_node_ids_from_project_uuid(
 @pytest.fixture
 def mock_list_dynamic_services(mocker: MockerFixture):
     mocker.patch(
-        f"{MODULE_GC_CORE}.api.list_dynamic_services",
+        f"{MODULE_GC_CORE_ORPHANS}.api.list_dynamic_services",
         autospec=True,
     )
 
 
-async def test_regression_remove_orphaned_services_node_ids_unhashable_type_set(
+async def test_regressionremove_orphaned_services_node_ids_unhashable_type_set(
     mock_get_workbench_node_ids_from_project_uuid: None,
     mock_list_dynamic_services: None,
     mock_registry: AsyncMock,
@@ -65,20 +67,20 @@ async def test_regression_project_id_recovered_from_the_wrong_data_structure(
     # tests that KeyError is not raised
 
     mocker.patch(
-        f"{MODULE_GC_CORE}.is_node_id_present_in_any_project_workbench",
+        f"{MODULE_GC_CORE_ORPHANS}.is_node_id_present_in_any_project_workbench",
         autospec=True,
         return_value=True,
     )
     mocker.patch(
-        f"{MODULE_GC_CORE}.ProjectDBAPI.get_from_app_context",
+        f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI.get_from_app_context",
         autospec=True,
         return_value=AsyncMock(),
     )
-    mocker.patch(f"{MODULE_GC_CORE}.api.stop_dynamic_service", autospec=True)
+    mocker.patch(f"{MODULE_GC_CORE_ORPHANS}.api.stop_dynamic_service", autospec=True)
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
-        interactive_service={
+        dynamic_service={
             "service_host": "host",
             "service_uuid": faker.uuid4(),
             "user_id": 1,
@@ -93,14 +95,13 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
     mocker: MockerFixture,
     aioresponses_mocker: AioResponsesMock,
 ):
-
     mocker.patch(
-        f"{MODULE_GC_CORE}.is_node_id_present_in_any_project_workbench",
+        f"{MODULE_GC_CORE_ORPHANS}.is_node_id_present_in_any_project_workbench",
         autospec=True,
         return_value=True,
     )
     mocker.patch(
-        f"{MODULE_GC_CORE}.ProjectDBAPI.get_from_app_context",
+        f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI.get_from_app_context",
         autospec=True,
         return_value=AsyncMock(),
     )
@@ -130,7 +131,7 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
-        interactive_service={
+        dynamic_service={
             "service_host": "host",
             "service_uuid": faker.uuid4(),
             "user_id": 1,

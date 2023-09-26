@@ -2,11 +2,10 @@
 
 import json
 import re
-from collections.abc import Generator
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Final, Literal, TypeAlias
+from typing import Any, ClassVar, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -22,15 +21,11 @@ from pydantic import (
     validator,
 )
 
-from .basic_types import PortInt
+from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
+from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
-
-# Cloudflare DNS server address
-DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
-
 
 # NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
 
@@ -215,8 +210,8 @@ class PathMappingsLabel(BaseModel):
             ):
                 msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
                 raise ValueError(msg)
-
-        return v
+        output: str | None = v
+        return output
 
     class Config(_BaseConfig):
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -260,59 +255,6 @@ class RestartPolicy(str, Enum):
 
     NO_RESTART = "no-restart"
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
-
-
-class _PortRange(BaseModel):
-    """`lower` and `upper` are included"""
-
-    lower: PortInt
-    upper: PortInt
-
-    @validator("upper")
-    @classmethod
-    def lower_less_than_upper(cls, v, values) -> PortInt:
-        upper = v
-        lower: PortInt | None = values.get("lower")
-        if lower is None or lower >= upper:
-            msg = f"Condition not satisfied: lower={lower!r} < upper={upper!r}"
-            raise ValueError(msg)
-        return v
-
-
-class DNSResolver(BaseModel):
-    address: str = Field(
-        ..., description="this is not an url address is derived from IP address"
-    )
-    port: PortInt
-
-    class Config(_BaseConfig):
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"address": "1.1.1.1", "port": 53},  # NOSONAR
-                {"address": "ns1.example.com", "port": 53},
-            ]
-        }
-
-
-class NATRule(BaseModel):
-    """Content of "simcore.service.containers-allowed-outgoing-permit-list" label"""
-
-    hostname: str
-    tcp_ports: list[_PortRange | PortInt]
-    dns_resolver: DNSResolver = Field(
-        default_factory=lambda: DNSResolver(
-            address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
-        ),
-        description="specify a DNS resolver address and port",
-    )
-
-    def iter_tcp_ports(self) -> Generator[PortInt, None, None]:
-        for port in self.tcp_ports:
-            if isinstance(port, _PortRange):
-                yield from range(port.lower, port.upper + 1)
-            else:
-                yield port
 
 
 class DynamicSidecarServiceLabels(BaseModel):
@@ -372,6 +314,12 @@ class DynamicSidecarServiceLabels(BaseModel):
         description="allow complete internet access to containers in here",
     )
 
+    callbacks_mapping: Json[CallbacksMapping] | None = Field(
+        default_factory=CallbacksMapping,
+        alias="simcore.service.callbacks-mapping",
+        description="exposes callbacks from user services to the sidecar",
+    )
+
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
@@ -387,7 +335,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is not None and values.get("compose_spec") is None:
             msg = "`container_http_entry` not allowed if `compose_spec` is missing"
             raise ValueError(msg)
-        return v
+        return f"{v}" if v else v
 
     @validator("containers_allowed_outgoing_permit_list")
     @classmethod
@@ -431,6 +379,34 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
+    @validator("callbacks_mapping")
+    @classmethod
+    def ensure_callbacks_mapping_container_names_defined_in_compose_spec(
+        cls, v: CallbacksMapping, values
+    ):
+        if v is None:
+            return {}
+
+        defined_services: set[str] = {x.service for x in v.before_shutdown}
+        if v.metrics:
+            defined_services.add(v.metrics.service)
+
+        if len(defined_services) == 0:
+            return v
+
+        compose_spec: dict | None = values.get("compose_spec")
+        if compose_spec is None:
+            if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
+                err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{defined_services}'"
+                raise ValueError(err_msg)
+        else:
+            containers_in_compose_spec = set(compose_spec["services"].keys())
+            for service_name in defined_services:
+                if service_name not in containers_in_compose_spec:
+                    err_msg = f"{service_name=} not found in {compose_spec=}"
+                    raise ValueError(err_msg)
+        return v
+
     @root_validator
     @classmethod
     def not_allowed_in_both_specs(cls, values):
@@ -470,7 +446,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         return values
 
     class Config(_BaseConfig):
-        pass
+        ...
 
 
 class SimcoreServiceLabels(DynamicSidecarServiceLabels):
@@ -519,6 +495,15 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
+                    "simcore.service.callbacks-mapping": json.dumps(
+                        {
+                            "metrics": {
+                                "service": DEFAULT_SINGLE_SERVICE_NAME,
+                                "command": "ls",
+                                "timeout": 1,
+                            }
+                        }
+                    ),
                 },
                 # dynamic-service with compose spec
                 {
@@ -553,6 +538,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     ),
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
+                    "simcore.service.callbacks-mapping": json.dumps(
+                        CallbacksMapping.Config.schema_extra["examples"][3]
+                    ),
                 },
             ]
         }

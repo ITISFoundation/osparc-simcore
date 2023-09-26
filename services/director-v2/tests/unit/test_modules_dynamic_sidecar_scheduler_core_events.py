@@ -3,21 +3,21 @@
 
 import asyncio
 import logging
-from typing import Final, Iterable
+from collections.abc import Iterable
+from typing import Final
 
 import pytest
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
-from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.exception_utils import _SKIPS_MESSAGE
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
     ContainerState,
     DockerContainerInspect,
     DockerStatus,
+    SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
     BaseClientHTTPError,
@@ -32,8 +32,9 @@ REPEAT_COUNT: Final[PositiveInt] = STEPS + 1
 
 @pytest.fixture
 def mock_env(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
@@ -57,7 +58,8 @@ def mock_sidecars_client_always_fail(mocker: MockerFixture) -> None:
     class MockedObj:
         @classmethod
         async def containers_inspect(cls, *args, **kwargs) -> None:
-            raise BaseClientHTTPError("will always fail")
+            msg = "will always fail"
+            raise BaseClientHTTPError(msg)
 
     mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
@@ -71,7 +73,8 @@ def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
         async def containers_inspect(self, *args, **kwargs) -> None:
             self.counter += 1
             if self.counter < STEPS / 2:
-                raise BaseClientHTTPError("will always fail")
+                msg = "will always fail"
+                raise BaseClientHTTPError(msg)
 
     mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
@@ -92,7 +95,9 @@ def scheduler_data(
 
 
 @pytest.fixture()
-def caplog_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(
         logging.DEBUG,
     ):
@@ -103,7 +108,7 @@ async def test_event_get_status_network_connectivity(
     mock_sidecars_client_always_fail: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
-    caplog_debug: LogCaptureFixture,
+    caplog_debug: pytest.LogCaptureFixture,
 ):
     caplog_debug.clear()
     with pytest.raises(BaseClientHTTPError):
@@ -118,7 +123,7 @@ async def test_event_get_status_recovers_after_error(
     mock_sidecars_client_stops_failing: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
-    caplog_debug: LogCaptureFixture,
+    caplog_debug: pytest.LogCaptureFixture,
 ):
     caplog_debug.clear()
     for _ in range(REPEAT_COUNT):

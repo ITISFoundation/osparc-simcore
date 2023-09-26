@@ -157,7 +157,7 @@ KNOWN_IDENTIFIERS = {
 }
 
 
-@pytest.mark.diagnostics
+@pytest.mark.diagnostics()
 @pytest.mark.parametrize(
     "metadata_path",
     TEST_DATA_FOLDER.rglob("metadata*.json"),
@@ -226,7 +226,7 @@ def test_template_substitution_on_jsondumps():
     json_dumps_template = json.dumps(json_template)  # LIKE image labels!
 
     # NOTE: that here we are enforcing the values to be strings!
-    assert '{"x": "$VALUE1", "y": "$VALUE2"}' == json_dumps_template
+    assert json_dumps_template == '{"x": "$VALUE1", "y": "$VALUE2"}'
 
     template = TextTemplate(json_dumps_template)
     assert set(template.get_identifiers()) == {"VALUE1", "VALUE2"}

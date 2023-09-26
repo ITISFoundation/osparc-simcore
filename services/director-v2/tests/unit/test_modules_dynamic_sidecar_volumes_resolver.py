@@ -33,8 +33,8 @@ def state_paths() -> list[Path]:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture
@@ -132,7 +132,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path("/some/random/path/to/a/workspace/folder"),
         node_uuid=faker.uuid4(cast_to=None),
-        run_id=faker.uuid4(cast_to=None),
+        run_id=RunID.create(),
     )
 
     await assert_creation_and_removal(unique_volume_name)
@@ -140,11 +140,11 @@ async def test_unique_name_creation_and_removal(faker: Faker):
 
 def test_volumes_get_truncated_as_expected(faker: Faker):
     node_uuid = faker.uuid4(cast_to=None)
-    run_id = faker.uuid4(cast_to=None)
+    run_id = RunID.create()
     assert node_uuid != run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path(
-            f"/home/user/a-{'-'.join(['very' for _ in range(31)])}-long-home-path/workspace"
+            f"/home/user/a-{'-'.join(['very' for _ in range(34)])}-long-home-path/workspace"
         ),
         node_uuid=node_uuid,
         run_id=run_id,

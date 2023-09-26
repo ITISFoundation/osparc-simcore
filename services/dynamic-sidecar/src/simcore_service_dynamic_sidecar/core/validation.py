@@ -2,7 +2,8 @@ import json
 import logging
 import os
 import re
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any, NamedTuple
 
 import yaml
 from servicelib.docker_constants import (
@@ -16,10 +17,10 @@ from .settings import ApplicationSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-class InvalidComposeSpec(Exception):
+class InvalidComposeSpecError(Exception):
     """Exception used to signal incorrect docker-compose configuration file"""
 
 
@@ -36,11 +37,9 @@ def _assemble_container_name(
         service_key,
     ]
 
-    container_name = "-".join([x for x in strings_to_use if len(x) > 0])[
+    return "-".join([x for x in strings_to_use if len(x) > 0])[
         : settings.DYNAMIC_SIDECAR_MAX_COMBINED_CONTAINER_NAME_LENGTH
     ].replace("_", "-")
-
-    return container_name
 
 
 def _get_forwarded_env_vars(container_key: str) -> list[str]:
@@ -49,7 +48,7 @@ def _get_forwarded_env_vars(container_key: str) -> list[str]:
         # some services expect it, using it as empty
         "SIMCORE_NODE_BASEPATH=",
     ]
-    for key in os.environ.keys():
+    for key in os.environ:
         if key.startswith("FORWARD_ENV_"):
             new_entry_key = key.replace("FORWARD_ENV_", "")
 
@@ -130,12 +129,12 @@ def _merge_env_vars(
 
 
 def _connect_user_services(
-    parsed_compose_spec: dict[str, Any], allow_internet_access: bool
+    parsed_compose_spec: dict[str, Any], *, allow_internet_access: bool
 ) -> None:
     """
     Put all containers in the compose spec in the same network.
     The network name must only be unique inside the user defined spec.
-    `docker-compose` will add some prefix to it.
+    `docker compose` will add some prefix to it.
     """
     networks = parsed_compose_spec.get("networks", None)
     if networks is None:
@@ -170,16 +169,21 @@ def parse_compose_spec(compose_file_content: str) -> Any:
     try:
         return yaml.safe_load(compose_file_content)
     except yaml.YAMLError as e:
-        raise InvalidComposeSpec(
-            f"{str(e)}\n{compose_file_content}\nProvided yaml is not valid!"
-        ) from e
+        msg = f"{e}\n{compose_file_content}\nProvided yaml is not valid!"
+        raise InvalidComposeSpecError(msg) from e
+
+
+class ComposeSpecValidation(NamedTuple):
+    compose_spec: str
+    current_container_names: list[str]
+    original_to_current_container_names: dict[str, str]
 
 
 async def validate_compose_spec(
     settings: ApplicationSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
-) -> str:
+) -> ComposeSpecValidation:
     """
     Validates what looks like a docker compose spec and injects
     additional data to mainly make sure:
@@ -188,22 +192,28 @@ async def validate_compose_spec(
     - properly target environment variables formwarded via
         settings on the service
 
-    Finally runs docker-compose config to properly validate the result
+    Finally runs docker compose config to properly validate the result
     """
-    logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
+    _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
     parsed_compose_spec = parse_compose_spec(compose_file_content)
 
     if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
-        raise InvalidComposeSpec(f"{compose_file_content}\nProvided yaml is not valid!")
+        msg = f"{compose_file_content}\nProvided yaml is not valid!"
+        raise InvalidComposeSpecError(msg)
 
     if not {"version", "services"}.issubset(set(parsed_compose_spec.keys())):
-        raise InvalidComposeSpec(f"{compose_file_content}\nProvided yaml is not valid!")
+        msg = f"{compose_file_content}\nProvided yaml is not valid!"
+        raise InvalidComposeSpecError(msg)
 
     version = parsed_compose_spec["version"]
     if version.startswith("1"):
-        raise InvalidComposeSpec(f"Provided spec version '{version}' is not supported")
+        msg = f"Provided spec version '{version}' is not supported"
+        raise InvalidComposeSpecError(msg)
 
     spec_services_to_container_name: dict[str, str] = {}
+
+    current_container_names: list[str] = []
+    original_to_current_container_names: dict[str, str] = {}
 
     spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
@@ -216,6 +226,9 @@ async def validate_compose_spec(
         )
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
+
+        current_container_names.append(container_name)
+        original_to_current_container_names[service] = container_name
 
         # inject forwarded environment variables
         environment_entries = service_content.get("environment", [])
@@ -278,15 +291,20 @@ async def validate_compose_spec(
         spec_services_to_container_name=spec_services_to_container_name,
     )
 
-    # validate against docker-compose config
+    # validate against docker compose config
     result = await docker_compose_config(compose_spec)
 
     if not result.success:
-        logger.warning(
-            "'docker-compose config' failed for:\n%s\n%s",
+        _logger.warning(
+            "'docker compose config' failed for:\n%s\n%s",
             f"{compose_spec}",
             result.message,
         )
-        raise InvalidComposeSpec(f"Invalid compose-specs:\n{result.message}")
+        msg = f"Invalid compose-specs:\n{result.message}"
+        raise InvalidComposeSpecError(msg)
 
-    return compose_spec
+    return ComposeSpecValidation(
+        compose_spec=compose_spec,
+        current_container_names=current_container_names,
+        original_to_current_container_names=original_to_current_container_names,
+    )

@@ -6,8 +6,9 @@
 
 import logging
 import sys
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Iterable, Iterator
+from unittest.mock import AsyncMock
 
 import pytest
 import simcore_service_dynamic_sidecar
@@ -15,8 +16,10 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
-from pytest import LogCaptureFixture, MonkeyPatch
+from pydantic import parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
     setenvs_from_dict,
@@ -119,8 +122,8 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture
@@ -138,8 +141,7 @@ def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
 
 
 @pytest.fixture
-def mock_environment(
-    monkeypatch: MonkeyPatch,
+def base_mock_envs(
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -147,11 +149,47 @@ def mock_environment(
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
-    user_id: UserID,
-    project_id: ProjectID,
     node_id: NodeID,
     run_id: RunID,
     ensure_shared_store_dir: None,
+) -> EnvVarsDict:
+    return {
+        # envs in Dockerfile
+        "SC_BOOT_MODE": "production",
+        "SC_BUILD_TARGET": "production",
+        "DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR": f"{dy_volumes}",
+        "DYNAMIC_SIDECAR_SHARED_STORE_DIR": f"{shared_store_dir}",
+        # envs on container
+        "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+        "REGISTRY_AUTH": "false",
+        "REGISTRY_USER": "test",
+        "REGISTRY_PW": "test",
+        "REGISTRY_SSL": "false",
+        "DY_SIDECAR_RUN_ID": f"{run_id}",
+        "DY_SIDECAR_NODE_ID": f"{node_id}",
+        "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
+        "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
+        "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
+        "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
+        "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
+    }
+
+
+@pytest.fixture
+def mock_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    base_mock_envs: EnvVarsDict,
+    user_id: UserID,
+    project_id: ProjectID,
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
+    node_id: NodeID,
+    run_id: RunID,
+    inputs_dir: Path,
+    compose_namespace: str,
+    outputs_dir: Path,
+    dy_volumes: Path,
+    shared_store_dir: Path,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -166,6 +204,7 @@ def mock_environment(
 
     # envs on container
     envs["DYNAMIC_SIDECAR_COMPOSE_NAMESPACE"] = compose_namespace
+    envs["DY_SIDECAR_CALLBACKS_MAPPING"] = "{}"
 
     envs["REGISTRY_AUTH"] = "false"
     envs["REGISTRY_USER"] = "test"
@@ -174,7 +213,7 @@ def mock_environment(
 
     envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
     envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
-    envs["DY_SIDECAR_RUN_ID"] = f"{run_id}"
+    envs["DY_SIDECAR_RUN_ID"] = run_id
     envs["DY_SIDECAR_NODE_ID"] = f"{node_id}"
     envs["DY_SIDECAR_PATH_INPUTS"] = f"{inputs_dir}"
     envs["DY_SIDECAR_PATH_OUTPUTS"] = f"{outputs_dir}"
@@ -197,18 +236,65 @@ def mock_environment(
 
 @pytest.fixture
 def mock_environment_with_envdevel(
-    monkeypatch: MonkeyPatch, project_slug_dir: Path
+    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
     """Alternative environment loaded fron .env-devel.
 
     .env-devel is used mainly to run CLI
     """
     env_file = project_slug_dir / ".env-devel"
-    envs = setenvs_from_envfile(monkeypatch, env_file.read_text())
-    return envs
+    return setenvs_from_envfile(monkeypatch, env_file.read_text())
 
 
 @pytest.fixture()
-def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_info_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
+
+
+@pytest.fixture
+def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
+    """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient member functions"""
+    return {
+        "wait_till_rabbitmq_responsive": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.wait_till_rabbitmq_responsive",
+            return_value=None,
+            autospec=True,
+        ),
+        "post_rabbit_message": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
+            return_value=None,
+            autospec=True,
+        ),
+        "close": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient.close",
+            return_value=None,
+            autospec=True,
+        ),
+    }
+
+
+@pytest.fixture
+def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.resource_tracking._core.stop_heart_beat_task",
+        return_value=None,
+    )
+
+
+@pytest.fixture
+def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
+    return parse_obj_as(
+        CreateServiceMetricsAdditionalParams,
+        CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+    )

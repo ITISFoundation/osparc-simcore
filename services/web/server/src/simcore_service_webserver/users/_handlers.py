@@ -35,8 +35,8 @@ routes = web.RouteTableDef()
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -56,7 +56,9 @@ def _handle_users_exceptions(handler: Handler):
 @_handle_users_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    profile: ProfileGet = await api.get_user_profile(request.app, req_ctx.user_id)
+    profile: ProfileGet = await api.get_user_profile(
+        request.app, req_ctx.user_id, req_ctx.product_name
+    )
     return envelope_json_response(profile)
 
 

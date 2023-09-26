@@ -1,4 +1,5 @@
 import logging
+from typing import TypeAlias
 
 from pydantic import BaseModel, ConstrainedFloat, Field, validate_arguments, validator
 
@@ -6,7 +7,7 @@ _logger = logging.getLogger(__name__)
 
 TaskId = str
 
-ProgressMessage = str
+ProgressMessage: TypeAlias = str
 
 
 class ProgressPercent(ConstrainedFloat):
@@ -21,7 +22,7 @@ class TaskProgress(BaseModel):
     """
 
     message: ProgressMessage = Field(default="")
-    percent: ProgressPercent = Field(default=0.0)
+    percent: ProgressPercent = Field(default=0.0)  # type: ignore[assignment]
 
     @validate_arguments
     def update(
@@ -35,14 +36,15 @@ class TaskProgress(BaseModel):
             self.message = message
         if percent:
             if not (0.0 <= percent <= 1.0):
-                raise ValueError(f"{percent=} must be in range [0.0, 1.0]")
+                msg = f"percent={percent!r} must be in range [0.0, 1.0]"
+                raise ValueError(msg)
             self.percent = percent
 
         _logger.debug("Progress update: %s", f"{self}")
 
     @classmethod
     def create(cls) -> "TaskProgress":
-        return cls.parse_obj(dict(message="", percent=0.0))
+        return cls.parse_obj({"message": "", "percent": 0.0})
 
     @validator("percent")
     @classmethod

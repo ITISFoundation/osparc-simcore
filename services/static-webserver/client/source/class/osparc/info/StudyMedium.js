@@ -72,6 +72,16 @@ qx.Class.define("osparc.info.StudyMedium", {
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
       this._add(extraInfoLayout);
+
+      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
+        marginTop: -10 // bring it closer to the extra info
+      });
+      const title = new qx.ui.basic.Label(this.tr("DESCRIPTION")).set({
+        paddingLeft: 14 // align it with the other titles
+      });
+      descriptionLayout.add(title);
+      descriptionLayout.add(osparc.info.StudyUtils.createDescriptionMD(this.getStudy()));
+      this._add(descriptionLayout);
     },
 
     __createMenuButton: function() {
@@ -118,13 +128,13 @@ qx.Class.define("osparc.info.StudyMedium", {
 
       if (
         osparc.product.Utils.showQuality() &&
-        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+        osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
           label: this.tr("QUALITY"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.__openQuality,
             ctx: this
           }
@@ -134,11 +144,6 @@ qx.Class.define("osparc.info.StudyMedium", {
       extraInfo.push({
         label: this.tr("TAGS"),
         view: osparc.info.StudyUtils.createTags(this.getStudy())
-      });
-
-      extraInfo.push({
-        label: this.tr("DESCRIPTION"),
-        view: osparc.info.StudyUtils.createDescription(this.getStudy())
       });
 
       return extraInfo;

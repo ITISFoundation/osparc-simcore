@@ -1,21 +1,30 @@
+import datetime
 import logging
 from abc import abstractmethod
+from decimal import Decimal
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
-from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum
+import arrow
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
+
+from .projects import ProjectID
+from .projects_nodes_io import NodeID
+from .projects_state import RunningState
+from .services import ServiceKey, ServiceType, ServiceVersion
+from .services_resources import ServiceResourcesDict
+from .users import UserID
+from .utils.enums import StrAutoEnum
+from .wallets import WalletID
 
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str
 
 
 class RabbitEventMessageType(str, Enum):
+    __slots__ = ()
+
     RELOAD_IFRAME = "RELOAD_IFRAME"
 
 
@@ -50,6 +59,7 @@ class NodeMessageBase(ProjectMessageBase):
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
+    node_id: NodeID | None
     messages: list[LogMessageStr]
     log_level: LogLevelInt = logging.INFO
 
@@ -157,3 +167,102 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     instances_running: int = Field(
         ..., description="the number of EC2 instances currently in running state in AWS"
     )
+
+
+class RabbitResourceTrackingMessageType(StrAutoEnum):
+    TRACKING_STARTED = auto()
+    TRACKING_HEARTBEAT = auto()
+    TRACKING_STOPPED = auto()
+
+
+class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.tracking"] = Field(
+        default="io.simcore.service.tracking", const=True
+    )
+
+    service_run_id: str = Field(
+        ..., description="uniquely identitifies the service run"
+    )
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+
+    def routing_key(self) -> str | None:
+        return None
+
+
+class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_STARTED, const=True
+    )
+
+    wallet_id: WalletID | None
+    wallet_name: str | None
+
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
+
+    product_name: str
+    simcore_user_agent: str
+
+    user_id: UserID
+    user_email: str
+
+    project_id: ProjectID
+    project_name: str
+
+    node_id: NodeID
+    node_name: str
+
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    service_type: ServiceType
+    service_resources: ServiceResourcesDict
+    service_additional_metadata: dict[str, Any] = Field(
+        default_factory=dict, description="service additional 'free' metadata"
+    )
+
+
+class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT, const=True
+    )
+
+
+class SimcorePlatformStatus(StrAutoEnum):
+    OK = auto()
+    BAD = auto()
+
+
+class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_STOPPED, const=True
+    )
+
+    simcore_platform_status: SimcorePlatformStatus = Field(
+        ...,
+        description=f"{SimcorePlatformStatus.BAD} if simcore failed to run the service properly",
+    )
+
+
+RabbitResourceTrackingMessages = (
+    RabbitResourceTrackingStartedMessage
+    | RabbitResourceTrackingStoppedMessage
+    | RabbitResourceTrackingHeartbeatMessage
+)
+
+
+class WalletCreditsMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.wallets"] = Field(
+        default="io.simcore.service.wallets", const=True
+    )
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+    wallet_id: WalletID
+    credits: Decimal
+
+    def routing_key(self) -> str | None:
+        return f"{self.wallet_id}"

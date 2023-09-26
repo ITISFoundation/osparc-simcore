@@ -63,14 +63,13 @@ qx.Class.define("osparc.info.MergedLarge", {
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      this._add(extraInfoLayout);
 
       const bounds = this.getBounds();
       const offset = 30;
       const widgetWidth = bounds ? bounds.width - offset : 500 - offset;
       let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       }));
       hBox.add(extraInfoLayout);
@@ -160,7 +159,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       if (
         osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
-        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+        osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
           label: this.tr("Quality"),
@@ -218,7 +217,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfoGrid(extraInfo).set({
+      const moreInfo = osparc.info.StudyUtils.createExtraInfoVBox(extraInfo).set({
         width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
 
@@ -286,7 +285,20 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
+      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
+        font: "text-13"
+      });
+      descriptionLayout.add(label);
+
+      const description = osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
+      description.setValue(this.getStudy().getDescription());
+      descriptionLayout.add(description);
+
+      return descriptionLayout;
     },
 
     __createResources: function() {
@@ -327,7 +339,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.getStudy().getName(), null, title);
+      const titleEditor = new osparc.widget.Renamer(this.getStudy().getName(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
@@ -352,8 +364,8 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize());
-      const win = osparc.component.form.tag.TagManager.popUpInWindow(tagManager);
+      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize());
+      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
         win.close();
         const updatedData = e.getData();
@@ -365,8 +377,8 @@ qx.Class.define("osparc.info.MergedLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.component.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
+      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
+      const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
@@ -380,7 +392,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
-      const textEditor = new osparc.component.editor.TextEditor(this.getStudy().getDescription());
+      const textEditor = new osparc.editor.TextEditor(this.getStudy().getDescription());
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();
@@ -402,7 +414,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         })
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
     }
   }

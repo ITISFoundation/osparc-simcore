@@ -2,14 +2,13 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 from unittest.mock import AsyncMock
 
 import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from pytest import MonkeyPatch
 from simcore_service_dynamic_sidecar.core.docker_logs import (
     _get_background_log_fetcher,
     start_log_fetching,
@@ -19,11 +18,12 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
 
 @pytest.fixture
 def mock_environment(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     mock_environment: None,
 ) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")
     monkeypatch.setenv("RABBIT_HOST", "mocked_host")
+    monkeypatch.setenv("RABBIT_SECURE", "false")
     monkeypatch.setenv("RABBIT_USER", "mocked_user")
     monkeypatch.setenv("RABBIT_PASSWORD", "mocked_password")
 
@@ -55,6 +55,6 @@ async def test_background_log_fetcher(
     await start_log_fetching(app=app, container_name=container_name)
     # wait for background log fetcher
     await asyncio.sleep(1)
-    assert mock_core_rabbitmq["post_log_message"].call_count == 1
+    assert mock_core_rabbitmq["post_rabbit_message"].call_count == 1
 
     await stop_log_fetching(app=app, container_name=container_name)

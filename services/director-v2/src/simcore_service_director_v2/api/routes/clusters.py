@@ -4,7 +4,15 @@ from typing import Final
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
+from models_library.api_schemas_directorv2.clusters import (
+    ClusterCreate,
+    ClusterDetails,
+    ClusterDetailsGet,
+    ClusterGet,
+    ClusterPatch,
+    ClusterPing,
+)
+from models_library.clusters import DEFAULT_CLUSTER_ID, BaseCluster, ClusterID
 from models_library.users import UserID
 from starlette import status
 
@@ -14,14 +22,6 @@ from ...core.errors import (
     DaskClientAcquisisitonError,
 )
 from ...core.settings import ComputationalBackendSettings
-from ...models.schemas.clusters import (
-    ClusterCreate,
-    ClusterDetails,
-    ClusterDetailsGet,
-    ClusterGet,
-    ClusterPatch,
-    ClusterPing,
-)
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...utils.dask_client_utils import test_scheduler_endpoint
@@ -49,13 +49,11 @@ async def _get_cluster_details_with_id(
     dask_clients_pool: DaskClientsPool,
 ) -> ClusterDetails:
     log.debug("Getting details for cluster '%s'", cluster_id)
-    cluster: Cluster = settings.default_cluster
+    cluster: BaseCluster = settings.default_cluster
     if cluster_id != DEFAULT_CLUSTER_ID:
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with dask_clients_pool.acquire(cluster) as client:
-        cluster_details = await client.get_cluster_details()
-
-    return cluster_details
+        return await client.get_cluster_details()
 
 
 @router.post(
@@ -91,8 +89,7 @@ async def list_clusters(
 async def get_default_cluster(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
-    cluster = settings.default_cluster
-    return cluster
+    return settings.default_cluster
 
 
 @router.get(

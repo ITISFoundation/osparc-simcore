@@ -47,12 +47,11 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
-from sqlalchemy.sql import text
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class AccessRights:
     read: bool
     write: bool
@@ -60,18 +59,18 @@ class AccessRights:
 
     @classmethod
     def all(cls) -> "AccessRights":
-        return cls(True, True, True)
+        return cls(read=True, write=True, delete=True)
 
     @classmethod
     def none(cls) -> "AccessRights":
-        return cls(False, False, False)
+        return cls(read=False, write=False, delete=False)
 
 
 class AccessLayerError(Exception):
     """Base class for access-layer related errors"""
 
 
-class InvalidFileIdentifier(AccessLayerError):
+class InvalidFileIdentifierError(AccessLayerError):
     """Identifier does not follow the criteria to
     be a file identifier (see naming criteria below)
     """
@@ -90,8 +89,8 @@ class InvalidFileIdentifier(AccessLayerError):
 async def _get_user_groups_ids(conn: SAConnection, user_id: UserID) -> list[GroupID]:
     stmt = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id)
     rows = await (await conn.execute(stmt)).fetchall()
-    user_group_ids = [g.gid for g in rows]
-    return user_group_ids
+    assert rows is not None  # nosec
+    return [g.gid for g in rows]
 
 
 def _aggregate_access_rights(
@@ -123,7 +122,7 @@ async def list_projects_access_rights(
 
     user_group_ids: list[int] = await _get_user_groups_ids(conn, user_id)
 
-    smt = text(
+    smt = sa.DDL(
         f"""\
     SELECT uuid, access_rights
     FROM projects
@@ -164,7 +163,7 @@ async def get_project_access_rights(
     """
     user_group_ids: list[int] = await _get_user_groups_ids(conn, user_id)
 
-    stmt = text(
+    stmt = sa.DDL(
         f"""\
         SELECT prj_owner, access_rights
         FROM projects
@@ -194,8 +193,7 @@ async def get_project_access_rights(
         return AccessRights.all()
 
     # determine user's access rights by aggregating AR of all groups
-    prj_access = _aggregate_access_rights(row.access_rights, user_group_ids)
-    return prj_access
+    return _aggregate_access_rights(row.access_rights, user_group_ids)
 
 
 async def get_file_access_rights(
@@ -210,7 +208,7 @@ async def get_file_access_rights(
     #
     # 1. file registered in file_meta_data table
     #
-    stmt = sa.select([file_meta_data.c.project_id, file_meta_data.c.user_id]).where(
+    stmt = sa.select(file_meta_data.c.project_id, file_meta_data.c.user_id).where(
         file_meta_data.c.file_id == f"{file_id}"
     )
     result: ResultProxy = await conn.execute(stmt)
@@ -260,14 +258,13 @@ async def get_file_access_rights(
             )
             if not access_rights:
                 logger.warning(
-                    "File %s references a project %s that does not exists in db",
+                    "File %s references a project that does not exists in db",
                     file_id,
-                    row.project_id,
                 )
                 return AccessRights.none()
 
         except (ValueError, AttributeError) as err:
-            raise InvalidFileIdentifier(
+            raise InvalidFileIdentifierError(
                 identifier=file_id,
                 details=str(err),
             ) from err

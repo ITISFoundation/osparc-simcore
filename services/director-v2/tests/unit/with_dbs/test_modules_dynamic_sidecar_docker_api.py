@@ -3,10 +3,12 @@
 # pylint: disable=protected-access
 
 import asyncio
+import contextlib
 import datetime
 import logging
 import sys
-from typing import Any, AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
+from typing import Any
 from uuid import UUID, uuid4
 
 import aiodocker
@@ -15,24 +17,22 @@ from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_enums import ServiceState
 from models_library.users import UserID
-from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
-from simcore_service_director_v2.models.schemas.constants import (
+from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
-from simcore_service_director_v2.models.schemas.dynamic_services import (
-    SchedulerData,
-    ServiceState,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
+    SchedulerData,
     SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
@@ -70,7 +70,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def dynamic_sidecar_settings(
-    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict
 ) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
@@ -181,15 +181,15 @@ def dynamic_sidecar_service_spec(
         "name": dynamic_sidecar_service_name,
         "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
         "labels": {
-            "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-            "uuid": f"{uuid4()}",
-            "service_key": "simcore/services/dynamic/3dviewer",
-            "service_tag": "2.4.5",
             "traefik.docker.network": "",
             "io.simcore.zone": "",
-            "service_port": "80",
-            "study_id": f"{uuid4()}",
-            "user_id": "123",
+            f"{to_simcore_runtime_docker_label_key('project_id')}": f"{uuid4()}",
+            f"{to_simcore_runtime_docker_label_key('user_id')}": "123",
+            f"{to_simcore_runtime_docker_label_key('node_id')}": f"{uuid4()}",
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+            f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
+            f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
+            f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.json(),
         },
     }
@@ -235,10 +235,13 @@ def dynamic_sidecar_stack_specs(
                 "ContainerSpec": {"Image": "joseluisq/static-web-server"}
             },
             "labels": {
-                "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "uuid": f"{node_uuid}",
-                "user_id": f"{user_id}",
-                "study_id": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
+                f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
+                f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
+                f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
             },
         },
         {
@@ -247,10 +250,13 @@ def dynamic_sidecar_stack_specs(
                 "ContainerSpec": {"Image": "joseluisq/static-web-server"}
             },
             "labels": {
-                "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "uuid": f"{node_uuid}",
-                "user_id": f"{user_id}",
-                "study_id": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
+                f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
+                f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
+                f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
             },
         },
     ]
@@ -328,13 +334,13 @@ def service_name() -> str:
         for example in SimcoreServiceLabels.Config.schema_extra["examples"]
     ],
 )
-def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
+def labels_example(request: pytest.FixtureRequest) -> SimcoreServiceLabels:
     return request.param
 
 
 @pytest.fixture(params=[None, datetime.datetime.now(tz=datetime.timezone.utc)])
 def time_dy_sidecar_became_unreachable(
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
 ) -> datetime.datetime | None:
     return request.param
 
@@ -382,7 +388,7 @@ async def mock_service(
 )
 def test_settings__valid_network_names(
     simcore_services_network_name: str,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> None:
     items = dynamic_sidecar_settings.dict()
@@ -574,8 +580,8 @@ async def test_remove_dynamic_sidecar_stack(
         services = await async_docker_client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
+                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
                 ]
             }
         )
@@ -750,8 +756,7 @@ async def test_regression_update_service_update_out_of_sequence(
 async def target_node_id(async_docker_client: aiodocker.Docker) -> str:
     # get a node's ID
     docker_nodes = await async_docker_client.nodes.list()
-    target_node_id = docker_nodes[0]["ID"]
-    return target_node_id
+    return docker_nodes[0]["ID"]
 
 
 async def test_constrain_service_to_node(
@@ -793,10 +798,8 @@ async def named_volumes(
 
     # remove volume if still present
     for named_volume in named_volumes:
-        try:
+        with contextlib.suppress(aiodocker.DockerError):
             await named_volume.delete()
-        except aiodocker.DockerError:
-            pass
 
 
 async def is_volume_present(
@@ -874,7 +877,7 @@ def volume_removal_services_names(faker: Faker) -> set[str]:
 
 
 @pytest.fixture(params=[0, 2])
-def service_timeout_s(request: FixtureRequest) -> int:
+def service_timeout_s(request: pytest.FixtureRequest) -> int:
     return request.param  # type: ignore
 
 

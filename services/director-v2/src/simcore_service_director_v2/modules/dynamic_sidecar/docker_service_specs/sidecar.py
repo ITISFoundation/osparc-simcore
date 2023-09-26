@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
@@ -11,9 +12,9 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
+from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....models.schemas.dynamic_services import SchedulerData
+from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
@@ -35,6 +36,7 @@ def _get_environment_variables(
     compose_namespace: str,
     scheduler_data: SchedulerData,
     app_settings: AppSettings,
+    *,
     allow_internet_access: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
@@ -55,9 +57,10 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
-        "DY_SIDECAR_RUN_ID": f"{scheduler_data.run_id}",
+        "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
+        "DY_SIDECAR_CALLBACKS_MAPPING": scheduler_data.callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
@@ -71,12 +74,12 @@ def _get_environment_variables(
         "POSTGRES_PASSWORD": f"{app_settings.POSTGRES.POSTGRES_PASSWORD.get_secret_value()}",
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
-        "R_CLONE_ENABLED": f"{r_clone_settings.R_CLONE_ENABLED}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
+        "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
         "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
         "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
         "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
@@ -96,6 +99,15 @@ def _get_environment_variables(
         "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
         "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
     }
+
+
+def get_prometheus_service_labels(
+    prometheus_service_labels: dict[str, str], callbacks_mapping: CallbacksMapping
+) -> dict[str, str]:
+    # NOTE: if the service must be scraped it will expose a /metrics endpoint
+    # these labels instruct prometheus to scrape it.
+    enable_prometheus_scraping = callbacks_mapping.metrics is not None
+    return prometheus_service_labels if enable_prometheus_scraping else {}
 
 
 def get_dynamic_sidecar_spec(
@@ -155,7 +167,7 @@ def get_dynamic_sidecar_spec(
         scheduler_data.paths_mapping.inputs_path,
         scheduler_data.paths_mapping.outputs_path,
     ]:
-        mounts.append(
+        mounts.append(  # noqa: PERF401
             DynamicSidecarVolumesPathsResolver.mount_entry(
                 swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                 path=path_to_mount,
@@ -252,6 +264,10 @@ def get_dynamic_sidecar_spec(
                 "service_version"
             ): scheduler_data.version,
         }
+        | get_prometheus_service_labels(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
+            scheduler_data.callbacks_mapping,
+        )
         | StandardSimcoreDockerLabels(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
@@ -270,7 +286,7 @@ def get_dynamic_sidecar_spec(
                     compose_namespace,
                     scheduler_data,
                     app_settings,
-                    allow_internet_access,
+                    allow_internet_access=allow_internet_access,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

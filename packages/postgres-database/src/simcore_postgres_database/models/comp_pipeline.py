@@ -22,6 +22,8 @@ class StateType(enum.Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     ABORTED = "ABORTED"
+    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
+    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
 
 
 def _new_uuid():

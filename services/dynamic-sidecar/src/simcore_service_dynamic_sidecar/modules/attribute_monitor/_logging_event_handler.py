@@ -9,7 +9,7 @@ from contextlib import suppress
 from pathlib import Path
 from queue import Empty
 from time import sleep as blocking_sleep
-from typing import Final, Optional
+from typing import Final
 
 import aioprocessing
 from aioprocessing.process import AioProcess
@@ -49,7 +49,6 @@ class _LoggingEventHandlerProcess:
         health_check_queue: AioQueue,
         heart_beat_interval_s: PositiveFloat,
     ) -> None:
-
         self.path_to_observe: Path = path_to_observe
         self.health_check_queue: AioQueue = health_check_queue
         self.heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
@@ -58,8 +57,8 @@ class _LoggingEventHandlerProcess:
         # the process itself and is used to stop the process.
         self._stop_queue: AioQueue = aioprocessing.AioQueue()
 
-        self._file_system_event_handler: Optional[_LoggingEventHandler] = None
-        self._process: Optional[AioProcess] = None
+        self._file_system_event_handler: _LoggingEventHandler | None = None
+        self._process: AioProcess | None = None
 
     def start_process(self) -> None:
         with log_context(
@@ -157,7 +156,7 @@ class LoggingEventHandlerObserver:
             heart_beat_interval_s=heart_beat_interval_s,
         )
         self._keep_running: bool = False
-        self._task_health_worker: Optional[Task] = None
+        self._task_health_worker: Task | None = None
 
     @property
     def heart_beat_interval_s(self) -> PositiveFloat:
@@ -175,7 +174,7 @@ class LoggingEventHandlerObserver:
                 try:
                     self._health_check_queue.get_nowait()
                     heart_beat_count += 1
-                except Empty:
+                except Empty:  # noqa: PERF203
                     break
 
             if heart_beat_count == 0:

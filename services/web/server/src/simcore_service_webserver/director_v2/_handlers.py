@@ -6,6 +6,7 @@ from aiohttp import web
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from models_library.wallets import WalletInfo
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
@@ -16,12 +17,20 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesRepo,
+)
+from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._constants import RQ_PRODUCT_KEY
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import login_required
+from ..projects import api as projects_api
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from ..version_control.models import CommitID
+from ..wallets import api as wallets_api
 from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
@@ -35,6 +44,21 @@ routes = web.RouteTableDef()
 class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
+
+
+class _ComputationStart(BaseModel):
+    force_restart: bool = False
+    cluster_id: ClusterID = 0
+    subgraph: set[str] = set()
+
+
+class _ComputationStarted(BaseModel):
+    pipeline_id: ProjectID = Field(
+        ..., description="ID for created pipeline (=project identifier)"
+    )
+    ref_ids: list[CommitID] = Field(
+        None, description="Checkpoints IDs for created pipeline"
+    )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
@@ -56,6 +80,8 @@ async def start_computation(request: web.Request) -> web.Response:
 
     if request.can_read_body:
         body = await request.json()
+        assert parse_obj_as(_ComputationStart, body) is not None  # nosec
+
         subgraph = body.get("subgraph", [])
         force_restart = bool(body.get("force_restart", force_restart))
         cluster_id = body.get("cluster_id")
@@ -63,13 +89,36 @@ async def start_computation(request: web.Request) -> web.Response:
     simcore_user_agent = request.headers.get(
         X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
     )
+    async with get_database_engine(request.app).acquire() as conn:
+        group_properties = (
+            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                conn, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+            )
+        )
+
+    # Get wallet information
+    wallet_info = None
+    project_wallet = await projects_api.get_project_wallet(
+        request.app, project_id=project_id
+    )
+    app_settings = get_settings(request.app)
+    if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
+        # Check whether user has access to the wallet
+        await wallets_api.get_wallet_by_user(
+            request.app, req_ctx.user_id, project_wallet.wallet_id, req_ctx.product_name
+        )
+        wallet_info = WalletInfo(
+            wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name
+        )
 
     options = {
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
         "force_restart": force_restart,
-        "cluster_id": cluster_id,
+        "cluster_id": None if group_properties.use_on_demand_clusters else cluster_id,
         "simcore_user_agent": simcore_user_agent,
+        "use_on_demand_clusters": group_properties.use_on_demand_clusters,
+        "wallet_info": wallet_info,
     }
 
     try:
@@ -114,11 +163,9 @@ async def start_computation(request: web.Request) -> web.Response:
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
 
-        return web.json_response(
-            {"data": data},
-            status=web.HTTPCreated.status_code,
-            dumps=json_dumps,
-        )
+        assert parse_obj_as(_ComputationStarted, data) is not None  # nosec
+
+        return envelope_json_response(data, status_cls=web.HTTPCreated)
 
     except DirectorServiceError as exc:
         return create_error_response(

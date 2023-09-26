@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 
+import contextlib
 from pathlib import Path
 from typing import AsyncIterator
 
@@ -7,6 +8,7 @@ import pytest
 from aiodocker import Docker, DockerError
 from aiodocker.volumes import DockerVolume
 from faker import Faker
+from models_library.services import RunID
 from pydantic import parse_obj_as
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
     SH_SCRIPT_REMOVE_VOLUMES,
@@ -16,7 +18,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.vo
 # UTILS
 
 
-def _get_source(run_id: str, node_uuid: str, volume_path: Path) -> str:
+def _get_source(run_id: RunID, node_uuid: str, volume_path: Path) -> str:
     reversed_path = f"{volume_path}"[::-1].replace("/", "_")
     return f"dyv_{run_id}_{node_uuid}_{reversed_path}"
 
@@ -67,8 +69,8 @@ def node_uuid(faker: Faker) -> str:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> str:
-    return faker.uuid4()
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture
@@ -87,7 +89,7 @@ async def unused_volume(
     swarm_stack_name: str,
     study_id: str,
     node_uuid: str,
-    run_id: str,
+    run_id: RunID,
     unused_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
     source = _get_source(run_id, node_uuid, unused_volume_path)
@@ -107,10 +109,8 @@ async def unused_volume(
 
     yield volume
 
-    try:
+    with contextlib.suppress(DockerError):
         await volume.delete()
-    except DockerError:
-        pass
 
 
 @pytest.fixture
@@ -119,7 +119,7 @@ async def used_volume(
     swarm_stack_name: str,
     study_id: str,
     node_uuid: str,
-    run_id: str,
+    run_id: RunID,
     used_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
     source = _get_source(run_id, node_uuid, used_volume_path)
@@ -166,7 +166,7 @@ async def unused_volume_name(unused_volume: DockerVolume) -> str:
 
 
 @pytest.fixture
-def missing_volume_name(run_id: str, node_uuid: str) -> str:
+def missing_volume_name(run_id: RunID, node_uuid: str) -> str:
     return _get_source(run_id, node_uuid, Path("/MISSING/PATH"))
 
 

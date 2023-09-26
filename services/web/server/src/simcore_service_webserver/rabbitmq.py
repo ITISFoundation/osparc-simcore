@@ -1,15 +1,14 @@
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_RABBITMQ_CLIENT_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
-from .rest.healthcheck import HealthCheck, HealthCheckFailed
+from .rest.healthcheck import HealthCheck, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -17,9 +16,8 @@ _logger = logging.getLogger(__name__)
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
     if not rabbit_client.healthy:
-        raise HealthCheckFailed(
-            "RabbitMQ client is in a bad state! TIP: check if network was cut between server and clients?"
-        )
+        msg = "RabbitMQ client is in a bad state! TIP: check if network was cut between server and clients?"
+        raise HealthCheckError(msg)
 
 
 async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:

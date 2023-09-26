@@ -1,7 +1,6 @@
 """Service access rights models
 
 """
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
@@ -20,7 +19,7 @@ class ServiceGroupAccessRights(BaseModel):
 
 
 class ServiceAccessRights(BaseModel):
-    access_rights: Optional[dict[GroupId, ServiceGroupAccessRights]] = Field(
+    access_rights: dict[GroupId, ServiceGroupAccessRights] | None = Field(
         None,
         alias="accessRights",
         description="service access rights per group id",

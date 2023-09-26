@@ -11,12 +11,13 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from .._constants import APP_SETTINGS_KEY
 from . import (
     _comments_handlers,
-    _handlers,
-    _handlers_crud,
+    _crud_handlers,
     _metadata_handlers,
     _nodes_handlers,
     _ports_handlers,
+    _states_handlers,
     _tags_handlers,
+    _wallets_handlers,
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
@@ -44,12 +45,13 @@ def setup_projects(app: web.Application) -> bool:
     # registers event handlers (e.g. on_user_disconnect)
     setup_project_observer_events(app)
 
-    app.router.add_routes(_handlers.routes)
-    app.router.add_routes(_handlers_crud.routes)
+    app.router.add_routes(_states_handlers.routes)
+    app.router.add_routes(_crud_handlers.routes)
     app.router.add_routes(_comments_handlers.routes)
     app.router.add_routes(_metadata_handlers.routes)
     app.router.add_routes(_ports_handlers.routes)
     app.router.add_routes(_nodes_handlers.routes)
     app.router.add_routes(_tags_handlers.routes)
+    app.router.add_routes(_wallets_handlers.routes)
 
     return True

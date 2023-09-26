@@ -14,20 +14,19 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
+)
 from models_library.service_settings_labels import SimcoreServiceLabels
-from pytest import LogCaptureFixture, MonkeyPatch
+from models_library.services_enums import ServiceState
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.dynamic_services import (
-    DynamicSidecarStatus,
-    RunningDynamicServiceDetails,
-    SchedulerData,
-    ServiceState,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
+    DynamicSidecarStatus,
+    SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -45,6 +44,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observ
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler import (
     Scheduler,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils import (
+    create_model_from_scheduler_data,
 )
 
 # running scheduler at a hight rate to stress out the system
@@ -114,9 +116,10 @@ async def _assert_get_dynamic_services_mocked(
 
 @pytest.fixture
 def mock_env(
+    disable_postgres: None,
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
     mock_docker_api: None,
 ) -> None:
@@ -132,11 +135,6 @@ def mock_env(
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
-    monkeypatch.setenv("POSTGRES_HOST", "test")
-    monkeypatch.setenv("POSTGRES_USER", "test")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "test")
-    monkeypatch.setenv("POSTGRES_DB", "test")
 
 
 @pytest.fixture
@@ -227,7 +225,7 @@ def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
 
 
 @pytest.fixture
-def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
+def mock_max_status_api_duration(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setenv("DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S", "0.0001")
     yield
 
@@ -369,7 +367,7 @@ async def test_get_stack_status(
     await scheduler._scheduler._add_service(scheduler_data)
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
-    assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+    assert stack_status == create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=ServiceState.PENDING,
@@ -400,7 +398,7 @@ async def test_get_stack_status_failing_sidecar(
     await scheduler._scheduler._add_service(scheduler_data)
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
-    assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+    assert stack_status == create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=ServiceState.FAILED,
@@ -419,7 +417,7 @@ async def test_get_stack_status_containers_are_starting(
     async with _assert_get_dynamic_services_mocked(
         scheduler, scheduler_data, mock_service_running, expected_status="created"
     ) as stack_status:
-        assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+        assert stack_status == create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.STARTING,
@@ -438,7 +436,7 @@ async def test_get_stack_status_ok(
     async with _assert_get_dynamic_services_mocked(
         scheduler, scheduler_data, mock_service_running, expected_status="running"
     ) as stack_status:
-        assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+        assert stack_status == create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.RUNNING,
@@ -455,7 +453,7 @@ def mocked_app() -> AsyncMock:
 async def test_regression_remove_service_from_observation(
     mocked_app: AsyncMock,
     faker: Faker,
-    caplog_debug_level: LogCaptureFixture,
+    caplog_debug_level: pytest.LogCaptureFixture,
     missing_to_observe_entry: bool,
 ):
     scheduler = Scheduler(mocked_app)

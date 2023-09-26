@@ -15,6 +15,7 @@ from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
+    ClusterTypeInModel,
     JupyterHubTokenAuthentication,
     KerberosAuthentication,
     NoAuthentication,
@@ -38,16 +39,15 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def minimal_dask_config(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CATALOG", "null")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
@@ -170,6 +170,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     client: TestClient,
     fake_clusters: Callable[[int], list[Cluster]],
 ):
+    assert client.app
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
         autospec=True,
@@ -189,6 +190,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 authentication=cluster.authentication,
                 endpoint=cluster.endpoint,
                 tasks_file_link_type=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
+                cluster_type=ClusterTypeInModel.ON_PREMISE,
             )
         )
         async with clients_pool.acquire(cluster) as dask_client:

@@ -9,11 +9,11 @@ from servicelib.mimetype_constants import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 
-from .._meta import api_version_prefix as vx
+from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils_email import AttachmentTuple, send_email_from_template, themed
-from ..products.plugin import get_current_product
+from ..products.api import get_current_product
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ _EMAIL_TEMPLATE_NAME = "service_submission.jinja2"
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{vx}/publications/service-submission", name="service_submission")
+@routes.post(f"/{VTAG}/publications/service-submission", name="service_submission")
 @login_required
 async def service_submission(request: web.Request):
     product = get_current_product(request)

@@ -33,6 +33,15 @@ services:
       - ./invitations:/devel/services/invitations
       - ../packages:/devel/packages
 
+  payments:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - PAYMENTS_LOGLEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./payments:/devel/services/payments
+      - ../packages:/devel/packages
+
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
@@ -41,6 +50,15 @@ services:
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
     volumes:
       - ./catalog:/devel/services/catalog
+      - ../packages:/devel/packages
+
+  clusters-keeper:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - LOG_LEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./clusters-keeper:/devel/services/clusters-keeper
       - ../packages:/devel/packages
 
   datcore-adapter:
@@ -95,7 +113,7 @@ services:
     volumes: *webserver-volumes-dev
     environment:
       <<: *webserver-environment-dev
-      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 15
+      RESOURCE_MANAGER_RESOURCE_TTL_S: 15
 
   dask-sidecar:
     volumes:
@@ -103,6 +121,7 @@ services:
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+
     environment:
       SC_BOOT_MODE: debug-ptvsd
       SIDECAR_LOGLEVEL: DEBUG
@@ -134,6 +153,11 @@ services:
       - PROMETHEUS_URL=${RESOURCE_USAGE_TRACKER_PROMETHEUS_URL}
       - PROMETHEUS_USERNAME=${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
       - PROMETHEUS_PASSWORD=${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_SECURE=${RABBIT_SECURE}
+      - RABBIT_USER=${RABBIT_USER}
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
       - ../packages:/devel/packages

@@ -33,6 +33,7 @@ from models_library.api_schemas_storage import (
     PresignedLink,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
@@ -66,7 +67,6 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -77,7 +77,6 @@ pytest_plugins = [
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# TODO: replace by pytest_simcore
 sys.path.append(str(CURRENT_DIR / "helpers"))
 
 
@@ -459,6 +458,7 @@ def upload_file(
         file_name: str,
         file_id: SimcoreS3FileID | None = None,
         wait_for_completion: bool = True,
+        sha256_checksum: SHA256Str | None = None,
     ) -> tuple[Path, SimcoreS3FileID]:
         assert client.app
         # create a file
@@ -466,8 +466,11 @@ def upload_file(
         if not file_id:
             file_id = create_simcore_file_id(project_id, node_id, file_name)
         # get an upload link
+        query_params: dict = {}
+        if sha256_checksum:
+            query_params["sha256_checksum"] = f"{sha256_checksum}"
         file_upload_link = await create_upload_file_link_v2(
-            file_id, link_type="presigned", file_size=file_size
+            file_id, link_type="presigned", file_size=file_size, **query_params
         )
 
         # upload the file
@@ -529,6 +532,7 @@ def upload_file(
             expected_file_size=file_size,
             expected_upload_id=False,
             expected_upload_expiration_date=False,
+            expected_sha256_checksum=sha256_checksum,
         )
         # check the file is in S3 for real
         s3_metadata = await storage_s3_client.get_file_metadata(

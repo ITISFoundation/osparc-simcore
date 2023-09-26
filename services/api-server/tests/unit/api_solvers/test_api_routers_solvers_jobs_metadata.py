@@ -113,7 +113,7 @@ async def test_get_and_update_job_metadata(
             }
         ).dict(),
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_201_CREATED
     job = Job.parse_obj(resp.json())
 
     # Get metadata

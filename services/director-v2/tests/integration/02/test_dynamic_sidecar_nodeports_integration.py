@@ -1,27 +1,16 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint:disable=too-many-arguments
+# pylint: disable=too-many-arguments
 
 import asyncio
 import hashlib
 import json
 import logging
 import os
-from collections import namedtuple
-from itertools import tee
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Coroutine
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Iterable,
-    Optional,
-    cast,
-)
+from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
 import aioboto3
@@ -37,6 +26,7 @@ from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
 )
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import (
     Node,
@@ -56,8 +46,8 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
@@ -66,6 +56,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     periodic_task_result,
 )
 from servicelib.progress_bar import ProgressBarData
+from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
@@ -74,12 +65,10 @@ from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_postgres_database.models.services import services_access_rights
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
+from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -118,8 +107,16 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-ServicesNodeUUIDs = namedtuple("ServicesNodeUUIDs", "sleeper, dy, dy_compose_spec")
-InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
+class ServicesNodeUUIDs(NamedTuple):
+    sleeper: str
+    dy: str
+    dy_compose_spec: str
+
+
+class InputsOutputs(NamedTuple):
+    inputs: dict[str, Any]
+    outputs: dict[str, Any]
+
 
 DY_VOLUMES: str = "/dy-volumes/"
 DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
@@ -140,7 +137,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 async def minimal_configuration(
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
@@ -156,7 +153,7 @@ async def minimal_configuration(
     current_user: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
-    await catalog_ready(current_user["id"], osparc_product_name)
+    await wait_for_catalog_service(current_user["id"], osparc_product_name)
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
@@ -238,14 +235,16 @@ def services_node_uuids(
         key = registry_service_data["schema"]["key"]
         version = registry_service_data["schema"]["version"]
 
+        found_node_uuid: str | None = None
         for node_uuid, workbench_service_data in fake_dy_workbench.items():
             if (
                 workbench_service_data["key"] == key
                 and workbench_service_data["version"] == version
             ):
-                return node_uuid
-
-        assert False, f"No node_uuid found for {key}:{version}"
+                found_node_uuid = node_uuid
+                break
+        assert found_node_uuid is not None, f"No node_uuid found for {key}:{version}"
+        return found_node_uuid
 
     return ServicesNodeUUIDs(
         sleeper=_get_node_uuid(sleeper_service),
@@ -300,8 +299,7 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:
-    is_plugin_installed = "rclone:" in run_command("docker plugin ls")
-    return is_plugin_installed
+    return "rclone:" in run_command("docker plugin ls")
 
 
 @pytest.fixture(
@@ -320,9 +318,9 @@ def dev_feature_r_clone_enabled(request) -> str:
     return request.param
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,
     network_name: str,
     dev_feature_r_clone_enabled: str,
@@ -340,43 +338,42 @@ def mock_env(
     image_name = f"{registry}/dynamic-sidecar:{image_tag}"
 
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
-    monkeypatch.setenv("PROXY_EXPOSE_PORT", "true")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SIDECAR_IMAGE": image_name,
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+            "SWARM_STACK_NAME": "test_swarm_name",
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
+            "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+            "PROXY_EXPOSE_PORT": "true",
+            "SIMCORE_SERVICES_NETWORK_NAME": network_name,
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+            "DIRECTOR_V2_LOGLEVEL": "DEBUG",
+            "DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG": "true",
+            "DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL": "debug",
+            # patch host for dynamic-sidecar, not reachable via localhost
+            # the dynamic-sidecar (running inside a container) will use
+            # this address to reach the rabbit service
+            "RABBIT_HOST": f"{get_localhost_ip()}",
+            "POSTGRES_HOST": f"{get_localhost_ip()}",
+            "R_CLONE_PROVIDER": "MINIO",
+            "S3_ENDPOINT": minio_config["client"]["endpoint"],
+            "S3_ACCESS_KEY": minio_config["client"]["access_key"],
+            "S3_SECRET_KEY": minio_config["client"]["secret_key"],
+            "S3_BUCKET_NAME": minio_config["bucket_name"],
+            "S3_SECURE": f"{minio_config['client']['secure']}",
+            "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
+            "REDIS_HOST": redis_service.REDIS_HOST,
+            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+            # always test the node limit feature, by default is disabled
+            "DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED": "true",
+        },
+    )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-    monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG", "true")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", "debug")
-    # patch host for dynamic-sidecar, not reachable via localhost
-    # the dynamic-sidecar (running inside a container) will use
-    # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
-    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
-    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
-    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
-    monkeypatch.setenv("S3_SECURE", f"{minio_config['client']['secure']}")
-    monkeypatch.setenv(
-        "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED", dev_feature_r_clone_enabled
-    )
-    monkeypatch.setenv(
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-        dask_scheduler_service,
-    )
-    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
-    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
-
-    # always test the node limit feature, by default is disabled
-    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
 
 
 @pytest.fixture
@@ -440,6 +437,14 @@ async def projects_networks_db(
         await conn.execute(upsert_snapshot)
 
 
+@pytest.fixture
+def mock_io_log_redirect_cb() -> LogRedirectCB:
+    async def _mocked_function(*args, **kwargs) -> None:
+        pass
+
+    return _mocked_function
+
+
 async def _get_mapped_nodeports_values(
     user_id: UserID, project_id: str, workbench: NodesDict, db_manager: DBManager
 ) -> dict[str, InputsOutputs]:
@@ -496,7 +501,7 @@ async def _assert_port_values(
     # files
 
     async def _int_value_port(port: Port) -> int | None:
-        file_path = cast(Optional[Path], await port.get())
+        file_path = cast(Path | None, await port.get())
         if file_path is None:
             return None
         return int(file_path.read_text())
@@ -613,31 +618,33 @@ async def _fetch_data_via_data_manager(
     r_clone_settings: RCloneSettings,
     dir_tag: str,
     user_id: UserID,
-    project_id: str,
-    service_uuid: str,
+    project_id: ProjectID,
+    service_uuid: NodeID,
     temp_dir: Path,
+    io_log_redirect_cb: LogRedirectCB,
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager.exists(
+        await data_manager._state_metadata_entry_exists(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
-            file_path=DY_SERVICES_STATE_PATH,
+            path=DY_SERVICES_STATE_PATH,
+            is_archive=False,
         )
         is True
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
             destination_path=DY_SERVICES_STATE_PATH,
             save_to=save_to,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
@@ -744,15 +751,8 @@ async def _wait_for_dy_services_to_fully_stop(
             assert False, "Timeout reached"
 
 
-def _pairwise(iterable) -> Iterable[tuple[Any, Any]]:
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
-
-
 def _assert_same_set(*sets_to_compare: set[Any]) -> None:
-    for first, second in _pairwise(sets_to_compare):
+    for first, second in pairwise(sets_to_compare):
         assert first == second
 
 
@@ -853,6 +853,7 @@ async def _assert_retrieve_completed(
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,
@@ -871,6 +872,7 @@ async def test_nodeports_integration(
     tmp_path: Path,
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
+    mock_io_log_redirect_cb: LogRedirectCB,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -1065,9 +1067,10 @@ async def test_nodeports_integration(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
             user_id=current_user["id"],
-            project_id=str(current_study.uuid),
+            project_id=current_study.uuid,
             service_uuid=services_node_uuids.dy,
             temp_dir=tmp_path,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
         )
     )
 
@@ -1084,9 +1087,10 @@ async def test_nodeports_integration(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
-            project_id=str(current_study.uuid),
+            project_id=current_study.uuid,
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=tmp_path,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
         )
     )
 

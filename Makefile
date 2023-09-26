@@ -35,6 +35,7 @@ SERVICES_NAMES_TO_BUILD := \
   api-server \
   autoscaling \
   catalog \
+	clusters-keeper \
   dask-sidecar \
   datcore-adapter \
   director \
@@ -43,6 +44,7 @@ SERVICES_NAMES_TO_BUILD := \
 	invitations \
   migration \
 	osparc-gateway-server \
+	payments \
 	resource-usage-tracker \
   service-integration \
   static-webserver \
@@ -67,6 +69,7 @@ export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
+export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
@@ -316,6 +319,7 @@ printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
+printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Storage S3 Filestash" "http://$(get_my_ip).nip.io:9002" 12345678 12345678;\
@@ -346,7 +350,7 @@ ifeq ($(target),)
 	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
-	@docker-compose --file $< up --detach $(target)
+	@docker compose --file $< up --detach $(target)
 endif
 	@$(_show_endpoints)
 
@@ -416,7 +420,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@docker-compose --file services/docker-compose-deploy.yml pull
+	@docker compose --file services/docker-compose-deploy.yml pull
 
 
 .PHONY: push-version push-latest
@@ -429,7 +433,7 @@ push-latest: tag-latest
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@export BUILD_TARGET=undefined; \
-	docker-compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
+	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
 
 
 ## ENVIRONMENT -------------------------------
@@ -544,6 +548,7 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/datcore-adapter $@
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
+	@$(MAKE_C) services/payments $@
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/web/server $@
 
@@ -558,7 +563,7 @@ code-analysis: .codeclimate.yml ## runs code-climate analysis
 
 .PHONY: auto-doc
 auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
-	# Parsing docker-compose config $< and creating graph
+	# Parsing docker compose config $< and creating graph
 	@./scripts/docker-compose-viz.bash $<
 	# Updating docs/img
 	@mv --verbose $<.png docs/img/
@@ -671,7 +676,7 @@ info: ## displays setup information
 	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' docker        : $(shell docker --version)'
 	@echo ' docker buildx : $(shell docker buildx version)'
-	@echo ' docker-compose: $(shell docker-compose --version)'
+	@echo ' docker compose: $(shell docker compose version)'
 
 
 define show-meta

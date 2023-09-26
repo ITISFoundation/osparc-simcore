@@ -1,5 +1,6 @@
 import urllib.parse
 from functools import cached_property
+from typing import Any, ClassVar
 
 from pydantic import Field, PostgresDsn, SecretStr, validator
 
@@ -42,9 +43,8 @@ class PostgresSettings(BaseCustomSettings):
     @classmethod
     def _check_size(cls, v, values):
         if not (values["POSTGRES_MINSIZE"] <= v):
-            raise ValueError(
-                f"assert POSTGRES_MINSIZE={values['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
-            )
+            msg = f"assert POSTGRES_MINSIZE={values['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
+            raise ValueError(msg)
         return v
 
     @cached_property
@@ -82,7 +82,7 @@ class PostgresSettings(BaseCustomSettings):
         return dsn
 
     class Config(BaseCustomSettings.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
                 # minimal required
                 {

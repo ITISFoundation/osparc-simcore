@@ -13,7 +13,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
-from ..products.plugin import Product, get_current_product
+from ..products.api import Product, get_current_product
 from ..security.api import check_password, forget
 from ..session.access_policies import (
     on_success_grant_session_access_to,

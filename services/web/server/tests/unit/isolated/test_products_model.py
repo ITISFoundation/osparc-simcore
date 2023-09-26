@@ -23,7 +23,7 @@ def test_product_examples(
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
 
-        if isinstance(model_cls, Product):
+        if isinstance(model_instance, Product):
             assert model_instance.to_statics()
 
             if "registration_email_template" in example:

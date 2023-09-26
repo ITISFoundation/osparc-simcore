@@ -1,6 +1,7 @@
 from asyncio import Task
+from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Coroutine
+from typing import Any, TypeAlias
 
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
@@ -15,11 +16,13 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 )
 from pydantic import BaseModel, Field, PositiveFloat
 
-TaskName = str
+TaskName: TypeAlias = str
 
-TaskType = Callable[..., Coroutine[Any, Any, Any]]
+TaskType: TypeAlias = Callable[..., Coroutine[Any, Any, Any]]
 
-ProgressCallback = Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
+ProgressCallback: TypeAlias = Callable[
+    [ProgressMessage, ProgressPercent, TaskId], Awaitable[None]
+]
 
 
 class TrackedTask(BaseModel):
@@ -63,4 +66,7 @@ __all__: tuple[str, ...] = (
     "TaskId",
     "TaskResult",
     "TaskStatus",
+    "TaskProgress",
+    "ProgressPercent",
+    "ProgressMessage",
 )

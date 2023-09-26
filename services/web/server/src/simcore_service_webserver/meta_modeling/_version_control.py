@@ -11,7 +11,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..projects.models import ProjectDict
 from ..version_control.db import VersionControlRepository
-from ..version_control.errors import UserUndefined
+from ..version_control.errors import UserUndefinedError
 from ..version_control.models import CommitID, TagProxy
 from ..version_control.vc_changes import (
     compute_workbench_checksum,
@@ -19,7 +19,7 @@ from ..version_control.vc_changes import (
 )
 from ..version_control.vc_tags import compose_workcopy_project_tag_name
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class VersionControlForMetaModeling(VersionControlRepository):
@@ -47,7 +47,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
     ) -> ProjectDict:
         async with self.engine.acquire() as conn:
             if self.user_id is None:
-                raise UserUndefined()
+                raise UserUndefinedError
 
             if include is None:
                 include = [

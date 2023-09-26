@@ -1,9 +1,10 @@
+from collections.abc import Iterator
 from copy import deepcopy
-from typing import Any, Iterator
+from typing import Any
 
 from pydantic import schema_of
 
-from ...projects_nodes import OutputsDict
+from ...projects_nodes import OutputID, OutputsDict
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import EN, OM, FunctionServices, create_fake_thumbnail_url
@@ -99,7 +100,11 @@ def _sensitivity_generator(
     for i, paramtestplus, paramtestminus in eval_sensitivity(
         paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
     ):
-        yield {"out_1": i, "out_2": paramtestplus, "out_3": paramtestminus}
+        yield {
+            OutputID("out_1"): i,
+            OutputID("out_2"): paramtestplus,
+            OutputID("out_3"): paramtestminus,
+        }
 
 
 services = FunctionServices()

@@ -55,7 +55,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     __loginBtn: null,
 
     _buildPage: function() {
-      const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasLoginAnnouncement()) {
         this.add(announcementUIFactory.createLoginAnnouncement());
       }
@@ -182,7 +182,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       const twoFactorAuthCbk = msg => {
         this.__loginBtn.setFetching(false);
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+        osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
         this.fireDataEvent("to2FAValidationCode", msg);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
@@ -201,7 +201,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
           });
         });
 
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       const manager = osparc.auth.Manager.getInstance();

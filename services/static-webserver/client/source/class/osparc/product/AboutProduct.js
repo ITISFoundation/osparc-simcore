@@ -58,6 +58,9 @@ qx.Class.define("osparc.product.AboutProduct", {
         case "s4llite":
           this.__buildS4LLiteLayout();
           break;
+        case "s4lacad":
+          this.__buildS4LAcademicLayout();
+          break;
         default: {
           const noInfoText = this.tr("Information not available");
           const noInfoLabel = osparc.product.tutorial.Utils.createLabel(noInfoText).set({
@@ -107,6 +110,32 @@ qx.Class.define("osparc.product.AboutProduct", {
       // more info ZMT website
       const moreInfoUrl = "https://zmt.swiss/";
       const moreInfoText = `For more information about <i>S4L<sup>lite</sup></i>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
+
+      [
+        introText,
+        licenseText,
+        moreInfoText
+      ].forEach(text => {
+        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
+        });
+        this.add(label);
+      });
+
+      this.__addCopyright();
+    },
+
+    __buildS4LAcademicLayout: function() {
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+
+      const introText = "TODO: Intro text";
+
+      const licenseUrl = "";
+      const licenseText = `TODO: Click <a href=${licenseUrl} style='color: ${color}' target='_blank'>here</a> to read the license agreements.`;
+
+      // more info ZMT website
+      const moreInfoUrl = "https://zmt.swiss/";
+      const moreInfoText = `For more information about <i>S4L Academic</i>, visit <a href=${moreInfoUrl} style='color: ${color}' target='_blank'>our website</a>.`;
 
       [
         introText,

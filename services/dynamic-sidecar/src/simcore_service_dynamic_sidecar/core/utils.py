@@ -7,14 +7,14 @@ import signal
 import tempfile
 import time
 from asyncio.subprocess import Process
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator, NamedTuple, Optional
+from typing import NamedTuple
 
 import aiofiles
 import httpx
 import psutil
-import yaml
 from aiofiles import os as aiofiles_os
 from servicelib.error_codes import create_error_code
 from settings_library.docker_registry import RegistrySettings
@@ -35,10 +35,10 @@ class CommandResult(NamedTuple):
     success: bool
     message: str
     command: str
-    elapsed: Optional[float]
+    elapsed: float | None
 
 
-class _RegistryNotReachableException(Exception):
+class _RegistryNotReachableError(Exception):
     pass
 
 
@@ -69,7 +69,7 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
                 f"Could not reach registry {registry_settings.api_url} "
                 f"auth={registry_settings.REGISTRY_AUTH}"
             )
-            raise _RegistryNotReachableException(error_message)
+            raise _RegistryNotReachableError(error_message)
 
 
 async def login_registry(registry_settings: RegistrySettings) -> None:
@@ -113,7 +113,6 @@ async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
 
 
 def _close_transport(proc: Process):
-
     # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
     #
     # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
@@ -125,12 +124,12 @@ def _close_transport(proc: Process):
     # SEE implementation of asyncio.subprocess.Process._read_stream(...)
     for fd in (1, 2):
         # pylint: disable=protected-access
-        if transport := getattr(proc, "_transport", None):
+        if transport := getattr(proc, "_transport", None):  # noqa: SIM102
             if t := transport.get_pipe_transport(fd):
                 t.close()
 
 
-async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
+async def async_command(command: str, timeout: float | None = None) -> CommandResult:
     """
     Does not raise Exception
     """
@@ -159,7 +158,7 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
         #
         # There is a chance that the launched process ignores SIGTERM
         # in that case, it would proc.wait() forever. This code will be
-        # used only to run docker-compose CLI which behaves well. Nonetheless,
+        # used only to run docker compose CLI which behaves well. Nonetheless,
         # we add here some asserts.
         assert await proc.wait() == -signal.SIGTERM  # nosec
         assert not psutil.pid_exists(proc.pid)  # nosec
@@ -201,20 +200,11 @@ async def async_command(command: str, timeout: Optional[float] = None) -> Comman
     )
 
 
-def assemble_container_names(validated_compose_content: str) -> list[str]:
-    """returns the list of container names from a validated compose_spec"""
-    parsed_compose_spec = yaml.safe_load(validated_compose_content)
-    return [
-        service_data["container_name"]
-        for service_data in parsed_compose_spec["services"].values()
-    ]
-
-
 async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
     # NOTE: by creating a hidden file on all mounted volumes
     # the same permissions are ensured and avoids
     # issues when starting the services
-    for volume_path in mounted_volumes.all_disk_paths():
+    for volume_path in mounted_volumes.all_disk_paths_iter():
         hidden_file = volume_path / HIDDEN_FILE_NAME
         hidden_file.write_text(
             f"Directory must not be empty.\nCreated by {__file__}.\n"

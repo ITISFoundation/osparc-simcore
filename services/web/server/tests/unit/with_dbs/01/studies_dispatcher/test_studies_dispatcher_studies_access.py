@@ -8,10 +8,10 @@
 import asyncio
 import re
 import urllib.parse
+from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import AsyncGenerator, AsyncIterator, Callable
 
 import pytest
 import redis.asyncio as aioredis
@@ -60,7 +60,7 @@ def _assert_same_projects(got: dict, expected: dict):
         "accessRights",
         "ui",
     }
-    for key in expected.keys():
+    for key in expected:
         if key not in exclude:
             assert got[key] == expected[key], "Failed in %s" % key
 

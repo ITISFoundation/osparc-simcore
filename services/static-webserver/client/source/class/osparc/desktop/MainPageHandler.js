@@ -25,17 +25,13 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
   members: {
     __stack: null,
-    __dashboard: null,
     __loadingPage: null,
+    __dashboard: null,
+    __userCenter: null,
     __studyEditor: null,
 
     setStack: function(stack) {
       this.__stack = stack;
-    },
-
-    addDashboard: function(dashboard) {
-      this.__dashboard = dashboard;
-      this.__stack.add(dashboard);
     },
 
     addLoadingPage: function(loadingPage) {
@@ -43,28 +39,35 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.__stack.add(loadingPage);
     },
 
+    addDashboard: function(dashboard) {
+      this.__dashboard = dashboard;
+      this.__stack.add(dashboard);
+    },
+
+    addUserCenter: function(userCenter) {
+      this.__userCenter = userCenter;
+      this.__stack.add(userCenter);
+    },
+
     addStudyEditor: function(studyEditor) {
       this.__studyEditor = studyEditor;
       this.__stack.add(studyEditor);
-    },
-
-    showDashboard: function() {
-      this.__stack.setSelection([this.__dashboard]);
     },
 
     showLoadingPage: function() {
       this.__stack.setSelection([this.__loadingPage]);
     },
 
-    showStudyEditor: function() {
-      this.__stack.setSelection([this.__studyEditor]);
+    showDashboard: function() {
+      this.__stack.setSelection([this.__dashboard]);
     },
 
-    replaceStudyEditor: function(studyEditor) {
-      if (this.__studyEditor) {
-        this.__stack.remove(this.__studyEditor);
-      }
-      this.addStudyEditor(studyEditor);
+    showUserCenter: function() {
+      this.__stack.setSelection([this.__userCenter]);
+    },
+
+    showStudyEditor: function() {
+      this.__stack.setSelection([this.__studyEditor]);
     },
 
     setLoadingPageHeader: function(msg) {
@@ -90,7 +93,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           this.loadStudy(studyData, pageContext);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.showDashboard();
           return;
         });
@@ -111,7 +114,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       store.getInaccessibleServices(studyData)
         .then(inaccessibleServices => {
           if (inaccessibleServices.length) {
-            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
+            const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices);
             throw new Error(msg);
           }
           this.showStudyEditor();
@@ -119,7 +122,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             .then(() => this.fireDataEvent("syncStudyEditor", pageContext));
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.showDashboard();
           return;
         });

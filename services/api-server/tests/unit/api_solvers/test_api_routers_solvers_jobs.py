@@ -1,12 +1,13 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
-import urllib.parse
 from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
 from typing import Any
+from unittest import mock
 from zipfile import ZipFile
 
 import arrow
@@ -18,6 +19,7 @@ from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
@@ -65,7 +67,7 @@ def presigned_download_link(
         "s3",
         endpoint_url=mocked_s3_server_url,
         # Some fake auth, otherwise botocore.exceptions.NoCredentialsError: Unable to locate credentials
-        aws_secret_access_key="xxx",
+        aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
     )
     s3_client.create_bucket(Bucket=bucket_name)
@@ -201,7 +203,21 @@ async def test_solver_logs(
     assert resp0.headers["location"] == presigned_download_link
 
     assert resp.url == presigned_download_link
-    pprint(dict(resp.headers))
+    pprint(dict(resp.headers))  # noqa: T203
+
+
+@pytest.fixture
+def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
+    from simcore_service_api_server.db.repositories.groups_extra_properties import (
+        GroupsExtraPropertiesRepository,
+    )
+
+    return mocker.patch.object(
+        GroupsExtraPropertiesRepository,
+        "use_on_demand_clusters",
+        autospec=True,
+        return_value=True,
+    )
 
 
 @pytest.mark.acceptance_test(
@@ -218,6 +234,7 @@ async def test_run_solver_job(
     project_id: str,
     solver_key: str,
     solver_version: str,
+    mocked_groups_extra_properties: mock.Mock,
 ):
     oas = directorv2_service_openapi_specs
 
@@ -318,7 +335,7 @@ async def test_run_solver_job(
 
     mocked_catalog_service_api.get(
         # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path=f"/v0/services/{urllib.parse.quote_plus(solver_key)}/{solver_version}",
+        path=f"/v0/services/{solver_key}/{solver_version}",
         name="get_service_v0_services__service_key___service_version__get",
     ).respond(
         status.HTTP_200_OK,
@@ -350,7 +367,7 @@ async def test_run_solver_job(
             }
         ).dict(),
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_201_CREATED
 
     assert mocked_webserver_service_api["create_projects"].called
     assert mocked_webserver_service_api["get_task_status"].called
@@ -371,3 +388,4 @@ async def test_run_solver_job(
 
     job_status = JobStatus.parse_obj(resp.json())
     assert job_status.progress == 0.0
+    mocked_groups_extra_properties.assert_called_once()

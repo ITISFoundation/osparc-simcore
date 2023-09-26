@@ -23,7 +23,7 @@ requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 
 up-extra: .env down-extra ## creates and starts adjacent services and migrates postgres database
 	# starting all adjacent services
-	docker-compose -f docker-compose-extra.yml up --detach
+	docker compose -f docker-compose-extra.yml up --detach
 	sleep 1
 	# discovering postgres services
 	@export $(shell grep -v '^#' .env | xargs) && sc-pg discover
@@ -35,7 +35,7 @@ down down-extra: docker-compose-extra.yml ## stops pg fixture
 	# cleanup discover cache
 	-@sc-pg clean
 	# stopping extra services
-	-@docker-compose -f docker-compose-extra.yml down
+	-@docker compose -f docker-compose-extra.yml down
 	# killing any process using port 8000
 	-@fuser --kill --verbose --namespace tcp 8000
 
@@ -54,11 +54,20 @@ run-prod: .env up-extra
 
 # BUILD #####################
 
+
+# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
+OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
+OPENAPI_GENERATOR_TAG := v0
+OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
+
+
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json
 openapi.json: .env
 	# generating openapi specs file
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+
 	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	docker run --rm \
+			--volume "$(CURDIR):/local" \
+			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$@

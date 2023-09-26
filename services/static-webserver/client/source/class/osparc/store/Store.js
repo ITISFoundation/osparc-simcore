@@ -44,7 +44,7 @@
  */
 qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
-  type : "singleton",
+  type: "singleton",
 
   properties: {
     currentStudy: {
@@ -107,6 +107,17 @@ qx.Class.define("osparc.store.Store", {
     profile: {
       check: "Object",
       init: {}
+    },
+    wallets: {
+      check: "Array",
+      init: [],
+      event: "changeWallets"
+    },
+    activeWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: true,
+      event: "changeActiveWallet"
     },
     permissions: {
       check: "Array",
@@ -357,15 +368,15 @@ qx.Class.define("osparc.store.Store", {
           .finally(() => {
             let servicesObj = {};
             if (includeRetired) {
-              servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
+              servicesObj = osparc.service.Utils.convertArrayToObject(allServices);
             } else {
-              const nonDepServices = allServices.filter(service => !(osparc.utils.Services.isRetired(service) || osparc.utils.Services.isDeprecated(service)));
-              servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
+              const nonDepServices = allServices.filter(service => !(osparc.service.Utils.isRetired(service) || osparc.service.Utils.isDeprecated(service)));
+              servicesObj = osparc.service.Utils.convertArrayToObject(nonDepServices);
             }
-            osparc.utils.Services.addTSRInfo(servicesObj);
-            osparc.utils.Services.addExtraTypeInfo(servicesObj);
+            osparc.service.Utils.addTSRInfo(servicesObj);
+            osparc.service.Utils.addExtraTypeInfo(servicesObj);
             if (includeRetired) {
-              osparc.utils.Services.servicesCached = servicesObj;
+              osparc.service.Utils.servicesCached = servicesObj;
             }
             resolve(servicesObj);
           });
@@ -389,7 +400,7 @@ qx.Class.define("osparc.store.Store", {
         this.getAllServices()
           .then(services => {
             nodes.forEach(node => {
-              if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
+              if (osparc.service.Utils.getFromObject(services, node.key, node.version)) {
                 const idx = inaccessibleServices.findIndex(inaccessibleSrv => inaccessibleSrv.key === node.key && inaccessibleSrv.version === node.version);
                 if (idx !== -1) {
                   inaccessibleServices.splice(idx, 1);
@@ -397,12 +408,8 @@ qx.Class.define("osparc.store.Store", {
               }
             });
           })
-          .catch(err => {
-            console.error("failed getting services", err);
-          })
-          .finally(() => {
-            resolve(inaccessibleServices);
-          });
+          .catch(err => console.error("failed getting services", err))
+          .finally(() => resolve(inaccessibleServices));
       });
     },
 
@@ -516,7 +523,7 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getPotentialCollaborators: function(includeGlobalEveryone = false) {
+    getPotentialCollaborators: function(includeMe = false, includeGlobalEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
@@ -537,6 +544,16 @@ qx.Class.define("osparc.store.Store", {
             for (const gid of Object.keys(members)) {
               members[gid]["collabType"] = 2;
               potentialCollaborators[gid] = members[gid];
+            }
+            if (includeMe) {
+              const myData = osparc.auth.Data.getInstance();
+              const myGid = myData.getGroupId();
+              potentialCollaborators[myGid] = {
+                "login": myData.getEmail(),
+                "first_name": myData.getFirstName(),
+                "last_name": myData.getLastName(),
+                "collabType": 2
+              };
             }
             const productEveryone = values[2]; // entry
             if (productEveryone && productEveryone["accessRights"]["read"]) {
@@ -587,6 +604,60 @@ qx.Class.define("osparc.store.Store", {
           resolve(null);
         }
       });
+    },
+
+    reloadWallets: function() {
+      const store = osparc.store.Store.getInstance();
+      store.setWallets([]);
+
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("wallets", "get")
+          .then(walletsData => {
+            const wallets = [];
+            const promises = [];
+            walletsData.forEach(walletReducedData => {
+              const wallet = new osparc.data.model.Wallet(walletReducedData);
+              wallets.push(wallet);
+              promises.push(this.reloadWalletAccessRights(wallet));
+            });
+            store.setWallets(wallets);
+
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "walletOsparcCreditsUpdated";
+            socket.removeSlot(slotName);
+            socket.on(slotName, jsonString => {
+              const data = JSON.parse(jsonString);
+              const walletFound = wallets.find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+              if (walletFound) {
+                walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+              }
+            }, this);
+
+            Promise.all(promises)
+              .then(() => resolve())
+              .catch(err => {
+                console.error(err);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    reloadWalletAccessRights: function(wallet) {
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId()
+        }
+      };
+      return osparc.data.Resources.fetch("wallets", "getAccessRights", params)
+        .then(accessRights => {
+          wallet.setAccessRights(accessRights);
+        })
+        .catch(err => console.error(err));
     },
 
     __getOrgClassifiers: function(orgId, useCache = false) {

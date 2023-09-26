@@ -11,7 +11,7 @@ from servicelib.aiohttp.application import create_safe_application
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
 from .announcements.plugin import setup_announcements
-from .application_settings import setup_settings
+from .application_settings import get_settings, setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
@@ -20,13 +20,14 @@ from .diagnostics.plugin import setup_diagnostics
 from .director_v2.plugin import setup_director_v2
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
-from .garbage_collector import setup_garbage_collector
+from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling
 from .notifications.plugin import setup_notifications
+from .payments.plugin import setup_payments
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
 from .publications.plugin import setup_publications
@@ -47,8 +48,23 @@ from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
 from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
+from .wallets.plugin import setup_wallets
 
 _logger = logging.getLogger(__name__)
+
+
+async def _welcome_banner(app: web.Application):
+    settings = get_settings(app)
+    print(WELCOME_MSG, flush=True)  # noqa: T201
+    if settings.WEBSERVER_GARBAGE_COLLECTOR:
+        print("with", WELCOME_GC_MSG, flush=True)  # noqa: T201
+    if settings.WEBSERVER_DB_LISTENER:
+        print("with", WELCOME_DB_LISTENER_MSG, flush=True)  # noqa: T201
+
+
+async def _finished_banner(app: web.Application):
+    assert app  # nosec
+    print(info.get_finished_banner(), flush=True)  # noqa: T201
 
 
 def create_application() -> web.Application:
@@ -56,12 +72,11 @@ def create_application() -> web.Application:
     Initializes service
     """
     app = create_safe_application()
-    settings = setup_settings(app)
+    setup_settings(app)
 
     # WARNING: setup order matters
-    # TODO: create dependency mechanism
-    # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-    #
+    # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
+
     setup_remote_debugging(app)
 
     # core modules
@@ -116,25 +131,19 @@ def create_application() -> web.Application:
     setup_scicrunch(app)
     setup_tags(app)
 
+    # wallets
+    setup_payments(app)
+    setup_wallets(app)
+
     setup_announcements(app)
     setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)
 
-    async def welcome_banner(_app: web.Application):
-        print(WELCOME_MSG, flush=True)
-        if settings.WEBSERVER_GARBAGE_COLLECTOR:
-            print("with", WELCOME_GC_MSG, flush=True)
-        if settings.WEBSERVER_DB_LISTENER:
-            print("with", WELCOME_DB_LISTENER_MSG, flush=True)
-
-    async def finished_banner(_app: web.Application):
-        print(info.get_finished_banner(), flush=True)
-
     # NOTE: *last* events
-    app.on_startup.append(welcome_banner)
-    app.on_shutdown.append(finished_banner)
+    app.on_startup.append(_welcome_banner)
+    app.on_shutdown.append(_finished_banner)
 
     _logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
@@ -151,4 +160,7 @@ def run_service(app: web.Application, config: dict[str, Any]):
     )
 
 
-__all__ = ("create_application", "run_service")
+__all__: tuple[str, ...] = (
+    "create_application",
+    "run_service",
+)

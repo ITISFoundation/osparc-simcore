@@ -40,12 +40,12 @@
 qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
-    this.base();
+  construct: function(openView) {
+    this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    this._add(osparc.component.notification.RibbonNotifications.getInstance());
+    this._add(osparc.notification.RibbonNotifications.getInstance());
 
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
@@ -55,6 +55,28 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
+    store.reloadWallets()
+      .then(() => {
+        if (openView && openView === "wallets") {
+          osparc.desktop.credits.Utils.areWalletsEnabled()
+            .then(walletsEnabled => {
+              if (walletsEnabled) {
+                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(true);
+                creditsWindow.openOverview();
+              }
+            });
+          // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
+        }
+        const preferenceSettings = osparc.Preferences.getInstance();
+        const preferenceWalletId = preferenceSettings.getPreferredWalletId();
+        const wallets = store.getWallets();
+        if (preferenceWalletId === null && wallets && wallets.length) {
+          // Select one by default: according to the use case, the one larger number of accessRights
+          wallets.sort((a, b) => b.getAccessRights().length - a.getAccessRights().length);
+          preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+        }
+      });
+
     Promise.all([
       store.getAllClassifiers(true),
       store.getTags()
@@ -76,6 +98,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __navBar: null,
     __dashboard: null,
     __dashboardLayout: null,
+    __userCenter: null,
     __loadingPage: null,
     __studyEditor: null,
 
@@ -92,11 +115,15 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       if (this.__studyEditor) {
         const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
-        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
-          if (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4llite")) {
+          if (
+            osparc.product.Utils.isProduct("s4l") ||
+            osparc.product.Utils.isProduct("s4llite") ||
+            osparc.product.Utils.isProduct("s4lacad")
+          ) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
             msg += this.tr("Make sure you saved your changes to:");
@@ -148,6 +175,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
       dashboardBtn.setFetching(false);
+
+      const store = osparc.store.Store.getInstance();
+      store.setActiveWallet(null);
     },
 
     closeEditor: function() {
@@ -172,6 +202,9 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       const dashboardLayout = this.__dashboardLayout = this.__createDashboardStack();
       mainPageHandler.addDashboard(dashboardLayout);
+
+      const userCenterLayout = this.__createUserCenter();
+      mainPageHandler.addUserCenter(userCenterLayout);
 
       const loadingPage = this.__loadingPage = new osparc.ui.message.Loading();
       mainPageHandler.addLoadingPage(loadingPage);
@@ -216,6 +249,20 @@ qx.Class.define("osparc.desktop.MainPage", {
       return dashboardLayout;
     },
 
+    __createUserCenter: function() {
+      const userCenter = this.__userCenter = new osparc.desktop.credits.UserCenter(true);
+
+      const userCenterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      userCenterLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      userCenterLayout.add(userCenter);
+      userCenterLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      return userCenterLayout;
+    },
+
     __attachHandlers: function() {
       const studyBrowser = this.__dashboard.getStudyBrowser();
       studyBrowser.addListener("publishTemplate", e => this.__publishTemplate(e.getData()));
@@ -223,7 +270,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __publishTemplate: function(data) {
       const text = this.tr("Started template creation and added to the background tasks");
-      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const params = {
         url: {
@@ -244,7 +291,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
 
@@ -269,11 +316,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
       mainPageHandler.setLoadingPageHeader(msg);
       mainPageHandler.showLoadingPage();
-    },
-
-    __showStudyEditor: function(studyEditor) {
-      osparc.desktop.MainPageHandler.getInstance().replaceStudyEditor(studyEditor);
-      osparc.desktop.MainPageHandler.getInstance().showStudyEditor();
     },
 
     __startSnapshot: async function(studyId, snapshotId) {
@@ -321,7 +363,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.__showDashboard();
           return;
         });
@@ -360,7 +402,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.__showDashboard();
           return;
         });

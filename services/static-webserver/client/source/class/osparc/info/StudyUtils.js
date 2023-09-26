@@ -122,7 +122,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       const addStars = model => {
         tsrLayout.removeAll();
         const quality = model.getQuality();
-        if (osparc.component.metadata.Quality.isEnabled(quality)) {
+        if (osparc.metadata.Quality.isEnabled(quality)) {
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
             nStars: 4,
@@ -165,7 +165,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       * @param maxHeight {Number} description's maxHeight
       */
-    createDescription: function(study, maxHeight) {
+    createDescriptionMD: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true
       });
@@ -238,55 +238,68 @@ qx.Class.define("osparc.info.StudyUtils", {
           column: 0
         });
 
-        moreInfo.add(extraInfo.view, {
-          row: idx,
-          column: 1
-        });
+        if (extraInfo.view) {
+          moreInfo.add(extraInfo.view, {
+            row: idx,
+            column: 1
+          });
+        }
       });
 
       return moreInfo;
     },
 
+    titleWithEditLayout: function(data) {
+      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const title = new qx.ui.basic.Label(data.label);
+      titleLayout.add(title);
+      if (data.action) {
+        titleLayout.add(data.action.button);
+        data.action.button.addListener("execute", () => {
+          const cb = data.action.callback;
+          if (typeof cb === "string") {
+            data.action.ctx.fireEvent(cb);
+          } else {
+            cb.call(data.action.ctx);
+          }
+        }, this);
+      }
+      return titleLayout;
+    },
+
     createExtraInfoGrid: function(extraInfos) {
       const positions = {
-        ACCESS_RIGHTS: {
+        THUMBNAIL: {
           column: 0,
-          row: 0
-        },
-        AUTHOR: {
-          column: 1,
-          row: 0
+          row: 0*3
         },
         CREATED: {
-          column: 2,
-          row: 0
+          column: 0,
+          row: 1*3
         },
         MODIFIED: {
-          column: 3,
-          row: 0
+          column: 0,
+          row: 2*3
         },
-        THUMBNAIL: {
-          column: 4,
-          row: 0,
-          rowSpan: 4
+        ACCESS_RIGHTS: {
+          column: 0,
+          row: 3*3
+        },
+        AUTHOR: {
+          column: 0,
+          row: 4*3
         },
         TAGS: {
           column: 0,
-          row: 3,
-          colSpan: 2
+          row: 5*3
         },
         QUALITY: {
-          column: 2,
-          row: 3
+          column: 0,
+          row: 6*3
         },
         CLASSIFIERS: {
-          column: 3,
-          row: 3
-        },
-        DESCRIPTION: {
           column: 0,
-          row: 6,
-          colSpan: 5
+          row: 7*3
         }
       };
 
@@ -295,8 +308,13 @@ qx.Class.define("osparc.info.StudyUtils", {
       grid.setColumnAlign(1, "left", "middle");
       grid.setColumnAlign(2, "left", "middle");
       grid.setColumnAlign(3, "left", "middle");
-      grid.setRowHeight(2, 10); // spacer
-      grid.setRowHeight(5, 10); // spacer
+      grid.setRowHeight(1*3-1, 10); // spacer
+      grid.setRowHeight(2*3-1, 10); // spacer
+      grid.setRowHeight(3*3-1, 10); // spacer
+      grid.setRowHeight(4*3-1, 10); // spacer
+      grid.setRowHeight(5*3-1, 10); // spacer
+      grid.setRowHeight(6*3-1, 10); // spacer
+      grid.setRowHeight(7*3-1, 10); // spacer
       const moreInfo = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {
@@ -304,20 +322,7 @@ qx.Class.define("osparc.info.StudyUtils", {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
-          const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          const title = new qx.ui.basic.Label(extraInfo.label);
-          titleLayout.add(title);
-          if (extraInfo.action) {
-            titleLayout.add(extraInfo.action.button);
-            extraInfo.action.button.addListener("execute", () => {
-              const cb = extraInfo.action.callback;
-              if (typeof cb === "string") {
-                extraInfo.action.ctx.fireEvent(cb);
-              } else {
-                cb.call(extraInfo.action.ctx);
-              }
-            }, this);
-          }
+          const titleLayout = this.titleWithEditLayout(extraInfo);
           moreInfo.add(titleLayout, {
             row: gridInfo.row,
             column: gridInfo.column,
@@ -340,7 +345,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param studyData {Object} Serialized Study Object
       */
     openAccessRights: function(studyData) {
-      const permissionsView = new osparc.component.share.CollaboratorsStudy(studyData);
+      const permissionsView = new osparc.share.CollaboratorsStudy(studyData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       return permissionsView;
@@ -350,7 +355,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param resourceData {Object} Serialized Resource Object
       */
     openQuality: function(resourceData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
+      const qualityEditor = new osparc.metadata.QualityEditor(resourceData);
       const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;

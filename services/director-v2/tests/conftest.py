@@ -17,7 +17,6 @@ import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, NodesDict
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
@@ -27,6 +26,8 @@ from starlette.testclient import ASGI3App, TestClient
 
 pytest_plugins = [
     "pytest_simcore.db_entries_mocks",
+    "pytest_simcore.dask_gateway",
+    "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -68,16 +69,15 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def project_env_devel_environment(
-    monkeypatch: MonkeyPatch, project_slug_dir: Path
+    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    envs = setenvs_from_envfile(
+    return setenvs_from_envfile(
         monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True
     )
-    return envs
 
 
 @pytest.fixture(scope="session")
@@ -140,9 +140,9 @@ def dynamic_sidecar_docker_image_name() -> str:
     return f"{registry}/dynamic-sidecar:{image_tag}"
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_env(
-    monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image_name: str
+    monkeypatch: pytest.MonkeyPatch, dynamic_sidecar_docker_image_name: str
 ) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
@@ -157,21 +157,26 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_ENABLED": "false",
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
         "RABBIT_HOST": "mocked_host",
+        "RABBIT_SECURE": "false",
         "RABBIT_USER": "mocked_user",
         "RABBIT_PASSWORD": "mocked_password",
         "REGISTRY_AUTH": "false",
         "REGISTRY_USER": "test",
         "REGISTRY_PW": "test",
         "REGISTRY_SSL": "false",
+        "POSTGRES_HOST": "test",
+        "POSTGRES_USER": "test",
+        "POSTGRES_PASSWORD": "test",
+        "POSTGRES_DB": "test",
         "R_CLONE_PROVIDER": "MINIO",
-        "DIRECTOR_V2_POSTGRES_ENABLED": "false",
         "SC_BOOT_MODE": "production",
+        "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
@@ -182,7 +187,7 @@ async def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
         yield test_client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
@@ -190,7 +195,7 @@ async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
         yield app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -200,7 +205,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
         yield client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def minimal_app(client: TestClient) -> ASGI3App:
     # NOTICE that this app triggers events
     # SEE: https://fastapi.tiangolo.com/advanced/testing-events/

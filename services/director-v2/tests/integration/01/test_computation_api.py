@@ -7,10 +7,11 @@
 
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -19,6 +20,7 @@ from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
 )
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
@@ -26,9 +28,8 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pytest import MonkeyPatch
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -46,29 +47,31 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
 ) -> None:
     # used by the client fixture
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv(
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-        dask_scheduler_service,
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
+            "COMPUTATIONAL_BACKEND_ENABLED": "1",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
+            "DYNAMIC_SIDECAR_IMAGE": dynamic_sidecar_docker_image_name,
+            "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
+            "SWARM_STACK_NAME": "test_mocked_stack_name",
+            "TRAEFIK_SIMCORE_ZONE": "test_mocked_simcore_zone",
+            "R_CLONE_PROVIDER": "MINIO",
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+        },
     )
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image_name)
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_configuration(
     sleeper_service: dict[str, str],
     jupyter_service: dict[str, str],
@@ -124,6 +127,7 @@ def fake_workbench_computational_pipeline_details_not_started(
     for node_state in completed_pipeline_details.node_states.values():
         node_state.modified = True
         node_state.current_status = RunningState.NOT_STARTED
+        node_state.progress = None
     return completed_pipeline_details
 
 
@@ -219,22 +223,22 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
                 exp_node_states_after_run={
@@ -247,17 +251,17 @@ class PartialComputationParams:
                     2: {
                         "modified": True,
                         "dependencies": [],
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
                 exp_pipeline_adj_list_after_force_run={1: []},
@@ -266,25 +270,25 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.NOT_STARTED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.NOT_STARTED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.NOT_STARTED,
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
             ),
@@ -299,25 +303,25 @@ class PartialComputationParams:
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
                 exp_node_states_after_run={
@@ -352,13 +356,13 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                     3: {
                         "modified": False,
@@ -370,7 +374,7 @@ class PartialComputationParams:
                         "modified": False,
                         "dependencies": [],
                         "currentStatus": RunningState.PUBLISHED,
-                        "progress": 0,
+                        "progress": None,
                     },
                 },
             ),
@@ -379,7 +383,7 @@ class PartialComputationParams:
     ],
 )
 async def test_run_partial_computation(
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -391,7 +395,7 @@ async def test_run_partial_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    await catalog_ready(user["id"], osparc_product_name)
+    await wait_for_catalog_service(user["id"], osparc_product_name)
     sleepers_project: ProjectAtDB = await project(
         user, workbench=fake_workbench_without_outputs
     )
@@ -531,7 +535,7 @@ async def test_run_partial_computation(
 
 
 async def test_run_computation(
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -544,7 +548,7 @@ async def test_run_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    await catalog_ready(user["id"], osparc_product_name)
+    await wait_for_catalog_service(user["id"], osparc_product_name)
     sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(

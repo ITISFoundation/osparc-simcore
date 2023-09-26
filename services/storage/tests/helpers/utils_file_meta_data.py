@@ -1,6 +1,5 @@
-from typing import Optional
-
 from aiopg.sa.engine import Engine
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.s3_client import UploadID
@@ -11,10 +10,11 @@ async def assert_file_meta_data_in_db(
     *,
     file_id: StorageFileID,
     expected_entry_exists: bool,
-    expected_file_size: Optional[int],
-    expected_upload_id: Optional[bool],
-    expected_upload_expiration_date: Optional[bool],
-) -> Optional[UploadID]:
+    expected_file_size: int | None,
+    expected_upload_id: bool | None,
+    expected_upload_expiration_date: bool | None,
+    expected_sha256_checksum: SHA256Str | None,
+) -> UploadID | None:
     if expected_entry_exists and expected_file_size == None:
         assert True, "Invalid usage of assertion, expected_file_size cannot be None"
 
@@ -51,5 +51,14 @@ async def assert_file_meta_data_in_db(
                 assert (
                     row[file_meta_data.c.upload_expires_at] is None
                 ), "expiration date should be NULL"
+            if expected_sha256_checksum:
+                assert (
+                    SHA256Str(row[file_meta_data.c.sha256_checksum])
+                    == expected_sha256_checksum
+                ), "invalid sha256_checksum"
+            else:
+                assert (
+                    row[file_meta_data.c.sha256_checksum] is None
+                ), "expected sha256_checksum was None"
             upload_id = row[file_meta_data.c.upload_id]
     return upload_id

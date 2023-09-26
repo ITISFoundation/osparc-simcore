@@ -2,14 +2,14 @@
     Models Front-end UI
 """
 
-from typing import Literal, TypedDict
+from typing import Any, ClassVar, Literal, TypedDict
 
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position
-from .utils.common_validators import empty_str_to_none
+from .utils.common_validators import empty_str_to_none_pre_validator
 
 
 class WorkbenchUI(BaseModel):
@@ -35,7 +35,7 @@ class Annotation(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "type": "note",
@@ -46,7 +46,7 @@ class Annotation(BaseModel):
                         "width": 117,
                         "height": 26,
                         "destinataryGid": 4,
-                        "text": "ToDo"
+                        "text": "ToDo",
                     },
                 },
                 {
@@ -72,4 +72,6 @@ class StudyUI(BaseModel):
     class Config:
         extra = Extra.allow
 
-    _empty_is_none = validator("*", allow_reuse=True, pre=True)(empty_str_to_none)
+    _empty_is_none = validator("*", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )

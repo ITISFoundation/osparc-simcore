@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
         this.__settingStudy = true;
 
-        this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
+        this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
 
         // Before starting a study, make sure the latest version is fetched
         const params = {
@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       this.__settingStudy = false;
 
-      this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
+      this._showLoadingPage(this.tr("Opening ") + (study.getName() || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
 
       const store = osparc.store.Store.getInstance();
       store.setCurrentStudy(study);
@@ -195,7 +195,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                   let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
                   msg += "<br>";
                   msg += this.tr("Please start them manually.");
-                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                  osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
                 }
               }
             });
@@ -206,7 +206,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 this.__startAutoSaveTimer();
               } else {
                 const msg = this.self().READ_ONLY_TEXT;
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
               }
             });
 
@@ -256,7 +256,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               msg += "<br>" + err["message"];
             }
           }
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           this.fireEvent("forceBackToDashboard");
         })
         .finally(() => this._hideLoadingPage());
@@ -298,7 +298,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const study = this.getStudy();
-      const nodesSlidesTree = this.__nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const nodesSlidesTree = this.__nodesSlidesTree = new osparc.widget.NodesSlidesTree(study);
       const title = this.tr("Edit App Mode");
       const nNodes = Object.keys(study.getWorkbench().getNodes()).length;
       const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 370, Math.min(350, 200+(30*nNodes))).set({
@@ -466,7 +466,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
-          this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
+          if (this.getStudy() && this.getStudy().getUi()) {
+            this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
+          }
           break;
         case "guided":
         case "app":
@@ -477,7 +479,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __takeSnapshot: function() {
-      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+      const editSnapshotView = new osparc.snapshots.EditSnapshotView();
       const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
       study.getSnapshots()
@@ -503,7 +505,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const store = osparc.store.Store.getInstance();
             store.getSnapshots().push(data);
           })
-          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          .catch(err => osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();
       }, this);
@@ -512,7 +514,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __showSnapshots: function() {
       const study = this.getStudy();
-      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
+      const snapshots = new osparc.snapshots.SnapshotsView(study);
       const title = this.tr("Checkpoints");
       const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
       snapshots.addListener("openSnapshot", e => {
@@ -528,7 +530,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __showIterations: function() {
       const study = this.getStudy();
-      const iterations = new osparc.component.snapshots.IterationsView(study);
+      const iterations = new osparc.snapshots.IterationsView(study);
       const title = this.tr("Iterations");
       const win = osparc.ui.window.Window.popUpInWindow(iterations, title, 1000, 500);
       iterations.addListener("openIteration", e => {
@@ -631,10 +633,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
-            osparc.component.message.FlashMessenger.getInstance().logAs(error.message, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(error.message, "ERROR");
           } else {
             console.error(error);
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
           }
           this.getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later

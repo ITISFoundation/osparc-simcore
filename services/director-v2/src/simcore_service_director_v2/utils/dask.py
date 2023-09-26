@@ -1,8 +1,8 @@
 import asyncio
 import collections
 import logging
-from collections.abc import Awaitable, Callable, Coroutine
-from typing import Any, Final, Generator, NoReturn, Optional, cast, get_args
+from collections.abc import Awaitable, Callable, Coroutine, Generator
+from typing import Any, Final, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -20,8 +20,9 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerLabelsDict,
 )
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.clusters import ClusterID
-from models_library.docker import StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -38,6 +39,7 @@ from simcore_sdk.node_ports_common.exceptions import (
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from simcore_sdk.node_ports_v2.ports_mapping import PortKey
+from simcore_service_director_v2.constants import UNDEFINED_DOCKER_LABEL
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -46,9 +48,8 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
-from ..models.domains.comp_runs import MetadataDict
-from ..models.domains.comp_tasks import Image
-from ..models.schemas.services import NodeRequirements
+from ..models.comp_runs import RunMetadataDict
+from ..models.comp_tasks import Image
 from ..modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -221,7 +222,7 @@ async def compute_input_data(
             else:
                 input_data[port.key] = value
 
-        except ValidationError as err:
+        except ValidationError as err:  # noqa: PERF203
             ports_errors.extend(_get_port_validation_errors(port.key, err))
 
     if ports_errors:
@@ -257,6 +258,7 @@ async def compute_output_data_schema(
                 else port.key,
                 link_type=file_link_type,
                 file_size=ByteSize(0),  # will create a single presigned link
+                sha256_checksum=None,
             )
             assert value_links.urls  # nosec
             assert len(value_links.urls) == 1  # nosec
@@ -288,12 +290,10 @@ async def compute_service_log_file_upload_link(
         file_name=_LOGS_FILE_NAME,
         link_type=file_link_type,
         file_size=ByteSize(0),  # will create a single presigned link
+        sha256_checksum=None,
     )
     url: AnyUrl = value_links.urls[0]
     return url
-
-
-_UNDEFINED_METADATA: Final[str] = "undefined-label"
 
 
 def compute_task_labels(
@@ -301,29 +301,30 @@ def compute_task_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    metadata: MetadataDict,
+    run_metadata: RunMetadataDict,
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
-    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
     standard_simcore_labels = StandardSimcoreDockerLabels.construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
         product_name=product_name,
-        simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
-        swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
+        simcore_user_agent=run_metadata.get(
+            "simcore_user_agent", UNDEFINED_DOCKER_LABEL
+        ),
+        swarm_stack_name=UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
     ).to_simcore_runtime_docker_labels()
-    all_labels = standard_simcore_labels | parse_obj_as(
+    return standard_simcore_labels | parse_obj_as(
         ContainerLabelsDict,
         {
-            k.lower(): f"{v}"
-            for k, v in metadata.items()
+            DockerLabelKey.from_key(k): f"{v}"
+            for k, v in run_metadata.items()
             if k not in ["product_name", "simcore_user_agent"]
         },
     )
-    return all_labels
 
 
 async def compute_task_envs(
@@ -333,9 +334,9 @@ async def compute_task_envs(
     project_id: ProjectID,
     node_id: NodeID,
     node_image: Image,
-    metadata: MetadataDict,
+    metadata: RunMetadataDict,
 ) -> ContainerEnvsDict:
-    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    product_name = metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
     task_envs = node_image.envs
     if task_envs:
         vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
@@ -459,7 +460,7 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources = node_reqs.dict(
+    dask_resources: dict[str, int | float] = node_reqs.dict(
         exclude_unset=True,
         by_alias=True,
         exclude_none=True,

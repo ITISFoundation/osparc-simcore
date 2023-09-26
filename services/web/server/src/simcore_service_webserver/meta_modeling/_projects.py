@@ -14,14 +14,14 @@ from aiohttp.typedefs import Handler
 from models_library.basic_regex import UUID_RE
 from models_library.projects import ProjectID
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..director_v2.api import AbstractProjectRunPolicy
-from ..projects._handlers_crud import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
+from ..projects._crud_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
 from ..version_control.models import CommitID
 from ._iterations import get_or_create_runnable_projects, get_runnable_projects_ids
 from ._version_control import VersionControlForMetaModeling
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/blob/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml#L8563
@@ -69,7 +69,7 @@ async def projects_redirection_middleware(request: web.Request, handler: Handler
 
                 if f"{workcopy_project_id}" != f"{project_id}":
                     request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = workcopy_project_id
-                    log.debug(
+                    _logger.debug(
                         "Redirecting request with %s to working copy %s",
                         f"{project_id=}",
                         f"{workcopy_project_id=}",

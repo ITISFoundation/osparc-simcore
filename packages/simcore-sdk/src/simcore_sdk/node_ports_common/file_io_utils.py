@@ -1,10 +1,11 @@
 import asyncio
 import json
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, AsyncGenerator, Protocol, runtime_checkable
+from typing import IO, Any, Final, Protocol, runtime_checkable
 
 import aiofiles
 from aiohttp import (
@@ -19,10 +20,11 @@ from aiohttp import (
 )
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
-from pydantic import AnyUrl
+from models_library.basic_types import SHA256Str
+from pydantic import AnyUrl, NonNegativeInt
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
-from servicelib.utils import logged_gather
+from servicelib.utils import logged_gather, partition_gen
 from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
@@ -36,12 +38,18 @@ from yarl import URL
 from . import exceptions
 from .constants import CHUNK_SIZE
 
+_logger = logging.getLogger(__name__)
+
+_CONCURRENT_MULTIPART_UPLOADS_COUNT: Final[NonNegativeInt] = 10
+_VALID_HTTP_STATUS_CODES: Final[NonNegativeInt] = 299
+
 
 @dataclass(frozen=True)
 class UploadableFileObject:
     file_object: IO
     file_name: str
     file_size: int
+    sha256_checksum: SHA256Str | None = None
 
 
 class ExtendedClientResponseError(ClientResponseError):
@@ -81,7 +89,7 @@ class ExtendedClientResponseError(ClientResponseError):
 
 
 async def _raise_for_status(response: ClientResponse) -> None:
-    if response.status >= 400:
+    if response.status >= web.HTTPBadRequest.status_code:
         body = await response.text()
         raise ExtendedClientResponseError(
             response.request_info,
@@ -146,19 +154,18 @@ async def _file_chunk_writer(
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
             if io_log_redirect_cb and pbar.update(len(chunk)):
-                with log_catch(log, reraise=False):
+                with log_catch(_logger, reraise=False):
                     await io_log_redirect_cb(f"{pbar}")
             await progress_bar.update(len(chunk))
 
 
-log = logging.getLogger(__name__)
-_TQDM_FILE_OPTIONS = dict(
-    unit="byte",
-    unit_scale=True,
-    unit_divisor=1024,
-    colour="yellow",
-    miniters=1,
-)
+_TQDM_FILE_OPTIONS: dict[str, Any] = {
+    "unit": "byte",
+    "unit_scale": True,
+    "unit_divisor": 1024,
+    "colour": "yellow",
+    "miniters": 1,
+}
 
 
 async def download_link_to_file(
@@ -170,21 +177,21 @@ async def download_link_to_file(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ):
-    log.debug("Downloading from %s to %s", url, file_path)
+    _logger.debug("Downloading from %s to %s", url, file_path)
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError),
-        before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
-        after=after_log(log, log_level=logging.ERROR),
+        before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+        after=after_log(_logger, log_level=logging.ERROR),
     ):
         with attempt:
             async with AsyncExitStack() as stack:
                 response = await stack.enter_async_context(session.get(url))
-                if response.status == 404:
+                if response.status == web.HTTPNotFound.status_code:
                     raise exceptions.InvalidDownloadLinkError(url)
-                if response.status > 299:
+                if response.status > _VALID_HTTP_STATUS_CODES:
                     raise exceptions.TransferError(url)
                 file_path.parent.mkdir(parents=True, exist_ok=True)
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
@@ -196,11 +203,11 @@ async def download_link_to_file(
                             total=file_size,
                             **(
                                 _TQDM_FILE_OPTIONS
-                                | dict(
-                                    miniters=_compute_tqdm_miniters(file_size)
+                                | {
+                                    "miniters": _compute_tqdm_miniters(file_size)
                                     if file_size
                                     else 1
-                                )
+                                }
                             ),
                         )
                     )
@@ -215,7 +222,7 @@ async def download_link_to_file(
                         io_log_redirect_cb,
                         sub_progress,
                     )
-                    log.debug("Download complete")
+                    _logger.debug("Download complete")
                 except ClientPayloadError as exc:
                     raise exceptions.TransferError(url) from exc
 
@@ -243,6 +250,32 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
         return True
 
     return False
+
+
+async def _session_put(
+    session: ClientSession,
+    file_part_size: int,
+    upload_url: AnyUrl,
+    pbar: tqdm,
+    io_log_redirect_cb: LogRedirectCB | None,
+    progress_bar: ProgressBarData,
+    file_uploader: Any | None,
+) -> str:
+    async with session.put(
+        upload_url, data=file_uploader, headers={"Content-Length": f"{file_part_size}"}
+    ) as response:
+        await _raise_for_status(response)
+        if io_log_redirect_cb and pbar.update(file_part_size):
+            with log_catch(_logger, reraise=False):
+                await io_log_redirect_cb(f"{pbar}")
+        await progress_bar.update(file_part_size)
+
+        # NOTE: the response from minio does not contain a json body
+        assert response.status == web.HTTPOk.status_code  # nosec
+        assert response.headers  # nosec
+        assert "Etag" in response.headers  # nosec
+        etag: str = json.loads(response.headers["Etag"])
+        return etag
 
 
 async def _upload_file_part(
@@ -276,32 +309,22 @@ async def _upload_file_part(
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError)
         | retry_if_exception(_check_for_aws_http_errors),
-        before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
-        after=after_log(log, log_level=logging.ERROR),
+        before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+        after=after_log(_logger, log_level=logging.ERROR),
     ):
         with attempt:
-            async with session.put(
-                upload_url,
-                data=file_uploader,
-                headers={
-                    "Content-Length": f"{file_part_size}",
-                },
-            ) as response:
-                await _raise_for_status(response)
-                if io_log_redirect_cb and pbar.update(file_part_size):
-                    with log_catch(log, reraise=False):
-                        await io_log_redirect_cb(f"{pbar}")
-                await progress_bar.update(file_part_size)
-
-                # NOTE: the response from minio does not contain a json body
-                assert response.status == web.HTTPOk.status_code  # nosec
-                assert response.headers  # nosec
-                assert "Etag" in response.headers  # nosec
-                received_e_tag = json.loads(response.headers["Etag"])
-                return (part_index, received_e_tag)
-    raise exceptions.S3TransferError(
-        f"Unexpected error while transferring {file_to_upload} to {upload_url}"
-    )
+            received_e_tag = await _session_put(
+                session=session,
+                file_part_size=file_part_size,
+                upload_url=upload_url,
+                pbar=pbar,
+                io_log_redirect_cb=io_log_redirect_cb,
+                progress_bar=progress_bar,
+                file_uploader=file_uploader,
+            )
+            return (part_index, received_e_tag)
+    msg = f"Unexpected error while transferring {file_to_upload} to {upload_url}"
+    raise exceptions.S3TransferError(msg)
 
 
 async def upload_file_to_presigned_links(
@@ -322,18 +345,22 @@ async def upload_file_to_presigned_links(
         file_size = file_to_upload.file_size
         file_name = file_to_upload.file_name
 
+    # NOTE: when the file object is already created it cannot be duplicated so
+    # no concurrency is allowed in that case
+    max_concurrency = 4 if isinstance(file_to_upload, Path) else 1
+
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
-    upload_tasks = []
+
+    results: list[UploadedPart] = []
     async with AsyncExitStack() as stack:
         tqdm_progress = stack.enter_context(
             tqdm_logging_redirect(
                 desc=f"uploading {file_name}\n",
                 total=file_size,
                 **(
-                    _TQDM_FILE_OPTIONS
-                    | dict(miniters=_compute_tqdm_miniters(file_size))
+                    _TQDM_FILE_OPTIONS | {"miniters": _compute_tqdm_miniters(file_size)}
                 ),
             )
         )
@@ -341,37 +368,42 @@ async def upload_file_to_presigned_links(
             progress_bar.sub_progress(steps=file_size)
         )
 
-        for index, upload_url in enumerate(file_upload_links.urls):
-            this_file_chunk_size = (
-                file_chunk_size if (index + 1) < num_urls else last_chunk_size
-            )
-            upload_tasks.append(
-                _upload_file_part(
-                    session,
-                    file_to_upload,
-                    index,
-                    index * file_chunk_size,
-                    this_file_chunk_size,
-                    upload_url,
-                    tqdm_progress,
-                    num_retries,
-                    io_log_redirect_cb=io_log_redirect_cb,
-                    progress_bar=sub_progress,
+        indexed_urls: list[tuple[int, AnyUrl]] = list(enumerate(file_upload_links.urls))
+        for partition_of_indexed_urls in partition_gen(
+            indexed_urls, slice_size=_CONCURRENT_MULTIPART_UPLOADS_COUNT
+        ):
+            upload_tasks = []
+            for index, upload_url in partition_of_indexed_urls:
+                this_file_chunk_size = (
+                    file_chunk_size if (index + 1) < num_urls else last_chunk_size
                 )
-            )
-        try:
-            results = await logged_gather(
-                *upload_tasks,
-                log=log,
-                # NOTE: when the file object is already created it cannot be duplicated so
-                # no concurrency is allowed in that case
-                max_concurrency=4 if isinstance(file_to_upload, Path) else 1,
-            )
-            part_to_etag = [
-                UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
-            ]
-            return part_to_etag
-        except ClientError as exc:
-            raise exceptions.S3TransferError(
-                f"Could not upload file {file_name} ({file_size=}, {file_chunk_size=}, {last_chunk_size=}):{exc}"
-            ) from exc
+                upload_tasks.append(
+                    _upload_file_part(
+                        session=session,
+                        file_to_upload=file_to_upload,
+                        part_index=index,
+                        file_offset=index * file_chunk_size,
+                        file_part_size=this_file_chunk_size,
+                        upload_url=upload_url,
+                        pbar=tqdm_progress,
+                        num_retries=num_retries,
+                        io_log_redirect_cb=io_log_redirect_cb,
+                        progress_bar=sub_progress,
+                    )
+                )
+            try:
+                upload_results = await logged_gather(
+                    *upload_tasks, log=_logger, max_concurrency=max_concurrency
+                )
+
+                for i, e_tag in upload_results:
+                    results.append(UploadedPart(number=i + 1, e_tag=e_tag))
+
+            except ClientError as exc:  # noqa: PERF203
+                msg = (
+                    f"Could not upload file {file_name} ({file_size=}, "
+                    f"{file_chunk_size=}, {last_chunk_size=}):{exc}"
+                )
+                raise exceptions.S3TransferError(msg) from exc
+
+    return results

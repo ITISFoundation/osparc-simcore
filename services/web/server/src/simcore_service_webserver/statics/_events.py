@@ -14,7 +14,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from .._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY
-from ..products.plugin import Product
+from ..products.api import Product
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
@@ -36,18 +36,18 @@ _logger = logging.getLogger(__name__)
 # which might still not be ready.
 #
 #
-_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY = dict(
-    stop=stop_after_attempt(5),
-    wait=wait_fixed(1.5),
-    before=before_log(_logger, logging.WARNING),
-    retry=retry_if_exception_type(ClientConnectionError),
-    reraise=True,
-)
+_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY = {
+    "stop": stop_after_attempt(5),
+    "wait": wait_fixed(1.5),
+    "before": before_log(_logger, logging.WARNING),
+    "retry": retry_if_exception_type(ClientConnectionError),
+    "reraise": True,
+}
 
 
 async def create_cached_indexes(app: web.Application) -> None:
     """
-    Currently the static resources are contain 4 folders: osparc, s4l, s4llite, tis
+    Currently the static resources are contain 4 folders: osparc, s4l, s4llite, s4lacad, tis
     each of them contain and index.html to be served to as the root of the site
     for each type of frontend.
 
@@ -72,12 +72,11 @@ async def create_cached_indexes(app: web.Application) -> None:
                     body = await response.text()
 
         except ClientError as err:
-            _logger.error("Could not fetch index from static server: %s", err)
+            _logger.exception("Could not fetch index from static server")
 
             # ANE: Yes this is supposed to fail the boot process
-            raise RuntimeError(
-                f"Could not fetch index at {str(url)}. Stopping application boot"
-            ) from err
+            msg = f"Could not fetch index at {url!s}. Stopping application boot"
+            raise RuntimeError(msg) from err
 
         # fixes relative paths
         body = body.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")

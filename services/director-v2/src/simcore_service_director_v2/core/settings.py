@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 
 
+import datetime
 import logging
 import random
 import re
@@ -43,12 +44,16 @@ from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.resource_usage_tracker import (
+    DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+    ResourceUsageTrackerSettings,
+)
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +64,6 @@ API_ROOT: str = "api"
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
 SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
 SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
-
-ORG_LABELS_TO_SCHEMA_LABELS: dict[str, str] = {
-    "org.label-schema.build-date": "build_date",
-    "org.label-schema.vcs-ref": "vcs_ref",
-    "org.label-schema.vcs-url": "vcs_url",
-}
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
@@ -77,6 +76,8 @@ class PlacementConstraintStr(ConstrainedStr):
 
 
 class VFSCacheMode(str, Enum):
+    __slots__ = ()
+
     OFF = "off"
     MINIMAL = "minimal"
     WRITES = "writes"
@@ -115,10 +116,8 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
     def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if not v < dir_cache_time:
-            raise ValueError(
-                f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
-                f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
-            )
+            msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
+            raise ValueError(msg)
         return v
 
 
@@ -142,7 +141,7 @@ class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
     DIRECTOR_HOST: str = "director"
-    DIRECTOR_PORT: PortInt = 8080
+    DIRECTOR_PORT: PortInt = PortInt(8080)
     DIRECTOR_V0_VTAG: VersionTag = Field(
         default="v0", description="Director-v0 service API's version tag"
     )
@@ -164,7 +163,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
         description="current version of the Caddy image to be pulled and used from dockerhub",
     )
     DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
-        default_factory=lambda: random.randint(1025, 65535),
+        default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
         description="port where to expose the proxy's admin API",
     )
 
@@ -207,11 +206,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose version used in the compose-specs"
+        "3.8", description="docker-compose spec version used in the compose-specs"
     )
 
     DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
-        False,
+        default=False,
         description="enables support for limiting service's volume size",
     )
 
@@ -223,6 +222,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    )
+
+    DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: dict[str, str] = Field(
+        ...,
+        description=(
+            "Provided by ops, are injected as service labels when starting the dy-sidecar, "
+            "and Prometheus identifies the service as to be scraped"
+        ),
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
@@ -274,14 +281,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
         1.0 * MINS,
         description=(
             "Restarts all started containers. During this operation, no data "
-            "stored in the container will be lost as docker-compose restart "
+            "stored in the container will be lost as docker compose restart "
             "will not alter the state of the files on the disk nor its environment."
         ),
     )
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
         60.0 * MINS,
         description=(
-            "When starting container (`docker-compose up`), images might "
+            "When starting container (`docker compose up`), images might "
             "require pulling before containers are started."
         ),
     )
@@ -340,19 +347,19 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
-        False,
+        default=False,
         description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
     )
 
     PROXY_EXPOSE_PORT: bool = Field(
-        False,
+        default=False,
         description="exposes the proxy on localhost for debuging and testing",
     )
 
     DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
-        False,
+        default=False,
         description=(
             "Limits concurrent service saves for a docker node. Guarantees "
             "that no more than X services use a resource together. "
@@ -405,7 +412,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
     def validate_log_level(cls, v: str) -> str:
         valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
         if v not in valid_log_levels:
-            raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
+            msg = f"Log level must be one of {valid_log_levels} not {v}"
+            raise ValueError(msg)
         return v
 
 
@@ -429,7 +437,7 @@ class DynamicServicesSettings(BaseCustomSettings):
     # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module
     # WARNING: THIS IS NOT the same module as dynamic-sidecar
     DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
-        True, description="Enables/Disables the dynamic_sidecar submodule"
+        default=True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
     DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
@@ -439,19 +447,12 @@ class DynamicServicesSettings(BaseCustomSettings):
     )
 
 
-class PGSettings(PostgresSettings):
-    DIRECTOR_V2_POSTGRES_ENABLED: bool = Field(
-        True,
-        description="Enables/Disables connection with service",
-    )
-
-
 class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
-        True,
+        default=True,
     )
     COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = Field(
-        True,
+        default=True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
         parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
@@ -473,6 +474,10 @@ class ComputationalBackendSettings(BaseCustomSettings):
         FileLinkType.PRESIGNED,
         description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
     )
+    COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: FileLinkType = Field(
+        FileLinkType.PRESIGNED,
+        description=f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'",
+    )
 
     @cached_property
     def default_cluster(self) -> Cluster:
@@ -486,7 +491,8 @@ class ComputationalBackendSettings(BaseCustomSettings):
         )
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
-    def empty_auth_is_none(v):
+    @classmethod
+    def _empty_auth_is_none(cls, v):
         if not v:
             return NoAuthentication()
         return v
@@ -502,7 +508,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -512,7 +518,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: bool = Field(
-        False,
+        default=False,
         description=(
             "Under development feature. If enabled state "
             "is saved using rclone docker volumes."
@@ -537,9 +543,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     EXTRA_HOSTS_SUFFIX: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
+    SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
+        default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+        description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)",
+    )
 
     SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
-        None,
+        default=None,
         description="used to find the right network name",
     )
     SIMCORE_SERVICES_PREFIX: str | None = Field(
@@ -554,7 +564,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_DEBUG: bool = False
 
     # ptvsd settings
-    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = 3000
+    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
 
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
@@ -567,7 +577,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
-    POSTGRES: PGSettings = Field(auto_default_from_env=True)
+    POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
     REDIS: RedisSettings = Field(auto_default_from_env=True)
 
@@ -580,6 +590,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
+
+    DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
+        auto_default_from_env=True,
+        description="resource usage tracker service client's plugin",
+    )
 
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.

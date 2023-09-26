@@ -1,12 +1,12 @@
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
-from ...projects_nodes import OutputsDict
+from ...projects_nodes import OutputID, OutputsDict
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
-def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDockerData:
+def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerData:
     prefix = prefix or type_name
     LABEL = f"{type_name.capitalize()} iterator"
     return ServiceDockerData.parse_obj(
@@ -56,15 +56,14 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
 def _linspace_func(
     linspace_start: int = 0, linspace_stop: int = 1, linspace_step: int = 1
 ) -> Iterator[int]:
-    for value in range(linspace_start, linspace_stop, linspace_step):
-        yield value
+    yield from range(linspace_start, linspace_stop, linspace_step)
 
 
 def _linspace_generator(**kwargs) -> Iterator[OutputsDict]:
     # Maps generator with iterable outputs.
     # Can have non-iterable outputs as well
     for value in _linspace_func(**kwargs):
-        yield {"out_1": value}
+        yield {OutputID("out_1"): value}
 
 
 services = FunctionServices()

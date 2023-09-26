@@ -30,7 +30,7 @@ from tenacity.wait import wait_fixed
 
 from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings, DynamicSidecarSettings
-from .....models.schemas.dynamic_services.scheduler import (
+from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,

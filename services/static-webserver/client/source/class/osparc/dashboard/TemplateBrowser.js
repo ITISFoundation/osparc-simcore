@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         this._populateCardMenu(card);
       });
       this.__evaluateUpdateAllButton();
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __itemClicked: function(card) {
@@ -135,15 +135,24 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return;
       }
 
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
-      osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
+      osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
-          this._hideLoadingPage();
-          this._startStudyById(studyId);
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          this._startStudyById(studyId, openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -226,7 +235,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __updateTemplates: async function(uniqueTemplatesData) {
       for (const uniqueTemplateData of uniqueTemplatesData) {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
-        osparc.component.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
+        osparc.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
         const params = {
           url: {
             "studyId": studyData["uuid"]
@@ -239,9 +248,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           })
           .catch(err => {
             if ("message" in err) {
-              osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
             } else {
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
             }
           });
       }
@@ -345,7 +354,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
+        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("templates", "put", params);
       } else {
@@ -356,7 +365,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         .then(() => this.__removeFromTemplateList(studyData.uuid))
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
         });
     },
 
@@ -373,7 +382,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
-          osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
+          osparc.FlashMessenger.logAs(msg, msgLevel);
         }
         taskUI.stop();
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);
@@ -422,7 +431,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     taskToTemplateReceived: function(task, studyName) {
-      const toTemaplateTaskUI = new osparc.component.task.ToTemplate(studyName);
+      const toTemaplateTaskUI = new osparc.task.ToTemplate(studyName);
       toTemaplateTaskUI.setTask(task);
       toTemaplateTaskUI.start();
       const toTemplateCard = this.__createToTemplateCard(studyName);
@@ -435,7 +444,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const toTemplateCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       toTemplateCard.buildLayout(
         this.tr("Publishing ") + studyName,
-        osparc.component.task.ToTemplate.ICON + (isGrid ? "60" : "24"),
+        osparc.task.ToTemplate.ICON + (isGrid ? "60" : "24"),
         null,
         true
       );

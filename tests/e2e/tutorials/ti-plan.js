@@ -1,4 +1,4 @@
-// node ti-plan.js [url] [user] [password] [timeout] [--demo]
+// node ti-plan.js [url] [--user user] [--pass password] [--start_timeout timeout] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
@@ -27,7 +27,7 @@ async function runTutorial() {
     await tutorial.closeQuickStart();
 
     // create New Plan
-    const studyData = await tutorial.startNewPlan();
+    const studyData = await tutorial.startClassicTIPlan();
     studyId = studyData["data"]["uuid"];
 
     // check the app mode steps
@@ -40,8 +40,8 @@ async function runTutorial() {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
     const esId = workbenchData["nodeIds"][0];
-    const tiId = workbenchData["nodeIds"][2];
-    const ppId = workbenchData["nodeIds"][3];
+    const tiId = workbenchData["nodeIds"][1];
+    const ppId = workbenchData["nodeIds"][2];
 
     // wait for the three services, except the optimizer
     await tutorial.waitForServices(
@@ -71,17 +71,8 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Finish Electrode Selector SetUp");
     await tutorial.takeScreenshot("electrodeSelector_after");
 
-    // Run optimizer
+    // ti-postpro
     await tutorial.waitAndClick("AppMode_NextBtn");
-    await tutorial.waitFor(5000, "Running Optimizer");
-    await tutorial.takeScreenshot("optimizer_before");
-    // one permutation should take less than 180"
-    await tutorial.waitForStudyDone(studyId, 480000);
-    await tutorial.takeScreenshot("optimizer_after");
-    await tutorial.waitAndClick("preparingInputsCloseBtn");
-    await tutorial.waitFor(2000, "Optimizer Finished");
-
-    // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
     // wait for iframe to be ready, it might take a while in Voila
     const postProIframe = await tutorial.waitForVoilaIframe(tiId);
@@ -90,15 +81,20 @@ async function runTutorial() {
 
     await tutorial.waitFor(5000, "Extra waiting to make sure, again, it renders");
 
+    // Click "Run optimization" button
+    const buttonsRunOptimization = await utils.getButtonsWithText(postProIframe, "Run Optimization");
+    await buttonsRunOptimization[0].click();
+    await tutorial.waitFor(20000, "Run Optimization");
+    await tutorial.takeScreenshot("postpro_run_optimization");
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();
-    await tutorial.waitFor(10000, "Loading anaylsis");
+    await tutorial.waitFor(20000, "Loading anaylsis");
     await tutorial.takeScreenshot("postpro_load_analysis");
     // Click on the first "Load" button
     const buttonsLoad = await utils.getButtonsWithText(postProIframe, "Load");
     await buttonsLoad[1].click();
-    await tutorial.waitFor(30000, "Loading Fields");
+    await tutorial.waitFor(20000, "Loading Fields");
     await tutorial.takeScreenshot("postpro_load_field");
     // Click on the "Add to Report" buttons
     const buttonsAddToReport = await utils.getButtonsWithText(postProIframe, "Add to Report");

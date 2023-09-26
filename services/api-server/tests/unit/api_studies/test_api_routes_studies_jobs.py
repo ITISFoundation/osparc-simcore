@@ -20,7 +20,7 @@ from simcore_service_api_server.models.schemas.studies import Study, StudyID
 async def test_studies_jobs_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
     study_id: StudyID,
 ):
     # get_study
@@ -74,3 +74,29 @@ async def test_studies_jobs_workflow(
     # Verify that Study Job is deleted
     resp = await client.delete(f"/v0/studies/{study_id}/jobs/{job_id}", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    # job metadata
+    resp = await client.get(f"/v0/studies/{study_id}/jobs/{job_id}/metadata", auth=auth)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["metadata"] == {}
+
+    # update_study metadata
+    custom_metadata = {"number": 3.14, "string": "str", "boolean": False}
+    resp = await client.put(
+        f"/v0/studies/{study_id}/jobs/{job_id}/metadata",
+        auth=auth,
+        json=custom_metadata,
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["metadata"] == custom_metadata
+
+    # other type
+    new_metadata = custom_metadata.copy()
+    new_metadata["other"] = custom_metadata.copy()  # or use json.dumps
+    resp = await client.put(
+        f"/v0/studies/{study_id}/jobs/{job_id}/metadata",
+        auth=auth,
+        json=custom_metadata,
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["metadata"]["other"] == str(new_metadata["other"])

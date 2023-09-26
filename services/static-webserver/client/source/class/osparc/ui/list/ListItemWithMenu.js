@@ -22,7 +22,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
   properties: {
     accessRights: {
       check: "Object",
-      apply: "__applyAccessRights",
+      apply: "_applyAccessRights",
       event: "changeAccessRights",
       nullable: true
     },
@@ -32,6 +32,13 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       apply: "__applyShowOptions",
       event: "changeShowOptions",
       nullable: true
+    },
+
+    options: {
+      check: "Array",
+      nullable: true,
+      event: "changeOptions",
+      apply: "__applyOptions"
     }
   },
 
@@ -43,22 +50,6 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "info-button": {
-          control = new qx.ui.form.Button().set({
-            maxWidth: 28,
-            maxHeight: 28,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@MaterialIcons/info_outline/14",
-            focusable: false
-          });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2
-          });
-          break;
-        }
         case "options": {
           const iconSize = this.self().ICON_SIZE;
           control = new qx.ui.form.MenuButton().set({
@@ -81,25 +72,22 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       return control || this.base(arguments, id);
     },
 
-    __applyAccessRights: function(value) {
+    _applyAccessRights: function(value) {
       const optionsMenu = this.getChildControl("options");
-      optionsMenu.exclude();
+      optionsMenu.hide();
 
       if (value === null) {
         return;
       }
 
-      this.__setSubtitle();
+      this._setSubtitle();
 
       this._getInfoButton();
 
-      const menu = this._getOptionsMenu();
-      if (menu) {
-        optionsMenu.setMenu(menu);
-      }
+      this.__applyOptions();
     },
 
-    __setSubtitle: function() {
+    _setSubtitle: function() {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
       if (
@@ -131,7 +119,15 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
 
     __applyShowOptions: function(value) {
       const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
+      optionsMenu.setVisibility(value ? "visible" : "hidden");
+    },
+
+    __applyOptions: function() {
+      const menu = this._getOptionsMenu();
+      if (menu && menu.getChildren() && menu.getChildren().length) {
+        const optionsMenu = this.getChildControl("options");
+        optionsMenu.setMenu(menu);
+      }
     }
   }
 });

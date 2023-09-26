@@ -17,15 +17,6 @@ warnings.warn(
 # SEE https://github.com/pytest-dev/pytest/issues/363#issuecomment-289830794
 
 
-@pytest.fixture(scope="session")
-def monkeypatch_session(request: FixtureRequest) -> Iterator[MonkeyPatch]:
-    assert request.scope == "session"
-
-    mpatch_session = MonkeyPatch()
-    yield mpatch_session
-    mpatch_session.undo()
-
-
 @pytest.fixture(scope="module")
 def monkeypatch_module(request: FixtureRequest) -> Iterator[MonkeyPatch]:
     assert request.scope == "module"

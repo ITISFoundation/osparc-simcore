@@ -17,15 +17,16 @@ DB_TO_RUNNING_STATE = {
     StateType.NOT_STARTED: RunningState.NOT_STARTED,
     StateType.RUNNING: RunningState.STARTED,
     StateType.ABORTED: RunningState.ABORTED,
+    StateType.WAITING_FOR_RESOURCES: RunningState.WAITING_FOR_RESOURCES,
+    StateType.WAITING_FOR_CLUSTER: RunningState.WAITING_FOR_CLUSTER,
 }
 
-RUNNING_STATE_TO_DB = {
-    **{v: k for k, v in DB_TO_RUNNING_STATE.items()},
-    **{RunningState.RETRY: StateType.RUNNING},
+RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()} | {
+    RunningState.UNKNOWN: StateType.FAILED
 }
 
 
-def to_clusters_db(cluster: BaseCluster, only_update: bool) -> dict[str, Any]:
+def to_clusters_db(cluster: BaseCluster, *, only_update: bool) -> dict[str, Any]:
     db_model: dict[str, Any] = json.loads(
         cluster.json(
             by_alias=True,

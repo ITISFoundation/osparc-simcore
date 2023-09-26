@@ -13,13 +13,7 @@ from re import Pattern
 from typing import Any, ClassVar
 from uuid import UUID
 
-from models_library.projects_nodes_io import (
-    LocationID,
-    LocationName,
-    NodeID,
-    SimcoreS3FileID,
-    StorageFileID,
-)
+from models_library.basic_types import SHA256Str
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -34,6 +28,13 @@ from pydantic.networks import AnyUrl
 
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .generics import ListModel
+from .projects_nodes_io import (
+    LocationID,
+    LocationName,
+    NodeID,
+    SimcoreS3FileID,
+    StorageFileID,
+)
 
 ETag = str
 
@@ -131,7 +132,9 @@ class FileMetaDataGet(BaseModel):
     )
     created_at: datetime
     last_modified: datetime
-    file_size: ByteSize = Field(-1, description="File size in bytes (-1 means invalid)")
+    file_size: ByteSize | int = Field(
+        default=-1, description="File size in bytes (-1 means invalid)"
+    )
     entity_tag: ETag | None = Field(
         default=None,
         description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",
@@ -142,6 +145,10 @@ class FileMetaDataGet(BaseModel):
         "i.e. is another entry with the same object_name",
     )
     is_directory: bool = Field(default=False, description="if True this is a directory")
+    sha256_checksum: SHA256Str | None = Field(
+        default=None,
+        description="SHA256 message digest of the file content. Main purpose: cheap lookup.",
+    )
 
     @validator("location_id", pre=True)
     @classmethod
@@ -271,6 +278,11 @@ class UploadedPart(BaseModel):
 
 class FileUploadCompletionBody(BaseModel):
     parts: list[UploadedPart]
+
+    @validator("parts")
+    @classmethod
+    def ensure_sorted(cls, value: list[UploadedPart]) -> list[UploadedPart]:
+        return sorted(value, key=lambda uploaded_part: uploaded_part.number)
 
 
 class FileUploadCompleteLinks(BaseModel):

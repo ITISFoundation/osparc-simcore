@@ -1,5 +1,7 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
+# NOTE: used for circular depedndency detection
+
 set -o errexit
 set -o nounset
 set -o pipefail

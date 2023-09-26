@@ -7,12 +7,12 @@ from .generated_models.docker_rest_api import (
     ServiceSpec,
     TaskSpec,
 )
-from .utils.converters import to_snake_case
+from .utils.change_case import camel_to_snake
 
 
 class AioDockerContainerSpec(ContainerSpec):
-    Env: dict[str, str | None] | None = Field(
-        None,
+    Env: dict[str, str | None] | None = Field(  # type: ignore
+        default=None,
         description="aiodocker expects here a dictionary and re-convert it back internally`.\n",
     )
 
@@ -37,7 +37,7 @@ class AioDockerResources1(Resources1):
         None, description="Define resources reservation.", alias="Reservations"
     )
 
-    class Config(Resources1.Config):
+    class Config(Resources1.Config):  # type: ignore
         allow_population_by_field_name = True
 
 
@@ -55,6 +55,6 @@ class AioDockerTaskSpec(TaskSpec):
 class AioDockerServiceSpec(ServiceSpec):
     TaskTemplate: AioDockerTaskSpec | None = None
 
-    class Config(ServiceSpec.Config):
-        alias_generator = to_snake_case
+    class Config(ServiceSpec.Config):  # type: ignore
+        alias_generator = camel_to_snake
         allow_population_by_field_name = True

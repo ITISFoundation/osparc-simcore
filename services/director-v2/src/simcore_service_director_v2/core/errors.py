@@ -103,6 +103,10 @@ class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
     msg_template = "Computational run not found"
 
 
+class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorException):
+    msg_template = "Computational task {node_id} not found"
+
+
 class NodeRightsAcquireError(PydanticErrorMixin, DirectorException):
     msg_template = "Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
 
@@ -236,6 +240,22 @@ class ComputationalBackendTaskNotFoundError(PydanticErrorMixin, SchedulerError):
 class ComputationalBackendTaskResultsNotReadyError(PydanticErrorMixin, SchedulerError):
     code = "computational_backend.task_result_not_ready"
     msg_template = "The task result is not ready yet for job '{job_id}'"
+
+
+class ComputationalBackendOnDemandClustersKeeperNotReadyError(
+    PydanticErrorMixin, SchedulerError
+):
+    code = "computational_backend.on_demand_cluster.clusters_keeper_not_ready"
+    msg_template = (
+        "The on demand computational cannot be reached: no clusters-keeper available!"
+    )
+
+
+class ComputationalBackendOnDemandNotReadyError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.on_demand_cluster.not_ready"
+    msg_template = (
+        "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
+    )
 
 
 #

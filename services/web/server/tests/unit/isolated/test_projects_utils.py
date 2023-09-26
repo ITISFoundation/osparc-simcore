@@ -5,12 +5,10 @@
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
 
-import jsonschema
 import pytest
-from jsonschema import ValidationError
 from models_library.projects import Project
+from models_library.projects_nodes_io import NodeID
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.nodes_utils import project_get_depending_nodes
 from simcore_service_webserver.projects.utils import (
@@ -34,7 +32,6 @@ from simcore_service_webserver.projects.utils import (
 )
 def test_clone_project_document(
     test_data_file_name: str,
-    project_jsonschema: dict[str, Any],
     tests_data_dir: Path,
 ):
     original_project: ProjectDict = json.loads(
@@ -54,34 +51,37 @@ def test_clone_project_document(
     for clone_node_id in clone["workbench"]:
         assert clone_node_id not in node_ids
 
-    try:
-        jsonschema.validate(instance=clone, schema=project_jsonschema)
-    except ValidationError as err:
-        pytest.fail(f"Invalid clone of '{test_data_file_name}': {err.message}")
+    # Here we do not use anymore jsonschema.validator since ...
+    #
+    # "OpenAPI 3.0 does not have an explicit null type as in JSON Schema, but you can use nullable:
+    # true to specify that the value may be null. Note that null is different from an empty string."
+    #
+    # SEE https://swagger.io/docs/specification/data-models/data-types/#Null
+
+    assert Project.parse_obj(clone) is not None
 
 
 @pytest.mark.parametrize(
     "node_uuid, expected_dependencies",
     [
         (
-            "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf",
+            NodeID("b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"),
             {
-                "5739e377-17f7-4f09-a6ad-62659fb7fdec",
+                NodeID("5739e377-17f7-4f09-a6ad-62659fb7fdec"),
             },
         ),
-        ("5739e377-17f7-4f09-a6ad-62659fb7fdec", set()),
-        ("351fd505-1ee3-466d-ad6c-ea2915ffd364", set()),
+        (NodeID("5739e377-17f7-4f09-a6ad-62659fb7fdec"), set()),
+        (NodeID("351fd505-1ee3-466d-ad6c-ea2915ffd364"), set()),
     ],
 )
 async def test_project_get_depending_nodes(
-    fake_project: ProjectDict, node_uuid: str, expected_dependencies: set[str]
+    fake_project: ProjectDict, node_uuid: NodeID, expected_dependencies: set[NodeID]
 ):
     set_of_depending_nodes = await project_get_depending_nodes(fake_project, node_uuid)
     assert set_of_depending_nodes == expected_dependencies
 
 
 def test_any_node_inputs_changed(fake_project: ProjectDict):
-
     current_project = deepcopy(fake_project)
     updated_project = deepcopy(fake_project)
 

@@ -43,12 +43,17 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import LinkType
-from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
+from models_library.clusters import (
+    ClusterID,
+    ClusterTypeInModel,
+    NoAuthentication,
+    SimpleAuthentication,
+)
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
@@ -65,9 +70,9 @@ from simcore_service_director_v2.core.errors import (
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.models.comp_runs import RunMetadataDict
+from simcore_service_director_v2.models.comp_tasks import Image
+from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -97,7 +102,7 @@ async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):
 async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
-    expected_status: RunningState,
+    expected_status: DaskClientTaskState,
     timeout: int | None = None,
 ):
     async for attempt in AsyncRetrying(
@@ -112,12 +117,16 @@ async def _assert_wait_for_task_status(
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
             current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
-            assert isinstance(current_task_status, RunningState)
+            assert isinstance(current_task_status, DaskClientTaskState)
             print(f"{current_task_status=} vs {expected_status=}")
-            if current_task_status is RunningState.FAILED and expected_status not in [
-                RunningState.FAILED,
-                RunningState.UNKNOWN,
-            ]:
+            if (
+                current_task_status is DaskClientTaskState.ERRED
+                and expected_status
+                not in [
+                    DaskClientTaskState.ERRED,
+                    DaskClientTaskState.LOST,
+                ]
+            ):
                 try:
                     # we can fail fast here
                     # this will raise and we catch the Assertion to not reraise too long
@@ -134,16 +143,15 @@ def user_id(faker: Faker) -> UserID:
 
 @pytest.fixture
 def _minimal_dask_config(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CATALOG", "null")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
@@ -166,6 +174,7 @@ async def create_dask_client_from_scheduler(
             endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
             authentication=NoAuthentication(),
             tasks_file_link_type=tasks_file_link_type,
+            cluster_type=ClusterTypeInModel.ON_PREMISE,
         )
         assert client
         assert client.app == minimal_app
@@ -209,6 +218,7 @@ async def create_dask_client_from_gateway(
                 password=SecretStr(local_dask_gateway_server.password),
             ),
             tasks_file_link_type=tasks_file_link_type,
+            cluster_type=ClusterTypeInModel.AWS,
         )
         assert client
         assert client.app == minimal_app
@@ -463,15 +473,15 @@ async def test_dask_does_report_any_non_base_exception_derived_error(
 
 
 @pytest.fixture
-def comp_run_metadata(faker: Faker) -> MetadataDict:
-    return MetadataDict(
+def comp_run_metadata(faker: Faker) -> RunMetadataDict:
+    return RunMetadataDict(
         product_name=faker.pystr(),
         simcore_user_agent=faker.pystr(),
     ) | faker.pydict(allowed_types=(str,))
 
 
 @pytest.fixture
-def task_labels(comp_run_metadata: MetadataDict) -> ContainerLabelsDict:
+def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
     return parse_obj_as(
         ContainerLabelsDict,
         {
@@ -492,7 +502,7 @@ async def test_send_computation_task(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
     task_labels: ContainerLabelsDict,
     faker: Faker,
 ):
@@ -565,7 +575,7 @@ async def test_send_computation_task(
 
     # check status goes to PENDING/STARTED
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.STARTED
+        job_id, dask_client, expected_status=DaskClientTaskState.PENDING_OR_STARTED
     )
 
     # using the event we let the remote fct continue
@@ -577,7 +587,7 @@ async def test_send_computation_task(
 
     # check the task status
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.SUCCESS
+        job_id, dask_client, expected_status=DaskClientTaskState.SUCCESS
     )
 
     # check the results
@@ -589,7 +599,7 @@ async def test_send_computation_task(
     await dask_client.release_task_result(job_id)
     # check the status now
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=60
+        job_id, dask_client, expected_status=DaskClientTaskState.LOST, timeout=60
     )
 
     with pytest.raises(ComputationalBackendTaskNotFoundError):
@@ -605,7 +615,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -657,7 +667,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     )
     # check the task status
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.SUCCESS
+        job_id, dask_client, expected_status=DaskClientTaskState.SUCCESS
     )
     assert node_id in image_params.fake_tasks
     # creating a new future shows that it is not done????
@@ -697,7 +707,7 @@ async def test_abort_computation_tasks(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -748,7 +758,9 @@ async def test_abort_computation_tasks(
     assert len(node_id_to_job_ids) == 1
     node_id, job_id = node_id_to_job_ids[0]
     assert node_id in image_params.fake_tasks
-    await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
+    await _assert_wait_for_task_status(
+        job_id, dask_client, DaskClientTaskState.PENDING_OR_STARTED
+    )
 
     # we wait to be sure the remote fct is started
     start_event = Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
@@ -762,7 +774,7 @@ async def test_abort_computation_tasks(
     assert await cancel_event.is_set()  # type: ignore
 
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
-    await _assert_wait_for_task_status(job_id, dask_client, RunningState.ABORTED)
+    await _assert_wait_for_task_status(job_id, dask_client, DaskClientTaskState.ABORTED)
 
     # getting the results should throw the cancellation error
     with pytest.raises(TaskCancelledError):
@@ -786,7 +798,7 @@ async def test_failed_task_returns_exceptions(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -827,7 +839,7 @@ async def test_failed_task_returns_exceptions(
 
     # the computation status is FAILED
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.FAILED
+        job_id, dask_client, expected_status=DaskClientTaskState.ERRED
     )
     with pytest.raises(
         ValueError,
@@ -853,7 +865,7 @@ async def test_missing_resource_send_computation_task(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
@@ -896,7 +908,7 @@ async def test_too_many_resources_send_computation_task(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -936,7 +948,7 @@ async def test_disconnected_backend_raises_exception(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -969,7 +981,7 @@ async def test_changed_scheduler_raises_exception(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     unused_tcp_port_factory: Callable,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -1016,7 +1028,7 @@ async def test_get_tasks_status(
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
     fail_remote_fct: bool,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -1060,7 +1072,9 @@ async def test_get_tasks_status(
     computation_future = distributed.Future(key=job_id)
     assert computation_future
 
-    await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
+    await _assert_wait_for_task_status(
+        job_id, dask_client, DaskClientTaskState.PENDING_OR_STARTED
+    )
 
     # let the remote fct run through now
     start_event = Event(_DASK_EVENT_NAME, dask_client.backend.client)
@@ -1069,7 +1083,7 @@ async def test_get_tasks_status(
     await _assert_wait_for_task_status(
         job_id,
         dask_client,
-        RunningState.FAILED if fail_remote_fct else RunningState.SUCCESS,
+        DaskClientTaskState.ERRED if fail_remote_fct else DaskClientTaskState.SUCCESS,
     )
     # release the task results
     await dask_client.release_task_result(job_id)
@@ -1077,13 +1091,13 @@ async def test_get_tasks_status(
     await _assert_wait_for_task_status(
         job_id,
         dask_client,
-        RunningState.FAILED if fail_remote_fct else RunningState.SUCCESS,
+        DaskClientTaskState.ERRED if fail_remote_fct else DaskClientTaskState.SUCCESS,
     )
 
     # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
     del computation_future
     await _assert_wait_for_task_status(
-        job_id, dask_client, RunningState.UNKNOWN, timeout=60
+        job_id, dask_client, DaskClientTaskState.LOST, timeout=60
     )
 
 
@@ -1104,7 +1118,7 @@ async def test_dask_sub_handlers(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     fake_task_handlers: TaskHandlers,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     dask_client.register_handlers(fake_task_handlers)
     _DASK_START_EVENT = "start"
@@ -1179,7 +1193,7 @@ async def test_get_cluster_details(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
     faker: Faker,
 ):
     cluster_details = await dask_client.get_cluster_details()
@@ -1232,7 +1246,7 @@ async def test_get_cluster_details(
 
     # check status goes to PENDING/STARTED
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.STARTED
+        job_id, dask_client, expected_status=DaskClientTaskState.PENDING_OR_STARTED
     )
 
     # check we have one worker using the resources
@@ -1261,7 +1275,7 @@ async def test_get_cluster_details(
 
     # wait for the task to complete
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.SUCCESS
+        job_id, dask_client, expected_status=DaskClientTaskState.SUCCESS
     )
 
     # check the resources are released

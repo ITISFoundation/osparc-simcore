@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 import simcore_sdk
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / "helpers"))
@@ -89,3 +90,11 @@ def node_ports_config(
     postgres_host_config: PostgresTestConfig, minio_config: dict[str, str]
 ) -> None:
     ...
+
+
+@pytest.fixture
+def mock_io_log_redirect_cb() -> LogRedirectCB:
+    async def _mocked_function(*args, **kwargs) -> None:
+        pass
+
+    return _mocked_function

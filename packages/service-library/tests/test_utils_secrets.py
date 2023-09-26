@@ -1,13 +1,17 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 from servicelib.utils_secrets import (
+    _MIN_SECRET_NUM_BYTES,
     MIN_PASSCODE_LENGTH,
     MIN_PASSWORD_LENGTH,
+    are_secrets_equal,
     generate_passcode,
     generate_password,
+    generate_token_secret_key,
 )
 
 
@@ -50,3 +54,14 @@ def test_generate_passcode():
 
     # passcode is a number
     assert int(generate_passcode()) >= 0
+
+
+def test_compare_secrets():
+    passcode = generate_passcode(100)
+    assert not are_secrets_equal(got="foo", expected=passcode)
+    assert are_secrets_equal(got=passcode, expected=passcode)
+
+
+def test_generate_token_secrets():
+    secret_key = generate_token_secret_key()
+    assert len(secret_key) == 2 * _MIN_SECRET_NUM_BYTES

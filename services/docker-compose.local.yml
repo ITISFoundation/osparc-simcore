@@ -27,6 +27,11 @@ services:
       - "8005:8000"
       - "3005:3000"
 
+  clusters-keeper:
+    ports:
+      - "8010:8000"
+      - "3015:3000"
+
   director:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
@@ -42,6 +47,7 @@ services:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+      - DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS={}
     ports:
       - "8000"
       - "3009:3000"
@@ -56,6 +62,10 @@ services:
   invitations:
     ports:
       - "8008:8000"
+
+  payments:
+    ports:
+      - "8011:8000"
 
   resource-usage-tracker:
     ports:

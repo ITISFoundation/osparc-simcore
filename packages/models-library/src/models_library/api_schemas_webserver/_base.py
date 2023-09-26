@@ -5,11 +5,9 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra
 
 from ..utils.change_case import snake_to_camel
-
-NOT_REQUIRED = Field(default=None)
 
 
 class EmptyModel(BaseModel):
@@ -18,11 +16,18 @@ class EmptyModel(BaseModel):
         extra = Extra.forbid
 
 
-class InputSchema(BaseModel):
-    class Config:  # type: ignore[pydantic-alias]
+class InputSchemaWithoutCameCase(BaseModel):
+    # Added to tmp keep backwards compatibility
+    # until all bodies are updated
+    #
+    class Config:
         allow_population_by_field_name = False
         extra = Extra.ignore  # Non-strict inputs policy: Used to prune extra field
         allow_mutations = False
+
+
+class InputSchema(BaseModel):
+    class Config(InputSchemaWithoutCameCase.Config):  # type: ignore[pydantic-alias]
         alias_generator = snake_to_camel
 
 
@@ -35,6 +40,7 @@ class OutputSchema(BaseModel):
 
     def data(
         self,
+        *,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -51,6 +57,7 @@ class OutputSchema(BaseModel):
 
     def data_json(
         self,
+        *,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,

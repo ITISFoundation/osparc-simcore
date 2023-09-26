@@ -13,8 +13,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from ..docker_service_specs.volume_remover import spec_volume_removal_service
 from ._utils import docker_client
 

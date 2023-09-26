@@ -78,20 +78,21 @@ def disable_swagger_doc_generation(
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(
-    default_app_cfg: ConfigDict, monkeypatch_session: pytest.MonkeyPatch
-) -> str:
-    """Overrides pytest-docker fixture"""
-
-    cfg = deepcopy(default_app_cfg["db"]["postgres"])
+def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
+    postgres_cfg = default_app_cfg["db"]["postgres"]
 
     # docker-compose reads these environs
-    monkeypatch_session.setenv("TEST_POSTGRES_DB", cfg["database"])
-    monkeypatch_session.setenv("TEST_POSTGRES_USER", cfg["user"])
-    monkeypatch_session.setenv("TEST_POSTGRES_PASSWORD", cfg["password"])
+    with pytest.MonkeyPatch().context() as patcher:
+        patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
+        patcher.setenv("TEST_POSTGRES_USER", postgres_cfg["user"])
+        patcher.setenv("TEST_POSTGRES_PASSWORD", postgres_cfg["password"])
+        yield patcher
 
+
+@pytest.fixture(scope="session")
+def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
+    """Overrides pytest-docker fixture"""
     compose_path = CURRENT_DIR / "docker-compose-devel.yml"
-
     assert compose_path.exists()
     return f"{compose_path}"
 
@@ -230,8 +231,8 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
-        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,
@@ -312,14 +313,14 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_api_create.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
@@ -331,7 +332,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects._crud_create_utils.get_project_total_size_simcore_s3",
+        "simcore_service_webserver.projects._crud_api_create.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )

@@ -1,20 +1,22 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import filecmp
 import os
 import re
 import urllib.parse
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Final
+from typing import Final
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from pytest import FixtureRequest
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
@@ -42,14 +44,31 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
         "öä$äö2-34 no extension",
     ]
 )
-def file_name(request: FixtureRequest) -> str:
-    return request.param  # type: ignore
+def file_name(request: pytest.FixtureRequest) -> str:
+    return request.param
 
 
 @pytest.fixture
 def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
-    local_file_path = upload_file_dir / f"__local__{file_name}"
-    return local_file_path
+    return upload_file_dir / f"__local__{file_name}"
+
+
+@pytest.fixture
+async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
+    session = aioboto3.Session(
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+    )
+    async with session.resource(
+        "s3",
+        endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+        use_ssl=r_clone_settings.R_CLONE_S3.S3_SECURE,
+    ) as s_3:
+        bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
+        s3_objects = []
+        async for s3_object in bucket.objects.all():
+            s3_objects.append(s3_object)  # noqa: PERF402
+        await asyncio.gather(*[o.delete() for o in s3_objects])
 
 
 # UTILS
@@ -81,7 +100,7 @@ async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
     # NOTE: bigger files get created faster with bigger chunk_size
-    chunk_size: int = parse_obj_as(ByteSize, "1mib"),
+    chunk_size: int = parse_obj_as(ByteSize, "1mib"),  # noqa: B008
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
@@ -123,6 +142,7 @@ async def _upload_local_dir_to_s3(
     r_clone_settings: RCloneSettings,
     s3_directory_link: AnyUrl,
     source_dir: Path,
+    *,
     check_progress: bool = False,
 ) -> None:
     # NOTE: progress is enforced only when uploading and only when using
@@ -145,9 +165,10 @@ async def _upload_local_dir_to_s3(
             progress_bar,
             local_directory_path=source_dir,
             upload_s3_link=s3_directory_link,
+            debug_logs=True,
         )
     if check_progress:
-        # NOTE: a progress of 1 is always sent ny the progress bar
+        # NOTE: a progress of 1 is always sent by the progress bar
         # we want to check that rclone also reports some progress entries
         assert len(progress_entries) > 1
 
@@ -168,6 +189,7 @@ async def _download_from_s3_to_local_dir(
             progress_bar,
             local_directory_path=destination_dir,
             download_s3_link=s3_directory_link,
+            debug_logs=True,
         )
 
 
@@ -178,10 +200,24 @@ def _directories_have_the_same_content(dir_1: Path, dir_2: Path) -> bool:
         return False
 
     filecmp.clear_cache()
-    return all(
-        filecmp.cmp(dir_1 / file_name, dir_2 / file_name, shallow=False)
-        for file_name in names_in_dir_1
-    )
+
+    compare_results: list[bool] = []
+
+    for file_name in names_in_dir_1:
+        f1 = dir_1 / file_name
+        f2 = dir_2 / file_name
+
+        # when there is a broken symlink, which we want to sync, filecmp does not work
+        is_broken_symlink = (
+            not f1.exists() and f1.is_symlink() and not f2.exists() and f2.is_symlink()
+        )
+
+        if is_broken_symlink:
+            compare_results.append(True)
+        else:
+            compare_results.append(filecmp.cmp(f1, f2, shallow=False))
+
+    return all(compare_results)
 
 
 def _ensure_dir(tmp_path: Path, faker: Faker, *, dir_prefix: str) -> Path:
@@ -225,6 +261,7 @@ async def test_local_to_remote_to_local(
     file_count: int,
     file_size: ByteSize,
     check_progress: bool,
+    cleanup_bucket_after_test: None,
 ) -> None:
     await _create_files_in_dir(dir_locally_created_files, file_count, file_size)
 
@@ -291,6 +328,18 @@ def _remove_all_files(
         (dir_locally_created_files / file_name).unlink()
 
 
+def _regression_add_broken_symlink(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    # NOTE: if rclone tries to copy a link that does not exist an error is raised
+    path_does_not_exist_on_fs = Path(f"/tmp/missing-{uuid4()}")  # noqa: S108
+    assert not path_does_not_exist_on_fs.exists()
+
+    broken_symlink = dir_locally_created_files / "missing.link"
+    assert not broken_symlink.exists()
+    os.symlink(f"{path_does_not_exist_on_fs}", f"{broken_symlink}")
+
+
 @pytest.mark.parametrize(
     "changes_callable",
     [
@@ -300,6 +349,7 @@ def _remove_all_files(
         _remove_all_files,
         _rename_one_file,
         _add_a_new_file,
+        _regression_add_broken_symlink,
     ],
 )
 async def test_overwrite_an_existing_file_and_sync_again(
@@ -309,6 +359,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     dir_downloaded_files_1: Path,
     dir_downloaded_files_2: Path,
     changes_callable: Callable[[Path, set[str]], None],
+    cleanup_bucket_after_test: None,
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
@@ -357,22 +408,24 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
 
 async def test_raises_error_if_local_directory_path_is_a_file(
-    tmp_path: Path, faker: Faker
+    tmp_path: Path, faker: Faker, cleanup_bucket_after_test: None
 ):
     file_path = await _create_file_of_size(
         tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
     )
-    with pytest.raises(r_clone.RCloneFileFoundError):
+    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_local_to_s3(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             upload_s3_link=AsyncMock(),
+            debug_logs=True,
         )
-    with pytest.raises(r_clone.RCloneFileFoundError):
+    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_s3_to_local(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             download_s3_link=AsyncMock(),
+            debug_logs=True,
         )

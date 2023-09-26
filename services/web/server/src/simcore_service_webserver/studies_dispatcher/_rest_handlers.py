@@ -3,6 +3,7 @@
 """
 import logging
 from dataclasses import asdict
+from typing import Any, ClassVar
 
 from aiohttp import web
 from aiohttp.web import Request
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
 from ._core import list_viewers_info
@@ -130,7 +131,7 @@ class ServiceGet(BaseModel):
         return v
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "title": "Sim4Life Mattermost",
@@ -150,8 +151,8 @@ class ServiceGet(BaseModel):
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{API_VTAG}/services", name="list_services")
-async def list_services(request: Request):
+@routes.get(f"/{API_VTAG}/services", name="list_latest_services")
+async def list_latest_services(request: Request):
     """Returns a list latest version of services"""
     product_name = get_product_name(request)
 

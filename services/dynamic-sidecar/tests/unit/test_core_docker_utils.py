@@ -1,33 +1,40 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
+from contextlib import suppress
+from typing import Any
 
 import aiodocker
 import pytest
 import yaml
+from aiodocker.containers import DockerContainer
 from faker import Faker
+from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.services import RunID
-from pydantic import PositiveInt, SecretStr
-from pytest import FixtureRequest
+from pydantic import PositiveInt, SecretStr, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
+    _DockerProgressDict,
+    _get_containers_inspect_from_names,
+    _parse_docker_pull_progress,
+    get_container_states,
+    get_containers_count_from_names,
     get_docker_service_images,
-    get_running_containers_count_from_names,
     get_volume_by_label,
     pull_images,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def volume_name() -> str:
     return "test_source_name"
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture
@@ -36,10 +43,7 @@ async def volume_with_label(volume_name: str, run_id: RunID) -> AsyncIterable[No
         volume = await docker_client.volumes.create(
             {
                 "Name": "test_volume_name_1",
-                "Labels": {
-                    "source": volume_name,
-                    "run_id": f"{run_id}",
-                },
+                "Labels": {"source": volume_name, "run_id": run_id},
             }
         )
 
@@ -49,7 +53,7 @@ async def volume_with_label(volume_name: str, run_id: RunID) -> AsyncIterable[No
 
 
 @pytest.fixture(params=[0, 1, 2, 3])
-def container_count(request: FixtureRequest) -> PositiveInt:
+def container_count(request: pytest.FixtureRequest) -> PositiveInt:
     return request.param
 
 
@@ -63,8 +67,8 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
     async with aiodocker.Docker() as docker_client:
         started_containers = []
         for container_name in container_names:
-            container = await docker_client.containers.create(
-                config={"Image": "busybox:latest"},
+            container = await docker_client.containers.run(
+                config={"Image": "alpine:latest", "Cmd": ["sh", "-c", "sleep 10000"]},
                 name=container_name,
             )
             started_containers.append(container)
@@ -72,7 +76,8 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
         yield
 
         for container in started_containers:
-            await container.stop()
+            with suppress(aiodocker.DockerError):
+                await container.kill()
             await container.delete()
 
 
@@ -87,14 +92,48 @@ async def test_volume_label_missing(run_id: RunID) -> None:
         await get_volume_by_label("not_exist", run_id)
 
     error_msg = f"{exc_info.value}"
-    assert f"{run_id}" in error_msg
+    assert run_id in error_msg
     assert "not_exist" in error_msg
+
+
+async def test__get_containers_inspect_from_names(
+    started_services: None, container_names: list[str], faker: Faker
+):
+    MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
+    container_details: dict[
+        str, DockerContainer | None
+    ] = await _get_containers_inspect_from_names(
+        [*container_names, MISSING_CONTAINER_NAME]
+    )
+    # containers which do not exist always return None
+    assert MISSING_CONTAINER_NAME in container_details
+    assert container_details.pop(MISSING_CONTAINER_NAME) is None
+
+    assert set(container_details.keys()) == set(container_names)
+    for docker_container in container_details.values():
+        assert docker_container is not None
+
+
+async def test_get_container_statuses(
+    started_services: None, container_names: list[str], faker: Faker
+):
+    MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
+    container_states: dict[str, ContainerState | None] = await get_container_states(
+        [*container_names, MISSING_CONTAINER_NAME]
+    )
+    # containers which do not exist always have a None status
+    assert MISSING_CONTAINER_NAME in container_states
+    assert container_states.pop(MISSING_CONTAINER_NAME) is None
+
+    assert set(container_states.keys()) == set(container_names)
+    for docker_status in container_states.values():
+        assert docker_status is not None
 
 
 async def test_get_running_containers_count_from_names(
     started_services: None, container_names: list[str], container_count: PositiveInt
 ):
-    found_containers = await get_running_containers_count_from_names(container_names)
+    found_containers = await get_containers_count_from_names(container_names)
     assert found_containers == container_count
 
 
@@ -192,3 +231,53 @@ async def test_pull_image(repeat: str):
         progress_cb=_print_progress,
         log_cb=_print_log,
     )
+
+
+PULL_PROGRESS_SEQUENCE: list[dict[str, Any]] = [
+    {"status": "Pulling from library/busybox", "id": "latest"},
+    {"status": "Pulling fs layer", "progressDetail": {}, "id": "3f4d90098f5b"},
+    {
+        "status": "Downloading",
+        "progressDetail": {"current": 22621, "total": 2219949},
+        "progress": "[>                                                  ]  22.62kB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {"status": "Download complete", "progressDetail": {}, "id": "3f4d90098f5b"},
+    {
+        "status": "Extracting",
+        "progressDetail": {"current": 32768, "total": 2219949},
+        "progress": "[>                                                  ]  32.77kB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {
+        "status": "Extracting",
+        "progressDetail": {"current": 884736, "total": 2219949},
+        "progress": "[===================>                               ]  884.7kB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {
+        "status": "Extracting",
+        "progressDetail": {"current": 2219949, "total": 2219949},
+        "progress": "[==================================================>]   2.22MB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {"status": "Pull complete", "progressDetail": {}, "id": "3f4d90098f5b"},
+    {
+        "status": "Digest: sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79"
+    },
+    {
+        "status": "Digest: sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79"
+    },
+    {"status": "Status: Downloaded newer image for busybox:latest"},
+]
+
+
+@pytest.mark.parametrize("pull_progress", PULL_PROGRESS_SEQUENCE)
+def test_docker_progress_dict(pull_progress: dict[str, Any]):
+    assert parse_obj_as(_DockerProgressDict, pull_progress)
+
+
+def test__parse_docker_pull_progress():
+    some_data = {}
+    for entry in PULL_PROGRESS_SEQUENCE:
+        _parse_docker_pull_progress(parse_obj_as(_DockerProgressDict, entry), some_data)

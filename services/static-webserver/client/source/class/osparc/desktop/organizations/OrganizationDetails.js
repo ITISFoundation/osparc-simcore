@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const org = this.__orgModel;
 
       const newOrg = false;
-      const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
+      const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
       org.bind("gid", orgEditor, "gid");
       org.bind("label", orgEditor, "label");
       org.bind("description", orgEditor, "description");
@@ -128,7 +128,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       };
       osparc.data.Resources.fetch("organizations", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
           osparc.store.Store.getInstance().reset("organizations");
@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
           });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
         });

@@ -17,6 +17,10 @@ class BaseProjectError(Exception):
         return f"{type(self)}: {self}"
 
 
+class ProjectInvalidUsageError(BaseProjectError):
+    ...
+
+
 class ProjectInvalidRightsError(BaseProjectError):
     """Invalid rights to access project"""
 

@@ -14,12 +14,12 @@
 import json
 import logging
 import sys
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 import pytest
 import yaml
-from models_library.projects import Project
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
@@ -77,18 +77,17 @@ def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
 
 @pytest.fixture
 def mock_orphaned_services(mocker):
-    remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.remove_orphaned_services",
+    return mocker.patch(
+        "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
     )
-    return remove_orphaned_services
 
 
 @pytest.fixture
 def disable_gc_manual_guest_users(mocker):
     """Disable to avoid an almost instant cleanup of GUEST users with their projects"""
     mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.remove_users_manually_marked_as_guests",
+        "simcore_service_webserver.garbage_collector._core.remove_users_manually_marked_as_guests",
         return_value=None,
     )
 
@@ -97,8 +96,3 @@ def disable_gc_manual_guest_users(mocker):
 def openapi_specs(api_version_prefix) -> OpenApiSpecs:
     spec_path = get_openapi_specs_path(api_version_prefix)
     return load_openapi_specs(spec_path)
-
-
-@pytest.fixture
-def project_jsonschema() -> dict[str, Any]:
-    return Project.schema(by_alias=True)

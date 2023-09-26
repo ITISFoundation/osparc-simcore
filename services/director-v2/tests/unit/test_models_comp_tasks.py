@@ -3,13 +3,13 @@
 # pylint:disable=redefined-outer-name
 
 from pprint import pformat
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from models_library.projects_state import RunningState
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.comp_pipeline import StateType
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 
 
 @pytest.mark.parametrize(
@@ -17,7 +17,7 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
     (CompTaskAtDB,),
 )
 def test_computation_task_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -27,10 +27,10 @@ def test_computation_task_model_examples(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompTaskAtDB,),
+    [CompTaskAtDB],
 )
 def test_computation_task_model_export_to_db_model(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -41,18 +41,18 @@ def test_computation_task_model_export_to_db_model(
         db_model = model_instance.to_db_model()
 
         assert isinstance(db_model, dict)
-        StateType(db_model["state"])
+        assert StateType(db_model["state"])
 
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompTaskAtDB,),
+    [CompTaskAtDB],
 )
 def test_computation_task_model_with_running_state_value_field(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
-        example["state"] = RunningState.RETRY.value
+        example["state"] = RunningState.WAITING_FOR_RESOURCES.value
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
@@ -60,10 +60,10 @@ def test_computation_task_model_with_running_state_value_field(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompTaskAtDB,),
+    [CompTaskAtDB],
 )
 def test_computation_task_model_with_wrong_default_value_field(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         for output_schema in example.get("schema", {}).get("outputs", {}).values():

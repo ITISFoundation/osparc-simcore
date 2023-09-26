@@ -1,9 +1,10 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 import psycopg2
 import sqlalchemy as sa
 from aiopg.sa import connection
+from models_library.api_schemas_directorv2.clusters import ClusterCreate, ClusterPatch
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
@@ -26,7 +27,6 @@ from ....core.errors import (
     ClusterInvalidOperationError,
     ClusterNotFoundError,
 )
-from ....models.schemas.clusters import ClusterCreate, ClusterPatch
 from ....utils.db import to_clusters_db
 from ._base import BaseRepository
 
@@ -99,13 +99,14 @@ async def _compute_user_access_rights(
         .join(groups)
     )
     user_groups = await result.fetchall()
-
+    assert user_groups  # nosec
     # get the primary group first, as it has precedence
-    if primary_group_row := next(
-        filter(lambda ugrp: ugrp[1] == GroupType.PRIMARY, user_groups), None
-    ):
-        if primary_grp_rights := cluster.access_rights.get(primary_group_row.gid):
-            return primary_grp_rights
+    if (
+        primary_group_row := next(
+            filter(lambda ugrp: ugrp[1] == GroupType.PRIMARY, user_groups), None
+        )
+    ) and (primary_grp_rights := cluster.access_rights.get(primary_group_row.gid)):
+        return primary_grp_rights
 
     solved_rights = CLUSTER_NO_RIGHTS.dict()
     for group_row in filter(lambda ugrp: ugrp[1] != GroupType.PRIMARY, user_groups):
@@ -263,9 +264,7 @@ class ClustersRepository(BaseRepository):
             clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
             if not clusters_list:
                 raise ClusterNotFoundError(cluster_id=cluster_id)
-            the_cluster = clusters_list[0]
-
-            return the_cluster
+            return clusters_list[0]
 
     async def delete_cluster(self, user_id: UserID, cluster_id: ClusterID) -> None:
         async with self.db_engine.acquire() as conn:
