@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
@@ -98,7 +98,7 @@ async def test_trial_accounts(pg_engine: Engine):
 
     async with pg_engine.acquire() as conn:
         # creates trial user
-        client_now = datetime.now(tz=timezone.utc)
+        client_now = datetime.utcnow()
         user_id: int | None = await conn.scalar(
             users.insert()
             .values(
