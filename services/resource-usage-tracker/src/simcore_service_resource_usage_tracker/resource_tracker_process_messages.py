@@ -61,7 +61,7 @@ async def process_message(
 async def _process_start_event(
     resource_tracker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingStartedMessage,
-    rabbitmq_client: RabbitMQClient,  # pylint: disable=unused-argument
+    rabbitmq_client: RabbitMQClient,
 ):
     service_type = (
         ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
@@ -122,6 +122,20 @@ async def _process_start_event(
         )
         await resource_tracker_repo.create_credit_transaction(transaction_create)
 
+        # Publish wallet total credits to RabbitMQ
+        wallet_total_credits = (
+            await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
+                msg.product_name,
+                msg.wallet_id,
+            )
+        )
+        publish_message = WalletCreditsMessage.construct(
+            wallet_id=msg.wallet_id,
+            created_at=datetime.now(tz=timezone.utc),
+            credits=wallet_total_credits.available_osparc_credits,
+        )
+        await rabbitmq_client.publish(publish_message.channel_name, publish_message)
+
 
 async def _process_heartbeat_event(
     resource_tracker_repo: ResourceTrackerRepository,
@@ -165,7 +179,7 @@ async def _process_heartbeat_event(
         publish_message = WalletCreditsMessage.construct(
             wallet_id=running_service.wallet_id,
             created_at=datetime.now(tz=timezone.utc),
-            credits=wallet_total_credits,
+            credits=wallet_total_credits.available_osparc_credits,
         )
         await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
@@ -219,7 +233,7 @@ async def _process_stop_event(
         publish_message = WalletCreditsMessage.construct(
             wallet_id=running_service.wallet_id,
             created_at=datetime.now(tz=timezone.utc),
-            credits=wallet_total_credits,
+            credits=wallet_total_credits.available_osparc_credits,
         )
         await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
