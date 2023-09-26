@@ -38,6 +38,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
   construct: function() {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this.getChildControl("bar"), "dashboardTabs");
     osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
     this.set({
