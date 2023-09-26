@@ -45,7 +45,7 @@ async def _on_user_connected(
     user_wallet = await wallets_api.list_wallets_for_user(
         app, user_id=user_id, product_name=product_name
     )
-    _logger.info(f"Connecting user {user_id} to wallets {user_wallet}")
+    _logger.debug("Connecting user %s to wallets %s", f"{user_id}", f"{user_wallet}")
     connect_tasks = [
         wallet_osparc_credits.subscribe(app, wallet.wallet_id) for wallet in user_wallet
     ]
