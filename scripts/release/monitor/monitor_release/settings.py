@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
+# pylint: disable=too-many-return-statements
+
 
 class Settings(BaseModel):
     portainer_url: str
