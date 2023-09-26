@@ -58,7 +58,7 @@ qx.Class.define("osparc.tours.Manager", {
       switch (id) {
         case "intro-text":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Here a collection of guided tours to show you how to use the framework:"),
+            value: this.tr("This collection of Guided Tours will show you how to use the framework:"),
             rich: true,
             wrap: true,
             font: "text-14"
