@@ -29,7 +29,7 @@ _TRIGGER_NAME: Final[str] = "auto_update_modified_timestamp"
 
 def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
     """registers a trigger/procedure couple in order to ensure auto
-    update of the modified timestamp column when a row is modified.
+    update of the 'modified' timestamp column when a row is modified.
 
     NOTE: Add a *hard-coded* version in the alembic migration code!!!
     see [this example](https://github.com/ITISFoundation/osparc-simcore/blob/78bc54e5815e8be5a8ed6a08a7bbe5591bbd2bd9/packages/postgres-database/src/simcore_postgres_database/migration/versions/e0a2557dec27_add_services_limitations.py)
@@ -38,6 +38,7 @@ def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
     Arguments:
         table -- the table to add the auto-trigger to
     """
+    assert "modified" in table.columns  # nosec
 
     # NOTE: scoped on database
     procedure_name: Final[str] = f"{table.name}_auto_update_modified_timestamp()"

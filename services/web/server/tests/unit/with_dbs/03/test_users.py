@@ -172,7 +172,7 @@ async def test_get_profile(
         assert profile.gravatar_id
         assert profile.first_name == logged_user["name"]
         assert profile.last_name == ""
-        assert profile.role == user_role.name.capitalize()
+        assert profile.role == user_role.name
         assert profile.groups
         assert profile.groups.dict(**RESPONSE_MODEL_POLICY) == {
             "me": primary_group,
@@ -213,7 +213,7 @@ async def test_update_profile(
 
         assert data["first_name"] == logged_user["name"]
         assert data["last_name"] == "Foo"
-        assert data["role"] == user_role.name.capitalize()
+        assert data["role"] == user_role.name
 
 
 # Test CRUD on tokens --------------------------------------------
