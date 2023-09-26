@@ -8,7 +8,6 @@
 import enum
 
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
 from .base import metadata
 from .users import users
@@ -16,7 +15,7 @@ from .users import users
 
 class ConfirmationAction(enum.Enum):
     REGISTRATION = "REGISTRATION"
-    RESET_PASSWORD = "RESET_PASSWORD"
+    RESET_PASSWORD = "RESET_PASSWORD"  # noqa: S105
     CHANGE_EMAIL = "CHANGE_EMAIL"
     INVITATION = "INVITATION"
 
@@ -49,9 +48,8 @@ confirmations = sa.Table(
     ),
     sa.Column(
         "created_at",
-        sa.DateTime,
+        sa.DateTime(),
         nullable=False,
-        server_default=func.now(),
         doc="Creation date of this code."
         "Can be used as reference to determine the expiration date. SEE ${ACTION}_CONFIRMATION_LIFETIME",
     ),
