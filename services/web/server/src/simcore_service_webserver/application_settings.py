@@ -310,6 +310,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "WEBSERVER_META_MODELING",
             "WEBSERVER_SCICRUNCH",
             "WEBSERVER_VERSION_CONTROL",
+            "WEBSERVER_CREDIT_COMPUTATION_ENABLED",
         }
         for field_name in PUBLIC_PLUGIN_CANDIDATES:
             if not self.is_enabled(field_name):
