@@ -171,6 +171,7 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
         expected_file_size=-1,
         expected_upload_id=bool(single_link_param.expected_link_scheme == "s3"),
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
     # check that no s3 multipart upload was initiated
     await assert_multipart_uploads_in_progress(
@@ -240,6 +241,7 @@ async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
         expected_file_size=-1,
         expected_upload_id=bool(single_link_param.expected_link_scheme == "s3"),
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
     # check that no s3 multipart upload was initiated
     await assert_multipart_uploads_in_progress(
@@ -346,6 +348,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
         expected_file_size=-1,
         expected_upload_id=expect_upload_id,
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
 
     # check that the s3 multipart upload was initiated properly
@@ -391,6 +394,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
         expected_file_size=-1,
         expected_upload_id=expect_upload_id,
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
 
     # check that the s3 multipart upload was initiated properly
@@ -413,6 +417,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
         expected_file_size=None,
         expected_upload_id=None,
         expected_upload_expiration_date=None,
+        expected_sha256_checksum=None,
     )
     # the multipart upload shall be aborted
     await assert_multipart_uploads_in_progress(
@@ -459,6 +464,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
         expected_file_size=-1,
         expected_upload_id=expect_upload_id,
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
 
     # check that the s3 multipart upload was initiated properly
@@ -487,6 +493,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
         expected_file_size=-1,
         expected_upload_id=expect_upload_id,
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
     if expect_upload_id and link_type == LinkType.PRESIGNED:
         assert (
@@ -611,6 +618,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         expected_file_size=file_size,
         expected_upload_id=False,
         expected_upload_expiration_date=False,
+        expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
     s3_metadata = await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
@@ -746,6 +754,7 @@ async def test_upload_real_file_with_s3_client(
         expected_file_size=file_size,
         expected_upload_id=False,
         expected_upload_expiration_date=False,
+        expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
     s3_metadata = await storage_s3_client.get_file_metadata(
@@ -791,6 +800,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
         expected_file_size=-1,
         expected_upload_id=bool(file_size >= MULTIPART_UPLOADS_MIN_TOTAL_SIZE),
         expected_upload_expiration_date=True,
+        expected_sha256_checksum=None,
     )
 
     # 3. upload part of the file to simulate a network issue in the upload
@@ -821,6 +831,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
         expected_file_size=file_size,
         expected_upload_id=False,
         expected_upload_expiration_date=False,
+        expected_sha256_checksum=None,
     )
     # check the file is in S3 for real
     s3_metadata = await storage_s3_client.get_file_metadata(
@@ -1081,6 +1092,7 @@ async def test_delete_file(
         expected_file_size=None,
         expected_upload_id=None,
         expected_upload_expiration_date=None,
+        expected_sha256_checksum=None,
     )
     # check the file is gone from S3
     with pytest.raises(S3KeyNotFoundError):

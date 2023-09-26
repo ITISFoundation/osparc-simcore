@@ -15,6 +15,7 @@ from models_library.api_schemas_storage import (
     PresignedLink,
     StorageFileID,
 )
+from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.users import UserID
 from pydantic import ByteSize
@@ -116,6 +117,7 @@ async def get_upload_file_links(
     link_type: LinkType,
     file_size: ByteSize,
     is_directory: bool,
+    sha256_checksum: SHA256Str | None,
 ) -> FileUploadSchema:
     """
     :raises exceptions.StorageServerIssue: _description_
@@ -128,6 +130,8 @@ async def get_upload_file_links(
         "file_size": int(file_size),
         "is_directory": f"{is_directory}".lower(),
     }
+    if sha256_checksum:
+        query_params["sha256_checksum"] = f"{sha256_checksum}"
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         params=query_params,
