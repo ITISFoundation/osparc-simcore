@@ -7,6 +7,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from servicelib.file_utils import USER_PREFERENCES_MAX_SIZE_KB
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
@@ -181,7 +182,9 @@ class DynamicSidecarVolumesPathsResolver:
             run_id=run_id,
             project_id=project_id,
             user_id=user_id,
-            volume_size_limit="128k" if has_quota_support else None,
+            volume_size_limit=f"{USER_PREFERENCES_MAX_SIZE_KB}k"
+            if has_quota_support
+            else None,
         )
 
     @classmethod
