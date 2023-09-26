@@ -25,8 +25,3 @@ def main(deployment: Deployment, action: Action):
         check_containers_deploys(settings, deployment)
     if action == Action.sidecars:
         check_running_sidecars(settings, deployment)
-
-
-# if __name__ == "__main__":
-#     # main(Deployment.aws_staging, Action.containers)
-#     typer.run(main)
