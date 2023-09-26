@@ -11,6 +11,9 @@ from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
 from ._rabbitmq_consumers import setup_rabbitmq_consumers
+from ._rabbitmq_osparc_credits_consumer import (
+    setup_rabbitmq_consumers as setup_rabbitmq_osparc_credits_consumers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -30,3 +33,4 @@ def setup_notifications(app: web.Application):
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
     app.cleanup_ctx.append(setup_rabbitmq_consumers)
+    app.cleanup_ctx.append(setup_rabbitmq_osparc_credits_consumers)
