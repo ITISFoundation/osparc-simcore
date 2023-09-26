@@ -36,7 +36,7 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
-_Faker: Faker = Faker()
+_faker: Faker = Faker()
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
     """in this test we create a purely dangling multipart upload with no correspongin
     entry in file_metadata table
     """
-    file_id = _Faker.file_name()
+    file_id = _faker.file_name()
     file_size = parse_obj_as(ByteSize, "100Mib")
     upload_links = await storage_s3_client.create_multipart_upload_links(
         storage_s3_bucket, file_id, file_size, expiration_secs=3600
@@ -96,7 +96,7 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
         (LinkType.PRESIGNED, False),
     ],
 )
-@pytest.mark.parametrize("checksum", [None, _Faker.sha256()])
+@pytest.mark.parametrize("checksum", [None, _faker.sha256()])
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
@@ -173,7 +173,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
-@pytest.mark.parametrize("checksum", [_Faker.sha256(), None])
+@pytest.mark.parametrize("checksum", [_faker.sha256(), None])
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     upload_file: Callable[
@@ -194,7 +194,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     to the last known version of the file"""
     file, file_id = await upload_file(
         file_size=file_size,
-        file_name=_Faker.file_name(),
+        file_name=_faker.file_name(),
         file_id=None,
         sha256_checksum=checksum,
     )
@@ -264,7 +264,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("is_directory", [True, False])
-@pytest.mark.parametrize("checksum", [_Faker.sha256(), None])
+@pytest.mark.parametrize("checksum", [_faker.sha256(), None])
 async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
@@ -354,7 +354,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     [parse_obj_as(ByteSize, "100Mib")],
     ids=byte_size_ids,
 )
-@pytest.mark.parametrize("checksum", [_Faker.sha256(), None])
+@pytest.mark.parametrize("checksum", [_faker.sha256(), None])
 async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_corresponding_upload_found(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
