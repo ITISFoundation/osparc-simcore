@@ -26,6 +26,7 @@ from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -137,7 +138,10 @@ def start_request_data(
                 "value": ["node.platform.os == linux"],
             },
         ],
-        "paths_mapping": {"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
+        "paths_mapping": {
+            "outputs_path": "/tmp/outputs",  # noqa: S108
+            "inputs_path": "/tmp/inputs",  # noqa: S108
+        },
         "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
@@ -152,30 +156,33 @@ async def director_v2_client(
     redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterable[TestClient]:
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
+            "SIMCORE_SERVICES_NETWORK_NAME": network_name,
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+            "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+            "DIRECTOR_V2_LOGLEVEL": "DEBUG",
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_ENABLED": "false",
+            "R_CLONE_PROVIDER": "MINIO",
+            "S3_ENDPOINT": "endpoint",
+            "S3_ACCESS_KEY": "access_key",
+            "S3_SECRET_KEY": "secret_key",
+            "S3_BUCKET_NAME": "bucket_name",
+            "S3_SECURE": "false",
+            # patch host for dynamic-sidecar, not reachable via localhost
+            # the dynamic-sidecar (running inside a container) will use
+            # this address to reach the rabbit service
+            "RABBIT_HOST": f"{get_localhost_ip()}",
+            "REDIS_HOST": redis_settings.REDIS_HOST,
+            "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
+        },
+    )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
-    monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
-
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
-
-    # patch host for dynamic-sidecar, not reachable via localhost
-    # the dynamic-sidecar (running inside a container) will use
-    # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
-
-    monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
-    monkeypatch.setenv("REDIS_PORT", f"{redis_settings.REDIS_PORT}")
 
     settings = AppSettings.create_from_envs()
 

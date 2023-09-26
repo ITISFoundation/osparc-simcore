@@ -2,6 +2,7 @@
 
 """
 from contextlib import suppress
+from pathlib import Path
 from typing import Final
 
 import pkg_resources
@@ -35,7 +36,11 @@ def get_summary() -> str:
 
 
 SUMMARY: Final[str] = get_summary()
-
+PACKAGE_DATA_FOLDER: Final[Path] = Path(
+    pkg_resources.resource_filename(
+        _current_distribution.project_name.replace("-", "_"), "data"
+    )
+)
 
 # https://patorjk.com/software/taag/#p=testall&f=Avatar&t=clusters_keeper
 APP_STARTED_BANNER_MSG = r"""

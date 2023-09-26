@@ -15,7 +15,6 @@ from typing import NamedTuple
 import aiofiles
 import httpx
 import psutil
-import yaml
 from aiofiles import os as aiofiles_os
 from servicelib.error_codes import create_error_code
 from settings_library.docker_registry import RegistrySettings
@@ -199,15 +198,6 @@ async def async_command(command: str, timeout: float | None = None) -> CommandRe
         command=f"{command}",
         elapsed=time.time() - start,
     )
-
-
-def assemble_container_names(validated_compose_content: str) -> list[str]:
-    """returns the list of container names from a validated compose_spec"""
-    parsed_compose_spec = yaml.safe_load(validated_compose_content)
-    return [
-        service_data["container_name"]
-        for service_data in parsed_compose_spec["services"].values()
-    ]
 
 
 async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:

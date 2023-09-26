@@ -5,6 +5,7 @@ from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
+from ..wallets import WalletInfo
 
 
 class ComputationGet(ComputationTask):
@@ -39,6 +40,10 @@ class ComputationCreate(BaseModel):
     use_on_demand_clusters: bool = Field(
         default=False,
         description="if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+    )
+    wallet_info: WalletInfo | None = Field(
+        default=None,
+        description="contains information about the wallet used to bill the running service",
     )
 
     @validator("product_name", always=True)

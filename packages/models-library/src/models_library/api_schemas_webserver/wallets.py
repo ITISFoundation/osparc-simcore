@@ -23,7 +23,7 @@ class WalletGet(OutputSchema):
 
 
 class WalletGetWithAvailableCredits(WalletGet):
-    available_credits: float
+    available_credits: Decimal
 
 
 class WalletGetPermissions(WalletGet):
@@ -97,6 +97,24 @@ class PaymentMethodInit(OutputSchema):
                     "wallet_id": 1,
                     "payment_method_id": "pm_0987654321",
                     "payment_method_form_url": "https://example.com/payment-method/form",
+                }
+            ]
+        }
+
+
+class PaymentMethodTransaction(OutputSchema):
+    # Used ONLY in socketio interface
+    wallet_id: WalletID
+    payment_method_id: PaymentMethodID
+    state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"]
+
+    class Config(OutputSchema.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "walletId": 1,
+                    "paymentMethodId": "pm_0987654321",
+                    "state": "SUCCESS",
                 }
             ]
         }

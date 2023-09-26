@@ -59,7 +59,9 @@ exceptiongroup==1.1.3
 execnet==2.0.2
     # via pytest-xdist
 faker==19.6.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
 frozenlist==1.3.0

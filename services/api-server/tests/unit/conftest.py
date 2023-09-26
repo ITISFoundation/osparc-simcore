@@ -131,11 +131,6 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         return_value=faker_user_id,
     )
     mocker.patch(
-        "simcore_service_api_server.db.repositories.users.UsersRepository.get_user_id",
-        autospec=True,
-        return_value=faker_user_id,
-    )
-    mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
         autospec=True,
         return_value=faker.email(),
@@ -481,9 +476,9 @@ def patch_webserver_long_running_project_tasks(
 
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
-def respx_mock_from_capture() -> Callable[
-    [respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter
-]:
+def respx_mock_from_capture() -> (
+    Callable[[respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter]
+):
     def _generate_mock(
         respx_mock: respx.MockRouter,
         capture_path: Path,

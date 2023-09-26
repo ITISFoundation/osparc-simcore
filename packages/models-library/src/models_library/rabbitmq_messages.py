@@ -1,6 +1,7 @@
 import datetime
 import logging
 from abc import abstractmethod
+from decimal import Decimal
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
@@ -250,3 +251,18 @@ RabbitResourceTrackingMessages = (
     | RabbitResourceTrackingStoppedMessage
     | RabbitResourceTrackingHeartbeatMessage
 )
+
+
+class WalletCreditsMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.wallets"] = Field(
+        default="io.simcore.service.wallets", const=True
+    )
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+    wallet_id: WalletID
+    credits: Decimal
+
+    def routing_key(self) -> str | None:
+        return f"{self.wallet_id}"

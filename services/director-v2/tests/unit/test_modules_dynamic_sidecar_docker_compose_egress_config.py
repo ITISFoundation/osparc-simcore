@@ -7,7 +7,7 @@ from typing import Any, Final
 import pytest
 import yaml
 from models_library.basic_types import PortInt
-from models_library.service_settings_labels import (
+from models_library.service_settings_nat_rule import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
     NATRule,
