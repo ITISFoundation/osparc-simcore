@@ -16,6 +16,7 @@ import pytest
 from aiopg.sa.engine import Engine
 from faker import Faker
 from models_library.api_schemas_storage import LinkType
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
@@ -176,7 +177,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     upload_file: Callable[
-        [ByteSize, str, SimcoreS3FileID | None],
+        ...,
         Awaitable[tuple[Path, SimcoreS3FileID]],
     ],
     aiopg_engine: Engine,
@@ -192,7 +193,13 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     """In this test we first upload a file to have a valid entry, then we trigger
     a new upload of the VERY SAME FILE, expire it, and make sure the cleaner reverts
     to the last known version of the file"""
-    file, file_id = await upload_file(file_size, faker.file_name(), None)
+    checksum: SHA256Str | None = faker.sha256() if add_checksum else None
+    file, file_id = await upload_file(
+        file_size=file_size,
+        file_name=faker.file_name(),
+        file_id=None,
+        sha256_checksum=checksum,
+    )
     async with aiopg_engine.acquire() as conn:
         original_fmd = await db_file_meta_data.get(conn, file_id)
 
@@ -202,7 +209,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
         file_id,
         link_type,
         file_size,
-        sha256_checksum=faker.sha256() if add_checksum else None,
+        sha256_checksum=checksum,
         is_directory=False,
     )
     # ensure the database is correctly set up
