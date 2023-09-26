@@ -28,7 +28,6 @@ qx.Class.define("osparc.product.tours.s4l.Tours", {
         osparc.utils.Utils.fetchJSON("/resource/osparc/tours/s4l_tours.json")
           .then(toursObj => {
             const tours = Object.values(toursObj);
-            console.log("tours", tours);
             resolve(tours);
           })
           .catch(err => {

@@ -66,15 +66,14 @@
       "placement": "left"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=feedbackButton",
-        "action": "open"
+        "selector": "osparc-test-id=feedbackButton"
       },
       "anchorEl": "osparc-test-id=feedbackMenu",
       "text": "The Support menu gives you a way of providing feedback or quistions, via the ZMT Forum or the official Sim4Life Support.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=themeSwitcher",
-      "text": "Switch between dark and light modes.",
+      "text": "Switch between dark and light modes",
       "placement": "bottom"
     }, {
       "beforeClick": {
