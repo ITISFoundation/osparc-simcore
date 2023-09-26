@@ -2,17 +2,13 @@ import asyncio
 import hashlib
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import Final, Protocol
 
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
 from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
 from pydantic import ByteSize, parse_obj_as
-
-if TYPE_CHECKING:
-    from aiofiles.threadpool.binary import AsyncBufferedReader
-    from starlette.datastructures import UploadFile
 
 CHUNK_4KB: Final[ByteSize] = parse_obj_as(ByteSize, "4kb")  # 4K blocks
 
@@ -37,8 +33,13 @@ async def remove_directory(
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
+class AsyncStream(Protocol):
+    async def read(self, size: int = -1) -> bytes:
+        ...
+
+
 async def create_sha256_checksum(
-    async_stream: "AsyncBufferedReader | UploadFile",
+    async_stream: AsyncStream,
     *,
     chunk_size: ByteSize = CHUNK_4KB,
 ) -> str:
@@ -58,7 +59,7 @@ async def create_sha256_checksum(
 
 
 async def _eval_hash_async(
-    async_stream: "AsyncBufferedReader | UploadFile",
+    async_stream: AsyncStream,
     hasher: "hashlib._Hash",
     chunk_size: ByteSize,
 ) -> str:
