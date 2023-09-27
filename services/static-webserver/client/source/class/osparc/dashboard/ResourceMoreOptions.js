@@ -109,7 +109,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = new qx.ui.basic.Label(resourceData.name).set({
         font: "text-16",
         alignY: "middle",
-        maxWidth: 300,
+        maxWidth: this.self().WIDTH-100,
         rich: true,
         wrap: true
       });

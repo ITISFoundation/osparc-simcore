@@ -70,7 +70,8 @@ qx.Class.define("osparc.info.StudyLarge", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "text-14"
+        font: "text-14",
+        maxWidth: 400
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";

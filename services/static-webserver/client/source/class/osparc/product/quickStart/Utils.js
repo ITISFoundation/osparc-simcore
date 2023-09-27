@@ -15,26 +15,30 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.Utils", {
+qx.Class.define("osparc.product.quickStart.Utils", {
   type: "static",
 
   statics: {
-    TUTORIALS: {
+    QUICK_START: {
       "tis": {
         localStorageStr: "tiDontShowQuickStart",
-        tutorial: () => new osparc.product.tutorial.ti.Slides()
+        tutorial: () => new osparc.product.quickStart.ti.Slides()
       },
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",
-        tutorial: () => new osparc.product.tutorial.s4llite.Slides()
+        tutorial: () => new osparc.product.quickStart.s4llite.Slides()
+      },
+      "s4l": {
+        localStorageStr: "s4lDontShowQuickStart",
+        tutorial: () => new osparc.product.quickStart.s4l.Welcome()
       }
     },
 
-    getTutorial: function() {
-      const tutorials = this.TUTORIALS;
+    getQuickStart: function() {
+      const quickStarts = this.QUICK_START;
       const pName = osparc.product.Utils.getProductName();
-      if (Object.keys(tutorials).includes(pName)) {
-        return tutorials[pName];
+      if (Object.keys(quickStarts).includes(pName)) {
+        return quickStarts[pName];
       }
       return null;
     },

@@ -212,14 +212,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           // Show Quick Start if studies.length === 0
-          const tutorial = osparc.product.tutorial.Utils.getTutorial();
-          if (tutorial) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
+          const quickStart = osparc.product.quickStart.Utils.getQuickStart();
+          if (quickStart) {
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStart.localStorageStr);
             if (dontShow === "true") {
               return;
             }
             if (nStudies === 0) {
-              const tutorialWindow = tutorial.tutorial();
+              const tutorialWindow = quickStart.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
             }
