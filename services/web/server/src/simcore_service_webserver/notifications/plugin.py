@@ -10,7 +10,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
-from ._rabbitmq_consumers import setup_rabbitmq_consumers
+from ..wallets.plugin import setup_wallets
+from ._rabbitmq_consumers import on_cleanup_ctx_rabbitmq_consumers
 
 _logger = logging.getLogger(__name__)
 
@@ -25,8 +26,11 @@ def setup_notifications(app: web.Application):
     # depends on diagnostics for setting the instrumentation
     setup_diagnostics(app)
 
+    # depends on WalletCreditsMessage
+    setup_wallets(app)
+
     setup_rabbitmq(app)
     setup_socketio(app)
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
-    app.cleanup_ctx.append(setup_rabbitmq_consumers)
+    app.cleanup_ctx.append(on_cleanup_ctx_rabbitmq_consumers)
