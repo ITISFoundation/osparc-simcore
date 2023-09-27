@@ -39,6 +39,11 @@ class SHA1Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{40}$")
 
 
+# sha256sum path/to/file
+class SHA256Str(ConstrainedStr):
+    regex = re.compile(r"^[a-fA-F0-9]{64}$")
+
+
 # md5sum path/to/file
 class MD5Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{32}$")

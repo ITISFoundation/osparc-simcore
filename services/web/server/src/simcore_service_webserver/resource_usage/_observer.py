@@ -2,7 +2,6 @@
 
 """
 
-# pylint: disable=unused-argument
 
 import logging
 
@@ -27,6 +26,9 @@ async def _on_user_disconnected(
     app: web.Application,
     product_name: ProductName,
 ) -> None:
+    assert product_name  # nosec
+    assert client_session_id  # nosec
+
     # Get all user wallets and unsubscribe
     user_wallet = await wallets_api.list_wallets_for_user(
         app, user_id=user_id, product_name=product_name

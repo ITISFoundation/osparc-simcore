@@ -296,7 +296,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return bool(getattr(self, field_name, None))
 
     def _get_disabled_public_plugins(self) -> list[str]:
-        plugins_disabled = []
         # NOTE: this list is limited for security reasons. An unbounded list
         # might reveal critical info on the settings of a deploy to the client.
         # TODO: more reliable definition of a "plugin" and whether it can be advertised or not
@@ -305,13 +304,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "WEBSERVER_CLUSTERS",
             "WEBSERVER_EXPORTER",
             "WEBSERVER_META_MODELING",
+            "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
             "WEBSERVER_VERSION_CONTROL",
         }
-        for field_name in PUBLIC_PLUGIN_CANDIDATES:
-            if not self.is_enabled(field_name):
-                plugins_disabled.append(field_name)
-        return plugins_disabled
+        return [
+            plugin_name
+            for plugin_name in PUBLIC_PLUGIN_CANDIDATES
+            if not self.is_enabled(plugin_name)
+        ]
 
     def _export_by_alias(self, **kwargs) -> dict[str, Any]:
         #  This is a small helper to assist export functions since aliases are no longer used by

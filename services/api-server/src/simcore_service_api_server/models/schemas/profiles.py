@@ -1,4 +1,5 @@
 from enum import auto
+from typing import Any, ClassVar
 
 from models_library.emails import LowerCaseEmailStr
 from models_library.utils.enums import StrAutoEnum
@@ -17,10 +18,12 @@ class ProfileUpdate(ProfileCommon):
 
 
 class UserRoleEnum(StrAutoEnum):
+    # NOTE: this is in sync with simcore_postgres_database.models.users.UserRole via testing
     ANONYMOUS = auto()
     GUEST = auto()
     USER = auto()
     TESTER = auto()
+    PRODUCT_OWNER = auto()
     ADMIN = auto()
 
 
@@ -42,7 +45,7 @@ class Profile(ProfileCommon):
         return v
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "first_name": "James",
                 "last_name": "Maxwell",

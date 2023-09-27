@@ -82,6 +82,7 @@ def test_file_entry_valid(
         bucket=S3BucketName("pytest-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=None,
     )
     fmd.file_size = parse_obj_as(ByteSize, file_size)
     fmd.entity_tag = entity_tag
