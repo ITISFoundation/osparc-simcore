@@ -52,17 +52,24 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
       const welcome = osparc.product.quickStart.Utils.createLabel(welcomeText);
       content.add(welcome);
 
+      const introTitle = this.tr("Experience Most Advanced Simulations – All In The Cloud");
+      const intro1 = osparc.product.quickStart.Utils.createLabel(introTitle);
+      intro1.set({
+        font: "text-16"
+      });
+      content.add(intro1);
+
       const introText = this.tr("\
+        Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.\
+        <br>\
+        <br>\
         In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.\
         <br>\
         <br>\
-        [Animation showing UserMenu -> Guided Tours]\
-        <br>\
-        <br>\
-        For more specific technical information, please refer to the Dashboard Manual and the S4L</i> Manual.\
+        For more specific technical information, please refer to the Manuals on the Navigation Bar.\
       ");
-      const intro = osparc.product.quickStart.Utils.createLabel(introText);
-      content.add(intro);
+      const intro2 = osparc.product.quickStart.Utils.createLabel(introText);
+      content.add(intro2);
 
       content.add(new qx.ui.core.Spacer(null, 20));
 
