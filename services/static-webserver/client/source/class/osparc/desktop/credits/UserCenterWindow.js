@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.CreditsWindow", {
+qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(walletsEnabled = false) {
@@ -41,7 +41,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
   statics: {
     openWindow: function(walletsEnabled = false) {
-      const accountWindow = new osparc.desktop.credits.CreditsWindow(walletsEnabled);
+      const accountWindow = new osparc.desktop.credits.UserCenterWindow(walletsEnabled);
       accountWindow.center();
       accountWindow.open();
       return accountWindow;

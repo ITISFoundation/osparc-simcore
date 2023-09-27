@@ -15,29 +15,26 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.panddy.Utils", {
+qx.Class.define("osparc.product.tours.Utils", {
   type: "static",
 
   statics: {
-    SEQUENCES: {
+    TOURS: {
       "s4llite": {
-        getSequences: () => osparc.product.panddy.s4llite.Sequences.getSequences()
+        fetchTours: () => osparc.product.tours.s4llite.Tours.fetchTours()
+      },
+      "s4l": {
+        fetchTours: () => osparc.product.tours.s4l.Tours.fetchTours()
       }
     },
 
-    hasPanddy: function() {
+    // it returns a promise
+    getTours: function() {
       if (osparc.utils.Utils.isDevelEnv()) {
-        const sequences = this.SEQUENCES;
         const pName = osparc.product.Utils.getProductName();
-        return Object.keys(sequences).includes(pName);
-      }
-      return false;
-    },
-
-    getSequences: function() {
-      if (this.hasPanddy()) {
-        const pName = osparc.product.Utils.getProductName();
-        return this.SEQUENCES[pName].getSequences();
+        if (Object.keys(this.TOURS).includes(pName)) {
+          return this.TOURS[pName].fetchTours();
+        }
       }
       return null;
     }

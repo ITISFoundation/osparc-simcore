@@ -23,6 +23,8 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
+    osparc.utils.Utils.setIdToWidget(this, "notificationsButton");
+
     this.set({
       width: 30,
       alignX: "center",

@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteUI", {
-  extend: osparc.product.tutorial.SlideBase,
+qx.Class.define("osparc.product.quickStart.s4llite.S4LLiteUI", {
+  extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
     const title = this.tr("<i>S4L<sup>lite</sup></i>");
@@ -28,7 +28,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteUI", {
       const introText = this.tr("\
         To check the <i>S4L<sup>lite</sup></i> manual, please open a project and access the documentation via Help in the menu as shown below. Enjoy!\
       ");
-      const intro = osparc.product.tutorial.Utils.createLabel(introText);
+      const intro = osparc.product.quickStart.Utils.createLabel(introText);
       this._add(intro);
 
       const manualGif = new qx.ui.basic.Image("https://zurichmedtech.github.io/s4l-lite-manual/assets/s4l-docs.gif").set({

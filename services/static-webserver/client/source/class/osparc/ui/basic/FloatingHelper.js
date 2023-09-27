@@ -14,13 +14,17 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
   extend: qx.ui.core.Widget,
   include: [qx.ui.core.MRemoteChildrenHandling, qx.ui.core.MRemoteLayoutHandling],
 
-  construct: function(element) {
+  construct: function(element, caretSize) {
     this.base(arguments);
     this.set({
       backgroundColor: "transparent",
       visibility: "excluded",
       zIndex: 110000
     });
+
+    if (caretSize) {
+      this.setCaretSize(caretSize);
+    }
 
     const hintCssUri = qx.util.ResourceManager.getInstance().toUri("hint/hint.css");
     qx.module.Css.includeStylesheet(hintCssUri);
@@ -68,6 +72,12 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       apply: "__applyOrientation"
     },
 
+    caretSize: {
+      check: ["small", "large"],
+      nullable: false,
+      init: "small"
+    },
+
     active: {
       check: "Boolean",
       nullable: false,
@@ -85,12 +95,14 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
             backgroundColor: "node-selected-background"
           });
           break;
-        case "caret":
+        case "caret": {
           control = new qx.ui.container.Composite().set({
             backgroundColor: "transparent"
           });
-          control.getContentElement().addClass("hint");
+          const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint";
+          control.getContentElement().addClass(classPrefix);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -98,16 +110,18 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
     __buildWidget: function() {
       this._removeAll();
 
+      const classPrefix = this.getCaretSize() === "large" ? "hint-large" : "hint";
+
       const hintContainer = this.getChildControl("hint-container");
       const caret = this.getChildControl("caret");
-      caret.getContentElement().removeClass("hint-top");
-      caret.getContentElement().removeClass("hint-right");
-      caret.getContentElement().removeClass("hint-bottom");
-      caret.getContentElement().removeClass("hint-left");
+      caret.getContentElement().removeClass(classPrefix+"-top");
+      caret.getContentElement().removeClass(classPrefix+"-right");
+      caret.getContentElement().removeClass(classPrefix+"-bottom");
+      caret.getContentElement().removeClass(classPrefix+"-left");
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.TOP:
         case this.self().ORIENTATION.LEFT: {
-          caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.LEFT ? "hint-left" : "hint-top");
+          caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.LEFT ? classPrefix+"-left" : classPrefix+"-top");
           this._setLayout(this.getOrientation() === this.self().ORIENTATION.LEFT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(hintContainer, {
             flex: 1
@@ -117,7 +131,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         }
         case this.self().ORIENTATION.RIGHT:
         case this.self().ORIENTATION.BOTTOM: {
-          caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.RIGHT ? "hint-right" : "hint-bottom");
+          caret.getContentElement().addClass(this.getOrientation() === this.self().ORIENTATION.RIGHT ? classPrefix+"-right" : classPrefix+"-bottom");
           this._setLayout(this.getOrientation() === this.self().ORIENTATION.RIGHT ? new qx.ui.layout.HBox() : new qx.ui.layout.VBox());
           this._add(caret);
           this._add(hintContainer, {
@@ -126,16 +140,17 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
           break;
         }
       }
+      const caretSize = this.getCaretSize() === "large" ? 10 : 5;
       switch (this.getOrientation()) {
         case this.self().ORIENTATION.RIGHT:
         case this.self().ORIENTATION.LEFT:
           caret.setHeight(0);
-          caret.setWidth(5);
+          caret.setWidth(caretSize);
           break;
         case this.self().ORIENTATION.TOP:
         case this.self().ORIENTATION.BOTTOM:
           caret.setWidth(0);
-          caret.setHeight(5);
+          caret.setHeight(caretSize);
           break;
       }
     },
@@ -174,6 +189,14 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         }
         this.setLayoutProperties(properties);
       }
+    },
+
+    moveToTheCenter: function() {
+      const properties = {};
+      const selfBounds = this.getHintBounds();
+      properties.top = Math.floor((window.innerHeight - selfBounds.width) / 2);
+      properties.left = Math.floor((window.innerWidth - selfBounds.height) / 2);
+      this.setLayoutProperties(properties);
     },
 
     getHintBounds: function() {
@@ -254,7 +277,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
         case "resize":
         case "scrollX":
         case "scrollY":
-          setTimeout(() => this.__updatePosition(), 50); // Hacky: Execute async and give some time for the relevant properties to be set
+          setTimeout(() => this.__updatePosition(), 20); // Hacky: Execute async and give some time for the relevant properties to be set
           break;
       }
     },
