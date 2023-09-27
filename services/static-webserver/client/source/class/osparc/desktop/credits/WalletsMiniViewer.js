@@ -154,8 +154,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true);
-      creditsLabel.set({
+      const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
         alignX: "right"
       });
       this._add(creditsLabel, {
