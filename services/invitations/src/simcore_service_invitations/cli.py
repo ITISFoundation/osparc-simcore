@@ -1,10 +1,12 @@
 import getpass
 import logging
+from typing import Optional
 
 import rich
 import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
+from models_library.invitations import InvitationContent, InvitationInputs
 from pydantic import HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
@@ -15,8 +17,6 @@ from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .invitations import (
     InvalidInvitationCodeError,
-    InvitationContent,
-    InvitationInputs,
     create_invitation_link,
     extract_invitation_code_from,
     extract_invitation_content,
@@ -38,8 +38,7 @@ def _version_callback(value: bool):
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: bool
-    | None = (
+    version: Optional[bool] = (
         typer.Option(
             None,
             "--version",
@@ -118,8 +117,7 @@ def invite(
     issuer: str = typer.Option(
         ..., help=InvitationInputs.__fields__["issuer"].field_info.description
     ),
-    trial_account_days: int
-    | None = typer.Option(
+    trial_account_days: Optional[int] = typer.Option(
         None,
         help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
     ),
