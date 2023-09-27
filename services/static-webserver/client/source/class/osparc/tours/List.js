@@ -67,26 +67,19 @@ qx.Class.define("osparc.tours.List", {
       return false;
     },
 
-    __evaluateRequiredTarget: function(tour, seqButton) {
-      if (this.__isSelectorVisible(document, tour.contextTarget)) {
-        seqButton.setEnabled(true);
-      } else {
-        seqButton.setEnabled(false);
-      }
-    },
-
     __getTourButton: function(tour) {
+      let label = tour.name;
+      if (tour.description) {
+        label += "<br>" + tour.description;
+      }
       const seqButton = new qx.ui.form.Button().set({
-        label: tour.name,
+        label,
         icon: "@FontAwesome5Solid/arrow-right/14",
         iconPosition: "right",
-        alignX: "left",
+        textAlign: "left",
         rich: true,
-        toolTipText: tour.description
+        wrap: true
       });
-      if (tour.contextTarget) {
-        this.__evaluateRequiredTarget(tour, seqButton);
-      }
       seqButton.addListener("execute", () => this.fireDataEvent("tourSelected", tour), this);
       return seqButton;
     },
