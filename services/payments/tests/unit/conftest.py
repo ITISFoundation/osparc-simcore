@@ -36,6 +36,15 @@ def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
+def disable_db(mocker: MockerFixture) -> Callable:
+    def _doit():
+        # The following moduls are affected if rabbitmq is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_db")
+
+    return _doit
+
+
+@pytest.fixture
 async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     test_app = create_app()
     async with LifespanManager(
