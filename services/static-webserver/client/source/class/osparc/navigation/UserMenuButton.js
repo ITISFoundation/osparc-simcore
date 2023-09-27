@@ -92,7 +92,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => {
             osparc.desktop.credits.Utils.areWalletsEnabled()
               .then(walletsEnabled => {
-                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+                const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
                 creditsWindow.openOverview();
               });
             // osparc.desktop.MainPageHandler.getInstance().showUserCenter();
