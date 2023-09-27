@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
@@ -24,9 +25,6 @@ _logger = logging.getLogger(__name__)
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 
-#
-# ROUTE HANDLERS
-#
 router = APIRouter()
 
 
@@ -37,8 +35,10 @@ router = APIRouter()
 )
 async def create_invitation(
     invitation_inputs: ApiInvitationInputs,
-    settings: ApplicationSettings = Depends(get_settings),
-    _credentials: HTTPBasicCredentials | None = Depends(get_validated_credentials),
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    _credentials: Annotated[
+        HTTPBasicCredentials | None, Depends(get_validated_credentials)
+    ],
 ):
     """Generates a new invitation code and returns its content and an invitation link"""
 
@@ -65,8 +65,10 @@ async def create_invitation(
 )
 async def extracts_invitation_from_code(
     encrypted: ApiEncryptedInvitation,
-    settings: ApplicationSettings = Depends(get_settings),
-    _credentials: HTTPBasicCredentials | None = Depends(get_validated_credentials),
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    _credentials: Annotated[
+        HTTPBasicCredentials | None, Depends(get_validated_credentials)
+    ],
 ):
     """Decrypts the invitation code and returns its content"""
 

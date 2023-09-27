@@ -1,18 +1,16 @@
 import logging
 from contextlib import contextmanager
+from typing import Final
 
 import sqlalchemy as sa
 from aiohttp import ClientError, ClientResponseError, web
+from models_library.api_schemas_invitations.invitations import ApiInvitationContent
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
 
 from ..db.plugin import get_database_engine
-from ._client import (
-    InvitationContent,
-    InvitationsServiceApi,
-    get_invitations_service_api,
-)
+from ._client import InvitationsServiceApi, get_invitations_service_api
 from .errors import (
     MSG_INVALID_INVITATION_URL,
     MSG_INVITATION_ALREADY_USED,
@@ -69,15 +67,17 @@ def _handle_exceptions_as_invitations_errors():
 # API plugin CALLS
 #
 
+_LONG_CODE_LEN: Final[int] = 100  # typically long strings
+
 
 def is_service_invitation_code(code: str):
     """Fast check to distinguish from confirmation-type of invitation code"""
-    return len(code) > 100  # typically long strings
+    return len(code) > _LONG_CODE_LEN
 
 
 async def validate_invitation_url(
     app: web.Application, guest_email: str, invitation_url: str
-) -> InvitationContent:
+) -> ApiInvitationContent:
     """Validates invitation and associated email/user and returns content upon success
 
     raises InvitationsError
@@ -109,7 +109,7 @@ async def validate_invitation_url(
 
 async def extract_invitation(
     app: web.Application, invitation_url: str
-) -> InvitationContent:
+) -> ApiInvitationContent:
     """Validates invitation and returns content without checking associated user
 
     raises InvitationsError

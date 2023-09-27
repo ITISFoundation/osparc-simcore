@@ -1,30 +1,17 @@
 import contextlib
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
-from models_library.emails import LowerCaseEmailStr
-from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
+from models_library.api_schemas_invitations.invitations import ApiInvitationContent
+from pydantic import AnyHttpUrl, parse_obj_as
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
 from .settings import InvitationsSettings
 
 _logger = logging.getLogger(__name__)
-
-
-#
-# MODELS
-#
-
-
-class InvitationContent(BaseModel):
-    issuer: str
-    guest: LowerCaseEmailStr
-    trial_account_days: int | None = None
-    created: datetime
 
 
 #
@@ -87,12 +74,14 @@ class InvitationsServiceApi:
     # service API
     #
 
-    async def extract_invitation(self, invitation_url: AnyHttpUrl) -> InvitationContent:
+    async def extract_invitation(
+        self, invitation_url: AnyHttpUrl
+    ) -> ApiInvitationContent:
         response = await self.client.post(
             url=self._url_vtag("/invitations:extract"),
             json={"invitation_url": invitation_url},
         )
-        return parse_obj_as(InvitationContent, await response.json())
+        return parse_obj_as(ApiInvitationContent, await response.json())
 
 
 #
