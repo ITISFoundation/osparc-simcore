@@ -59,6 +59,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           break;
         case "credits-indicator":
           control = new osparc.desktop.credits.CreditsLabel().set({
+            minWidth: 110,
+            maxWidth: 110,
+            alignX: "right",
             alignY: "middle"
           });
           this._add(control, {
