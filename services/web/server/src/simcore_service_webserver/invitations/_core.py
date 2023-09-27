@@ -49,12 +49,12 @@ def _handle_exceptions_as_invitations_errors():
             )
             raise InvalidInvitation(reason=f"Unexpected error [{error_code}]") from err
 
-        assert 400 <= err.status  # nosec
+        assert err.status >= 400  # nosec
         # any other error status code
-        raise InvitationsServiceUnavailable() from err
+        raise InvitationsServiceUnavailable from err
 
     except (ValidationError, ClientError) as err:
-        raise InvitationsServiceUnavailable() from err
+        raise InvitationsServiceUnavailable from err
 
     except InvitationsErrors:
         # bypass: prevents that the Exceptions handler catches this exception
@@ -62,7 +62,7 @@ def _handle_exceptions_as_invitations_errors():
 
     except Exception as err:
         _logger.exception("Unexpected error in invitations plugin")
-        raise InvitationsServiceUnavailable() from err
+        raise InvitationsServiceUnavailable from err
 
 
 #
@@ -123,7 +123,4 @@ async def extract_invitation(
             raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
-        invitation = await invitations_service.extract_invitation(
-            invitation_url=valid_url
-        )
-        return invitation
+        return await invitations_service.extract_invitation(invitation_url=valid_url)

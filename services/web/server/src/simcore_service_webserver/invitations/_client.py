@@ -36,7 +36,7 @@ class InvitationContent(BaseModel):
 class InvitationsServiceApi:
     client: ClientSession
     settings: InvitationsSettings
-    exit_stack: contextlib.AsyncExitStack
+    _exit_stack: contextlib.AsyncExitStack
     healthcheck_path: str = "/"
 
     @classmethod
@@ -51,7 +51,7 @@ class InvitationsServiceApi:
                 raise_for_status=True,
             )
         )
-        return cls(client=client_session, exit_stack=exit_stack, settings=settings)
+        return cls(client=client_session, _exit_stack=exit_stack, settings=settings)
 
     #
     # common SDK
@@ -70,7 +70,7 @@ class InvitationsServiceApi:
 
     async def close(self) -> None:
         """Releases underlying connector from ClientSession [client]"""
-        await self.exit_stack.aclose()
+        await self._exit_stack.aclose()
 
     async def ping(self) -> bool:
         ok = False
@@ -92,8 +92,7 @@ class InvitationsServiceApi:
             url=self._url_vtag("/invitations:extract"),
             json={"invitation_url": invitation_url},
         )
-        invitation = parse_obj_as(InvitationContent, await response.json())
-        return invitation
+        return parse_obj_as(InvitationContent, await response.json())
 
 
 #
@@ -104,7 +103,6 @@ _APP_INVITATIONS_SERVICE_API_KEY = f"{__name__}.{InvitationsServiceApi.__name__}
 
 
 async def invitations_service_api_cleanup_ctx(app: web.Application):
-
     service_api = await InvitationsServiceApi.create(
         settings=app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS
     )

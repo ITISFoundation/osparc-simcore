@@ -2,7 +2,7 @@ import base64
 import binascii
 import logging
 from datetime import datetime
-from typing import Optional, cast
+from typing import Any, ClassVar, cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -46,7 +46,7 @@ class InvitationInputs(BaseModel):
         ...,
         description="Invitee's email. Note that the registration can ONLY be used with this email",
     )
-    trial_account_days: Optional[PositiveInt] = Field(
+    trial_account_days: PositiveInt | None = Field(
         None,
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
@@ -85,7 +85,7 @@ class _ContentWithShortNames(InvitationContent):
         allow_mutation = False
         anystr_strip_whitespace = True
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
-        fields = {
+        fields: ClassVar[dict[str, Any]] = {
             "issuer": {
                 "alias": "i",
             },
@@ -167,16 +167,14 @@ def _create_invitation_code(
 def create_invitation_link(
     invitation_data: InvitationInputs, secret_key: bytes, base_url: HttpUrl
 ) -> HttpUrl:
-
     invitation_code = _create_invitation_code(
         invitation_data=invitation_data, secret_key=secret_key
     )
     # Adds message as the invitation in query
-    url = _build_link(
+    return _build_link(
         base_url=base_url,
         code_url_safe=invitation_code.decode(),
     )
-    return url
 
 
 def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationContent:
@@ -195,8 +193,7 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationCon
     decryted: bytes = fernet.decrypt(token=code)
 
     # parses serialized invitation
-    content = _ContentWithShortNames.deserialize(raw_data=decryted.decode())
-    return content
+    return _ContentWithShortNames.deserialize(raw_data=decryted.decode())
 
 
 def extract_invitation_content(
