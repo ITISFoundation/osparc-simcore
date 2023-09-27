@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class PaymentsGatewayApi:
     client: httpx.AsyncClient
-    exit_stack: contextlib.AsyncExitStack
+    _exit_stack: contextlib.AsyncExitStack
 
     @classmethod
     def create(cls, settings: ApplicationSettings) -> "PaymentsGatewayApi":
@@ -49,13 +49,13 @@ class PaymentsGatewayApi:
         )
         exit_stack = contextlib.AsyncExitStack()
 
-        return cls(client=client, exit_stack=exit_stack)
+        return cls(client=client, _exit_stack=exit_stack)
 
     async def start(self):
-        await self.exit_stack.enter_async_context(self.client)
+        await self._exit_stack.enter_async_context(self.client)
 
     async def close(self):
-        await self.exit_stack.aclose()
+        await self._exit_stack.aclose()
 
     #
     # service diagnostics
@@ -127,6 +127,7 @@ class PaymentsGatewayApi:
 
     @classmethod
     def setup(cls, app: FastAPI):
+        # create and and save instance in state
         assert app.state  # nosec
         if exists := getattr(app.state, "payment_gateway_api", None):
             _logger.warning(
@@ -140,14 +141,15 @@ class PaymentsGatewayApi:
         app.state.payment_gateway_api = api = cls.create(app_settings)
         assert cls.get_from_state(app) == api  # nosec
 
-        async def on_startup():
+        # define lifespam
+        async def _on_startup():
             await api.start()
 
-        async def on_shutdown():
+        async def _on_shutdown():
             await api.close()
 
-        app.add_event_handler("startup", on_startup)
-        app.add_event_handler("shutdown", on_shutdown)
+        app.add_event_handler("startup", _on_startup)
+        app.add_event_handler("shutdown", _on_shutdown)
 
 
 def setup_payments_gateway(app: FastAPI):
