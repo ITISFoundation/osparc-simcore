@@ -18,20 +18,30 @@
 qx.Class.define("osparc.desktop.credits.CreditsLabel", {
   extend: qx.ui.basic.Label,
 
-  construct: function(wallet) {
+  construct: function(wallet, shortWording) {
     this.base(arguments);
 
     this.set({
       alignY: "middle",
       font: "text-16"
     });
+
+    if (wallet) {
+      this.setWallet(wallet);
+    }
+
+    if (shortWording !== undefined) {
+      this.setShortWording(shortWording);
+    }
+
     this.bind("creditsAvailable", this, "value", {
-      converter: val => val === null ? this.tr("Select Credit Account") : val + " " + this.tr("credits")
+      converter: () => this.__recomputeLabel()
     });
+
     this.bind("creditsAvailable", this, "textColor", {
       converter: val => {
         if (val > 20) {
-          return "strong-main";
+          return "text";
         } else if (val > 0.1) {
           return "warning-yellow";
         }
@@ -39,9 +49,9 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
       }
     });
 
-    if (wallet) {
-      this.setWallet(wallet);
-    }
+    this.bind("shortWording", this, "value", {
+      converter: () => this.__recomputeLabel()
+    });
   },
 
   properties: {
@@ -58,6 +68,13 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
       init: 0,
       nullable: false,
       event: "changeCreditsAvailable"
+    },
+
+    shortWording: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeShortWording"
     }
   },
 
@@ -66,6 +83,20 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
       if (wallet) {
         wallet.bind("creditsAvailable", this, "creditsAvailable");
       }
+    },
+
+    __recomputeLabel: function() {
+      const creditsAvailable = this.getCreditsAvailable();
+      if (creditsAvailable === null) {
+        return "-";
+      }
+      let label = creditsAvailable;
+      if (this.isShortWording()) {
+        label += this.tr(" cr.");
+      } else {
+        label += this.tr(" credits");
+      }
+      return label;
     }
   }
 });

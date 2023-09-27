@@ -232,10 +232,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         column++;
 
         // indicator
-        const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "horizontal").set({
-          allowShrinkY: true
-        });
-        layout.add(progressBar, {
+        const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet);
+        layout.add(creditsLabel, {
           column,
           row: i
         });
