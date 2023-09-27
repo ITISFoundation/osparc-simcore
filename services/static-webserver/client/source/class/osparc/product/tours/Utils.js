@@ -32,7 +32,9 @@ qx.Class.define("osparc.product.tours.Utils", {
     getTours: function() {
       if (osparc.utils.Utils.isDevelEnv()) {
         const pName = osparc.product.Utils.getProductName();
-        return this.TOURS[pName].fetchTours();
+        if (Object.keys(this.TOURS).includes(pName)) {
+          return this.TOURS[pName].fetchTours();
+        }
       }
       return null;
     }
