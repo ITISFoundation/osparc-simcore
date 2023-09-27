@@ -182,7 +182,10 @@ async def test_product_owner_generate_invitation(
     # request
     response = await client.post(
         "/v0/invitation:generate",
-        json={"guest": guest_email, "trialAccountDays": trial_account_days},
+        json={
+            "guest": guest_email,
+            "trialAccountDays": trial_account_days,
+        },
     )
 
     # checks
