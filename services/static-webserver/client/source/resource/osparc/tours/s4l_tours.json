@@ -25,14 +25,14 @@
         "selector": "osparc-test-id=templatesTabBtn"
       },
       "anchorEl": "osparc-test-id=templatesTabBtn",
-      "text": "Clicking on a Tutorial will create a copy of that Study, which will appear in your own Projec ts tab with thee same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
+      "text": "Clicking on a Tutorial will create a copy of that Study, which will appear in your own Project ts tab with thee same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
       "placement": "bottom"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=servicesTabBtn"
       },
       "anchorEl": "osparc-test-id=servicesTabBtn",
-      "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebools or perform computations to execute simulations within a Project.",
+      "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -70,7 +70,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=feedbackMenu",
-      "text": "The Support menu gives you a way of providing feedback or quistions, via the ZMT Forum or the official Sim4Life Support.",
+      "text": "The Support menu gives you a way of providing feedback or questions, via the ZMT Forum or the official Sim4Life Support.",
       "placement": "left"
     }, {
       "anchorEl": "osparc-test-id=themeSwitcher",

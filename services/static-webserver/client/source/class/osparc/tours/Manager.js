@@ -50,7 +50,7 @@ qx.Class.define("osparc.tours.Manager", {
   },
 
   members: {
-    __currentBuble: null,
+    __currentBubble: null,
     __currentIdx: null,
 
     _createChildControlImpl: function(id) {
@@ -87,14 +87,14 @@ qx.Class.define("osparc.tours.Manager", {
     },
 
     stop: function() {
-      this.__removeCurrentBuble();
+      this.__removeCurrentBubble();
     },
 
-    __removeCurrentBuble: function() {
-      if (this.__currentBuble) {
-        qx.core.Init.getApplication().getRoot().remove(this.__currentBuble);
-        this.__currentBuble.exclude();
-        this.__currentBuble = null;
+    __removeCurrentBubble: function() {
+      if (this.__currentBubble) {
+        qx.core.Init.getApplication().getRoot().remove(this.__currentBubble);
+        this.__currentBubble.exclude();
+        this.__currentBubble = null;
       }
     },
 
@@ -112,7 +112,7 @@ qx.Class.define("osparc.tours.Manager", {
         idx = 0;
       }
 
-      this.__removeCurrentBuble();
+      this.__removeCurrentBubble();
       this.__currentIdx = idx;
       const step = steps[idx];
       if (step.beforeClick && step.beforeClick.selector) {
@@ -143,7 +143,7 @@ qx.Class.define("osparc.tours.Manager", {
 
     __toStep: async function(steps, idx) {
       const step = steps[idx];
-      const stepWidget = this.__currentBuble = this.__createStep();
+      const stepWidget = this.__currentBubble = this.__createStep();
       if (step.anchorEl) {
         const el = document.querySelector(`[${step.anchorEl}]`);
         const targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
