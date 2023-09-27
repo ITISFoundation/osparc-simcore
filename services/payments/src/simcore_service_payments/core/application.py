@@ -13,6 +13,7 @@ from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.payments_gateway import setup_payments_gateway
 from ..services.rabbitmq import setup_rabbitmq
+from ..services.resource_usage_tracker import setup_resource_usage_tracker
 from .settings import ApplicationSettings
 
 
@@ -40,6 +41,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # APIs w/ payments-gateway
     setup_payments_gateway(app)
     setup_rest_api_routes(app)
+
+    # APIs w/ RUT
+    setup_resource_usage_tracker(app)
 
     # ERROR HANDLERS
     # ... add here ...
