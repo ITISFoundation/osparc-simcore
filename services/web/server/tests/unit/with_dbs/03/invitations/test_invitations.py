@@ -40,11 +40,12 @@ def app_environment(
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_NOTIFICATIONS": "0",
+            "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_META_MODELING": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "0",

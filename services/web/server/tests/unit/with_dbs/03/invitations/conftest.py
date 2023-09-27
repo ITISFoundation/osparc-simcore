@@ -6,13 +6,18 @@
 
 import json
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_invitations.invitations import ApiInvitationContent
+from aioresponses import CallbackResult
+from models_library.api_schemas_invitations.invitations import (
+    ApiInvitationContent,
+    ApiInvitationContentAndLink,
+)
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from simcore_service_webserver.invitations.settings import (
@@ -88,10 +93,22 @@ def mock_invitations_service_http_api(
 
     # generate
     assert "/v1/invitations" in oas["paths"]
-    aioresponses_mocker.post(
-        f"{base_url}/v1/invitations",
-        status=web.HTTPOk.status_code,
-        payload=jsonable_encoder(expected_invitation.dict()),
-    )
+    example = oas["components"]["schemas"]["ApiInvitationContentAndLink"]["example"]
+
+    def _side_effect(url, **kwargs):
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload=jsonable_encoder(
+                ApiInvitationContentAndLink.parse_obj(
+                    {
+                        **example,
+                        **kwargs["json"],
+                        "created": datetime.now(tz=timezone.utc),
+                    }
+                )
+            ),
+        )
+
+    aioresponses_mocker.post(f"{base_url}/v1/invitations", callback=_side_effect)
 
     return aioresponses_mocker

@@ -52,7 +52,8 @@ async def generate_invitation(request: web.Request):
     )
     assert request.url.host  # nosec
 
-    invitation_link = URL(generated.invitation_url).with_host(request.url.host)
+    url = URL(generated.invitation_url)
+    invitation_link = request.url.with_path(url.path).with_fragment(url.raw_fragment)
 
     invitation = InvitationGenerated(
         product_name=req_ctx.product_name,
