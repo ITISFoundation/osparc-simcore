@@ -1792,7 +1792,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProductInvitation_'
+                $ref: '#/components/schemas/Envelope_InvitationGenerated_'
   /v0/projects/{project_uuid}/comments:
     get:
       tags:
@@ -5094,6 +5094,14 @@ components:
           $ref: '#/components/schemas/HealthInfoDict'
         error:
           title: Error
+    Envelope_InvitationGenerated_:
+      title: Envelope[InvitationGenerated]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/InvitationGenerated'
+        error:
+          title: Error
     Envelope_InvitationInfo_:
       title: Envelope[InvitationInfo]
       type: object
@@ -5156,14 +5164,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PresignedLink'
-        error:
-          title: Error
-    Envelope_ProductInvitation_:
-      title: Envelope[ProductInvitation]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/ProductInvitation'
         error:
           title: Error
     Envelope_ProfileGet_:
@@ -6167,6 +6167,40 @@ components:
           type: string
           description: Invitation code
       additionalProperties: false
+    InvitationGenerated:
+      title: InvitationGenerated
+      required:
+      - productName
+      - issuer
+      - guest
+      - created
+      - invitationLink
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        issuer:
+          title: Issuer
+          type: string
+          format: email
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          type: integer
+        created:
+          title: Created
+          type: string
+          format: date-time
+        invitationLink:
+          title: Invitationlink
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     InvitationInfo:
       title: InvitationInfo
       type: object
@@ -7141,40 +7175,6 @@ components:
         link:
           title: Link
           maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
-    ProductInvitation:
-      title: ProductInvitation
-      required:
-      - productName
-      - issuer
-      - guest
-      - created
-      - invitationUrl
-      type: object
-      properties:
-        productName:
-          title: Productname
-          type: string
-        issuer:
-          title: Issuer
-          type: string
-          format: email
-        guest:
-          title: Guest
-          type: string
-          format: email
-        trialAccountDays:
-          title: Trialaccountdays
-          type: integer
-        created:
-          title: Created
-          type: string
-          format: date-time
-        invitationUrl:
-          title: Invitationurl
-          maxLength: 2083
           minLength: 1
           type: string
           format: uri

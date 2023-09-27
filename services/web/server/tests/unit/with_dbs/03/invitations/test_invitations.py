@@ -10,6 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver.product import InvitationGenerated
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -157,6 +158,7 @@ async def test_invalid_invitation_if_not_guest(
         )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
@@ -191,15 +193,17 @@ async def test_product_owner_generate_invitation(
     # checks
     data, error = await assert_status(response, expected_status)
     if data:
+        got = InvitationGenerated.parse_obj(data)
         expected_data = {
             "issuer": logged_user["email"],
             "guest": guest_email,
             "trialAccountDays": trial_account_days,
         }
-        assert {k: data[k] for k in expected_data} == expected_data
+        assert got.dict(include=set(expected_data)) == expected_data
 
-        assert data["invitationUrl"].startswith(client.make_url("/"))
-        assert before_dt < data["created"]
-        assert data["created"] < datetime.now(tz=timezone.utc)
+        product_base_url = f"{client.make_url('/')}"
+        assert got.invitation_link.startswith(product_base_url)
+        assert before_dt < got.created
+        assert got.created < datetime.now(tz=timezone.utc)
     else:
         assert error

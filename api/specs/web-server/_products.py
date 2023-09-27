@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from models_library.api_schemas_webserver.product import (
     CreditPriceGet,
     GenerateInvitation,
-    InvitationGet,
+    InvitationGenerated,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
@@ -32,7 +32,7 @@ async def get_current_product_price():
 
 @router.get(
     "/invitation:generate",
-    response_model=Envelope[InvitationGet],
+    response_model=Envelope[InvitationGenerated],
 )
 async def generate_invitation(_body: GenerateInvitation):
     ...

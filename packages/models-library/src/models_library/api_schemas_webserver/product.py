@@ -31,31 +31,24 @@ class GenerateInvitation(InputSchema):
     trial_account_days: int | None = None
 
 
-class InvitationGet(OutputSchema):
+class InvitationGenerated(OutputSchema):
     product_name: ProductName
     issuer: LowerCaseEmailStr
     guest: LowerCaseEmailStr
     trial_account_days: int | None = None
     created: datetime
-    invitation_url: HttpUrl
+    invitation_link: HttpUrl
 
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
-                    "product_name": "osparc",
+                    "productName": "osparc",
                     "issuer": "John Doe",
                     "guest": "guest@example.com",
-                    "trial_account_days": 7,
+                    "trialAccountDays": 7,
                     "created": "2023-09-27T15:30:00",
-                    "invitation_url": "https://example.com/invitation#1234",
-                },
-                {
-                    "product_name": "osparc",
-                    "issuer": "John Doe",
-                    "guest": "guest@example.com",
-                    "created": "2023-09-27T15:30:00",
-                    "invitation_url": "https://example.com/invitation",
+                    "invitationLink": "https://example.com/invitation#1234",
                 },
             ]
         }

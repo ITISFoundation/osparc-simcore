@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from aiohttp import web
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
-    InvitationGet,
+    InvitationGenerated,
 )
 from models_library.users import UserID
 from pydantic import Field
@@ -29,7 +29,7 @@ class _ProductsRequestContext(RequestParams):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
-@routes.get(f"/{VTAG}/invitation:generate", name="generate_invitation")
+@routes.post(f"/{VTAG}/invitation:generate", name="generate_invitation")
 @login_required
 @permission_required("product.invitations")
 async def generate_invitation(request: web.Request):
@@ -38,13 +38,11 @@ async def generate_invitation(request: web.Request):
 
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 
-    invitation = InvitationGet.parse_obj(
-        {
-            **body.dict(),
-            "product_name": req_ctx.product_name,
-            "issuer": user_email,
-            "created": datetime.now(tz=timezone.utc),
-            "invitation_url": request.url.origin().with_path("/fake-invitation"),
-        }
+    invitation = InvitationGenerated(
+        product_name=req_ctx.product_name,
+        issuer=user_email,
+        created=datetime.now(tz=timezone.utc),
+        invitation_link=str(request.url.origin().with_path("/fake-invitation")),
+        **body.dict(),
     )
     return envelope_json_response(invitation)
