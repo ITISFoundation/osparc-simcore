@@ -16,14 +16,16 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.CreditsLabel", {
-  extend: qx.ui.basic.Label,
+  extend: qx.ui.basic.Atom,
 
   construct: function(wallet, shortWording) {
     this.base(arguments);
 
     this.set({
-      alignY: "middle",
-      font: "text-16"
+      font: "text-16",
+      alignY: "middle"
+      // icon: "@MaterialIcons/monetization_on/16",
+      // iconPosition: "right"
     });
 
     if (wallet) {
@@ -34,7 +36,7 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
       this.setShortWording(shortWording);
     }
 
-    this.bind("creditsAvailable", this, "value", {
+    this.bind("creditsAvailable", this, "label", {
       converter: () => this.__recomputeLabel()
     });
 
@@ -49,7 +51,7 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
       }
     });
 
-    this.bind("shortWording", this, "value", {
+    this.bind("shortWording", this, "label", {
       converter: () => this.__recomputeLabel()
     });
   },
