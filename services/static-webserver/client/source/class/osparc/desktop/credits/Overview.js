@@ -162,15 +162,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       titleLayout.add(walletName);
       layout.add(titleLayout);
 
-      const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "vertical").set({
-        allowShrinkY: true
-      });
-      progressBar.getChildControl("credits-indicator").set({
-        minWidth: 100
-      });
-      progressBar.getChildControl("credits-text").set({
-        font: "text-16"
-      });
+      const progressBar = new osparc.desktop.credits.CreditsLabel(wallet);
       layout.add(progressBar);
 
       const buyButton = new qx.ui.form.Button().set({
@@ -242,9 +234,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         // indicator
         const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "horizontal").set({
           allowShrinkY: true
-        });
-        progressBar.getChildControl("credits-indicator").set({
-          minWidth: 100
         });
         layout.add(progressBar, {
           column,

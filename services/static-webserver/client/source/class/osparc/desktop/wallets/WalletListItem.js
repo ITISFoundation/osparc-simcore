@@ -54,23 +54,18 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             marginLeft: 10,
             alignY: "middle",
-            width: 100
+            width: 140
+          });
+          break;
+        case "credits-indicator":
+          control = new osparc.desktop.credits.CreditsLabel().set({
+            alignY: "middle"
           });
           this._add(control, {
             row: 0,
             column: 4,
             rowSpan: 2
           });
-          break;
-        case "credits-indicator":
-          control = new osparc.desktop.credits.CreditsIndicator().set({
-            maxHeight: 40
-          });
-          this.getChildControl("credits-layout").addAt(control, 0);
-          break;
-        case "credits-label":
-          control = new qx.ui.basic.Label();
-          this.getChildControl("credits-layout").addAt(control, 1);
           break;
         case "status-button":
           control = new qx.ui.form.Button().set({
@@ -154,10 +149,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (creditsAvailable !== null) {
         const creditsIndicator = this.getChildControl("credits-indicator");
         creditsIndicator.setCreditsAvailable(creditsAvailable);
-
-        this.getChildControl("credits-label").set({
-          value: creditsAvailable + this.tr(" credits")
-        });
       }
     },
 
