@@ -158,7 +158,6 @@ async def test_invalid_invitation_if_not_guest(
         )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
@@ -167,7 +166,7 @@ async def test_invalid_invitation_if_not_guest(
         (UserRole.USER, web.HTTPForbidden),
         (UserRole.TESTER, web.HTTPForbidden),
         (UserRole.PRODUCT_OWNER, web.HTTPOk),
-        (UserRole.ADMIN, web.HTTPOk),
+        (UserRole.ADMIN, web.HTTPForbidden),
     ],
 )
 async def test_product_owner_generate_invitation(
@@ -194,12 +193,12 @@ async def test_product_owner_generate_invitation(
     data, error = await assert_status(response, expected_status)
     if data:
         got = InvitationGenerated.parse_obj(data)
-        expected_data = {
+        expected = {
             "issuer": logged_user["email"],
             "guest": guest_email,
-            "trialAccountDays": trial_account_days,
+            "trial_account_days": trial_account_days,
         }
-        assert got.dict(include=set(expected_data)) == expected_data
+        assert got.dict(include=set(expected), by_alias=False) == expected
 
         product_base_url = f"{client.make_url('/')}"
         assert got.invitation_link.startswith(product_base_url)
