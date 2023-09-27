@@ -65,7 +65,6 @@ qx.Class.define("osparc.desktop.MainPage", {
                 creditsWindow.openOverview();
               }
             });
-          // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
         }
         const preferenceSettings = osparc.Preferences.getInstance();
         const preferenceWalletId = preferenceSettings.getPreferredWalletId();

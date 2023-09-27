@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.SlidesBase", {
+qx.Class.define("osparc.product.quickStart.SlidesBase", {
   extend: osparc.ui.window.SingletonWindow,
   type: "abstract",
 

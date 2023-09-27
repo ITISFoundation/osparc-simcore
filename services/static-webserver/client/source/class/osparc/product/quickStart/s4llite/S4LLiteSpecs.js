@@ -15,8 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteSpecs", {
-  extend: osparc.product.tutorial.SlideBase,
+qx.Class.define("osparc.product.quickStart.s4llite.S4LLiteSpecs", {
+  extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
     const title = this.tr("<i>S4L<sup>lite</sup></i>: Features and Limitations");
@@ -31,7 +31,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteSpecs", {
         facilitate their understanding of computational modeling and simulations for various topics, ranging from wireless communication \
         to medical applications. The access to <i>S4L<sup>lite</sup></i> is available free of charge to students enrolled at registered universities.\
       ");
-      const intro = osparc.product.tutorial.Utils.createLabel(introText);
+      const intro = osparc.product.quickStart.Utils.createLabel(introText);
       this._add(intro);
 
       const featuresText = this.tr("\
@@ -50,7 +50,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteSpecs", {
         - Material database<br>\
         - Python and Jupyter Notebook scripting\
       ");
-      const features = osparc.product.tutorial.Utils.createLabel(featuresText);
+      const features = osparc.product.quickStart.Utils.createLabel(featuresText);
       this._add(features);
 
       const limitationsText = this.tr("\
@@ -69,7 +69,7 @@ qx.Class.define("osparc.product.tutorial.s4llite.S4LLiteSpecs", {
         &emsp;- 5 GB disk space<br>\
         &emsp;- 16 GB RAM<br>\
       ");
-      const limitations = osparc.product.tutorial.Utils.createLabel(limitationsText);
+      const limitations = osparc.product.quickStart.Utils.createLabel(limitationsText);
       this._add(limitations);
     }
   }

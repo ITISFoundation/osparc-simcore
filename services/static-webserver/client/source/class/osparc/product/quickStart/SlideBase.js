@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.tutorial.SlideBase", {
+qx.Class.define("osparc.product.quickStart.SlideBase", {
   extend: qx.ui.core.Widget,
   type: "abstract",
 
@@ -29,7 +29,7 @@ qx.Class.define("osparc.product.tutorial.SlideBase", {
     });
 
     if (title) {
-      const label = osparc.product.tutorial.Utils.createTitle(title);
+      const label = osparc.product.quickStart.Utils.createTitle(title);
       this._add(label);
     }
 

@@ -15,11 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.panddy.Step", {
+qx.Class.define("osparc.tours.Step", {
   extend: osparc.ui.basic.FloatingHelper,
 
   construct: function(element, title, message) {
-    this.base(arguments, element);
+    this.base(arguments, element, "large");
 
     this.setLayout(new qx.ui.layout.VBox(8));
 
