@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, ClassVar
 
 from models_library.products import ProductName
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, PositiveInt
 
 from ..basic_types import NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
@@ -28,14 +28,14 @@ class CreditPriceGet(OutputSchema):
 
 class GenerateInvitation(InputSchema):
     guest: LowerCaseEmailStr
-    trial_account_days: int | None = None
+    trial_account_days: PositiveInt | None = None
 
 
 class InvitationGenerated(OutputSchema):
     product_name: ProductName
     issuer: LowerCaseEmailStr
     guest: LowerCaseEmailStr
-    trial_account_days: int | None = None
+    trial_account_days: PositiveInt | None = None
     created: datetime
     invitation_link: HttpUrl
 
@@ -44,7 +44,7 @@ class InvitationGenerated(OutputSchema):
             "examples": [
                 {
                     "productName": "osparc",
-                    "issuer": "John Doe",
+                    "issuer": "john.doe@email.com",
                     "guest": "guest@example.com",
                     "trialAccountDays": 7,
                     "created": "2023-09-27T15:30:00",

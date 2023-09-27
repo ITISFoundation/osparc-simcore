@@ -6031,7 +6031,9 @@ components:
           format: email
         trialAccountDays:
           title: Trialaccountdays
+          exclusiveMinimum: true
           type: integer
+          minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -6190,7 +6192,9 @@ components:
           format: email
         trialAccountDays:
           title: Trialaccountdays
+          exclusiveMinimum: true
           type: integer
+          minimum: 0
         created:
           title: Created
           type: string
