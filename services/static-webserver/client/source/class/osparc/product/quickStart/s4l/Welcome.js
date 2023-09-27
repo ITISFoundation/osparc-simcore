@@ -25,8 +25,8 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
       layout: new qx.ui.layout.VBox(20),
       contentPadding: 15,
       modal: true,
-      width: 400,
-      height: 400,
+      width: 500,
+      height: 500,
       showMaximize: false,
       showMinimize: false
     });
@@ -48,16 +48,16 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
     __createContent: function() {
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const welcomeText = this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",";
-      const welcome = osparc.product.quickStart.Utils.createLabel(welcomeText);
-      content.add(welcome);
-
       const introTitle = this.tr("Experience Most Advanced Simulations – All In The Cloud");
       const intro1 = osparc.product.quickStart.Utils.createLabel(introTitle);
       intro1.set({
         font: "text-16"
       });
       content.add(intro1);
+
+      const welcomeText = this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",";
+      const welcome = osparc.product.quickStart.Utils.createLabel(welcomeText);
+      content.add(welcome);
 
       const introText = this.tr("\
         Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.\
