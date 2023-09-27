@@ -1,7 +1,18 @@
+import re
+
 from packaging import version
 from pydantic import BaseModel, ByteSize, Field, validator
 
 LEGACY_INTEGRATION_VERSION = version.Version("0")
+PROGRESS_REGEXP: re.Pattern[str] = re.compile(
+    r"^(?:\[?progress\]?:?)?\s*"
+    r"(?P<value>[0-1]?\.\d+|"
+    r"\d+\s*(?:(?P<percent_sign>%)|"
+    r"\d+\s*"
+    r"(?P<percent_explicit>percent))|"
+    r"\[?(?P<fraction>\d+\/\d+)\]?"
+    r"|0|1)"
+)
 
 
 class ContainerHostConfig(BaseModel):
@@ -51,3 +62,11 @@ class DockerContainerConfig(BaseModel):
     image: str = Field(..., alias="Image")
     labels: dict[str, str] = Field(..., alias="Labels")
     host_config: ContainerHostConfig = Field(..., alias="HostConfig")
+
+
+class ImageLabels(BaseModel):
+    integration_version: version.Version = LEGACY_INTEGRATION_VERSION
+    progress_regexp: re.Pattern[str] = PROGRESS_REGEXP
+
+    class Config:
+        arbitrary_types_allowed = True

@@ -40,13 +40,13 @@ from ..settings import Settings
 from .docker_utils import (
     create_container_config,
     get_computational_shared_data_mount_point,
-    get_integration_version,
+    get_image_labels,
     managed_container,
     managed_monitor_container_log_task,
     pull_image,
 )
 from .errors import ServiceBadFormattedOutputError
-from .models import LEGACY_INTEGRATION_VERSION
+from .models import LEGACY_INTEGRATION_VERSION, ImageLabels
 from .task_shared_volume import TaskSharedVolumes
 
 logger = logging.getLogger(__name__)
@@ -194,7 +194,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 self._publish_sidecar_log,
             )
 
-            integration_version = await get_integration_version(
+            image_labels: ImageLabels = await get_image_labels(
                 docker_client, self.docker_auth, self.service_key, self.service_version
             )
             computational_shared_data_mount_point = (
@@ -211,7 +211,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 envs=self.task_envs,
                 labels=self.task_labels,
             )
-            await self._write_input_data(task_volumes, integration_version)
+            await self._write_input_data(task_volumes, image_labels.integration_version)
 
             # PROCESSING
             async with managed_container(
@@ -220,11 +220,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
             ) as container, managed_monitor_container_log_task(
                 container=container,
-                container_labels=self.task_labels,
+                image_labels=image_labels,
                 service_key=self.service_key,
                 service_version=self.service_version,
                 task_publishers=self.task_publishers,
-                integration_version=integration_version,
+                integration_version=image_labels.integration_version,
                 task_volumes=task_volumes,
                 log_file_url=self.log_file_url,
                 log_publishing_cb=self._publish_sidecar_log,
@@ -254,7 +254,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
             # POST-PROCESSING
             results = await self._retrieve_output_data(
-                task_volumes, integration_version
+                task_volumes, image_labels.integration_version
             )
             await self._publish_sidecar_log("Task completed successfully.")
             return results
