@@ -4,7 +4,12 @@ from dataclasses import dataclass
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
-from models_library.api_schemas_invitations.invitations import ApiInvitationContent
+from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_invitations.invitations import (
+    ApiInvitationContent,
+    ApiInvitationContentAndLink,
+    ApiInvitationInputs,
+)
 from pydantic import AnyHttpUrl, parse_obj_as
 from yarl import URL
 
@@ -82,6 +87,15 @@ class InvitationsServiceApi:
             json={"invitation_url": invitation_url},
         )
         return parse_obj_as(ApiInvitationContent, await response.json())
+
+    async def generate_invitation(
+        self, params: ApiInvitationInputs
+    ) -> ApiInvitationContentAndLink:
+        response = await self.client.post(
+            url=self._url_vtag("/invitations"),
+            json=jsonable_encoder(params),
+        )
+        return parse_obj_as(ApiInvitationContentAndLink, await response.json())
 
 
 #

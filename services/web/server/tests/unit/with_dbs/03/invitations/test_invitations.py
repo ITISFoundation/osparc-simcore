@@ -10,6 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_invitations.invitations import ApiInvitationContent
 from models_library.api_schemas_webserver.product import InvitationGenerated
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -18,7 +19,6 @@ from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations._client import (
-    InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,
 )
@@ -76,7 +76,7 @@ def app_environment(
 
 async def test_invitation_service_unavailable(
     client: TestClient,
-    expected_invitation: InvitationContent,
+    expected_invitation: ApiInvitationContent,
 ):
     assert client.app
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
@@ -98,8 +98,6 @@ async def test_invitation_service_api_ping(
 ):
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
-    print(mock_invitations_service_http_api)
-
     # first request is mocked to pass
     assert await invitations_api.ping()
 
@@ -110,7 +108,7 @@ async def test_invitation_service_api_ping(
 async def test_valid_invitation(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: InvitationContent,
+    expected_invitation: ApiInvitationContent,
 ):
     assert client.app
     invitation = await validate_invitation_url(
@@ -125,7 +123,7 @@ async def test_valid_invitation(
 async def test_invalid_invitation_if_guest_is_already_registered(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: InvitationContent,
+    expected_invitation: ApiInvitationContent,
 ):
     assert client.app
     async with NewUser(
@@ -146,7 +144,7 @@ async def test_invalid_invitation_if_guest_is_already_registered(
 async def test_invalid_invitation_if_not_guest(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: InvitationContent,
+    expected_invitation: ApiInvitationContent,
 ):
     assert client.app
     assert expected_invitation.guest != "unexpected_guest@email.me"

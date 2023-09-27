@@ -4,7 +4,11 @@ from typing import Final
 
 import sqlalchemy as sa
 from aiohttp import ClientError, ClientResponseError, web
-from models_library.api_schemas_invitations.invitations import ApiInvitationContent
+from models_library.api_schemas_invitations.invitations import (
+    ApiInvitationContent,
+    ApiInvitationContentAndLink,
+    ApiInvitationInputs,
+)
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.error_codes import create_error_code
 from simcore_postgres_database.models.users import users
@@ -124,3 +128,13 @@ async def extract_invitation(
 
         # check with service
         return await invitations_service.extract_invitation(invitation_url=valid_url)
+
+
+async def generate_invitation(
+    app: web.Application, params: ApiInvitationInputs
+) -> ApiInvitationContentAndLink:
+    invitations_service: InvitationsServiceApi = get_invitations_service_api(app=app)
+
+    with _handle_exceptions_as_invitations_errors():
+        # check with service
+        return await invitations_service.generate_invitation(params)

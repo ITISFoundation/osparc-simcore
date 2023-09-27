@@ -1,7 +1,7 @@
 import logging
-from datetime import datetime, timezone
 
 from aiohttp import web
+from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
@@ -11,9 +11,11 @@ from pydantic import Field
 from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
+from yarl import URL
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..invitations import api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_name_and_email
@@ -39,13 +41,25 @@ async def generate_invitation(request: web.Request):
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 
     # TODO: check if invitations are activated in this product or raise
-    # TODO: create real invitation
+
+    generated = await api.generate_invitation(
+        request.app,
+        ApiInvitationInputs(
+            issuer=user_email,
+            trial_account_days=body.trial_account_days,
+            guest=body.guest,
+        ),
+    )
+    assert request.url.host
+
+    invitation_link = URL(generated.invitation_url).with_host(request.url.host)
 
     invitation = InvitationGenerated(
         product_name=req_ctx.product_name,
-        issuer=user_email,
-        created=datetime.now(tz=timezone.utc),
-        invitation_link=str(request.url.origin().with_path("/fake-invitation")),
-        **body.dict(),
+        issuer=generated.issuer,
+        guest=generated.guest,
+        trial_account_days=generated.trial_account_days,
+        created=generated.created,
+        invitation_link=f"{invitation_link}",
     )
-    return envelope_json_response(invitation)
+    return envelope_json_response(invitation.dict(exclude_none=True))
