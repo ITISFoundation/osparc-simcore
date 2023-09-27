@@ -1,4 +1,3 @@
-import functools
 import logging
 
 from aiohttp import web
@@ -17,13 +16,10 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from .._constants import MSG_UNDER_DEVELOPMENT
 from .._meta import API_VTAG as VTAG
-from ..application_settings import get_settings
 from ..login.decorators import login_required
 from ..payments import api
 from ..payments.api import (
@@ -51,22 +47,10 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-def requires_dev_feature_enabled(handler: Handler):
-    @functools.wraps(handler)
-    async def _handler_under_dev(request: web.Request):
-        app_settings = get_settings(request.app)
-        if not app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
-            raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
-        return await handler(request)
-
-    return _handler_under_dev
-
-
 @routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
@@ -105,7 +89,6 @@ async def create_payment(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def list_all_payments(request: web.Request):
     """Lists all user's payments to any of his wallets
 
@@ -149,7 +132,6 @@ class PaymentsPathParams(WalletsPathParams):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def cancel_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
@@ -181,7 +163,6 @@ class PaymentMethodsPathParams(WalletsPathParams):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def init_creation_of_payment_method(request: web.Request):
     """Triggers the creation of a new payment method.
     Note that creating a payment-method follows the init-prompt-ack flow
@@ -216,7 +197,6 @@ async def init_creation_of_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def cancel_creation_of_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
@@ -247,7 +227,6 @@ async def cancel_creation_of_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
@@ -268,7 +247,6 @@ async def list_payments_methods(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def get_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
@@ -290,7 +268,6 @@ async def get_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@requires_dev_feature_enabled
 async def delete_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
