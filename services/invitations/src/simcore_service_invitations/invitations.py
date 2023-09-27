@@ -6,15 +6,8 @@ from typing import Any, ClassVar, cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
-from models_library.emails import LowerCaseEmailStr
-from pydantic import (
-    BaseModel,
-    Field,
-    HttpUrl,
-    PositiveInt,
-    ValidationError,
-    parse_obj_as,
-)
+from models_library.invitations import InvitationContent, InvitationInputs
+from pydantic import HttpUrl, ValidationError, parse_obj_as
 from starlette.datastructures import URL
 
 logger = logging.getLogger(__name__)
@@ -31,36 +24,6 @@ class InvalidInvitationCode(Exception):
 #
 # Models
 #
-
-
-class InvitationInputs(BaseModel):
-    """Input data necessary to create an invitation"""
-
-    issuer: str = Field(
-        ...,
-        description="Identifies who issued the invitation. E.g. an email, a service name etc",
-        min_length=1,
-        max_length=30,
-    )
-    guest: LowerCaseEmailStr = Field(
-        ...,
-        description="Invitee's email. Note that the registration can ONLY be used with this email",
-    )
-    trial_account_days: PositiveInt | None = Field(
-        None,
-        description="If set, this invitation will activate a trial account."
-        "Sets the number of days from creation until the account expires",
-    )
-
-
-class InvitationContent(InvitationInputs):
-    """Data in an invitation"""
-
-    # avoid using default to mark exactly the time
-    created: datetime = Field(..., description="Timestamp for creation")
-
-    def as_invitation_inputs(self) -> InvitationInputs:
-        return self.copy(exclude={"created"})
 
 
 class _ContentWithShortNames(InvitationContent):
