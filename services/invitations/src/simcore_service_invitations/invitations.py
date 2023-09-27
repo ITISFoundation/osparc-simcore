@@ -1,7 +1,7 @@
 import base64
 import binascii
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, ClassVar, cast
 from urllib import parse
 
@@ -10,14 +10,14 @@ from models_library.invitations import InvitationContent, InvitationInputs
 from pydantic import HttpUrl, ValidationError, parse_obj_as
 from starlette.datastructures import URL
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # Errors
 #
 
 
-class InvalidInvitationCode(Exception):
+class InvalidInvitationCodeError(Exception):
     ...
 
 
@@ -88,8 +88,8 @@ def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
         invitation_code: str = query_params["invitation"]
         return invitation_code
     except KeyError as err:
-        logger.debug("Invalid invitation: %s", err)
-        raise InvalidInvitationCode from err
+        _logger.debug("Invalid invitation: %s", err)
+        raise InvalidInvitationCodeError from err
 
 
 def _fernet_encrypt_as_urlsafe_code(
@@ -109,7 +109,7 @@ def _create_invitation_code(
     # builds content
     content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.utcnow(),
+        created=datetime.now(tz=timezone.utc),
     )
 
     content_jsonstr: str = _ContentWithShortNames.serialize(content)
@@ -168,5 +168,5 @@ def extract_invitation_content(
             invitation_code=invitation_code, secret_key=secret_key
         )
     except (InvalidToken, ValidationError, binascii.Error) as err:
-        logger.debug("Invalid code: %s", err)
-        raise InvalidInvitationCode from err
+        _logger.debug("Invalid code: %s", err)
+        raise InvalidInvitationCodeError from err

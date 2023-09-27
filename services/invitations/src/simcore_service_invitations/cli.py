@@ -1,6 +1,5 @@
 import getpass
 import logging
-from typing import Optional
 
 import rich
 import typer
@@ -15,7 +14,7 @@ from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .invitations import (
-    InvalidInvitationCode,
+    InvalidInvitationCodeError,
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
@@ -39,7 +38,8 @@ def _version_callback(value: bool):
 @app.callback()
 def main(
     ctx: typer.Context,
-    version: Optional[bool] = (
+    version: bool
+    | None = (
         typer.Option(
             None,
             "--version",
@@ -93,7 +93,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = ApplicationSettings.create_from_envs(
-        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000", # NOSONAR
+        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",  # NOSONAR
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=username,
         INVITATIONS_PASSWORD=password,
@@ -118,7 +118,8 @@ def invite(
     issuer: str = typer.Option(
         ..., help=InvitationInputs.__fields__["issuer"].field_info.description
     ),
-    trial_account_days: Optional[int] = typer.Option(
+    trial_account_days: int
+    | None = typer.Option(
         None,
         help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
     ),
@@ -157,7 +158,7 @@ def extract(ctx: typer.Context, invitation_url: str):
         )
 
         rich.print(invitation.json(indent=1))
-    except (InvalidInvitationCode, ValidationError):
+    except (InvalidInvitationCodeError, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
 
 

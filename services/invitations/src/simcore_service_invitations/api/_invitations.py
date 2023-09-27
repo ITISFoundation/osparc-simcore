@@ -1,6 +1,5 @@
 import logging
-from datetime import datetime
-from typing import Any
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
@@ -13,27 +12,16 @@ from models_library.api_schemas_invitations.invitations import (
 
 from ..core.settings import ApplicationSettings
 from ..invitations import (
-    InvalidInvitationCode,
+    InvalidInvitationCodeError,
     create_invitation_link,
     extract_invitation_code_from,
     extract_invitation_content,
 )
 from ._dependencies import get_settings, get_validated_credentials
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
-
-#
-# API SCHEMA MODELS
-#
-
-
-_INPUTS_EXAMPLE: dict[str, Any] = {
-    "issuer": "issuerid",
-    "guest": "invitedguest@company.com",
-    "trial_account_days": 2,
-}
 
 
 #
@@ -61,11 +49,11 @@ async def create_invitation(
     )
     invitation = ApiInvitationContentAndLink(
         invitation_url=invitation_link,
-        created=datetime.utcnow(),
+        created=datetime.now(tz=timezone.utc),
         **invitation_inputs.dict(),
     )
 
-    logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
+    _logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
 
     return invitation
 
@@ -87,7 +75,7 @@ async def extracts_invitation_from_code(
             invitation_code=extract_invitation_code_from(encrypted.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         )
-    except InvalidInvitationCode as err:
+    except InvalidInvitationCodeError as err:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=INVALID_INVITATION_URL_MSG,
