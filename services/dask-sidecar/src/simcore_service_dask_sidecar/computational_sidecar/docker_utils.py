@@ -160,7 +160,6 @@ async def _try_parse_progress(line: str, *, image_labels: ImageLabels) -> float 
         with contextlib.suppress(arrow.ParserError):
             if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
                 log = splitted_log[1]
-        logger.info("using progress-regexp: %s", f"{image_labels.progress_regexp}")
         if match := re.search(image_labels.progress_regexp, log.lower()):
             return _guess_progress_value(match)
 
