@@ -22,11 +22,11 @@ from simcore_service_webserver.invitations._client import (
     InvitationsServiceApi,
     get_invitations_service_api,
 )
+from simcore_service_webserver.invitations.api import validate_invitation_url
 from simcore_service_webserver.invitations.errors import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
 )
-from simcore_service_webserver.invitations.plugin import validate_invitation_url
 from yarl import URL
 
 
