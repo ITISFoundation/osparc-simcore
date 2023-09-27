@@ -32,8 +32,10 @@ class _ContentWithShortNames(InvitationContent):
     @classmethod
     def serialize(cls, model_data: InvitationContent) -> str:
         """Exports to json using *short* aliases and values in order to produce shorter codes"""
-        model_w_short_aliases = cls.construct(**model_data.dict(exclude_unset=True))
-        return model_w_short_aliases.json(exclude_unset=True, by_alias=True)
+        model_w_short_aliases_json: str = cls.construct(
+            **model_data.dict(exclude_unset=True)
+        ).json(exclude_unset=True, by_alias=True)
+        return model_w_short_aliases_json
 
     @classmethod
     def deserialize(cls, raw_data: str) -> InvitationContent:

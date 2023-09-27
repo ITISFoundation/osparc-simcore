@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   "paths": {
     "/": {
