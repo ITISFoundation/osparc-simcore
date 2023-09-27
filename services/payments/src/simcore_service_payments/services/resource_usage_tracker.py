@@ -22,7 +22,6 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 from models_library.products import ProductName
 from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 
