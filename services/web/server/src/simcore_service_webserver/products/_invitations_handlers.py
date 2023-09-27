@@ -50,7 +50,7 @@ async def generate_invitation(request: web.Request):
             guest=body.guest,
         ),
     )
-    assert request.url.host
+    assert request.url.host  # nosec
 
     invitation_link = URL(generated.invitation_url).with_host(request.url.host)
 

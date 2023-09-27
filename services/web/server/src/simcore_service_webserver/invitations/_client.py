@@ -4,12 +4,12 @@ from dataclasses import dataclass
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
-from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
     ApiInvitationContentAndLink,
     ApiInvitationInputs,
 )
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from yarl import URL
 
