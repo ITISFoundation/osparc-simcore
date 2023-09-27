@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from aiohttp import web
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
-    ProductInvitation,
+    InvitationGet,
 )
 from models_library.users import UserID
 from pydantic import Field
@@ -38,7 +38,7 @@ async def generate_invitation(request: web.Request):
 
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 
-    invitation = ProductInvitation.parse_obj(
+    invitation = InvitationGet.parse_obj(
         {
             **body.dict(),
             "product_name": req_ctx.product_name,

@@ -31,7 +31,7 @@ class GenerateInvitation(InputSchema):
     trial_account_days: int | None = None
 
 
-class ProductInvitation(OutputSchema):
+class InvitationGet(OutputSchema):
     product_name: ProductName
     issuer: LowerCaseEmailStr
     guest: LowerCaseEmailStr

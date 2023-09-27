@@ -1774,6 +1774,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CreditPriceGet_'
+  /v0/invitation:generate:
+    get:
+      tags:
+      - products
+      summary: Generate Invitation
+      operationId: generate_invitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvitation'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProductInvitation_'
   /v0/projects/{project_uuid}/comments:
     get:
       tags:
@@ -5139,6 +5158,14 @@ components:
           $ref: '#/components/schemas/PresignedLink'
         error:
           title: Error
+    Envelope_ProductInvitation_:
+      title: Envelope[ProductInvitation]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductInvitation'
+        error:
+          title: Error
     Envelope_ProfileGet_:
       title: Envelope[ProfileGet]
       type: object
@@ -5897,6 +5924,12 @@ components:
           type: boolean
           description: if True this is a directory
           default: false
+        sha256_checksum:
+          title: Sha256 Checksum
+          pattern: ^[a-fA-F0-9]{64}$
+          type: string
+          description: 'SHA256 message digest of the file content. Main purpose: cheap
+            lookup.'
       additionalProperties: false
     FileUploadCompleteFutureResponse:
       title: FileUploadCompleteFutureResponse
@@ -5986,6 +6019,19 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    GenerateInvitation:
+      title: GenerateInvitation
+      required:
+      - guest
+      type: object
+      properties:
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          type: integer
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -7098,6 +7144,40 @@ components:
           minLength: 1
           type: string
           format: uri
+    ProductInvitation:
+      title: ProductInvitation
+      required:
+      - productName
+      - issuer
+      - guest
+      - created
+      - invitationUrl
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        issuer:
+          title: Issuer
+          type: string
+          format: email
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          type: integer
+        created:
+          title: Created
+          type: string
+          format: date-time
+        invitationUrl:
+          title: Invitationurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     ProfileGet:
       title: ProfileGet
       required:
@@ -7125,11 +7205,12 @@ components:
         role:
           title: Role
           enum:
-          - Anonymous
-          - Guest
-          - User
-          - Tester
-          - Admin
+          - ANONYMOUS
+          - GUEST
+          - USER
+          - TESTER
+          - PRODUCT_OWNER
+          - ADMIN
           type: string
         groups:
           $ref: '#/components/schemas/AllUsersGroups'
