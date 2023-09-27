@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
 
     this.set({
       font: "text-16",
-      alignY: "middle"
+      allowGrowX: false
       // icon: "@MaterialIcons/monetization_on/16",
       // iconPosition: "right"
     });
