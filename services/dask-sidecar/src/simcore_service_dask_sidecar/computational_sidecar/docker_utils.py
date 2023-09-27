@@ -162,9 +162,7 @@ async def _try_parse_progress(
             if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
                 log = splitted_log[1]
         regexp: re.Pattern[str] = PROGRESS_REGEXP
-        if label_value := container_labels.get(
-            DockerLabelKey("solver-progress-regexp")
-        ):
+        if label_value := container_labels.get(DockerLabelKey("progress-regexp")):
             regexp = re.compile(label_value)
         if match := re.search(regexp, log.lower()):
             return _guess_progress_value(match)
