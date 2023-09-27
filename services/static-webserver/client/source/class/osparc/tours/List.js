@@ -68,19 +68,8 @@ qx.Class.define("osparc.tours.List", {
     },
 
     __getTourButton: function(tour) {
-      let label = tour.name;
-      if (tour.description) {
-        label += "<br>" + tour.description;
-      }
-      const seqButton = new qx.ui.form.Button().set({
-        label,
-        icon: "@FontAwesome5Solid/arrow-right/14",
-        iconPosition: "right",
-        textAlign: "left",
-        rich: true,
-        wrap: true
-      });
-      seqButton.addListener("execute", () => this.fireDataEvent("tourSelected", tour), this);
+      const seqButton = new osparc.tours.ListItem(tour);
+      seqButton.addListener("tap", () => this.fireDataEvent("tourSelected", tour), this);
       return seqButton;
     },
 
