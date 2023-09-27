@@ -43,6 +43,9 @@ class PaymentsGatewayApi:
                 settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value(),
             ),
             base_url=settings.PAYMENTS_GATEWAY_URL,
+            headers={
+                "X-Init-Api-Secret": settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
+            },
         )
         exit_stack = contextlib.AsyncExitStack()
 

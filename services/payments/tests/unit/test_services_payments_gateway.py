@@ -60,6 +60,9 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
+)
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
