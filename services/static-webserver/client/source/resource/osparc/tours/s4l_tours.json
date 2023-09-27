@@ -91,6 +91,9 @@
     "name": "Projects",
     "description": "All you need to know about Project handling",
     "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Project Filter and Search",
       "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
