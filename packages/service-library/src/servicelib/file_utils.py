@@ -1,7 +1,6 @@
 import asyncio
 import hashlib
 import shutil
-import tempfile
 from pathlib import Path
 from typing import Final, Protocol
 
@@ -38,13 +37,6 @@ async def remove_directory(
         await asyncio.gather(*[_rm(child, ignore_errors) for child in path.glob("*")])
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
-
-
-def get_temporary_path_name() -> Path:
-    """Only provides the temporary file name without creating the file on disk"""
-    # pylint: disable=W0212
-    tmp_path = Path(tempfile._get_default_tempdir())  # type: ignore #  noqa: SLF001
-    return tmp_path / next(tempfile._get_candidate_names())  # type: ignore # noqa: SLF001
 
 
 async def create_sha256_checksum(
