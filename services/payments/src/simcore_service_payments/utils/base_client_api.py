@@ -7,6 +7,10 @@ import httpx
 _logger = logging.getLogger(__name__)
 
 
+#
+# TODO: compare with
+# services/api-server/src/simcore_service_api_server/utils/app_data.py
+# services/api-server/src/simcore_service_api_server/utils/client_base.py
 @dataclass
 class BaseHttpApi:
     client: httpx.AsyncClient
