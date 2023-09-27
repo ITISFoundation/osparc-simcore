@@ -8,7 +8,7 @@ from aiohttp import web
 from . import _sql
 from .utils import get_random_string
 
-log = getLogger(__name__)
+_logger = getLogger(__name__)
 
 APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 
@@ -50,15 +50,17 @@ class AsyncpgStorage:
 
     async def get_user(self, with_data) -> asyncpg.Record:
         async with self.pool.acquire() as conn:
-            data = await _sql.find_one(conn, self.user_tbl, with_data)
-            return data
+            return await _sql.find_one(conn, self.user_tbl, with_data)
 
     async def create_user(self, data: dict) -> asyncpg.Record:
-        data.setdefault("created_at", datetime.utcnow())
         async with self.pool.acquire() as conn:
-            data["id"] = await _sql.insert(conn, self.user_tbl, data)
-            new_user = await _sql.find_one(conn, self.user_tbl, {"id": data["id"]})
-            data["primary_gid"] = new_user["primary_gid"]
+            user_id = await _sql.insert(conn, self.user_tbl, data)
+            new_user = await _sql.find_one(conn, self.user_tbl, {"id": user_id})
+            data.update(
+                id=new_user["id"],
+                created_at=new_user["created_at"],
+                primary_gid=new_user["primary_gid"],
+            )
         return data
 
     async def update_user(self, user, updates) -> asyncpg.Record:
@@ -73,20 +75,23 @@ class AsyncpgStorage:
     # CRUD confirmation
     #
     async def create_confirmation(
-        self, user_id, action: ActionLiteralStr, data=None
+        self, user_id: int, action: ActionLiteralStr, data: str | None = None
     ) -> ConfirmationTokenDict:
         async with self.pool.acquire() as conn:
+            # generate different code
             while True:
-                code = get_random_string(30)
+                code: str = get_random_string(30)
                 if not await _sql.find_one(conn, self.confirm_tbl, {"code": code}):
                     break
-            confirmation: ConfirmationTokenDict = {
-                "code": code,
-                "user_id": user_id,
-                "action": action,
-                "data": data,
-                "created_at": datetime.utcnow(),
-            }
+            # insert confirmation
+            # NOTE: returns timestamp generated at the server-side
+            confirmation = ConfirmationTokenDict(
+                code=code,
+                action=action,
+                user_id=user_id,
+                data=data,
+                created_at=datetime.utcnow(),
+            )
             c = await _sql.insert(
                 conn, self.confirm_tbl, confirmation, returning="code"
             )
@@ -115,22 +120,16 @@ class AsyncpgStorage:
     async def delete_confirmation_and_user(
         self, user, confirmation: ConfirmationTokenDict
     ):
-        async with self.pool.acquire() as conn:
-            async with conn.transaction():
-                await _sql.delete(
-                    conn, self.confirm_tbl, {"code": confirmation["code"]}
-                )
-                await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
+        async with self.pool.acquire() as conn, conn.transaction():
+            await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
+            await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
     async def delete_confirmation_and_update_user(
         self, user_id, updates, confirmation: ConfirmationTokenDict
     ):
-        async with self.pool.acquire() as conn:
-            async with conn.transaction():
-                await _sql.delete(
-                    conn, self.confirm_tbl, {"code": confirmation["code"]}
-                )
-                await _sql.update(conn, self.user_tbl, {"id": user_id}, updates)
+        async with self.pool.acquire() as conn, conn.transaction():
+            await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
+            await _sql.update(conn, self.user_tbl, {"id": user_id}, updates)
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:

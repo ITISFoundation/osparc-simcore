@@ -73,6 +73,7 @@ async def is_confirmation_allowed(
             confirmation,
         )
         return True
+    return False
 
 
 def is_confirmation_expired(cfg: LoginOptions, confirmation: ConfirmationTokenDict):

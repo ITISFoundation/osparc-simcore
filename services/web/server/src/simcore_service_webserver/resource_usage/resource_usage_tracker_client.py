@@ -51,6 +51,7 @@ async def list_service_runs_by_user_and_product(
 
 async def list_service_runs_by_user_and_product_and_wallet(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: str,
     wallet_id: WalletID,
