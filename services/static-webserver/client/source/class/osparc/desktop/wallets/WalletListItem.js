@@ -18,6 +18,15 @@
 qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
+  construct: function() {
+    this.base(arguments);
+
+    const creditsCol = 4;
+    const layout = this._getLayout();
+    layout.setColumnWidth(creditsCol, 110);
+    layout.setColumnAlign(creditsCol, "right", "middle");
+  },
+
   properties: {
     creditsAvailable: {
       check: "Number",
@@ -59,8 +68,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           break;
         case "credits-indicator":
           control = new osparc.desktop.credits.CreditsLabel().set({
-            minWidth: 110,
-            maxWidth: 110,
             alignX: "right",
             alignY: "middle"
           });

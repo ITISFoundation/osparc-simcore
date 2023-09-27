@@ -279,8 +279,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
                 }
                 const entry = [
                   osparc.utils.Utils.formatDateAndTime(new Date(transaction["createdAt"])),
-                  transaction["priceDollars"].toString(),
-                  transaction["osparcCredits"].toString(),
+                  transaction["priceDollars"].toFixed(2).toString(),
+                  transaction["osparcCredits"].toFixed(2).toString(),
                   walletName,
                   transaction["comment"]
                 ];
