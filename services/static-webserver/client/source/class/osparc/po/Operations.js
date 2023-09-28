@@ -138,7 +138,7 @@ qx.Class.define("osparc.po.Operations", {
       return form;
     },
 
-    __createGeneratedInvitationLayout: function(invitationLink) {
+    __createGeneratedInvitationLayout: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
@@ -153,7 +153,7 @@ qx.Class.define("osparc.po.Operations", {
         flex: 1
       });
 
-      const invitationField = this.__invitationField = new qx.ui.form.TextField(invitationLink).set({
+      const invitationField = this.__invitationField = new qx.ui.form.TextField().set({
         readOnly: true
       });
       hBox.add(invitationField, {
@@ -162,7 +162,7 @@ qx.Class.define("osparc.po.Operations", {
 
       const copyInvitationBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy invitation"));
       copyInvitationBtn.addListener("execute", () => {
-        if (osparc.utils.Utils.copyTextToClipboard(invitationLink)) {
+        if (osparc.utils.Utils.copyTextToClipboard(this.__invitationField.getValue())) {
           copyInvitationBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
