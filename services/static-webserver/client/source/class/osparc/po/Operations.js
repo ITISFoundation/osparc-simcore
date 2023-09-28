@@ -63,6 +63,7 @@ qx.Class.define("osparc.po.Operations", {
       switch (id) {
         case "create-invitation":
           control = this.__createInvitations();
+          this._add(control);
           break;
       }
       return control || this.base(arguments, id);
