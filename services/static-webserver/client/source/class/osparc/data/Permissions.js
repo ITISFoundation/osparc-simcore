@@ -69,9 +69,13 @@ qx.Class.define("osparc.data.Permissions", {
         can: [],
         inherits: ["user"]
       },
-      admin: {
+      "product_owner": {
         can: [],
         inherits: ["tester"]
+      },
+      admin: {
+        can: [],
+        inherits: ["product_owner"]
       }
     },
 
