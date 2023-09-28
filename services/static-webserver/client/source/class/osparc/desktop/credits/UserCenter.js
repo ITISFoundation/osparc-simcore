@@ -72,15 +72,6 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     this._add(tabViews);
   },
 
-  statics: {
-    openWindow: function(walletsEnabled = false) {
-      const accountWindow = new osparc.desktop.credits.UserCenter(walletsEnabled);
-      accountWindow.center();
-      accountWindow.open();
-      return accountWindow;
-    }
-  },
-
   members: {
     __walletsEnabled: null,
     __tabsView: null,
