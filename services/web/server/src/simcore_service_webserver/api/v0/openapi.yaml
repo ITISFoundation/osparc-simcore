@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.30.0
+  version: 0.31.0
 servers:
 - url: ''
   description: webserver
@@ -1774,6 +1774,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CreditPriceGet_'
+  /v0/invitation:generate:
+    get:
+      tags:
+      - products
+      summary: Generate Invitation
+      operationId: generate_invitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvitation'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_InvitationGenerated_'
   /v0/projects/{project_uuid}/comments:
     get:
       tags:
@@ -5075,6 +5094,14 @@ components:
           $ref: '#/components/schemas/HealthInfoDict'
         error:
           title: Error
+    Envelope_InvitationGenerated_:
+      title: Envelope[InvitationGenerated]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/InvitationGenerated'
+        error:
+          title: Error
     Envelope_InvitationInfo_:
       title: Envelope[InvitationInfo]
       type: object
@@ -5897,6 +5924,12 @@ components:
           type: boolean
           description: if True this is a directory
           default: false
+        sha256_checksum:
+          title: Sha256 Checksum
+          pattern: ^[a-fA-F0-9]{64}$
+          type: string
+          description: 'SHA256 message digest of the file content. Main purpose: cheap
+            lookup.'
       additionalProperties: false
     FileUploadCompleteFutureResponse:
       title: FileUploadCompleteFutureResponse
@@ -5986,6 +6019,21 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    GenerateInvitation:
+      title: GenerateInvitation
+      required:
+      - guest
+      type: object
+      properties:
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -6121,6 +6169,42 @@ components:
           type: string
           description: Invitation code
       additionalProperties: false
+    InvitationGenerated:
+      title: InvitationGenerated
+      required:
+      - productName
+      - issuer
+      - guest
+      - created
+      - invitationLink
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        issuer:
+          title: Issuer
+          type: string
+          format: email
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        created:
+          title: Created
+          type: string
+          format: date-time
+        invitationLink:
+          title: Invitationlink
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     InvitationInfo:
       title: InvitationInfo
       type: object
@@ -7125,11 +7209,12 @@ components:
         role:
           title: Role
           enum:
-          - Anonymous
-          - Guest
-          - User
-          - Tester
-          - Admin
+          - ANONYMOUS
+          - GUEST
+          - USER
+          - TESTER
+          - PRODUCT_OWNER
+          - ADMIN
           type: string
         groups:
           $ref: '#/components/schemas/AllUsersGroups'

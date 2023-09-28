@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   "paths": {
     "/": {
@@ -57,7 +57,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/_ApiInvitationInputs"
+                "$ref": "#/components/schemas/ApiInvitationInputs"
               }
             }
           },
@@ -69,7 +69,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_InvitationContentAndLink"
+                  "$ref": "#/components/schemas/ApiInvitationContentAndLink"
                 }
               }
             }
@@ -104,7 +104,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/_EncryptedInvitation"
+                "$ref": "#/components/schemas/ApiEncryptedInvitation"
               }
             }
           },
@@ -116,7 +116,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_ApiInvitationContent"
+                  "$ref": "#/components/schemas/ApiInvitationContent"
                 }
               }
             }
@@ -142,54 +142,25 @@
   },
   "components": {
     "schemas": {
-      "HTTPValidationError": {
-        "title": "HTTPValidationError",
-        "type": "object",
-        "properties": {
-          "detail": {
-            "title": "Detail",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            }
-          }
-        }
-      },
-      "ValidationError": {
-        "title": "ValidationError",
+      "ApiEncryptedInvitation": {
+        "title": "ApiEncryptedInvitation",
         "required": [
-          "loc",
-          "msg",
-          "type"
+          "invitation_url"
         ],
         "type": "object",
         "properties": {
-          "loc": {
-            "title": "Location",
-            "type": "array",
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            }
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
+          "invitation_url": {
+            "title": "Invitation Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Invitation link",
+            "format": "uri"
           }
         }
       },
-      "_ApiInvitationContent": {
-        "title": "_ApiInvitationContent",
+      "ApiInvitationContent": {
+        "title": "ApiInvitationContent",
         "required": [
           "issuer",
           "guest",
@@ -232,61 +203,8 @@
           "created": "2023-01-11 13:11:47.293595"
         }
       },
-      "_ApiInvitationInputs": {
-        "title": "_ApiInvitationInputs",
-        "required": [
-          "issuer",
-          "guest"
-        ],
-        "type": "object",
-        "properties": {
-          "issuer": {
-            "title": "Issuer",
-            "maxLength": 30,
-            "minLength": 1,
-            "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
-          },
-          "guest": {
-            "title": "Guest",
-            "type": "string",
-            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
-            "format": "email"
-          },
-          "trial_account_days": {
-            "title": "Trial Account Days",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
-            "minimum": 0
-          }
-        },
-        "description": "Input data necessary to create an invitation",
-        "example": {
-          "issuer": "issuerid",
-          "guest": "invitedguest@company.com",
-          "trial_account_days": 2
-        }
-      },
-      "_EncryptedInvitation": {
-        "title": "_EncryptedInvitation",
-        "required": [
-          "invitation_url"
-        ],
-        "type": "object",
-        "properties": {
-          "invitation_url": {
-            "title": "Invitation Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "Invitation link",
-            "format": "uri"
-          }
-        }
-      },
-      "_InvitationContentAndLink": {
-        "title": "_InvitationContentAndLink",
+      "ApiInvitationContentAndLink": {
+        "title": "ApiInvitationContentAndLink",
         "required": [
           "issuer",
           "guest",
@@ -337,6 +255,88 @@
           "trial_account_days": 2,
           "created": "2023-01-11 12:11:47.293595",
           "invitation_url": "https://foo.com/#/registration?invitation=1234"
+        }
+      },
+      "ApiInvitationInputs": {
+        "title": "ApiInvitationInputs",
+        "required": [
+          "issuer",
+          "guest"
+        ],
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "title": "Issuer",
+            "maxLength": 30,
+            "minLength": 1,
+            "type": "string",
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+          },
+          "guest": {
+            "title": "Guest",
+            "type": "string",
+            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
+            "format": "email"
+          },
+          "trial_account_days": {
+            "title": "Trial Account Days",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          }
+        },
+        "description": "Input data necessary to create an invitation",
+        "example": {
+          "issuer": "issuerid",
+          "guest": "invitedguest@company.com",
+          "trial_account_days": 2
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
         }
       },
       "_Meta": {
