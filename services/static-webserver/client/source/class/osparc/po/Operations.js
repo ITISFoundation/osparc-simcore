@@ -73,7 +73,7 @@ qx.Class.define("osparc.po.Operations", {
     __createInvitations: function() {
       const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
 
-      const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this deployment/product.")).set({
+      const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this product/deployment.")).set({
         textColor: "warning-yellow"
       });
       disclaimer.exclude();
@@ -118,10 +118,12 @@ qx.Class.define("osparc.po.Operations", {
         this.__invitationField.resetValue();
         const params = {
           data: {
-            "guest": userEmail.getValue(),
-            "trialAccountDays": trialDays.getValue()
+            "guest": userEmail.getValue()
           }
         };
+        if (trialDays.getValue() > 0) {
+          params.data["trialAccountDays"] = trialDays.getValue();
+        }
         generateInvitationBtn.setFetching(true);
         osparc.data.Resources.fetch("invitations", "post", params)
           .then(data => this.__invitationField.setValue(data["invitationLink"]))
