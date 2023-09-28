@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.po.Overview", {
+qx.Class.define("osparc.po.Operations", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
