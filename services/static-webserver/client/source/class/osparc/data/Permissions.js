@@ -136,7 +136,7 @@ qx.Class.define("osparc.data.Permissions", {
           "statics.read",
           "usage.all.read"
         ],
-        "po": [],
+        "product_owner": [],
         "admin": []
       };
       let fromUserToTester = [];
@@ -169,7 +169,7 @@ qx.Class.define("osparc.data.Permissions", {
 
   properties: {
     role: {
-      check: ["anonymous", "guest", "user", "tester", "po", "admin"],
+      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
       init: null,
       nullable: false,
       event: "changeRole"
@@ -277,7 +277,11 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isTester: function() {
-      return ["tester", "po", "admin"].includes(this.getRole());
+      return ["tester", "product_owner", "admin"].includes(this.getRole());
+    },
+
+    isProductOwner: function() {
+      return ["product_owner", "admin"].includes(this.getRole());
     }
   }
 });
