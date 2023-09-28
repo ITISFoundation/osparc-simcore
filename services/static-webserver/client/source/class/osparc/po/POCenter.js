@@ -34,14 +34,15 @@ qx.Class.define("osparc.po.POCenter", {
     });
     tabViews.getChildControl("bar").add(osparc.desktop.credits.UserCenter.createMiniProfileView());
 
-    const overviewPage = this.__getOperationsPage();
-    tabViews.add(overviewPage);
+    const operationsPage = this.__operationsPage = this.__getOperationsPage();
+    tabViews.add(operationsPage);
 
     this._add(tabViews);
   },
 
   members: {
     __tabsView: null,
+    __operationsPage: null,
 
     __getOperationsPage: function() {
       const title = this.tr("Operations");
@@ -54,6 +55,18 @@ qx.Class.define("osparc.po.POCenter", {
       });
       page.add(overview);
       return page;
+    },
+
+    __openPage: function(page) {
+      if (page) {
+        this.__tabsView.setSelection([page]);
+      }
+    },
+
+    openOperations: function() {
+      if (this.__operationsPage) {
+        this.__openPage(this.__operationsPage);
+      }
     }
   }
 });

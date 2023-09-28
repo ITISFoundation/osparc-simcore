@@ -51,8 +51,8 @@ qx.Class.define("osparc.po.POCenterWindow", {
   members: {
     __poCenter: null,
 
-    openOverview: function() {
-      this.__poCenter.openOverview();
+    openOperations: function() {
+      this.__poCenter.openOperations();
     }
   }
 });

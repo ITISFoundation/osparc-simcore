@@ -87,14 +87,22 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
-        case "account":
+        case "user-center":
           control = new qx.ui.menu.Button(this.tr("User Center"));
           control.addListener("execute", () => {
             osparc.desktop.credits.Utils.areWalletsEnabled()
               .then(walletsEnabled => {
-                const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-                creditsWindow.openOverview();
+                const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+                userCenterWindow.openOverview();
               });
+          }, this);
+          this.getMenu().add(control);
+          break;
+        case "po-center":
+          control = new qx.ui.menu.Button(this.tr("PO Center"));
+          control.addListener("execute", () => {
+            const poCenterWindow = osparc.po.POCenterWindow.openWindow();
+            poCenterWindow.openOperations();
           }, this);
           this.getMenu().add(control);
           break;
@@ -160,12 +168,13 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateMenu: function() {
       this.getMenu().removeAll();
-
-      const authData = osparc.auth.Data.getInstance();
-      if (authData.isGuest()) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
         this.getChildControl("log-in");
       } else {
-        this.getChildControl("account");
+        this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isProductOwner()) {
+          this.getChildControl("po-center");
+        }
         this.getChildControl("preferences");
         this.getChildControl("organizations");
         this.getChildControl("clusters");
@@ -197,7 +206,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           if (authData.isGuest()) {
             this.getChildControl("log-in");
           } else {
-            this.getChildControl("account");
+            this.getChildControl("user-center");
             this.getChildControl("preferences");
             this.getChildControl("organizations");
             this.getChildControl("clusters");
