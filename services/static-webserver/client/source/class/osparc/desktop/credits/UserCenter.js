@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(this.__getMiniProfileView());
+    tabViews.getChildControl("bar").add(this.self().createMiniProfileView());
 
     if (this.__walletsEnabled) {
       const overviewPage = this.__overviewPage = this.__getOverviewPage();
@@ -72,20 +72,8 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     this._add(tabViews);
   },
 
-  members: {
-    __walletsEnabled: null,
-    __tabsView: null,
-    __overviewPage: null,
-    __profilePage: null,
-    __walletsPage: null,
-    __buyCreditsPage: null,
-    __paymentMethodsPage: null,
-    __transactionsPage: null,
-    __usageOverviewPage: null,
-    __buyCredits: null,
-    __transactionsTable: null,
-
-    __getMiniProfileView: function() {
+  statics: {
+    createMiniProfileView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
         minWidth: 120,
@@ -129,7 +117,21 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       });
 
       return layout;
-    },
+    }
+  },
+
+  members: {
+    __walletsEnabled: null,
+    __tabsView: null,
+    __overviewPage: null,
+    __profilePage: null,
+    __walletsPage: null,
+    __buyCreditsPage: null,
+    __paymentMethodsPage: null,
+    __transactionsPage: null,
+    __usageOverviewPage: null,
+    __buyCredits: null,
+    __transactionsTable: null,
 
     __getOverviewPage: function() {
       const title = this.tr("Overview");
@@ -207,11 +209,11 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       const iconSrc = "@FontAwesome5Solid/credit-card/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const paymentPethods = new osparc.desktop.paymentMethods.PaymentMethods();
-      paymentPethods.set({
+      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
+      paymentMethods.set({
         margin: 10
       });
-      page.add(paymentPethods);
+      page.add(paymentMethods);
       return page;
     },
 
