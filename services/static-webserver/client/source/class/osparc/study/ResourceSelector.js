@@ -221,7 +221,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
         });
       }
 
-      // OM: puppeteer has no walelts. Enable it when BE is ready
+      // OM: puppeteer has no wallets. Enable it when BE is ready
       // this.getChildControl("open-button").setEnabled(Boolean(wallet));
     },
 
@@ -408,7 +408,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
     },
 
     __getCreditsLeftView: function() {
-      const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
+      const creditsLeftView = new osparc.desktop.credits.CreditsLabel();
       this.bind("wallet", creditsLeftView, "wallet");
       return creditsLeftView;
     }

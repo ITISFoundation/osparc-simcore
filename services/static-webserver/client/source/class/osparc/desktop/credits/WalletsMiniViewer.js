@@ -154,10 +154,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const progressBar = new osparc.desktop.credits.CreditsIndicator(wallet).set({
-        allowShrinkY: true
+      const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
+        alignX: "right"
       });
-      this._add(progressBar, {
+      this._add(creditsLabel, {
         flex: 1
       });
     },
