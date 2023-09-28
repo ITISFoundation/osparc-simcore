@@ -136,7 +136,9 @@ qx.Class.define("osparc.data.Permissions", {
           "statics.read",
           "usage.all.read"
         ],
-        "product_owner": [],
+        "product_owner": [
+          "user.invitation.generate"
+        ],
         "admin": []
       };
       let fromUserToTester = [];
