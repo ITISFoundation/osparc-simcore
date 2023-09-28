@@ -24,7 +24,7 @@ qx.Class.define("osparc.po.POCenter", {
     this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
-      padding: 20,
+      padding: 10,
       paddingLeft: 10
     });
 
