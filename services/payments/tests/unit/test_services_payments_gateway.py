@@ -31,12 +31,12 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 
 @pytest.fixture
 def app(
-    disable_rabbitmq_service: Callable,
-    disable_db: Callable,
+    disable_rabbitmq_and_rpc_setup: Callable,
+    disable_db_setup: Callable,
     app_environment: EnvVarsDict,
 ):
-    disable_rabbitmq_service()
-    disable_db()
+    disable_rabbitmq_and_rpc_setup()
+    disable_db_setup()
     return create_app()
 
 

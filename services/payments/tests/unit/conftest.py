@@ -26,7 +26,7 @@ from simcore_service_payments.models.payments_gateway import (
 
 
 @pytest.fixture
-def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
+def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     def _doit():
         # The following moduls are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
@@ -36,7 +36,7 @@ def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def disable_db(mocker: MockerFixture) -> Callable:
+def disable_db_setup(mocker: MockerFixture) -> Callable:
     def _doit():
         # The following moduls are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_db")

@@ -16,7 +16,6 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
-from simcore_service_payments.core.application import create_app
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -28,7 +27,12 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
+    disable_db_setup: Callable,
 ):
+    # mocks setup
+    disable_db_setup()
+
+    # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
     return setenvs_from_dict(
         monkeypatch,
@@ -37,15 +41,6 @@ def app_environment(
             **rabbit_env_vars_dict,
         },
     )
-
-
-@pytest.fixture
-def app(
-    disable_db: Callable,
-    app_environment: EnvVarsDict,
-):
-    disable_db()
-    return create_app()
 
 
 async def test_rpc_create_payment_fail(

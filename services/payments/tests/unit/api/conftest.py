@@ -19,10 +19,14 @@ from simcore_service_payments.models.schemas.auth import Token
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
-    disable_rabbitmq_service: Callable,
+    disable_rabbitmq_and_rpc_setup: Callable,
+    disable_db_setup: Callable,
 ) -> EnvVarsDict:
     # disables rabbit before creating app
-    disable_rabbitmq_service()
+    disable_rabbitmq_and_rpc_setup()
+    disable_db_setup()
+
+    #
     return app_environment
 
 
