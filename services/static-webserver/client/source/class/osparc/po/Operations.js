@@ -75,7 +75,7 @@ qx.Class.define("osparc.po.Operations", {
     __createInvitations: function() {
       const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
 
-      const label = this.createHelpLabel(this.tr("This is a list of the 'statics' resources"));
+      const label = this.self().createHelpLabel(this.tr("This is a list of the 'statics' resources"));
       invitationGroupBox.add(label);
 
       const newTokenForm = this.__createInvitationForm();
