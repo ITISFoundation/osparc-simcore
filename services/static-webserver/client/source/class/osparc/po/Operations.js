@@ -21,10 +21,7 @@ qx.Class.define("osparc.po.Operations", {
   construct: function() {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(20, 20);
-    grid.setColumnFlex(0, 1);
-    grid.setColumnFlex(1, 1);
-    this._setLayout(grid);
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
   },
@@ -33,7 +30,7 @@ qx.Class.define("osparc.po.Operations", {
     createGroupBox: function(title) {
       const box = new qx.ui.groupbox.GroupBox(title).set({
         appearance: "settings-groupbox",
-        layout: new qx.ui.layout.VBox(10),
+        layout: new qx.ui.layout.VBox(5),
         alignX: "center"
       });
       box.getChildControl("legend").set({
@@ -76,10 +73,7 @@ qx.Class.define("osparc.po.Operations", {
     __createInvitations: function() {
       const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
 
-      const label = this.self().createHelpLabel(this.tr("This is a list of the 'statics' resources"));
-      invitationGroupBox.add(label);
-
-      const disclaimer = this.self().createHelpLabel(this.tr("This is a list of the 'statics' resources")).set({
+      const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this deployment/product.")).set({
         textColor: "warning-yellow"
       });
       disclaimer.exclude();
