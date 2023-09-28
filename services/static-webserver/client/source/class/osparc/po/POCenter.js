@@ -24,8 +24,7 @@ qx.Class.define("osparc.po.POCenter", {
     this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
-      padding: 10,
-      paddingLeft: 10
+      padding: 10
     });
 
     const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
