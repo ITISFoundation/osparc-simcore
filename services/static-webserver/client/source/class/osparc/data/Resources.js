@@ -665,7 +665,7 @@ qx.Class.define("osparc.data.Resources", {
       },
       "invitations": {
         endpoints: {
-          get: {
+          post: {
             method: "POST",
             url: statics.API + "/invitation:generate"
           }
