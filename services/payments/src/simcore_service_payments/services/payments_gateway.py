@@ -6,7 +6,6 @@
 """
 
 
-import contextlib
 import logging
 from dataclasses import dataclass
 from typing import cast
@@ -26,7 +25,7 @@ from ..models.payments_gateway import (
     PaymentMethodID,
     PaymentMethodInitiated,
 )
-from ..utils.base_client_api import BaseHttpApi
+from ..utils.http_client import BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 
@@ -34,28 +33,25 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class PaymentsGatewayApi(BaseHttpApi):
     @classmethod
-    def create(cls, settings: ApplicationSettings) -> "PaymentsGatewayApi":
-        client = httpx.AsyncClient(
-            auth=(
-                settings.PAYMENTS_GATEWAY_API_KEY.get_secret_value(),
-                settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value(),
-            ),
-            base_url=settings.PAYMENTS_GATEWAY_URL,
-            headers={
-                "X-Init-Api-Secret": settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
-            },
-        )
-        exit_stack = contextlib.AsyncExitStack()
+    def create(cls, app: FastAPI) -> "PaymentsGatewayApi":
+        settings: ApplicationSettings = app.state.settings
 
-        return cls(client=client, _exit_stack=exit_stack)
+        return cls(
+            client=httpx.AsyncClient(
+                auth=(
+                    settings.PAYMENTS_GATEWAY_API_KEY.get_secret_value(),
+                    settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value(),
+                ),
+                base_url=settings.PAYMENTS_GATEWAY_URL,
+                headers={
+                    "X-Init-Api-Secret": settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
+                },
+            )
+        )
 
     #
     # app.state
     #
-
-    @classmethod
-    def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
-        return cast("PaymentsGatewayApi", app.state.payment_gateway_api)
 
     @classmethod
     def setup_state(cls, app: FastAPI):
@@ -67,15 +63,16 @@ class PaymentsGatewayApi(BaseHttpApi):
             )
             return
 
-        assert not hasattr(app.state, "payment_gateway_api")  # nosec
-        app_settings: ApplicationSettings = app.state.settings
-
-        app.state.payment_gateway_api = api = cls.create(app_settings)
+        app.state.payment_gateway_api = api = cls.create(app)
         assert cls.get_from_state(app) == api  # nosec
 
         # define lifespam
         app.add_event_handler("startup", api.start)
         app.add_event_handler("shutdown", api.close)
+
+    @classmethod
+    def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
+        return cast("PaymentsGatewayApi", app.state.payment_gateway_api)
 
     #
     # api: one-time-payment workflow

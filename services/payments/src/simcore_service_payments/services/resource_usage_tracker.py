@@ -5,7 +5,6 @@
 """
 
 
-import contextlib
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -23,27 +22,22 @@ from models_library.products import ProductName
 from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 
 from ..core.settings import ApplicationSettings
-from ..utils.base_client_api import BaseHttpApi
+from ..utils.http_client import BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ResourceUsageTrackerApi(BaseHttpApi):
-    settings: ResourceUsageTrackerSettings
-
     @classmethod
-    def create(cls, settings: ApplicationSettings) -> "ResourceUsageTrackerApi":
-        client = httpx.AsyncClient(
-            base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
-        )
+    def create(cls, app: FastAPI) -> "ResourceUsageTrackerApi":
+        settings: ApplicationSettings = app.state.settings
         return cls(
-            client=client,
-            settings=settings.PAYMENTS_RESOURCE_USAGE_TRACKER,
-            _exit_stack=contextlib.AsyncExitStack(),
+            client=httpx.AsyncClient(
+                base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
+            )
         )
 
     #
@@ -65,7 +59,7 @@ class ResourceUsageTrackerApi(BaseHttpApi):
             )
             return
 
-        app.state.source_usage_tracker_api = api = cls.create(app.state.settings)
+        app.state.source_usage_tracker_api = api = cls.create(app)
         assert cls.get_from_state(app) == api  # nosec
 
         # define lifespam
