@@ -126,7 +126,7 @@ qx.Class.define("osparc.po.Operations", {
         }
         generateInvitationBtn.setFetching(true);
         osparc.data.Resources.fetch("invitations", "post", params)
-          .then(data => this.__invitationField.setValue(data["invitationLink"]))
+          .then(data => this.__invitationField.setValue(data["invitation_link"]))
           .catch(err => {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");
