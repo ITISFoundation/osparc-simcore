@@ -33,22 +33,22 @@ qx.Class.define("osparc.po.POCenter", {
     });
     tabViews.getChildControl("bar").add(osparc.desktop.credits.UserCenter.createMiniProfileView());
 
-    const operationsPage = this.__operationsPage = this.__getOperationsPage();
-    tabViews.add(operationsPage);
+    const invitationsPage = this.__invitationsPage = this.__getInvitationsPage();
+    tabViews.add(invitationsPage);
 
     this._add(tabViews);
   },
 
   members: {
     __tabsView: null,
-    __operationsPage: null,
+    __invitationsPage: null,
 
-    __getOperationsPage: function() {
-      const title = this.tr("Operations");
+    __getInvitationsPage: function() {
+      const title = this.tr("Invitations");
       const iconSrc = "@FontAwesome5Solid/table/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const overview = new osparc.po.Operations();
+      const overview = new osparc.po.Invitations();
       overview.set({
         margin: 10
       });
@@ -62,9 +62,9 @@ qx.Class.define("osparc.po.POCenter", {
       }
     },
 
-    openOperations: function() {
-      if (this.__operationsPage) {
-        this.__openPage(this.__operationsPage);
+    openInvitations: function() {
+      if (this.__invitationsPage) {
+        this.__openPage(this.__invitationsPage);
       }
     }
   }

@@ -102,7 +102,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("PO Center"));
           control.addListener("execute", () => {
             const poCenterWindow = osparc.po.POCenterWindow.openWindow();
-            poCenterWindow.openOperations();
+            poCenterWindow.openInvitations();
           }, this);
           this.getMenu().add(control);
           break;
