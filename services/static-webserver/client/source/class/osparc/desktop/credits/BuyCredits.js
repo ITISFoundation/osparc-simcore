@@ -251,7 +251,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getCreditsLeftView: function() {
-      const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
+      const creditsLeftView = new osparc.desktop.credits.CreditsLabel();
       this.bind("wallet", creditsLeftView, "wallet");
       return creditsLeftView;
     },

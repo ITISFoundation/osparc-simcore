@@ -6,15 +6,20 @@
 
 import json
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aioresponses import CallbackResult
+from models_library.api_schemas_invitations.invitations import (
+    ApiInvitationContent,
+    ApiInvitationContentAndLink,
+)
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from simcore_service_webserver.invitations._client import InvitationContent
 from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,
@@ -41,10 +46,10 @@ def invitations_service_openapi_specs(
 @pytest.fixture
 def expected_invitation(
     invitations_service_openapi_specs: dict[str, Any]
-) -> InvitationContent:
+) -> ApiInvitationContent:
     oas = deepcopy(invitations_service_openapi_specs)
-    return InvitationContent.parse_obj(
-        oas["components"]["schemas"]["_ApiInvitationContent"]["example"]
+    return ApiInvitationContent.parse_obj(
+        oas["components"]["schemas"]["ApiInvitationContent"]["example"]
     )
 
 
@@ -58,7 +63,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker: AioResponsesMock,
     invitations_service_openapi_specs: dict[str, Any],
     base_url: URL,
-    expected_invitation: InvitationContent,
+    expected_invitation: ApiInvitationContent,
 ) -> AioResponsesMock:
     oas = deepcopy(invitations_service_openapi_specs)
 
@@ -85,5 +90,25 @@ def mock_invitations_service_http_api(
         status=web.HTTPOk.status_code,
         payload=jsonable_encoder(expected_invitation.dict()),
     )
+
+    # generate
+    assert "/v1/invitations" in oas["paths"]
+    example = oas["components"]["schemas"]["ApiInvitationContentAndLink"]["example"]
+
+    def _side_effect(url, **kwargs):
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload=jsonable_encoder(
+                ApiInvitationContentAndLink.parse_obj(
+                    {
+                        **example,
+                        **kwargs["json"],
+                        "created": datetime.now(tz=timezone.utc),
+                    }
+                )
+            ),
+        )
+
+    aioresponses_mocker.post(f"{base_url}/v1/invitations", callback=_side_effect)
 
     return aioresponses_mocker
