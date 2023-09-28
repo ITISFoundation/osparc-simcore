@@ -53,7 +53,7 @@ qx.Class.define("osparc.po.Invitations", {
   },
 
   members: {
-    __invitationField: null,
+    __generatedInvitationLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -89,9 +89,6 @@ qx.Class.define("osparc.po.Invitations", {
       const form = new qx.ui.form.renderer.Single(newTokenForm);
       invitationGroupBox.add(form);
 
-      const generatedInvitationLayout = this.__createGeneratedInvitationLayout();
-      invitationGroupBox.add(generatedInvitationLayout);
-
       return invitationGroupBox;
     },
 
@@ -115,7 +112,9 @@ qx.Class.define("osparc.po.Invitations", {
         if (!osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
           return;
         }
-        this.__invitationField.resetValue();
+        if (this.__generatedInvitationLayout) {
+          this._remove(this.__generatedInvitationLayout);
+        }
         const params = {
           data: {
             "guest": userEmail.getValue()
@@ -126,7 +125,10 @@ qx.Class.define("osparc.po.Invitations", {
         }
         generateInvitationBtn.setFetching(true);
         osparc.data.Resources.fetch("invitations", "post", params)
-          .then(data => this.__invitationField.setValue(data["invitation_link"]))
+          .then(data => {
+            const generatedInvitationLayout = this.__generatedInvitationLayout = this.__createGeneratedInvitationLayout(data);
+            this._add(generatedInvitationLayout);
+          })
           .catch(err => {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -138,35 +140,44 @@ qx.Class.define("osparc.po.Invitations", {
       return form;
     },
 
-    __createGeneratedInvitationLayout: function() {
+    __createGeneratedInvitationLayout: function(respData) {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
-        value: qx.locale.Manager.tr("Remember that this is a one time use link")
+        value: this.tr("Remember that this is a one time use link")
       });
       vBox.add(label);
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
-      vBox.add(hBox, {
-        flex: 1
-      });
+      vBox.add(hBox);
 
-      const invitationField = this.__invitationField = new qx.ui.form.TextField().set({
+      const invitationField = new qx.ui.form.TextField(respData["invitation_link"]).set({
         readOnly: true
       });
       hBox.add(invitationField, {
         flex: 1
       });
 
-      const copyInvitationBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy invitation"));
+      const copyInvitationBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy invitation link"));
       copyInvitationBtn.addListener("execute", () => {
-        if (osparc.utils.Utils.copyTextToClipboard(this.__invitationField.getValue())) {
+        if (osparc.utils.Utils.copyTextToClipboard(respData["invitation_link"])) {
           copyInvitationBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
       hBox.add(copyInvitationBtn);
+
+      const respLabel = new qx.ui.basic.Label().set({
+        value: this.tr("Data encrypted in the invitation")
+      });
+      vBox.add(respLabel);
+
+      delete respData["invitation_link"];
+      const invitationRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "invitation-data");
+      const container = new qx.ui.container.Scroll();
+      container.add(invitationRespViewer);
+      vBox.add(container);
 
       return vBox;
     }

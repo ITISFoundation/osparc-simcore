@@ -45,7 +45,7 @@ qx.Class.define("osparc.po.POCenter", {
 
     __getInvitationsPage: function() {
       const title = this.tr("Invitations");
-      const iconSrc = "@FontAwesome5Solid/table/22";
+      const iconSrc = "@FontAwesome5Solid/envelope/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
       const overview = new osparc.po.Invitations();
