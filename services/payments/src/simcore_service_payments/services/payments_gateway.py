@@ -26,15 +26,13 @@ from ..models.payments_gateway import (
     PaymentMethodID,
     PaymentMethodInitiated,
 )
+from ..utils.base_client_api import BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class PaymentsGatewayApi:
-    client: httpx.AsyncClient
-    _exit_stack: contextlib.AsyncExitStack
-
+class PaymentsGatewayApi(BaseHttpApi):
     @classmethod
     def create(cls, settings: ApplicationSettings) -> "PaymentsGatewayApi":
         client = httpx.AsyncClient(
@@ -51,34 +49,36 @@ class PaymentsGatewayApi:
 
         return cls(client=client, _exit_stack=exit_stack)
 
-    async def start(self):
-        await self._exit_stack.enter_async_context(self.client)
+    #
+    # app.state
+    #
 
-    async def close(self):
-        await self._exit_stack.aclose()
+    @classmethod
+    def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
+        return cast("PaymentsGatewayApi", app.state.payment_gateway_api)
+
+    @classmethod
+    def setup_state(cls, app: FastAPI):
+        # create and and save instance in state
+        assert app.state  # nosec
+        if exists := getattr(app.state, "payment_gateway_api", None):
+            _logger.warning(
+                "Skipping setup. Cannot setup more than once %s: %s", cls, exists
+            )
+            return
+
+        assert not hasattr(app.state, "payment_gateway_api")  # nosec
+        app_settings: ApplicationSettings = app.state.settings
+
+        app.state.payment_gateway_api = api = cls.create(app_settings)
+        assert cls.get_from_state(app) == api  # nosec
+
+        # define lifespam
+        app.add_event_handler("startup", api.start)
+        app.add_event_handler("shutdown", api.close)
 
     #
-    # service diagnostics
-    #
-    async def ping(self) -> bool:
-        """Check whether server is reachable"""
-        try:
-            await self.client.get("/")
-            return True
-        except httpx.RequestError:
-            return False
-
-    async def is_healhy(self) -> bool:
-        """Service is reachable and ready"""
-        try:
-            response = await self.client.get("/")
-            response.raise_for_status()
-            return True
-        except httpx.HTTPError:
-            return False
-
-    #
-    # one-time-payment workflow
+    # api: one-time-payment workflow
     #
 
     async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
@@ -90,7 +90,7 @@ class PaymentsGatewayApi:
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
 
     #
-    # payment method workflows
+    # api: payment method workflows
     #
 
     async def init_payment_method(
@@ -117,41 +117,7 @@ class PaymentsGatewayApi:
     async def pay_with_payment_method(self, payment: InitPayment) -> PaymentInitiated:
         raise NotImplementedError
 
-    #
-    # app
-    #
-
-    @classmethod
-    def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
-        return cast("PaymentsGatewayApi", app.state.payment_gateway_api)
-
-    @classmethod
-    def setup(cls, app: FastAPI):
-        # create and and save instance in state
-        assert app.state  # nosec
-        if exists := getattr(app.state, "payment_gateway_api", None):
-            _logger.warning(
-                "Skipping setup. Cannot setup more than once %s: %s", cls, exists
-            )
-            return
-
-        assert not hasattr(app.state, "payment_gateway_api")  # nosec
-        app_settings: ApplicationSettings = app.state.settings
-
-        app.state.payment_gateway_api = api = cls.create(app_settings)
-        assert cls.get_from_state(app) == api  # nosec
-
-        # define lifespam
-        async def _on_startup():
-            await api.start()
-
-        async def _on_shutdown():
-            await api.close()
-
-        app.add_event_handler("startup", _on_startup)
-        app.add_event_handler("shutdown", _on_shutdown)
-
 
 def setup_payments_gateway(app: FastAPI):
     assert app.state  # nosec
-    PaymentsGatewayApi.setup(app)
+    PaymentsGatewayApi.setup_state(app)

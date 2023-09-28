@@ -23,7 +23,7 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
     with pytest.raises(AttributeError):
         PaymentsGatewayApi.get_from_state(new_app)
 
-    PaymentsGatewayApi.setup(new_app)
+    PaymentsGatewayApi.setup_state(new_app)
     payment_gateway_api = PaymentsGatewayApi.get_from_state(new_app)
 
     assert payment_gateway_api is not None

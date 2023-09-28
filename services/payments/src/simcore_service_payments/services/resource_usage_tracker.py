@@ -68,6 +68,7 @@ class ResourceUsageTrackerApi(BaseHttpApi):
         app.state.source_usage_tracker_api = api = cls.create(app.state.settings)
         assert cls.get_from_state(app) == api  # nosec
 
+        # define lifespam
         app.add_event_handler("startup", api.start)
         app.add_event_handler("shutdown", api.close)
 
