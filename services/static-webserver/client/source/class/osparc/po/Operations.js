@@ -56,6 +56,8 @@ qx.Class.define("osparc.po.Operations", {
   },
 
   members: {
+    __invitationField: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -68,6 +70,22 @@ qx.Class.define("osparc.po.Operations", {
 
     __buildLayout: function() {
       this._createChildControlImpl("create-invitation");
+    },
+
+    __createInvitations: function() {
+      const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
+
+      const label = this.createHelpLabel(this.tr("This is a list of the 'statics' resources"));
+      invitationGroupBox.add(label);
+
+      const newTokenForm = this.__createInvitationForm();
+      const form = new qx.ui.form.renderer.Single(newTokenForm);
+      invitationGroupBox.add(form);
+
+      const generatedInvitationLayout = this.__createGeneratedInvitationLayout();
+      invitationGroupBox.add(generatedInvitationLayout);
+
+      return invitationGroupBox;
     },
 
     __createInvitationForm: function() {
@@ -90,6 +108,7 @@ qx.Class.define("osparc.po.Operations", {
         if (!osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
           return;
         }
+        this.__invitationField.resetValue();
         const params = {
           data: {
             "guest": userEmail.getValue(),
@@ -98,7 +117,10 @@ qx.Class.define("osparc.po.Operations", {
         };
         generateInvitationBtn.setFetching(true);
         osparc.data.Resources.fetch("invitations", "get", params)
-          .then(data => console.log(data))
+          .then(data => {
+            console.log(data);
+            // this.__invitationField.setValue(data);
+          })
           .catch(err => {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -110,17 +132,37 @@ qx.Class.define("osparc.po.Operations", {
       return form;
     },
 
-    __createInvitations: function() {
-      const invitationGroupBox = this.createGroupBox(this.tr("Create invitation"));
+    __createGeneratedInvitationLayout: function(invitationLink) {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const label = this.createHelpLabel(this.tr("This is a list of the 'statics' resources"));
-      invitationGroupBox.add(label);
+      const label = new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("Remember that this is a one time use link")
+      });
+      vBox.add(label);
 
-      const newTokenForm = this.__createInvitationForm();
-      const form = new qx.ui.form.renderer.Single(newTokenForm);
-      invitationGroupBox.add(form);
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+      vBox.add(hBox, {
+        flex: 1
+      });
 
-      return invitationGroupBox;
+      const invitationField = this.__invitationField = new qx.ui.form.TextField(invitationLink).set({
+        readOnly: true
+      });
+      hBox.add(invitationField, {
+        flex: 1
+      });
+
+      const copyInvitationBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy invitation"));
+      copyInvitationBtn.addListener("execute", () => {
+        if (osparc.utils.Utils.copyTextToClipboard(invitationLink)) {
+          copyInvitationBtn.setIcon("@FontAwesome5Solid/check/12");
+        }
+      });
+      hBox.add(copyInvitationBtn);
+
+      return vBox;
     }
   }
 });
