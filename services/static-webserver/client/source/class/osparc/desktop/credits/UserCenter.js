@@ -106,15 +106,20 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
         converter: lastName => authData.getFirstName() + " " + lastName
       });
 
+      const role = authData.getFriendlyRole();
+      const roleLabel = new qx.ui.basic.Label(role).set({
+        font: "text-13",
+        alignX: "center"
+      });
+      layout.add(roleLabel);
+
       const emailLabel = new qx.ui.basic.Label(email).set({
         font: "text-13",
         alignX: "center"
       });
       layout.add(emailLabel);
 
-      layout.add(new qx.ui.core.Spacer(15, 15), {
-        flex: 1
-      });
+      layout.add(new qx.ui.core.Spacer(15, 15));
 
       return layout;
     }

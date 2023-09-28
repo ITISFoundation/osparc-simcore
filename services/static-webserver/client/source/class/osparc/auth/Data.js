@@ -142,6 +142,13 @@ qx.Class.define("osparc.auth.Data", {
         return osparc.utils.Utils.getNameFromEmail(email);
       }
       return "user";
+    },
+
+    getFriendlyRole: function() {
+      const role = this.getRole();
+      let friendlyRole = role.replace(/_/g, " ");
+      friendlyRole = osparc.utils.Utils.firstsUp(friendlyRole);
+      return friendlyRole;
     }
   }
 });
