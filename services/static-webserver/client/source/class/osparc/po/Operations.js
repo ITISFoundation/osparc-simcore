@@ -78,6 +78,18 @@ qx.Class.define("osparc.po.Operations", {
       const label = this.self().createHelpLabel(this.tr("This is a list of the 'statics' resources"));
       invitationGroupBox.add(label);
 
+      const disclaimer = this.self().createHelpLabel(this.tr("This is a list of the 'statics' resources")).set({
+        textColor: "warning-yellow"
+      });
+      disclaimer.exclude();
+      osparc.data.Resources.getOne("config")
+        .then(config => {
+          if ("invitation_required" in config && config["invitation_required"] === false) {
+            disclaimer.show();
+          }
+        });
+      invitationGroupBox.add(disclaimer);
+
       const newTokenForm = this.__createInvitationForm();
       const form = new qx.ui.form.renderer.Single(newTokenForm);
       invitationGroupBox.add(form);
@@ -92,7 +104,7 @@ qx.Class.define("osparc.po.Operations", {
       const form = new qx.ui.form.Form();
 
       const userEmail = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Input your token key")
+        placeholder: this.tr("new.user@email.address")
       });
       form.add(userEmail, this.tr("User Email"));
 
