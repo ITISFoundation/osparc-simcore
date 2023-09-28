@@ -6,6 +6,7 @@ from models_library.osparc_variable_identifier import (
     UnresolvedOsparcVariableIdentifierError,
     raise_if_unresolved,
 )
+from pydantic import ValidationError
 
 VALID_IDENTIFIERS: list[str] = [
     "$OSPARC_VARIABLE_One121_",
@@ -34,26 +35,26 @@ def osparc_variable_identifier_str(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture
-def osparc_variable_identifier(
+def identifier(
     osparc_variable_identifier_str: str,
 ) -> OsparcVariableIdentifier:
-    return OsparcVariableIdentifier(osparc_variable_identifier_str)
+    return OsparcVariableIdentifier(identifier=osparc_variable_identifier_str)
 
 
 @pytest.mark.parametrize("invalid_var_name", INVALID_IDENTIFIERS)
 def test_osparc_variable_identifier_does_not_validate(invalid_var_name: str):
-    with pytest.raises(TypeError):
-        OsparcVariableIdentifier(invalid_var_name)
+    with pytest.raises(ValidationError):
+        OsparcVariableIdentifier(identifier=invalid_var_name)
 
 
-def test_raise_if_unresolved(osparc_variable_identifier: OsparcVariableIdentifier):
+def test_raise_if_unresolved(identifier: OsparcVariableIdentifier):
     def example_func(par: OsparcVariableIdentifier | int) -> None:
         _ = 12 + raise_if_unresolved(par)
 
     example_func(1)
 
     with pytest.raises(UnresolvedOsparcVariableIdentifierError):
-        example_func(osparc_variable_identifier)
+        example_func(identifier)
 
 
 @pytest.mark.parametrize(
@@ -90,8 +91,6 @@ def test_osparc_variable_name_and_default_value(
     expected_osparc_variable_name: str,
     expected_default_value: str | None,
 ):
-    osparc_variable_identifer = OsparcVariableIdentifier(str_identifier)
-    assert (
-        osparc_variable_identifer.osparc_variable_name == expected_osparc_variable_name
-    )
+    osparc_variable_identifer = OsparcVariableIdentifier(identifier=str_identifier)
+    assert osparc_variable_identifer.name == expected_osparc_variable_name
     assert osparc_variable_identifer.default_value == expected_default_value

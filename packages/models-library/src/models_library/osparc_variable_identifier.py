@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, TypeAlias, TypeVar
 
 from pydantic import BaseModel, Field
@@ -9,11 +10,8 @@ T = TypeVar("T")
 
 class OsparcVariableIdentifier(BaseModel):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
-    osparc_variable_identifier: str = Field(
+    identifier: str = Field(
         ..., regex=rf"^\${{?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+}}?(:-.+)?$"
-    )
-    replace_with: Any | None = Field(
-        None, description="if not None replace the identifier with this value"
     )
 
     def _get_without_template_markers(self) -> str:
@@ -22,12 +20,12 @@ class OsparcVariableIdentifier(BaseModel):
         # ${VAR:-}
         # ${VAR:-default}
         # ${VAR:-{}}
-        if self.osparc_variable_identifier.startswith("${"):
-            return self.osparc_variable_identifier.removeprefix("${").removesuffix("}")
-        return self.osparc_variable_identifier.removeprefix("$")
+        if self.identifier.startswith("${"):
+            return self.identifier.removeprefix("${").removesuffix("}")
+        return self.identifier.removeprefix("$")
 
     @property
-    def osparc_variable_name(self) -> str:
+    def name(self) -> str:
         return self._get_without_template_markers().split(":-")[0]
 
     @property
@@ -68,14 +66,16 @@ def extract_identifiers(pydantic_model: BaseModel) -> FoundIdentifiers:  # noqa:
     """
     found_identifiers: FoundIdentifiers = []
 
-    for attribute in pydantic_model.__dict__.values():
+    for key, attribute in pydantic_model.__dict__.items():
         if isinstance(attribute, OsparcVariableIdentifier):
             found_identifiers.append(attribute)
         elif isinstance(attribute, BaseModel):
             found_identifiers.extend(extract_identifiers(attribute))
         elif isinstance(attribute, dict):
             for value in attribute.values():
-                if isinstance(value, BaseModel):
+                if isinstance(value, OsparcVariableIdentifier):
+                    found_identifiers.append(value)
+                elif isinstance(value, BaseModel):
                     found_identifiers.extend(extract_identifiers(value))
         elif isinstance(attribute, list):
             for item in attribute:
@@ -87,21 +87,35 @@ def extract_identifiers(pydantic_model: BaseModel) -> FoundIdentifiers:  # noqa:
     return found_identifiers
 
 
-def _resolve_in_place(pydantic_model: BaseModel) -> ResolvedIdentifiers:  # noqa: C901
+def _resolve_in_place(an_object: object) -> ResolvedIdentifiers:  # noqa: C901
     """Scans BaseModel and replaces in place  all instances of OsparcVariableIdentifier."""
     resolved_identifiers: ResolvedIdentifiers = []
 
-    for key, attribute in dict(pydantic_model.__dict__).items():
+    # write replace in BaseModel
+    # write replace in list
+    # write replace in dict
+
+    soruce_object_dict = (
+        an_object if isinstance(an_object, dict) else an_object.__dict__
+    )
+
+    for key, attribute in soruce_object_dict.items():
         if isinstance(attribute, OsparcVariableIdentifier):
             if attribute.replace_with is not None:
-                setattr(pydantic_model, key, attribute.replace_with)
+                setattr(soruce_object_dict, key, attribute.replace_with)
                 resolved_identifiers.append(attribute)
         elif isinstance(attribute, BaseModel):
             resolved_identifiers.extend(_resolve_in_place(attribute))
         elif isinstance(attribute, dict):
-            for value in attribute.values():
-                if isinstance(value, BaseModel):
-                    resolved_identifiers.extend(_resolve_in_place(value))
+            resolved_identifiers.extend(_resolve_in_place(attribute))
+            # for dict_key in list(attribute.keys()):
+            #     value = attribute[dict_key]
+            #     if isinstance(value, OsparcVariableIdentifier):
+            #         if value.replace_with is not None:
+            #             resolved_identifiers.append(value)
+            #             attribute[dict_key] = value.replace_with
+            #     elif isinstance(value, BaseModel):
+            #         resolved_identifiers.extend(_resolve_in_place(value))
         elif isinstance(attribute, list):
             for k in range(len(attribute)):
                 if isinstance(attribute[k], OsparcVariableIdentifier):
@@ -128,12 +142,46 @@ def resolve_osparc_variable_identifiers(
         a tuple containing the found identifiers and the ones which were replaced
     """
 
+    if isinstance(pydantic_model, OsparcVariableIdentifier):
+        msg = f"Cannot replace variables if root element is {OsparcVariableIdentifier}"
+        raise TypeError(msg)
+
     found: FoundIdentifiers = extract_identifiers(pydantic_model)
 
     for identifier in found:
-        if identifier.osparc_variable_name in osparc_variables:
-            identifier.replace_with = osparc_variables[identifier.osparc_variable_name]
+        if identifier.name in osparc_variables:
+            identifier.replace_with = osparc_variables[identifier.name]
 
     resolved: ResolvedIdentifiers = _resolve_in_place(pydantic_model)
 
     return found, resolved
+
+
+def replace_osparc_variable_identifier(  # noqa: C901
+    obj: T, osparc_variables: dict[str, Any]
+) -> T:
+    if isinstance(obj, OsparcVariableIdentifier):
+        if obj.name in osparc_variables:
+            return deepcopy(osparc_variables[obj.name])
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
+    elif isinstance(obj, BaseModel):
+        for key, value in obj.__dict__.items():
+            obj.__dict__[key] = replace_osparc_variable_identifier(
+                value, osparc_variables
+            )
+    if isinstance(obj, list):
+        for i, item in enumerate(obj):
+            obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
+    elif isinstance(obj, tuple):
+        new_items = tuple(
+            replace_osparc_variable_identifier(item, osparc_variables) for item in obj
+        )
+        obj = new_items
+    elif isinstance(obj, set):
+        new_items = {
+            replace_osparc_variable_identifier(item, osparc_variables) for item in obj
+        }
+        obj = new_items
+    return obj
