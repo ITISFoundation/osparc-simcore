@@ -63,7 +63,7 @@ qx.Class.define("osparc.product.AboutProduct", {
           break;
         default: {
           const noInfoText = this.tr("Information not available");
-          const noInfoLabel = osparc.product.tutorial.Utils.createLabel(noInfoText).set({
+          const noInfoLabel = osparc.product.quickStart.Utils.createLabel(noInfoText).set({
             maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
           });
           this.add(noInfoLabel);
@@ -89,7 +89,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+        const label = osparc.product.quickStart.Utils.createLabel(text).set({
           maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);
@@ -116,7 +116,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+        const label = osparc.product.quickStart.Utils.createLabel(text).set({
           maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);
@@ -142,7 +142,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+        const label = osparc.product.quickStart.Utils.createLabel(text).set({
           maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);

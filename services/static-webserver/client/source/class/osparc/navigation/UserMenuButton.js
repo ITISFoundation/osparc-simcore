@@ -92,10 +92,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => {
             osparc.desktop.credits.Utils.areWalletsEnabled()
               .then(walletsEnabled => {
-                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+                const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
                 creditsWindow.openOverview();
               });
-            // osparc.desktop.MainPageHandler.getInstance().showUserCenter();
           }, this);
           this.getMenu().add(control);
           break;
@@ -171,11 +170,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("organizations");
         this.getChildControl("clusters");
       }
-      if (osparc.product.tutorial.Utils.getTutorial()) {
+      if (osparc.product.quickStart.Utils.getQuickStart()) {
         this.getMenu().addSeparator();
         osparc.store.Support.addQuickStartToMenu(this.getMenu());
-        osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
+      osparc.store.Support.addGuidedToursToMenu(this.getMenu());
       this.getMenu().addSeparator();
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
@@ -231,7 +230,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     __addQuickStartToMenu: function() {
       const menu = this.getMenu();
       osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addPanddyToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
     },
 
     __addManualsToMenu: async function() {

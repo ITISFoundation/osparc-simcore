@@ -8,6 +8,7 @@ from typing import AsyncIterator
 
 import pytest
 from aiopg.sa.engine import Engine
+from faker import Faker
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
@@ -24,7 +25,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 @pytest.fixture()
 async def output_file(
-    user_id: UserID, project_id: str, aiopg_engine: Engine
+    user_id: UserID, project_id: str, aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[FileMetaData]:
     node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
 
@@ -36,6 +37,7 @@ async def output_file(
         bucket=S3BucketName("master-simcore"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=faker.sha256(),
     )
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
     file.file_size = ByteSize(12)
@@ -122,8 +124,8 @@ async def test_create_soft_link(
     # assert output_file.last_modified < link_file.fmd.last_modified
 
     # can find
-    files_list = await simcore_s3_dsm.search_files_starting_with(
-        user_id, f"api/{api_file_id}/{file_name}"
+    files_list = await simcore_s3_dsm.search_read_access_files(
+        user_id, f"api/{api_file_id}/{file_name}", None
     )
     assert len(files_list) == 1
     assert files_list[0] == link_file

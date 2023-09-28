@@ -51,6 +51,7 @@ def test_fmd_build():
         bucket=S3BucketName("test-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=None,
     )
 
     assert fmd.node_id
@@ -70,6 +71,7 @@ def test_fmd_build():
         bucket=S3BucketName("test-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=None,
     )
 
     assert fmd.node_id == NodeID(file_id.split("/")[1])

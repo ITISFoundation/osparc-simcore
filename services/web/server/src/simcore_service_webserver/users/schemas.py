@@ -71,7 +71,7 @@ class ProfileUpdate(_ProfileCommon):
 class ProfileGet(_ProfileCommon):
     id: IdInt
     login: LowerCaseEmailStr
-    role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
+    role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: AllUsersGroups | None = None
     gravatar_id: str | None = None
     expiration_date: date | None = Field(
@@ -110,9 +110,9 @@ class ProfileGet(_ProfileCommon):
     @classmethod
     def to_capitalize(cls, v):
         if isinstance(v, str):
-            return v.capitalize()
+            return v.upper()
         if isinstance(v, UserRole):
-            return v.name.capitalize()
+            return v.name.upper()
         return v
 
 

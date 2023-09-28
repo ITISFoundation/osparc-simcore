@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from models_library.api_schemas_storage import FileUploadSchema, LinkType
+from models_library.basic_types import SHA256Str
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
@@ -131,6 +132,7 @@ async def get_upload_links_from_storage(
     file_name: str,
     link_type: LinkType,
     file_size: ByteSize,
+    sha256_checksum: SHA256Str | None,
 ) -> FileUploadSchema:
     log.debug("getting link to file from storage for %s", file_name)
     s3_object = data_items_utils.create_simcore_file_id(
@@ -144,6 +146,7 @@ async def get_upload_links_from_storage(
         link_type=link_type,
         file_size=file_size,
         is_directory=False,
+        sha256_checksum=sha256_checksum,
     )
     return links
 

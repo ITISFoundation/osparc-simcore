@@ -3,6 +3,7 @@ from asyncio import CancelledError
 from dataclasses import dataclass
 from pathlib import Path
 
+import aiofiles
 from aiohttp import ClientSession
 from models_library.api_schemas_storage import (
     ETag,
@@ -13,9 +14,11 @@ from models_library.api_schemas_storage import (
     LocationName,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from yarl import URL
@@ -88,6 +91,7 @@ async def get_upload_links_from_s3(
     client_session: ClientSession | None = None,
     file_size: ByteSize,
     is_directory: bool,
+    sha256_checksum: SHA256Str | None,
 ) -> tuple[LocationID, FileUploadSchema]:
     async with ClientSessionContextManager(client_session) as session:
         store_id = await _resolve_location_id(session, user_id, store_name, store_id)
@@ -99,6 +103,7 @@ async def get_upload_links_from_s3(
             link_type=link_type,
             file_size=file_size,
             is_directory=is_directory,
+            sha256_checksum=sha256_checksum,
         )
         return (store_id, file_links)
 
@@ -243,6 +248,20 @@ class UploadedFolder:
     ...
 
 
+async def _generate_checksum(
+    path_to_upload: Path | UploadableFileObject, is_directory: bool
+) -> SHA256Str | None:
+    checksum: SHA256Str | None = None
+    if is_directory:
+        return checksum
+    if isinstance(path_to_upload, Path):
+        async with aiofiles.open(path_to_upload, mode="rb") as f:
+            checksum = SHA256Str(await create_sha256_checksum(f))
+    elif isinstance(path_to_upload, UploadableFileObject):
+        checksum = path_to_upload.sha256_checksum
+    return checksum
+
+
 async def upload_path(
     *,
     user_id: UserID,
@@ -280,7 +299,7 @@ async def upload_path(
     if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
         msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
         raise exceptions.NodeportsException(msg)
-
+    checksum: SHA256Str | None = await _generate_checksum(path_to_upload, is_directory)
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
 
@@ -302,6 +321,7 @@ async def upload_path(
                 is_directory=is_directory,
                 session=session,
                 exclude_patterns=exclude_patterns,
+                sha256_checksum=checksum,
             )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
@@ -332,6 +352,7 @@ async def _upload_to_s3(  # noqa: PLR0913
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
     is_directory: bool,
+    sha256_checksum: SHA256Str | None,
     session: ClientSession,
     exclude_patterns: set[str] | None,
 ) -> tuple[LocationID, ETag | None, FileUploadSchema]:
@@ -348,6 +369,7 @@ async def _upload_to_s3(  # noqa: PLR0913
             else path_to_upload.file_size
         ),
         is_directory=is_directory,
+        sha256_checksum=sha256_checksum,
     )
 
     uploaded_parts: list[UploadedPart] = []
