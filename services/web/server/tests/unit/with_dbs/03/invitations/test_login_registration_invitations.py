@@ -7,12 +7,11 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pytest import MonkeyPatch
+from models_library.api_schemas_invitations.invitations import ApiInvitationContent
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_webserver.invitations._client import InvitationContent
 from simcore_service_webserver.login.handlers_registration import (
     InvitationCheck,
     InvitationInfo,
@@ -22,7 +21,9 @@ from simcore_service_webserver.login.settings import LoginSettingsForProduct
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     login_envs = setenvs_from_dict(
         monkeypatch,
@@ -99,7 +100,7 @@ async def test_check_registration_invitation_and_get_email(
     client: TestClient,
     mocker: MockerFixture,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: InvitationContent,
+    expected_invitation: ApiInvitationContent,
 ):
     assert client.app
     mocker.patch(

@@ -37,29 +37,29 @@ PROD_REQUIREMENTS = tuple(
 
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-SETUP = dict(
-    name=NAME,
-    version=VERSION,
-    author=AUTHORS,
-    description=DESCRIPTION,
-    long_description=README,
-    license="MIT license",
-    python_requires="~=3.10",
-    packages=find_packages(where="src"),
-    package_dir={
+SETUP = {
+    "name": NAME,
+    "version": VERSION,
+    "author": AUTHORS,
+    "description": DESCRIPTION,
+    "long_description": README,
+    "license": "MIT license",
+    "python_requires": "~=3.10",
+    "packages": find_packages(where="src"),
+    "package_dir": {
         "": "src",
     },
-    include_package_data=True,
-    install_requires=PROD_REQUIREMENTS,
-    test_suite="tests",
-    tests_require=TEST_REQUIREMENTS,
-    extras_require={"test": TEST_REQUIREMENTS},
-    entry_points={
+    "include_package_data": True,
+    "install_requires": PROD_REQUIREMENTS,
+    "test_suite": "tests",
+    "tests_require": TEST_REQUIREMENTS,
+    "extras_require": {"test": TEST_REQUIREMENTS},
+    "entry_points": {
         "console_scripts": [
             "simcore-service-invitations = simcore_service_invitations.cli:app",
         ],
     },
-)
+}
 
 if __name__ == "__main__":
     setup(**SETUP)
