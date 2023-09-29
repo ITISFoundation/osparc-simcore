@@ -6,7 +6,7 @@ import filecmp
 import os
 import re
 import urllib.parse
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Final
 from unittest.mock import AsyncMock
@@ -17,6 +17,7 @@ import aiofiles
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
@@ -228,18 +229,26 @@ def _ensure_dir(tmp_path: Path, faker: Faker, *, dir_prefix: str) -> Path:
 
 
 @pytest.fixture
-def dir_locally_created_files(tmp_path: Path, faker: Faker) -> Path:
-    return _ensure_dir(tmp_path, faker, dir_prefix="source")
+async def dir_locally_created_files(
+    tmp_path: Path, faker: Faker
+) -> AsyncIterator[Path]:
+    path = _ensure_dir(tmp_path, faker, dir_prefix="source")
+    yield path
+    await remove_directory(path)
 
 
 @pytest.fixture
-def dir_downloaded_files_1(tmp_path: Path, faker: Faker) -> Path:
-    return _ensure_dir(tmp_path, faker, dir_prefix="downloaded-1")
+async def dir_downloaded_files_1(tmp_path: Path, faker: Faker) -> AsyncIterator[Path]:
+    path = _ensure_dir(tmp_path, faker, dir_prefix="downloaded-1")
+    yield path
+    await remove_directory(path)
 
 
 @pytest.fixture
-def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> Path:
-    return _ensure_dir(tmp_path, faker, dir_prefix="downloaded-2")
+async def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> AsyncIterator[Path]:
+    path = _ensure_dir(tmp_path, faker, dir_prefix="downloaded-2")
+    yield path
+    await remove_directory(path)
 
 
 @pytest.mark.parametrize(
