@@ -46,14 +46,6 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this.__walletListeners = [];
 
     this.__buildLayout();
-
-    this.addListener("tap", () => {
-      osparc.desktop.credits.Utils.areWalletsEnabled()
-        .then(walletsEnabled => {
-          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-          creditsWindow.openOverview();
-        });
-    }, this);
   },
 
   properties: {
@@ -83,6 +75,15 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       } else {
         this.__showSelectWallet();
       }
+
+      const store = osparc.store.Store.getInstance();
+      store.getWallets().forEach(wallet => {
+        const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
+        this.__walletListeners.push({
+          walletId: wallet.getWalletId(),
+          listenerId: preferredWalletId
+        });
+      });
     },
 
     __removeWallets: function() {
@@ -121,29 +122,26 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       this.__removeWallets();
 
       this.__addWallet(wallet);
-      this.__addWalletListener(wallet);
+      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: changeStatusId
+      });
     },
 
     __addWallet: function(wallet) {
       const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
         alignX: "right"
       });
+      creditsLabel.addListener("tap", () => {
+        osparc.desktop.credits.Utils.areWalletsEnabled()
+          .then(walletsEnabled => {
+            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+            creditsWindow.openOverview();
+          });
+      }, this);
       this._add(creditsLabel, {
         flex: 1
-      });
-    },
-
-    __addWalletListener: function(wallet) {
-      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: changeStatusId
-      });
-
-      const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: preferredWalletId
       });
     }
   }
