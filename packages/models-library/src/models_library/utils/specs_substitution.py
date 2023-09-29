@@ -78,11 +78,9 @@ class SpecsSubstitutionsResolver:
         needed_identifiers_with_defaults: dict[str, str | None] = {}
         for identifier in needed_identifiers:
             parts = identifier.split(":-")
-            if ":-" in identifier:
-                default = parts[1]
-                needed_identifiers_with_defaults[identifier] = default
-            else:
-                needed_identifiers_with_defaults[identifier] = None
+            needed_identifiers_with_defaults[identifier] = (
+                parts[1] if ":-" in identifier else None
+            )
 
         resolved_identifiers: dict[str, str] = {}
         for identifier in needed_identifiers_with_defaults:
