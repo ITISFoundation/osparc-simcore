@@ -77,9 +77,9 @@ def replace_osparc_variable_identifier(  # noqa: C901
 
     if isinstance(obj, OsparcVariableIdentifier):
         if obj.name in osparc_variables:
-            return deepcopy(osparc_variables[obj.name])
+            return deepcopy(osparc_variables[obj.name])  # type: ignore
         if obj.default_value is not None:
-            return deepcopy(obj.default_value)
+            return deepcopy(obj.default_value)  # type: ignore
     elif isinstance(obj, dict):
         for key, value in obj.items():
             obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
@@ -92,13 +92,13 @@ def replace_osparc_variable_identifier(  # noqa: C901
         for i, item in enumerate(obj):
             obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
     elif isinstance(obj, tuple):
-        new_items = tuple(
+        new_tuple = tuple(
             replace_osparc_variable_identifier(item, osparc_variables) for item in obj
         )
-        obj = new_items
+        obj = new_tuple  # type: ignore
     elif isinstance(obj, set):
-        new_items = {
+        new_set = {
             replace_osparc_variable_identifier(item, osparc_variables) for item in obj
         }
-        obj = new_items
+        obj = new_set  # type: ignore
     return obj

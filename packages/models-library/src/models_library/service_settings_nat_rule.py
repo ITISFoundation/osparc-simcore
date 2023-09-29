@@ -21,13 +21,13 @@ class _PortRange(BaseModel):
     @classmethod
     def lower_less_than_upper(cls, v, values) -> PortInt:
         if isinstance(v, OsparcVariableIdentifier):
-            return v  # bypass validation if unresolved
+            return v  # type: ignore # bypass validation if unresolved
 
         upper = v
         lower: PortInt | OsparcVariableIdentifier | None = values.get("lower")
 
         if lower and isinstance(lower, OsparcVariableIdentifier):
-            return v  # bypass validation if unresolved
+            return v  # type: ignore # bypass validation if unresolved
 
         if lower is None or lower >= upper:
             msg = f"Condition not satisfied: lower={lower!r} < upper={upper!r}"
