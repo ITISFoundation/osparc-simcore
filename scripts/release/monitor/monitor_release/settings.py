@@ -13,9 +13,9 @@ class Settings(BaseModel):
     portainer_endpoint_version: int
 
 
-def get_settings(deployment):
+def get_settings(env_file, deployment):
     # pylint: disable=too-many-return-statements
-    load_dotenv("/home/matus/Projects/osparc-simcore/scripts/release/monitor/.env")
+    load_dotenv(env_file)
 
     if deployment == "master":
         portainer_url = os.getenv("MASTER_PORTAINER_URL")
