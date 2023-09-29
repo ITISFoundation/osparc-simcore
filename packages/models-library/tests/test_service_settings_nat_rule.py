@@ -119,7 +119,3 @@ def test_replace_an_instance_of_osparcvariable_identifier(replace_with_value: An
     # NOTE: after replacement the original reference still points
     assert isinstance(a_var, OsparcVariableIdentifier)
     assert replaced_var == replace_with_value
-
-
-# TODO: what about default values? thos should be pulled in from the name if missing!!!
-# add a test to check taht this happens, it should not
