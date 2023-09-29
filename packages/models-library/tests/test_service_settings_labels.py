@@ -397,6 +397,7 @@ def vendor_environments() -> dict[str, Any]:
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1": 1,
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2": 2,
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_3": 3,
+        "OSPARC_VARIABLE_OS_TYPE_LINUX": "linux",
     }
 
 
@@ -461,12 +462,11 @@ def service_labels() -> dict[str, str]:
             }
         ),
         "simcore.service.settings": json.dumps(
-            # TODO: inside this one add some ene vars to test better!
             [
                 {
                     "name": "constraints",
                     "type": "string",
-                    "value": ["node.platform.os == linux"],
+                    "value": ["node.platform.os == $OSPARC_VARIABLE_OS_TYPE_LINUX"],
                 },
                 {
                     "name": "ContainerSpec",
@@ -550,7 +550,11 @@ def test_can_parse_labels_with_osparc_identifiers(
     service_meta = replace_osparc_variable_identifier(service_meta, vendor_environments)
     service_meta_str = service_meta.json()
 
+    not_replaced_vars = {"OSPARC_VARIABLE_OS_TYPE_LINUX"}
+
     for osparc_variable_name in vendor_environments:
+        if osparc_variable_name in not_replaced_vars:
+            continue
         assert osparc_variable_name not in service_meta_str
 
     service_meta_str = service_meta.json(
@@ -574,7 +578,6 @@ def test_resolving_some_service_labels_at_load_time(
     # NOTE: replacing all OsparcVariableIdentifier instances nested inside objects
     # this also does a partial replacement if there is no entry inside the vendor_environments
     # mapped to that name
-    # TODO: what about default values?
     replace_osparc_variable_identifier(service_meta, vendor_environments)
 
     for attribute_name, pydantic_model in (
@@ -582,7 +585,6 @@ def test_resolving_some_service_labels_at_load_time(
         ("settings", SimcoreServiceSettingsLabel),
     ):
         to_serialize = getattr(service_meta, attribute_name)
-        print("THE_TYPE", type(to_serialize))
         template = TextTemplate(
             servicelib__json_serialization__json_dumps(to_serialize)
         )
