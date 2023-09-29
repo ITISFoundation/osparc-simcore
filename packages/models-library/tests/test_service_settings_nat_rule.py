@@ -107,7 +107,7 @@ def test_nat_rule_with_osparc_variable_identifier(
         ("a", "tuple"),
     ],
 )
-def test_replace_an_instance_of_osparcvariable_identifier(replace_with_value: Any):
+def test_______(replace_with_value: Any):
     a_var = parse_obj_as(
         OsparcVariableIdentifier, {"identifier": "$OSPARC_VARIABLE_some_var"}
     )
@@ -119,3 +119,51 @@ def test_replace_an_instance_of_osparcvariable_identifier(replace_with_value: An
     # NOTE: after replacement the original reference still points
     assert isinstance(a_var, OsparcVariableIdentifier)
     assert replaced_var == replace_with_value
+
+
+@pytest.mark.parametrize(
+    "var_template",
+    ["$OSPARC_VARIABLE_a", "${OSPARC_VARIABLE_a}", "${OSPARC_VARIABLE_a:-%s}"],
+)
+@pytest.mark.parametrize(
+    "default_value", ["", "a", "1", "1.1", "aa", "$", "$$$$", "[]", "{}"]
+)
+@pytest.mark.parametrize(
+    "replace_with_value",
+    [
+        "a_string",
+        1,
+        True,
+        {"a_set"},
+        {"a": "dict"},
+        ("a", "tuple"),
+    ],
+)
+@pytest.mark.parametrize("replace_with_default", [True, False])
+def test_replace_an_instance_of_osparc_variable_identifier(
+    var_template: str,
+    default_value: str,
+    replace_with_value: Any,
+    replace_with_default: bool,
+):
+    identifier_has_default = False
+    try:
+        formatted_template = var_template % default_value
+        identifier_has_default = True
+    except TypeError:
+        formatted_template = var_template
+
+    a_var = parse_obj_as(OsparcVariableIdentifier, {"identifier": formatted_template})
+    assert isinstance(a_var, OsparcVariableIdentifier)
+
+    replace_with_identifier_default = identifier_has_default and replace_with_default
+    replacement_content = (
+        {} if replace_with_identifier_default else {a_var.name: replace_with_value}
+    )
+    replaced_var = replace_osparc_variable_identifier(a_var, replacement_content)
+    # NOTE: after replacement the original reference still points
+    assert isinstance(a_var, OsparcVariableIdentifier)
+    if replace_with_identifier_default:
+        assert replaced_var == default_value
+    else:
+        assert replaced_var == replace_with_value
