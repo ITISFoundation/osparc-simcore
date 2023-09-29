@@ -9,6 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..payments.plugin import setup_payments
 from . import _groups_handlers, _handlers, _payments_handlers
+from ._events import setup_wallets_events
 
 _logger = logging.getLogger(__name__)
 
@@ -29,3 +30,5 @@ def setup_wallets(app: web.Application):
     setup_payments(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS:
         app.router.add_routes(_payments_handlers.routes)
+
+    setup_wallets_events()

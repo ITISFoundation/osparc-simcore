@@ -8,7 +8,7 @@ from servicelib.aiohttp.observer import register_observer, setup_observer_regist
 from ._api import create_wallet, list_wallets_for_user
 
 
-async def auto_add_default_wallet(
+async def _auto_add_default_wallet(
     app: web.Application, user_id: UserID, product_name: ProductName
 ):
     # TODO: check ANY OWNED wallets!
@@ -26,7 +26,7 @@ async def auto_add_default_wallet(
 async def _on_user_registration(
     app: web.Application, user_id: UserID, product_name: ProductName
 ):
-    await auto_add_default_wallet(app, user_id=user_id, product_name=product_name)
+    await _auto_add_default_wallet(app, user_id=user_id, product_name=product_name)
 
 
 def setup_wallets_events(app: web.Application):
