@@ -33,9 +33,9 @@ def setup_wallets_events(app: web.Application):
     # ensures registry in place
     setup_observer_registry(app)
 
-    # registers SIGNAL_USER_REGISTRATION
+    # registers SIGNAL_ON_USER_REGISTERED
     register_observer(
         app,
         functools.partial(_on_user_registration, app=app),
-        event="SIGNAL_USER_REGISTRATION",
+        event="SIGNAL_ON_USER_REGISTERED",
     )

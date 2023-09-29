@@ -31,4 +31,4 @@ def setup_wallets(app: web.Application):
     if app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS:
         app.router.add_routes(_payments_handlers.routes)
 
-    setup_wallets_events()
+    setup_wallets_events(app)

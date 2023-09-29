@@ -70,8 +70,10 @@ async def notify_user_registration(
     user_id: UserID,
     product_name: ProductName,
 ):
-    """Broadcasts signa when 'user_id' has registered in 'product_name'"""
-    await observer.emit(app, "SIGNAL_USER_REGISTRATION", user_id, product_name, app)
+    """Broadcast that user with 'user_id' has registered in 'product_name'"""
+    await observer.emit(
+        app, "SIGNAL_ON_USER_REGISTERED", user_id=user_id, product_name=product_name
+    )
 
 
 async def notify_user_logout(
