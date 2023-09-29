@@ -80,10 +80,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const oneWallet = activeWallet ? activeWallet : preferredWallet;
       if (oneWallet) {
         this.__showOneWallet(oneWallet);
-      } else if (osparc.store.Store.getInstance().getWallets().length) {
-        this.__showAllWallets();
       } else {
-        this.__showNoWallets();
+        this.__showSelectWallet();
       }
     },
 
@@ -99,17 +97,12 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       this._removeAll();
     },
 
-    __showNoWallets: function() {
+    __showSelectWallet: function() {
       this.__removeWallets();
 
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       const iconSrc = "@MaterialIcons/account_balance_wallet/26";
-      const walletsButton = new qx.ui.form.Button(null, iconSrc).set({
-        toolTipText: this.tr("No Wallets"),
-        backgroundColor: "transparent",
+      const walletsButton = new qx.ui.basic.Image(iconSrc).set({
+        toolTipText: this.tr("Select Wallet"),
         textColor: "danger-red"
       });
       walletsButton.addListener("tap", () => {
@@ -122,47 +115,13 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       this._add(walletsButton, {
         flex: 1
       });
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
     },
 
     __showOneWallet: function(wallet) {
       this.__removeWallets();
 
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       this.__addWallet(wallet);
       this.__addWalletListener(wallet);
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-    },
-
-    __showAllWallets: function() {
-      this.__removeWallets();
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      const maxIndicators = 3;
-      for (let i=0; i<wallets.length && i<maxIndicators; i++) {
-        const wallet = wallets[i];
-        if (wallet.getStatus() === "ACTIVE") {
-          this.__addWallet(wallet);
-        }
-        this.__addWalletListener(wallet);
-      }
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
     },
 
     __addWallet: function(wallet) {
