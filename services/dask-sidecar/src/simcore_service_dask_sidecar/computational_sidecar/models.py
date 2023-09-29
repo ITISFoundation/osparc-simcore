@@ -5,7 +5,7 @@ from pydantic import BaseModel, ByteSize, Field, validator
 
 LEGACY_INTEGRATION_VERSION = version.Version("0")
 PROGRESS_REGEXP: re.Pattern[str] = re.compile(
-    r"^(?:\[?progress\]?:?)?\s*"
+    r"^(?:\[?PROGRESS\]?:?)?\s*"
     r"(?P<value>[0-1]?\.\d+|"
     r"\d+\s*(?:(?P<percent_sign>%)|"
     r"\d+\s*"

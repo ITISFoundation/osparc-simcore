@@ -4,6 +4,7 @@
 # pylint: disable=no-member
 
 import asyncio
+import re
 from typing import Any
 from unittest.mock import call
 
@@ -24,6 +25,7 @@ from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     create_container_config,
     managed_container,
 )
+from simcore_service_dask_sidecar.computational_sidecar.models import ImageLabels
 
 
 @pytest.fixture()
@@ -120,36 +122,45 @@ async def test_create_container_config(
 
 @pytest.mark.parametrize("with_timestamp", [True, False], ids=str)
 @pytest.mark.parametrize(
-    "log_line, expected_progress_value",
+    "log_line, expected_progress_value, image_labels",
     [
-        ("hello from the logs", None),
-        ("[progress] this is some whatever progress without number", None),
-        ("[Progress] 34%", 0.34),
-        ("[PROGRESS] .34", 0.34),
-        ("[progress] 0.44", 0.44),
-        ("[progress] 44 percent done", 0.44),
-        ("[progress] 44/150", 44.0 / 150.0),
-        ("Progress: this is some progress", None),
-        ("progress: 34%", 0.34),
-        ("PROGRESS: .34", 0.34),
-        ("progress: 0.44", 0.44),
-        ("progress: 44 percent done", 0.44),
-        ("44 percent done", 0.44),
-        ("progress: 44/150", 44.0 / 150.0),
-        ("progress: 44/150...", 44.0 / 150.0),
-        ("any kind of message even with progress inside", None),
-        ("[PROGRESS]1.000000\n", 1.00),
-        ("[PROGRESS] 1\n", 1.00),
-        ("[PROGRESS] 0\n", 0.00),
+        ("hello from the logs", None, ImageLabels()),
+        (
+            "[PROGRESS] this is some whatever progress without number",
+            None,
+            ImageLabels(),
+        ),
+        ("[PROGRESS] .34", 0.34, ImageLabels()),
+        ("Progress: this is some progress", None, ImageLabels()),
+        ("PROGRESS: .34", 0.34, ImageLabels()),
+        ("PROGRESS: 44 percent done", 0.44, ImageLabels()),
+        ("44 percent done", 0.44, ImageLabels()),
+        ("PROGRESS: 44/150", 44.0 / 150.0, ImageLabels()),
+        ("PROGRESS: 44/150...", 44.0 / 150.0, ImageLabels()),
+        ("any kind of message even with progress inside", None, ImageLabels()),
+        ("[PROGRESS]1.000000\n", 1.00, ImageLabels()),
+        ("[PROGRESS] 1\n", 1.00, ImageLabels()),
+        ("[PROGRESS] 0\n", 0.00, ImageLabels()),
         (
             "[PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
             0.01,
+            ImageLabels(),
         ),
-        ("[warn]: this is some warning", None),
-        ("err: this is some error", None),
+        ("[warn]: this is some warning", None, ImageLabels()),
+        ("err: this is some error", None, ImageLabels()),
         (
             "progress: 10/0 asd this is a 15% 10/asdf progress without progress it will not break the system",
             None,
+            ImageLabels(),
+        ),
+        (
+            "[PROGRESS]: 21% [ 1219946 / 5545233 ] Assembling matrix",
+            0.21,
+            ImageLabels(
+                progress_regexp=re.compile(
+                    "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?:(?P<percent_sign>%)|\\d+\\s*(?P<percent_explicit>percent)))"
+                )
+            ),
         ),
     ],
 )
@@ -157,12 +168,13 @@ async def test__try_parse_progress(
     with_timestamp: bool,
     log_line: str,
     expected_progress_value: float,
+    image_labels: ImageLabels,
 ):
     expected_time_stamp = arrow.utcnow().datetime
     if with_timestamp:
         log_line = f"{expected_time_stamp.isoformat()} {log_line}"
 
-    received_progress = await _try_parse_progress(log_line)
+    received_progress = await _try_parse_progress(log_line, image_labels=image_labels)
     assert received_progress == expected_progress_value
 
 
