@@ -6,7 +6,7 @@ import filecmp
 import os
 import re
 import urllib.parse
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Final
 from unittest.mock import AsyncMock
@@ -17,6 +17,7 @@ import aiofiles
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
@@ -37,22 +38,6 @@ pytest_simcore_ops_services_selection = [
 WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
-@pytest.fixture(
-    params=[
-        f"{uuid4()}.bin",
-        "some funky name.txt",
-        "öä$äö2-34 no extension",
-    ]
-)
-def file_name(request: pytest.FixtureRequest) -> str:
-    return request.param
-
-
-@pytest.fixture
-def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
-    return upload_file_dir / f"__local__{file_name}"
-
-
 @pytest.fixture
 async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
     session = aioboto3.Session(
@@ -69,9 +54,6 @@ async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
         async for s3_object in bucket.objects.all():
             s3_objects.append(s3_object)  # noqa: PERF402
         await asyncio.gather(*[o.delete() for o in s3_objects])
-
-
-# UTILS
 
 
 def _fake_s3_link(r_clone_settings: RCloneSettings, s3_object: str) -> AnyUrl:
@@ -228,18 +210,26 @@ def _ensure_dir(tmp_path: Path, faker: Faker, *, dir_prefix: str) -> Path:
 
 
 @pytest.fixture
-def dir_locally_created_files(tmp_path: Path, faker: Faker) -> Path:
-    return _ensure_dir(tmp_path, faker, dir_prefix="source")
+async def dir_locally_created_files(
+    tmp_path: Path, faker: Faker
+) -> AsyncIterator[Path]:
+    path = _ensure_dir(tmp_path, faker, dir_prefix="source")
+    yield path
+    await remove_directory(path)
 
 
 @pytest.fixture
-def dir_downloaded_files_1(tmp_path: Path, faker: Faker) -> Path:
-    return _ensure_dir(tmp_path, faker, dir_prefix="downloaded-1")
+async def dir_downloaded_files_1(tmp_path: Path, faker: Faker) -> AsyncIterator[Path]:
+    path = _ensure_dir(tmp_path, faker, dir_prefix="downloaded-1")
+    yield path
+    await remove_directory(path)
 
 
 @pytest.fixture
-def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> Path:
-    return _ensure_dir(tmp_path, faker, dir_prefix="downloaded-2")
+async def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> AsyncIterator[Path]:
+    path = _ensure_dir(tmp_path, faker, dir_prefix="downloaded-2")
+    yield path
+    await remove_directory(path)
 
 
 @pytest.mark.parametrize(
