@@ -18,11 +18,11 @@ SUPPORTED_TEMPLATES: set[str] = {
 }
 
 
-def _format(template: str, *, name: str, default: str) -> dict[str, str]:
+def _format(template: str, *, name: str, default: str) -> str:
     try:
-        return {"identifier": template % (name, default)}
+        return template % (name, default)
     except TypeError:
-        return {"identifier": template % (name)}
+        return template % (name)
 
 
 SERIALIZED_NAT_RULES: list[ParameterSet] = [
@@ -108,9 +108,7 @@ def test_nat_rule_with_osparc_variable_identifier(
     ],
 )
 def test_______(replace_with_value: Any):
-    a_var = parse_obj_as(
-        OsparcVariableIdentifier, {"identifier": "$OSPARC_VARIABLE_some_var"}
-    )
+    a_var = parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_some_var")
     assert isinstance(a_var, OsparcVariableIdentifier)
 
     replaced_var = replace_osparc_variable_identifier(
@@ -153,7 +151,7 @@ def test_replace_an_instance_of_osparc_variable_identifier(
     except TypeError:
         formatted_template = var_template
 
-    a_var = parse_obj_as(OsparcVariableIdentifier, {"identifier": formatted_template})
+    a_var = parse_obj_as(OsparcVariableIdentifier, formatted_template)
     assert isinstance(a_var, OsparcVariableIdentifier)
 
     replace_with_identifier_default = identifier_has_default and replace_with_default

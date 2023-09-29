@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 class OsparcVariableIdentifier(BaseModel):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
-    identifier: str = Field(
+    __root__: str = Field(
         ..., regex=rf"^\${{?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+}}?(:-.+)?$"
     )
 
@@ -20,9 +20,9 @@ class OsparcVariableIdentifier(BaseModel):
         # ${VAR:-}
         # ${VAR:-default}
         # ${VAR:-{}}
-        if self.identifier.startswith("${"):
-            return self.identifier.removeprefix("${").removesuffix("}")
-        return self.identifier.removeprefix("$")
+        if self.__root__.startswith("${"):
+            return self.__root__.removeprefix("${").removesuffix("}")
+        return self.__root__.removeprefix("$")
 
     @property
     def name(self) -> str:
