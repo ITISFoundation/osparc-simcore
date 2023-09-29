@@ -276,6 +276,19 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
                 cb();
               }
             });
+
+          // push 'WALLET_SHARED' notification
+          osparc.store.Store.getInstance().getPotentialCollaborators()
+            .then(potentialCollaborators => {
+              gids.forEach(gid => {
+                if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
+                  // it's a user, not an organization
+                  const collab = potentialCollaborators[gid];
+                  const uid = collab["id"];
+                  osparc.notification.Notifications.postNewWallet(uid, wallet.getWalletId());
+                }
+              });
+            });
         });
     },
 
