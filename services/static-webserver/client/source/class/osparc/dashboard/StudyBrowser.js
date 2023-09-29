@@ -644,7 +644,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
           const size = file.size;
-          const maxSize = 10 * 1024 * 1024 * 1024; // 10 GB
+          const maxSize = 10 * 1000 * 1000 * 1000; // 10 GB
           if (size > maxSize) {
             osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
