@@ -9,7 +9,6 @@ from functools import total_ordering
 from typing import Final, NamedTuple
 
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -18,6 +17,7 @@ _USER_ROLE_TO_LEVEL = {
     "GUEST": 10,
     "USER": 20,
     "TESTER": 30,
+    "PRODUCT_OWNER": 40,
     "ADMIN": 100,
 }
 
@@ -44,6 +44,7 @@ class UserRole(Enum):
     GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
+    PRODUCT_OWNER = "PRODUCT_OWNER"
     ADMIN = "ADMIN"
 
     @property
@@ -127,15 +128,15 @@ users = sa.Table(
         "created_at",
         sa.DateTime(),
         nullable=False,
-        server_default=func.now(),
+        server_default=sa.func.now(),
         doc="Registration timestamp",
     ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),  # this will auto-update on modification
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),  # this will auto-update on modification
         doc="Last modification timestamp",
     ),
     sa.Column(

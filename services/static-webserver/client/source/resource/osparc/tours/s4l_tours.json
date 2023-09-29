@@ -1,0 +1,127 @@
+{
+  "dashboard": {
+    "id": "dashboard",
+    "name": "Dashboard",
+    "description": "Introduction to the Dashboard tabs",
+    "steps": [{
+      "anchorEl": "osparc-test-id=dashboardLabel",
+      "title": "Dashboard",
+      "text": "The Dashboard is your private hub which contains all of your simulation Projects, as well as Projects that have been shared with you.<br>From the Dashboard you are able to open your projects and create new ones.",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=dashboardTabs",
+      "title": "Dashboard Menu",
+      "text": "The menu tabs give you quick access to a set of core elements of the platform, namely Projects, Tutorials, Services and Data.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=studiesTabBtn",
+      "text": "Any Project is accessible via the Dashboard. The Projects, which belong to or are shared with you, can be found here.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=templatesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=templatesTabBtn",
+      "text": "Clicking on a Tutorial will create a copy of that Study, which will appear in your own Project ts tab with thee same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=servicesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=servicesTabBtn",
+      "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=dataTabBtn"
+      },
+      "anchorEl": "osparc-test-id=dataTabBtn",
+      "text": "The Data tab allow you to browse the output files of all of your active pipelines in one place. This is most useful for downloading the data created on the online platform.",
+      "placement": "bottom"
+    }]
+  },
+  "navbar": {
+    "id": "navbar",
+    "name": "Navigation Bar",
+    "description": "Introduction to the Navigation Bar",
+    "steps": [{
+      "anchorEl": "osparc-test-id=walletsMiniViewer",
+      "title": "Credits",
+      "text": "It will open the User Center",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=notificationsButton",
+      "title": "Notifications",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=manualsButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=manualsMenu",
+      "text": "The Manuals menu groups the oSPARC Manual and oSPARC Z43 Manual. It also provides quick access to other interactive Guides.",
+      "placement": "left"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=feedbackButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=feedbackMenu",
+      "text": "The Support menu gives you a way of providing feedback or questions, via the ZMT Forum or the official Sim4Life Support.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=themeSwitcher",
+      "text": "Switch between dark and light modes",
+      "placement": "bottom"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=userMenuBtn",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=userMenuMenu",
+      "text": "The User menu gives you access to the User Center, Preferences, Organizations and more.",
+      "placement": "left"
+    }]
+  },
+  "projects": {
+    "id": "projects",
+    "name": "Projects",
+    "description": "All you need to know about Project handling",
+    "steps": [{
+      "beforeClick": {
+        "selector": "osparc-test-id=studiesTabBtn"
+      },
+      "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+      "title": "Project Filter and Search",
+      "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "placement": "bottom"
+    }, {
+      "anchorEl": "osparc-test-id=startS4LButton",
+      "title": "Start Sim4Life",
+      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
+      "placement": "right"
+    }, {
+      "anchorEl": "osparc-test-id=startJSmashButton",
+      "title": "Start Sim4Life lab",
+      "text": "Clicking on this (+) Start Sim4Life lab button, allows you to create and open a new Sim4Life powered Jupyter notebook.",
+      "placement": "right"
+    }, {
+      "beforeClick": {
+        "selector": "osparc-test-id=studyItemMenuButton",
+        "action": "open"
+      },
+      "anchorEl": "osparc-test-id=studyItemMenuMenu",
+      "title": "More options button",
+      "text": "On the Project card, you can use the three dots button to access more information and operation on the Project.",
+      "placement": "left"
+    }, {
+      "anchorEl": "osparc-test-id=updateStudyBtn",
+      "title": "Update Services",
+      "text": "On the Project card, you can use the Update button to update the corresponding service to the latest version.",
+      "placement": "bottom"
+    }]
+  }
+}

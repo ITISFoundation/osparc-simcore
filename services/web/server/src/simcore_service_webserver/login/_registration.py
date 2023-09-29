@@ -17,12 +17,12 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
-from ..invitations.errors import InvalidInvitation, InvitationsServiceUnavailable
-from ..invitations.plugin import (
+from ..invitations.api import (
     extract_invitation,
     is_service_invitation_code,
     validate_invitation_url,
 )
+from ..invitations.errors import InvalidInvitation, InvitationsServiceUnavailable
 from ._confirmation import is_confirmation_expired, validate_confirmation_code
 from ._constants import MSG_EMAIL_EXISTS, MSG_INVITATIONS_CONTACT_SUFFIX
 from .settings import LoginOptions

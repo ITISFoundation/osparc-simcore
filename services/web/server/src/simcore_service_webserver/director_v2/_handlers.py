@@ -102,7 +102,7 @@ async def start_computation(request: web.Request) -> web.Response:
         request.app, project_id=project_id
     )
     app_settings = get_settings(request.app)
-    if project_wallet and app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
+    if project_wallet and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED:
         # Check whether user has access to the wallet
         await wallets_api.get_wallet_by_user(
             request.app, req_ctx.user_id, project_wallet.wallet_id, req_ctx.product_name

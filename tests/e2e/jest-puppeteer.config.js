@@ -1,4 +1,4 @@
-const demo = false;
+const demo = false; // For local testing, set this to true to make it non headless
 
 module.exports = {
   launch: {

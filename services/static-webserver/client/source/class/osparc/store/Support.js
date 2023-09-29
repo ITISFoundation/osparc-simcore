@@ -28,14 +28,14 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addQuickStartToMenu: function(menu) {
-      const tutorial = osparc.product.tutorial.Utils.getTutorial();
-      if (tutorial) {
+      const quickStart = osparc.product.quickStart.Utils.getQuickStart();
+      if (quickStart) {
         const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
         qsButton.getChildControl("label").set({
           rich: true
         });
         qsButton.addListener("execute", () => {
-          const tutorialWindow = tutorial.tutorial();
+          const tutorialWindow = quickStart.tutorial();
           tutorialWindow.center();
           tutorialWindow.open();
         });
@@ -43,16 +43,23 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
-    addPanddyToMenu: function(menu) {
-      if (osparc.product.panddy.Utils.hasPanddy()) {
-        const sequences = osparc.product.panddy.Utils.getSequences();
-        const panddyButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Panddy"));
-        panddyButton.addListener("execute", () => {
-          const panddy = osparc.panddy.Panddy.getInstance();
-          panddy.setSequences(sequences);
-          panddy.start();
-        });
-        menu.add(panddyButton);
+    addGuidedToursToMenu: function(menu) {
+      const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided Tours"));
+      guidedToursButton.exclude();
+      menu.add(guidedToursButton);
+      const fetchTours = osparc.product.tours.Utils.getTours();
+      if (fetchTours) {
+        fetchTours
+          .then(tours => {
+            if (tours) {
+              guidedToursButton.show();
+              guidedToursButton.addListener("execute", () => {
+                const toursManager = new osparc.tours.Manager();
+                toursManager.setTours(tours);
+                toursManager.start();
+              });
+            }
+          });
       }
     },
 

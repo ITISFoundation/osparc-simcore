@@ -50,7 +50,7 @@ async def _sum_credit_transactions_and_publish_to_rabbitmq(
     publish_message = WalletCreditsMessage.construct(
         wallet_id=wallet_id,
         created_at=datetime.now(tz=timezone.utc),
-        credits=wallet_total_credits,
+        credits=wallet_total_credits.available_osparc_credits,
     )
     await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 

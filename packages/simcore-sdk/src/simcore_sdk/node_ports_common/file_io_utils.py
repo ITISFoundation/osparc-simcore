@@ -20,6 +20,7 @@ from aiohttp import (
 )
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
+from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
@@ -48,6 +49,7 @@ class UploadableFileObject:
     file_object: IO
     file_name: str
     file_size: int
+    sha256_checksum: SHA256Str | None = None
 
 
 class ExtendedClientResponseError(ClientResponseError):

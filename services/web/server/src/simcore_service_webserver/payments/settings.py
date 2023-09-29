@@ -31,7 +31,6 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     # NOTE: PAYMENTS_FAKE_* settings are temporary until some features are moved to the payments service
-
     PAYMENTS_FAKE_COMPLETION: bool = Field(
         default=False, description="Enables fake completion. ONLY for testing purposes"
     )
@@ -68,9 +67,9 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
 
     @validator("PAYMENTS_FAKE_COMPLETION")
     @classmethod
-    def check_dev_feature_enabled(cls, v):
-        if v and not os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", False):
-            msg = "PAYMENTS_FAKE_COMPLETION only allowed when WEBSERVER_DEV_FEATURES_ENABLED=1"
+    def _payments_cannot_be_faken_in_production(cls, v):
+        if v is True and "production" in os.environ.get("SWARM_STACK_NAME", ""):
+            msg = "PAYMENTS_FAKE_COMPLETION only allowed FOR TESTING PURPOSES and cannot be released to production"
             raise ValueError(msg)
         return v
 

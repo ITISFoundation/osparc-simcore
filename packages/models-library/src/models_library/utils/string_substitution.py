@@ -5,9 +5,9 @@ import re
 import sys
 from collections import UserDict
 from string import Template
-from typing import Any
+from typing import Any, Final
 
-OSPARC_IDENTIFIER_PREFIX = "OSPARC_VARIABLE_"
+OSPARC_IDENTIFIER_PREFIX: Final[str] = "OSPARC_VARIABLE_"
 
 
 def upgrade_identifier(identifier: str) -> str:
