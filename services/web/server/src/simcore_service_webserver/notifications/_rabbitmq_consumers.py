@@ -1,6 +1,7 @@
 import functools
 import logging
-from typing import Any, AsyncIterator, Callable, Coroutine, Final
+from collections.abc import AsyncIterator, Callable, Coroutine
+from typing import Any, Final
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -177,7 +178,7 @@ async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> b
         }
     ]
     wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
-        app, rabbit_message.wallet_id
+        app, wallet_id=rabbit_message.wallet_id
     )
     rooms_to_notify = [f"{item.gid}" for item in wallet_groups]
     for room in rooms_to_notify:
@@ -198,17 +199,17 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        dict(topics=[]),
+        {"topics": []},
     ),
     (
         ProgressRabbitMessageNode.get_channel_name(),
         _progress_message_parser,
-        dict(topics=[]),
+        {"topics": []},
     ),
     (
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,
-        dict(exclusive_queue=False),
+        {"exclusive_queue": False},
     ),
     (
         EventRabbitMessage.get_channel_name(),
@@ -218,7 +219,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         WalletCreditsMessage.get_channel_name(),
         _osparc_credits_message_parser,
-        dict(topics=[]),
+        {"topics": []},
     ),
 )
 
