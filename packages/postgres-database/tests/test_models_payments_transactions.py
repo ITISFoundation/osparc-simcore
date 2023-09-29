@@ -79,7 +79,9 @@ def init_transaction(connection: SAConnection):
         values["initiated_at"] = utcnow()
 
         # insert
-        await insert_init_payment_transaction(connection, **values)
+        ok = await insert_init_payment_transaction(connection, **values)
+        assert ok
+
         return values
 
     return _init
