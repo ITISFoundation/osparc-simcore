@@ -5,19 +5,20 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
-from ._api import create_wallet, list_wallets_for_user
+from ._api import any_wallet_owned_by_user, create_wallet
 
 
 async def _auto_add_default_wallet(
     app: web.Application, user_id: UserID, product_name: ProductName
 ):
-    # TODO: check ANY OWNED wallets!
-    if not await list_wallets_for_user(app, user_id=user_id, product_name=product_name):
+    if not await any_wallet_owned_by_user(
+        app, user_id=user_id, product_name=product_name
+    ):
         await create_wallet(
             app,
             user_id=user_id,
             wallet_name="Credits",
-            description=None,
+            description="Keeps the credits in your account",
             thumbnail=None,
             product_name=product_name,
         )

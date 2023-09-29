@@ -88,6 +88,26 @@ async def list_wallets_for_user(
     return parse_obj_as(list[WalletGet], user_wallets)
 
 
+async def any_wallet_owned_by_user(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+) -> bool:
+    wallet_ids = await db.list_wallets_owned_by_user(
+        app, user_id=user_id, product_name=product_name
+    )
+
+    if len(wallet_ids) > 1:
+        _logger.warning(
+            "User %s owns more than one wallet for %s. Check %s",
+            f"{user_id=}",
+            f"{product_name=}",
+            f"{wallet_ids=}",
+        )
+
+    return len(wallet_ids) != 0
+
+
 async def update_wallet(
     app: web.Application,
     user_id: UserID,
