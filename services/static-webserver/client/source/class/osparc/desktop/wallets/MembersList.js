@@ -97,9 +97,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     __canIWrite: function() {
       const wallet = this.__currentModel;
       if (wallet) {
-        const myAcessRights = wallet.getMyAccessRights();
-        if (myAcessRights) {
-          return myAcessRights["write"];
+        const myAccessRights = wallet.getMyAccessRights();
+        if (myAccessRights) {
+          return myAccessRights["write"];
         }
       }
       return false;
@@ -140,7 +140,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __getRolesToolbar: function() {
-      return osparc.data.Roles.createRolesWalleltInfo();
+      return osparc.data.Roles.createRolesWalletInfo();
     },
 
     __getMembersFilter: function() {
@@ -152,7 +152,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __getMembersList: function() {
-      const memebersUIList = new qx.ui.form.List().set({
+      const membersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         width: 150,
@@ -160,7 +160,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();
-      const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
+      const membersCtrl = new qx.data.controller.List(membersModel, membersUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.desktop.wallets.MemberListItem(),
         bindItem: (ctrl, item, id) => {
@@ -195,7 +195,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         }
       });
 
-      return memebersUIList;
+      return membersUIList;
     },
 
     __reloadWalletMembers: async function() {
