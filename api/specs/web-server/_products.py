@@ -30,7 +30,7 @@ async def get_current_product_price():
     ...
 
 
-@router.get(
+@router.post(
     "/invitation:generate",
     response_model=Envelope[InvitationGenerated],
 )

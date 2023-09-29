@@ -1775,7 +1775,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_CreditPriceGet_'
   /v0/invitation:generate:
-    get:
+    post:
       tags:
       - products
       summary: Generate Invitation
