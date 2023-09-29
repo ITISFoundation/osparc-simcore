@@ -435,6 +435,8 @@ async def get_image_labels(
 
         progress_regexp_label = image_labels.get("io.simcore.progress-regexp", "{}")
 
+        logger.debug("io.simcore.progress-regexp: %s", progress_regexp_label)
+
         progress_regexp_label = json.loads(progress_regexp_label).get(
             "progress-regexp", None
         )

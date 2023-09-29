@@ -158,7 +158,7 @@ async def test_create_container_config(
             0.21,
             ImageLabels(
                 progress_regexp=re.compile(
-                    "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?:(?P<percent_sign>%)|\\d+\\s*(?P<percent_explicit>percent)))"
+                    "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))"
                 )
             ),
         ),
