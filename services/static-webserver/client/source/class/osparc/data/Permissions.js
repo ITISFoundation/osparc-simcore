@@ -69,9 +69,13 @@ qx.Class.define("osparc.data.Permissions", {
         can: [],
         inherits: ["user"]
       },
-      admin: {
+      "product_owner": {
         can: [],
         inherits: ["tester"]
+      },
+      admin: {
+        can: [],
+        inherits: ["product_owner"]
       }
     },
 
@@ -124,7 +128,6 @@ qx.Class.define("osparc.data.Permissions", {
           "services.all.read",
           "services.all.reupdate",
           "services.filePicker.read.all",
-          "user.role.update",
           "user.clusters.create",
           "user.wallets.create",
           "study.everyone.share",
@@ -135,6 +138,9 @@ qx.Class.define("osparc.data.Permissions", {
           "study.logger.debug.read",
           "statics.read",
           "usage.all.read"
+        ],
+        "product_owner": [
+          "user.invitation.generate"
         ],
         "admin": []
       };
@@ -168,7 +174,7 @@ qx.Class.define("osparc.data.Permissions", {
 
   properties: {
     role: {
-      check: ["anonymous", "guest", "user", "tester", "admin"],
+      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
       init: null,
       nullable: false,
       event: "changeRole"
@@ -276,7 +282,11 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isTester: function() {
-      return ["admin", "tester"].includes(this.getRole());
+      return ["tester", "product_owner", "admin"].includes(this.getRole());
+    },
+
+    isProductOwner: function() {
+      return ["product_owner", "admin"].includes(this.getRole());
     }
   }
 });
