@@ -19,7 +19,7 @@ def _serializer(data: dict[str, Any]) -> str:
 
 
 def _deserializer(str_data: str) -> dict[str, Any]:
-    return json.loads(str_data)
+    return cast(dict[str, Any], json.loads(str_data))
 
 
 class SpecsSubstitutionsResolver:
@@ -85,11 +85,11 @@ class SpecsSubstitutionsResolver:
         resolved_identifiers: dict[str, str] = {}
         for identifier in needed_identifiers_with_defaults:
             if identifier in mappings:
-                resolved_identifiers[identifier] = mappings[identifier]
+                resolved_identifiers[identifier] = cast(str, mappings[identifier])
             elif needed_identifiers_with_defaults[identifier] is not None:
-                resolved_identifiers[identifier] = needed_identifiers_with_defaults[
-                    identifier
-                ]
+                resolved_identifiers[identifier] = cast(
+                    str, needed_identifiers_with_defaults[identifier]
+                )
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)
         return self._substitutions
