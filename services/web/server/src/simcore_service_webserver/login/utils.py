@@ -5,6 +5,7 @@ from typing import Any, cast
 
 import passlib.hash
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.users import UserID
 from passlib import pwd
 from servicelib.aiohttp import observer
@@ -13,7 +14,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from ..db.models import ConfirmationAction, UserRole, UserStatus
+from ..db.models import ConfirmationAction, UserStatus
 from ._constants import MSG_ACTIVATION_REQUIRED, MSG_USER_BANNED, MSG_USER_EXPIRED
 
 log = logging.getLogger(__name__)
@@ -62,6 +63,15 @@ def validate_user_status(*, user: dict, support_email: str):
         )  # 401
 
     assert user_status == ACTIVE  # nosec
+
+
+async def notify_user_registration(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+):
+    """Broadcasts signa when 'user_id' has registered in 'product_name'"""
+    await observer.emit(app, "SIGNAL_USER_REGISTRATION", user_id, product_name, app)
 
 
 async def notify_user_logout(
