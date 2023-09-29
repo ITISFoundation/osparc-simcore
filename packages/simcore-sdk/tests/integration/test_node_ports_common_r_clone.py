@@ -38,22 +38,6 @@ pytest_simcore_ops_services_selection = [
 WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
-@pytest.fixture(
-    params=[
-        f"{uuid4()}.bin",
-        "some funky name.txt",
-        "öä$äö2-34 no extension",
-    ]
-)
-def file_name(request: pytest.FixtureRequest) -> str:
-    return request.param
-
-
-@pytest.fixture
-def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
-    return upload_file_dir / f"__local__{file_name}"
-
-
 @pytest.fixture
 async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
     session = aioboto3.Session(
@@ -70,9 +54,6 @@ async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
         async for s3_object in bucket.objects.all():
             s3_objects.append(s3_object)  # noqa: PERF402
         await asyncio.gather(*[o.delete() for o in s3_objects])
-
-
-# UTILS
 
 
 def _fake_s3_link(r_clone_settings: RCloneSettings, s3_object: str) -> AnyUrl:
