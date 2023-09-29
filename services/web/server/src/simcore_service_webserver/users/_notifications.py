@@ -20,6 +20,7 @@ class NotificationCategory(StrAutoEnum):
     STUDY_SHARED = auto()
     TEMPLATE_SHARED = auto()
     ANNOTATION_NOTE = auto()
+    WALLET_SHARED = auto()
 
 
 class BaseUserNotification(BaseModel):
@@ -98,6 +99,16 @@ class UserNotification(BaseUserNotification):
                     "title": "Note added",
                     "text": "A Note was added for you",
                     "date": "2023-02-23T16:28:13.122Z",
+                    "read": False,
+                },
+                {
+                    "id": "390053c9-3931-40e1-839f-585268f6fd3e",
+                    "user_id": "1",
+                    "category": "WALLET_SHARED",
+                    "actionable_path": "wallet/21",
+                    "title": "Credits shared",
+                    "text": "A credit account was shared with you",
+                    "date": "2023-09-29T16:28:13.122Z",
                     "read": False,
                 },
             ]
