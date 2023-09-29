@@ -1,5 +1,5 @@
 import json
-from typing import Any, Final, TypeAlias, cast
+from typing import Any, TypeAlias, cast
 
 from pydantic import StrictBool, StrictFloat, StrictInt
 
@@ -12,8 +12,6 @@ from .string_substitution import (
 # This constraint on substitution values is to avoid
 # deserialization issues on the TextTemplate substitution!
 SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
-
-_EXPECTED_PARTS: Final[int] = 2
 
 
 def _serializer(data: dict[str, Any]) -> str:
@@ -80,7 +78,7 @@ class SpecsSubstitutionsResolver:
         needed_identifiers_with_defaults: dict[str, str | None] = {}
         for identifier in needed_identifiers:
             parts = identifier.split(":-")
-            if len(parts) == _EXPECTED_PARTS or ":-" in identifier:
+            if ":-" in identifier:
                 default = parts[1]
                 needed_identifiers_with_defaults[identifier] = default
             else:
