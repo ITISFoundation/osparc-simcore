@@ -26,9 +26,21 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     osparc.utils.Utils.setIdToWidget(this, "walletsMiniViewer");
 
     this.set({
-      cursor: "pointer",
+      alignX: "center",
       padding: 5,
-      paddingRight: 10
+      margin: 10,
+      marginRight: 20
+    });
+
+    // make it look like a button
+    this.set({
+      cursor: "pointer",
+      backgroundColor: "background-main-3"
+    });
+    this.addListener("pointerover", () => this.setBackgroundColor("background-main-4"), this);
+    this.addListener("pointerout", () => this.setBackgroundColor("background-main-3"), this);
+    this.getContentElement().setStyles({
+      "border-radius": "4px"
     });
 
     this.__walletListeners = [];

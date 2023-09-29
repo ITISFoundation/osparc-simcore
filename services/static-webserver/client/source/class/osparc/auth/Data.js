@@ -85,7 +85,7 @@ qx.Class.define("osparc.auth.Data", {
     },
 
     role: {
-      check: ["anonymous", "guest", "user", "tester", "admin"],
+      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
       init: null,
       nullable: false,
       event: "changeRole",
@@ -109,7 +109,7 @@ qx.Class.define("osparc.auth.Data", {
 
   members: {
     __applyRole: function(role) {
-      if (role && ["user", "tester", "admin"].includes(role)) {
+      if (role && ["user", "tester", "product_owner", "admin"].includes(role)) {
         this.setGuest(false);
       } else {
         this.setGuest(true);
@@ -142,6 +142,13 @@ qx.Class.define("osparc.auth.Data", {
         return osparc.utils.Utils.getNameFromEmail(email);
       }
       return "user";
+    },
+
+    getFriendlyRole: function() {
+      const role = this.getRole();
+      let friendlyRole = role.replace(/_/g, " ");
+      friendlyRole = osparc.utils.Utils.firstsUp(friendlyRole);
+      return friendlyRole;
     }
   }
 });

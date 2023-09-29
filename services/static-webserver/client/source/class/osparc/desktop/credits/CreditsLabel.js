@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.credits.CreditsLabel", {
       }
       let label = creditsAvailable.toFixed(2);
       if (this.isShortWording()) {
-        label += this.tr(" cr.");
+        label += this.tr(" credits");
       } else {
         label += this.tr(" credits");
       }

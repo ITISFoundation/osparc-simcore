@@ -653,13 +653,21 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * CREDITS PRICE
+       * PRODUCTS
        */
       "credits-price": {
         endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/credits-price"
+          }
+        }
+      },
+      "invitations": {
+        endpoints: {
+          post: {
+            method: "POST",
+            url: statics.API + "/invitation:generate"
           }
         }
       },
@@ -928,7 +936,7 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * Test/Diagnonstic entrypoint
+       * Test/Diagnostic entrypoint
        */
       "checkEP": {
         useCache: false,
@@ -1184,7 +1192,7 @@ qx.Class.define("osparc.data.Resources", {
     /**
      * Add the given data to the cached version of a resource, or a collection of them.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
-     * @param {*} data Resource or collection of resources to be addded to the cache.
+     * @param {*} data Resource or collection of resources to be added to the cache.
      */
     __addCached: function(resource, data) {
       osparc.store.Store.getInstance().append(resource, data, this.self().resources[resource].idField || "uuid");
