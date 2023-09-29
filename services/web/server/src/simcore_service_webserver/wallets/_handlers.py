@@ -90,6 +90,8 @@ async def create_wallet(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateWalletBodyParams, request)
 
+    # TODO: should we limit this?
+
     wallet: WalletGet = await _api.create_wallet(
         request.app,
         user_id=req_ctx.user_id,

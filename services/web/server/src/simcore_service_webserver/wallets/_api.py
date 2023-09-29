@@ -85,9 +85,7 @@ async def list_wallets_for_user(
     user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
         app=app, user_id=user_id, product_name=product_name
     )
-    wallets_api = parse_obj_as(list[WalletGet], user_wallets)
-
-    return wallets_api
+    return parse_obj_as(list[WalletGet], user_wallets)
 
 
 async def update_wallet(
