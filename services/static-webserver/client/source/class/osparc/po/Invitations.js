@@ -100,10 +100,18 @@ qx.Class.define("osparc.po.Invitations", {
       });
       form.add(userEmail, this.tr("User Email"));
 
+      const withExpiration = new qx.ui.form.CheckBox().set({
+        value: false
+      });
+      form.add(withExpiration, this.tr("With expiration"));
+
       const trialDays = new qx.ui.form.Spinner().set({
-        minimum: 0,
+        minimum: 1,
         maximum: 1000,
-        value: 0
+        value: 1
+      });
+      withExpiration.bind("value", trialDays, "visibility", {
+        converter: val => val ? "visible" : "excluded"
       });
       form.add(trialDays, this.tr("Trial Days"));
 
@@ -120,7 +128,7 @@ qx.Class.define("osparc.po.Invitations", {
             "guest": userEmail.getValue()
           }
         };
-        if (trialDays.getValue() > 0) {
+        if (withExpiration.getValue()) {
           params.data["trialAccountDays"] = trialDays.getValue();
         }
         generateInvitationBtn.setFetching(true);
@@ -160,7 +168,7 @@ qx.Class.define("osparc.po.Invitations", {
         flex: 1
       });
 
-      const copyInvitationBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy invitation link"));
+      const copyInvitationBtn = new qx.ui.form.Button(this.tr("Copy invitation link"));
       copyInvitationBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(respData["invitation_link"])) {
           copyInvitationBtn.setIcon("@FontAwesome5Solid/check/12");
@@ -168,9 +176,7 @@ qx.Class.define("osparc.po.Invitations", {
       });
       hBox.add(copyInvitationBtn);
 
-      const respLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Data encrypted in the invitation")
-      });
+      const respLabel = new qx.ui.basic.Label(this.tr("Data encrypted in the invitation"));
       vBox.add(respLabel);
 
       delete respData["invitation_link"];
