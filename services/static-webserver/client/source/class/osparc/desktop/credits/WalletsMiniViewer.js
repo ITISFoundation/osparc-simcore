@@ -23,6 +23,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this._setLayout(new qx.ui.layout.VBox(3));
 
+    osparc.utils.Utils.setIdToWidget(this, "walletsMiniViewer");
+
     this.set({
       cursor: "pointer",
       padding: 5,
@@ -36,7 +38,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this.addListener("tap", () => {
       osparc.desktop.credits.Utils.areWalletsEnabled()
         .then(walletsEnabled => {
-          const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
           creditsWindow.openOverview();
         });
     }, this);
@@ -101,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       walletsButton.addListener("tap", () => {
         osparc.desktop.credits.Utils.areWalletsEnabled()
           .then(walletsEnabled => {
-            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
             creditsWindow.openWallets();
           });
       }, this);
@@ -152,10 +154,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const progressBar = new osparc.desktop.credits.CreditsIndicator(wallet).set({
-        allowShrinkY: true
+      const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
+        alignX: "right"
       });
-      this._add(progressBar, {
+      this._add(creditsLabel, {
         flex: 1
       });
     },

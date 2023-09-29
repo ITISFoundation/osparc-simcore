@@ -133,6 +133,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             source: "@MaterialIcons/update/18",
             visibility: "excluded"
           });
+          osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.UPDATES
@@ -251,6 +252,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       const menuButton = this.getChildControl("menu-button");
       if (value) {
         menuButton.setMenu(value);
+        osparc.utils.Utils.setIdToWidget(value, "studyItemMenuMenu");
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
     }

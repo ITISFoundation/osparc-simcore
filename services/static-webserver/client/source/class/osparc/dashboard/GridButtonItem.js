@@ -65,6 +65,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             visibility: "excluded",
             alignY: "bottom"
           });
+          osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         case "hits-service":
@@ -221,6 +222,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       const menuButton = this.getChildControl("menu-button");
       if (value) {
         menuButton.setMenu(value);
+        osparc.utils.Utils.setIdToWidget(value, "studyItemMenuMenu");
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
     }
