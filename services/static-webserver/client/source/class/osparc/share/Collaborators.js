@@ -358,9 +358,9 @@ qx.Class.define("osparc.share.Collaborators", {
     _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const aceessRights = this._serializedData["accessRights"];
+      const accessRights = this._serializedData["accessRights"];
       const collaboratorsList = [];
-      Object.keys(aceessRights).forEach(gid => {
+      Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];
           // Do not override collaborator object
@@ -369,7 +369,7 @@ qx.Class.define("osparc.share.Collaborators", {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
-          collaborator["accessRights"] = aceessRights[gid];
+          collaborator["accessRights"] = accessRights[gid];
           collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
           collaboratorsList.push(collaborator);
         }
