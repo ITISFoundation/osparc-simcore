@@ -80,17 +80,4 @@ resource_tracker_pricing_unit_costs = sa.Table(
         doc="Option to store comment",
     ),
     column_modified_datetime(timezone=True),
-    # sa.Column(
-    #     "version",
-    #     sa.Integer,
-    #     nullable=False,
-    #     doc="Version of specific pricing unit in the pricing plan (ex. In case of change in cost_per_unit, the version is increased)",
-    # ),
-    # ---------------------------
-    # sa.UniqueConstraint(
-    #     "pricing_plan_id",
-    #     "unit_name",
-    #     "version",
-    #     name="pricing_details_unit_constrain_key",
-    # ),
 )

@@ -96,21 +96,6 @@ async def create_credit_transaction(
 ################
 
 
-# @router.get(
-#     "/services/{service_key:path}/{service_version}/pricing-plans",
-#     response_model=list[ServicePricingPlanGet],
-#     operation_id="list_service_pricing_plans",
-#     description="Returns a list of service pricing plans with pricing details for a specified service",
-# )
-# async def list_service_pricing_plans(
-#     service_pricing_plans: Annotated[
-#         list[ServicePricingPlanGet],
-#         Depends(resource_tracker_pricing_plans.list_service_pricing_plans),
-#     ],
-# ):
-#     return service_pricing_plans
-
-
 @router.get(
     "/services/{service_key:path}/{service_version}/pricing-plan",
     response_model=ServicePricingPlanGet,
@@ -127,36 +112,8 @@ async def get_service_default_pricing_plan(
     return service_pricing_plans
 
 
-# @router.get(
-#     "/pricing-plans",   # --> Not implemented
-#     # response_model=list[ServicePricingPlanGet],
-#     # operation_id="list_service_pricing_plans",
-#     # description="Returns a list of service pricing plans with pricing details for a specified service",
-# )
-# async def list_pricing_plans():
-#     ...
-
-# @router.get(
-#     "/pricing-plans/{pricing_plan_id}/pricing-units",  # --> Not implemented
-#     # response_model=list[ServicePricingPlanGet],
-#     # operation_id="list_service_pricing_plans",
-#     # description="Returns a list of service pricing plans with pricing details for a specified service",
-# )
-# async def list_pricing_plan_pricing_units():
-#     ...
-
-# @router.get(
-#     "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}/costs",  # --> Not implemented
-#     # response_model=list[ServicePricingPlanGet],
-#     # operation_id="list_service_pricing_plans",
-#     # description="Returns a list of service pricing plans with pricing details for a specified service",
-# )
-# async def list_pricing_plan_unit_costs():
-#     ...
-
-
 @router.get(
-    "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",  # --> here is also unit_cost_id
+    "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
     response_model=PricingUnitGet,
     operation_id="list_service_pricing_plans",
     description="Returns a list of service pricing plans with pricing details for a specified service",

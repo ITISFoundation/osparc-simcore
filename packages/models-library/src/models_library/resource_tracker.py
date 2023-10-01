@@ -7,7 +7,6 @@ from .utils.enums import StrAutoEnum
 
 ServiceRunId: TypeAlias = str
 PricingPlanId: TypeAlias = PositiveInt
-PricingDetailId: TypeAlias = PositiveInt
 PricingUnitId: TypeAlias = PositiveInt
 PricingUnitCostId: TypeAlias = PositiveInt
 CreditTransactionId: TypeAlias = PositiveInt
