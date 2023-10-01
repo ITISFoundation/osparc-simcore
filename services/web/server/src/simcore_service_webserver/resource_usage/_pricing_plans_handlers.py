@@ -55,7 +55,7 @@ class _GetPricingPlanUnitPathParams(BaseModel):
 
 
 @routes.get(
-    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}/pricing-unit/{{pricing_unit_id}}",
+    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}/pricing-units/{{pricing_unit_id}}",
     name="get_pricing_plan_unit",
 )
 @login_required
