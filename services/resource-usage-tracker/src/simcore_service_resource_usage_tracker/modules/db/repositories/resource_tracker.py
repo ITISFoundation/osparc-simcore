@@ -511,7 +511,6 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        # output = result.fetchall()
         return [PricingUnitsDB.from_orm(row) for row in result.fetchall()]
 
     async def get_pricing_unit(
