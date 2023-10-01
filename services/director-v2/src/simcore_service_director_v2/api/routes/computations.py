@@ -261,7 +261,7 @@ async def create_computation(  # noqa: C901, PLR0912
                     wallet_name=wallet_name,
                     pricing_plan_id=pricing_plan_id,
                     pricing_unit_id=pricing_unit_id,
-                    pricing_unit_cost=pricing_unit_cost_id,
+                    pricing_unit_cost_id=pricing_unit_cost_id,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )
