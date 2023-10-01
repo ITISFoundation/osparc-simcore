@@ -383,21 +383,6 @@ class ResourceTrackerRepository(BaseRepository):
     # Pricing plans
     #################################
 
-    # async def get_pricing_plan(self, pricing_plan_id: PricingPlanId) -> PricingPlanDB:
-    #     async with self.db_engine.begin() as conn:
-    #         query = sa.select(
-    #             resource_tracker_pricing_plans.c.pricing_plan_id,
-    #             resource_tracker_pricing_plans.c.name,
-    #             resource_tracker_pricing_plans.c.description,
-    #             resource_tracker_pricing_plans.c.classification,
-    #             resource_tracker_pricing_plans.c.is_active,
-    #             resource_tracker_pricing_plans.c.created,
-    #             resource_tracker_pricing_plans.c.pricing_plan_key,
-    #         ).where(resource_tracker_pricing_plans.c.pricing_plan_id == pricing_plan_id)
-    #         result = await conn.execute(query)
-    #     row = result.first()
-    #     return PricingPlanDB.from_orm(row)
-
     async def list_active_service_pricing_plans_by_product_and_service(
         self,
         product_name: ProductName,
@@ -477,21 +462,6 @@ class ResourceTrackerRepository(BaseRepository):
     #################################
     # Pricing units
     #################################
-
-    # async def get_pricing_unit_actual_cost(
-    #     self,
-    #     pricing_unit_id: PricingUnitId,
-    # ) -> Decimal:
-    #     async with self.db_engine.begin() as conn:
-    #         query = sa.select(
-    #             resource_tracker_pricing_units.c.current_cost_per_unit
-    #         ).where(resource_tracker_pricing_units.c.pricing_unit_id == pricing_unit_id)
-    #         result = await conn.execute(query)
-
-    #     row = result.first()
-    #     if row is None:
-    #         raise ValueError
-    #     return Decimal(row[0])
 
     async def list_pricing_units_by_pricing_plan(
         self,
@@ -639,62 +609,3 @@ class ResourceTrackerRepository(BaseRepository):
         if row is None:
             raise ValueError
         return PricingUnitCostsDB.from_orm(row)
-
-    # async def list_pricing_unit_costs_by_pricing_plan_and_unit(
-    #     self, pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId
-    # ) -> list[PricingUnitCostsDB]:
-    #     async with self.db_engine.begin() as conn:
-    #         query = (
-    #             sa.select(
-    #                 resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id,
-    #                 resource_tracker_pricing_unit_costs.c.pricing_plan_id,
-    #                 resource_tracker_pricing_unit_costs.c.pricing_plan_key,
-    #                 resource_tracker_pricing_unit_costs.c.pricing_unit_id,
-    #                 resource_tracker_pricing_unit_costs.c.pricing_unit_name,
-    #                 resource_tracker_pricing_unit_costs.c.cost_per_unit,
-    #                 resource_tracker_pricing_unit_costs.c.valid_from,
-    #                 resource_tracker_pricing_unit_costs.c.valid_to,
-    #                 resource_tracker_pricing_unit_costs.c.specific_info,
-    #                 resource_tracker_pricing_unit_costs.c.created,
-    #                 resource_tracker_pricing_unit_costs.c.created_by,
-    #                 resource_tracker_pricing_unit_costs.c.modified,
-    #             )
-    #             .where(
-    #                 (
-    #                     resource_tracker_pricing_unit_costs.c.pricing_plan_id
-    #                     == pricing_plan_id
-    #                 )
-    #                 & (
-    #                     resource_tracker_pricing_unit_costs.c.pricing_unit_id
-    #                     == pricing_unit_id
-    #                 )
-    #             )
-    #             .order_by(resource_tracker_pricing_unit_costs.c.created.asc())
-    #         )
-    #         result = await conn.execute(query)
-
-    #     return [PricingUnitCostsDB.from_orm(row) for row in result.fetchall()]
-
-    # async def get_pricing_unit_cost_id_by_pricing_plan_and_unit(
-    #     self, pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId
-    # ) -> PricingUnitCostId:
-    #     async with self.db_engine.begin() as conn:
-    #         query = sa.select(
-    #             resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id,
-    #         ).where(
-    #             (
-    #                 resource_tracker_pricing_unit_costs.c.pricing_plan_id
-    #                 == pricing_plan_id
-    #             )
-    #             & (
-    #                 resource_tracker_pricing_unit_costs.c.pricing_unit_id
-    #                 == pricing_unit_id
-    #             )
-    #             & (resource_tracker_pricing_unit_costs.c.valid_to.is_(None))
-    #         )
-    #         result = await conn.execute(query)
-
-    #     row = result.first()
-    #     if row is None:
-    #         raise ValueError("Pricing unit cost id does not exists for specified combination")
-    #     return parse_obj_as(PricingUnitCostId, row[0])

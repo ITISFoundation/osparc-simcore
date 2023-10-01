@@ -43,10 +43,8 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
-    _logger.debug("%s", data)
-
     rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
-
+    _logger.info("Process msg service_run_id: %s", rabbit_message.service_run_id)
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=app.state.engine
     )
