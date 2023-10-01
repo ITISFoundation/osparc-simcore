@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 
 from fastapi import FastAPI
@@ -12,7 +12,6 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
-    WalletCreditsMessage,
 )
 from models_library.resource_tracker import (
     CreditClassification,
@@ -28,21 +27,24 @@ from .models.resource_tracker_credit_transactions import (
     CreditTransactionCreditsAndStatusUpdate,
     CreditTransactionCreditsUpdate,
 )
-from .models.resource_tracker_service_run import (
+from .models.resource_tracker_service_runs import (
     ServiceRunCreate,
     ServiceRunLastHeartbeatUpdate,
     ServiceRunStoppedAtUpdate,
 )
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
-from .resource_tracker_utils import make_negative
+from .resource_tracker_utils import (
+    make_negative,
+    sum_credit_transactions_and_publish_to_rabbitmq,
+)
 
 _logger = logging.getLogger(__name__)
 
 
-async def process_message(
-    app: FastAPI, data: bytes  # pylint: disable=unused-argument
-) -> bool:
+async def process_message(app: FastAPI, data: bytes) -> bool:
+    _logger.debug("%s", data)
+
     rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
 
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
@@ -53,8 +55,6 @@ async def process_message(
     await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
         resource_tacker_repo, rabbit_message, rabbitmq_client
     )
-
-    _logger.debug("%s", data)
     return True
 
 
@@ -69,13 +69,12 @@ async def _process_start_event(
         else ResourceTrackerServiceType.DYNAMIC_SERVICE
     )
 
-    pricing_detail_cost_per_unit = None
-    if msg.pricing_detail_id:
-        pricing_detail_cost_per_unit = (
-            await resource_tracker_repo.get_pricing_detail_cost_per_unit(
-                msg.pricing_detail_id
-            )
+    pricing_unit_cost = None
+    if msg.pricing_unit_cost_id:
+        pricing_unit_cost_db = await resource_tracker_repo.get_pricing_unit_cost_by_id(
+            pricing_unit_cost_id=msg.pricing_unit_cost_id
         )
+        pricing_unit_cost = pricing_unit_cost_db.cost_per_unit
 
     create_service_run = ServiceRunCreate(
         product_name=msg.product_name,
@@ -83,8 +82,9 @@ async def _process_start_event(
         wallet_id=msg.wallet_id,
         wallet_name=msg.wallet_name,
         pricing_plan_id=msg.pricing_plan_id,
-        pricing_detail_id=msg.pricing_detail_id,
-        pricing_detail_cost_per_unit=pricing_detail_cost_per_unit,
+        pricing_unit_id=msg.pricing_unit_id,
+        pricing_unit_cost_id=msg.pricing_unit_cost_id,
+        pricing_unit_cost=pricing_unit_cost,
         simcore_user_agent=msg.simcore_user_agent,
         user_id=msg.user_id,
         user_email=msg.user_email,
@@ -109,7 +109,8 @@ async def _process_start_event(
             wallet_id=msg.wallet_id,
             wallet_name=msg.wallet_name,
             pricing_plan_id=msg.pricing_plan_id,
-            pricing_detail_id=msg.pricing_detail_id,
+            pricing_unit_id=msg.pricing_unit_id,
+            pricing_unit_cost_id=msg.pricing_unit_cost_id,
             user_id=msg.user_id,
             user_email=msg.user_email,
             osparc_credits=Decimal(0.0),
@@ -123,18 +124,9 @@ async def _process_start_event(
         await resource_tracker_repo.create_credit_transaction(transaction_create)
 
         # Publish wallet total credits to RabbitMQ
-        wallet_total_credits = (
-            await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-                msg.product_name,
-                msg.wallet_id,
-            )
+        await sum_credit_transactions_and_publish_to_rabbitmq(
+            resource_tracker_repo, rabbitmq_client, msg.product_name, msg.wallet_id
         )
-        publish_message = WalletCreditsMessage.construct(
-            wallet_id=msg.wallet_id,
-            created_at=datetime.now(tz=timezone.utc),
-            credits=wallet_total_credits.available_osparc_credits,
-        )
-        await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
 
 async def _process_heartbeat_event(
@@ -153,12 +145,12 @@ async def _process_heartbeat_event(
         _logger.info("Nothing to update: %s", msg)
         return
 
-    if running_service.wallet_id and running_service.pricing_detail_cost_per_unit:
+    if running_service.wallet_id and running_service.pricing_unit_cost:
         # Compute currently used credits
         computed_credits = await _compute_service_run_credit_costs(
             running_service.started_at,
             msg.created_at,
-            running_service.pricing_detail_cost_per_unit,
+            running_service.pricing_unit_cost,
         )
         # Update credits in the transaction table
         update_credit_transaction = CreditTransactionCreditsUpdate(
@@ -170,18 +162,12 @@ async def _process_heartbeat_event(
             update_credit_transaction
         )
         # Publish wallet total credits to RabbitMQ
-        wallet_total_credits = (
-            await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-                running_service.product_name,
-                running_service.wallet_id,
-            )
+        await sum_credit_transactions_and_publish_to_rabbitmq(
+            resource_tracker_repo,
+            rabbitmq_client,
+            running_service.product_name,
+            running_service.wallet_id,
         )
-        publish_message = WalletCreditsMessage.construct(
-            wallet_id=running_service.wallet_id,
-            created_at=datetime.now(tz=timezone.utc),
-            credits=wallet_total_credits.available_osparc_credits,
-        )
-        await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
 
 async def _process_stop_event(
@@ -205,12 +191,12 @@ async def _process_stop_event(
         _logger.error("Nothing to update. This should not happen investigate.")
         return
 
-    if running_service.wallet_id and running_service.pricing_detail_cost_per_unit:
+    if running_service.wallet_id and running_service.pricing_unit_cost:
         # Compute currently used credits
         computed_credits = await _compute_service_run_credit_costs(
             running_service.started_at,
             msg.created_at,
-            running_service.pricing_detail_cost_per_unit,
+            running_service.pricing_unit_cost,
         )
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
@@ -224,18 +210,12 @@ async def _process_stop_event(
             update_credit_transaction
         )
         # Publish wallet total credits to RabbitMQ
-        wallet_total_credits = (
-            await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-                running_service.product_name,
-                running_service.wallet_id,
-            )
+        await sum_credit_transactions_and_publish_to_rabbitmq(
+            resource_tracker_repo,
+            rabbitmq_client,
+            running_service.product_name,
+            running_service.wallet_id,
         )
-        publish_message = WalletCreditsMessage.construct(
-            wallet_id=running_service.wallet_id,
-            created_at=datetime.now(tz=timezone.utc),
-            credits=wallet_total_credits.available_osparc_credits,
-        )
-        await rabbitmq_client.publish(publish_message.channel_name, publish_message)
 
 
 RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] = {

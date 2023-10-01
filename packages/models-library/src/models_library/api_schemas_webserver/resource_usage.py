@@ -2,7 +2,6 @@ from datetime import datetime
 from decimal import Decimal
 
 from models_library.resource_tracker import (
-    PricingDetailId,
     PricingPlanClassification,
     PricingPlanId,
     ServiceRunId,
@@ -14,7 +13,7 @@ from pydantic import BaseModel
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
-from ..resource_tracker import ServiceRunStatus
+from ..resource_tracker import PricingUnitId, ServiceRunStatus
 from ..services import ServiceKey, ServiceVersion
 from ._base import OutputSchema
 
@@ -41,18 +40,18 @@ class ServiceRunGet(
     service_run_status: ServiceRunStatus
 
 
-class PricingDetailMinimalGet(OutputSchema):
-    pricing_detail_id: PricingDetailId
+class PricingUnitGet(OutputSchema):
+    pricing_unit_id: PricingUnitId
     unit_name: str
-    cost_per_unit: Decimal
-    valid_from: datetime
-    simcore_default: bool
+    current_cost_per_unit: Decimal
+    default: bool
 
 
-class PricingPlanGet(OutputSchema):
+class ServicePricingPlanGet(OutputSchema):
     pricing_plan_id: PricingPlanId
-    name: str
+    display_name: str
     description: str
     classification: PricingPlanClassification
     created_at: datetime
-    details: list[PricingDetailMinimalGet]
+    pricing_plan_key: str
+    pricing_units: list[PricingUnitGet]

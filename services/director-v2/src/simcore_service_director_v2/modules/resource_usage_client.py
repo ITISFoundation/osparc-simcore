@@ -8,9 +8,15 @@ from typing import cast
 
 import httpx
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    ServicePricingPlanGet,
+)
 from models_library.products import ProductName
-from models_library.resource_tracker import PricingDetailId, PricingPlanId
+from models_library.resource_tracker import (
+    PricingPlanId,
+    PricingUnitCostId,
+    PricingUnitId,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import parse_obj_as
 
@@ -63,38 +69,37 @@ class ResourceUsageApi:
     # pricing plans methods
     #
 
-    async def get_pricing_plans_for_service(
+    async def get_default_service_pricing_plan(
         self,
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> list[PricingPlanGet]:
+    ) -> ServicePricingPlanGet:
         response = await self.client.get(
-            "/pricing-plans",
+            f"/services/{service_key}/{service_version}/pricing-plan",
             params={
                 "product_name": product_name,
-                "service_key": service_key,
-                "service_version": service_version,
             },
         )
         response.raise_for_status()
-        return parse_obj_as(list[PricingPlanGet], response.json())
+        return parse_obj_as(ServicePricingPlanGet, response.json())
 
-    async def get_default_pricing_plan_and_pricing_detail_for_service(
+    async def get_default_service_pricing_plan_and_pricing_unit(
         self,
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> tuple[PricingPlanId, PricingDetailId]:
-        pricing_plans = await self.get_pricing_plans_for_service(
+    ) -> tuple[PricingPlanId, PricingUnitId, PricingUnitCostId]:
+        pricing_plan = await self.get_default_service_pricing_plan(
             product_name, service_key, service_version
         )
-        if pricing_plans:
-            default_pricing_plan = pricing_plans[0]
-            default_pricing_detail = pricing_plans[0].details[0]
+        if pricing_plan:
+            default_pricing_plan = pricing_plan
+            default_pricing_unit = pricing_plan.pricing_units[0]
             return (
                 default_pricing_plan.pricing_plan_id,
-                default_pricing_detail.pricing_detail_id,
+                default_pricing_unit.pricing_unit_id,
+                default_pricing_unit.current_cost_per_unit_id,
             )
         raise ValueError(
             f"No default pricing plan provided for requested service key: {service_key} version: {service_version} product: {product_name}"

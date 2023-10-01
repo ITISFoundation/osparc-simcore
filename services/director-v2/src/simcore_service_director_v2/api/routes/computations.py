@@ -226,7 +226,8 @@ async def create_computation(  # noqa: C901, PLR0912
             wallet_id = None
             wallet_name = None
             pricing_plan_id = None
-            pricing_detail_id = None
+            pricing_unit_id = None
+            pricing_unit_cost_id = None
             if computation.wallet_info:
                 wallet_id = computation.wallet_info.wallet_id
                 wallet_name = computation.wallet_info.wallet_name
@@ -235,8 +236,9 @@ async def create_computation(  # noqa: C901, PLR0912
                 # NOTE: MD/SAN -> add real service version/key and store in DB, issue: https://github.com/ITISFoundation/osparc-issues/issues/1131
                 (
                     pricing_plan_id,
-                    pricing_detail_id,
-                ) = await resource_usage_api.get_default_pricing_plan_and_pricing_detail_for_service(
+                    pricing_unit_id,
+                    pricing_unit_cost_id,
+                ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
                     computation.product_name,
                     ServiceKey("simcore/services/comp/itis/sleeper"),
                     ServiceVersion("2.1.6"),
@@ -258,7 +260,8 @@ async def create_computation(  # noqa: C901, PLR0912
                     wallet_id=wallet_id,
                     wallet_name=wallet_name,
                     pricing_plan_id=pricing_plan_id,
-                    pricing_detail_id=pricing_detail_id,
+                    pricing_unit_id=pricing_unit_id,
+                    pricing_unit_cost=pricing_unit_cost_id,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )

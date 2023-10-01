@@ -2,13 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from models_library.api_schemas_webserver.resource_usage import ServiceRunGet
+from models_library.api_schemas_resource_usage_tracker.service_runs import ServiceRunGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import (
-    PricingDetailId,
+    CreditTransactionStatus,
     PricingPlanId,
+    PricingUnitCostId,
+    PricingUnitId,
     ResourceTrackerServiceType,
     ServiceRunId,
     ServiceRunStatus,
@@ -25,8 +27,9 @@ class ServiceRunCreate(BaseModel):
     wallet_id: WalletID | None
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
-    pricing_detail_id: PricingDetailId | None
-    pricing_detail_cost_per_unit: Decimal | None
+    pricing_unit_id: PricingUnitId | None
+    pricing_unit_cost_id: PricingUnitCostId | None
+    pricing_unit_cost: Decimal | None
     simcore_user_agent: str
     user_id: UserID
     user_email: str
@@ -61,8 +64,9 @@ class ServiceRunDB(BaseModel):
     wallet_id: WalletID | None
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
-    pricing_detail_id: PricingDetailId | None
-    pricing_detail_cost_per_unit: Decimal | None
+    pricing_unit_id: PricingUnitId | None
+    pricing_unit_cost_id: PricingUnitCostId | None
+    pricing_unit_cost: Decimal | None
     user_id: UserID
     user_email: str
     project_id: ProjectID
@@ -76,15 +80,19 @@ class ServiceRunDB(BaseModel):
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
+    modified: datetime
+    last_heartbeat_at: datetime
 
     class Config:
         orm_mode = True
 
 
-class ServiceRunOnUpdateDB(BaseModel):
-    pricing_plan_id: PricingPlanId
-    pricing_detail_id: PricingDetailId
-    started_at: datetime
+class ServiceRunWithCreditsDB(ServiceRunDB):
+    osparc_credits: Decimal | None
+    transaction_status: CreditTransactionStatus | None
+
+    class Config:
+        orm_mode = True
 
 
 class ServiceRunPage(NamedTuple):

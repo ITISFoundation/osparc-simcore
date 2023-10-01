@@ -11,6 +11,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from . import resource_usage_tracker_client
+from ._pricing_plans_api import get_default_service_pricing_plan
 
 
 async def get_wallet_total_available_credits(
@@ -46,3 +47,6 @@ async def add_credits_to_wallet(
         payment_transaction_id=payment_id,
         created_at=created_at,
     )
+
+
+__all__ = ("get_default_service_pricing_plan",)

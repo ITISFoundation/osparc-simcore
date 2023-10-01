@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..rabbitmq import setup_rabbitmq
 from ..wallets.plugin import setup_wallets
-from . import _service_runs_handlers
+from . import _pricing_plans_handlers, _service_runs_handlers
 from ._observer import setup_resource_usage_observer_events
 
 _logger = logging.getLogger(__name__)
@@ -30,3 +30,4 @@ def setup_resource_tracker(app: web.Application):
     setup_resource_usage_observer_events(app)
 
     app.router.add_routes(_service_runs_handlers.routes)
+    app.router.add_routes(_pricing_plans_handlers.routes)
