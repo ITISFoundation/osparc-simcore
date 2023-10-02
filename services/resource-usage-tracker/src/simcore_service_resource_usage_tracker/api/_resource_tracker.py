@@ -1,9 +1,10 @@
 import logging
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    CreditTransactionCreated,
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
@@ -21,7 +22,7 @@ from ..services import (
     resource_tracker_service_runs,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
@@ -77,7 +78,7 @@ async def get_credit_transactions_sum(
 
 @router.post(
     "/credit-transactions",
-    response_model=dict[Literal["credit_transaction_id"], CreditTransactionId],
+    response_model=CreditTransactionCreated,
     summary="Top up credits for specific wallet",
     status_code=status.HTTP_201_CREATED,
     tags=["credit-transactions"],
