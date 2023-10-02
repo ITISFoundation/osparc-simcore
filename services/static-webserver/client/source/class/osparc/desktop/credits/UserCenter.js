@@ -251,25 +251,27 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __openPage: function(page) {
       if (page) {
         this.__tabsView.setSelection([page]);
+        return true;
       }
+      return false;
     },
 
     openOverview: function() {
       if (this.__overviewPage) {
-        this.__openPage(this.__overviewPage);
-      } else {
-        // fallback
-        this.__openPage(this.__profilePage);
+        return this.__openPage(this.__overviewPage);
       }
+      // fallback
+      this.__openPage(this.__profilePage);
+      return false;
     },
 
     openWallets: function() {
       if (this.__walletsPage) {
-        this.__openPage(this.__walletsPage);
-      } else {
-        // fallback
-        this.__openPage(this.__profilePage);
+        return this.__openPage(this.__walletsPage);
       }
+      // fallback
+      this.__openPage(this.__profilePage);
+      return false;
     },
 
     __openBuyCredits: function() {
