@@ -1,6 +1,7 @@
 from collections import deque
+from typing import ClassVar
 
-from models_library.services import ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
 
 from .core.styling_components import (
@@ -213,6 +214,9 @@ class InputsEntryModel(BaseModel):
     service_name: StrictStr = Field(
         ..., description="Name of the service containing this input"
     )
+    service_key: ServiceKey = Field(
+        ..., description="Key of the service containing this input"
+    )
     service_version: ServiceVersion = Field(
         ..., description="Version of the service containing this input"
     )
@@ -244,6 +248,9 @@ class OutputsEntryModel(BaseModel):
     )
     service_name: StrictStr = Field(
         ..., description="Name of the service containing this output"
+    )
+    service_key: ServiceKey = Field(
+        ..., description="Key of the service containing this output"
     )
     service_version: ServiceVersion = Field(
         ..., description="Version of the service containing this output"
@@ -280,7 +287,7 @@ class CodeDescriptionParams(BaseModel):
 
 class SheetCodeDescription(BaseXLSXSheet):
     name = "Code Description"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = [
         ## Header
         ("A1", TB("Metadata element")),
         ("B1", TB("Description")),
@@ -699,7 +706,7 @@ class SheetCodeDescription(BaseXLSXSheet):
         ("A39:C39", Borders.border_top_thick),
         ("A39:C41", Borders.medium_grid),
     ]
-    column_dimensions = {"A": 40, "B": 55, "C": 35}
+    column_dimensions: ClassVar[dict[str, int]] = {"A": 40, "B": 55, "C": 35}
 
     def assemble_data_for_template(
         self, template_data: BaseModel
@@ -727,6 +734,7 @@ class SheetCodeDescription(BaseXLSXSheet):
         for column_letter, rrid_entry in zip(
             column_generator(4, len(code_description.rrid_entires)),
             code_description.rrid_entires,
+            strict=False,
         ):
             cells.append(
                 (f"{column_letter}2", T(rrid_entry.rrid_term) | Borders.light_grid)
@@ -795,9 +803,18 @@ class SheetCodeDescription(BaseXLSXSheet):
         return list(cells)
 
 
+def _include_ports_from_this_service(service_key: ServiceKey) -> bool:
+    return service_key.startswith(
+        (
+            "simcore/services/frontend/parameter/",
+            "simcore/services/frontend/iterator-consumer/probe/",
+        )
+    )
+
+
 class SheetInputs(BaseXLSXSheet):
     name = "Inputs"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = [
         # column A
         ("A1", T("Field")),
         ("A2", T("Description")),
@@ -845,7 +862,7 @@ class SheetInputs(BaseXLSXSheet):
         ("B2:I3", Backgrounds.yellow),
         ("A1:I3", Borders.medium_grid),
     ]
-    column_dimensions = {
+    column_dimensions: ClassVar[dict[str, int]] = {
         "A": 10,
         "B": 20,
         "C": 20,
@@ -863,12 +880,16 @@ class SheetInputs(BaseXLSXSheet):
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
-        intputs: list[InputsEntryModel] = params.inputs
+        intputs: list[InputsEntryModel] = [
+            i for i in params.inputs if _include_ports_from_this_service(i.service_key)
+        ]
 
         cells: deque[tuple[str, BaseXLSXCellData]] = deque()
 
         inputs_entry: InputsEntryModel
-        for row_index, inputs_entry in zip(range(4, len(intputs) + 4), intputs):
+        for row_index, inputs_entry in zip(
+            range(4, len(intputs) + 4), intputs, strict=False
+        ):
             cells.append(
                 (f"B{row_index}", T(inputs_entry.service_alias) | Borders.light_grid)
             )
@@ -905,7 +926,7 @@ class SheetInputs(BaseXLSXSheet):
 
 class SheetOutputs(BaseXLSXSheet):
     name = "Outputs"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = [
         # column A
         ("A1", T("Field")),
         ("A2", T("Description")),
@@ -950,7 +971,7 @@ class SheetOutputs(BaseXLSXSheet):
         ("B2:H3", Backgrounds.yellow),
         ("A1:H3", Borders.medium_grid),
     ]
-    column_dimensions = {
+    column_dimensions: ClassVar[dict[str, int]] = {
         "A": 10,
         "B": 20,
         "C": 20,
@@ -967,12 +988,16 @@ class SheetOutputs(BaseXLSXSheet):
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
-        outputs: list[OutputsEntryModel] = params.outputs
+        outputs: list[OutputsEntryModel] = [
+            o for o in params.outputs if _include_ports_from_this_service(o.service_key)
+        ]
 
         cells: deque[tuple[str, BaseXLSXCellData]] = deque()
 
         outputs_entry: OutputsEntryModel
-        for row_index, outputs_entry in zip(range(4, len(outputs) + 4), outputs):
+        for row_index, outputs_entry in zip(
+            range(4, len(outputs) + 4), outputs, strict=False
+        ):
             cells.append(
                 (f"B{row_index}", T(outputs_entry.service_alias) | Borders.light_grid)
             )
@@ -1010,7 +1035,7 @@ class SheetOutputs(BaseXLSXSheet):
 
 class SheetTSRRating(BaseXLSXSheet):
     name = "TSR Rating Rubric"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] | None = [
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]] | None] = [
         ("A1", T("Conformance Level")),
         ("A3", T("Description")),
         ("B1", T("Comprehensive")),
@@ -1062,8 +1087,19 @@ class SheetTSRRating(BaseXLSXSheet):
         ("A1:F2", AllignTopCenter()),
         ("A3:F3", AllignTop()),
     ]
-    cell_merge = {"A1:A2"}
-    column_dimensions = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 20}
+    cell_merge: ClassVar[set[str]] = {"A1:A2"}
+    column_dimensions: ClassVar[dict[str, int]] = {
+        "A": 20,
+        "B": 20,
+        "C": 20,
+        "D": 20,
+        "E": 20,
+        "F": 20,
+    }
+
+
+class SheetCodeDescriptionV2(BaseXLSXSheet):
+    ...
 
 
 class CodeDescriptionXLSXDocument(BaseXLSXDocument):

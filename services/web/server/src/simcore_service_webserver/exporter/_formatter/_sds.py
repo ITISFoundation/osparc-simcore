@@ -138,6 +138,7 @@ async def create_sds_directory(
             input_entry = InputsEntryModel(
                 service_alias=label,
                 service_name=service_data["name"],
+                service_key=service_data["key"],
                 service_version=service_data["version"],
                 input_name=service_input["label"],
                 # not present on the service
@@ -155,6 +156,7 @@ async def create_sds_directory(
             output_entry = OutputsEntryModel(
                 service_alias=label,
                 service_name=service_data["name"],
+                service_key=service_data["key"],
                 service_version=service_data["version"],
                 output_name=service_output["label"],
                 # not present on the service
