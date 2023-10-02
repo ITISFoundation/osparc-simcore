@@ -5,13 +5,17 @@
 
 
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import (
+    EnvVarsDict,
+    load_dotenv,
+    setenvs_from_dict,
+)
 from respx import MockRouter
-from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
 from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
@@ -30,14 +34,27 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 
 
 @pytest.fixture
-def app(
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
     disable_rabbitmq_and_rpc_setup: Callable,
     disable_db_setup: Callable,
-    app_environment: EnvVarsDict,
+    project_tests_dir: Path,
 ):
+    # mocks setup
     disable_rabbitmq_and_rpc_setup()
     disable_db_setup()
-    return create_app()
+
+    secret_envs = {}
+    env_file = project_tests_dir / ".env-secret.ignore.keep"
+    if env_file.exists():
+        secret_envs = load_dotenv(env_file)
+
+    # set environs
+    return setenvs_from_dict(
+        monkeypatch,
+        {**app_environment, **secret_envs},
+    )
 
 
 async def test_payment_gateway_responsiveness(
@@ -65,16 +82,17 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
-    mock_payments_gateway_service_api_base: MockRouter,
-    mock_init_payment_route: Callable,
+    # mock_payments_gateway_service_api_base: MockRouter,
+    # mock_init_payment_route: Callable,
 ):
-    mock_init_payment_route(mock_payments_gateway_service_api_base)
+    # mock_init_payment_route(mock_payments_gateway_service_api_base)
 
     payment_gateway_api = PaymentsGatewayApi.get_from_state(app)
     assert payment_gateway_api
@@ -99,4 +117,4 @@ async def test_one_time_payment_workflow(
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # check mock
-    assert mock_payments_gateway_service_api_base.routes["init_payment"].called
+    # assert mock_payments_gateway_service_api_base.routes["init_payment"].called

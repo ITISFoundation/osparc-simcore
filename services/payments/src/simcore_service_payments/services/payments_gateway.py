@@ -30,6 +30,15 @@ from ..utils.http_client import BaseHttpApi
 _logger = logging.getLogger(__name__)
 
 
+class GatewayeAuth(httpx.Auth):
+    def __init__(self, secret):
+        self.token = secret
+
+    def auth_flow(self, request):
+        request.headers["X-Init-Api-Secret"] = self.token
+        yield request
+
+
 @dataclass
 class PaymentsGatewayApi(BaseHttpApi):
     @classmethod
@@ -39,9 +48,10 @@ class PaymentsGatewayApi(BaseHttpApi):
         return cls(
             client=httpx.AsyncClient(
                 base_url=settings.PAYMENTS_GATEWAY_URL,
-                headers={
-                    "X-Init-Api-Secret": settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
-                },
+                headers={"accept": "application/json"},
+                auth=GatewayeAuth(
+                    secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
+                ),
             )
         )
 
@@ -75,7 +85,11 @@ class PaymentsGatewayApi(BaseHttpApi):
     #
 
     async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
-        response = await self.client.post("/init", json=jsonable_encoder(payment))
+        response = await self.client.post(
+            "/init",
+            json=jsonable_encoder(payment),
+        )
+        # FIXME: convert
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
 
