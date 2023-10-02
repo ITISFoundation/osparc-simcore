@@ -341,7 +341,4 @@ async def get_service_pricing_plan(request: Request):
         )
     )
 
-    data = service_pricing_plan.dict(**RESPONSE_MODEL_POLICY)
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return envelope_json_response(service_pricing_plan)

@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 
 
+import re
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -16,10 +17,14 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     ServicePricingPlanGet,
 )
 from models_library.resource_tracker import PricingPlanClassification
-from pytest_mock.plugin import MockerFixture
+from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import parse_obj_as
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.resource_usage.settings import get_plugin_settings
 
 _PRICING_UNIT_GET: PricingUnitGet = PricingUnitGet(
     pricing_unit_id=1,
@@ -42,25 +47,38 @@ _PRICING_PLAN_GET: ServicePricingPlanGet = ServicePricingPlanGet(
 
 
 @pytest.fixture
-def mock_resource_tracker_client(mocker: MockerFixture) -> tuple:
-    mock_get_pricing_plan_unit = mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.resource_tracker_client.get_pricing_plan_unit",
-        spec=True,
-        return_value=_PRICING_UNIT_GET,
+def mock_rut_api_responses(
+    client: TestClient, aioresponses_mocker: AioResponsesMock
+) -> AioResponsesMock:
+    assert client.app
+    settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
+
+    pricing_unit_get = parse_obj_as(
+        PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
     )
-    mock_get_default_service_pricing_plan = mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.resource_tracker_client.get_default_service_pricing_plan",
-        spec=True,
-        return_value=_PRICING_PLAN_GET,
+
+    service_pricing_plan_get = parse_obj_as(
+        ServicePricingPlanGet,
+        ServicePricingPlanGet.Config.schema_extra["examples"][0],
     )
-    return mock_get_pricing_plan_unit, mock_get_default_service_pricing_plan
+
+    aioresponses_mocker.get(
+        re.compile(f"^{settings.api_base_url}/pricing-plans/+.+$"),
+        payload=jsonable_encoder(pricing_unit_get),
+    )
+    aioresponses_mocker.get(
+        re.compile(f"^{settings.api_base_url}/services/+.+$"),
+        payload=jsonable_encoder(service_pricing_plan_get),
+    )
+
+    return aioresponses_mocker
 
 
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_list_service_usage(
     client: TestClient,
     logged_user: UserInfoDict,
-    mock_resource_tracker_client,
+    mock_rut_api_responses,
 ):
     # Get specific pricing plan unit
     url = client.app.router["get_pricing_plan_unit"].url_for(
@@ -68,7 +86,7 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert mock_resource_tracker_client[0].called
+    assert mock_rut_api_responses
     assert len(data.keys()) == 4
     assert data["unitName"] == "SMALL"
 
@@ -79,5 +97,5 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert data["pricingPlanKey"] == "sleeper-pricing-plan"
+    assert data["pricingPlanKey"] == "pricing-plan-sleeper"
     assert len(data["pricingUnits"]) == 1

@@ -8,7 +8,7 @@ from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import parse_obj_as
 
-from . import resource_usage_tracker_client as resource_tracker_client
+from . import _client as resource_tracker_client
 
 
 async def get_default_service_pricing_plan(
