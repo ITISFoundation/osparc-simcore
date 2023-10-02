@@ -2,13 +2,14 @@ import json
 import logging
 import os
 import socket
+from typing import Any
 
 import aiopg.sa
 import sqlalchemy as sa
 import tenacity
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
@@ -118,8 +119,6 @@ class DBManager:
         ) as engine, engine.acquire() as connection:
             # update the necessary parts
             await connection.execute(
-                # FIXME: E1120:No value for argument 'dml' in method call
-                # pylint: disable=E1120
                 comp_tasks.update()
                 .where(
                     and_(
@@ -160,12 +159,11 @@ class DBManager:
         async with DBContextManager(
             self._db_engine
         ) as engine, engine.acquire() as connection:
-            row: RowProxy | None = await (
-                await connection.execute(
-                    sa.select(projects).where(projects.c.uuid == f"{project_id}")
+            prj_owner: Any | None = await connection.scalar(
+                sa.select(projects.c.prj_owner).where(
+                    projects.c.uuid == f"{project_id}"
                 )
-            ).first()
-        if not row:
-            raise ProjectNotFoundError(project_id)
-        project_at_db = ProjectAtDB.from_orm(row)
-        return project_at_db.prj_owner
+            )
+            if prj_owner is None:
+                raise ProjectNotFoundError(project_id)
+        return UserID(prj_owner)
