@@ -107,7 +107,7 @@ class UserNotification(BaseUserNotification):
                     "category": "WALLET_SHARED",
                     "actionable_path": "wallet/21",
                     "title": "Credits shared",
-                    "text": "A credit account was shared with you",
+                    "text": "A Credit account was shared with you",
                     "date": "2023-09-29T16:28:13.122Z",
                     "read": False,
                 },
