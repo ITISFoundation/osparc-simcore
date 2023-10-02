@@ -22,12 +22,13 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_NOTIFICATIONS": "0",
+            "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_META_MODELING": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
@@ -37,7 +38,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
-            "WEBSERVER_WALLETS": "0",
+            "WEBSERVER_WALLETS": "1",
         },
     )
 

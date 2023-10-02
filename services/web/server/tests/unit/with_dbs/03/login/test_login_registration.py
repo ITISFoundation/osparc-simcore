@@ -3,15 +3,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Iterator
 from datetime import timedelta
-from typing import Iterator
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import CaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -37,7 +36,7 @@ from simcore_service_webserver.users.schemas import ProfileGet
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     login_envs = setenvs_from_dict(
         monkeypatch,
@@ -349,7 +348,7 @@ async def test_registration_without_confirmation(
 async def test_registration_with_confirmation(
     client: TestClient,
     db: AsyncpgStorage,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,

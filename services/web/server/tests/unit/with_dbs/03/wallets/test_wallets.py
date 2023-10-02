@@ -151,7 +151,6 @@ async def test_wallets_full_workflow(
         assert errors
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_auto_wallet_on_user_registration_confirmation(
     client: TestClient,
