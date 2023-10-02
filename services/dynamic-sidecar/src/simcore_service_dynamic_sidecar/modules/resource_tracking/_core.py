@@ -115,7 +115,8 @@ async def send_service_started(
         service_resources=metrics_params.service_resources,
         service_additional_metadata=metrics_params.service_additional_metadata,
         pricing_plan_id=metrics_params.pricing_plan_id,
-        pricing_detail_id=metrics_params.pricing_detail_id,
+        pricing_unit_id=metrics_params.pricing_unit_id,
+        pricing_unit_cost_id=metrics_params.pricing_unit_cost_id,
     )
     await post_resource_tracking_message(app, message)
 

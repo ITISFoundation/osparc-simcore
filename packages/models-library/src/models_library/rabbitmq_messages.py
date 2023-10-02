@@ -201,7 +201,8 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
     wallet_name: str | None
 
     pricing_plan_id: int | None
-    pricing_detail_id: int | None
+    pricing_unit_id: int | None
+    pricing_unit_cost_id: int | None
 
     product_name: str
     simcore_user_agent: str

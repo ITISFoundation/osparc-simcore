@@ -32,7 +32,11 @@ async def test_process_events_via_rabbit(
 ):
     publisher = rabbitmq_client("publisher")
     msg = random_rabbit_message_start(
-        wallet_id=None, wallet_name=None, pricing_plan_id=None, pricing_detail_id=None
+        wallet_id=None,
+        wallet_name=None,
+        pricing_plan_id=None,
+        pricing_unit_id=None,
+        pricing_unit_cost_id=None,
     )
     await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), msg)
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
