@@ -17,6 +17,7 @@
 --editable ../../packages/pytest-simcore/
 --editable ../../packages/service-library/
 --editable ../../packages/settings-library/
+--editable ../../packages/service-integration/
 
 # installs current package
 --editable .

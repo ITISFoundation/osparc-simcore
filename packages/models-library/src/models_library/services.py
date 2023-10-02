@@ -494,6 +494,14 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         regex=VERSION_RE,
         examples=["1.0.0"],
     )
+    progress_regexp: str | None = Field(
+        None,
+        alias="progress-regexp",
+        description="regexp pattern for detecting computational service's progress",
+        examples=[
+            "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))"
+        ],
+    )
     service_type: ServiceType = Field(
         ...,
         alias="type",

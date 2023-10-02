@@ -62,11 +62,3 @@ class DockerContainerConfig(BaseModel):
     image: str = Field(..., alias="Image")
     labels: dict[str, str] = Field(..., alias="Labels")
     host_config: ContainerHostConfig = Field(..., alias="HostConfig")
-
-
-class ImageLabels(BaseModel):
-    integration_version: version.Version = LEGACY_INTEGRATION_VERSION
-    progress_regexp: re.Pattern[str] = PROGRESS_REGEXP
-
-    class Config:
-        arbitrary_types_allowed = True

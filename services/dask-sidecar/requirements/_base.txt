@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aio-pika==9.2.2
+aio-pika==9.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiobotocore==2.5.4
     # via s3fs
@@ -23,6 +23,8 @@ aiohttp==3.8.5
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -39,10 +41,11 @@ aiormq==6.7.7
     # via aio-pika
 aiosignal==1.3.1
     # via aiohttp
-arrow==1.2.3
+arrow==1.3.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==4.0.3
@@ -65,18 +68,21 @@ certifi==2023.7.22
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.0
     # via
     #   aiohttp
     #   requests
 click==8.1.7
     # via
+    #   -r requirements/../../../packages/service-integration/requirements/_base.in
     #   dask
     #   dask-gateway
     #   distributed
@@ -85,6 +91,8 @@ cloudpickle==2.2.1
     # via
     #   dask
     #   distributed
+colorama==0.4.6
+    # via typer
 dask==2023.3.2
     # via
     #   -c requirements/constraints.txt
@@ -92,7 +100,7 @@ dask==2023.3.2
     #   -r requirements/_base.in
     #   dask-gateway
     #   distributed
-dask-gateway==2023.1.1
+dask-gateway==2023.9.0
     # via -r requirements/_base.in
 distributed==2023.3.2
     # via
@@ -100,13 +108,17 @@ distributed==2023.3.2
     #   dask-gateway
 dnspython==2.4.2
     # via email-validator
+docker==6.1.3
+    # via -r requirements/../../../packages/service-integration/requirements/_base.in
 email-validator==2.0.0.post2
     # via pydantic
+exceptiongroup==1.1.3
+    # via pytest
 frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2023.6.0
+fsspec==2023.9.2
     # via
     #   -r requirements/_base.in
     #   dask
@@ -118,11 +130,15 @@ idna==3.4
     #   yarl
 importlib-metadata==6.8.0
     # via dask
+iniconfig==2.0.0
+    # via pytest
 jinja2==3.1.2
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -133,10 +149,12 @@ jinja2==3.1.2
     #   distributed
 jmespath==1.0.1
     # via botocore
-jsonschema==4.19.0
+jsonschema==4.19.1
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-integration/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2023.7.1
     # via jsonschema
@@ -152,37 +170,44 @@ markupsafe==2.1.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.0.5
+msgpack==1.0.7
     # via distributed
 multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-numpy==1.25.2
+numpy==1.26.0
     # via bokeh
 orjson==3.9.7
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-packaging==23.1
+packaging==23.2
     # via
     #   bokeh
     #   dask
     #   distributed
+    #   docker
+    #   pytest
 pamqp==3.2.1
     # via aiormq
-partd==1.4.0
+partd==1.4.1
     # via dask
-pillow==10.0.0
+pillow==10.0.1
     # via bokeh
+pluggy==1.3.0
+    # via pytest
 psutil==5.9.5
     # via distributed
-pydantic==1.10.12
+pydantic==1.10.13
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -191,6 +216,7 @@ pydantic==1.10.12
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -198,8 +224,10 @@ pydantic==1.10.12
     #   -r requirements/_base.in
 pygments==2.16.1
     # via rich
-pyinstrument==4.5.1
+pyinstrument==4.5.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+pytest==7.4.2
+    # via -r requirements/../../../packages/service-integration/requirements/_base.in
 python-dateutil==2.8.2
     # via
     #   arrow
@@ -211,21 +239,26 @@ pyyaml==6.0.1
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-integration/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   bokeh
     #   dask
     #   dask-gateway
     #   distributed
-redis==5.0.0
+redis==5.0.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -238,17 +271,22 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-specifications
 requests==2.31.0
-    # via fsspec
-rich==13.5.2
+    # via
+    #   docker
+    #   fsspec
+rich==13.6.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-rpds-py==0.9.2
+    #   typer
+rpds-py==0.10.3
     # via
     #   jsonschema
     #   referencing
-s3fs==2023.6.0
+s3fs==2023.9.2
     # via fsspec
+shellingham==1.5.3
+    # via typer
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
@@ -257,6 +295,8 @@ tblib==2.0.0
     # via distributed
 tenacity==8.2.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+tomli==2.0.1
+    # via pytest
 toolz==0.12.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -272,9 +312,12 @@ tqdm==4.66.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.9.0
     # via
+    #   -r requirements/../../../packages/service-integration/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.7.1
+types-python-dateutil==2.8.19.14
+    # via arrow
+typing-extensions==4.8.0
     # via
     #   aiodebug
     #   aiodocker
@@ -286,6 +329,8 @@ urllib3==1.26.16
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-integration/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -293,7 +338,10 @@ urllib3==1.26.16
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   distributed
+    #   docker
     #   requests
+websocket-client==1.6.3
+    # via docker
 wrapt==1.15.0
     # via aiobotocore
 yarl==1.9.2
@@ -303,5 +351,5 @@ yarl==1.9.2
     #   aiormq
 zict==3.0.0
     # via distributed
-zipp==3.16.2
+zipp==3.17.0
     # via importlib-metadata

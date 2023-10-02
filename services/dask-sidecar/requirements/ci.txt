@@ -16,6 +16,7 @@
 ../../packages/pytest-simcore/
 ../../packages/service-library/
 ../../packages/settings-library/
+../../packages/service-integration/
 
 # installs current package
 .
