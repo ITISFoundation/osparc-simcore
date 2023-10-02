@@ -50,7 +50,6 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
       switch (id) {
         case "powered-by":
           control = new qx.ui.basic.Label(this.tr("powered by")).set({
-            minWidth: 47,
             alignX: "center",
             font: "text-9"
           });
@@ -60,13 +59,18 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
           control = new qx.ui.basic.Image().set({
             width: 42,
             height: 33,
-            scale: true,
-            alignX: "center"
+            scale: true
           });
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "bottom"
           }));
+          logoContainer.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
           logoContainer.add(control);
+          logoContainer.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
           this._add(logoContainer);
           break;
         }

@@ -207,6 +207,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
             this.getChildControl("log-in");
           } else {
             this.getChildControl("user-center");
+            if (osparc.data.Permissions.getInstance().isProductOwner()) {
+              this.getChildControl("po-center");
+            }
             this.getChildControl("preferences");
             this.getChildControl("organizations");
             this.getChildControl("clusters");
