@@ -799,6 +799,35 @@ paths:
               schema:
                 title: Response Get Service Resources
                 type: object
+  /v0/catalog/services/{service_key}/{service_version}/pricing-plan:
+    get:
+      tags:
+      - catalog
+      - pricing-plans
+      summary: Retrieve default pricing plan for provided service
+      operationId: get_service_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ServicePricingPlanGet_'
   /v0/clusters:
     get:
       tags:
@@ -2867,7 +2896,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/resource-usage/services:
+  /v0/services/-/resource-usages:
     get:
       tags:
       - usage
@@ -2905,6 +2934,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+  /v0/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
+    get:
+      tags:
+      - pricing-plans
+      summary: Retrieve detail information about pricing unit
+      operationId: get_pricing_plan_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitGet_'
   /v0/storage/locations:
     get:
       tags:
@@ -5166,6 +5225,14 @@ components:
           $ref: '#/components/schemas/PresignedLink'
         error:
           title: Error
+    Envelope_PricingUnitGet_:
+      title: Envelope[PricingUnitGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingUnitGet'
+        error:
+          title: Error
     Envelope_ProfileGet_:
       title: Envelope[ProfileGet]
       type: object
@@ -5236,6 +5303,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ServiceInputGet'
+        error:
+          title: Error
+    Envelope_ServicePricingPlanGet_:
+      title: Envelope[ServicePricingPlanGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ServicePricingPlanGet'
         error:
           title: Error
     Envelope_StatusDiagnosticsGet_:
@@ -7182,6 +7257,35 @@ components:
           minLength: 1
           type: string
           format: uri
+    PricingPlanClassification:
+      title: PricingPlanClassification
+      enum:
+      - TIER
+      type: string
+      description: An enumeration.
+    PricingUnitGet:
+      title: PricingUnitGet
+      required:
+      - pricingUnitId
+      - unitName
+      - currentCostPerUnit
+      - default
+      type: object
+      properties:
+        pricingUnitId:
+          title: Pricingunitid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        unitName:
+          title: Unitname
+          type: string
+        currentCostPerUnit:
+          title: Currentcostperunit
+          type: number
+        default:
+          title: Default
+          type: boolean
     ProfileGet:
       title: ProfileGet
       required:
@@ -8371,6 +8475,43 @@ components:
         unitLong: seconds
         unitShort: sec
         keyId: output_2
+    ServicePricingPlanGet:
+      title: ServicePricingPlanGet
+      required:
+      - pricingPlanId
+      - displayName
+      - description
+      - classification
+      - createdAt
+      - pricingPlanKey
+      - pricingUnits
+      type: object
+      properties:
+        pricingPlanId:
+          title: Pricingplanid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        pricingPlanKey:
+          title: Pricingplankey
+          type: string
+        pricingUnits:
+          title: Pricingunits
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingUnitGet'
     ServiceRunGet:
       title: ServiceRunGet
       required:

@@ -4,9 +4,11 @@ from decimal import Decimal
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditClassification,
+    CreditTransactionId,
     CreditTransactionStatus,
-    PricingDetailId,
     PricingPlanId,
+    PricingUnitCostId,
+    PricingUnitId,
     ServiceRunId,
 )
 from models_library.users import UserID
@@ -19,7 +21,8 @@ class CreditTransactionCreate(BaseModel):
     wallet_id: WalletID
     wallet_name: str
     pricing_plan_id: PricingPlanId | None
-    pricing_detail_id: PricingDetailId | None
+    pricing_unit_id: PricingUnitId | None
+    pricing_unit_cost_id: PricingUnitCostId | None
     user_id: UserID
     user_email: str
     osparc_credits: Decimal
@@ -41,3 +44,26 @@ class CreditTransactionCreditsAndStatusUpdate(BaseModel):
     service_run_id: ServiceRunId
     osparc_credits: Decimal
     transaction_status: CreditTransactionStatus
+
+
+class CreditTransactionDB(BaseModel):
+    transaction_id: CreditTransactionId
+    product_name: ProductName
+    wallet_id: WalletID
+    wallet_name: str
+    pricing_plan_id: PricingPlanId | None
+    pricing_unit_id: PricingUnitId | None
+    pricing_unit_cost_id: PricingUnitCostId | None
+    user_id: UserID
+    user_email: str
+    osparc_credits: Decimal
+    transaction_status: CreditTransactionStatus
+    transaction_classification: CreditClassification
+    service_run_id: ServiceRunId | None
+    payment_transaction_id: str | None
+    created: datetime
+    last_heartbeat_at: datetime
+    modified: datetime
+
+    class Config:
+        orm_mode = True
