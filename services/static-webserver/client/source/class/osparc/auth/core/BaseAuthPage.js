@@ -105,7 +105,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      */
     _addTitleHeader: function(txt) {
       let lbl = new qx.ui.basic.Label(txt).set({
-        font: "headline",
+        font: "text-24",
         alignX: "center"
       });
       this.add(lbl, {

@@ -62,7 +62,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     PADDING: 10,
     SPACING_IN: 5,
     SPACING: 15,
-    TITLE_MAX_HEIGHT: 34, // two lines
+    // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
+    TITLE_MAX_HEIGHT: 38, // two lines in Manrope
     POS: {
       TITLE: {
         row: 0,
@@ -224,7 +225,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           }
         }
       });
-      maxHeight -= 4;
+      // maxHeight -= 4; // for Roboto
+      maxHeight -= 18; // for Manrope
       iconLayout.getChildControl("image").setMaxHeight(maxHeight);
       iconLayout.setMaxHeight(maxHeight);
       iconLayout.recheckSize();
