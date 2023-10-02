@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from models_library.basic_types import BuildTargetEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .._meta import (
@@ -19,18 +20,25 @@ from .settings import ApplicationSettings
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+
+    app_settings = settings or ApplicationSettings.create_from_envs()
+    is_devel = (
+        app_settings.SC_BOOT_TARGET is None
+        or app_settings.SC_BOOT_TARGET == BuildTargetEnum.DEVELOPMENT
+    )
+
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/doc",  # NOTE: token auth would not work otherwise
+        docs_url="/doc" if is_devel else None,
         redoc_url=None,  # default disabled, see below
     )
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = settings or ApplicationSettings.create_from_envs()
+    app.state.settings = app_settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
