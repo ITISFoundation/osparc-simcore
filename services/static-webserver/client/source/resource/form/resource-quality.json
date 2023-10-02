@@ -39,21 +39,21 @@
             "required": [
                 "r01",
                 "r02",
-                "r03a",
+                "r03",
                 "r03b",
                 "r03c",
                 "r04",
                 "r05",
                 "r06",
-                "r07a",
+                "r07",
                 "r07b",
                 "r07c",
                 "r07d",
                 "r07e",
-                "r08a",
+                "r08",
                 "r08b",
                 "r09",
-                "r10a",
+                "r10",
                 "r10b"
             ],
             "properties": {
@@ -67,7 +67,7 @@
                     "description": "Links to data that was used to create, validate, test, etc. the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r03a": {
+                "r03": {
                     "title": "TSR3a - Verification",
                     "description": "Link to test suite for project.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -97,7 +97,7 @@
                     "description": "Link to user and/or developer documentation for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r07a": {
+                "r07": {
                     "title": "TSR7a - Broad Dissemination: Releases",
                     "description": "Link to the download or release page for the project, e.g., on the SPARC Portal.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -122,7 +122,7 @@
                     "description": "Link to the project on an interactive software hosting platform e.g. o²S²PARC.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r08a": {
+                "r08": {
                     "title": "TSR8a - Independent Reviews",
                     "description": "Links to reviews of project by independent members of the community.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -137,7 +137,7 @@
                     "description": "Link to benchmarking against other projects operating in the same domain.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r10a": {
+                "r10": {
                     "title": "TSR10a - Relevant standards",
                     "description": "List and/or link to standards/guidelines that this project conforms to or implements.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -156,21 +156,21 @@
             "required": [
                 "r01",
                 "r02",
-                "r03a",
+                "r03",
                 "r03b",
                 "r03c",
                 "r04",
                 "r05",
                 "r06",
-                "r07a",
+                "r07",
                 "r07b",
                 "r07c",
                 "r07d",
                 "r07e",
-                "r08a",
+                "r08",
                 "r08b",
                 "r09",
-                "r10a",
+                "r10",
                 "r10b"
             ],
             "properties": {
@@ -184,7 +184,7 @@
                     "description": "Links to data that was used to create, validate, test, etc. the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r03a": {
+                "r03": {
                     "title": "TSR3a - Verification",
                     "description": "Link to test suite for project.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -214,7 +214,7 @@
                     "description": "Link to user and/or developer documentation for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r07a": {
+                "r07": {
                     "title": "TSR7a - Broad Dissemination: Releases",
                     "description": "Link to the download or release page for the project, e.g., on the SPARC Portal.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -239,7 +239,7 @@
                     "description": "Link to the project on an interactive software hosting platform e.g. o²S²PARC.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r08a": {
+                "r08": {
                     "title": "TSR8a - Independent Reviews",
                     "description": "Links to reviews of project by independent members of the community.",
                     "$ref": "#/definitions/tenSimpleRule"
@@ -254,7 +254,7 @@
                     "description": "Link to benchmarking against other projects operating in the same domain.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
-                "r10a": {
+                "r10": {
                     "title": "TSR10a - Relevant standards",
                     "description": "List and/or link to standards/guidelines that this project conforms to or implements.",
                     "$ref": "#/definitions/tenSimpleRule"

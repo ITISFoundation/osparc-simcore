@@ -130,6 +130,14 @@ domain and the intended context of use",
           "level": 0,
           "references": ""
         },
+        "r03b": {
+          "level": 0,
+          "references": ""
+        },
+        "r03c": {
+          "level": 0,
+          "references": ""
+        },
         "r04": {
           "level": 0,
           "references": ""
@@ -146,7 +154,27 @@ domain and the intended context of use",
           "level": 0,
           "references": ""
         },
+        "r07b": {
+          "level": 0,
+          "references": ""
+        },
+        "r07c": {
+          "level": 0,
+          "references": ""
+        },
+        "r07d": {
+          "level": 0,
+          "references": ""
+        },
+        "r07e": {
+          "level": 0,
+          "references": ""
+        },
         "r08": {
+          "level": 0,
+          "references": ""
+        },
+        "r08b": {
           "level": 0,
           "references": ""
         },
@@ -155,6 +183,10 @@ domain and the intended context of use",
           "references": ""
         },
         "r10": {
+          "level": 0,
+          "references": ""
+        },
+        "r10b": {
           "level": 0,
           "references": ""
         }
@@ -176,6 +208,14 @@ domain and the intended context of use",
           "level": 4,
           "references": ""
         },
+        "r03b": {
+          "level": 4,
+          "references": ""
+        },
+        "r03c": {
+          "level": 4,
+          "references": ""
+        },
         "r04": {
           "level": 4,
           "references": ""
@@ -192,7 +232,27 @@ domain and the intended context of use",
           "level": 4,
           "references": ""
         },
+        "r07b": {
+          "level": 4,
+          "references": ""
+        },
+        "r07c": {
+          "level": 4,
+          "references": ""
+        },
+        "r07d": {
+          "level": 4,
+          "references": ""
+        },
+        "r07e": {
+          "level": 4,
+          "references": ""
+        },
         "r08": {
+          "level": 4,
+          "references": ""
+        },
+        "r08b": {
           "level": 4,
           "references": ""
         },
@@ -201,6 +261,10 @@ domain and the intended context of use",
           "references": ""
         },
         "r10": {
+          "level": 4,
+          "references": ""
+        },
+        "r10b": {
           "level": 4,
           "references": ""
         }
