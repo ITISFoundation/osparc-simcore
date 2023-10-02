@@ -25,7 +25,7 @@ from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     create_container_config,
     managed_container,
 )
-from simcore_service_dask_sidecar.computational_sidecar.models import ImageLabels
+from simcore_service_dask_sidecar.computational_sidecar.models import PROGRESS_REGEXP
 
 
 @pytest.fixture()
@@ -122,44 +122,42 @@ async def test_create_container_config(
 
 @pytest.mark.parametrize("with_timestamp", [True, False], ids=str)
 @pytest.mark.parametrize(
-    "log_line, expected_progress_value, image_labels",
+    "log_line, expected_progress_value, progress_regexp",
     [
-        ("hello from the logs", None, ImageLabels()),
+        ("hello from the logs", None, PROGRESS_REGEXP),
         (
             "[PROGRESS] this is some whatever progress without number",
             None,
-            ImageLabels(),
+            PROGRESS_REGEXP,
         ),
-        ("[PROGRESS] .34", 0.34, ImageLabels()),
-        ("Progress: this is some progress", None, ImageLabels()),
-        ("PROGRESS: .34", 0.34, ImageLabels()),
-        ("PROGRESS: 44 percent done", 0.44, ImageLabels()),
-        ("44 percent done", 0.44, ImageLabels()),
-        ("PROGRESS: 44/150", 44.0 / 150.0, ImageLabels()),
-        ("PROGRESS: 44/150...", 44.0 / 150.0, ImageLabels()),
-        ("any kind of message even with progress inside", None, ImageLabels()),
-        ("[PROGRESS]1.000000\n", 1.00, ImageLabels()),
-        ("[PROGRESS] 1\n", 1.00, ImageLabels()),
-        ("[PROGRESS] 0\n", 0.00, ImageLabels()),
+        ("[PROGRESS] .34", 0.34, PROGRESS_REGEXP),
+        ("Progress: this is some progress", None, PROGRESS_REGEXP),
+        ("PROGRESS: .34", 0.34, PROGRESS_REGEXP),
+        ("PROGRESS: 44 percent done", 0.44, PROGRESS_REGEXP),
+        ("44 percent done", 0.44, PROGRESS_REGEXP),
+        ("PROGRESS: 44/150", 44.0 / 150.0, PROGRESS_REGEXP),
+        ("PROGRESS: 44/150...", 44.0 / 150.0, PROGRESS_REGEXP),
+        ("any kind of message even with progress inside", None, PROGRESS_REGEXP),
+        ("[PROGRESS]1.000000\n", 1.00, PROGRESS_REGEXP),
+        ("[PROGRESS] 1\n", 1.00, PROGRESS_REGEXP),
+        ("[PROGRESS] 0\n", 0.00, PROGRESS_REGEXP),
         (
             "[PROGRESS]: 1% [ 10 / 624 ] Time Update, estimated remaining time 1 seconds @ 26.43 MCells/s",
             0.01,
-            ImageLabels(),
+            PROGRESS_REGEXP,
         ),
-        ("[warn]: this is some warning", None, ImageLabels()),
-        ("err: this is some error", None, ImageLabels()),
+        ("[warn]: this is some warning", None, PROGRESS_REGEXP),
+        ("err: this is some error", None, PROGRESS_REGEXP),
         (
             "progress: 10/0 asd this is a 15% 10/asdf progress without progress it will not break the system",
             None,
-            ImageLabels(),
+            PROGRESS_REGEXP,
         ),
         (
             "[PROGRESS]: 21% [ 1219946 / 5545233 ] Assembling matrix",
             0.21,
-            ImageLabels(
-                progress_regexp=re.compile(
-                    "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))"
-                )
+            re.compile(
+                "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))"
             ),
         ),
     ],
@@ -168,13 +166,15 @@ async def test__try_parse_progress(
     with_timestamp: bool,
     log_line: str,
     expected_progress_value: float,
-    image_labels: ImageLabels,
+    progress_regexp: re.Pattern[str],
 ):
     expected_time_stamp = arrow.utcnow().datetime
     if with_timestamp:
         log_line = f"{expected_time_stamp.isoformat()} {log_line}"
 
-    received_progress = await _try_parse_progress(log_line, image_labels=image_labels)
+    received_progress = await _try_parse_progress(
+        log_line, progress_regexp=progress_regexp
+    )
     assert received_progress == expected_progress_value
 
 
