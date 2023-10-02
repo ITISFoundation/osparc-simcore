@@ -80,29 +80,20 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       }
 
       this.__resourceData = resourceData;
-      if (!("tsr_current" in resourceData["quality"])) {
-        resourceData["quality"]["tsr_current"] = resourceData["quality"]["tsr"] || osparc.metadata.Quality.getDefaultCurrentQualityTSR();
-      }
-      if (!("tsr_target" in resourceData["quality"])) {
-        resourceData["quality"]["tsr_target"] = osparc.metadata.Quality.getDefaultTargetQualityTSR();
-      }
-      if (!("annotations" in resourceData["quality"])) {
-        resourceData["quality"]["annotations"] = osparc.metadata.Quality.getDefaultQualityAnnotations();
-      }
       this.__copyResourceData = osparc.utils.Resources.isService(resourceData) ? osparc.utils.Utils.deepCloneObject(resourceData) : osparc.data.model.Study.deepCloneStudyObject(resourceData);
 
-      const schemaUrl = "/resource/form/resource-quality.json";
-      const data = resourceData["quality"];
       const ajvLoader = new qx.util.DynamicScriptLoader([
         "/resource/ajv/ajv-6-11-0.min.js",
         "/resource/object-path/object-path-0-11-4.min.js"
       ]);
       ajvLoader.addListener("ready", () => {
         this.__ajv = new Ajv();
+        const schemaUrl = "/resource/form/resource-quality.json";
         osparc.utils.Utils.fetchJSON(schemaUrl)
           .then(schema => {
             if (this.__validate(schema.$schema, schema)) {
-              // If schema is valid
+              // Schema is valid
+              const data = resourceData["quality"];
               if (this.__validate(schema, data)) {
                 // Validate data if present
                 this.__resourceData = resourceData;
