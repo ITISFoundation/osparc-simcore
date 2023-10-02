@@ -331,11 +331,11 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       Object.keys(copyTSRCurrent).forEach(ruleKey => {
         const currentRule = copyTSRCurrent[ruleKey];
 
-        const currentRulelayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        const currentRuleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
           alignY: "middle"
         }));
         const updateCurrentLevel = value => {
-          currentRulelayout.removeAll();
+          currentRuleLayout.removeAll();
           const ruleRating = new osparc.ui.basic.StarsRating();
           ruleRating.set({
             maxScore: copyTSRTarget[ruleKey].level,
@@ -356,10 +356,10 @@ qx.Class.define("osparc.metadata.QualityEditor", {
           const ruleRatingWHint = new osparc.form.FieldWHint(null, hint, ruleRating).set({
             hintPosition: "left"
           });
-          currentRulelayout.add(ruleRatingWHint);
+          currentRuleLayout.add(ruleRatingWHint);
         };
         updateCurrentLevel(currentRule.level);
-        this.__tsrGrid.add(currentRulelayout, {
+        this.__tsrGrid.add(currentRuleLayout, {
           row,
           column: this.self().GridPos.clCurrent
         });
