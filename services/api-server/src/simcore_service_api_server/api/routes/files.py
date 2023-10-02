@@ -317,9 +317,7 @@ async def search_files_page(
             access_right="read",
         )
         error_message: str = "Not found in storage"
-        if not stored_files:
-            raise ValueError(error_message)  # noqa: TRY301
-        if page_params.offset >= len(stored_files):
+        if page_params.offset > len(stored_files):
             raise ValueError(error_message)
         stored_files = stored_files[page_params.offset :]
         if len(stored_files) > page_params.limit:
