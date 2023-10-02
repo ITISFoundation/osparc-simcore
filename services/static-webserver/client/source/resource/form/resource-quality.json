@@ -29,7 +29,7 @@
     "properties": {
         "enabled": {
             "type": "boolean",
-            "title": "Whether the quality assesment is enabled or not",
+            "title": "Whether the quality assessment is enabled or not",
             "default": true
         },
         "tsr_current": {
