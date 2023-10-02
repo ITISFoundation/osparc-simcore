@@ -11,7 +11,7 @@
   📝    Add or update documentation.
   🔨    Add or update development scripts.
   🔒️    Fix security issues.
-  ⚠️    Changes in ops configuration etc. are required before deploying. 
+  ⚠️    Changes in ops configuration etc. are required before deploying.
         [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/osparc-ops-environments or https://git.speag.com/oSparc/osparc-infra ]
   🗃️    Database table changed (relevant for devops).
 
@@ -30,6 +30,9 @@ or from https://gitmoji.dev/
 
 - resolves ITISFoundation/osparc-issues#428
 - fixes #26
+
+  If openapi changes are provided, optionally point to the swagger editor with new changes
+  Example [openapi.json specs](https://editor.swagger.io/?url=https://raw.githubusercontent.com/<github-username>/osparc-simcore/is1133/create-api-for-creation-of-pricing-plan/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml)
 -->
 
 
