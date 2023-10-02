@@ -49,7 +49,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
   },
 
   statics: {
-    extractThumbanilSuggestions: function(study) {
+    extractThumbnailSuggestions: function(study) {
       const suggestions = new Set([]);
       const wb = study.getWorkbench();
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
@@ -99,8 +99,8 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       // make it first in the list
       this.__setThumbnails("0000-workbenchUIPreview", [{
         type: "workbenchUIPreview",
-        thumbnailUrl: osparc.product.Utils.getWorkbenhUIPreviewPath(),
-        fileUrl: osparc.product.Utils.getWorkbenhUIPreviewPath()
+        thumbnailUrl: osparc.product.Utils.getWorkbenchUIPreviewPath(),
+        fileUrl: osparc.product.Utils.getWorkbenchUIPreviewPath()
       }]);
 
       const themeManager = qx.theme.manager.Meta.getInstance();
