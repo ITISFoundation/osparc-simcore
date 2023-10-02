@@ -4,14 +4,12 @@
 
 
 import json
-from collections.abc import Iterator
-from typing import AsyncIterable
+from collections.abc import AsyncIterable, Iterator
 
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
@@ -22,7 +20,7 @@ from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_s
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
