@@ -58,7 +58,7 @@ qx.Class.define("osparc.ui.window.Window", {
   },
 
   statics: {
-    popUpInWindow: function(widget, title = "", width = 400, height = 400, icon) {
+    popUpInWindow: function(widget, title = "", width = 400, minHeight = 400, icon) {
       const win = new osparc.ui.window.Window(title, icon).set({
         layout: new qx.ui.layout.Grow(),
         autoDestroy: true,
@@ -67,7 +67,7 @@ qx.Class.define("osparc.ui.window.Window", {
         showMaximize: false,
         resizable: true,
         width: width,
-        // height: height,
+        minHeight: minHeight,
         modal: true,
         clickAwayClose: true
       });
