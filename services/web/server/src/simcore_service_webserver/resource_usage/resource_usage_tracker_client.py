@@ -95,7 +95,8 @@ async def get_default_service_pricing_plan(
     )
     with handle_client_exceptions(app) as session:
         async with session.get(url) as response:
-            return parse_obj_as(ServicePricingPlanGet, response.json())
+            body: dict = await response.json()
+            return parse_obj_as(ServicePricingPlanGet, body)
 
 
 async def get_pricing_plan_unit(
@@ -105,8 +106,12 @@ async def get_pricing_plan_unit(
     pricing_unit_id: PricingUnitId,
 ) -> PricingUnitGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = URL(
-        f"{settings.api_base_url}/pricing_plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}"
+    url = (
+        URL(settings.api_base_url)
+        / "pricing-plans"
+        / str(pricing_plan_id)
+        / "pricing-units"
+        / str(pricing_unit_id)
     ).with_query(
         {
             "product_name": product_name,
@@ -114,7 +119,8 @@ async def get_pricing_plan_unit(
     )
     with handle_client_exceptions(app) as session:
         async with session.get(url) as response:
-            return parse_obj_as(PricingUnitGet, response.json())
+            body: dict = await response.json()
+            return parse_obj_as(PricingUnitGet, body)
 
 
 async def sum_total_available_credits_in_the_wallet(
