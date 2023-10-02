@@ -6,8 +6,6 @@
 
 
 import re
-from datetime import datetime, timezone
-from decimal import Decimal
 
 import pytest
 from aiohttp import web
@@ -16,7 +14,6 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
     ServicePricingPlanGet,
 )
-from models_library.resource_tracker import PricingPlanClassification
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
@@ -25,25 +22,6 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
-
-_PRICING_UNIT_GET: PricingUnitGet = PricingUnitGet(
-    pricing_unit_id=1,
-    unit_name="SMALL",
-    current_cost_per_unit=Decimal(5),
-    current_cost_per_unit_id=1,
-    default=True,
-    specific_info={},
-)
-
-_PRICING_PLAN_GET: ServicePricingPlanGet = ServicePricingPlanGet(
-    pricing_plan_id=1,
-    display_name="Sleeper pricing plan",
-    description="",
-    classification=PricingPlanClassification.TIER,
-    created_at=datetime.now(tz=timezone.utc),
-    pricing_plan_key="sleeper-pricing-plan",
-    pricing_units=[_PRICING_UNIT_GET],
-)
 
 
 @pytest.fixture
