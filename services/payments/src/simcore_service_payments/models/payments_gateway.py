@@ -1,9 +1,18 @@
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Literal, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel
+
+
+class ErrorModel(BaseModel):
+    message: str
+    exception: str
+    file: Path | str
+    line: int
+    trace: list
 
 
 class InitPayment(BaseModel):

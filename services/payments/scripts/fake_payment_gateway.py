@@ -1,7 +1,7 @@
 import argparse
 import json
 import types
-from typing import Annotated
+from typing import Annotated, Any
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, status
@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
+    ErrorModel,
     InitPayment,
     InitPaymentMethod,
     PaymentID,
@@ -27,6 +28,9 @@ def set_operation_id_as_handler_function_name(router: APIRouter):
             route.operation_id = route.endpoint.__name__
 
 
+ERROR_RESPONSES: dict[str, Any] = {"4XX": {"model": ErrorModel}}
+
+
 def create_payment_router():
     router = APIRouter(
         tags=[
@@ -35,7 +39,7 @@ def create_payment_router():
     )
 
     # payment
-    @router.post("/init", response_model=PaymentInitiated)
+    @router.post("/init", response_model=PaymentInitiated, responses=ERROR_RESPONSES)
     def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
@@ -50,7 +54,7 @@ def create_payment_router():
     ):
         assert id  # nosec
 
-    @router.post("/cancel")
+    @router.post("/cancel", responses=ERROR_RESPONSES)
     def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
@@ -60,7 +64,7 @@ def create_payment_router():
     return router
 
 
-def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None):
+def auth_session(X_Init_Api_Secret: Annotated[str | None, Header()] = None):
     return 1
 
 
@@ -123,7 +127,15 @@ def create_payment_method_router():
 
 
 def create_app():
-    app = FastAPI(title="fake-payment-gateway")
+    app = FastAPI(
+        title="fake-payment-gateway",
+        servers=[
+            {
+                "url": "https://fake-api-server.test",
+                "description": "dev payment gateway",
+            }
+        ],
+    )
     # TODO: create header with auth
 
     for factory in (
