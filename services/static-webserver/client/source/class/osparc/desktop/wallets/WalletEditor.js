@@ -110,7 +110,9 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
         }
         case "create": {
           const buttons = this.getChildControl("buttonsLayout");
-          control = new osparc.ui.form.FetchButton(this.tr("Create"));
+          control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
+            appearance: "strong-button"
+          });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
               control.setFetching(true);
