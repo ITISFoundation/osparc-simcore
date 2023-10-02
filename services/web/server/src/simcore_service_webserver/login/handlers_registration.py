@@ -207,7 +207,6 @@ async def register(request: web.Request):
     )
 
     # NOTE: PC->SAN: should this go here or when user is actually logged in?
-    # FIXME: do this in confirmation !!!!!
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
     await auto_add_user_to_product_group(
         app=request.app, user_id=user["id"], product_name=product.name

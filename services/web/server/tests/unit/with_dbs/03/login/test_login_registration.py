@@ -17,6 +17,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
@@ -51,9 +52,10 @@ def app_environment(
 
 
 @pytest.fixture
-def _clean_user_table(postgres_db: sa.engine.Engine) -> Iterator[None]:
+def cleanup_db_tables(postgres_db: sa.engine.Engine) -> Iterator[None]:
     yield
     with postgres_db.connect() as conn:
+        conn.execute(wallets.delete())
         conn.execute(users.delete())
 
 
@@ -61,7 +63,7 @@ async def test_register_entrypoint(
     client: TestClient,
     fake_user_email: str,
     fake_user_password: str,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
@@ -79,7 +81,7 @@ async def test_register_entrypoint(
 
 
 async def test_register_body_validation(
-    client: TestClient, fake_user_password: str, _clean_user_table: None
+    client: TestClient, fake_user_password: str, cleanup_db_tables: None
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
@@ -124,7 +126,7 @@ async def test_registration_is_not_get(client: TestClient):
 
 
 async def test_registration_with_existing_email(
-    client: TestClient, _clean_user_table: None
+    client: TestClient, cleanup_db_tables: None
 ):
     assert client.app
 
@@ -147,7 +149,7 @@ async def test_registration_with_expired_confirmation(
     client: TestClient,
     db: AsyncpgStorage,
     mocker: MockerFixture,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     mocker.patch(
@@ -195,7 +197,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     fake_user_password: str,
     product_name: str,
     fake_weak_password: str,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     mocker.patch(
@@ -252,7 +254,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
 async def test_registration_with_weak_password_fails(
     client: TestClient,
     mocker: MockerFixture,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
     product_name: str,
     fake_user_email: str,
     fake_weak_password: str,
@@ -282,7 +284,7 @@ async def test_registration_with_invalid_confirmation_code(
     login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     # Checks bug in https://github.com/ITISFoundation/osparc-simcore/pull/3356
     assert client.app
@@ -313,7 +315,7 @@ async def test_registration_without_confirmation(
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     mocker.patch(
@@ -353,7 +355,7 @@ async def test_registration_with_confirmation(
     fake_user_email: str,
     fake_user_password: str,
     mocked_email_core_remove_comments: None,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     mocker.patch(
@@ -401,9 +403,6 @@ async def test_registration_with_confirmation(
     user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
 
-    # cleanup
-    await db.delete_user(user)
-
 
 @pytest.mark.parametrize(
     "is_invitation_required,has_valid_invitation,expected_response",
@@ -424,7 +423,7 @@ async def test_registration_with_invitation(
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     mocker.patch(
@@ -484,7 +483,7 @@ async def test_registraton_with_invitation_for_trial_account(
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,
-    _clean_user_table: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
     mocker.patch(
