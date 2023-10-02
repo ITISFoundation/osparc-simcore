@@ -98,7 +98,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: function(states) {
         return {
           marginLeft: 2,
-          font: "small"
+          font: "text-12"
         };
       }
     },
