@@ -71,7 +71,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
         font: "text-14",
-        maxWidth: 400
+        maxWidth: 380
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
