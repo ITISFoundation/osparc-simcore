@@ -467,27 +467,31 @@ class ResourceTrackerRepository(BaseRepository):
     # Pricing units
     #################################
 
+    @staticmethod
+    def _pricing_units_select_stmt():
+        return sa.select(
+            resource_tracker_pricing_units.c.pricing_unit_id,
+            resource_tracker_pricing_units.c.pricing_plan_id,
+            resource_tracker_pricing_units.c.unit_name,
+            resource_tracker_pricing_units.c.default,
+            resource_tracker_pricing_units.c.specific_info,
+            resource_tracker_pricing_units.c.created,
+            resource_tracker_pricing_units.c.modified,
+            resource_tracker_pricing_unit_costs.c.cost_per_unit.label(
+                "current_cost_per_unit"
+            ),
+            resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id.label(
+                "current_cost_per_unit_id"
+            ),
+        )
+
     async def list_pricing_units_by_pricing_plan(
         self,
         pricing_plan_id: PricingPlanId,
     ) -> list[PricingUnitsDB]:
         async with self.db_engine.begin() as conn:
             query = (
-                sa.select(
-                    resource_tracker_pricing_units.c.pricing_unit_id,
-                    resource_tracker_pricing_units.c.pricing_plan_id,
-                    resource_tracker_pricing_units.c.unit_name,
-                    resource_tracker_pricing_units.c.default,
-                    resource_tracker_pricing_units.c.specific_info,
-                    resource_tracker_pricing_units.c.created,
-                    resource_tracker_pricing_units.c.modified,
-                    resource_tracker_pricing_unit_costs.c.cost_per_unit.label(
-                        "current_cost_per_unit"
-                    ),
-                    resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id.label(
-                        "current_cost_per_unit_id"
-                    ),
-                )
+                self._pricing_units_select_stmt()
                 .select_from(
                     resource_tracker_pricing_units.join(
                         resource_tracker_pricing_unit_costs,
@@ -524,21 +528,7 @@ class ResourceTrackerRepository(BaseRepository):
     ) -> PricingUnitsDB:
         async with self.db_engine.begin() as conn:
             query = (
-                sa.select(
-                    resource_tracker_pricing_units.c.pricing_unit_id,
-                    resource_tracker_pricing_units.c.pricing_plan_id,
-                    resource_tracker_pricing_units.c.unit_name,
-                    resource_tracker_pricing_units.c.default,
-                    resource_tracker_pricing_units.c.specific_info,
-                    resource_tracker_pricing_units.c.created,
-                    resource_tracker_pricing_units.c.modified,
-                    resource_tracker_pricing_unit_costs.c.cost_per_unit.label(
-                        "current_cost_per_unit"
-                    ),
-                    resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id.label(
-                        "current_cost_per_unit_id"
-                    ),
-                )
+                self._pricing_units_select_stmt()
                 .select_from(
                     resource_tracker_pricing_units.join(
                         resource_tracker_pricing_unit_costs,
