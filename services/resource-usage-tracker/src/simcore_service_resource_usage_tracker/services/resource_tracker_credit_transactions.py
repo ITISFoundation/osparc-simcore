@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    CreditTransactionCreateBody,
     WalletTotalCredits,
 )
 from models_library.products import ProductName
@@ -13,26 +13,13 @@ from models_library.resource_tracker import (
     CreditTransactionId,
     CreditTransactionStatus,
 )
-from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..api.dependencies import get_repository
 from ..models.resource_tracker_credit_transactions import CreditTransactionCreate
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from ..modules.rabbitmq import get_rabbitmq_client_from_request
-
-
-class CreditTransactionCreateBody(BaseModel):
-    product_name: ProductName
-    wallet_id: WalletID
-    wallet_name: str
-    user_id: UserID
-    user_email: str
-    osparc_credits: Decimal
-    payment_transaction_id: str
-    created_at: datetime
 
 
 async def _sum_credit_transactions_and_publish_to_rabbitmq(
