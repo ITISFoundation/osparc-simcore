@@ -46,14 +46,6 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this.__walletListeners = [];
 
     this.__buildLayout();
-
-    this.addListener("tap", () => {
-      osparc.desktop.credits.Utils.areWalletsEnabled()
-        .then(walletsEnabled => {
-          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-          creditsWindow.openOverview();
-        });
-    }, this);
   },
 
   properties: {
@@ -76,15 +68,22 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     __reloadLayout: function() {
       const activeWallet = this.getActiveWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       const oneWallet = activeWallet ? activeWallet : preferredWallet;
       if (oneWallet) {
         this.__showOneWallet(oneWallet);
-      } else if (osparc.store.Store.getInstance().getWallets().length) {
-        this.__showAllWallets();
       } else {
-        this.__showNoWallets();
+        this.__showSelectWallet();
       }
+
+      const store = osparc.store.Store.getInstance();
+      store.getWallets().forEach(wallet => {
+        const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
+        this.__walletListeners.push({
+          walletId: wallet.getWalletId(),
+          listenerId: preferredWalletId
+        });
+      });
     },
 
     __removeWallets: function() {
@@ -99,31 +98,22 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       this._removeAll();
     },
 
-    __showNoWallets: function() {
+    __showSelectWallet: function() {
       this.__removeWallets();
 
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       const iconSrc = "@MaterialIcons/account_balance_wallet/26";
-      const walletsButton = new qx.ui.form.Button(null, iconSrc).set({
-        toolTipText: this.tr("No Wallets"),
-        backgroundColor: "transparent",
+      const walletsButton = new qx.ui.basic.Image(iconSrc).set({
+        toolTipText: this.tr("Select Wallet"),
         textColor: "danger-red"
       });
       walletsButton.addListener("tap", () => {
         osparc.desktop.credits.Utils.areWalletsEnabled()
           .then(walletsEnabled => {
-            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            creditsWindow.openWallets();
+            const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+            userCenterWindow.openWallets();
           });
       }, this);
       this._add(walletsButton, {
-        flex: 1
-      });
-
-      this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
     },
@@ -131,37 +121,11 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     __showOneWallet: function(wallet) {
       this.__removeWallets();
 
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       this.__addWallet(wallet);
-      this.__addWalletListener(wallet);
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-    },
-
-    __showAllWallets: function() {
-      this.__removeWallets();
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      const maxIndicators = 3;
-      for (let i=0; i<wallets.length && i<maxIndicators; i++) {
-        const wallet = wallets[i];
-        if (wallet.getStatus() === "ACTIVE") {
-          this.__addWallet(wallet);
-        }
-        this.__addWalletListener(wallet);
-      }
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
+      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: changeStatusId
       });
     },
 
@@ -169,22 +133,15 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
         alignX: "right"
       });
+      creditsLabel.addListener("tap", () => {
+        osparc.desktop.credits.Utils.areWalletsEnabled()
+          .then(walletsEnabled => {
+            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+            creditsWindow.openOverview();
+          });
+      }, this);
       this._add(creditsLabel, {
         flex: 1
-      });
-    },
-
-    __addWalletListener: function(wallet) {
-      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: changeStatusId
-      });
-
-      const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: preferredWalletId
       });
     }
   }

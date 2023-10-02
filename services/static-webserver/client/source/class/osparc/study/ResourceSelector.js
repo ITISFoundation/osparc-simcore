@@ -367,7 +367,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
         const selection = e.getData();
         selectWallet(selection[0].walletId);
       });
-      const favWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const favWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       if (this.__projectWalletId) {
         selectWallet(this.__projectWalletId);
       } else if (favWallet) {

@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
     __createWalletsView: function() {
       const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       const oneWallet = activeWallet ? activeWallet : preferredWallet;
       if (oneWallet) {
         // show one wallet
