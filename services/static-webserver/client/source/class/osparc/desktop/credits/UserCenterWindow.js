@@ -52,11 +52,11 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
     __userCenter: null,
 
     openOverview: function() {
-      this.__userCenter.openOverview();
+      return this.__userCenter.openOverview();
     },
 
     openWallets: function() {
-      this.__userCenter.openWallets();
+      return this.__userCenter.openWallets();
     }
   }
 });

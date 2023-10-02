@@ -26,6 +26,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     this.addCancelButton();
 
     const confirmButton = this.__confirmButton = new qx.ui.form.Button();
+    this.bind("confirmText", confirmButton, "label");
     confirmButton.addListener("execute", () => {
       this.setConfirmed(true);
       this.close(1);
@@ -39,7 +40,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     confirmText: {
       check: "String",
       init: "Yes",
-      apply: "__applyConfirmText"
+      event: "changeConfirmText"
     },
 
     confirmAction: {
@@ -64,10 +65,6 @@ qx.Class.define("osparc.ui.window.Confirmation", {
 
     getCancelButton: function() {
       return this.getChildControl("cancel-button");
-    },
-
-    __applyConfirmText: function(confirmText) {
-      this.__confirmButton.setLabel(confirmText);
     },
 
     __applyConfirmAppearance: function(confirmationAction) {
