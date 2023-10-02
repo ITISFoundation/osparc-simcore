@@ -497,18 +497,18 @@ qx.Class.define("osparc.utils.Utils", {
       if (bytes == 0) {
         return "0 Bytes";
       }
-      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-      return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
+      return Math.round((bytes / Math.pow(1000, i)) * 100) / 100 + " " + sizes[i];
     },
 
     bytesToGB: function(bytes) {
-      const b2gb = 1024*1024*1024;
+      const b2gb = 1000*1000*1000;
       return Math.round(100*bytes/b2gb)/100;
     },
 
-    gBToBytes: function(gbytes) {
-      const b2gb = 1024*1024*1024;
-      return gbytes*b2gb;
+    gBToBytes: function(gBytes) {
+      const b2gb = 1000*1000*1000;
+      return gBytes*b2gb;
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {

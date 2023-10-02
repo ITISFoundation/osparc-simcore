@@ -60,7 +60,9 @@ def upgrade():
             "UPDATE payments_transactions SET state = 'PENDING' WHERE success IS NULL"
         )
     )
-    connection.execute("UPDATE payments_transactions SET state_message = errors")
+    connection.execute(
+        sa.DDL("UPDATE payments_transactions SET state_message = errors")
+    )
 
     op.drop_column("payments_transactions", "success")
     op.drop_column("payments_transactions", "errors")
