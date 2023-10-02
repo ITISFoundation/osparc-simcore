@@ -248,9 +248,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         });
     },
 
-    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
+    __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
-      this._serializedData["accessRights"][collboratorGId] = newAccessRights;
+      this._serializedData["accessRights"][collaboratorGId] = newAccessRights;
       const params = {
         url: {
           "studyId": this._serializedData["uuid"]
