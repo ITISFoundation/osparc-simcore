@@ -3,11 +3,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterator
 from datetime import timedelta
 
 import pytest
-import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -16,8 +14,6 @@ from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from simcore_postgres_database.models.users import users
-from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
@@ -49,14 +45,6 @@ def app_environment(
     )
 
     return app_environment | login_envs
-
-
-@pytest.fixture
-def cleanup_db_tables(postgres_db: sa.engine.Engine) -> Iterator[None]:
-    yield
-    with postgres_db.connect() as conn:
-        conn.execute(wallets.delete())
-        conn.execute(users.delete())
 
 
 async def test_register_entrypoint(

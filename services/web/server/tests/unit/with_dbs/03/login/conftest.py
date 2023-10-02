@@ -4,14 +4,19 @@
 
 
 import json
+from collections.abc import Iterator
+from typing import AsyncIterable
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from simcore_postgres_database.models.users import users
+from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
@@ -123,7 +128,7 @@ async def registered_user(
     fake_user_password: str,
     fake_user_phone_number: str,
     client: TestClient,
-) -> UserInfoDict:
+) -> AsyncIterable[UserInfoDict]:
     async with NewUser(
         params={
             "name": fake_user_name,
@@ -147,3 +152,11 @@ def mocked_email_core_remove_comments(mocker: MockerFixture):
         autospec=True,
         side_effect=_do_not_remove_comments,
     )
+
+
+@pytest.fixture
+def cleanup_db_tables(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    yield
+    with postgres_db.connect() as conn:
+        conn.execute(wallets.delete())
+        conn.execute(users.delete())
