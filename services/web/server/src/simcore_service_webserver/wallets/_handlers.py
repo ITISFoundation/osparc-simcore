@@ -22,6 +22,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..payments.errors import (
     PaymentCompletedError,
@@ -83,14 +84,13 @@ class WalletsPathParams(StrictRequestParams):
 
 
 @routes.post(f"/{VTAG}/wallets", name="create_wallet")
+@requires_dev_feature_enabled  # NOTE: one wallet per user+product. SEE _events.py:_auto_add_default_wallet
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def create_wallet(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateWalletBodyParams, request)
-
-    # TODO: should we limit this?
 
     wallet: WalletGet = await _api.create_wallet(
         request.app,
