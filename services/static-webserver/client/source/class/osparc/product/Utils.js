@@ -147,7 +147,7 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
-    getWorkbenhUIPreviewPath: function() {
+    getWorkbenchUIPreviewPath: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const darkImage = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
