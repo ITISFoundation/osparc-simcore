@@ -16,10 +16,12 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.login.utils import notify_user_confirmation
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -147,3 +149,31 @@ async def test_wallets_full_workflow(
             web.HTTPForbidden,
         )
         assert errors
+
+
+@pytest.mark.testit
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+async def test_auto_wallet_on_user_registration_confirmation(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: type[web.HTTPException],
+    wallets_clean_db: AsyncIterator[None],
+    osparc_product_name: ProductName,
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+):
+    assert client.app
+
+    url = client.app.router["list_wallets"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert len(data) == 0
+
+    await notify_user_confirmation(
+        client.app, user_id=logged_user["id"], product_name=osparc_product_name
+    )
+
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert len(data) == 1
+
+    assert mock_rut_sum_total_available_credits_in_the_wallet.called

@@ -65,14 +65,17 @@ def validate_user_status(*, user: dict, support_email: str):
     assert user_status == ACTIVE  # nosec
 
 
-async def notify_user_registration(
+async def notify_user_confirmation(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
 ):
-    """Broadcast that user with 'user_id' has registered in 'product_name'"""
+    """Broadcast that user with 'user_id' has login for the first-time in 'product_name'"""
     await observer.emit(
-        app, "SIGNAL_ON_USER_REGISTERED", user_id=user_id, product_name=product_name
+        app,
+        "SIGNAL_ON_USER_CONFIRMATION",
+        user_id=user_id,
+        product_name=product_name,
     )
 
 

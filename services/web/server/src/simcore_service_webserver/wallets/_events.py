@@ -24,7 +24,7 @@ async def _auto_add_default_wallet(
         )
 
 
-async def _on_user_registration(
+async def _on_user_confirmation(
     app: web.Application, user_id: UserID, product_name: ProductName
 ):
     await _auto_add_default_wallet(app, user_id=user_id, product_name=product_name)
@@ -34,9 +34,9 @@ def setup_wallets_events(app: web.Application):
     # ensures registry in place
     setup_observer_registry(app)
 
-    # registers SIGNAL_ON_USER_REGISTERED
+    # registers SIGNAL_ON_USER_CONFIRMATION
     register_observer(
         app,
-        functools.partial(_on_user_registration, app=app),
-        event="SIGNAL_ON_USER_REGISTERED",
+        functools.partial(_on_user_confirmation, app=app),
+        event="SIGNAL_ON_USER_CONFIRMATION",
     )

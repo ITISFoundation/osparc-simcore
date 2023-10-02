@@ -55,7 +55,6 @@ from .utils import (
     envelope_response,
     flash_response,
     get_client_ip,
-    notify_user_registration,
 )
 from .utils_email import get_template_path, send_email_from_template
 
@@ -208,12 +207,10 @@ async def register(request: web.Request):
     )
 
     # NOTE: PC->SAN: should this go here or when user is actually logged in?
+    # FIXME: do this in confirmation !!!!!
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
     await auto_add_user_to_product_group(
         app=request.app, user_id=user["id"], product_name=product.name
-    )
-    await notify_user_registration(
-        request.app, user_id=user["id"], product_name=product.name
     )
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
