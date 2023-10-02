@@ -8,16 +8,19 @@ import sqlalchemy as sa
 import tenacity
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.projects import ProjectAtDB, ProjectID
+from models_library.users import UserID
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_aiopg import (
     close_engine,
     raise_if_migration_not_ready,
 )
 from sqlalchemy import and_
 
-from .exceptions import NodeNotFound
+from .exceptions import NodeNotFound, ProjectNotFoundError
 from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
@@ -110,26 +113,27 @@ class DBManager:
         log.debug(message)
 
         node_configuration = json.loads(json_configuration)
-        async with DBContextManager(self._db_engine) as engine:
-            async with engine.acquire() as connection:
-                # update the necessary parts
-                await connection.execute(
-                    # FIXME: E1120:No value for argument 'dml' in method call
-                    # pylint: disable=E1120
-                    comp_tasks.update()
-                    .where(
-                        and_(
-                            comp_tasks.c.node_id == node_uuid,
-                            comp_tasks.c.project_id == project_id,
-                        )
-                    )
-                    .values(
-                        schema=node_configuration["schema"],
-                        inputs=node_configuration["inputs"],
-                        outputs=node_configuration["outputs"],
-                        run_hash=node_configuration.get("run_hash"),
+        async with DBContextManager(
+            self._db_engine
+        ) as engine, engine.acquire() as connection:
+            # update the necessary parts
+            await connection.execute(
+                # FIXME: E1120:No value for argument 'dml' in method call
+                # pylint: disable=E1120
+                comp_tasks.update()
+                .where(
+                    and_(
+                        comp_tasks.c.node_id == node_uuid,
+                        comp_tasks.c.project_id == project_id,
                     )
                 )
+                .values(
+                    schema=node_configuration["schema"],
+                    inputs=node_configuration["inputs"],
+                    outputs=node_configuration["outputs"],
+                    run_hash=node_configuration.get("run_hash"),
+                )
+            )
 
     async def get_ports_configuration_from_node_uuid(
         self, project_id: str, node_uuid: str
@@ -137,18 +141,31 @@ class DBManager:
         log.debug(
             "Getting ports configuration of node %s from comp_tasks table", node_uuid
         )
-        async with DBContextManager(self._db_engine) as engine:
-            async with engine.acquire() as connection:
-                node: RowProxy = await _get_node_from_db(
-                    project_id, node_uuid, connection
-                )
-                node_json_config = json.dumps(
-                    {
-                        "schema": node.schema,
-                        "inputs": node.inputs,
-                        "outputs": node.outputs,
-                        "run_hash": node.run_hash,
-                    }
-                )
+        async with DBContextManager(
+            self._db_engine
+        ) as engine, engine.acquire() as connection:
+            node: RowProxy = await _get_node_from_db(project_id, node_uuid, connection)
+            node_json_config = json.dumps(
+                {
+                    "schema": node.schema,
+                    "inputs": node.inputs,
+                    "outputs": node.outputs,
+                    "run_hash": node.run_hash,
+                }
+            )
         log.debug("Found and converted to json")
         return node_json_config
+
+    async def get_project_owner_user_id(self, project_id: ProjectID) -> UserID:
+        async with DBContextManager(
+            self._db_engine
+        ) as engine, engine.acquire() as connection:
+            row: RowProxy | None = await (
+                await connection.execute(
+                    sa.select(projects).where(projects.c.uuid == f"{project_id}")
+                )
+            ).first()
+        if not row:
+            raise ProjectNotFoundError(project_id)
+        project_at_db = ProjectAtDB.from_orm(row)
+        return project_at_db.prj_owner
