@@ -5,16 +5,11 @@
 
 
 from collections.abc import Callable
-from pathlib import Path
 
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pytest_simcore.helpers.utils_envs import (
-    EnvVarsDict,
-    load_dotenv,
-    setenvs_from_dict,
-)
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
@@ -39,21 +34,16 @@ def app_environment(
     app_environment: EnvVarsDict,
     disable_rabbitmq_and_rpc_setup: Callable,
     disable_db_setup: Callable,
-    project_tests_dir: Path,
+    external_secret_envs: EnvVarsDict,
 ):
     # mocks setup
     disable_rabbitmq_and_rpc_setup()
     disable_db_setup()
 
-    secret_envs = {}
-    env_file = project_tests_dir / ".env-secret.ignore.keep"
-    if env_file.exists():
-        secret_envs = load_dotenv(env_file)
-
     # set environs
     return setenvs_from_dict(
         monkeypatch,
-        {**app_environment, **secret_envs},
+        {**app_environment, **external_secret_envs},
     )
 
 
@@ -82,17 +72,16 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
-    # mock_payments_gateway_service_api_base: MockRouter,
-    # mock_init_payment_route: Callable,
+    mock_payments_gateway_service_api_base: MockRouter,
+    mock_init_payment_route: Callable,
 ):
-    # mock_init_payment_route(mock_payments_gateway_service_api_base)
+    mock_init_payment_route(mock_payments_gateway_service_api_base)
 
     payment_gateway_api = PaymentsGatewayApi.get_from_state(app)
     assert payment_gateway_api
