@@ -26,19 +26,43 @@ qx.Class.define("osparc.metadata.Quality", {
       if (!("enabled" in obj["quality"])) {
         obj["quality"]["enabled"] = true;
       }
-      if (!("tsr_current" in obj["quality"])) {
-        obj["quality"]["tsr_current"] = osparc.metadata.Quality.getDefaultCurrentQualityTSR();
-      }
-      if (!("tsr_target" in obj["quality"])) {
-        obj["quality"]["tsr_target"] = osparc.metadata.Quality.getDefaultTargetQualityTSR();
-      }
-      if (!("annotations" in obj["quality"])) {
-        obj["quality"]["annotations"] = osparc.metadata.Quality.getDefaultQualityAnnotations();
-      }
+
       if ("tsr" in obj["quality"]) {
         obj["quality"]["tsr_current"] = obj["quality"]["tsr"];
         delete obj["quality"]["tsr"];
       }
+
+      const defaultCurrentTSR = osparc.metadata.Quality.getDefaultCurrentQualityTSR();
+      if (!("tsr_current" in obj["quality"])) {
+        obj["quality"]["tsr_current"] = defaultCurrentTSR;
+      }
+      Object.keys(defaultCurrentTSR).forEach(sectionKey => {
+        if (!(sectionKey in obj["quality"]["tsr_current"])) {
+          obj["quality"]["tsr_current"][sectionKey] = {
+            "level": 0,
+            "references": ""
+          };
+        }
+      });
+
+      const defaultTargetTSR = osparc.metadata.Quality.getDefaultTargetQualityTSR();
+      if (!("tsr_target" in obj["quality"])) {
+        obj["quality"]["tsr_target"] = defaultTargetTSR;
+      }
+      Object.keys(defaultTargetTSR).forEach(sectionKey => {
+        if (!(sectionKey in obj["quality"]["tsr_target"])) {
+          obj["quality"]["tsr_target"][sectionKey] = {
+            "level": 4,
+            "references": ""
+          };
+        }
+      });
+
+      const defaultQualityAnnotations = osparc.metadata.Quality.getDefaultQualityAnnotations();
+      if (!("annotations" in obj["quality"])) {
+        obj["quality"]["annotations"] = defaultQualityAnnotations;
+      }
+
       [
         "purpose",
         "documentation",
