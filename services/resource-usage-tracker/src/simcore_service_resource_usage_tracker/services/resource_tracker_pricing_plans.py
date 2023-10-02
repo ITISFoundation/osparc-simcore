@@ -10,6 +10,7 @@ from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
 
 from ..api.dependencies import get_repository
+from ..core.errors import ResourceUsageTrackerCustomRuntimeError
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
@@ -32,7 +33,9 @@ async def get_service_default_pricing_plan(
             break
 
     if default_pricing_plan is None:
-        raise ValueError("No default pricing plan for the specified service")
+        raise ResourceUsageTrackerCustomRuntimeError(
+            msg="No default pricing plan for the specified service"
+        )
 
     pricing_plan_unit_db = (
         await resource_tracker_repo.list_pricing_units_by_pricing_plan(

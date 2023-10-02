@@ -43,7 +43,11 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import CreateServiceRunError, CreateTransactionError
+from ....core.errors import (
+    CreateServiceRunError,
+    CreateTransactionError,
+    ResourceUsageTrackerCustomRuntimeError,
+)
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
@@ -496,7 +500,6 @@ class ResourceTrackerRepository(BaseRepository):
                                 resource_tracker_pricing_units.c.pricing_unit_id
                                 == resource_tracker_pricing_unit_costs.c.pricing_unit_id
                             )
-                            # & (resource_tracker_pricing_unit_costs.c.valid_to.is_(None))
                         ),
                     )
                 )
@@ -574,7 +577,9 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise ValueError(f"Pricing unit id {pricing_unit_id} not found")
+            raise ResourceUsageTrackerCustomRuntimeError(
+                msg=f"Pricing unit id {pricing_unit_id} not found"
+            )
         return PricingUnitsDB.from_orm(row)
 
     #################################
@@ -606,5 +611,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise ValueError
+            raise ResourceUsageTrackerCustomRuntimeError(
+                msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table"
+            )
         return PricingUnitCostsDB.from_orm(row)

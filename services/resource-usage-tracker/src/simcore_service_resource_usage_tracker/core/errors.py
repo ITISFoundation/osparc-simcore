@@ -15,3 +15,7 @@ class CreateServiceRunError(ResourceUsageTrackerRuntimeError):
 
 class CreateTransactionError(ResourceUsageTrackerRuntimeError):
     msg_template: str = "Error during creation of new transaction record in DB: {msg}"
+
+
+class ResourceUsageTrackerCustomRuntimeError(ResourceUsageTrackerRuntimeError):
+    msg_template: str = "Error: {msg}"
