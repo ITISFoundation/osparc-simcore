@@ -88,14 +88,14 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     getWallet: function(walletId) {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
-      const favouriteWallet = wallets.find(wallet => wallet.getWalletId() === walletId);
-      if (favouriteWallet) {
-        return favouriteWallet;
+      const foundWallet = wallets.find(wallet => wallet.getWalletId() === walletId);
+      if (foundWallet) {
+        return foundWallet;
       }
       return null;
     },
 
-    getFavouriteWallet: function() {
+    getPreferredWallet: function() {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
       const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
