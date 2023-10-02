@@ -102,7 +102,7 @@ def check_password(password: str, password_hash: str) -> bool:
 
 def get_random_string(min_len: int, max_len: int | None = None) -> str:
     max_len = max_len or min_len
-    size = random.randint(min_len, max_len)
+    size = random.randint(min_len, max_len)  # noqa: S311 # nosec
     return cast(str, pwd.genword(entropy=52, length=size))
 
 
