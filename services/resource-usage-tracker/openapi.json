@@ -218,13 +218,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Create Credit Transaction V1 Credit Transactions Post",
-                  "type": "object",
-                  "additionalProperties": {
-                    "exclusiveMinimum": true,
-                    "type": "integer",
-                    "minimum": 0
-                  }
+                  "$ref": "#/components/schemas/CreditTransactionCreated"
                 }
               }
             }
@@ -363,6 +357,22 @@
             "format": "date-time"
           }
         }
+      },
+      "CreditTransactionCreated": {
+        "title": "CreditTransactionCreated",
+        "required": [
+          "credit_transaction_id"
+        ],
+        "type": "object",
+        "properties": {
+          "credit_transaction_id": {
+            "title": "Credit Transaction Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "description": "Response Create Credit Transaction V1 Credit Transactions Post"
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
