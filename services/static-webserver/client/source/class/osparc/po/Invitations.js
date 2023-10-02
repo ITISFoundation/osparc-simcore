@@ -179,7 +179,8 @@ qx.Class.define("osparc.po.Invitations", {
       const respLabel = new qx.ui.basic.Label(this.tr("Data encrypted in the invitation"));
       vBox.add(respLabel);
 
-      delete respData["invitation_link"];
+      const printData = osparc.utils.Utils.deepCloneObject(respData);
+      delete printData["invitation_link"];
       const invitationRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "invitation-data");
       const container = new qx.ui.container.Scroll();
       container.add(invitationRespViewer);
