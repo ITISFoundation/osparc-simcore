@@ -38,10 +38,6 @@ class PaymentsGatewayApi(BaseHttpApi):
 
         return cls(
             client=httpx.AsyncClient(
-                auth=(
-                    settings.PAYMENTS_GATEWAY_API_KEY.get_secret_value(),
-                    settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value(),
-                ),
                 base_url=settings.PAYMENTS_GATEWAY_URL,
                 headers={
                     "X-Init-Api-Secret": settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
