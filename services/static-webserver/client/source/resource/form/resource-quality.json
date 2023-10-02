@@ -58,92 +58,92 @@
             ],
             "properties": {
                 "r01": {
-                    "title": "R1 - Clearly Defined Context",
+                    "title": "TSR1 - Clearly Defined Context",
                     "description": "Description of use cases for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r02": {
-                    "title": "R2 - Use of Appropriate Data",
+                    "title": "TSR2 - Use of Appropriate Data",
                     "description": "Links to data that was used to create, validate, test, etc. the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03a": {
-                    "title": "R3a - Verification",
+                    "title": "TSR3a - Verification",
                     "description": "Link to test suite for project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03b": {
-                    "title": "R3b - Verification Results",
+                    "title": "TSR3b - Verification Results",
                     "description": "Link to test results from running the tests for the project, e.g., on the o²S²PARC platform.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03c": {
-                    "title": "R3c - Evaluation Within Context",
+                    "title": "TSR3c - Evaluation Within Context",
                     "description": "Link to scientific validation (experimental comparator), sensitivity analysis and uncertainty quantification for the project in the context of the use cases described in TSR1.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r04": {
-                    "title": "R4 - Explicitly Listed Limitations",
+                    "title": "TSR4 - Explicitly Listed Limitations",
                     "description": "Link to documentation of known issues and limitations of the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r05": {
-                    "title": "R5 - Version Control",
+                    "title": "TSR5 - Version Control",
                     "description": "Link to primary forge repository for the project. For example, o²S²PARC, github, or gitlab instance.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r06": {
-                    "title": "R6 - Adequate Documentation",
+                    "title": "TSR6 - Adequate Documentation",
                     "description": "Link to user and/or developer documentation for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07a": {
-                    "title": "R7a - Broad Dissemination: Releases",
+                    "title": "TSR7a - Broad Dissemination: Releases",
                     "description": "Link to the download or release page for the project, e.g., on the SPARC Portal.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07b": {
-                    "title": "R7b - Broad Dissemination: Issues",
+                    "title": "TSR7b - Broad Dissemination: Issues",
                     "description": "Link to project issue tracker.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07c": {
-                    "title": "R7c - Broad Dissemination: License",
+                    "title": "TSR7c - Broad Dissemination: License",
                     "description": "Link to project license.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07d": {
-                    "title": "R7d - Broad Dissemination: Packages",
+                    "title": "TSR7d - Broad Dissemination: Packages",
                     "description": "Link to language ecosystem package repository. For example, PyPI for python projects.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07e": {
-                    "title": "R7e - Broad Dissemination: Interactive",
+                    "title": "TSR7e - Broad Dissemination: Interactive",
                     "description": "Link to the project on an interactive software hosting platform e.g. o²S²PARC.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r08a": {
-                    "title": "R8a - Independent Reviews",
+                    "title": "TSR8a - Independent Reviews",
                     "description": "Links to reviews of project by independent members of the community.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r08b": {
-                    "title": "R8b - External Certification",
+                    "title": "TSR8b - External Certification",
                     "description": "Link to external certification of project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r09": {
-                    "title": "R9 - Competing Implementation Testing",
+                    "title": "TSR9 - Competing Implementation Testing",
                     "description": "Link to benchmarking against other projects operating in the same domain.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r10a": {
-                    "title": "R10a - Relevant standards",
+                    "title": "TSR10a - Relevant standards",
                     "description": "List and/or link to standards/guidelines that this project conforms to or implements.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r10b": {
-                    "title": "R10b - Standards Adherence",
+                    "title": "TSR10b - Standards Adherence",
                     "description": "Link to demonstration that project conforms to standard.",
                     "$ref": "#/definitions/tenSimpleRule"
                 }
@@ -175,92 +175,92 @@
             ],
             "properties": {
                 "r01": {
-                    "title": "R1 - Clearly Defined Context",
+                    "title": "TSR1 - Clearly Defined Context",
                     "description": "Description of use cases for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r02": {
-                    "title": "R2 - Use of Appropriate Data",
+                    "title": "TSR2 - Use of Appropriate Data",
                     "description": "Links to data that was used to create, validate, test, etc. the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03a": {
-                    "title": "R3a - Verification",
+                    "title": "TSR3a - Verification",
                     "description": "Link to test suite for project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03b": {
-                    "title": "R3b - Verification Results",
+                    "title": "TSR3b - Verification Results",
                     "description": "Link to test results from running the tests for the project, e.g., on the o²S²PARC platform.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03c": {
-                    "title": "R3c - Evaluation Within Context",
+                    "title": "TSR3c - Evaluation Within Context",
                     "description": "Link to scientific validation (experimental comparator), sensitivity analysis and uncertainty quantification for the project in the context of the use cases described in TSR1.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r04": {
-                    "title": "R4 - Explicitly Listed Limitations",
+                    "title": "TSR4 - Explicitly Listed Limitations",
                     "description": "Link to documentation of known issues and limitations of the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r05": {
-                    "title": "R5 - Version Control",
+                    "title": "TSR5 - Version Control",
                     "description": "Link to primary forge repository for the project. For example, o²S²PARC, github, or gitlab instance.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r06": {
-                    "title": "R6 - Adequate Documentation",
+                    "title": "TSR6 - Adequate Documentation",
                     "description": "Link to user and/or developer documentation for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07a": {
-                    "title": "R7a - Broad Dissemination: Releases",
+                    "title": "TSR7a - Broad Dissemination: Releases",
                     "description": "Link to the download or release page for the project, e.g., on the SPARC Portal.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07b": {
-                    "title": "R7b - Broad Dissemination: Issues",
+                    "title": "TSR7b - Broad Dissemination: Issues",
                     "description": "Link to project issue tracker.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07c": {
-                    "title": "R7c - Broad Dissemination: License",
+                    "title": "TSR7c - Broad Dissemination: License",
                     "description": "Link to project license.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07d": {
-                    "title": "R7d - Broad Dissemination: Packages",
+                    "title": "TSR7d - Broad Dissemination: Packages",
                     "description": "Link to language ecosystem package repository. For example, PyPI for python projects.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07e": {
-                    "title": "R7e - Broad Dissemination: Interactive",
+                    "title": "TSR7e - Broad Dissemination: Interactive",
                     "description": "Link to the project on an interactive software hosting platform e.g. o²S²PARC.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r08a": {
-                    "title": "R8a - Independent Reviews",
+                    "title": "TSR8a - Independent Reviews",
                     "description": "Links to reviews of project by independent members of the community.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r08b": {
-                    "title": "R8b - External Certification",
+                    "title": "TSR8b - External Certification",
                     "description": "Link to external certification of project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r09": {
-                    "title": "R9 - Competing Implementation Testing",
+                    "title": "TSR9 - Competing Implementation Testing",
                     "description": "Link to benchmarking against other projects operating in the same domain.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r10a": {
-                    "title": "R10a - Relevant standards",
+                    "title": "TSR10a - Relevant standards",
                     "description": "List and/or link to standards/guidelines that this project conforms to or implements.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r10b": {
-                    "title": "R10b - Standards Adherence",
+                    "title": "TSR10b - Standards Adherence",
                     "description": "Link to demonstration that project conforms to standard.",
                     "$ref": "#/definitions/tenSimpleRule"
                 }
