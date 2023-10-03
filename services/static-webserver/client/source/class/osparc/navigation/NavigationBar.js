@@ -184,10 +184,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "logo-powered":
           control = new osparc.ui.basic.PoweredByOsparc().set({
-            width: 50,
             padding: 3,
             paddingTop: 1,
-            maxHeight: 50
+            maxHeight: this.self().HEIGHT - 2
           });
           this.getChildControl("left-items").add(control);
           break;

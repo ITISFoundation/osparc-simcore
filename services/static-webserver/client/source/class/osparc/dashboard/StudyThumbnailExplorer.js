@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       const scrollThumbnails = this.getChildControl("thumbnail-suggestions");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
-        this.__showInThumbnailViewer(thumbnailData["tpye"], thumbnailData["source"]);
+        this.__showInThumbnailViewer(thumbnailData["type"], thumbnailData["source"]);
       });
     },
 

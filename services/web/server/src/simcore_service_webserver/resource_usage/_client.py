@@ -2,6 +2,7 @@
 
 """
 import logging
+import urllib.parse
 from datetime import datetime
 from decimal import Decimal
 
@@ -14,9 +15,14 @@ from aiohttp.client_exceptions import (
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingUnitGet,
+    ServicePricingPlanGet,
+)
+from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from yarl import URL
@@ -76,21 +82,45 @@ async def list_service_runs_by_user_and_product_and_wallet(
             return body
 
 
-async def list_pricing_plans_by_product_and_service(
+async def get_default_service_pricing_plan(
     app: web.Application, product_name: str, service_key: str, service_version: str
-) -> dict:
+) -> ServicePricingPlanGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (URL(settings.api_base_url) / "pricing-plans").with_query(
+    url = URL(
+        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan"
+    ).with_query(
         {
             "product_name": product_name,
-            "service_key": service_key,
-            "service_version": service_version,
         }
     )
     with handle_client_exceptions(app) as session:
         async with session.get(url) as response:
             body: dict = await response.json()
-            return body
+            return parse_obj_as(ServicePricingPlanGet, body)
+
+
+async def get_pricing_plan_unit(
+    app: web.Application,
+    product_name: str,
+    pricing_plan_id: PricingPlanId,
+    pricing_unit_id: PricingUnitId,
+) -> PricingUnitGet:
+    settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
+    url = (
+        URL(settings.api_base_url)
+        / "pricing-plans"
+        / str(pricing_plan_id)
+        / "pricing-units"
+        / str(pricing_unit_id)
+    ).with_query(
+        {
+            "product_name": product_name,
+        }
+    )
+    with handle_client_exceptions(app) as session:
+        async with session.get(url) as response:
+            body: dict = await response.json()
+            return parse_obj_as(PricingUnitGet, body)
 
 
 async def sum_total_available_credits_in_the_wallet(

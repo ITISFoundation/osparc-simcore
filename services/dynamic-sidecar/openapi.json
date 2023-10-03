@@ -848,9 +848,13 @@
             "type": "integer",
             "title": "Pricing Plan Id"
           },
-          "pricing_detail_id": {
+          "pricing_unit_id": {
             "type": "integer",
-            "title": "Pricing Detail Id"
+            "title": "Pricing Unit Id"
+          },
+          "pricing_unit_cost_id": {
+            "type": "integer",
+            "title": "Pricing Unit Cost Id"
           },
           "product_name": {
             "type": "string",
@@ -911,7 +915,8 @@
           "wallet_id": 1,
           "wallet_name": "a private wallet for me",
           "pricing_plan_id": 1,
-          "pricing_detail_id": 1,
+          "pricing_unit_id": 1,
+          "pricing_unit_detail_id": 1,
           "product_name": "osparc",
           "simcore_user_agent": "undefined",
           "user_email": "test@test.com",
