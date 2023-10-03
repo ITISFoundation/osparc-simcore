@@ -258,9 +258,11 @@ domain and the intended context of use",
       let targetScore = 0;
       let maxScore = 0;
       Object.entries(currentTSR).forEach(([tsrKey, cTSR]) => {
-        score += cTSR.level;
-        targetScore += targetTSR[tsrKey].level;
-        maxScore += 4;
+        if ("level" in cTSR && "level" in targetTSR[tsrKey]) {
+          score += cTSR.level;
+          targetScore += targetTSR[tsrKey].level;
+          maxScore += 4;
+        }
       });
       return {
         score,
