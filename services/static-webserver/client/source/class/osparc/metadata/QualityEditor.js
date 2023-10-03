@@ -69,9 +69,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
     __schema: null,
     __enabledQuality: null,
     __TSRSection: null,
-    __annotationsSection: null,
     __tsrGrid: null,
-    __annotationsGrid: null,
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
@@ -144,11 +142,10 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         this.__schema = schema;
 
         if (this.__canIWrite()) {
-          this.__createEditBtns();
+          this.__createEditButtons();
         }
 
         this.__createTSRSection();
-        this.__createAnnotationsSection();
 
         this.__createEnableSection();
         if (!this.__canIWrite()) {
@@ -194,27 +191,6 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       this._add(box);
     },
 
-    __createAnnotationsSection: function() {
-      const box = this.__annotationsSection = new qx.ui.groupbox.GroupBox(this.tr("Annotations"));
-      box.getChildControl("legend").set({
-        font: "text-14"
-      });
-      box.getChildControl("frame").set({
-        backgroundColor: "transparent"
-      });
-      box.setLayout(new qx.ui.layout.VBox(10));
-
-      const grid = new qx.ui.layout.Grid(10, 6);
-      grid.setColumnAlign(0, "left", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnAlign(2, "left", "middle");
-      grid.setColumnFlex(1, 1);
-      this.__annotationsGrid = new qx.ui.container.Composite(grid);
-      box.add(this.__annotationsGrid);
-
-      this._add(box);
-    },
-
     __populateForms: function() {
       this.__populateEnable();
       this.__populateTSR();
@@ -227,9 +203,6 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         this.__copyResourceData["quality"]["enabled"] = value;
       }, this);
       this.__enabledQuality.bind("value", this.__TSRSection, "visibility", {
-        converter: value => value ? "visible" : "excluded"
-      });
-      this.__enabledQuality.bind("value", this.__annotationsSection, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
     },
@@ -425,169 +398,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       });
     },
 
-    // ANNOTATIONS //
-    __populateAnnotations: function() {
-      const schemaAnnotations = this.__schema["properties"]["annotations"]["properties"];
-      const copyMetadataAnnotations = this.__copyResourceData["quality"]["annotations"];
-
-      let row = 0;
-
-      // certificationStatus
-      const headerCS = this.__getAnnotationHeader(schemaAnnotations.certificationStatus);
-      this.__annotationsGrid.add(headerCS, {
-        row,
-        column: 0
-      });
-
-      const certificationBox = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
-      });
-      this.bind("mode", certificationBox, "enabled", {
-        converter: mode => mode === "edit"
-      });
-      schemaAnnotations.certificationStatus["enum"].forEach(certStatus => {
-        const certItem = new qx.ui.form.ListItem(certStatus);
-        certificationBox.add(certItem);
-        if (copyMetadataAnnotations.certificationStatus === certStatus) {
-          certificationBox.setSelection([certItem]);
-        }
-      });
-      certificationBox.addListener("changeSelection", e => {
-        const selection = e.getData();
-        copyMetadataAnnotations.certificationStatus = selection[0].getLabel();
-      }, this);
-      this.__annotationsGrid.add(certificationBox, {
-        row,
-        column: 1
-      });
-      row++;
-
-      // certificationLink
-      const headerCL = this.__getAnnotationHeader(schemaAnnotations.certificationLink);
-      certificationBox.bind("selection", headerCL, "visibility", {
-        converter: selection => selection[0].getLabel() === "Uncertified" ? "excluded" : "visible"
-      }, this);
-      this.__annotationsGrid.add(headerCL, {
-        row,
-        column: 0
-      });
-
-      const annotationCL = new osparc.ui.markdown.Markdown();
-      annotationCL.setValue(copyMetadataAnnotations.certificationLink);
-      certificationBox.bind("selection", annotationCL, "visibility", {
-        converter: selection => selection[0].getLabel() === "Uncertified" ? "excluded" : "visible"
-      }, this);
-      this.__annotationsGrid.add(annotationCL, {
-        row,
-        column: 1
-      });
-
-      const buttonCL = this.__getEditButton(copyMetadataAnnotations, "certificationLink", annotationCL);
-      certificationBox.bind("selection", buttonCL, "visibility", {
-        converter: selection => (this.getMode() === "edit" && selection[0].getLabel() !== "Uncertified") ? "visible" : "excluded"
-      }, this);
-      this.bind("mode", buttonCL, "visibility", {
-        converter: mode => (mode === "edit" && certificationBox.getSelection()[0].getLabel() !== "Uncertified") ? "visible" : "excluded"
-      });
-      this.__annotationsGrid.add(buttonCL, {
-        row,
-        column: 2
-      });
-      row++;
-
-      // vandv
-      const headerVV = this.__getAnnotationHeader(schemaAnnotations.vandv);
-      this.__annotationsGrid.add(headerVV, {
-        row,
-        column: 0
-      });
-
-      const annotationVV = new osparc.ui.markdown.Markdown();
-      annotationVV.setValue(copyMetadataAnnotations.vandv);
-      this.__annotationsGrid.add(annotationVV, {
-        row,
-        column: 1
-      });
-
-      const buttonVV = this.__getEditButton(copyMetadataAnnotations, "vandv", annotationVV);
-      this.bind("mode", buttonVV, "visibility", {
-        converter: mode => mode === "edit" ? "visible" : "excluded"
-      });
-      this.__annotationsGrid.add(buttonVV, {
-        row,
-        column: 2
-      });
-      row++;
-
-      // limitations
-      const headerL = this.__getAnnotationHeader(schemaAnnotations.limitations);
-      this.__annotationsGrid.add(headerL, {
-        row,
-        column: 0
-      });
-
-      let serviceLimitations = "";
-      if ("workbench" in this.__resourceData) {
-        const services = osparc.service.Utils.getUniqueServicesFromWorkbench(this.__resourceData["workbench"]);
-        services.forEach(service => {
-          const metaData = osparc.service.Utils.getMetaData(service.key, service.version);
-          const knownLimitations = osparc.metadata.Quality.getKnownLimitations(metaData);
-          if (knownLimitations !== "") {
-            serviceLimitations += "<br>"+metaData.name+":<br>"+knownLimitations;
-          }
-        });
-      }
-      const annotationLimitations = new osparc.ui.markdown.Markdown();
-      annotationLimitations.setValue(copyMetadataAnnotations.limitations + serviceLimitations);
-      this.__annotationsGrid.add(annotationLimitations, {
-        row,
-        column: 1
-      });
-
-      const buttonL = this.__getEditButton(copyMetadataAnnotations, "limitations", annotationLimitations, serviceLimitations);
-      this.bind("mode", buttonL, "visibility", {
-        converter: mode => mode === "edit" ? "visible" : "excluded"
-      });
-      this.__annotationsGrid.add(buttonL, {
-        row,
-        column: 2
-      });
-    },
-
-    __getAnnotationHeader: function(annotation) {
-      let header = new qx.ui.basic.Label(annotation.title).set({
-        marginTop: 5
-      });
-      if (annotation.description !== "") {
-        header = new osparc.form.FieldWHint(null, annotation.description, header).set({
-          allowGrowX: false
-        });
-      }
-      return header;
-    },
-
-    __getEditButton: function(annotationsObj, fieldKey, viewMD, suffixText = "") {
-      const button = osparc.utils.Utils.getEditButton();
-      button.addListener("execute", () => {
-        const title = this.tr("Edit Annotations");
-        const textEditor = new osparc.editor.TextEditor(annotationsObj[fieldKey]);
-        textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
-        const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
-        textEditor.addListener("textChanged", e => {
-          const newText = e.getData();
-          viewMD.setValue(newText + suffixText);
-          annotationsObj[fieldKey] = newText;
-          win.close();
-        }, this);
-        textEditor.addListener("cancel", () => {
-          win.close();
-        }, this);
-      }, this);
-      return button;
-    },
-    // ANNOTATIONS //
-
-    __createEditBtns: function() {
+    __createEditButtons: function() {
       const editButton = new qx.ui.form.Button(this.tr("Edit"));
       this.bind("mode", editButton, "visibility", {
         converter: value => value === "display" ? "visible" : "excluded"
@@ -626,7 +437,6 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       data["quality"]["enabled"] = this.__copyResourceData["quality"]["enabled"];
       data["quality"]["tsr_current"] = this.__copyResourceData["quality"]["tsr_current"];
       data["quality"]["tsr_target"] = this.__copyResourceData["quality"]["tsr_target"];
-      data["quality"]["annotations"] = this.__copyResourceData["quality"]["annotations"];
       if (this.__validate(this.__schema, data["quality"])) {
         btn.setFetching(true);
         if (osparc.utils.Resources.isService(this.__copyResourceData)) {
