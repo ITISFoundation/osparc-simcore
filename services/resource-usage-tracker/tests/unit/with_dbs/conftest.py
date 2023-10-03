@@ -5,6 +5,7 @@
 
 from collections.abc import AsyncIterable, Callable
 from datetime import datetime, timezone
+from random import choice
 from typing import Any
 
 import httpx
@@ -29,6 +30,12 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 )
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
+from simcore_service_resource_usage_tracker.models.resource_tracker_credit_transactions import (
+    CreditTransactionDB,
+)
+from simcore_service_resource_usage_tracker.models.resource_tracker_service_runs import (
+    ServiceRunDB,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -80,7 +87,8 @@ def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str,
             "wallet_id": faker.pyint(),
             "wallet_name": faker.word(),
             "pricing_plan_id": faker.pyint(),
-            "pricing_detail_id": faker.pyint(),
+            "pricing_unit_id": faker.pyint(),
+            "pricing_unit_cost_id": faker.pyint(),
             "simcore_user_agent": faker.word(),
             "user_id": faker.pyint(),
             "user_email": faker.email(),
@@ -105,6 +113,35 @@ def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str,
     return _creator
 
 
+@pytest.fixture
+def random_resource_tracker_credit_transactions(
+    faker: Faker,
+) -> Callable[..., dict[str, Any]]:
+    def _creator(**overrides) -> dict[str, Any]:
+        data = {
+            "product_name": "osparc",
+            "wallet_id": faker.pyint(),
+            "wallet_name": faker.word(),
+            "pricing_plan_id": faker.pyint(),
+            "pricing_unit_id": faker.pyint(),
+            "pricing_unit_cost_id": faker.pyint(),
+            "user_id": faker.pyint(),
+            "user_email": faker.email(),
+            "osparc_credits": -abs(faker.pyfloat()),
+            "transaction_status": choice(["BILLED", "PENDING", "NOT_BILLED"]),
+            "transaction_classification": "DEDUCT_SERVICE_RUN",
+            "service_run_id": faker.uuid4(),
+            "payment_transaction_id": faker.uuid4(),
+            "created": datetime.now(tz=timezone.utc),
+            "last_heartbeat_at": datetime.now(tz=timezone.utc),
+            "modified": datetime.now(tz=timezone.utc),
+        }
+        data.update(overrides)
+        return data
+
+    return _creator
+
+
 @pytest.fixture()
 def resource_tracker_service_run_db(postgres_db: sa.engine.Engine):
     with postgres_db.connect() as con:
@@ -116,7 +153,7 @@ def resource_tracker_service_run_db(postgres_db: sa.engine.Engine):
 
 async def assert_service_runs_db_row(
     postgres_db, service_run_id: str, status: str | None = None
-) -> dict | None:
+) -> ServiceRunDB:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
         stop=stop_after_delay(10),
@@ -124,24 +161,23 @@ async def assert_service_runs_db_row(
         reraise=True,
     ):
         with attempt, postgres_db.connect() as con:
-            # removes all projects before continuing
-            con.execute(resource_tracker_service_runs.select())
             result = con.execute(
                 sa.select(resource_tracker_service_runs).where(
                     resource_tracker_service_runs.c.service_run_id == service_run_id
                 )
             )
-            row: dict | None = result.first()
+            row = result.first()
             assert row
+            service_run_db = ServiceRunDB.from_orm(row)
             if status:
-                assert row[21] == status
-            return row
-    return None
+                assert service_run_db.service_run_status == status
+            return service_run_db
+    raise ValueError
 
 
 async def assert_credit_transactions_db_row(
     postgres_db, service_run_id: str, modified_at: datetime | None = None
-) -> dict | None:
+) -> CreditTransactionDB:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
         stop=stop_after_delay(10),
@@ -149,19 +185,19 @@ async def assert_credit_transactions_db_row(
         reraise=True,
     ):
         with attempt, postgres_db.connect() as con:
-            con.execute(resource_tracker_credit_transactions.select())
             result = con.execute(
                 sa.select(resource_tracker_credit_transactions).where(
                     resource_tracker_credit_transactions.c.service_run_id
                     == service_run_id
                 )
             )
-            row: dict | None = result.first()
+            row = result.first()
             assert row
+            credit_transaction_db = CreditTransactionDB.from_orm(row)
             if modified_at:
-                assert row[15] > modified_at
-            return row
-    return None
+                assert credit_transaction_db.modified > modified_at
+            return credit_transaction_db
+    raise ValueError
 
 
 @pytest.fixture
@@ -189,7 +225,8 @@ def random_rabbit_message_start(
             "wallet_id": faker.pyint(),
             "wallet_name": faker.pystr(),
             "pricing_plan_id": faker.pyint(),
-            "pricing_detail_id": faker.pyint(),
+            "pricing_unit_id": faker.pyint(),
+            "pricing_unit_cost_id": faker.pyint(),
             "product_name": "osparc",
             "simcore_user_agent": faker.pystr(),
             "user_id": faker.pyint(),

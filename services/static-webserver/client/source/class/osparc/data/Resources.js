@@ -223,7 +223,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/services?offset={offset}&limit={limit}"
+            url: statics.API + "/services/-/resource-usages?offset={offset}&limit={limit}"
           }
         }
       },
@@ -232,7 +232,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/services?wallet_id={walletId}&offset={offset}&limit={limit}"
+            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
           }
         }
       },

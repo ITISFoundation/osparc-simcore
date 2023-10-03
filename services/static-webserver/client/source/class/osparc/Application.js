@@ -241,7 +241,7 @@ qx.Class.define("osparc.Application", {
       osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (platformName !== "master") {
-            // first, pop up new relaese window
+            // first, pop up new release window
             this.__checkNewRelease();
             // then, pop up cookies accepted window. It will go on top.
             this.__checkCookiesAccepted();

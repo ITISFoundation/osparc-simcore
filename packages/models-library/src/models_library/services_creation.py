@@ -11,7 +11,8 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
     wallet_id: WalletID | None
     wallet_name: str | None
     pricing_plan_id: int | None
-    pricing_detail_id: int | None
+    pricing_unit_id: int | None
+    pricing_unit_cost_id: int | None
     product_name: str
     simcore_user_agent: str
     user_email: str
@@ -28,7 +29,8 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "wallet_id": 1,
                 "wallet_name": "a private wallet for me",
                 "pricing_plan_id": 1,
-                "pricing_detail_id": 1,
+                "pricing_unit_id": 1,
+                "pricing_unit_detail_id": 1,
                 "product_name": "osparc",
                 "simcore_user_agent": "undefined",
                 "user_email": "test@test.com",

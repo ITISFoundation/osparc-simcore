@@ -6,7 +6,7 @@ from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
 
 from ..wallets import api as wallet_api
-from . import resource_usage_tracker_client as resource_tracker_client
+from . import _client as resource_tracker_client
 
 
 async def list_usage_services(
