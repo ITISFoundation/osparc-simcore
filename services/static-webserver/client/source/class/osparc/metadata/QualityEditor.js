@@ -317,7 +317,10 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             updateTotalTSR();
           }, this);
           const confLevel = osparc.metadata.Quality.findConformanceLevel(value);
-          const hint = confLevel.title + "<br>" + confLevel.description;
+          let hint = confLevel.title + "<br>" + confLevel.description;
+          if (copyTSRTarget[ruleKey].level === 0) {
+            hint = this.tr("Not Applicable");
+          }
           const ruleRatingWHint = new osparc.form.FieldWHint(null, hint, ruleRating).set({
             hintPosition: "left"
           });
@@ -339,7 +342,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
           Object.values(conformanceLevels).forEach(conformanceLevel => {
             let text = `${conformanceLevel.level} - `;
             if (conformanceLevel.level === 0) {
-              text += "Not applicable";
+              text += "Not Applicable";
             } else {
               text += conformanceLevel.title;
             }
