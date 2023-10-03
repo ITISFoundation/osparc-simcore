@@ -7,7 +7,6 @@
             "type": "object",
             "title": "Ten Simple Rule",
             "required": [
-                "level", 
                 "references"
             ],
             "properties": {
