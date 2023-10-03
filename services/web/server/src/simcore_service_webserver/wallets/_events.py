@@ -18,7 +18,7 @@ async def _auto_add_default_wallet(
             app,
             user_id=user_id,
             wallet_name="Credits",
-            description="Keeps the credits in your account",
+            description="Purchased credits end up in here",
             thumbnail=None,
             product_name=product_name,
         )
