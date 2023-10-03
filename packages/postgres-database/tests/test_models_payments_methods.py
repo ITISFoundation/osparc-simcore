@@ -167,12 +167,13 @@ async def test_payments_automation(
 
     # update auto-rechage
     async def _update_auto_recharge(pm, **updates) -> RowProxy:
-        updated = await connection.execute(
+        result = await connection.execute(
             payments_automation.update()
             .where(payments_automation.c.payment_method_id == pm)
             .values(**updates)
             .returning(sa.text("*"))
         )
+        updated = await result.first()
         assert updated
         return updated
 
