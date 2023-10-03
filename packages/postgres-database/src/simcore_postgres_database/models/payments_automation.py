@@ -30,6 +30,13 @@ payments_automation = sa.Table(
     # Recharge Limits and Controls
     #
     sa.Column(
+        "enabled",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.false(),
+        doc="If true, the auto-recharge is triggered",
+    ),
+    sa.Column(
         "min_balance_in_usd",
         sa.Numeric(**NUMERIC_KWARGS),
         nullable=False,

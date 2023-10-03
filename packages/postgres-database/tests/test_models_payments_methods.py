@@ -110,28 +110,36 @@ async def test_payments_automation(
     assert payment_method_row
     assert payment_method_row.payment_method_id == payment_method_id
 
-    #
-    # min_balance_in_usd = 0 # defaults ZERO
-    #
-    # inc_payment_amount_in_usd
-    # max_payment_amount_in_usd
-    #
-    #
-
     # has recharge trigger?
-    async def _has_rechage_trigger(pm) -> RowProxy | None:
-        return await (
-            await connection.execute(
-                payments_automation.select().where(
-                    payments_automation.c.payment_method_id == pm
+    async def _get_wallet_auto_recharge(w) -> RowProxy | None:
+        stmt = (
+            sa.select(
+                payments_methods.c.wallet_id,
+                payments_methods.c.user_id,
+                payments_methods.c.payment_method_id,
+                payments_automation.c.enabled,
+                payments_automation.c.min_balance_in_usd,
+                payments_automation.c.inc_payment_amount_in_usd,
+                payments_automation.c.inc_payments_countdown,
+            )
+            .select_from(
+                payments_methods.join(
+                    payments_automation,
+                    payments_methods.c.payment_method_id
+                    == payments_automation.c.payment_method_id,
                 )
             )
-        ).first()
-
-    assert _has_rechage_trigger(payment_method_id) is None
+            .where(
+                (payments_automation.c.wallet_id == w)
+                & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
+            )
+        )
+        result = await connection.execute(stmt)
+        return await result.first()
 
     # using this primary payment-method, create an autorecharge
-    async def _create_autorecharge(pm, th, ip, cd) -> None:
+    async def _create_wallet_autorecharge(pm, th, ip, cd) -> None:
+        # TODO: has to be only one valid payment method in the wallet at a time!
         await connection.execute(
             payments_automation.insert().values(
                 payment_method_id=pm,
@@ -141,8 +149,13 @@ async def test_payments_automation(
             )
         )
 
-    await _create_autorecharge(payment_method_id, th=10, ip=100, cd=5)
-    assert _has_rechage_trigger(payment_method_id) is not None
+    auto_recharge = await _get_wallet_auto_recharge(payment_method_row.wallet_id)
+    assert auto_recharge is None
+
+    await _create_wallet_autorecharge(payment_method_id, th=10, ip=100, cd=5)
+    auto_recharge = await _get_wallet_auto_recharge(payment_method_row.wallet_id)
+    assert auto_recharge is not None
+    assert auto_recharge.payment_method_id == payment_method_id
 
     # updates payments countdown
     async def _decrease_countdown(pm) -> int | None:
