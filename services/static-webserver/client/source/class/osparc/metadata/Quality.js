@@ -58,20 +58,9 @@ qx.Class.define("osparc.metadata.Quality", {
         }
       });
 
-      const defaultQualityAnnotations = osparc.metadata.Quality.getDefaultQualityAnnotations();
-      if (!("annotations" in obj["quality"])) {
-        obj["quality"]["annotations"] = defaultQualityAnnotations;
+      if (("annotations" in obj["quality"])) {
+        delete obj["quality"]["annotations"];
       }
-
-      [
-        "purpose",
-        "documentation",
-        "standards"
-      ].forEach(fieldToDelete => {
-        if (fieldToDelete in obj["quality"]["annotations"]) {
-          delete obj["quality"]["annotations"][fieldToDelete];
-        }
-      });
     },
 
     isEnabled: function(quality) {
@@ -128,16 +117,6 @@ domain and the intended context of use",
         }
       });
       return confLevel;
-    },
-
-    getDefaultQualityAnnotations: function() {
-      const defaultAnnotations = {
-        "certificationStatus": "Uncertified",
-        "certificationLink": "",
-        "vandv": "",
-        "limitations": ""
-      };
-      return defaultAnnotations;
     },
 
     getDefaultCurrentQualityTSR: function() {
