@@ -2,9 +2,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, PositiveInt
 
-from ..basic_types import IDStr
+from ..basic_types import IDStr, NonNegativeDecimal
 from ..users import GroupID
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus
@@ -132,22 +132,59 @@ class PaymentMethodGet(OutputSchema):
     zipcode: str
     country: str
     created: datetime
+    auto_recharge: bool = Field(
+        default=False,
+        description="If true, this payment-method is used for auto-recharge",
+    )
 
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "idr": "pm_1234567890",
-                    "wallet_id": 1,
-                    "card_holder_name": "John Doe",
-                    "card_number_masked": "**** **** **** 1234",
-                    "card_type": "Visa",
-                    "expiration_month": 10,
-                    "expiration_year": 2025,
-                    "street_address": "123 Main St",
+                    "walletId": 1,
+                    "cardHolderName": "John Doe",
+                    "cardNumber_masked": "**** **** **** 1234",
+                    "cardType": "Visa",
+                    "expirationMonth": 10,
+                    "expirationYear": 2025,
+                    "streetAddress": "123 Main St",
                     "zipcode": "12345",
                     "country": "United States",
                     "created": "2023-09-13T15:30:00Z",
+                    "autoRecharge": "False",
                 },
             ],
         }
+
+
+#
+# Auto-recharge mechanism associated to a wallet
+#
+
+
+class WalletAutoRecharge(OutputSchema):
+    enabled: bool = Field(
+        ..., description="Enables/disables auto-recharge trigger in this wallet"
+    )
+    payment_method_id: PaymentMethodID = Field(
+        ...,
+        description="Payment method in the wallet used to perform the auto-recharge payments",
+    )
+    min_balance_in_usd: NonNegativeDecimal = Field(
+        ..., description="Minimum balance in USD that triggers an auto-recharge"
+    )
+    inc_payment_amount_in_usd: NonNegativeDecimal = Field(
+        ..., description="Amount in USD payed when auto-recharge condition is satisfied"
+    )
+    max_number_of_incs: PositiveInt | None = Field(
+        ..., description="Maximum number of top-ups or None if unlimited"
+    )
+
+
+class UpdateWalletAutoRecharge(InputSchema):
+    enabled: bool | None = None
+    payment_method_id: PaymentMethodID | None = None
+    min_balance_in_usd: NonNegativeDecimal | None = None
+    inc_payment_amount_in_usd: NonNegativeDecimal | None = None
+    max_number_of_incs: PositiveInt | None = None

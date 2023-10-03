@@ -19,6 +19,8 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInit,
     PaymentTransaction,
     PutWalletBodyParams,
+    UpdateWalletAutoRecharge,
+    WalletAutoRecharge,
     WalletGet,
     WalletGetWithAvailableCredits,
     WalletPaymentCreated,
@@ -151,6 +153,29 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
+    ...
+
+
+#
+# payment-autorecharge. Implemented as a singleton-subresource
+#
+
+
+@router.get(
+    "/wallets/{wallet_id}/auto-recharge",
+    response_model=Envelope[WalletAutoRecharge],
+)
+async def get_wallet_autorecharge(wallet_id: WalletID):
+    ...
+
+
+@router.patch(
+    "/wallets/{wallet_id}/auto-recharge",
+    response_model=Envelope[WalletAutoRecharge],
+)
+async def update_wallet_autorecharge(
+    wallet_id: WalletID, update: UpdateWalletAutoRecharge
 ):
     ...
 

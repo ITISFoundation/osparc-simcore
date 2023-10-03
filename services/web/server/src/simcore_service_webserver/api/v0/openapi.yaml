@@ -4175,6 +4175,55 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+  /v0/wallets/{wallet_id}/auto-recharge:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet Autorecharge
+      operationId: get_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletAutoRecharge_'
+    patch:
+      tags:
+      - wallets
+      summary: Update Wallet Autorecharge
+      operationId: update_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalletAutoRecharge'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletAutoRecharge_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -5503,6 +5552,12 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/WalletGetWithAvailableCredits'
+    Envelope_WalletAutoRecharge_:
+      title: Envelope[WalletAutoRecharge]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletAutoRecharge'
         error:
           title: Error
     Envelope_WalletGet_:
@@ -7186,6 +7241,11 @@ components:
           title: Created
           type: string
           format: date-time
+        autoRecharge:
+          title: Autorecharge
+          type: boolean
+          description: If true, this payment-method is used for auto-recharge
+          default: false
     PaymentMethodInit:
       title: PaymentMethodInit
       required:
@@ -9292,6 +9352,30 @@ components:
       example:
         service: github-api-v1
         token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+    UpdateWalletAutoRecharge:
+      title: UpdateWalletAutoRecharge
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+        minBalanceInUsd:
+          title: Minbalanceinusd
+          minimum: 0.0
+          type: number
+        incPaymentAmountInUsd:
+          title: Incpaymentamountinusd
+          minimum: 0.0
+          type: number
+        maxNumberOfIncs:
+          title: Maxnumberofincs
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     UploadedPart:
       title: UploadedPart
       required:
@@ -9459,6 +9543,42 @@ components:
         \ can be in two different viewer resources\n  - viewer1=(JPEG, RawGraph service)\n\
         \  - viewer2=(CSV, RawGraph service)\n\nA viewer can be dispatched using the\
         \ view_url and appending the"
+    WalletAutoRecharge:
+      title: WalletAutoRecharge
+      required:
+      - enabled
+      - paymentMethodId
+      - minBalanceInUsd
+      - incPaymentAmountInUsd
+      - maxNumberOfIncs
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+          description: Enables/disables auto-recharge trigger in this wallet
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+          description: Payment method in the wallet used to perform the auto-recharge
+            payments
+        minBalanceInUsd:
+          title: Minbalanceinusd
+          minimum: 0.0
+          type: number
+          description: Minimum balance in USD that triggers an auto-recharge
+        incPaymentAmountInUsd:
+          title: Incpaymentamountinusd
+          minimum: 0.0
+          type: number
+          description: Amount in USD payed when auto-recharge condition is satisfied
+        maxNumberOfIncs:
+          title: Maxnumberofincs
+          exclusiveMinimum: true
+          type: integer
+          description: Maximum number of top-ups or None if unlimited
+          minimum: 0
     WalletGet:
       title: WalletGet
       required:
