@@ -3,6 +3,7 @@ import enum
 import sqlalchemy as sa
 
 from ._common import (
+    NUMERIC_KWARGS,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -35,7 +36,7 @@ payments_transactions = sa.Table(
     ),
     sa.Column(
         "price_dollars",
-        sa.Numeric(scale=2),
+        sa.Numeric(**NUMERIC_KWARGS),
         nullable=False,
         doc="Total amount of the transaction (in dollars). E.g. 1234.12 $",
     ),
@@ -44,7 +45,7 @@ payments_transactions = sa.Table(
     #
     sa.Column(
         "osparc_credits",
-        sa.Numeric(scale=2),
+        sa.Numeric(**NUMERIC_KWARGS),
         nullable=False,
         doc="Amount of credits that will be added to the wallet_id "
         "once the transaction completes successfuly."

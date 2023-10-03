@@ -13,6 +13,7 @@ from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import FAKE
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.payments_automation import payments_automation
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -94,3 +95,86 @@ async def test_create_payment_method(
     assert row is not None
 
     # a payment-method added by a user and associated to a wallet
+
+
+@pytest.mark.testit
+async def test_payments_automation(
+    connection: SAConnection,
+    payment_method_id: str,
+):
+    init_values = _random_payment_method(payment_method_id=payment_method_id)
+    result = await connection.execute(
+        payments_methods.insert().values(**init_values).returning(sa.text("*"))
+    )
+    payment_method_row = await result.first()
+    assert payment_method_row
+    assert payment_method_row.payment_method_id == payment_method_id
+
+    #
+    # min_balance_in_usd = 0 # defaults ZERO
+    #
+    # inc_payment_amount_in_usd
+    # max_payment_amount_in_usd
+    #
+    #
+
+    # has recharge trigger?
+    async def _has_rechage_trigger(pm) -> RowProxy | None:
+        return await (
+            await connection.execute(
+                payments_automation.select().where(
+                    payments_automation.c.payment_method_id == pm
+                )
+            )
+        ).first()
+
+    assert _has_rechage_trigger(payment_method_id) is None
+
+    # using this primary payment-method, create an autorecharge
+    async def _create_autorecharge(pm, th, ip, cd) -> None:
+        await connection.execute(
+            payments_automation.insert().values(
+                payment_method_id=pm,
+                min_balance_in_usd=th,
+                inc_payment_amount_in_usd=ip,
+                inc_payments_countdown=cd,
+            )
+        )
+
+    await _create_autorecharge(payment_method_id, th=10, ip=100, cd=5)
+    assert _has_rechage_trigger(payment_method_id) is not None
+
+    # updates payments countdown
+    async def _decrease_countdown(pm) -> int | None:
+        return await connection.scalar(
+            payments_automation.update()
+            .where(
+                (payments_automation.c.payment_method_id == pm)
+                & (payments_automation.c.inc_payments_countdown is not None)
+            )
+            .values(
+                inc_payments_countdown=payments_automation.c.inc_payments_countdown - 1,
+            )
+            .returning(payments_automation.c.inc_payments_countdown)
+        )
+
+    assert _decrease_countdown(payment_method_id) == 4
+    assert _decrease_countdown(payment_method_id) == 3
+    assert _decrease_countdown(payment_method_id) == 2
+    assert _decrease_countdown(payment_method_id) == 1
+    assert _decrease_countdown(payment_method_id) == 0
+    assert _decrease_countdown(payment_method_id) == -1
+
+    # update auto-rechage
+    async def _update_auto_recharge(pm, **updates) -> RowProxy:
+        updated = await connection.execute(
+            payments_automation.update()
+            .where(payments_automation.c.payment_method_id == pm)
+            .values(**updates)
+            .returning(sa.text("*"))
+        )
+        assert updated
+        return updated
+
+    await _update_auto_recharge(payment_method_id, inc_payments_countdown=None)
+    assert _decrease_countdown(payment_method_id) is None
