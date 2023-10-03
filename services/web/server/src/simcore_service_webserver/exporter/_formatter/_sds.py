@@ -83,7 +83,7 @@ async def create_sds_directory(
         rrid_entires.append(
             RRIDEntry(
                 rrid_term=scicrunch_resource.name,
-                rrod_identifier=scicrunch_resource.rrid,
+                rrid_identifier=scicrunch_resource.rrid,
             )
         )
     params_code_description["rrid_entires"] = list(rrid_entires)
@@ -141,13 +141,15 @@ async def create_sds_directory(
                 service_key=service_data["key"],
                 service_version=service_data["version"],
                 input_name=service_input["label"],
+                input_parameter_description=service_data.get("description", ""),
                 # not present on the service
-                input_data_ontology_identifier="",
                 input_data_type=service_input["type"],
                 # this is optional
                 input_data_units=service_input.get("unit", ""),
                 # not always available
                 input_data_default_value=str(service_input.get("defaultValue", "")),
+                # NOTE: currently not available in the backend
+                input_data_constraints="",
             )
             inputs.append(input_entry)
 
@@ -159,11 +161,14 @@ async def create_sds_directory(
                 service_key=service_data["key"],
                 service_version=service_data["version"],
                 output_name=service_output["label"],
+                output_parameter_description=service_data.get("description", ""),
                 # not present on the service
                 output_data_ontology_identifier="",
                 output_data_type=service_output["type"],
                 # this is optional
                 output_data_units=service_output.get("unit", ""),
+                # NOTE: currently not available in the backend
+                output_data_constraints="",
             )
             outputs.append(output_entry)
 

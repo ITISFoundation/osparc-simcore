@@ -105,6 +105,9 @@ class Borders:
     border_bottom_light = BorderWithStyle(
         "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
     )
+    border_bottom_medium = BorderWithStyle(
+        "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
+    )
     border_top_light = BorderWithStyle(
         "top", border_style=BORDER_THIN, color=COLOR_BLACK
     )

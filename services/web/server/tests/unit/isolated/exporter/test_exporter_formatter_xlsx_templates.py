@@ -241,7 +241,7 @@ def test_code_description(temp_dir: Path):
     rrid_entires = [
         RRIDEntry(
             rrid_term=random_text(f"rrid_term{i}"),
-            rrod_identifier=random_text(f"rrod_identifier{i}"),
+            rrid_identifier=random_text(f"rrod_identifier{i}"),
             ontological_term=random_text(f"ontological_term{i}"),
             ontological_identifier=random_text(f"ontological_identifier{i}"),
         )
@@ -325,12 +325,11 @@ def test_code_description(temp_dir: Path):
             service_name=random_text(f"service_name{i}"),
             service_version="1.2.3",
             input_name=random_text(f"input_name{i}"),
-            input_data_ontology_identifier=random_text(
-                f"input_data_ontology_identifier{i}"
-            ),
+            input_parameter_description=random_text(f"input_name{i}"),
             input_data_type=random_text(f"input_data_type{i}"),
             input_data_units=random_text(f"input_data_units{i}"),
             input_data_default_value=random_text(f"input_data_default_value{i}"),
+            input_data_constraints=random_text(f"input_name{i}"),
         )
         for i in range(MAX_ENTRIES_IN_ARRAYS)
     ]
@@ -407,7 +406,7 @@ def test_code_description(temp_dir: Path):
         rrid_entry: RRIDEntry = rrid_entry
 
         expected_code_description[f"{column_letter}2"] = rrid_entry.rrid_term
-        expected_code_description[f"{column_letter}3"] = rrid_entry.rrod_identifier
+        expected_code_description[f"{column_letter}3"] = rrid_entry.rrid_identifier
         expected_code_description[f"{column_letter}4"] = rrid_entry.ontological_term
         expected_code_description[
             f"{column_letter}5"
@@ -421,7 +420,7 @@ def test_code_description(temp_dir: Path):
         expected_inputs[f"C{row}"] = input_entry.service_name
         expected_inputs[f"D{row}"] = input_entry.service_version
         expected_inputs[f"E{row}"] = input_entry.input_name
-        expected_inputs[f"F{row}"] = input_entry.input_data_ontology_identifier
+        expected_inputs[f"F{row}"] = input_entry.input_parameter_description
         expected_inputs[f"G{row}"] = input_entry.input_data_type
         expected_inputs[f"H{row}"] = input_entry.input_data_units
         expected_inputs[f"I{row}"] = input_entry.input_data_default_value
