@@ -266,7 +266,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         });
         row++;
       });
-      const label = new qx.ui.basic.Label("TSR score").set({
+      const label = new qx.ui.basic.Label(this.tr("TSR SCORE")).set({
         font: "text-14"
       });
       this.__tsrGrid.add(label, {
