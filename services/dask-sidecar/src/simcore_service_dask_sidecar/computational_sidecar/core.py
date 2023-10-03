@@ -200,10 +200,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             if image_labels := await get_image_labels(
                 docker_client, self.docker_auth, self.service_key, self.service_version
             ):
-                if version := image_labels.integration_version:
-                    integration_version = version.Version(version)
-                if regexp := image_labels.progress_regexp:
-                    progress_regexp = re.compile(regexp)
+                if iversion := image_labels.integration_version:
+                    integration_version = version.Version(iversion)
+                if pregexp := image_labels.progress_regexp:
+                    progress_regexp = re.compile(pregexp)
             computational_shared_data_mount_point = (
                 await get_computational_shared_data_mount_point(docker_client)
             )
