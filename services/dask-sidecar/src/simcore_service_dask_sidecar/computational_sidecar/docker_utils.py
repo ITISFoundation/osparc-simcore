@@ -22,10 +22,11 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTag,
     LogFileUploadURL,
 )
+from models_library.services import ServiceDockerData
 from models_library.services_resources import BootMode
+from models_library.utils.labels_annotations import OSPARC_LABEL_PREFIXES, from_labels
 from packaging import version
-from pydantic import ByteSize
-from service_integration.osparc_config import MetaConfig
+from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -413,7 +414,7 @@ async def get_image_labels(
     docker_auth: DockerBasicAuth,
     service_key: ContainerImage,
     service_version: ContainerTag,
-) -> MetaConfig | None:
+) -> ServiceDockerData | None:
     image_cfg = await docker_client.images.inspect(
         f"{docker_auth.server_address}/{service_key}:{service_version}"
     )
@@ -421,7 +422,10 @@ async def get_image_labels(
     # image labels are set to None when empty
     if image_labels := image_cfg["Config"].get("Labels"):
         logger.debug("found following image labels:\n%s", pformat(image_labels))
-        return MetaConfig.from_labels_annotations(image_labels)
+        data = from_labels(
+            image_labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
+        )
+        return parse_obj_as(ServiceDockerData, data)
     return None
 
 
