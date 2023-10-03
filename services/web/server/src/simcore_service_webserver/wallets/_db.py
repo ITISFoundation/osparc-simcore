@@ -71,6 +71,7 @@ _JOIN_TABLES = user_to_groups.join(
 
 async def list_wallets_for_user(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: ProductName,
 ) -> list[UserWalletDB]:
@@ -99,6 +100,27 @@ async def list_wallets_for_user(
         rows = await result.fetchall() or []
         output: list[UserWalletDB] = [parse_obj_as(UserWalletDB, row) for row in rows]
         return output
+
+
+async def list_wallets_owned_by_user(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> list[WalletID]:
+    stmt = (
+        select(wallets.c.wallet_id)
+        .select_from(_JOIN_TABLES)
+        .where(
+            (user_to_groups.c.uid == user_id)
+            & (user_to_groups.c.gid == wallets.c.owner)
+            & (wallets.c.product_name == product_name)
+        )
+    )
+    async with get_database_engine(app).acquire() as conn:
+        results = await conn.execute(stmt)
+        rows = await results.fetchall() or []
+        return [row.wallet_id for row in rows]
 
 
 async def get_wallet_for_user(
