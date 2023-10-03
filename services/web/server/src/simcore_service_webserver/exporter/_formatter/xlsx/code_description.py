@@ -5,15 +5,7 @@ from typing import Any, ClassVar, cast
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
 
-from .core.styling_components import (
-    TB,
-    AllignTop,
-    AllignTopCenter,
-    Backgrounds,
-    Borders,
-    Link,
-    T,
-)
+from .core.styling_components import TB, Backgrounds, Borders, Link, T
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import column_generator, ensure_correct_instance
 
@@ -820,293 +812,11 @@ def _include_ports_from_this_service(service_key: ServiceKey) -> bool:
     )
 
 
-class SheetInputs(BaseXLSXSheet):
-    name = "Inputs"
-    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = [
-        # column A
-        ("A1", T("Field")),
-        ("A2", T("Description")),
-        ("A3", T("Example")),
-        # column B
-        ("B1", T("Service Alias (User-given name)")),
-        ("B2", T("Name of the service containing this input, given by the user")),
-        ("B3", T("MembraneModel")),
-        # column C
-        ("C1", TB("Service name")),
-        ("C2", T("Name of the service containing this input")),
-        ("C3", T("MembraneModel")),
-        # column D
-        ("D1", TB("Service version")),
-        ("D2", T("Version of the service containing this input")),
-        ("D3", T("1.0.1")),
-        # column E
-        ("E1", TB("Input Name")),
-        ("E2", T("An input field to the MSoP submission")),
-        ("E3", T("Membrane Depolarization")),
-        # column F
-        ("F1", TB("Input Data Ontology Identifier")),
-        (
-            "F2",
-            Link(
-                "Ontology identifier for the input field, if applicable",
-                "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
-            ),
-        ),
-        ("F3", T("ILX:0103092")),
-        # column G
-        ("G1", TB("Input Data Type")),
-        ("G2", T("Data type for the input field (in plain text)")),
-        ("G3", T(".txt file")),
-        # column H
-        ("H1", TB("Input Data Units")),
-        ("H2", T("Units of data for the input field, if applicable")),
-        ("H3", T("millivolts")),
-        # column I
-        ("I1", TB("Input Data Default Value")),
-        ("I2", T("Default value for the input field, if applicable (doi or value)")),
-        # background & borders
-        ("A1:A3", Backgrounds.gray_background),
-        ("B1:I1", Backgrounds.yellow_dark),
-        ("B2:I3", Backgrounds.yellow),
-        ("A1:I3", Borders.medium_grid),
-    ]
-    column_dimensions: ClassVar[dict[str, int]] = {
-        "A": 10,
-        "B": 20,
-        "C": 20,
-        "D": 20,
-        "E": 20,
-        "F": 20,
-        "G": 20,
-        "H": 20,
-        "I": 20,
-    }
-
-    def assemble_data_for_template(
-        self, template_data: BaseModel
-    ) -> list[tuple[str, BaseXLSXCellData]]:
-        params: CodeDescriptionParams = ensure_correct_instance(
-            template_data, CodeDescriptionParams
-        )
-        intputs: list[InputsEntryModel] = [
-            i for i in params.inputs if _include_ports_from_this_service(i.service_key)
-        ]
-
-        cells: deque[tuple[str, BaseXLSXCellData]] = deque()
-
-        inputs_entry: InputsEntryModel
-        for row_index, inputs_entry in zip(
-            range(4, len(intputs) + 4), intputs, strict=False
-        ):
-            cells.append(
-                (f"B{row_index}", T(inputs_entry.service_alias) | Borders.light_grid)
-            )
-            cells.append(
-                (f"C{row_index}", T(inputs_entry.service_name) | Borders.light_grid)
-            )
-            cells.append(
-                (f"D{row_index}", T(inputs_entry.service_version) | Borders.light_grid)
-            )
-            cells.append(
-                (f"E{row_index}", T(inputs_entry.input_name) | Borders.light_grid)
-            )
-            cells.append(
-                (
-                    f"F{row_index}",
-                    T(inputs_entry.input_parameter_description) | Borders.light_grid,
-                )
-            )
-            cells.append(
-                (f"G{row_index}", T(inputs_entry.input_data_type) | Borders.light_grid)
-            )
-            cells.append(
-                (f"H{row_index}", T(inputs_entry.input_data_units) | Borders.light_grid)
-            )
-            cells.append(
-                (
-                    f"I{row_index}",
-                    T(inputs_entry.input_data_default_value) | Borders.light_grid,
-                )
-            )
-
-        return list(cells)
+def _format_value_label(index: int) -> str:
+    return f"Value {index}" if index > 0 else "Value"
 
 
-class SheetOutputs(BaseXLSXSheet):
-    name = "Outputs"
-    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = [
-        # column A
-        ("A1", T("Field")),
-        ("A2", T("Description")),
-        ("A3", T("Example")),
-        # column B
-        ("B1", TB("Service name")),
-        ("B2", T("Name of the service containing this output")),
-        ("B3", T("ThresholdModel")),
-        # column C
-        ("C1", TB("Service name")),
-        ("C2", T("Name of the service containing this output")),
-        ("C3", T("ThresholdModel")),
-        # column D
-        ("D1", TB("Service version")),
-        ("D2", T("Version of the service containing this output")),
-        ("D3", T("1.0.1")),
-        # column E
-        ("E1", TB("Output Name")),
-        ("E2", T("An output field to the MSoP submission")),
-        ("E3", T("Excitation Threshold")),
-        # column F
-        ("F1", TB("Output Data Ontology Identifier")),
-        (
-            "F2",
-            Link(
-                "Ontology identifier for the output field, if applicable",
-                "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
-            ),
-        ),
-        ("F3", T("ILX:0110906 ")),
-        # column G
-        ("G1", TB("Output Data Type")),
-        ("G2", T("Data type for the output field")),
-        ("G3", T("real number")),
-        # column H
-        ("H1", TB("Output Data Units")),
-        ("H2", T("Units of data for the output field, if applicable")),
-        ("H3", T("millivolts")),
-        # background & borders
-        ("A1:A3", Backgrounds.gray_background),
-        ("B1:H1", Backgrounds.yellow_dark),
-        ("B2:H3", Backgrounds.yellow),
-        ("A1:H3", Borders.medium_grid),
-    ]
-    column_dimensions: ClassVar[dict[str, int]] = {
-        "A": 10,
-        "B": 20,
-        "C": 20,
-        "D": 20,
-        "E": 20,
-        "F": 20,
-        "G": 20,
-        "H": 20,
-    }
-
-    def assemble_data_for_template(
-        self, template_data: BaseModel
-    ) -> list[tuple[str, BaseXLSXCellData]]:
-        params: CodeDescriptionParams = ensure_correct_instance(
-            template_data, CodeDescriptionParams
-        )
-        outputs: list[OutputsEntryModel] = [
-            o for o in params.outputs if _include_ports_from_this_service(o.service_key)
-        ]
-
-        cells: deque[tuple[str, BaseXLSXCellData]] = deque()
-
-        outputs_entry: OutputsEntryModel
-        for row_index, outputs_entry in zip(
-            range(4, len(outputs) + 4), outputs, strict=False
-        ):
-            cells.append(
-                (f"B{row_index}", T(outputs_entry.service_alias) | Borders.light_grid)
-            )
-            cells.append(
-                (f"C{row_index}", T(outputs_entry.service_name) | Borders.light_grid)
-            )
-            cells.append(
-                (f"D{row_index}", T(outputs_entry.service_version) | Borders.light_grid)
-            )
-            cells.append(
-                (f"E{row_index}", T(outputs_entry.output_name) | Borders.light_grid)
-            )
-            cells.append(
-                (
-                    f"F{row_index}",
-                    T(outputs_entry.output_data_ontology_identifier)
-                    | Borders.light_grid,
-                )
-            )
-            cells.append(
-                (
-                    f"G{row_index}",
-                    T(outputs_entry.output_data_type) | Borders.light_grid,
-                )
-            )
-            cells.append(
-                (
-                    f"H{row_index}",
-                    T(outputs_entry.output_data_units) | Borders.light_grid,
-                )
-            )
-
-        return list(cells)
-
-
-class SheetTSRRating(BaseXLSXSheet):
-    name = "TSR Rating Rubric"
-    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]] | None] = [
-        ("A1", T("Conformance Level")),
-        ("A3", T("Description")),
-        ("B1", T("Comprehensive")),
-        ("B2", T(4)),
-        (
-            "B3",
-            T(
-                "Can be understood by non MS&P practitioners familiar with the application domain and the intended context of use"
-            ),
-        ),
-        ("C1", T("Extensive")),
-        ("C2", T(3)),
-        (
-            "C3",
-            T(
-                "Can be understood by MS&P practitions not familiar with the application domain and the intended context of use"
-            ),
-        ),
-        ("D1", T("Adequate")),
-        ("D2", T(2)),
-        (
-            "D3",
-            T(
-                "Can be understood by MS&P practitioners familiar with the application domain and the intended context of use"
-            ),
-        ),
-        ("E1", T("Partial")),
-        ("E2", T(1)),
-        (
-            "E3",
-            T(
-                "Unclear to the MS&P practitioners familiar with the application domain and the intended context of use"
-            ),
-        ),
-        ("F1", T("Insufficient")),
-        ("F2", T(0)),
-        (
-            "F3",
-            T(
-                "Missing or grossly incomplete information to properly evaluate the conformance with the rule"
-            ),
-        ),
-        # background
-        ("A1:F2", Backgrounds.green),
-        ("A3:F3", Backgrounds.yellow),
-        # borders
-        ("A1:F3", Borders.medium_grid),
-        # alignment
-        ("A1:F2", AllignTopCenter()),
-        ("A3:F3", AllignTop()),
-    ]
-    cell_merge: ClassVar[set[str]] = {"A1:A2"}
-    column_dimensions: ClassVar[dict[str, int]] = {
-        "A": 20,
-        "B": 20,
-        "C": 20,
-        "D": 20,
-        "E": 20,
-        "F": 20,
-    }
-
-
-class SheetDivisionParts(BaseModel):
+class BaseSheetDivisionParts(BaseModel):
     total_columns: int
 
     @abstractmethod
@@ -1116,11 +826,7 @@ class SheetDivisionParts(BaseModel):
         """provides the offset so that edits to sections are easier to apply"""
 
 
-def _format_value_label(index: int) -> str:
-    return f"Value {index}" if index > 0 else "Value"
-
-
-class RRIDSheetPart(SheetDivisionParts):
+class RRIDSheetPart(BaseSheetDivisionParts):
     total_columns: int = 5
 
     def get_cell_styles(
@@ -1209,7 +915,7 @@ class RRIDSheetPart(SheetDivisionParts):
         return static_cells + rrid_cells + styles
 
 
-class InputsOutputsSheetPart(SheetDivisionParts):
+class InputsOutputsSheetPart(BaseSheetDivisionParts):
     total_columns: int = 14
 
     def get_cell_styles(
@@ -1410,7 +1116,7 @@ class SheetCodeDescriptionV2(BaseXLSXSheet):
 
         offset_index: int = 0
 
-        entries: list[tuple[SheetDivisionParts, Any]] = [
+        entries: list[tuple[BaseSheetDivisionParts, Any]] = [
             (RRIDSheetPart(), code_description_params.code_description.rrid_entires),
             (InputsOutputsSheetPart(), code_description_params),
         ]
