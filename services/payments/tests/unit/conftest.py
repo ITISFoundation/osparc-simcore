@@ -6,7 +6,6 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
-from pathlib import Path
 
 import httpx
 import pytest
@@ -17,7 +16,6 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
@@ -47,25 +45,6 @@ def disable_db_setup(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
-    """
-    If a file under test prefixed `.env-secret` is present,
-    then some mocks are disabled and real external services are used.
-
-    This technique allows reusing the same tests to check against
-    external development/production servers
-    """
-    envs = {}
-    env_files = list(project_tests_dir.glob(".env-secret*"))
-    if env_files:
-        assert len(env_files) == 1
-        envs = load_dotenv(env_files[0])
-        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
-        assert "PAYMENTS_GATEWAY_URL" in envs
-    return envs
-
-
-@pytest.fixture
 async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     test_app = create_app()
     async with LifespanManager(
@@ -77,22 +56,15 @@ async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
 
 
 @pytest.fixture
-def mock_payments_gateway_service_api_base(
-    app: FastAPI, external_secret_envs: EnvVarsDict
-) -> Iterator[MockRouter]:
+def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
     """
     If external_secret_envs is present, then this mock is not really used
     and instead the test runs against some real services
     """
     settings: ApplicationSettings = app.state.settings
-    mock_base_url = settings.PAYMENTS_GATEWAY_URL
-
-    if external_secret_envs.get("PAYMENTS_GATEWAY_URL") == mock_base_url:
-        print("WARNING: Bypassing mock, and using external service at", mock_base_url)
-        mock_base_url = "https://httpbin.org/"
 
     with respx.mock(
-        base_url=mock_base_url,
+        base_url=settings.PAYMENTS_GATEWAY_URL,
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:

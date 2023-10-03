@@ -96,6 +96,13 @@ class PaymentsGatewayApi(BaseHttpApi):
     def get_form_payment_url(self, id_: PaymentID) -> URL:
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
 
+    async def cancel_payment(self, payment_initiated: PaymentInitiated):
+        response = await self.client.post(
+            "/cancel",
+            json=jsonable_encoder(payment_initiated),
+        )
+        response.raise_for_status()
+
     #
     # api: payment method workflows
     #
