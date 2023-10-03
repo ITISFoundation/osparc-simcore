@@ -368,7 +368,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
         // reference
         if (currentRule.references !== undefined) {
-          const referenceMD = new osparc.ui.markdown.Markdown();
+          const referenceMD = new osparc.ui.markdown.Markdown(currentRule.references);
           this.__tsrGrid.add(referenceMD, {
             row,
             column: this.self().GridPos.reference
