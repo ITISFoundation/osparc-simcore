@@ -44,7 +44,7 @@ openapi-dev.json: .env ## Creates OAS under development (API_SERVER_DEV_FEATURES
 	@$(call _create_and_validate_openapi,1)
 
 
-CLIENT_RELEASE=0.5.0
+CLIENT_RELEASE=0.6.0
 CLIENT_OAS_PATH=osparc-simcore-clients-$(CLIENT_RELEASE)/api/openapi.json
 
 openapi-client.json:
