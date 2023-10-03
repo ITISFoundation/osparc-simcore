@@ -36,6 +36,7 @@ from faker import Faker
 from models_library.basic_types import EnvVarKey
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceDockerData
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from packaging import version
@@ -427,15 +428,19 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 
 @pytest.fixture
-def mocked_get_integration_version(
+def mocked_get_image_labels(
     integration_version: version.Version, mocker: MockerFixture
 ) -> mock.Mock:
-    mocked_get_integration_version = mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
-        autospec=True,
-        return_value=integration_version,
+    labels: ServiceDockerData = parse_obj_as(
+        ServiceDockerData, ServiceDockerData.Config.schema_extra["examples"][0]
     )
-    return mocked_get_integration_version
+    labels.integration_version = f"{integration_version}"
+    mocked_get_image_labels = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_image_labels",
+        autospec=True,
+        return_value=labels,
+    )
+    return mocked_get_image_labels
 
 
 def test_run_computational_sidecar_real_fct(
@@ -446,7 +451,7 @@ def test_run_computational_sidecar_real_fct(
     sleeper_task: ServiceExampleParam,
     s3_settings: S3Settings,
     boot_mode: BootMode,
-    mocked_get_integration_version: mock.Mock,
+    mocked_get_image_labels: mock.Mock,
 ):
     output_data = run_computational_sidecar(
         **sleeper_task.sidecar_params(),
@@ -454,7 +459,7 @@ def test_run_computational_sidecar_real_fct(
         boot_mode=boot_mode,
         task_labels={},
     )
-    mocked_get_integration_version.assert_called_once_with(
+    mocked_get_image_labels.assert_called_once_with(
         mock.ANY,
         sleeper_task.docker_basic_auth,
         sleeper_task.service_key,
@@ -513,7 +518,7 @@ def test_run_multiple_computational_sidecar_dask(
     sleeper_task: ServiceExampleParam,
     s3_settings: S3Settings,
     boot_mode: BootMode,
-    mocked_get_integration_version: mock.Mock,
+    mocked_get_image_labels: mock.Mock,
 ):
     NUMBER_OF_TASKS = 50
 
@@ -539,7 +544,7 @@ def test_run_multiple_computational_sidecar_dask(
             assert k in output_data
             assert output_data[k] == v
 
-    mocked_get_integration_version.assert_called()
+    mocked_get_image_labels.assert_called()
 
 
 @pytest.fixture
@@ -564,7 +569,7 @@ async def test_run_computational_sidecar_dask(
     boot_mode: BootMode,
     log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
-    mocked_get_integration_version: mock.Mock,
+    mocked_get_image_labels: mock.Mock,
 ):
     future = dask_client.submit(
         run_computational_sidecar,
@@ -616,7 +621,7 @@ async def test_run_computational_sidecar_dask(
         if isinstance(v, FileUrl):
             with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
                 assert fp.details.get("size") > 0  # type: ignore
-    mocked_get_integration_version.assert_called()
+    mocked_get_image_labels.assert_called()
 
 
 @pytest.mark.parametrize(
@@ -629,9 +634,9 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     boot_mode: BootMode,
     log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
-    mocked_get_integration_version: mock.Mock,
+    mocked_get_image_labels: mock.Mock,
 ):
-    mocked_get_integration_version.assert_not_called()
+    mocked_get_image_labels.assert_not_called()
     NUMBER_OF_LOGS = 20000
     future = dask_client.submit(
         run_computational_sidecar,
@@ -671,7 +676,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     # check all the awaited logs are in there
     filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
     assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
-    mocked_get_integration_version.assert_called()
+    mocked_get_image_labels.assert_called()
 
 
 @pytest.mark.parametrize(
