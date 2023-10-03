@@ -415,7 +415,9 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       });
       editButton.addListener("execute", () => this.setMode("edit"), this);
 
-      const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
+      const saveButton = new osparc.ui.form.FetchButton(this.tr("Save")).set({
+        appearance: "strong-button"
+      });
       this.bind("mode", saveButton, "visibility", {
         converter: value => value === "edit" ? "visible" : "excluded"
       });
