@@ -413,25 +413,19 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       this.bind("mode", editButton, "visibility", {
         converter: value => value === "display" ? "visible" : "excluded"
       });
-      editButton.addListener("execute", () => {
-        this.setMode("edit");
-      }, this);
+      editButton.addListener("execute", () => this.setMode("edit"), this);
 
       const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
       this.bind("mode", saveButton, "visibility", {
         converter: value => value === "edit" ? "visible" : "excluded"
       });
-      saveButton.addListener("execute", e => {
-        this.__save(saveButton);
-      }, this);
+      saveButton.addListener("execute", () => this.__save(saveButton), this);
 
       const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
       this.bind("mode", cancelButton, "visibility", {
         converter: value => value === "edit" ? "visible" : "excluded"
       });
-      cancelButton.addListener("execute", () => {
-        this.setMode("display");
-      }, this);
+      cancelButton.addListener("execute", () => this.setMode("display"), this);
 
       const buttonsToolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       buttonsToolbar.add(editButton);
