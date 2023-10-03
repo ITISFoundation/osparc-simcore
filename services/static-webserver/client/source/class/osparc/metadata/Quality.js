@@ -38,10 +38,7 @@ qx.Class.define("osparc.metadata.Quality", {
       }
       Object.keys(defaultCurrentTSR).forEach(sectionKey => {
         if (!(sectionKey in obj["quality"]["tsr_current"])) {
-          obj["quality"]["tsr_current"][sectionKey] = {
-            "level": 0,
-            "references": ""
-          };
+          obj["quality"]["tsr_current"][sectionKey] = defaultCurrentTSR[sectionKey];
         }
       });
 
@@ -51,10 +48,7 @@ qx.Class.define("osparc.metadata.Quality", {
       }
       Object.keys(defaultTargetTSR).forEach(sectionKey => {
         if (!(sectionKey in obj["quality"]["tsr_target"])) {
-          obj["quality"]["tsr_target"][sectionKey] = {
-            "level": 4,
-            "references": ""
-          };
+          obj["quality"]["tsr_target"][sectionKey] = defaultTargetTSR[sectionKey];
         }
       });
 
