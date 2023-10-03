@@ -58,8 +58,8 @@
             ],
             "properties": {
                 "r01": {
-                    "title": "TSR1 - Clearly Defined Context",
-                    "description": "Description of use cases for the project.",
+                    "title": "TSR1 - Clearly Defined Context (*)",
+                    "description": "Description of use cases for the project. (Required)",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r02": {
@@ -83,8 +83,8 @@
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r04": {
-                    "title": "TSR4 - Explicitly Listed Limitations",
-                    "description": "Link to documentation of known issues and limitations of the project.",
+                    "title": "TSR4 - Explicitly Listed Limitations (*)",
+                    "description": "Link to documentation of known issues and limitations of the project. (Required)",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r05": {
@@ -93,8 +93,8 @@
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r06": {
-                    "title": "TSR6 - Adequate Documentation",
-                    "description": "Link to user and/or developer documentation for the project.",
+                    "title": "TSR6 - Adequate Documentation (*)",
+                    "description": "Link to user and/or developer documentation for the project. (Required)",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07": {
