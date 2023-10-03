@@ -291,9 +291,11 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       updateTotalTSR();
 
       let row = 1;
-      Object.keys(copyTSRCurrent).forEach(ruleKey => {
+      const schemaRules = this.__schema["properties"]["tsr_current"]["properties"];
+      Object.keys(schemaRules).forEach(ruleKey => {
         const currentRule = copyTSRCurrent[ruleKey];
 
+        // current
         const currentRuleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
           alignY: "middle"
         }));
@@ -321,73 +323,81 @@ qx.Class.define("osparc.metadata.QualityEditor", {
           });
           currentRuleLayout.add(ruleRatingWHint);
         };
-        updateCurrentLevel(currentRule.level);
-        this.__tsrGrid.add(currentRuleLayout, {
-          row,
-          column: this.self().GridPos.clCurrent
-        });
+        if (currentRule.level !== undefined) {
+          updateCurrentLevel(currentRule.level);
+          this.__tsrGrid.add(currentRuleLayout, {
+            row,
+            column: this.self().GridPos.clCurrent
+          });
+        }
 
+        // target
         const targetRule = copyTSRTarget[ruleKey];
-        const targetsBox = new qx.ui.form.SelectBox();
-        const conformanceLevels = osparc.metadata.Quality.getConformanceLevel();
-        Object.values(conformanceLevels).forEach(conformanceLevel => {
-          let text = `${conformanceLevel.level} - `;
-          if (conformanceLevel.level === 0) {
-            text += "Not applicable";
-          } else {
-            text += conformanceLevel.title;
-          }
-          const targetItem = new qx.ui.form.ListItem(text);
-          targetItem.level = conformanceLevel.level;
-          targetsBox.add(targetItem);
-          if (targetRule.level === conformanceLevel.level) {
-            targetsBox.setSelection([targetItem]);
-          }
-        });
-        targetsBox.addListener("changeSelection", e => {
-          const newMaxScore = e.getData()[0].level;
-          copyTSRTarget[ruleKey].level = newMaxScore;
-          copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
-          updateCurrentLevel(copyTSRCurrent[ruleKey].level);
-          updateTotalTSR();
-        }, this);
-        this.bind("mode", targetsBox, "visibility", {
-          converter: mode => mode === "edit" ? "visible" : "excluded"
-        });
-        this.__tsrGrid.add(targetsBox, {
-          row,
-          column: this.self().GridPos.clTarget
-        });
-
-        const referenceMD = new osparc.ui.markdown.Markdown(currentRule.references);
-        this.__tsrGrid.add(referenceMD, {
-          row,
-          column: this.self().GridPos.reference
-        });
-
-        const button = osparc.utils.Utils.getEditButton();
-        button.addListener("execute", () => {
-          const title = this.tr("Edit References");
-          const textEditor = new osparc.editor.TextEditor(currentRule.references);
-          textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
-          const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
-          textEditor.addListener("textChanged", e => {
-            const newText = e.getData();
-            referenceMD.setValue(newText);
-            currentRule.references = newText;
-            win.close();
+        if (targetRule.level !== undefined) {
+          const targetsBox = new qx.ui.form.SelectBox();
+          const conformanceLevels = osparc.metadata.Quality.getConformanceLevel();
+          Object.values(conformanceLevels).forEach(conformanceLevel => {
+            let text = `${conformanceLevel.level} - `;
+            if (conformanceLevel.level === 0) {
+              text += "Not applicable";
+            } else {
+              text += conformanceLevel.title;
+            }
+            const targetItem = new qx.ui.form.ListItem(text);
+            targetItem.level = conformanceLevel.level;
+            targetsBox.add(targetItem);
+            if (targetRule.level === conformanceLevel.level) {
+              targetsBox.setSelection([targetItem]);
+            }
+          });
+          targetsBox.addListener("changeSelection", e => {
+            const newMaxScore = e.getData()[0].level;
+            copyTSRTarget[ruleKey].level = newMaxScore;
+            copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
+            updateCurrentLevel(copyTSRCurrent[ruleKey].level);
+            updateTotalTSR();
           }, this);
-          textEditor.addListener("cancel", () => {
-            win.close();
+          this.bind("mode", targetsBox, "visibility", {
+            converter: mode => mode === "edit" ? "visible" : "excluded"
+          });
+          this.__tsrGrid.add(targetsBox, {
+            row,
+            column: this.self().GridPos.clTarget
+          });
+        }
+
+        // reference
+        if (currentRule.references !== undefined) {
+          const referenceMD = new osparc.ui.markdown.Markdown();
+          this.__tsrGrid.add(referenceMD, {
+            row,
+            column: this.self().GridPos.reference
+          });
+
+          const button = osparc.utils.Utils.getEditButton();
+          button.addListener("execute", () => {
+            const title = this.tr("Edit References");
+            const textEditor = new osparc.editor.TextEditor(currentRule.references);
+            textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
+            const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
+            textEditor.addListener("textChanged", e => {
+              const newText = e.getData();
+              referenceMD.setValue(newText);
+              currentRule.references = newText;
+              win.close();
+            }, this);
+            textEditor.addListener("cancel", () => {
+              win.close();
+            }, this);
           }, this);
-        }, this);
-        this.bind("mode", button, "visibility", {
-          converter: mode => mode === "edit" ? "visible" : "excluded"
-        });
-        this.__tsrGrid.add(button, {
-          row,
-          column: this.self().GridPos.edit
-        });
+          this.bind("mode", button, "visibility", {
+            converter: mode => mode === "edit" ? "visible" : "excluded"
+          });
+          this.__tsrGrid.add(button, {
+            row,
+            column: this.self().GridPos.edit
+          });
+        }
 
         row++;
       });
