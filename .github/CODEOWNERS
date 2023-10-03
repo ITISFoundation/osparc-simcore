@@ -21,7 +21,7 @@ Makefile                                  @pcrespov @sanderegg
 /packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov @matusdrobuliak66
 /services/agent/                          @GitHK
-/services/api-server/                     @pcrespov
+/services/api-server/                     @pcrespov @bisgaard-itis
 /services/autoscaling/                    @sanderegg
 /services/catalog/                        @pcrespov @sanderegg
 /services/clusters-keeper/                @sanderegg
