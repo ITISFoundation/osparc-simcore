@@ -1315,7 +1315,11 @@ class InputsOutputsSheetPart(SheetDivisionParts):
 
         # formatted inputs
 
-        inputs: list[InputsEntryModel] = code_description_params.inputs
+        inputs: list[InputsEntryModel] = [
+            x
+            for x in code_description_params.inputs
+            if _include_ports_from_this_service(x.service_key)
+        ]
 
         inputs_cells: list[tuple[str, BaseXLSXCellData]] = [
             (f"D{o+2}", T(len(inputs))),
@@ -1341,13 +1345,17 @@ class InputsOutputsSheetPart(SheetDivisionParts):
                 (f"{column_letter}{o+8}", T(input_entry.input_data_constraints))
             )
 
-        outputs_entries: list[tuple[str, BaseXLSXCellData]] = [
-            (f"D{o+9}", T(len(code_description_params.outputs))),
-        ]
-
         # formatted outputs
 
-        outputs: list[OutputsEntryModel] = code_description_params.outputs
+        outputs: list[OutputsEntryModel] = [
+            x
+            for x in code_description_params.outputs
+            if _include_ports_from_this_service(x.service_key)
+        ]
+
+        outputs_cells: list[tuple[str, BaseXLSXCellData]] = [
+            (f"D{o+9}", T(len(outputs)))
+        ]
 
         for column_letter, output_entry in zip(
             column_generator(4, len(outputs)), outputs, strict=True
@@ -1367,10 +1375,11 @@ class InputsOutputsSheetPart(SheetDivisionParts):
             )
 
         # write top "value n" labels
+        value_labels: list[tuple[str, BaseXLSXCellData]] = []
         for i, column_letter in enumerate(
             column_generator(4, max(len(inputs), len(outputs)))
         ):
-            inputs_cells.append(
+            value_labels.append(
                 (
                     f"{column_letter}{o+1}",
                     TB(_format_value_label(i)) | Backgrounds.gray_background,
@@ -1383,7 +1392,7 @@ class InputsOutputsSheetPart(SheetDivisionParts):
             (f"C{o+8}", Borders.border_bottom_medium),
         ]
 
-        return static_cells + inputs_cells + outputs_entries + styles
+        return static_cells + inputs_cells + outputs_cells + value_labels + styles
 
 
 class SheetCodeDescriptionV2(BaseXLSXSheet):
