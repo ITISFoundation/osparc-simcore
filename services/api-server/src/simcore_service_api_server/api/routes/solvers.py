@@ -223,10 +223,7 @@ async def list_solver_ports(
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists inputs and outputs of a given solver
-
-    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
-    """
+    """Lists inputs and outputs of a given solver"""
     try:
         ports = await catalog_client.get_service_ports(
             user_id=user_id,
