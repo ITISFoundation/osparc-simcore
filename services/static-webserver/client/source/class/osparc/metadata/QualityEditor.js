@@ -218,7 +218,6 @@ qx.Class.define("osparc.metadata.QualityEditor", {
     __populateForms: function() {
       this.__populateEnable();
       this.__populateTSR();
-      this.__populateAnnotations();
     },
 
     __populateEnable: function() {

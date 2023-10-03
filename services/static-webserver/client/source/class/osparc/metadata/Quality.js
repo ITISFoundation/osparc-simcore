@@ -253,13 +253,6 @@ domain and the intended context of use",
       return defaultTargetTSR;
     },
 
-    getKnownLimitations: function(metaData) {
-      if (metaData && "quality" in metaData && "annotations" in metaData["quality"] && "limitations" in metaData["quality"]["annotations"]) {
-        return metaData["quality"]["annotations"]["limitations"];
-      }
-      return "";
-    },
-
     computeTSRScore: function(currentTSR, targetTSR) {
       let score = 0;
       let targetScore = 0;

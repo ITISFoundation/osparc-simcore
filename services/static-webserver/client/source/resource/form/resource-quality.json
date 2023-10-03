@@ -265,43 +265,6 @@
                     "$ref": "#/definitions/tenSimpleRule"
                 }
             }
-        },
-        "annotations": {
-            "type": "object",
-            "title": "Annotations",
-            "required": [
-                "certificationStatus", 
-                "certificationLink",
-                "vandv",
-                "limitations"
-            ],
-            "properties": {
-                "certificationStatus": {
-                    "title": "Certification status",
-                    "description": "",
-                    "type": "string",
-                    "default": "Uncertified",
-                    "enum": ["Uncertified", "Independently reviewed", "Regulatory grade"]
-                },
-                "certificationLink": {
-                    "title": "Certification link",
-                    "description": "",
-                    "type": "string",
-                    "default": ""
-                },
-                "vandv": {
-                    "title": "Verification & Validation",
-                    "description": "Description of verification and validation testing performed for the model and/or code submitted, or a link to these tests",
-                    "type": "string",
-                    "default": ""
-                },
-                "limitations": {
-                    "title": "Known limitations",
-                    "description": "",
-                    "type": "string",
-                    "default": ""
-                }
-            }
         }
     }
 }
