@@ -35,6 +35,7 @@ def setup_wallets_events(app: web.Application):
     setup_observer_registry(app)
 
     # registers SIGNAL_ON_USER_CONFIRMATION
+    # NOTE: should follow up on https://github.com/ITISFoundation/osparc-simcore/issues/4822
     register_observer(
         app,
         functools.partial(_on_user_confirmation, app=app),

@@ -71,6 +71,7 @@ async def notify_user_confirmation(
     product_name: ProductName,
 ):
     """Broadcast that user with 'user_id' has login for the first-time in 'product_name'"""
+    # NOTE: Follow up in https://github.com/ITISFoundation/osparc-simcore/issues/4822
     await observer.emit(
         app,
         "SIGNAL_ON_USER_CONFIRMATION",
