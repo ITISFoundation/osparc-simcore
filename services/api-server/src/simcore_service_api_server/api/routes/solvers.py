@@ -215,7 +215,6 @@ async def get_solver_release(
 @router.get(
     "/{solver_key:path}/releases/{version}/ports",
     response_model=OnePage[SolverPort],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
