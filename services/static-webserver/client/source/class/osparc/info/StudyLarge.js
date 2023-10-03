@@ -319,7 +319,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
+      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy());
       const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {

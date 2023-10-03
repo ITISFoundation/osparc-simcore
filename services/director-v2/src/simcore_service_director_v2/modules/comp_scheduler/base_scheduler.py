@@ -381,7 +381,8 @@ class BaseCompScheduler(ABC):
                     wallet_id=run_metadata.get("wallet_id"),
                     wallet_name=run_metadata.get("wallet_name"),
                     pricing_plan_id=run_metadata.get("pricing_plan_id"),
-                    pricing_detail_id=run_metadata.get("pricing_detail_id"),
+                    pricing_unit_id=run_metadata.get("pricing_unit_id"),
+                    pricing_unit_cost_id=run_metadata.get("pricing_unit_cost_id"),
                     product_name=run_metadata.get(
                         "product_name", UNDEFINED_STR_METADATA
                     ),

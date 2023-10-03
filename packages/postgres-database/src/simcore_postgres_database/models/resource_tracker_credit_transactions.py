@@ -60,7 +60,13 @@ resource_tracker_credit_transactions = sa.Table(
         doc="Pricing plan",
     ),
     sa.Column(
-        "pricing_detail_id",
+        "pricing_unit_id",
+        sa.BigInteger,
+        nullable=True,
+        doc="Pricing detail",
+    ),
+    sa.Column(
+        "pricing_unit_cost_id",
         sa.BigInteger,
         nullable=True,
         doc="Pricing detail",

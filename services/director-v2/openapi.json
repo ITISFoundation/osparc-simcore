@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-director-v2",
     "description": " Orchestrates the pipeline of services defined by the user",
@@ -60,366 +60,6 @@
         }
       }
     },
-    "/v0/services": {
-      "get": {
-        "tags": [
-          "services"
-        ],
-        "summary": "List Services",
-        "description": "Lists services available in the deployed registry",
-        "operationId": "list_services_v0_services_get",
-        "parameters": [
-          {
-            "description": "The service type:\n   - computational - a computational service\n   - interactive - an interactive service\n",
-            "required": false,
-            "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/ServiceType"
-                }
-              ],
-              "description": "The service type:\n   - computational - a computational service\n   - interactive - an interactive service\n"
-            },
-            "name": "service_type",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicesArrayEnveloped"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/services/{service_key}/{service_version}/extras": {
-      "get": {
-        "tags": [
-          "services"
-        ],
-        "summary": "Get Extra Service Versioned",
-        "description": "Returns the service extras",
-        "operationId": "get_extra_service_versioned_v0_services__service_key___service_version__extras_get",
-        "parameters": [
-          {
-            "description": "Distinctive name for the node based on the docker registry path",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "type": "string",
-              "description": "Distinctive name for the node based on the docker registry path"
-            },
-            "name": "service_key",
-            "in": "path"
-          },
-          {
-            "description": "The tag/version of the service",
-            "required": true,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string",
-              "description": "The tag/version of the service"
-            },
-            "name": "service_version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServiceExtrasEnveloped"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/services/{service_key}/{service_version}": {
-      "get": {
-        "tags": [
-          "services"
-        ],
-        "summary": "Get Service Versioned",
-        "description": "Returns details of the selected service if available in the platform",
-        "operationId": "get_service_versioned_v0_services__service_key___service_version__get",
-        "parameters": [
-          {
-            "description": "Distinctive name for the node based on the docker registry path",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "type": "string",
-              "description": "Distinctive name for the node based on the docker registry path"
-            },
-            "name": "service_key",
-            "in": "path"
-          },
-          {
-            "description": "The tag/version of the service",
-            "required": true,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string",
-              "description": "The tag/version of the service"
-            },
-            "name": "service_version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicesArrayEnveloped"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/running_interactive_services": {
-      "get": {
-        "tags": [
-          "services"
-        ],
-        "summary": "List Running Interactive Services",
-        "description": "Lists of running interactive services",
-        "operationId": "list_running_interactive_services_v0_running_interactive_services_get",
-        "parameters": [
-          {
-            "description": "The ID of the user that starts the service",
-            "required": true,
-            "schema": {
-              "title": "User Id",
-              "type": "string",
-              "description": "The ID of the user that starts the service"
-            },
-            "name": "user_id",
-            "in": "query"
-          },
-          {
-            "description": "The ID of the project in which the service starts",
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string",
-              "description": "The ID of the project in which the service starts"
-            },
-            "name": "project_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RunningServicesDetailsArrayEnveloped"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "services"
-        ],
-        "summary": "Start Interactive Service",
-        "description": "Starts an interactive service in the  platform",
-        "operationId": "start_interactive_service_v0_running_interactive_services_post",
-        "parameters": [
-          {
-            "description": "The ID of the user that starts the service",
-            "required": true,
-            "schema": {
-              "title": "User Id",
-              "type": "string",
-              "description": "The ID of the user that starts the service"
-            },
-            "name": "user_id",
-            "in": "query"
-          },
-          {
-            "description": "The ID of the project in which the service starts",
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string",
-              "description": "The ID of the project in which the service starts"
-            },
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "description": "distinctive name for the node based on the docker registry path",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "type": "string",
-              "description": "distinctive name for the node based on the docker registry path"
-            },
-            "example": [
-              "simcore/services/comp/itis/sleeper",
-              "simcore/services/dynamic/3dviewer"
-            ],
-            "name": "service_key",
-            "in": "query"
-          },
-          {
-            "description": "The tag/version of the service",
-            "required": true,
-            "schema": {
-              "title": "Service Tag",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string",
-              "description": "The tag/version of the service"
-            },
-            "example": "1.0.0",
-            "name": "service_tag",
-            "in": "query"
-          },
-          {
-            "description": "The uuid to assign the service with",
-            "required": true,
-            "schema": {
-              "title": "Service Uuid",
-              "type": "string",
-              "description": "The uuid to assign the service with"
-            },
-            "name": "service_uuid",
-            "in": "query"
-          },
-          {
-            "description": "predefined basepath for the backend service otherwise uses root",
-            "required": false,
-            "schema": {
-              "title": "Service Base Path",
-              "type": "string",
-              "description": "predefined basepath for the backend service otherwise uses root",
-              "default": ""
-            },
-            "example": "/x/EycCXbU0H/",
-            "name": "service_base_path",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/running_interactive_services/{service_uuid}": {
-      "delete": {
-        "tags": [
-          "services"
-        ],
-        "summary": "Stop Interactive Service",
-        "operationId": "stop_interactive_service_v0_running_interactive_services__service_uuid__delete",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Service Uuid",
-              "type": "string"
-            },
-            "name": "service_uuid",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v2/computations": {
       "post": {
         "tags": [
@@ -472,9 +112,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "path"
@@ -482,9 +122,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -524,9 +164,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "path"
@@ -570,9 +210,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "path"
@@ -624,9 +264,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "path"
@@ -634,9 +274,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -649,11 +289,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get All Tasks Log Files V2 Computations  Project Id  Tasks   Logfile Get",
-                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TaskLogFileGet"
-                  }
+                  },
+                  "type": "array",
+                  "title": "Response Get All Tasks Log Files V2 Computations  Project Id  Tasks   Logfile Get"
                 }
               }
             }
@@ -683,9 +323,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "path"
@@ -693,9 +333,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -703,9 +343,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -747,9 +387,9 @@
           {
             "required": false,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -758,9 +398,9 @@
           {
             "required": false,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "query"
@@ -772,11 +412,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Tracked Dynamic Services V2 Dynamic Services Get",
-                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/RunningDynamicServiceDetails"
-                  }
+                  },
+                  "type": "array",
+                  "title": "Response List Tracked Dynamic Services V2 Dynamic Services Get"
                 }
               }
             }
@@ -803,8 +443,8 @@
           {
             "required": true,
             "schema": {
-              "title": "X-Dynamic-Sidecar-Request-Dns",
-              "type": "string"
+              "type": "string",
+              "title": "X-Dynamic-Sidecar-Request-Dns"
             },
             "name": "x-dynamic-sidecar-request-dns",
             "in": "header"
@@ -812,8 +452,8 @@
           {
             "required": true,
             "schema": {
-              "title": "X-Dynamic-Sidecar-Request-Scheme",
-              "type": "string"
+              "type": "string",
+              "title": "X-Dynamic-Sidecar-Request-Scheme"
             },
             "name": "x-dynamic-sidecar-request-scheme",
             "in": "header"
@@ -821,8 +461,8 @@
           {
             "required": true,
             "schema": {
-              "title": "X-Simcore-User-Agent",
-              "type": "string"
+              "type": "string",
+              "title": "X-Simcore-User-Agent"
             },
             "name": "x-simcore-user-agent",
             "in": "header"
@@ -873,9 +513,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -914,9 +554,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -924,8 +564,8 @@
           {
             "required": false,
             "schema": {
-              "title": "Can Save",
               "type": "boolean",
+              "title": "Can Save",
               "default": true
             },
             "name": "can_save",
@@ -960,9 +600,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1013,9 +653,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1049,9 +689,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Project Id",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Project Id"
             },
             "name": "project_id",
             "in": "path"
@@ -1085,9 +725,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1100,11 +740,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Clusters V2 Clusters Get",
-                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/ClusterGet"
-                  }
+                  },
+                  "type": "array",
+                  "title": "Response List Clusters V2 Clusters Get"
                 }
               }
             }
@@ -1131,9 +771,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1206,9 +846,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Cluster Id",
+              "type": "integer",
               "minimum": 0,
-              "type": "integer"
+              "title": "Cluster Id"
             },
             "name": "cluster_id",
             "in": "path"
@@ -1216,9 +856,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1258,9 +898,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Cluster Id",
+              "type": "integer",
               "minimum": 0,
-              "type": "integer"
+              "title": "Cluster Id"
             },
             "name": "cluster_id",
             "in": "path"
@@ -1268,9 +908,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1303,9 +943,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Cluster Id",
+              "type": "integer",
               "minimum": 0,
-              "type": "integer"
+              "title": "Cluster Id"
             },
             "name": "cluster_id",
             "in": "path"
@@ -1313,9 +953,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1367,9 +1007,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1411,9 +1051,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Cluster Id",
+              "type": "integer",
               "minimum": 0,
-              "type": "integer"
+              "title": "Cluster Id"
             },
             "name": "cluster_id",
             "in": "path"
@@ -1421,9 +1061,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1513,9 +1153,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Cluster Id",
+              "type": "integer",
               "minimum": 0,
-              "type": "integer"
+              "title": "Cluster Id"
             },
             "name": "cluster_id",
             "in": "path"
@@ -1523,9 +1163,9 @@
           {
             "required": true,
             "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "User Id",
               "minimum": 0
             },
             "name": "user_id",
@@ -1560,9 +1200,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1606,9 +1246,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1620,8 +1260,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Service Containers V2 Dynamic Scheduler Services  Node Uuid  Containers Delete",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Delete Service Containers V2 Dynamic Scheduler Services  Node Uuid  Containers Delete"
                 }
               }
             }
@@ -1653,9 +1293,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1667,8 +1307,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Save Service State V2 Dynamic Scheduler Services  Node Uuid  State Save Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Save Service State V2 Dynamic Scheduler Services  Node Uuid  State Save Post"
                 }
               }
             }
@@ -1700,9 +1340,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1714,8 +1354,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Push Service Outputs V2 Dynamic Scheduler Services  Node Uuid  Outputs Push Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Push Service Outputs V2 Dynamic Scheduler Services  Node Uuid  Outputs Push Post"
                 }
               }
             }
@@ -1747,9 +1387,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Node Uuid",
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Node Uuid"
             },
             "name": "node_uuid",
             "in": "path"
@@ -1761,8 +1401,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Service Docker Resources V2 Dynamic Scheduler Services  Node Uuid  Docker Resources Delete",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Delete Service Docker Resources V2 Dynamic Scheduler Services  Node Uuid  Docker Resources Delete"
                 }
               }
             }
@@ -1786,198 +1426,79 @@
   },
   "components": {
     "schemas": {
-      "Author": {
-        "title": "Author",
-        "required": [
-          "name",
-          "email"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "Name of the author",
-            "example": "Jim Knopf"
-          },
-          "email": {
-            "title": "Email",
-            "type": "string",
-            "description": "Email address",
-            "format": "email"
-          },
-          "affiliation": {
-            "title": "Affiliation",
-            "type": "string",
-            "description": "Affiliation of the author"
-          }
-        },
-        "additionalProperties": false
-      },
-      "Badge": {
-        "title": "Badge",
-        "required": [
-          "name",
-          "image",
-          "url"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "Name of the subject"
-          },
-          "image": {
-            "title": "Image",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "Url to the badge",
-            "format": "uri"
-          },
-          "url": {
-            "title": "Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "Link to the status",
-            "format": "uri"
-          }
-        },
-        "additionalProperties": false
-      },
-      "BootChoice": {
-        "title": "BootChoice",
-        "required": [
-          "label",
-          "description"
-        ],
-        "type": "object",
-        "properties": {
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          }
-        }
-      },
       "BootMode": {
-        "title": "BootMode",
+        "type": "string",
         "enum": [
           "CPU",
           "GPU",
           "MPI"
         ],
-        "type": "string",
+        "title": "BootMode",
         "description": "An enumeration."
       },
-      "BootOption": {
-        "title": "BootOption",
-        "required": [
-          "label",
-          "description",
-          "default",
-          "items"
-        ],
-        "type": "object",
-        "properties": {
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "default": {
-            "title": "Default",
-            "type": "string"
-          },
-          "items": {
-            "title": "Items",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/BootChoice"
-            }
-          }
-        }
-      },
       "ClusterAccessRights": {
-        "title": "ClusterAccessRights",
+        "properties": {
+          "read": {
+            "type": "boolean",
+            "title": "Read",
+            "description": "allows to run pipelines on that cluster"
+          },
+          "write": {
+            "type": "boolean",
+            "title": "Write",
+            "description": "allows to modify the cluster"
+          },
+          "delete": {
+            "type": "boolean",
+            "title": "Delete",
+            "description": "allows to delete a cluster"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "read",
           "write",
           "delete"
         ],
-        "type": "object",
-        "properties": {
-          "read": {
-            "title": "Read",
-            "type": "boolean",
-            "description": "allows to run pipelines on that cluster"
-          },
-          "write": {
-            "title": "Write",
-            "type": "boolean",
-            "description": "allows to modify the cluster"
-          },
-          "delete": {
-            "title": "Delete",
-            "type": "boolean",
-            "description": "allows to delete a cluster"
-          }
-        },
-        "additionalProperties": false
+        "title": "ClusterAccessRights"
       },
       "ClusterCreate": {
-        "title": "ClusterCreate",
-        "required": [
-          "name",
-          "type",
-          "endpoint",
-          "authentication"
-        ],
-        "type": "object",
         "properties": {
           "name": {
-            "title": "Name",
             "type": "string",
+            "title": "Name",
             "description": "The human readable name of the cluster"
           },
           "description": {
-            "title": "Description",
-            "type": "string"
+            "type": "string",
+            "title": "Description"
           },
           "type": {
-            "$ref": "#/components/schemas/ClusterType"
+            "$ref": "#/components/schemas/ClusterTypeInModel"
           },
           "owner": {
-            "title": "Owner",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Owner",
             "minimum": 0
           },
           "thumbnail": {
-            "title": "Thumbnail",
+            "type": "string",
             "maxLength": 2083,
             "minLength": 1,
-            "type": "string",
-            "description": "url to the image describing this cluster",
-            "format": "uri"
+            "format": "uri",
+            "title": "Thumbnail",
+            "description": "url to the image describing this cluster"
           },
           "endpoint": {
-            "title": "Endpoint",
+            "type": "string",
             "maxLength": 65536,
             "minLength": 1,
-            "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "title": "Endpoint"
           },
           "authentication": {
-            "title": "Authentication",
             "anyOf": [
               {
                 "$ref": "#/components/schemas/SimpleAuthentication"
@@ -1988,47 +1509,123 @@
               {
                 "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
               }
-            ]
+            ],
+            "title": "Authentication"
           },
           "accessRights": {
-            "title": "Accessrights",
-            "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/ClusterAccessRights"
-            }
+            },
+            "type": "object",
+            "title": "Accessrights"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "endpoint",
+          "authentication"
+        ],
+        "title": "ClusterCreate"
       },
       "ClusterDetailsGet": {
-        "title": "ClusterDetailsGet",
-        "required": [
-          "scheduler",
-          "dashboard_link"
-        ],
-        "type": "object",
         "properties": {
           "scheduler": {
-            "title": "Scheduler",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Scheduler"
               }
             ],
+            "title": "Scheduler",
             "description": "This contains dask scheduler information given by the underlying dask library"
           },
           "dashboard_link": {
-            "title": "Dashboard Link",
+            "type": "string",
             "maxLength": 65536,
             "minLength": 1,
-            "type": "string",
-            "description": "Link to this scheduler's dashboard",
-            "format": "uri"
+            "format": "uri",
+            "title": "Dashboard Link",
+            "description": "Link to this scheduler's dashboard"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "scheduler",
+          "dashboard_link"
+        ],
+        "title": "ClusterDetailsGet"
       },
       "ClusterGet": {
-        "title": "ClusterGet",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The human readable name of the cluster"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ClusterTypeInModel"
+          },
+          "owner": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Owner",
+            "minimum": 0
+          },
+          "thumbnail": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Thumbnail",
+            "description": "url to the image describing this cluster"
+          },
+          "endpoint": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Endpoint"
+          },
+          "authentication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimpleAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/KerberosAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/NoAuthentication"
+              }
+            ],
+            "title": "Authentication",
+            "description": "Dask gateway authentication"
+          },
+          "accessRights": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ClusterAccessRights"
+            },
+            "type": "object",
+            "title": "Accessrights"
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Id",
+            "description": "The cluster ID"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "name",
           "type",
@@ -2037,43 +1634,77 @@
           "authentication",
           "id"
         ],
-        "type": "object",
+        "title": "ClusterGet"
+      },
+      "ClusterPatch": {
         "properties": {
           "name": {
-            "title": "Name",
             "type": "string",
-            "description": "The human readable name of the cluster"
+            "title": "Name"
           },
           "description": {
-            "title": "Description",
-            "type": "string"
+            "type": "string",
+            "title": "Description"
           },
           "type": {
-            "$ref": "#/components/schemas/ClusterType"
+            "$ref": "#/components/schemas/ClusterTypeInModel"
           },
           "owner": {
-            "title": "Owner",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Owner",
             "minimum": 0
           },
           "thumbnail": {
-            "title": "Thumbnail",
+            "type": "string",
             "maxLength": 2083,
             "minLength": 1,
-            "type": "string",
-            "description": "url to the image describing this cluster",
-            "format": "uri"
+            "format": "uri",
+            "title": "Thumbnail"
           },
           "endpoint": {
-            "title": "Endpoint",
+            "type": "string",
             "maxLength": 65536,
             "minLength": 1,
-            "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "title": "Endpoint"
           },
           "authentication": {
-            "title": "Authentication",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimpleAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/KerberosAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
+              }
+            ],
+            "title": "Authentication"
+          },
+          "accessRights": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ClusterAccessRights"
+            },
+            "type": "object",
+            "title": "Accessrights"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ClusterPatch"
+      },
+      "ClusterPing": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Endpoint"
+          },
+          "authentication": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/SimpleAuthentication"
@@ -2088,202 +1719,200 @@
                 "$ref": "#/components/schemas/NoAuthentication"
               }
             ],
-            "description": "Dask gateway authentication"
-          },
-          "accessRights": {
-            "title": "Accessrights",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ClusterAccessRights"
-            }
-          },
-          "id": {
-            "title": "Id",
-            "minimum": 0,
-            "type": "integer",
-            "description": "The cluster ID"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ClusterPatch": {
-        "title": "ClusterPatch",
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/ClusterType"
-          },
-          "owner": {
-            "title": "Owner",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "thumbnail": {
-            "title": "Thumbnail",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
-          },
-          "endpoint": {
-            "title": "Endpoint",
-            "maxLength": 65536,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
-          },
-          "authentication": {
             "title": "Authentication",
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimpleAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/KerberosAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              }
-            ]
-          },
-          "accessRights": {
-            "title": "Accessrights",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ClusterAccessRights"
-            }
+            "description": "Dask gateway authentication"
           }
         },
-        "additionalProperties": false
-      },
-      "ClusterPing": {
-        "title": "ClusterPing",
+        "type": "object",
         "required": [
           "endpoint",
           "authentication"
         ],
-        "type": "object",
-        "properties": {
-          "endpoint": {
-            "title": "Endpoint",
-            "maxLength": 65536,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
-          },
-          "authentication": {
-            "title": "Authentication",
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimpleAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/KerberosAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/NoAuthentication"
-              }
-            ],
-            "description": "Dask gateway authentication"
-          }
-        }
+        "title": "ClusterPing"
       },
-      "ClusterType": {
-        "title": "ClusterType",
+      "ClusterTypeInModel": {
+        "type": "string",
         "enum": [
           "AWS",
-          "ON_PREMISE"
+          "ON_PREMISE",
+          "ON_DEMAND"
         ],
+        "title": "ClusterTypeInModel",
         "description": "An enumeration."
       },
       "ComputationCreate": {
-        "title": "ComputationCreate",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "start_pipeline": {
+            "type": "boolean",
+            "title": "Start Pipeline",
+            "description": "if True the computation pipeline will start right away",
+            "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "subgraph": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Subgraph",
+            "description": "An optional set of nodes that must be executed, if empty the whole pipeline is executed"
+          },
+          "force_restart": {
+            "type": "boolean",
+            "title": "Force Restart",
+            "description": "if True will force re-running all dependent nodes",
+            "default": false
+          },
+          "cluster_id": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Cluster Id",
+            "description": "the computation shall use the cluster described by its id, 0 is the default cluster"
+          },
+          "simcore_user_agent": {
+            "type": "string",
+            "title": "Simcore User Agent",
+            "default": ""
+          },
+          "use_on_demand_clusters": {
+            "type": "boolean",
+            "title": "Use On Demand Clusters",
+            "description": "if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+            "default": false
+          },
+          "wallet_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletInfo"
+              }
+            ],
+            "title": "Wallet Info",
+            "description": "contains information about the wallet used to bill the running service"
+          }
+        },
+        "type": "object",
         "required": [
           "user_id",
           "project_id",
           "product_name"
         ],
-        "type": "object",
-        "properties": {
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "start_pipeline": {
-            "title": "Start Pipeline",
-            "type": "boolean",
-            "description": "if True the computation pipeline will start right away",
-            "default": false
-          },
-          "product_name": {
-            "title": "Product Name",
-            "type": "string"
-          },
-          "subgraph": {
-            "title": "Subgraph",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "description": "An optional set of nodes that must be executed, if empty the whole pipeline is executed"
-          },
-          "force_restart": {
-            "title": "Force Restart",
-            "type": "boolean",
-            "description": "if True will force re-running all dependent nodes",
-            "default": false
-          },
-          "cluster_id": {
-            "title": "Cluster Id",
-            "minimum": 0,
-            "type": "integer",
-            "description": "the computation shall use the cluster described by its id, 0 is the default cluster"
-          }
-        }
+        "title": "ComputationCreate"
       },
       "ComputationDelete": {
-        "title": "ComputationDelete",
-        "required": [
-          "user_id"
-        ],
-        "type": "object",
         "properties": {
           "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
             "minimum": 0
           },
           "force": {
-            "title": "Force",
             "type": "boolean",
+            "title": "Force",
             "description": "if True then the pipeline will be removed even if it is running",
             "default": false
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "ComputationDelete"
       },
       "ComputationGet": {
-        "title": "ComputationGet",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "the id of the computation task"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunningState"
+              }
+            ],
+            "description": "the state of the computational task"
+          },
+          "result": {
+            "type": "string",
+            "title": "Result",
+            "description": "the result of the computational task"
+          },
+          "pipeline_details": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PipelineDetails"
+              }
+            ],
+            "title": "Pipeline Details",
+            "description": "the details of the generated pipeline"
+          },
+          "iteration": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Iteration",
+            "description": "the iteration id of the computation task (none if no task ran yet)",
+            "minimum": 0
+          },
+          "cluster_id": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Cluster Id",
+            "description": "the cluster on which the computaional task runs/ran (none if no task ran yet)"
+          },
+          "started": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started",
+            "description": "the timestamp when the computation was started or None if not started yet"
+          },
+          "stopped": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Stopped",
+            "description": "the timestamp when the computation was stopped or None if not started nor stopped yet"
+          },
+          "submitted": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted",
+            "description": "task last modification timestamp or None if the there is no task"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url",
+            "description": "the link where to get the status of the task"
+          },
+          "stop_url": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Stop Url",
+            "description": "the link where to stop the task"
+          }
+        },
+        "type": "object",
         "required": [
           "id",
           "state",
@@ -2295,132 +1924,96 @@
           "submitted",
           "url"
         ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string",
-            "description": "the id of the computation task",
-            "format": "uuid"
-          },
-          "state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RunningState"
-              }
-            ],
-            "description": "the state of the computational task"
-          },
-          "result": {
-            "title": "Result",
-            "type": "string",
-            "description": "the result of the computational task"
-          },
-          "pipeline_details": {
-            "title": "Pipeline Details",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PipelineDetails"
-              }
-            ],
-            "description": "the details of the generated pipeline"
-          },
-          "iteration": {
-            "title": "Iteration",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "description": "the iteration id of the computation task (none if no task ran yet)",
-            "minimum": 0
-          },
-          "cluster_id": {
-            "title": "Cluster Id",
-            "minimum": 0,
-            "type": "integer",
-            "description": "the cluster on which the computaional task runs/ran (none if no task ran yet)"
-          },
-          "started": {
-            "title": "Started",
-            "type": "string",
-            "description": "the timestamp when the computation was started or None if not started yet",
-            "format": "date-time"
-          },
-          "stopped": {
-            "title": "Stopped",
-            "type": "string",
-            "description": "the timestamp when the computation was stopped or None if not started nor stopped yet",
-            "format": "date-time"
-          },
-          "submitted": {
-            "title": "Submitted",
-            "type": "string",
-            "description": "task last modification timestamp or None if the there is no task",
-            "format": "date-time"
-          },
-          "url": {
-            "title": "Url",
-            "maxLength": 65536,
-            "minLength": 1,
-            "type": "string",
-            "description": "the link where to get the status of the task",
-            "format": "uri"
-          },
-          "stop_url": {
-            "title": "Stop Url",
-            "maxLength": 65536,
-            "minLength": 1,
-            "type": "string",
-            "description": "the link where to stop the task",
-            "format": "uri"
-          }
-        }
+        "title": "ComputationGet"
       },
       "ComputationStop": {
-        "title": "ComputationStop",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          }
+        },
+        "type": "object",
         "required": [
           "user_id"
         ],
-        "type": "object",
-        "properties": {
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          }
-        }
-      },
-      "ContainerSpec": {
-        "title": "ContainerSpec",
-        "required": [
-          "Command"
-        ],
-        "type": "object",
-        "properties": {
-          "Command": {
-            "title": "Command",
-            "maxItems": 2,
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Used to override the container's command"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Implements entries that can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate\nrequest body: TaskTemplate -> ContainerSpec"
+        "title": "ComputationStop"
       },
       "DictModel_str__PositiveFloat_": {
-        "title": "DictModel[str, PositiveFloat]",
-        "type": "object",
         "additionalProperties": {
-          "exclusiveMinimum": true,
           "type": "number",
+          "exclusiveMinimum": true,
           "minimum": 0.0
-        }
+        },
+        "type": "object",
+        "title": "DictModel[str, PositiveFloat]"
       },
       "DynamicServiceCreate": {
-        "title": "DynamicServiceCreate",
+        "properties": {
+          "service_key": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version",
+            "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "service_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Service Uuid"
+          },
+          "service_basepath": {
+            "type": "string",
+            "format": "path",
+            "title": "Service Basepath",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
+          },
+          "service_resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ImageResources"
+            },
+            "type": "object",
+            "title": "Service Resources"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Current product name"
+          },
+          "can_save": {
+            "type": "boolean",
+            "title": "Can Save",
+            "description": "the service data must be saved when closing"
+          },
+          "wallet_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletInfo"
+              }
+            ],
+            "title": "Wallet Info",
+            "description": "contains information about the wallet used to bill the running service"
+          }
+        },
+        "type": "object",
         "required": [
           "service_key",
           "service_version",
@@ -2431,57 +2024,7 @@
           "product_name",
           "can_save"
         ],
-        "type": "object",
-        "properties": {
-          "service_key": {
-            "title": "Service Key",
-            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-            "type": "string",
-            "description": "distinctive name for the node based on the docker registry path"
-          },
-          "service_version": {
-            "title": "Service Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "semantic version number of the node"
-          },
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "service_uuid": {
-            "title": "Service Uuid",
-            "type": "string",
-            "format": "uuid"
-          },
-          "service_basepath": {
-            "title": "Service Basepath",
-            "type": "string",
-            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
-            "format": "path"
-          },
-          "service_resources": {
-            "title": "Service Resources",
-            "type": "object"
-          },
-          "product_name": {
-            "title": "Product Name",
-            "type": "string",
-            "description": "Current product name"
-          },
-          "can_save": {
-            "title": "Can Save",
-            "type": "boolean",
-            "description": "the service data must be saved when closing"
-          }
-        },
+        "title": "DynamicServiceCreate",
         "example": {
           "key": "simcore/services/dynamic/3dviewer",
           "version": "2.4.5",
@@ -2508,70 +2051,74 @@
                 "CPU"
               ]
             }
+          },
+          "wallet_info": {
+            "wallet_id": 1,
+            "wallet_name": "My Wallet"
           }
         }
       },
       "HTTPValidationError": {
-        "title": "HTTPValidationError",
-        "type": "object",
         "properties": {
           "errors": {
-            "title": "Validation errors",
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
-            }
+            },
+            "type": "array",
+            "title": "Validation errors"
           }
-        }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "HealthCheckGet": {
-        "title": "HealthCheckGet",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
         "required": [
           "timestamp"
         ],
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "title": "Timestamp",
-            "type": "string"
-          }
-        },
+        "title": "HealthCheckGet",
         "example": {
           "timestamp": "simcore_service_directorv2.api.routes.health@2023-07-03T12:59:12.024551+00:00"
         }
       },
       "ImageResources": {
-        "title": "ImageResources",
-        "required": [
-          "image",
-          "resources"
-        ],
-        "type": "object",
         "properties": {
           "image": {
-            "title": "Image",
-            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
             "type": "string",
+            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
+            "title": "Image",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
           "resources": {
-            "title": "Resources",
-            "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/ResourceValue"
-            }
+            },
+            "type": "object",
+            "title": "Resources"
           },
           "boot_modes": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/BootMode"
             },
+            "type": "array",
             "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
             "default": [
               "CPU"
             ]
           }
         },
+        "type": "object",
+        "required": [
+          "image",
+          "resources"
+        ],
+        "title": "ImageResources",
         "example": {
           "image": "simcore/service/dynamic/pretty-intense:1.0.0",
           "resources": {
@@ -2599,69 +2146,69 @@
         }
       },
       "JupyterHubTokenAuthentication": {
-        "title": "JupyterHubTokenAuthentication",
-        "required": [
-          "api_token"
-        ],
-        "type": "object",
         "properties": {
           "type": {
-            "title": "Type",
+            "type": "string",
             "enum": [
               "jupyterhub"
             ],
-            "type": "string",
+            "title": "Type",
             "default": "jupyterhub"
           },
           "api_token": {
-            "title": "Api Token",
-            "type": "string"
+            "type": "string",
+            "title": "Api Token"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_token"
+        ],
+        "title": "JupyterHubTokenAuthentication"
       },
       "KerberosAuthentication": {
-        "title": "KerberosAuthentication",
-        "type": "object",
         "properties": {
           "type": {
-            "title": "Type",
+            "type": "string",
             "enum": [
               "kerberos"
             ],
-            "type": "string",
+            "title": "Type",
             "default": "kerberos"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "title": "KerberosAuthentication"
       },
       "Meta": {
-        "title": "Meta",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Version"
+          },
+          "released": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
+            "title": "Released",
+            "description": "Maps every route's path tag with a released version"
+          }
+        },
+        "type": "object",
         "required": [
           "name",
           "version"
         ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "version": {
-            "title": "Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string"
-          },
-          "released": {
-            "title": "Released",
-            "type": "object",
-            "additionalProperties": {
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
-            "description": "Maps every route's path tag with a released version"
-          }
-        },
+        "title": "Meta",
         "example": {
           "name": "simcore_service_foo",
           "version": "2.4.45",
@@ -2672,71 +2219,36 @@
         }
       },
       "NoAuthentication": {
-        "title": "NoAuthentication",
-        "type": "object",
         "properties": {
           "type": {
-            "title": "Type",
+            "type": "string",
             "enum": [
               "none"
             ],
-            "type": "string",
+            "title": "Type",
             "default": "none"
           }
         },
-        "additionalProperties": false
-      },
-      "NodeRequirements": {
-        "title": "NodeRequirements",
-        "required": [
-          "CPU",
-          "RAM"
-        ],
+        "additionalProperties": false,
         "type": "object",
-        "properties": {
-          "CPU": {
-            "title": "Cpu",
-            "exclusiveMinimum": true,
-            "type": "number",
-            "description": "defines the required (maximum) CPU shares for running the services",
-            "minimum": 0.0
-          },
-          "GPU": {
-            "title": "Gpu",
-            "minimum": 0,
-            "type": "integer",
-            "description": "defines the required (maximum) GPU for running the services"
-          },
-          "RAM": {
-            "title": "Ram",
-            "type": "integer",
-            "description": "defines the required (maximum) amount of RAM for running the services"
-          },
-          "VRAM": {
-            "title": "Vram",
-            "type": "integer",
-            "description": "defines the required (maximum) amount of VRAM for running the services"
-          }
-        }
+        "title": "NoAuthentication"
       },
       "NodeState": {
-        "title": "NodeState",
-        "type": "object",
         "properties": {
           "modified": {
-            "title": "Modified",
             "type": "boolean",
+            "title": "Modified",
             "description": "true if the node's outputs need to be re-computed",
             "default": true
           },
           "dependencies": {
-            "title": "Dependencies",
-            "uniqueItems": true,
-            "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
             },
+            "type": "array",
+            "uniqueItems": true,
+            "title": "Dependencies",
             "description": "contains the node inputs dependencies if they need to be computed first"
           },
           "currentStatus": {
@@ -2749,196 +2261,186 @@
             "default": "NOT_STARTED"
           },
           "progress": {
-            "title": "Progress",
+            "type": "number",
             "maximum": 1.0,
             "minimum": 0.0,
-            "type": "number",
+            "title": "Progress",
             "description": "current progress of the task if available (None if not started or not a computational task)",
             "default": 0
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "title": "NodeState"
       },
       "ObservationItem": {
-        "title": "ObservationItem",
+        "properties": {
+          "is_disabled": {
+            "type": "boolean",
+            "title": "Is Disabled"
+          }
+        },
+        "type": "object",
         "required": [
           "is_disabled"
         ],
-        "type": "object",
-        "properties": {
-          "is_disabled": {
-            "title": "Is Disabled",
-            "type": "boolean"
-          }
-        }
+        "title": "ObservationItem"
       },
       "PipelineDetails": {
-        "title": "PipelineDetails",
+        "properties": {
+          "adjacency_list": {
+            "additionalProperties": {
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Adjacency List",
+            "description": "The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}"
+          },
+          "progress": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "description": "the progress of the pipeline (None if there are no computational tasks)"
+          },
+          "node_states": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NodeState"
+            },
+            "type": "object",
+            "title": "Node States",
+            "description": "The states of each of the computational nodes in the pipeline"
+          }
+        },
+        "type": "object",
         "required": [
           "adjacency_list",
           "progress",
           "node_states"
         ],
-        "type": "object",
-        "properties": {
-          "adjacency_list": {
-            "title": "Adjacency List",
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "format": "uuid"
-              }
-            },
-            "description": "The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}"
-          },
-          "progress": {
-            "title": "Progress",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "type": "number",
-            "description": "the progress of the pipeline (None if there are no computational tasks)"
-          },
-          "node_states": {
-            "title": "Node States",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/NodeState"
-            },
-            "description": "The states of each of the computational nodes in the pipeline"
-          }
-        }
+        "title": "PipelineDetails"
       },
       "ResourceValue": {
-        "title": "ResourceValue",
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Limit"
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Reservation"
+          }
+        },
+        "type": "object",
         "required": [
           "limit",
           "reservation"
         ],
-        "type": "object",
-        "properties": {
-          "limit": {
-            "title": "Limit",
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "reservation": {
-            "title": "Reservation",
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          }
-        }
+        "title": "ResourceValue"
       },
       "RetrieveDataIn": {
-        "title": "RetrieveDataIn",
+        "properties": {
+          "port_keys": {
+            "items": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            },
+            "type": "array",
+            "title": "Port Keys",
+            "description": "The port keys to retrieve data from"
+          }
+        },
+        "type": "object",
         "required": [
           "port_keys"
         ],
-        "type": "object",
-        "properties": {
-          "port_keys": {
-            "title": "Port Keys",
-            "type": "array",
-            "items": {
-              "pattern": "^[-_a-zA-Z0-9]+$",
-              "type": "string"
-            },
-            "description": "The port keys to retrieve data from"
-          }
-        }
+        "title": "RetrieveDataIn"
       },
       "RetrieveDataOut": {
-        "title": "RetrieveDataOut",
+        "properties": {
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes",
+            "description": "The amount of data transferred by the retrieve call"
+          }
+        },
+        "type": "object",
         "required": [
           "size_bytes"
         ],
-        "type": "object",
-        "properties": {
-          "size_bytes": {
-            "title": "Size Bytes",
-            "type": "integer",
-            "description": "The amount of data transferred by the retrieve call"
-          }
-        }
+        "title": "RetrieveDataOut"
       },
       "RetrieveDataOutEnveloped": {
-        "title": "RetrieveDataOutEnveloped",
-        "required": [
-          "data"
-        ],
-        "type": "object",
         "properties": {
           "data": {
             "$ref": "#/components/schemas/RetrieveDataOut"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "RetrieveDataOutEnveloped"
       },
       "RunningDynamicServiceDetails": {
-        "title": "RunningDynamicServiceDetails",
-        "required": [
-          "service_key",
-          "service_version",
-          "user_id",
-          "project_id",
-          "service_uuid",
-          "service_host",
-          "service_port",
-          "service_state"
-        ],
-        "type": "object",
         "properties": {
           "service_key": {
-            "title": "Service Key",
-            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key",
             "description": "distinctive name for the node based on the docker registry path"
           },
           "service_version": {
-            "title": "Service Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version",
             "description": "semantic version number of the node"
           },
           "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
             "minimum": 0
           },
           "project_id": {
-            "title": "Project Id",
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "title": "Project Id"
           },
           "service_uuid": {
-            "title": "Service Uuid",
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "title": "Service Uuid"
           },
           "service_basepath": {
-            "title": "Service Basepath",
             "type": "string",
-            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
-            "format": "path"
+            "format": "path",
+            "title": "Service Basepath",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
           },
           "boot_type": {
             "allOf": [
@@ -2950,32 +2452,32 @@
             "default": "V0"
           },
           "service_host": {
-            "title": "Service Host",
             "type": "string",
+            "title": "Service Host",
             "description": "the service swarm internal host name"
           },
           "service_port": {
-            "title": "Service Port",
+            "type": "integer",
             "exclusiveMaximum": true,
             "exclusiveMinimum": true,
-            "type": "integer",
+            "title": "Service Port",
             "description": "the service swarm internal port",
             "maximum": 65535,
             "minimum": 0
           },
           "published_port": {
-            "title": "Published Port",
+            "type": "integer",
             "exclusiveMaximum": true,
             "exclusiveMinimum": true,
-            "type": "integer",
+            "title": "Published Port",
             "description": "the service swarm published port if any",
             "deprecated": true,
             "maximum": 65535,
             "minimum": 0
           },
           "entry_point": {
-            "title": "Entry Point",
             "type": "string",
+            "title": "Entry Point",
             "description": "if empty the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
@@ -2988,486 +2490,72 @@
             "description": "service current state"
           },
           "service_message": {
-            "title": "Service Message",
             "type": "string",
+            "title": "Service Message",
             "description": "additional information related to service state"
           }
-        }
-      },
-      "RunningServiceDetails": {
-        "title": "RunningServiceDetails",
+        },
+        "type": "object",
         "required": [
-          "entry_point",
-          "service_uuid",
           "service_key",
           "service_version",
+          "user_id",
+          "project_id",
+          "service_uuid",
           "service_host",
-          "service_basepath",
-          "service_state",
-          "service_message"
+          "service_port",
+          "service_state"
         ],
-        "type": "object",
-        "properties": {
-          "published_port": {
-            "title": "Published Port",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "description": "The ports where the service provides its interface on the docker swarm",
-            "deprecated": true,
-            "maximum": 65535,
-            "minimum": 0
-          },
-          "entry_point": {
-            "title": "Entry Point",
-            "type": "string",
-            "description": "The entry point where the service provides its interface"
-          },
-          "service_uuid": {
-            "title": "Service Uuid",
-            "pattern": "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$",
-            "type": "string",
-            "description": "The node UUID attached to the service"
-          },
-          "service_key": {
-            "title": "Service Key",
-            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-            "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "example": [
-              "simcore/services/comp/itis/sleeper",
-              "simcore/services/dynamic/3dviewer"
-            ]
-          },
-          "service_version": {
-            "title": "Service Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "service version number",
-            "example": [
-              "1.0.0",
-              "0.0.1"
-            ]
-          },
-          "service_host": {
-            "title": "Service Host",
-            "type": "string",
-            "description": "service host name within the network"
-          },
-          "service_port": {
-            "title": "Service Port",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "description": "port to access the service within the network",
-            "default": 80,
-            "maximum": 65535,
-            "minimum": 0
-          },
-          "service_basepath": {
-            "title": "Service Basepath",
-            "type": "string",
-            "description": "the service base entrypoint where the service serves its contents"
-          },
-          "service_state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ServiceState"
-              }
-            ],
-            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start * 'stopping' - The service is stopping"
-          },
-          "service_message": {
-            "title": "Service Message",
-            "type": "string",
-            "description": "the service message"
-          }
-        }
-      },
-      "RunningServicesDetailsArray": {
-        "title": "RunningServicesDetailsArray",
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/RunningServiceDetails"
-        }
-      },
-      "RunningServicesDetailsArrayEnveloped": {
-        "title": "RunningServicesDetailsArrayEnveloped",
-        "required": [
-          "data"
-        ],
-        "type": "object",
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RunningServicesDetailsArray"
-          }
-        }
+        "title": "RunningDynamicServiceDetails"
       },
       "RunningState": {
-        "title": "RunningState",
+        "type": "string",
         "enum": [
           "UNKNOWN",
           "PUBLISHED",
           "NOT_STARTED",
           "PENDING",
+          "WAITING_FOR_RESOURCES",
           "STARTED",
-          "RETRY",
           "SUCCESS",
           "FAILED",
-          "ABORTED"
+          "ABORTED",
+          "WAITING_FOR_CLUSTER"
         ],
-        "type": "string",
+        "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
       },
       "Scheduler": {
-        "title": "Scheduler",
-        "required": [
-          "status"
-        ],
-        "type": "object",
         "properties": {
           "status": {
-            "title": "Status",
             "type": "string",
+            "title": "Status",
             "description": "The running status of the scheduler"
           },
           "workers": {
-            "title": "Workers",
-            "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/Worker"
-            }
-          }
-        }
-      },
-      "SelectBox": {
-        "title": "SelectBox",
-        "required": [
-          "structure"
-        ],
-        "type": "object",
-        "properties": {
-          "structure": {
-            "title": "Structure",
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Structure"
-            }
+            },
+            "type": "object",
+            "title": "Workers"
           }
         },
-        "additionalProperties": false
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "Scheduler"
       },
       "ServiceBootType": {
-        "title": "ServiceBootType",
+        "type": "string",
         "enum": [
           "V0",
           "V2"
         ],
-        "type": "string",
+        "title": "ServiceBootType",
         "description": "An enumeration."
       },
-      "ServiceBuildDetails": {
-        "title": "ServiceBuildDetails",
-        "required": [
-          "build_date",
-          "vcs_ref",
-          "vcs_url"
-        ],
-        "type": "object",
-        "properties": {
-          "build_date": {
-            "title": "Build Date",
-            "type": "string"
-          },
-          "vcs_ref": {
-            "title": "Vcs Ref",
-            "type": "string"
-          },
-          "vcs_url": {
-            "title": "Vcs Url",
-            "type": "string"
-          }
-        }
-      },
-      "ServiceDockerData": {
-        "title": "ServiceDockerData",
-        "required": [
-          "name",
-          "description",
-          "key",
-          "version",
-          "type",
-          "authors",
-          "contact",
-          "inputs",
-          "outputs"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "short, human readable name for the node",
-            "example": "Fast Counter"
-          },
-          "thumbnail": {
-            "title": "Thumbnail",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "url to the thumbnail",
-            "format": "uri"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "human readable description of the purpose of the node"
-          },
-          "key": {
-            "title": "Key",
-            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-            "type": "string",
-            "description": "distinctive name for the node based on the docker registry path"
-          },
-          "version": {
-            "title": "Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "service version number"
-          },
-          "integration-version": {
-            "title": "Integration-Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "integration version number"
-          },
-          "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ServiceType"
-              }
-            ],
-            "description": "service type"
-          },
-          "badges": {
-            "title": "Badges",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Badge"
-            }
-          },
-          "authors": {
-            "title": "Authors",
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Author"
-            }
-          },
-          "contact": {
-            "title": "Contact",
-            "type": "string",
-            "description": "email to correspond to the authors about the node",
-            "format": "email"
-          },
-          "inputs": {
-            "title": "Inputs",
-            "type": "object",
-            "description": "definition of the inputs of this node"
-          },
-          "outputs": {
-            "title": "Outputs",
-            "type": "object",
-            "description": "definition of the outputs of this node"
-          },
-          "boot-options": {
-            "title": "Boot-Options",
-            "type": "object",
-            "description": "Service defined boot options. These get injected in the service as env variables."
-          },
-          "min-visible-inputs": {
-            "title": "Min-Visible-Inputs",
-            "minimum": 0,
-            "type": "integer",
-            "description": "The number of 'data type inputs' displayed by default in the UI. When None all 'data type inputs' are displayed."
-          }
-        },
-        "additionalProperties": false,
-        "description": "Static metadata for a service injected in the image labels\n\nThis is one to one with node-meta-v0.0.1.json"
-      },
-      "ServiceExtras": {
-        "title": "ServiceExtras",
-        "required": [
-          "node_requirements"
-        ],
-        "type": "object",
-        "properties": {
-          "node_requirements": {
-            "$ref": "#/components/schemas/NodeRequirements"
-          },
-          "service_build_details": {
-            "$ref": "#/components/schemas/ServiceBuildDetails"
-          },
-          "container_spec": {
-            "$ref": "#/components/schemas/ContainerSpec"
-          }
-        }
-      },
-      "ServiceExtrasEnveloped": {
-        "title": "ServiceExtrasEnveloped",
-        "required": [
-          "data"
-        ],
-        "type": "object",
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ServiceExtras"
-          }
-        }
-      },
-      "ServiceInput": {
-        "title": "ServiceInput",
-        "required": [
-          "label",
-          "description",
-          "type"
-        ],
-        "type": "object",
-        "properties": {
-          "displayOrder": {
-            "title": "Displayorder",
-            "type": "number",
-            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
-            "deprecated": true
-          },
-          "label": {
-            "title": "Label",
-            "type": "string",
-            "description": "short name for the property",
-            "example": "Age"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "description of the property",
-            "example": "Age in seconds since 1970"
-          },
-          "type": {
-            "title": "Type",
-            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-            "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed"
-          },
-          "contentSchema": {
-            "title": "Contentschema",
-            "type": "object",
-            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
-          },
-          "fileToKeyMap": {
-            "title": "Filetokeymap",
-            "type": "object",
-            "description": "Place the data associated with the named keys in files"
-          },
-          "unit": {
-            "title": "Unit",
-            "type": "string",
-            "description": "Units, when it refers to a physical quantity"
-          },
-          "defaultValue": {
-            "title": "Defaultvalue",
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "integer"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "widget": {
-            "title": "Widget",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Widget"
-              }
-            ],
-            "description": "custom widget to use instead of the default one determined from the data-type"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Metadata on a service input port"
-      },
-      "ServiceOutput": {
-        "title": "ServiceOutput",
-        "required": [
-          "label",
-          "description",
-          "type"
-        ],
-        "type": "object",
-        "properties": {
-          "displayOrder": {
-            "title": "Displayorder",
-            "type": "number",
-            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
-            "deprecated": true
-          },
-          "label": {
-            "title": "Label",
-            "type": "string",
-            "description": "short name for the property",
-            "example": "Age"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "description of the property",
-            "example": "Age in seconds since 1970"
-          },
-          "type": {
-            "title": "Type",
-            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-            "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed"
-          },
-          "contentSchema": {
-            "title": "Contentschema",
-            "type": "object",
-            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
-          },
-          "fileToKeyMap": {
-            "title": "Filetokeymap",
-            "type": "object",
-            "description": "Place the data associated with the named keys in files"
-          },
-          "unit": {
-            "title": "Unit",
-            "type": "string",
-            "description": "Units, when it refers to a physical quantity"
-          },
-          "widget": {
-            "title": "Widget",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Widget"
-              }
-            ],
-            "description": "custom widget to use instead of the default one determined from the data-type",
-            "deprecated": true
-          }
-        },
-        "additionalProperties": false,
-        "description": "Base class for service input/outputs"
-      },
       "ServiceState": {
-        "title": "ServiceState",
         "enum": [
           "pending",
           "pulling",
@@ -3477,173 +2565,92 @@
           "failed",
           "stopping"
         ],
+        "title": "ServiceState",
         "description": "An enumeration."
-      },
-      "ServiceType": {
-        "title": "ServiceType",
-        "enum": [
-          "computational",
-          "dynamic",
-          "frontend",
-          "backend"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
-      "ServicesArrayEnveloped": {
-        "title": "ServicesArrayEnveloped",
-        "required": [
-          "data"
-        ],
-        "type": "object",
-        "properties": {
-          "data": {
-            "title": "Data",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ServiceDockerData"
-            }
-          }
-        }
       },
       "SimpleAuthentication": {
-        "title": "SimpleAuthentication",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "simple"
+            ],
+            "title": "Type",
+            "default": "simple"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "username",
           "password"
         ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "title": "Type",
-            "enum": [
-              "simple"
-            ],
-            "type": "string",
-            "default": "simple"
-          },
-          "username": {
-            "title": "Username",
-            "type": "string"
-          },
-          "password": {
-            "title": "Password",
-            "type": "string",
-            "format": "password",
-            "writeOnly": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "Structure": {
-        "title": "Structure",
-        "required": [
-          "key",
-          "label"
-        ],
-        "type": "object",
-        "properties": {
-          "key": {
-            "title": "Key",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "number"
-              }
-            ]
-          },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
+        "title": "SimpleAuthentication"
       },
       "TaskCounts": {
-        "title": "TaskCounts",
-        "type": "object",
         "properties": {
           "error": {
-            "title": "Error",
             "type": "integer",
+            "title": "Error",
             "default": 0
           },
           "memory": {
-            "title": "Memory",
             "type": "integer",
+            "title": "Memory",
             "default": 0
           },
           "executing": {
-            "title": "Executing",
             "type": "integer",
+            "title": "Executing",
             "default": 0
           }
-        }
+        },
+        "type": "object",
+        "title": "TaskCounts"
       },
       "TaskLogFileGet": {
-        "title": "TaskLogFileGet",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "download_link": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Download Link",
+            "description": "Presigned link for log file or None if still not available"
+          }
+        },
+        "type": "object",
         "required": [
           "task_id"
         ],
-        "type": "object",
-        "properties": {
-          "task_id": {
-            "title": "Task Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "download_link": {
-            "title": "Download Link",
-            "maxLength": 65536,
-            "minLength": 1,
-            "type": "string",
-            "description": "Presigned link for log file or None if still not available",
-            "format": "uri"
-          }
-        }
-      },
-      "TextArea": {
-        "title": "TextArea",
-        "required": [
-          "minHeight"
-        ],
-        "type": "object",
-        "properties": {
-          "minHeight": {
-            "title": "Minheight",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "description": "minimum Height of the textarea",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false
+        "title": "TaskLogFileGet"
       },
       "UsedResources": {
-        "title": "UsedResources",
-        "type": "object",
         "additionalProperties": {
-          "minimum": 0.0,
-          "type": "number"
-        }
+          "type": "number",
+          "minimum": 0.0
+        },
+        "type": "object",
+        "title": "UsedResources"
       },
       "ValidationError": {
-        "title": "ValidationError",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "type": "object",
         "properties": {
           "loc": {
-            "title": "Location",
-            "type": "array",
             "items": {
               "anyOf": [
                 {
@@ -3653,76 +2660,56 @@
                   "type": "integer"
                 }
               ]
-            }
+            },
+            "type": "array",
+            "title": "Location"
           },
           "msg": {
-            "title": "Message",
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           },
           "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        }
-      },
-      "Widget": {
-        "title": "Widget",
-        "required": [
-          "type",
-          "details"
-        ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/WidgetType"
-              }
-            ],
-            "description": "type of the property"
-          },
-          "details": {
-            "title": "Details",
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TextArea"
-              },
-              {
-                "$ref": "#/components/schemas/SelectBox"
-              }
-            ]
+            "type": "string",
+            "title": "Error Type"
           }
         },
-        "additionalProperties": false
-      },
-      "WidgetType": {
-        "title": "WidgetType",
-        "enum": [
-          "TextArea",
-          "SelectBox"
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
         ],
-        "type": "string",
-        "description": "An enumeration."
+        "title": "ValidationError"
+      },
+      "WalletInfo": {
+        "properties": {
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wallet_id",
+          "wallet_name"
+        ],
+        "title": "WalletInfo"
       },
       "Worker": {
-        "title": "Worker",
-        "required": [
-          "id",
-          "name",
-          "resources",
-          "used_resources",
-          "memory_limit",
-          "metrics"
-        ],
-        "type": "object",
         "properties": {
           "id": {
-            "title": "Id",
-            "type": "string"
+            "type": "string",
+            "title": "Id"
           },
           "name": {
-            "title": "Name",
-            "type": "string"
+            "type": "string",
+            "title": "Name"
           },
           "resources": {
             "$ref": "#/components/schemas/DictModel_str__PositiveFloat_"
@@ -3731,49 +2718,59 @@
             "$ref": "#/components/schemas/UsedResources"
           },
           "memory_limit": {
-            "title": "Memory Limit",
-            "type": "integer"
+            "type": "integer",
+            "title": "Memory Limit"
           },
           "metrics": {
             "$ref": "#/components/schemas/WorkerMetrics"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "resources",
+          "used_resources",
+          "memory_limit",
+          "metrics"
+        ],
+        "title": "Worker"
       },
       "WorkerMetrics": {
-        "title": "WorkerMetrics",
+        "properties": {
+          "cpu": {
+            "type": "number",
+            "title": "Cpu",
+            "description": "consumed % of cpus"
+          },
+          "memory": {
+            "type": "integer",
+            "title": "Memory",
+            "description": "consumed memory"
+          },
+          "num_fds": {
+            "type": "integer",
+            "title": "Num Fds",
+            "description": "consumed file descriptors"
+          },
+          "task_counts": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskCounts"
+              }
+            ],
+            "title": "Task Counts",
+            "description": "task details"
+          }
+        },
+        "type": "object",
         "required": [
           "cpu",
           "memory",
           "num_fds",
           "task_counts"
         ],
-        "type": "object",
-        "properties": {
-          "cpu": {
-            "title": "Cpu",
-            "type": "number",
-            "description": "consumed % of cpus"
-          },
-          "memory": {
-            "title": "Memory",
-            "type": "integer",
-            "description": "consumed memory"
-          },
-          "num_fds": {
-            "title": "Num Fds",
-            "type": "integer",
-            "description": "consumed file descriptors"
-          },
-          "task_counts": {
-            "title": "Task Counts",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TaskCounts"
-              }
-            ],
-            "description": "task details"
-          }
-        }
+        "title": "WorkerMetrics"
       }
     }
   }

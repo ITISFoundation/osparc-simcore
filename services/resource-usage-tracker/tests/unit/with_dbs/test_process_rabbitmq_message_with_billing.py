@@ -14,14 +14,17 @@ from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
-from simcore_postgres_database.models.resource_tracker_pricing_details import (
-    resource_tracker_pricing_details,
-)
 from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
     resource_tracker_pricing_plan_to_service,
 )
 from simcore_postgres_database.models.resource_tracker_pricing_plans import (
     resource_tracker_pricing_plans,
+)
+from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import (
+    resource_tracker_pricing_unit_costs,
+)
+from simcore_postgres_database.models.resource_tracker_pricing_units import (
+    resource_tracker_pricing_units,
 )
 from simcore_service_resource_usage_tracker.modules.db.repositories.resource_tracker import (
     ResourceTrackerRepository,
@@ -49,56 +52,103 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(
             resource_tracker_pricing_plans.insert().values(
                 product_name="osparc",
-                name="test_name",
+                display_name="ISolve Thermal",
                 description="",
                 classification="TIER",
                 is_active=True,
+                pricing_plan_key="isolve-thermal",
             )
         )
         con.execute(
-            resource_tracker_pricing_details.insert().values(
+            resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                cost_per_unit=Decimal(1500),
-                valid_from=datetime.now(tz=timezone.utc),
-            ),
-            simcore_default=True,
-            specific_info={},
+                default=False,
+                specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=timezone.utc),
+            )
         )
         con.execute(
-            resource_tracker_pricing_details.insert().values(
+            resource_tracker_pricing_unit_costs.insert().values(
+                pricing_plan_id=1,
+                pricing_plan_key="isolve-thermal",
+                pricing_unit_id=1,
+                pricing_unit_name="S",
+                cost_per_unit=Decimal(500),
+                valid_from=datetime.now(tz=timezone.utc),
+                valid_to=None,
+                specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                comment="",
+                modified=datetime.now(tz=timezone.utc),
+            )
+        )
+        con.execute(
+            resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                cost_per_unit=Decimal(1500),
-                valid_from=datetime.now(tz=timezone.utc),
-            ),
-            simcore_default=False,
-            specific_info={},
+                default=True,
+                specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=timezone.utc),
+            )
         )
         con.execute(
-            resource_tracker_pricing_details.insert().values(
+            resource_tracker_pricing_unit_costs.insert().values(
+                pricing_plan_id=1,
+                pricing_plan_key="isolve-thermal",
+                pricing_unit_id=2,
+                pricing_unit_name="M",
+                cost_per_unit=Decimal(1000),
+                valid_from=datetime.now(tz=timezone.utc),
+                valid_to=None,
+                specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                comment="",
+                modified=datetime.now(tz=timezone.utc),
+            )
+        )
+        con.execute(
+            resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
+                default=False,
+                specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=timezone.utc),
+            )
+        )
+        con.execute(
+            resource_tracker_pricing_unit_costs.insert().values(
+                pricing_plan_id=1,
+                pricing_plan_key="isolve-thermal",
+                pricing_unit_id=3,
+                pricing_unit_name="L",
                 cost_per_unit=Decimal(1500),
                 valid_from=datetime.now(tz=timezone.utc),
-            ),
-            simcore_default=False,
-            specific_info={},
+                valid_to=None,
+                specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                comment="",
+                modified=datetime.now(tz=timezone.utc),
+            )
         )
         con.execute(
             resource_tracker_pricing_plan_to_service.insert().values(
                 pricing_plan_id=1,
-                product="osparc",
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="1.0.16",
+                service_default_plan=True,
             )
         )
 
         yield
 
         con.execute(resource_tracker_pricing_plan_to_service.delete())
-        con.execute(resource_tracker_pricing_details.delete())
+        con.execute(resource_tracker_pricing_units.delete())
         con.execute(resource_tracker_pricing_plans.delete())
+        con.execute(resource_tracker_pricing_unit_costs.delete())
         con.execute(resource_tracker_credit_transactions.delete())
 
 
@@ -115,18 +165,22 @@ async def test_process_event_functions(
     publisher = rabbitmq_client("publisher")
 
     msg = random_rabbit_message_start(
-        wallet_id=1, wallet_name="test", pricing_plan_id=1, pricing_detail_id=1
+        wallet_id=1,
+        wallet_name="test",
+        pricing_plan_id=1,
+        pricing_unit_id=1,
+        pricing_unit_cost_id=1,
     )
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=engine
     )
     await _process_start_event(resource_tacker_repo, msg, publisher)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
-    assert output[8] == 0.0
-    assert output[9] == "PENDING"
-    assert output[10] == "DEDUCT_SERVICE_RUN"
-    first_occurence_of_last_heartbeat_at = output[14]
-    modified_at = output[15]
+    assert output.osparc_credits == 0.0
+    assert output.transaction_status == "PENDING"
+    assert output.transaction_classification == "DEDUCT_SERVICE_RUN"
+    first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
+    modified_at = output.modified
 
     await asyncio.sleep(0)
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
@@ -136,11 +190,11 @@ async def test_process_event_functions(
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
-    first_credits_used = output[8]
+    first_credits_used = output.osparc_credits
     assert first_credits_used < 0.0
-    assert output[9] == "PENDING"
-    assert first_occurence_of_last_heartbeat_at < output[14]
-    modified_at = output[15]
+    assert output.transaction_status == "PENDING"
+    assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
+    modified_at = output.modified
 
     await asyncio.sleep(
         2
@@ -154,5 +208,5 @@ async def test_process_event_functions(
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
-    assert output[8] < first_credits_used
-    assert output[9] == "BILLED"
+    assert output.osparc_credits < first_credits_used
+    assert output.transaction_status == "BILLED"

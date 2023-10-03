@@ -12,5 +12,5 @@ def setup_api_routes(app: FastAPI):
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")
     api_router.include_router(_meta.router, tags=["meta"])
-    api_router.include_router(_resource_tracker.router, tags=["resource-usage-tracker"])
+    api_router.include_router(_resource_tracker.router)
     app.include_router(api_router)
