@@ -14,7 +14,6 @@
 ../../packages/models-library/
 ../../packages/service-library/
 ../../packages/settings-library/
-../../packages/service-integration/
 
 # installs current package
 .
