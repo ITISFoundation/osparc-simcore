@@ -130,7 +130,7 @@ qx.Class.define("osparc.metadata.ClassifiersEditor", {
       btn.setFetching(true);
       osparc.data.Resources.fetch("classifiers", "postRRID", params)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfuly added"), "INFO");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfully added"), "INFO");
           osparc.store.Store.getInstance().getAllClassifiers(true);
         })
         .catch(err => {
