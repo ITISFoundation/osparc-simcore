@@ -28,7 +28,7 @@ from ..utils.http_client import AppStateMixin, BaseHttpApi
 _logger = logging.getLogger(__name__)
 
 
-class GatewayeAuth(httpx.Auth):
+class _GatewayeAuth(httpx.Auth):
     def __init__(self, secret):
         self.token = secret
 
@@ -49,7 +49,7 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
             "/init",
             json=jsonable_encoder(payment),
         )
-        # FIXME: convert
+        # FIXME: handle exceptions! SEE ErrorModel
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
 
@@ -61,6 +61,7 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
             "/cancel",
             json=jsonable_encoder(payment_initiated),
         )
+        # FIXME: handle exceptions! SEE ErrorModel
         response.raise_for_status()
 
     #
@@ -100,7 +101,7 @@ def setup_payments_gateway(app: FastAPI):
     api = PaymentsGatewayApi.from_client_kwargs(
         base_url=settings.PAYMENTS_GATEWAY_URL,
         headers={"accept": "application/json"},
-        auth=GatewayeAuth(
+        auth=_GatewayeAuth(
             secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
         ),
     )
