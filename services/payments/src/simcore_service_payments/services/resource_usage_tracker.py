@@ -6,12 +6,9 @@
 
 
 import logging
-from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import cast
 
-import httpx
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
@@ -24,47 +21,13 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from ..core.settings import ApplicationSettings
-from ..utils.http_client import BaseHttpApi
+from ..utils.http_client import AppStateMixin, BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ResourceUsageTrackerApi(BaseHttpApi):
-    @classmethod
-    def create(cls, app: FastAPI) -> "ResourceUsageTrackerApi":
-        settings: ApplicationSettings = app.state.settings
-        return cls(
-            client=httpx.AsyncClient(
-                base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
-            )
-        )
-
-    #
-    # app.state
-    #
-
-    @classmethod
-    def get_from_state(cls, app: FastAPI) -> "ResourceUsageTrackerApi":
-        return cast("ResourceUsageTrackerApi", app.state.source_usage_tracker_api)
-
-    @classmethod
-    def setup_state(cls, app: FastAPI):
-        # create and and save instance in state
-        if exists := getattr(app.state, "source_usage_tracker_api", None):
-            _logger.warning(
-                "Skipping setup. Cannot setup more than once %s: %s",
-                ResourceUsageTrackerApi,
-                exists,
-            )
-            return
-
-        app.state.source_usage_tracker_api = api = cls.create(app)
-        assert cls.get_from_state(app) == api  # nosec
-
-        # define lifespam
-        app.add_event_handler("startup", api.start)
-        app.add_event_handler("shutdown", api.close)
+class ResourceUsageTrackerApi(BaseHttpApi, AppStateMixin):
+    app_state_name: str = "source_usage_tracker_api"
 
     #
     # api
@@ -103,5 +66,9 @@ class ResourceUsageTrackerApi(BaseHttpApi):
 
 def setup_resource_usage_tracker(app: FastAPI):
     assert app.state  # nosec
-
-    ResourceUsageTrackerApi.setup_state(app)
+    settings: ApplicationSettings = app.state.settings
+    api = ResourceUsageTrackerApi.from_client_kwargs(
+        base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
+    )
+    api.save_to_state(app)
+    api.attach_lifespan_to(app)

@@ -22,6 +22,7 @@ from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
+    setup_resource_usage_tracker,
 )
 from toolz.dicttoolz import get_in
 
@@ -30,10 +31,10 @@ async def test_setup_rut_api(app_environment: EnvVarsDict):
     new_app = FastAPI()
     new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
-        ResourceUsageTrackerApi.get_from_state(new_app)
+        ResourceUsageTrackerApi.load_from_state(new_app)
 
-    ResourceUsageTrackerApi.setup_state(new_app)
-    rut_api = ResourceUsageTrackerApi.get_from_state(new_app)
+    setup_resource_usage_tracker(new_app)
+    rut_api = ResourceUsageTrackerApi.load_from_state(new_app)
 
     assert rut_api is not None
     assert rut_api.client
@@ -122,7 +123,7 @@ async def test_add_credits_to_wallet(
     app: FastAPI, faker: Faker, mock_rut_service_api: MockRouter
 ):
     # test
-    rut_api = ResourceUsageTrackerApi.get_from_state(app)
+    rut_api = ResourceUsageTrackerApi.load_from_state(app)
 
     assert (
         await rut_api.create_credit_transaction(

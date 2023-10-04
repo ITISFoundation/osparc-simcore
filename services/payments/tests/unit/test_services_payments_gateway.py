@@ -18,17 +18,20 @@ from pytest_simcore.helpers.utils_envs import (
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
-from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
+from simcore_service_payments.services.payments_gateway import (
+    PaymentsGatewayApi,
+    setup_payments_gateway,
+)
 
 
 async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
     new_app = FastAPI()
     new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
-        PaymentsGatewayApi.get_from_state(new_app)
+        PaymentsGatewayApi.load_from_state(new_app)
 
-    PaymentsGatewayApi.setup_state(new_app)
-    payment_gateway_api = PaymentsGatewayApi.get_from_state(new_app)
+    setup_payments_gateway(new_app)
+    payment_gateway_api = PaymentsGatewayApi.load_from_state(new_app)
 
     assert payment_gateway_api is not None
 
@@ -76,7 +79,7 @@ async def test_payment_gateway_responsiveness(
     mock_payments_gateway_service_api_base: MockRouter,
 ):
     # NOTE: should be standard practice
-    payment_gateway_api = PaymentsGatewayApi.get_from_state(app)
+    payment_gateway_api = PaymentsGatewayApi.load_from_state(app)
     assert payment_gateway_api
 
     mock_payments_gateway_service_api_base.get(
@@ -108,7 +111,7 @@ async def test_one_time_payment_workflow(
 ):
     mock_payments_routes(mock_payments_gateway_service_api_base)
 
-    payment_gateway_api = PaymentsGatewayApi.get_from_state(app)
+    payment_gateway_api = PaymentsGatewayApi.load_from_state(app)
     assert payment_gateway_api
 
     # init
