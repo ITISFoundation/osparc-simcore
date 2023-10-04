@@ -13,6 +13,10 @@ class BaseHttpApi:
         # Controls all resources lifespan in sync
         self._exit_stack: contextlib.AsyncExitStack = contextlib.AsyncExitStack()
 
+    @classmethod
+    def from_client_kwargs(cls, **kwargs):
+        return cls(client=httpx.AsyncClient(**kwargs))
+
     @property
     def client(self) -> httpx.AsyncClient:
         return self._client
@@ -23,7 +27,7 @@ class BaseHttpApi:
     async def _close(self):
         await self._exit_stack.aclose()
 
-    def attach_lifespan_to_app(self, app: FastAPI):
+    def attach_lifespan_to(self, app: FastAPI):
         app.add_event_handler("startup", self._start)
         app.add_event_handler("shutdown", self._close)
 
@@ -33,7 +37,7 @@ class BaseHttpApi:
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
-            await self.client.get("/")
+            await self.client.get("/")  # TODO: tune to short timeout!
             return True
         except httpx.RequestError:
             return False

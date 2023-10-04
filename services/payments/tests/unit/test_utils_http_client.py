@@ -1,7 +1,10 @@
+from collections.abc import Iterator
+
 import httpx
 import pytest
-from fastapi import FastAPI
-from pydantic import BaseModel, HttpUrl
+import respx
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI, status
 from simcore_service_payments.utils.http_client import AppStateMixin, BaseHttpApi
 
 
@@ -42,20 +45,51 @@ def test_using_app_state_mixin():
     assert SomeData(32).save_to_state(app) == SomeData.load_from_state(app)
 
 
-@pytest.mark.skip()
-def test_base_http_api():
-    class MyAppSettings(BaseModel):
-        MY_BASE_URL: HttpUrl = "https://test_base_http_api"
+@pytest.fixture
+def base_url() -> str:
+    return "https://test_base_http_api"
 
+
+@pytest.fixture
+def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
+    with respx.mock(
+        base_url=base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.get("/").respond(status.HTTP_200_OK)
+        yield mock
+
+
+async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
     class MyClientApi(BaseHttpApi, AppStateMixin):
         app_state_name: str = "my_client_api"
-        raise_if_undefined: bool = True
 
-    # my app
-    app = FastAPI()
-    app.state.settings = MyAppSettings()
+    new_app = FastAPI()
 
-    api = MyClientApi(client=httpx.AsyncClient(base_url="https://test_base_http_api"))
-    api.save_to_state(app)
+    # create
+    api = MyClientApi(client=httpx.AsyncClient(base_url=base_url))
 
-    assert MyClientApi.load_from_state(app) == api
+    # or create from client kwargs
+    assert MyClientApi.from_client_kwargs(base_url=base_url)
+
+    # save to app.state
+    api.save_to_state(new_app)
+    assert MyClientApi.load_from_state(new_app) == api
+
+    # defin lifespan
+    api.attach_lifespan_to(new_app)
+
+    async with LifespanManager(
+        new_app,
+        startup_timeout=None,  # for debugging
+        shutdown_timeout=10,
+    ):
+        # start event called
+        assert not api.client.is_closed
+
+        assert await api.ping()
+        assert await api.is_healhy()
+
+    # shutdown event
+    assert api.client.is_closed
