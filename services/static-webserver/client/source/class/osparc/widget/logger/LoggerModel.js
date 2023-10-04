@@ -186,7 +186,7 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
           this.__filteredData.push(rowData);
         }
       }
-      // Fake the server localy
+      // Fake the server locally
       const self = this;
       self._onRowCountLoaded(this.__filteredData.length);
     },
