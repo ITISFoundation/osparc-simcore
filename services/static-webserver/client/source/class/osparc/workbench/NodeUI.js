@@ -371,11 +371,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.getChildControl("progress").exclude();
       }
 
-      // two lines
       const title = this.getChildControl("title");
       title.set({
-        wrap: true,
-        maxHeight: 28,
+        // maxHeight: 28, // two lines in Roboto
+        maxHeight: 34, // two lines in Manrope
         maxWidth: 90
       });
 
