@@ -7,7 +7,6 @@
             "type": "object",
             "title": "Ten Simple Rule",
             "required": [
-                "level", 
                 "references"
             ],
             "properties": {
@@ -29,7 +28,7 @@
     "properties": {
         "enabled": {
             "type": "boolean",
-            "title": "Whether the quality assesment is enabled or not",
+            "title": "Whether the quality assessment is enabled or not",
             "default": true
         },
         "tsr_current": {
@@ -40,63 +39,111 @@
                 "r01",
                 "r02",
                 "r03",
+                "r03b",
+                "r03c",
                 "r04",
                 "r05",
                 "r06",
                 "r07",
+                "r07b",
+                "r07c",
+                "r07d",
+                "r07e",
                 "r08",
+                "r08b",
                 "r09",
-                "r10"
+                "r10",
+                "r10b"
             ],
             "properties": {
                 "r01": {
-                    "title": "R1 - Define context clearly",
-                    "description": "Develop and document the subject, purpose, and intended use(s) of the model or simulation.",
+                    "title": "TSR1 - Clearly Defined Context (*)",
+                    "description": "Description of use cases for the project. (Required)",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r02": {
-                    "title": "R2 - Use appropriate data",
-                    "description": "Employ relevant and traceable information in the development or operation of a model or simulation.",
+                    "title": "TSR2 - Use of Appropriate Data",
+                    "description": "Links to data that was used to create, validate, test, etc. the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03": {
-                    "title": "R3 - Evaluate within context",
-                    "description": "Verification, validation, uncertainty quantification, and sensitivity analysis of the model or simulation are accomplished with respect to the reality of interest and intended use(s) of the model or simulation.",
+                    "title": "TSR3a - Verification",
+                    "description": "Link to test suite for project.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r03b": {
+                    "title": "TSR3b - Verification Results",
+                    "description": "Link to test results from running the tests for the project, e.g., on the o²S²PARC platform.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r03c": {
+                    "title": "TSR3c - Evaluation Within Context",
+                    "description": "Link to scientific validation (experimental comparator), sensitivity analysis and uncertainty quantification for the project in the context of the use cases described in TSR1.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r04": {
-                    "title": "R4 - List limitations explicitly",
-                    "description": "Restrictions, constraints, or qualifications for or on the use of the model or simulation are available for consideration by the users or customers of a model or simulation.",
+                    "title": "TSR4 - Explicitly Listed Limitations (*)",
+                    "description": "Link to documentation of known issues and limitations of the project. (Required)",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r05": {
-                    "title": "R5 - Use version control",
-                    "description": "Implement a system to trace the time history of M&S activities including delineation of contributors' efforts.",
+                    "title": "TSR5 - Version Control",
+                    "description": "Link to primary forge repository for the project. For example, o²S²PARC, github, or gitlab instance.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r06": {
-                    "title": "R6 - Document adequately",
-                    "description": "Maintain up-to-date informative record of all M&S activities, including simulation code, model mark-up, scope and intended use of M&S activities, as well as users' and developers' guides.",
+                    "title": "TSR6 - Adequate Documentation (*)",
+                    "description": "Link to user and/or developer documentation for the project. (Required)",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07": {
-                    "title": "R7 - Disseminate broadly",
-                    "description": "Publish all components of M&S activities, including simulation software, models, simulation scenarios and results.",
+                    "title": "TSR7a - Broad Dissemination: Releases",
+                    "description": "Link to the download or release page for the project, e.g., on the SPARC Portal.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07b": {
+                    "title": "TSR7b - Broad Dissemination: Issues",
+                    "description": "Link to project issue tracker.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07c": {
+                    "title": "TSR7c - Broad Dissemination: License",
+                    "description": "Link to project license.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07d": {
+                    "title": "TSR7d - Broad Dissemination: Packages",
+                    "description": "Link to language ecosystem package repository. For example, PyPI for python projects.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07e": {
+                    "title": "TSR7e - Broad Dissemination: Interactive",
+                    "description": "Link to the project on an interactive software hosting platform e.g. o²S²PARC.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r08": {
-                    "title": "R8 - Get independent reviews",
-                    "description": "Have the M&S activity reviewed by nonpartisan third-party users and developers.",
+                    "title": "TSR8a - Independent Reviews",
+                    "description": "Links to reviews of project by independent members of the community.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r08b": {
+                    "title": "TSR8b - External Certification",
+                    "description": "Link to external certification of project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r09": {
-                    "title": "R9 - Test competing implementations",
-                    "description": "Use contrasting M&S execution strategies to check the conclusions of the different execution strategies against each other.",
+                    "title": "TSR9 - Competing Implementation Testing",
+                    "description": "Link to benchmarking against other projects operating in the same domain.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r10": {
-                    "title": "R10 - Conform to standards",
-                    "description": "Adopt and promote generally applicable and discipline specific operating procedures, guidelines, and regulations accepted as best practices.",
+                    "title": "TSR10a - Relevant standards",
+                    "description": "List and/or link to standards/guidelines that this project conforms to or implements.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r10b": {
+                    "title": "TSR10b - Standards Adherence",
+                    "description": "Link to demonstration that project conforms to standard.",
                     "$ref": "#/definitions/tenSimpleRule"
                 }
             }
@@ -109,101 +156,112 @@
                 "r01",
                 "r02",
                 "r03",
+                "r03b",
+                "r03c",
                 "r04",
                 "r05",
                 "r06",
                 "r07",
+                "r07b",
+                "r07c",
+                "r07d",
+                "r07e",
                 "r08",
+                "r08b",
                 "r09",
-                "r10"
+                "r10",
+                "r10b"
             ],
             "properties": {
                 "r01": {
-                    "title": "R1 - Define context clearly",
-                    "description": "Develop and document the subject, purpose, and intended use(s) of the model or simulation.",
+                    "title": "TSR1 - Clearly Defined Context",
+                    "description": "Description of use cases for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r02": {
-                    "title": "R2 - Use appropriate data",
-                    "description": "Employ relevant and traceable information in the development or operation of a model or simulation.",
+                    "title": "TSR2 - Use of Appropriate Data",
+                    "description": "Links to data that was used to create, validate, test, etc. the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r03": {
-                    "title": "R3 - Evaluate within context",
-                    "description": "Verification, validation, uncertainty quantification, and sensitivity analysis of the model or simulation are accomplished with respect to the reality of interest and intended use(s) of the model or simulation.",
+                    "title": "TSR3a - Verification",
+                    "description": "Link to test suite for project.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r03b": {
+                    "title": "TSR3b - Verification Results",
+                    "description": "Link to test results from running the tests for the project, e.g., on the o²S²PARC platform.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r03c": {
+                    "title": "TSR3c - Evaluation Within Context",
+                    "description": "Link to scientific validation (experimental comparator), sensitivity analysis and uncertainty quantification for the project in the context of the use cases described in TSR1.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r04": {
-                    "title": "R4 - List limitations explicitly",
-                    "description": "Restrictions, constraints, or qualifications for or on the use of the model or simulation are available for consideration by the users or customers of a model or simulation.",
+                    "title": "TSR4 - Explicitly Listed Limitations",
+                    "description": "Link to documentation of known issues and limitations of the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r05": {
-                    "title": "R5 - Use version control",
-                    "description": "Implement a system to trace the time history of M&S activities including delineation of contributors' efforts.",
+                    "title": "TSR5 - Version Control",
+                    "description": "Link to primary forge repository for the project. For example, o²S²PARC, github, or gitlab instance.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r06": {
-                    "title": "R6 - Document adequately",
-                    "description": "Maintain up-to-date informative record of all M&S activities, including simulation code, model mark-up, scope and intended use of M&S activities, as well as users' and developers' guides.",
+                    "title": "TSR6 - Adequate Documentation",
+                    "description": "Link to user and/or developer documentation for the project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r07": {
-                    "title": "R7 - Disseminate broadly",
-                    "description": "Publish all components of M&S activities, including simulation software, models, simulation scenarios and results.",
+                    "title": "TSR7a - Broad Dissemination: Releases",
+                    "description": "Link to the download or release page for the project, e.g., on the SPARC Portal.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07b": {
+                    "title": "TSR7b - Broad Dissemination: Issues",
+                    "description": "Link to project issue tracker.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07c": {
+                    "title": "TSR7c - Broad Dissemination: License",
+                    "description": "Link to project license.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07d": {
+                    "title": "TSR7d - Broad Dissemination: Packages",
+                    "description": "Link to language ecosystem package repository. For example, PyPI for python projects.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07e": {
+                    "title": "TSR7e - Broad Dissemination: Interactive",
+                    "description": "Link to the project on an interactive software hosting platform e.g. o²S²PARC.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r08": {
-                    "title": "R8 - Get independent reviews",
-                    "description": "Have the M&S activity reviewed by nonpartisan third-party users and developers.",
+                    "title": "TSR8a - Independent Reviews",
+                    "description": "Links to reviews of project by independent members of the community.",
+                    "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r08b": {
+                    "title": "TSR8b - External Certification",
+                    "description": "Link to external certification of project.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r09": {
-                    "title": "R9 - Test competing implementations",
-                    "description": "Use contrasting M&S execution strategies to check the conclusions of the different execution strategies against each other.",
+                    "title": "TSR9 - Competing Implementation Testing",
+                    "description": "Link to benchmarking against other projects operating in the same domain.",
                     "$ref": "#/definitions/tenSimpleRule"
                 },
                 "r10": {
-                    "title": "R10 - Conform to standards",
-                    "description": "Adopt and promote generally applicable and discipline specific operating procedures, guidelines, and regulations accepted as best practices.",
+                    "title": "TSR10a - Relevant standards",
+                    "description": "List and/or link to standards/guidelines that this project conforms to or implements.",
                     "$ref": "#/definitions/tenSimpleRule"
-                }
-            }
-        },
-        "annotations": {
-            "type": "object",
-            "title": "Annotations",
-            "required": [
-                "certificationStatus", 
-                "certificationLink",
-                "vandv",
-                "limitations"
-            ],
-            "properties": {
-                "certificationStatus": {
-                    "title": "Certification status",
-                    "description": "",
-                    "type": "string",
-                    "default": "Uncertified",
-                    "enum": ["Uncertified", "Independently reviewed", "Regulatory grade"]
                 },
-                "certificationLink": {
-                    "title": "Certification link",
-                    "description": "",
-                    "type": "string",
-                    "default": ""
-                },
-                "vandv": {
-                    "title": "Verification & Validation",
-                    "description": "Description of verification and validation testing performed for the model and/or code submitted, or a link to these tests",
-                    "type": "string",
-                    "default": ""
-                },
-                "limitations": {
-                    "title": "Known limitations",
-                    "description": "",
-                    "type": "string",
-                    "default": ""
+                "r10b": {
+                    "title": "TSR10b - Standards Adherence",
+                    "description": "Link to demonstration that project conforms to standard.",
+                    "$ref": "#/definitions/tenSimpleRule"
                 }
             }
         }
