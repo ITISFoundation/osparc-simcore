@@ -166,14 +166,19 @@ def create_payment_method_router():
 def create_app():
     app = FastAPI(
         title="fake-payment-gateway",
+        version="0.2.0",
         servers=[
             {
-                "url": "https://fake-api-server.test",
-                "description": "dev payment gateway",
+                "url": "{scheme}://{host}:{port}",
+                "description": "development server",
+                "variables": {
+                    "scheme": {"default": "http"},
+                    "host": {"default": "localhost"},
+                    "port": {"default": "8080"},
+                },
             }
         ],
     )
-    # TODO: create header with auth
 
     for factory in (
         create_payment_router,
@@ -188,7 +193,7 @@ def create_app():
 
 def run_command(args):
     app = create_app()
-    uvicorn.run(app)
+    uvicorn.run(app, port=8080)
 
 
 def openapi_command(args):
