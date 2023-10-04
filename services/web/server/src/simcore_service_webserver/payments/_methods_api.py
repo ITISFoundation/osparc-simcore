@@ -289,3 +289,35 @@ async def delete_wallet_payment_method(
     await delete_payment_method(
         app, user_id=user_id, wallet_id=wallet_id, payment_method_id=payment_method_id
     )
+
+
+#
+# payment-autorecharge
+#
+
+
+async def get_wallet_payment_autorecharge(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    raise NotImplementedError
+
+
+async def update_wallet_payment_autorecharge(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    wallet_id: WalletID,
+    updated: dict[str, Any],
+):
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    raise NotImplementedError

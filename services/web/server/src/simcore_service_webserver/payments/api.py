@@ -7,20 +7,24 @@ from ._client import get_payments_service_api
 from ._methods_api import (
     cancel_creation_of_wallet_payment_method,
     delete_wallet_payment_method,
+    get_wallet_payment_autorecharge,
     get_wallet_payment_method,
     init_creation_of_wallet_payment_method,
     list_wallet_payment_methods,
+    update_wallet_payment_autorecharge,
 )
 
 __all__: tuple[str, ...] = (
+    "cancel_creation_of_wallet_payment_method",
     "cancel_payment_to_wallet",
     "create_payment_to_wallet",
+    "delete_wallet_payment_method",
     "get_payments_service_api",
     "get_user_payments_page",
+    "get_wallet_payment_autorecharge",
+    "get_wallet_payment_method",
     "init_creation_of_wallet_payment_method",
     "list_wallet_payment_methods",
-    "get_wallet_payment_method",
-    "delete_wallet_payment_method",
-    "cancel_creation_of_wallet_payment_method",
+    "update_wallet_payment_autorecharge",
 )
 # nopycln: file
