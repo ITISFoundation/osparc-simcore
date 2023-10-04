@@ -110,7 +110,7 @@ class OciImageSpecAnnotations(BaseModel):
         return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
-        labels = to_labels(
+        labels: dict[str, str] = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OCI_LABEL_PREFIX,
         )

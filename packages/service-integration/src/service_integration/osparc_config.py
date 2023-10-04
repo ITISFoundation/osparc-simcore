@@ -124,11 +124,12 @@ class MetaConfig(ServiceDockerData):
         return model
 
     def to_labels_annotations(self) -> dict[str, str]:
-        return to_labels(
+        labels: dict[str, str] = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
             trim_key_head=False,
         )
+        return labels
 
     def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
@@ -253,10 +254,11 @@ class RuntimeConfig(BaseModel):
         return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
-        return to_labels(
+        labels: dict[str, str] = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
+        return labels
 
 
 ## FILES -----------------------------------------------------------
