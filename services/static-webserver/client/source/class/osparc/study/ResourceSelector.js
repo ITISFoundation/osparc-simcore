@@ -230,74 +230,43 @@ qx.Class.define("osparc.study.ResourceSelector", {
       this.__buildOptionsLayout();
     },
 
-    createTierButtonsGroup: function(serviceLabel, servicesResources, advancedCB) {
-      const imageKeys = Object.keys(servicesResources);
-      if (imageKeys && imageKeys.length) {
-        // hack to show "s4l-core"
-        const mainImageKey = imageKeys.length > 1 ? imageKeys[1] : imageKeys[0];
-        const serviceResources = servicesResources[mainImageKey];
-        if (serviceResources && "resources" in serviceResources) {
-          const machinesLayout = this.self().createGroupBox(serviceLabel);
-          machinesLayout.setLayout(new qx.ui.layout.HBox(5));
-          machinesLayout.exclude();
+    createTierButtonsGroup: function(serviceLabel, pricingPlans, advancedCB) {
+      if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
+        const machinesLayout = this.self().createGroupBox(serviceLabel);
+        machinesLayout.setLayout(new qx.ui.layout.HBox(5));
 
-          const smInfo = this.self().getMachineInfo("sm");
-          const mdInfo = this.self().getMachineInfo("md");
-          const lgInfo = this.self().getMachineInfo("lg");
-          if ("CPU" in serviceResources["resources"]) {
-            const lgValue = serviceResources["resources"]["CPU"]["limit"];
-            smInfo["resources"]["CPU"] = lgValue/4;
-            mdInfo["resources"]["CPU"] = lgValue/2;
-            lgInfo["resources"]["CPU"] = lgValue;
-          }
-          if ("RAM" in serviceResources["resources"]) {
-            const lgValue = serviceResources["resources"]["RAM"]["limit"];
-            smInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue/4);
-            mdInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue/2);
-            lgInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue);
-          }
-          if ("VRAM" in serviceResources["resources"]) {
-            const lgValue = serviceResources["resources"]["VRAM"]["limit"];
-            smInfo["resources"]["VRAM"] = lgValue;
-            mdInfo["resources"]["VRAM"] = lgValue;
-            lgInfo["resources"]["VRAM"] = lgValue;
-          }
-          if (Object.keys(lgInfo["resources"]).length) {
-            const buttons = [];
-            const smallButton = new osparc.study.TierButton(smInfo);
-            const mediumButton = new osparc.study.TierButton(mdInfo);
-            const largeButton = new osparc.study.TierButton(lgInfo);
-            [
-              smallButton,
-              mediumButton,
-              largeButton
-            ].forEach(btn => {
-              advancedCB.bind("value", btn, "advanced");
-              buttons.push(btn);
-              machinesLayout.add(btn);
+        const buttons = [];
+        pricingPlans["pricingUnits"].forEach(pricingUnit => {
+          const button = new osparc.study.TierButton(pricingUnit);
+          advancedCB.bind("value", button, "advanced");
+          buttons.push(button);
+          machinesLayout.add(button);
+        });
+
+        const buttonSelected = button => {
+          buttons.forEach(btn => {
+            if (btn !== button) {
+              btn.setValue(false);
+            }
+          });
+        };
+        buttons.forEach(btn => btn.addListener("execute", () => buttonSelected(btn)));
+        buttons.forEach(btn => btn.addListener("changeValue", e => {
+          if (e.getData()) {
+            this.getChildControl("summary-label").set({
+              value: serviceLabel + ": " + btn.getTierInfo().currentCostPerUnit
             });
-            machinesLayout.show();
-
-            const buttonSelected = button => {
-              buttons.forEach(btn => {
-                if (btn !== button) {
-                  btn.setValue(false);
-                }
-              });
-            };
-            buttons.forEach(btn => btn.addListener("execute", () => buttonSelected(btn)));
-            buttons.forEach(btn => btn.addListener("changeValue", e => {
-              if (e.getData()) {
-                this.getChildControl("summary-label").set({
-                  value: serviceLabel + ": " + btn.getTierInfo().price
-                });
-              }
-            }));
-            // medium by default
-            mediumButton.execute();
           }
-          return machinesLayout;
-        }
+        }));
+
+        // preselect default
+        buttons.forEach(button => {
+          if (button.getTierInfo()["default"]) {
+            button.execute();
+          }
+        });
+
+        return machinesLayout;
       }
       return null;
     },
@@ -309,18 +278,31 @@ qx.Class.define("osparc.study.ResourceSelector", {
     __buildNodeResources: function() {
       const loadingImage = this.getChildControl("loading-services-resources");
       const servicesBox = this.getChildControl("services-resources-layout");
-      servicesBox.exclude();
+      const tiersLoading = () => {
+        loadingImage.show();
+        servicesBox.exclude();
+      };
+      const tiersAdded = () => {
+        loadingImage.exclude();
+        servicesBox.show();
+      };
+      tiersLoading();
       if ("workbench" in this.__studyData) {
-        for (const nodeId in this.__studyData["workbench"]) {
-          const node = this.__studyData["workbench"][nodeId];
+        const promises = [];
+        const nodes = Object.values(this.__studyData["workbench"]);
+        nodes.forEach(node => {
           const params = {
-            url: {
-              studyId: this.__studyId,
-              nodeId
-            }
+            url: osparc.data.Resources.getServiceUrl(
+              node["key"],
+              node["version"]
+            )
           };
-          osparc.data.Resources.get("nodesInStudyResources", params)
-            .then(serviceResources => {
+          promises.push(osparc.data.Resources.fetch("services", "pricingPlans", params));
+        });
+        Promise.all(promises)
+          .then(values => {
+            console.log(values);
+            if (values) {
               // eslint-disable-next-line no-underscore-dangle
               this.getChildControl("options-layout")._removeAll();
               this.getChildControl("options-layout").add(servicesBox);
@@ -329,14 +311,15 @@ qx.Class.define("osparc.study.ResourceSelector", {
                 value: false
               });
               servicesBox.add(advancedCB);
-              const serviceGroup = this.createTierButtonsGroup(node["label"], serviceResources, advancedCB);
-              if (serviceGroup) {
-                loadingImage.exclude();
-                servicesBox.add(serviceGroup);
-                servicesBox.show();
-              }
-            });
-        }
+              values.forEach((pricingPlans, idx) => {
+                const serviceGroup = this.createTierButtonsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
+                if (serviceGroup) {
+                  servicesBox.add(serviceGroup);
+                  tiersAdded();
+                }
+              });
+            }
+          });
       }
     },
 

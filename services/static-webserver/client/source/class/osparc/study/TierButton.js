@@ -18,7 +18,7 @@
 qx.Class.define("osparc.study.TierButton", {
   extend: qx.ui.form.ToggleButton,
 
-  construct: function(tierInfo) {
+  construct: function(pricingUnit) {
     this.base(arguments);
 
     this.set({
@@ -31,7 +31,7 @@ qx.Class.define("osparc.study.TierButton", {
       "border-radius": "4px"
     });
 
-    this.__tierInfo = tierInfo;
+    this.__pricingUnit = pricingUnit;
 
     this.__buildLayout();
   },
@@ -47,10 +47,10 @@ qx.Class.define("osparc.study.TierButton", {
   },
 
   members: {
-    __tierInfo: null,
+    __pricingUnit: null,
 
     __buildLayout: function() {
-      const tierInfo = this.__tierInfo;
+      const pricingUnit = this.__pricingUnit;
 
       const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
 
@@ -59,30 +59,30 @@ qx.Class.define("osparc.study.TierButton", {
         this._setLayout(new qx.ui.layout.VBox(5));
 
         this._add(new qx.ui.basic.Label().set({
-          value: tierInfo.title,
+          value: pricingUnit.unitName,
           font: "text-16"
         }));
-        Object.keys(tierInfo.resources).forEach(resourceKey => {
+        Object.keys(pricingUnit.resources).forEach(resourceKey => {
           this._add(new qx.ui.basic.Label().set({
-            value: resourceKey + ": " + toFixedIfNecessary(tierInfo.resources[resourceKey]),
+            value: resourceKey + ": " + toFixedIfNecessary(pricingUnit.resources[resourceKey]),
             font: "text-12"
           }));
         });
         this._add(new qx.ui.basic.Label().set({
-          value: qx.locale.Manager.tr("Credits/h") + ": " + tierInfo.price,
+          value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
           font: "text-14"
         }));
       } else {
         this._setLayout(new qx.ui.layout.HBox(5));
         this._add(new qx.ui.basic.Label().set({
-          value: tierInfo.title + ": " + tierInfo.price,
+          value: pricingUnit.unitName + ": " + pricingUnit.currentCostPerUnit,
           font: "text-16"
         }));
       }
     },
 
     getTierInfo: function() {
-      return this.__tierInfo;
+      return this.__pricingUnit;
     }
   }
 });
