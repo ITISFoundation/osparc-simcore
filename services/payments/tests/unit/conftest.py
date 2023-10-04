@@ -72,9 +72,9 @@ def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]
 
 
 @pytest.fixture
-def mock_init_payment_route(faker: Faker) -> Callable:
+def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
-        def _init_payment_successfully(request: httpx.Request):
+        def _init_200(request: httpx.Request):
             assert InitPayment.parse_raw(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
@@ -83,9 +83,20 @@ def mock_init_payment_route(faker: Faker) -> Callable:
                 json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
             )
 
+        def _cancel_200(request: httpx.Request):
+            assert PaymentInitiated.parse_raw(request.content) is not None
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+
+            return httpx.Response(status.HTTP_200_OK, json={})
+
         mock_router.post(
             path="/init",
             name="init_payment",
-        ).mock(side_effect=_init_payment_successfully)
+        ).mock(side_effect=_init_200)
+
+        mock_router.post(
+            path="/cancel",
+            name="cancel_payment",
+        ).mock(side_effect=_cancel_200)
 
     return _mock

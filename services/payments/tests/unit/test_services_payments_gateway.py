@@ -96,6 +96,7 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
@@ -103,9 +104,9 @@ async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_api_base: MockRouter,
-    mock_init_payment_route: Callable,
+    mock_payments_routes: Callable,
 ):
-    mock_init_payment_route(mock_payments_gateway_service_api_base)
+    mock_payments_routes(mock_payments_gateway_service_api_base)
 
     payment_gateway_api = PaymentsGatewayApi.get_from_state(app)
     assert payment_gateway_api
@@ -133,4 +134,5 @@ async def test_one_time_payment_workflow(
     await payment_gateway_api.cancel_payment(payment_initiated)
 
     # check mock
-    # assert mock_payments_gateway_service_api_base.routes["init_payment"].called
+    assert mock_payments_gateway_service_api_base.routes["init_payment"].called
+    assert mock_payments_gateway_service_api_base.routes["cancel_payment"].called
