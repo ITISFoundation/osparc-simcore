@@ -10,7 +10,7 @@ include ../../scripts/common-service.Makefile
 
 .PHONY: openapi.json
 openapi-specs: openapi.json
-openapi.json:  ## produces openapi.json
+openapi.json: .env-ignore ## produces openapi.json
 	# generating openapi specs file (need to have the environment set for this)
 	@set -o allexport; \
 	source $<; \
