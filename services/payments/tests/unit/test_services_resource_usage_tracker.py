@@ -31,10 +31,10 @@ async def test_setup_rut_api(app_environment: EnvVarsDict):
     new_app = FastAPI()
     new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
-        ResourceUsageTrackerApi.load_from_state(new_app)
+        ResourceUsageTrackerApi.get_from_app_state(new_app)
 
     setup_resource_usage_tracker(new_app)
-    rut_api = ResourceUsageTrackerApi.load_from_state(new_app)
+    rut_api = ResourceUsageTrackerApi.get_from_app_state(new_app)
 
     assert rut_api is not None
     assert rut_api.client
@@ -123,7 +123,7 @@ async def test_add_credits_to_wallet(
     app: FastAPI, faker: Faker, mock_rut_service_api: MockRouter
 ):
     # test
-    rut_api = ResourceUsageTrackerApi.load_from_state(app)
+    rut_api = ResourceUsageTrackerApi.get_from_app_state(app)
 
     assert (
         await rut_api.create_credit_transaction(

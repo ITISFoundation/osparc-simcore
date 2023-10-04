@@ -105,4 +105,4 @@ def setup_payments_gateway(app: FastAPI):
         ),
     )
     api.attach_lifespan_to(app)
-    api.save_to_state(app)
+    api.set_to_app_state(app)

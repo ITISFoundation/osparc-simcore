@@ -21,28 +21,28 @@ def test_using_app_state_mixin():
 
     # load -> fails
     with pytest.raises(AttributeError):
-        SomeData.load_from_state(app)
+        SomeData.get_from_app_state(app)
 
     # save
     obj = SomeData(42)
-    obj.save_to_state(app)
+    obj.set_to_app_state(app)
 
     # load
-    assert SomeData.load_from_state(app) == obj
+    assert SomeData.get_from_app_state(app) == obj
     assert app.state.my_data == obj
 
     # cannot re-save if frozen
     assert SomeData.frozen
     with pytest.raises(ValueError):
-        SomeData(32).save_to_state(app)
+        SomeData(32).set_to_app_state(app)
 
     # delete
-    assert SomeData.delete_from_state(app) == obj
+    assert SomeData.pop_from_app_state(app) == obj
     with pytest.raises(AttributeError):
-        SomeData.load_from_state(app)
+        SomeData.get_from_app_state(app)
 
     # save = load
-    assert SomeData(32).save_to_state(app) == SomeData.load_from_state(app)
+    assert SomeData(32).set_to_app_state(app) == SomeData.get_from_app_state(app)
 
 
 @pytest.fixture
@@ -74,8 +74,8 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
     assert MyClientApi.from_client_kwargs(base_url=base_url)
 
     # save to app.state
-    api.save_to_state(new_app)
-    assert MyClientApi.load_from_state(new_app) == api
+    api.set_to_app_state(new_app)
+    assert MyClientApi.get_from_app_state(new_app) == api
 
     # defin lifespan
     api.attach_lifespan_to(new_app)

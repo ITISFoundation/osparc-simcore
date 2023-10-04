@@ -70,5 +70,5 @@ def setup_resource_usage_tracker(app: FastAPI):
     api = ResourceUsageTrackerApi.from_client_kwargs(
         base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
     )
-    api.save_to_state(app)
+    api.set_to_app_state(app)
     api.attach_lifespan_to(app)
