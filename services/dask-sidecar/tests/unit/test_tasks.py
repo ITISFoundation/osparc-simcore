@@ -688,6 +688,7 @@ def test_failing_service_raises_exception(
     dask_subsystem_mock: dict[str, mock.Mock],
     failing_ubuntu_task: ServiceExampleParam,
     s3_settings: S3Settings,
+    mocked_get_image_labels: mock.Mock,
 ):
     with pytest.raises(ServiceRuntimeError):
         run_computational_sidecar(
