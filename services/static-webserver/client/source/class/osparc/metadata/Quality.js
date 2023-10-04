@@ -26,28 +26,35 @@ qx.Class.define("osparc.metadata.Quality", {
       if (!("enabled" in obj["quality"])) {
         obj["quality"]["enabled"] = true;
       }
-      if (!("tsr_current" in obj["quality"])) {
-        obj["quality"]["tsr_current"] = osparc.metadata.Quality.getDefaultCurrentQualityTSR();
-      }
-      if (!("tsr_target" in obj["quality"])) {
-        obj["quality"]["tsr_target"] = osparc.metadata.Quality.getDefaultTargetQualityTSR();
-      }
-      if (!("annotations" in obj["quality"])) {
-        obj["quality"]["annotations"] = osparc.metadata.Quality.getDefaultQualityAnnotations();
-      }
+
       if ("tsr" in obj["quality"]) {
         obj["quality"]["tsr_current"] = obj["quality"]["tsr"];
         delete obj["quality"]["tsr"];
       }
-      [
-        "purpose",
-        "documentation",
-        "standards"
-      ].forEach(fieldToDelete => {
-        if (fieldToDelete in obj["quality"]["annotations"]) {
-          delete obj["quality"]["annotations"][fieldToDelete];
+
+      const defaultCurrentTSR = osparc.metadata.Quality.getDefaultCurrentQualityTSR();
+      if (!("tsr_current" in obj["quality"])) {
+        obj["quality"]["tsr_current"] = defaultCurrentTSR;
+      }
+      Object.keys(defaultCurrentTSR).forEach(sectionKey => {
+        if (!(sectionKey in obj["quality"]["tsr_current"])) {
+          obj["quality"]["tsr_current"][sectionKey] = defaultCurrentTSR[sectionKey];
         }
       });
+
+      const defaultTargetTSR = osparc.metadata.Quality.getDefaultTargetQualityTSR();
+      if (!("tsr_target" in obj["quality"])) {
+        obj["quality"]["tsr_target"] = defaultTargetTSR;
+      }
+      Object.keys(defaultTargetTSR).forEach(sectionKey => {
+        if (!(sectionKey in obj["quality"]["tsr_target"])) {
+          obj["quality"]["tsr_target"][sectionKey] = defaultTargetTSR[sectionKey];
+        }
+      });
+
+      if (("annotations" in obj["quality"])) {
+        delete obj["quality"]["annotations"];
+      }
     },
 
     isEnabled: function(quality) {
@@ -106,16 +113,6 @@ domain and the intended context of use",
       return confLevel;
     },
 
-    getDefaultQualityAnnotations: function() {
-      const defaultAnnotations = {
-        "certificationStatus": "Uncertified",
-        "certificationLink": "",
-        "vandv": "",
-        "limitations": ""
-      };
-      return defaultAnnotations;
-    },
-
     getDefaultCurrentQualityTSR: function() {
       const defaultCurrentTSR = {
         "r01": {
@@ -128,6 +125,12 @@ domain and the intended context of use",
         },
         "r03": {
           "level": 0,
+          "references": ""
+        },
+        "r03b": {
+          "references": ""
+        },
+        "r03c": {
           "references": ""
         },
         "r04": {
@@ -146,8 +149,23 @@ domain and the intended context of use",
           "level": 0,
           "references": ""
         },
+        "r07b": {
+          "references": ""
+        },
+        "r07c": {
+          "references": ""
+        },
+        "r07d": {
+          "references": ""
+        },
+        "r07e": {
+          "references": ""
+        },
         "r08": {
           "level": 0,
+          "references": ""
+        },
+        "r08b": {
           "references": ""
         },
         "r09": {
@@ -156,6 +174,9 @@ domain and the intended context of use",
         },
         "r10": {
           "level": 0,
+          "references": ""
+        },
+        "r10b": {
           "references": ""
         }
       };
@@ -176,6 +197,12 @@ domain and the intended context of use",
           "level": 4,
           "references": ""
         },
+        "r03b": {
+          "references": ""
+        },
+        "r03c": {
+          "references": ""
+        },
         "r04": {
           "level": 4,
           "references": ""
@@ -192,8 +219,23 @@ domain and the intended context of use",
           "level": 4,
           "references": ""
         },
+        "r07b": {
+          "references": ""
+        },
+        "r07c": {
+          "references": ""
+        },
+        "r07d": {
+          "references": ""
+        },
+        "r07e": {
+          "references": ""
+        },
         "r08": {
           "level": 4,
+          "references": ""
+        },
+        "r08b": {
           "references": ""
         },
         "r09": {
@@ -203,16 +245,12 @@ domain and the intended context of use",
         "r10": {
           "level": 4,
           "references": ""
+        },
+        "r10b": {
+          "references": ""
         }
       };
       return defaultTargetTSR;
-    },
-
-    getKnownLimitations: function(metaData) {
-      if (metaData && "quality" in metaData && "annotations" in metaData["quality"] && "limitations" in metaData["quality"]["annotations"]) {
-        return metaData["quality"]["annotations"]["limitations"];
-      }
-      return "";
     },
 
     computeTSRScore: function(currentTSR, targetTSR) {
@@ -220,9 +258,11 @@ domain and the intended context of use",
       let targetScore = 0;
       let maxScore = 0;
       Object.entries(currentTSR).forEach(([tsrKey, cTSR]) => {
-        score += cTSR.level;
-        targetScore += targetTSR[tsrKey].level;
-        maxScore += 4;
+        if ("level" in cTSR && "level" in targetTSR[tsrKey] && targetTSR[tsrKey]["level"] !== 0) {
+          score += cTSR.level;
+          targetScore += targetTSR[tsrKey].level;
+          maxScore += 4;
+        }
       });
       return {
         score,

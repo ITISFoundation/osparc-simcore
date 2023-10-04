@@ -97,6 +97,7 @@ async def test_invitation_service_api_ping(
     mock_invitations_service_http_api: AioResponsesMock,
     base_url: URL,
 ):
+    assert client.app
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
     # first request is mocked to pass
