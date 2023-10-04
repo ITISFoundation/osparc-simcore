@@ -7,8 +7,6 @@
 
 
 import logging
-from dataclasses import dataclass
-from typing import cast
 
 import httpx
 from fastapi import FastAPI
@@ -25,7 +23,7 @@ from ..models.payments_gateway import (
     PaymentMethodID,
     PaymentMethodInitiated,
 )
-from ..utils.http_client import BaseHttpApi
+from ..utils.http_client import AppStateMixin, BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 
@@ -39,46 +37,8 @@ class GatewayeAuth(httpx.Auth):
         yield request
 
 
-@dataclass
-class PaymentsGatewayApi(BaseHttpApi):
-    @classmethod
-    def create(cls, app: FastAPI) -> "PaymentsGatewayApi":
-        settings: ApplicationSettings = app.state.settings
-
-        return cls(
-            client=httpx.AsyncClient(
-                base_url=settings.PAYMENTS_GATEWAY_URL,
-                headers={"accept": "application/json"},
-                auth=GatewayeAuth(
-                    secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
-                ),
-            )
-        )
-
-    #
-    # app.state
-    #
-
-    @classmethod
-    def setup_state(cls, app: FastAPI):
-        # create and and save instance in state
-        assert app.state  # nosec
-        if exists := getattr(app.state, "payment_gateway_api", None):
-            _logger.warning(
-                "Skipping setup. Cannot setup more than once %s: %s", cls, exists
-            )
-            return
-
-        app.state.payment_gateway_api = api = cls.create(app)
-        assert cls.get_from_state(app) == api  # nosec
-
-        # define lifespam
-        app.add_event_handler("startup", api.start)
-        app.add_event_handler("shutdown", api.close)
-
-    @classmethod
-    def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
-        return cast("PaymentsGatewayApi", app.state.payment_gateway_api)
+class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
+    app_state_name: str = "payment_gateway_api"
 
     #
     # api: one-time-payment workflow
@@ -134,4 +94,15 @@ class PaymentsGatewayApi(BaseHttpApi):
 
 def setup_payments_gateway(app: FastAPI):
     assert app.state  # nosec
-    PaymentsGatewayApi.setup_state(app)
+    settings: ApplicationSettings = app.state.settings
+
+    # create
+    api = PaymentsGatewayApi.from_client_kwargs(
+        base_url=settings.PAYMENTS_GATEWAY_URL,
+        headers={"accept": "application/json"},
+        auth=GatewayeAuth(
+            secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
+        ),
+    )
+    api.attach_lifespan_to(app)
+    api.save_to_state(app)
