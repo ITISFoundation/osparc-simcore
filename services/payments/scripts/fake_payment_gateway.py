@@ -29,6 +29,9 @@ def set_operation_id_as_handler_function_name(router: APIRouter):
 
 
 ERROR_RESPONSES: dict[str, Any] = {"4XX": {"model": ErrorModel}}
+ERROR_HTML_RESPONSES: dict[str, Any] = {
+    "4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}
+}
 
 
 def create_payment_router():
@@ -39,7 +42,11 @@ def create_payment_router():
     )
 
     # payment
-    @router.post("/init", response_model=PaymentInitiated, responses=ERROR_RESPONSES)
+    @router.post(
+        "/init",
+        response_model=PaymentInitiated,
+        responses=ERROR_RESPONSES,
+    )
     def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
@@ -47,14 +54,20 @@ def create_payment_router():
         assert payment  # nosec
         assert auth  # nosec
 
-    @router.get("/pay", response_class=HTMLResponse)
+    @router.get(
+        "/pay",
+        response_class=HTMLResponse,
+        responses=ERROR_HTML_RESPONSES,
+    )
     def get_form_payment(
         id: PaymentID,
-        auth: Annotated[int, Depends(auth_session)],
     ):
         assert id  # nosec
 
-    @router.post("/cancel", responses=ERROR_RESPONSES)
+    @router.post(
+        "/cancel",
+        responses=ERROR_RESPONSES,
+    )
     def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
@@ -77,7 +90,11 @@ def create_payment_method_router():
     )
 
     # payment-methods
-    @router.post(":init", response_model=PaymentMethodInitiated)
+    @router.post(
+        ":init",
+        response_model=PaymentMethodInitiated,
+        responses=ERROR_RESPONSES,
+    )
     def init_payment_method(
         payment_method: InitPaymentMethod,
         auth: Annotated[int, Depends(auth_session)],
@@ -85,12 +102,20 @@ def create_payment_method_router():
         assert payment_method  # nosec
         assert auth  # nosec
 
-    @router.get("/form", response_class=HTMLResponse)
+    @router.get(
+        "/form",
+        response_class=HTMLResponse,
+        responses=ERROR_HTML_RESPONSES,
+    )
     def get_form_payment_method(id: PaymentMethodID):
         assert id  # nosec
 
     # CRUD payment-methods
-    @router.post(":batchGet", response_model=PaymentMethodsBatch)
+    @router.post(
+        ":batchGet",
+        response_model=PaymentMethodsBatch,
+        responses=ERROR_RESPONSES,
+    )
     def batch_get_payment_methods(
         batch: BatchGetPaymentMethods,
         auth: Annotated[int, Depends(auth_session)],
@@ -98,7 +123,11 @@ def create_payment_method_router():
         assert auth  # nosec
         assert batch  # nosec
 
-    @router.get("/{id}", response_class=HTMLResponse)
+    @router.get(
+        "/{id}",
+        response_class=HTMLResponse,
+        responses=ERROR_RESPONSES,
+    )
     def get_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
@@ -106,7 +135,11 @@ def create_payment_method_router():
         assert id  # nosec
         assert auth  # nosec
 
-    @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+    @router.delete(
+        "/{id}",
+        status_code=status.HTTP_204_NO_CONTENT,
+        responses=ERROR_RESPONSES,
+    )
     def delete_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
@@ -114,7 +147,11 @@ def create_payment_method_router():
         assert id  # nosec
         assert auth  # nosec
 
-    @router.post("/{id}:pay", response_model=PaymentInitiated)
+    @router.post(
+        "/{id}:pay",
+        response_model=PaymentInitiated,
+        responses=ERROR_RESPONSES,
+    )
     def pay_with_payment_method(
         id: PaymentMethodID,
         payment: InitPayment,
