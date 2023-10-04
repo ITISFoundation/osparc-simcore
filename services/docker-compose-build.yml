@@ -42,9 +42,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${API_SERVER_API_VERSION}"
 
   autoscaling:
@@ -60,9 +60,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${AUTOSCALING_API_VERSION}"
 
   catalog:
@@ -78,9 +78,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${CATALOG_API_VERSION}"
 
   clusters-keeper:
@@ -112,9 +112,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${DIRECTOR_API_VERSION}"
 
   dask-sidecar:
@@ -131,9 +131,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
 
   director-v2:
     image: local/director-v2:${BUILD_TARGET:?build_target_required}
@@ -148,9 +148,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${DIRECTOR_V2_API_VERSION}"
 
   migration:
@@ -166,9 +166,9 @@ services:
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
 
   osparc-gateway-server:
     image: local/osparc-gateway-server:${BUILD_TARGET:?build_target_required}
@@ -221,9 +221,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
 
   webserver:
     image: local/webserver:${BUILD_TARGET:?build_target_required}
@@ -242,9 +242,9 @@ services:
         - VCS_REF=${VCS_REF}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${WEBSERVER_API_VERSION}"
 
   dynamic-sidecar:
@@ -260,9 +260,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
 
   invitations:
     image: local/invitations:${BUILD_TARGET:?build_target_required}
@@ -277,9 +277,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${INVITATIONS_API_VERSION}"
 
 
@@ -295,10 +295,10 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/payments:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        io.osparc.api-version: "${PAYMENTS_API_VERSION}"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        io.osparc.api-version: "${PAYMENTS_API_VERSION}"
 
 
   datcore-adapter:
@@ -314,9 +314,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${DATCORE_ADAPTER_API_VERSION}"
 
   storage:
@@ -332,9 +332,9 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${STORAGE_API_VERSION}"
 
   agent:
@@ -356,7 +356,7 @@ services:
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${AGENT_API_VERSION}"

@@ -66,35 +66,10 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         placeholder: this.tr("Last Name")
       });
 
-      let role = null;
-      const permissions = osparc.data.Permissions.getInstance();
-      if (permissions.canDo("user.role.update")) {
-        role = new qx.ui.form.SelectBox();
-        const roles = permissions.getChildrenRoles(permissions.getRole());
-        for (let i=0; i<roles.length; i++) {
-          const roleItem = new qx.ui.form.ListItem(roles[i]);
-          role.add(roleItem);
-          role.setSelection([roleItem]);
-        }
-        role.addListener("changeSelection", function(e) {
-          let newRole = e.getData()[0].getLabel();
-          newRole = newRole.toLowerCase();
-          permissions.setRole(newRole);
-        }, this);
-      } else {
-        role = new qx.ui.form.TextField().set({
-          readOnly: true
-        });
-      }
-      role.set({
-        tabIndex: 4
-      });
-
       const form = new qx.ui.form.Form();
       form.add(email, "Email", null, "email");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
-      form.add(role, "Role", null, "role");
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
@@ -150,7 +125,6 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         }
       });
       controller.addTarget(lastName, "value", "lastName", true);
-      controller.addTarget(role, "value", "role", false);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: expirationDay => {
           if (expirationDay) {
@@ -174,7 +148,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
       const namesValidator = new qx.ui.form.validation.Manager();
       namesValidator.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
-      namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also emtpy last name
+      namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also empty last name
 
       const updateBtn = new qx.ui.form.Button("Update Profile").set({
         allowGrowX: false

@@ -112,6 +112,7 @@ async def test_get_upload_file_links(
     location_id: LocationID,
     link_type: LinkType,
     expected_scheme: tuple[str],
+    faker: Faker,
 ):
     file_upload_links = await get_upload_file_links(
         session=session,
@@ -121,6 +122,7 @@ async def test_get_upload_file_links(
         link_type=link_type,
         file_size=ByteSize(0),
         is_directory=False,
+        sha256_checksum=faker.sha256(),
     )
     assert isinstance(file_upload_links, FileUploadSchema)
     assert file_upload_links.urls[0].scheme in expected_scheme

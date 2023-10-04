@@ -13,7 +13,6 @@ aiohttp==3.8.5
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiodocker
-    #   dask-gateway-server
 aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
@@ -37,7 +36,7 @@ attrs==23.1.0
     #   jsonschema
     #   referencing
     #   sarif-om
-aws-sam-translator==1.73.0
+aws-sam-translator==1.74.0
     # via cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
@@ -75,24 +74,19 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
-colorlog==6.7.0
-    # via dask-gateway-server
-coverage==7.3.0
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 cryptography==41.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   dask-gateway-server
     #   moto
     #   python-jose
     #   sshpubkeys
-dask-gateway-server==2023.1.1
+debugpy==1.8.0
     # via -r requirements/_test.in
-debugpy==1.6.7.post1
-    # via -r requirements/_test.in
-deepdiff==6.3.1
+deepdiff==6.5.0
     # via -r requirements/_test.in
 docker==6.1.3
     # via
@@ -108,9 +102,9 @@ exceptiongroup==1.1.3
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==19.3.1
+faker==19.6.1
     # via -r requirements/_test.in
-fakeredis==2.18.0
+fakeredis==2.18.1
     # via -r requirements/_test.in
 flask==2.3.3
     # via
@@ -125,8 +119,6 @@ frozenlist==1.4.0
     #   aiosignal
 graphql-core==3.2.3
     # via moto
-greenlet==2.0.2
-    # via sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_base.txt
@@ -198,7 +190,7 @@ markupsafe==2.1.3
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.2.0
+moto==4.2.2
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -249,7 +241,7 @@ pydantic==1.10.12
     #   aws-sam-translator
 pyparsing==3.1.1
     # via moto
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -339,10 +331,6 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   fakeredis
-sqlalchemy==1.4.49
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   dask-gateway-server
 sshpubkeys==3.3.1
     # via moto
 sympy==1.12
@@ -351,8 +339,6 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-traitlets==5.9.0
-    # via dask-gateway-server
 types-pyyaml==6.0.12.11
     # via responses
 typing-extensions==4.7.1
@@ -369,7 +355,7 @@ urllib3==1.26.16
     #   docker
     #   requests
     #   responses
-websocket-client==1.6.2
+websocket-client==1.6.3
     # via docker
 werkzeug==2.3.7
     # via

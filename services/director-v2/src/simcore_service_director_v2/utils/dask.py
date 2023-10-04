@@ -258,6 +258,7 @@ async def compute_output_data_schema(
                 else port.key,
                 link_type=file_link_type,
                 file_size=ByteSize(0),  # will create a single presigned link
+                sha256_checksum=None,
             )
             assert value_links.urls  # nosec
             assert len(value_links.urls) == 1  # nosec
@@ -289,6 +290,7 @@ async def compute_service_log_file_upload_link(
         file_name=_LOGS_FILE_NAME,
         link_type=file_link_type,
         file_size=ByteSize(0),  # will create a single presigned link
+        sha256_checksum=None,
     )
     url: AnyUrl = value_links.urls[0]
     return url

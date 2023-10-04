@@ -15,6 +15,7 @@ from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
+    ClusterTypeInModel,
     JupyterHubTokenAuthentication,
     KerberosAuthentication,
     NoAuthentication,
@@ -189,6 +190,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 authentication=cluster.authentication,
                 endpoint=cluster.endpoint,
                 tasks_file_link_type=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
+                cluster_type=ClusterTypeInModel.ON_PREMISE,
             )
         )
         async with clients_pool.acquire(cluster) as dask_client:

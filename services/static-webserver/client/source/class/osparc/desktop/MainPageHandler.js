@@ -27,7 +27,6 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
     __stack: null,
     __loadingPage: null,
     __dashboard: null,
-    __userCenter: null,
     __studyEditor: null,
 
     setStack: function(stack) {
@@ -44,11 +43,6 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.__stack.add(dashboard);
     },
 
-    addUserCenter: function(userCenter) {
-      this.__userCenter = userCenter;
-      this.__stack.add(userCenter);
-    },
-
     addStudyEditor: function(studyEditor) {
       this.__studyEditor = studyEditor;
       this.__stack.add(studyEditor);
@@ -60,10 +54,6 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
     showDashboard: function() {
       this.__stack.setSelection([this.__dashboard]);
-    },
-
-    showUserCenter: function() {
-      this.__stack.setSelection([this.__userCenter]);
     },
 
     showStudyEditor: function() {

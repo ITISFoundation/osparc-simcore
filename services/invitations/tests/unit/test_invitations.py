@@ -4,17 +4,16 @@
 # pylint: disable=too-many-arguments
 
 import binascii
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib import parse
 
 import cryptography.fernet
 import pytest
 from faker import Faker
+from models_library.invitations import InvitationContent, InvitationInputs
 from pydantic import BaseModel, ValidationError
 from simcore_service_invitations.invitations import (
-    InvalidInvitationCode,
-    InvitationContent,
-    InvitationInputs,
+    InvalidInvitationCodeError,
     _ContentWithShortNames,
     _create_invitation_code,
     _fernet_encrypt_as_urlsafe_code,
@@ -39,7 +38,7 @@ def test_import_and_export_invitation_alias_by_alias(
 ):
     expected_content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.utcnow(),
+        created=datetime.now(tz=timezone.utc),
     )
     raw_data = _ContentWithShortNames.serialize(expected_content)
 
@@ -52,7 +51,7 @@ def test_export_by_alias_produces_smaller_strings(
 ):
     content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.utcnow(),
+        created=datetime.now(tz=timezone.utc),
     )
     raw_data = _ContentWithShortNames.serialize(content)
 
@@ -63,7 +62,6 @@ def test_export_by_alias_produces_smaller_strings(
 def test_create_and_decrypt_invitation(
     invitation_data: InvitationInputs, faker: Faker, secret_key: str
 ):
-
     invitation_link = create_invitation_link(
         invitation_data, secret_key=secret_key.encode(), base_url=faker.url()
     )
@@ -119,7 +117,7 @@ def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
 
     assert f"{error_info.value}" == "Incorrect padding"
 
-    with pytest.raises(InvalidInvitationCode):
+    with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
@@ -136,7 +134,7 @@ def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str
             secret_key=my_secret_key,
         )
 
-    with pytest.raises(InvalidInvitationCode):
+    with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
@@ -159,7 +157,7 @@ def test_invalid_invitation_data(secret_key: str):
             secret_key=my_secret_key,
         )
 
-    with pytest.raises(InvalidInvitationCode):
+    with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,

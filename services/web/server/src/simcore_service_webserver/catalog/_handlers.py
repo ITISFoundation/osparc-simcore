@@ -4,6 +4,7 @@
 should live in the catalog service in his final version
 
 """
+import asyncio
 import logging
 import urllib.parse
 from typing import Any, Final
@@ -16,6 +17,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputKey,
     ServiceUpdate,
 )
+from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -30,6 +32,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
+from ..resource_usage.api import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, client
@@ -76,7 +79,9 @@ async def list_services(request: Request):
     # assert parse_obj_as(list[ServiceGet], data_array) is not None  # nosec
     #
 
-    return envelope_json_response(data_array)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data_array
+    )
 
 
 @routes.get(
@@ -92,7 +97,9 @@ async def get_service(request: Request):
         path_params.service_key, path_params.service_version, ctx
     )
     assert parse_obj_as(ServiceGet, data) is not None  # nosec
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 @routes.patch(
@@ -117,7 +124,9 @@ async def update_service(request: Request):
     )
 
     assert parse_obj_as(ServiceGet, data) is not None  # nosec
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 @routes.get(
@@ -136,7 +145,9 @@ async def list_service_inputs(request: Request):
     )
 
     data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 class _ServiceInputsPathParams(ServicePathParams):
@@ -162,7 +173,9 @@ async def get_service_input(request: Request):
     )
 
     data = response_model.dict(**RESPONSE_MODEL_POLICY)
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 class _FromServiceOutputParams(BaseModel):
@@ -192,7 +205,9 @@ async def get_compatible_inputs_given_source_output(request: Request):
         ctx,
     )
 
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 @routes.get(
@@ -211,7 +226,9 @@ async def list_service_outputs(request: Request):
     )
 
     data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 class _ServiceOutputsPathParams(ServicePathParams):
@@ -237,7 +254,9 @@ async def get_service_output(request: Request):
     )
 
     data = response_model.dict(**RESPONSE_MODEL_POLICY)
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 class _ToServiceInputsParams(BaseModel):
@@ -271,7 +290,9 @@ async def get_compatible_outputs_given_target_input(request: Request):
         ctx,
     )
 
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
 
 
 @routes.get(
@@ -296,4 +317,28 @@ async def get_service_resources(request: Request):
     )
 
     data = ServiceResourcesDictHelpers.create_jsonable(service_resources)
-    return envelope_json_response(data)
+    return await asyncio.get_event_loop().run_in_executor(
+        None, envelope_json_response, data
+    )
+
+
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/pricing-plan",
+    name="get_service_pricing_plan",
+)
+@login_required
+@permission_required("services.catalog.*")
+async def get_service_pricing_plan(request: Request):
+    ctx = CatalogRequestContext.create(request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+
+    service_pricing_plan: ServicePricingPlanGet = (
+        await get_default_service_pricing_plan(
+            app=request.app,
+            product_name=ctx.product_name,
+            service_key=path_params.service_key,
+            service_version=path_params.service_version,
+        )
+    )
+
+    return envelope_json_response(service_pricing_plan)

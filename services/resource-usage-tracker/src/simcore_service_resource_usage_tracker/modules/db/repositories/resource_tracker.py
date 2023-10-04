@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import cast
 
 import sqlalchemy as sa
@@ -9,8 +10,9 @@ from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditTransactionId,
     CreditTransactionStatus,
-    PricingDetailId,
     PricingPlanId,
+    PricingUnitCostId,
+    PricingUnitId,
     ServiceRunId,
     ServiceRunStatus,
 )
@@ -21,33 +23,46 @@ from pydantic import PositiveInt
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
-from simcore_postgres_database.models.resource_tracker_pricing_details import (
-    resource_tracker_pricing_details,
-)
 from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
     resource_tracker_pricing_plan_to_service,
 )
 from simcore_postgres_database.models.resource_tracker_pricing_plans import (
     resource_tracker_pricing_plans,
 )
+from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import (
+    resource_tracker_pricing_unit_costs,
+)
+from simcore_postgres_database.models.resource_tracker_pricing_units import (
+    resource_tracker_pricing_units,
+)
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
+from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit_costs import (
+    PricingUnitCostsDB,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import CreateServiceRunError, CreateTransactionError
+from ....core.errors import (
+    CreateServiceRunError,
+    CreateTransactionError,
+    ResourceUsageTrackerCustomRuntimeError,
+)
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
     CreditTransactionCreditsUpdate,
 )
-from ....models.resource_tracker_pricing_details import PricingDetailDB
-from ....models.resource_tracker_pricing_plans import PricingPlanDB
-from ....models.resource_tracker_service_run import (
+from ....models.resource_tracker_pricing_plans import (
+    PricingPlansWithServiceDefaultPlanDB,
+)
+from ....models.resource_tracker_pricing_units import PricingUnitsDB
+from ....models.resource_tracker_service_runs import (
     ServiceRunCreate,
     ServiceRunDB,
     ServiceRunLastHeartbeatUpdate,
     ServiceRunStoppedAtUpdate,
+    ServiceRunWithCreditsDB,
 )
 from ._base import BaseRepository
 
@@ -59,31 +74,6 @@ class ResourceTrackerRepository(BaseRepository):
     # Service Run
     ###############
 
-    @staticmethod
-    def _service_runs_select_stmt():
-        return sa.select(
-            resource_tracker_service_runs.c.product_name,
-            resource_tracker_service_runs.c.service_run_id,
-            resource_tracker_service_runs.c.wallet_id,
-            resource_tracker_service_runs.c.wallet_name,
-            resource_tracker_service_runs.c.pricing_plan_id,
-            resource_tracker_service_runs.c.pricing_detail_id,
-            resource_tracker_service_runs.c.pricing_detail_cost_per_unit,
-            resource_tracker_service_runs.c.user_id,
-            resource_tracker_service_runs.c.user_email,
-            resource_tracker_service_runs.c.project_id,
-            resource_tracker_service_runs.c.project_name,
-            resource_tracker_service_runs.c.node_id,
-            resource_tracker_service_runs.c.node_name,
-            resource_tracker_service_runs.c.service_key,
-            resource_tracker_service_runs.c.service_version,
-            resource_tracker_service_runs.c.service_type,
-            resource_tracker_service_runs.c.service_resources,
-            resource_tracker_service_runs.c.started_at,
-            resource_tracker_service_runs.c.stopped_at,
-            resource_tracker_service_runs.c.service_run_status,
-        )
-
     async def create_service_run(self, data: ServiceRunCreate) -> ServiceRunId:
         async with self.db_engine.begin() as conn:
             insert_stmt = (
@@ -94,8 +84,9 @@ class ResourceTrackerRepository(BaseRepository):
                     wallet_id=data.wallet_id,
                     wallet_name=data.wallet_name,
                     pricing_plan_id=data.pricing_plan_id,
-                    pricing_detail_id=data.pricing_detail_id,
-                    pricing_detail_cost_per_unit=data.pricing_detail_cost_per_unit,
+                    pricing_unit_id=data.pricing_unit_id,
+                    pricing_unit_cost_id=data.pricing_unit_cost_id,
+                    pricing_unit_cost=data.pricing_unit_cost,
                     simcore_user_agent=data.simcore_user_agent,
                     user_id=data.user_id,
                     user_email=data.user_email,
@@ -182,118 +173,89 @@ class ResourceTrackerRepository(BaseRepository):
             return None
         return ServiceRunDB.from_orm(row)
 
-    async def list_service_runs_by_user_and_product(
-        self, user_id: UserID, product_name: ProductName, offset: int, limit: int
-    ) -> list[ServiceRunDB]:
-        async with self.db_engine.begin() as conn:
-            query = (
-                self._service_runs_select_stmt()
-                .where(
-                    (resource_tracker_service_runs.c.user_id == user_id)
-                    & (resource_tracker_service_runs.c.product_name == product_name)
-                )
-                .order_by(resource_tracker_service_runs.c.started_at.desc())
-                .offset(offset)
-                .limit(limit)
-            )
-            result = await conn.execute(query)
-
-        return [ServiceRunDB.from_orm(row) for row in result.fetchall()]
-
-    async def total_service_runs_by_user_and_product(
-        self, user_id: UserID, product_name: ProductName
-    ) -> PositiveInt:
-        async with self.db_engine.begin() as conn:
-            query = (
-                sa.select(sa.func.count())
-                .select_from(resource_tracker_service_runs)
-                .where(
-                    (resource_tracker_service_runs.c.user_id == user_id)
-                    & (resource_tracker_service_runs.c.product_name == product_name)
-                )
-            )
-            result = await conn.execute(query)
-        row = result.first()
-        return cast(PositiveInt, row[0]) if row else 0
-
-    async def list_service_runs_by_user_and_product_and_wallet(
-        self,
-        user_id: UserID,
-        product_name: ProductName,
-        wallet_id: WalletID,
-        offset: int,
-        limit: int,
-    ) -> list[ServiceRunDB]:
-        async with self.db_engine.begin() as conn:
-            query = (
-                self._service_runs_select_stmt()
-                .where(
-                    (resource_tracker_service_runs.c.user_id == user_id)
-                    & (resource_tracker_service_runs.c.product_name == product_name)
-                    & (resource_tracker_service_runs.c.wallet_id == wallet_id)
-                )
-                .order_by(resource_tracker_service_runs.c.started_at.desc())
-                .offset(offset)
-                .limit(limit)
-            )
-            result = await conn.execute(query)
-
-        return [ServiceRunDB.from_orm(row) for row in result.fetchall()]
-
-    async def total_service_runs_by_user_and_product_and_wallet(
-        self, user_id: UserID, product_name: ProductName, wallet_id: WalletID
-    ) -> PositiveInt:
-        async with self.db_engine.begin() as conn:
-            query = (
-                sa.select(sa.func.count())
-                .select_from(resource_tracker_service_runs)
-                .where(
-                    (resource_tracker_service_runs.c.user_id == user_id)
-                    & (resource_tracker_service_runs.c.product_name == product_name)
-                    & (resource_tracker_service_runs.c.wallet_id == wallet_id)
-                )
-            )
-            result = await conn.execute(query)
-
-        row = result.first()
-        return cast(PositiveInt, row[0]) if row else 0
-
-    async def list_service_runs_by_product_and_wallet(
+    async def list_service_runs_by_product_and_user_and_wallet(
         self,
         product_name: ProductName,
-        wallet_id: WalletID,
+        user_id: UserID | None,
+        wallet_id: WalletID | None,
         offset: int,
         limit: int,
-    ) -> list[ServiceRunDB]:
+    ) -> list[ServiceRunWithCreditsDB]:
         async with self.db_engine.begin() as conn:
             query = (
-                self._service_runs_select_stmt()
-                .where(
-                    (resource_tracker_service_runs.c.wallet_id == wallet_id)
-                    & (resource_tracker_service_runs.c.product_name == product_name)
+                sa.select(
+                    resource_tracker_service_runs.c.product_name,
+                    resource_tracker_service_runs.c.service_run_id,
+                    resource_tracker_service_runs.c.wallet_id,
+                    resource_tracker_service_runs.c.wallet_name,
+                    resource_tracker_service_runs.c.pricing_plan_id,
+                    resource_tracker_service_runs.c.pricing_unit_id,
+                    resource_tracker_service_runs.c.pricing_unit_cost_id,
+                    resource_tracker_service_runs.c.pricing_unit_cost,
+                    resource_tracker_service_runs.c.user_id,
+                    resource_tracker_service_runs.c.user_email,
+                    resource_tracker_service_runs.c.project_id,
+                    resource_tracker_service_runs.c.project_name,
+                    resource_tracker_service_runs.c.node_id,
+                    resource_tracker_service_runs.c.node_name,
+                    resource_tracker_service_runs.c.service_key,
+                    resource_tracker_service_runs.c.service_version,
+                    resource_tracker_service_runs.c.service_type,
+                    resource_tracker_service_runs.c.service_resources,
+                    resource_tracker_service_runs.c.started_at,
+                    resource_tracker_service_runs.c.stopped_at,
+                    resource_tracker_service_runs.c.service_run_status,
+                    resource_tracker_service_runs.c.modified,
+                    resource_tracker_service_runs.c.last_heartbeat_at,
+                    resource_tracker_credit_transactions.c.osparc_credits,
+                    resource_tracker_credit_transactions.c.transaction_status,
                 )
+                .select_from(
+                    resource_tracker_service_runs.join(
+                        resource_tracker_credit_transactions,
+                        resource_tracker_service_runs.c.service_run_id
+                        == resource_tracker_credit_transactions.c.service_run_id,
+                        isouter=True,
+                    )
+                )
+                .where(resource_tracker_service_runs.c.product_name == product_name)
                 .order_by(resource_tracker_service_runs.c.started_at.desc())
                 .offset(offset)
                 .limit(limit)
             )
+
+            if user_id:
+                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+            if wallet_id:
+                query = query.where(
+                    resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+
             result = await conn.execute(query)
 
-        return [ServiceRunDB.from_orm(row) for row in result.fetchall()]
+        return [ServiceRunWithCreditsDB.from_orm(row) for row in result.fetchall()]
 
-    async def total_service_runs_by_product_and_wallet(
-        self, product_name: ProductName, wallet_id: WalletID
+    async def total_service_runs_by_product_and_user_and_wallet(
+        self,
+        product_name: ProductName,
+        user_id: UserID | None,
+        wallet_id: WalletID | None,
     ) -> PositiveInt:
         async with self.db_engine.begin() as conn:
             query = (
                 sa.select(sa.func.count())
                 .select_from(resource_tracker_service_runs)
-                .where(
-                    (resource_tracker_service_runs.c.wallet_id == wallet_id)
-                    & (resource_tracker_service_runs.c.product_name == product_name)
-                )
+                .where(resource_tracker_service_runs.c.product_name == product_name)
             )
-            result = await conn.execute(query)
 
+            if user_id:
+                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+            if wallet_id:
+                query = query.where(
+                    resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+
+            result = await conn.execute(query)
         row = result.first()
         return cast(PositiveInt, row[0]) if row else 0
 
@@ -312,7 +274,8 @@ class ResourceTrackerRepository(BaseRepository):
                     wallet_id=data.wallet_id,
                     wallet_name=data.wallet_name,
                     pricing_plan_id=data.pricing_plan_id,
-                    pricing_detail_id=data.pricing_detail_id,
+                    pricing_unit_id=data.pricing_unit_id,
+                    pricing_unit_cost_id=data.pricing_unit_cost_id,
                     user_id=data.user_id,
                     user_email=data.user_email,
                     osparc_credits=data.osparc_credits,
@@ -415,57 +378,21 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(sum_stmt)
         row = result.first()
         if row is None or row[0] is None:
-            msg = "product_name and wallet_id combination does not exists in DB"
-            raise ValueError(msg)
+            return WalletTotalCredits(
+                wallet_id=wallet_id, available_osparc_credits=Decimal(0)
+            )
         return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
     #################################
     # Pricing plans
     #################################
 
-    async def list_active_pricing_plans_by_product(
-        self, product_name: ProductName
-    ) -> list[PricingPlanDB]:
-        async with self.db_engine.begin() as conn:
-            query = (
-                sa.select(
-                    resource_tracker_pricing_plans.c.pricing_plan_id,
-                    resource_tracker_pricing_plans.c.name,
-                    resource_tracker_pricing_plans.c.description,
-                    resource_tracker_pricing_plans.c.classification,
-                    resource_tracker_pricing_plans.c.is_active,
-                    resource_tracker_pricing_plans.c.created,
-                )
-                .where(
-                    (resource_tracker_pricing_plans.c.product_name == product_name)
-                    & (resource_tracker_pricing_plans.c.is_active.is_(True))
-                )
-                .order_by(resource_tracker_pricing_plans.c.created.asc())
-            )
-            result = await conn.execute(query)
-
-        return [PricingPlanDB.from_orm(row) for row in result.fetchall()]
-
-    async def get_pricing_plan(self, pricing_plan_id: PricingPlanId) -> PricingPlanDB:
-        async with self.db_engine.begin() as conn:
-            query = sa.select(
-                resource_tracker_pricing_plans.c.pricing_plan_id,
-                resource_tracker_pricing_plans.c.name,
-                resource_tracker_pricing_plans.c.description,
-                resource_tracker_pricing_plans.c.classification,
-                resource_tracker_pricing_plans.c.is_active,
-                resource_tracker_pricing_plans.c.created,
-            ).where(resource_tracker_pricing_plans.c.pricing_plan_id == pricing_plan_id)
-            result = await conn.execute(query)
-        row = result.first()
-        return PricingPlanDB.from_orm(row)
-
-    async def get_pricing_plan_by_product_and_service(
+    async def list_active_service_pricing_plans_by_product_and_service(
         self,
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> PricingPlanId | None:
+    ) -> list[PricingPlansWithServiceDefaultPlanDB]:
         # NOTE: consilidate with utils_services_environmnets.py
         def _version(column_or_value):
             # converts version value string to array[integer] that can be compared
@@ -473,7 +400,8 @@ class ResourceTrackerRepository(BaseRepository):
 
         async with self.db_engine.begin() as conn:
             query = sa.select(
-                resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                resource_tracker_pricing_plan_to_service.c.service_key,
+                resource_tracker_pricing_plan_to_service.c.service_version,
             )
             query = (
                 query.where(
@@ -487,10 +415,8 @@ class ResourceTrackerRepository(BaseRepository):
                         resource_tracker_pricing_plan_to_service.c.service_key
                         == service_key
                     )
-                    & (
-                        resource_tracker_pricing_plan_to_service.c.product
-                        == product_name
-                    )
+                    & (resource_tracker_pricing_plans.c.product_name == product_name)
+                    & (resource_tracker_pricing_plans.c.is_active.is_(True))
                 )
                 .order_by(
                     _version(
@@ -501,58 +427,181 @@ class ResourceTrackerRepository(BaseRepository):
             )
 
             result = await conn.execute(query)
-        row = result.first()
-        if row is None:
-            return None
-        return PricingPlanId(row[0])
+            row = result.first()
+            if row is None:
+                return []
+            latest_service_key, latest_service_version = row
 
-    #################################
-    # Pricing details
-    #################################
-
-    async def get_pricing_detail_cost_per_unit(
-        self,
-        pricing_detail_id: PricingDetailId,
-    ) -> float:
-        async with self.db_engine.begin() as conn:
-            query = sa.select(resource_tracker_pricing_details.c.cost_per_unit).where(
-                resource_tracker_pricing_details.c.pricing_detail_id
-                == pricing_detail_id
+            query = sa.select(
+                resource_tracker_pricing_plans.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.display_name,
+                resource_tracker_pricing_plans.c.description,
+                resource_tracker_pricing_plans.c.classification,
+                resource_tracker_pricing_plans.c.is_active,
+                resource_tracker_pricing_plans.c.created,
+                resource_tracker_pricing_plans.c.pricing_plan_key,
+                resource_tracker_pricing_plan_to_service.c.service_default_plan,
+            )
+            query = query.where(
+                (
+                    _version(resource_tracker_pricing_plan_to_service.c.service_version)
+                    == _version(latest_service_version)
+                )
+                & (
+                    resource_tracker_pricing_plan_to_service.c.service_key
+                    == latest_service_key
+                )
+                & (resource_tracker_pricing_plans.c.product_name == product_name)
+                & (resource_tracker_pricing_plans.c.is_active.is_(True))
+            ).order_by(
+                resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
             )
             result = await conn.execute(query)
 
-        row = result.first()
-        if row is None:
-            raise ValueError
-        output: float = row[0]
-        return output
+        return [
+            PricingPlansWithServiceDefaultPlanDB.from_orm(row)
+            for row in result.fetchall()
+        ]
 
-    async def list_pricing_details_by_pricing_plan(
+    #################################
+    # Pricing units
+    #################################
+
+    @staticmethod
+    def _pricing_units_select_stmt():
+        return sa.select(
+            resource_tracker_pricing_units.c.pricing_unit_id,
+            resource_tracker_pricing_units.c.pricing_plan_id,
+            resource_tracker_pricing_units.c.unit_name,
+            resource_tracker_pricing_units.c.default,
+            resource_tracker_pricing_units.c.specific_info,
+            resource_tracker_pricing_units.c.created,
+            resource_tracker_pricing_units.c.modified,
+            resource_tracker_pricing_unit_costs.c.cost_per_unit.label(
+                "current_cost_per_unit"
+            ),
+            resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id.label(
+                "current_cost_per_unit_id"
+            ),
+        )
+
+    async def list_pricing_units_by_pricing_plan(
         self,
         pricing_plan_id: PricingPlanId,
-    ) -> list[PricingDetailDB]:
+    ) -> list[PricingUnitsDB]:
         async with self.db_engine.begin() as conn:
             query = (
-                sa.select(
-                    resource_tracker_pricing_details.c.pricing_detail_id,
-                    resource_tracker_pricing_details.c.pricing_plan_id,
-                    resource_tracker_pricing_details.c.unit_name,
-                    resource_tracker_pricing_details.c.cost_per_unit,
-                    resource_tracker_pricing_details.c.valid_from,
-                    resource_tracker_pricing_details.c.valid_to,
-                    resource_tracker_pricing_details.c.specific_info,
-                    resource_tracker_pricing_details.c.created,
-                    resource_tracker_pricing_details.c.simcore_default,
+                self._pricing_units_select_stmt()
+                .select_from(
+                    resource_tracker_pricing_units.join(
+                        resource_tracker_pricing_unit_costs,
+                        (
+                            (
+                                resource_tracker_pricing_units.c.pricing_plan_id
+                                == resource_tracker_pricing_unit_costs.c.pricing_plan_id
+                            )
+                            & (
+                                resource_tracker_pricing_units.c.pricing_unit_id
+                                == resource_tracker_pricing_unit_costs.c.pricing_unit_id
+                            )
+                        ),
+                    )
                 )
                 .where(
                     (
-                        resource_tracker_pricing_details.c.pricing_plan_id
+                        resource_tracker_pricing_units.c.pricing_plan_id
                         == pricing_plan_id
                     )
-                    & (resource_tracker_pricing_details.c.valid_to.is_(None))
+                    & (resource_tracker_pricing_unit_costs.c.valid_to.is_(None))
                 )
-                .order_by(resource_tracker_pricing_details.c.created.asc())
+                .order_by(resource_tracker_pricing_unit_costs.c.cost_per_unit.asc())
             )
             result = await conn.execute(query)
 
-        return [PricingDetailDB.from_orm(row) for row in result.fetchall()]
+        return [PricingUnitsDB.from_orm(row) for row in result.fetchall()]
+
+    async def get_pricing_unit(
+        self,
+        product_name: ProductName,
+        pricing_plan_id: PricingPlanId,
+        pricing_unit_id: PricingUnitId,
+    ) -> PricingUnitsDB:
+        async with self.db_engine.begin() as conn:
+            query = (
+                self._pricing_units_select_stmt()
+                .select_from(
+                    resource_tracker_pricing_units.join(
+                        resource_tracker_pricing_unit_costs,
+                        (
+                            (
+                                resource_tracker_pricing_units.c.pricing_plan_id
+                                == resource_tracker_pricing_unit_costs.c.pricing_plan_id
+                            )
+                            & (
+                                resource_tracker_pricing_units.c.pricing_unit_id
+                                == resource_tracker_pricing_unit_costs.c.pricing_unit_id
+                            )
+                        ),
+                    ).join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plans.c.pricing_plan_id
+                            == resource_tracker_pricing_units.c.pricing_plan_id
+                        ),
+                    )
+                )
+                .where(
+                    (
+                        resource_tracker_pricing_units.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                    & (
+                        resource_tracker_pricing_units.c.pricing_unit_id
+                        == pricing_unit_id
+                    )
+                    & (resource_tracker_pricing_unit_costs.c.valid_to.is_(None))
+                    & (resource_tracker_pricing_plans.c.product_name == product_name)
+                )
+            )
+            result = await conn.execute(query)
+
+        row = result.first()
+        if row is None:
+            raise ResourceUsageTrackerCustomRuntimeError(
+                msg=f"Pricing unit id {pricing_unit_id} not found"
+            )
+        return PricingUnitsDB.from_orm(row)
+
+    #################################
+    # Pricing unit-costs
+    #################################
+
+    async def get_pricing_unit_cost_by_id(
+        self, pricing_unit_cost_id: PricingUnitCostId
+    ) -> PricingUnitCostsDB:
+        async with self.db_engine.begin() as conn:
+            query = sa.select(
+                resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id,
+                resource_tracker_pricing_unit_costs.c.pricing_plan_id,
+                resource_tracker_pricing_unit_costs.c.pricing_plan_key,
+                resource_tracker_pricing_unit_costs.c.pricing_unit_id,
+                resource_tracker_pricing_unit_costs.c.pricing_unit_name,
+                resource_tracker_pricing_unit_costs.c.cost_per_unit,
+                resource_tracker_pricing_unit_costs.c.valid_from,
+                resource_tracker_pricing_unit_costs.c.valid_to,
+                resource_tracker_pricing_unit_costs.c.specific_info,
+                resource_tracker_pricing_unit_costs.c.created,
+                resource_tracker_pricing_unit_costs.c.comment,
+                resource_tracker_pricing_unit_costs.c.modified,
+            ).where(
+                resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id
+                == pricing_unit_cost_id
+            )
+            result = await conn.execute(query)
+
+        row = result.first()
+        if row is None:
+            raise ResourceUsageTrackerCustomRuntimeError(
+                msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table"
+            )
+        return PricingUnitCostsDB.from_orm(row)

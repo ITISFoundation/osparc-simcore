@@ -74,7 +74,8 @@ async def publish_service_resource_tracking_started(  # noqa: PLR0913
     wallet_id: WalletID | None,
     wallet_name: str | None,
     pricing_plan_id: int | None,
-    pricing_detail_id: int | None,
+    pricing_unit_id: int | None,
+    pricing_unit_cost_id: int | None,
     product_name: str,
     simcore_user_agent: str,
     user_id: UserID,
@@ -94,7 +95,8 @@ async def publish_service_resource_tracking_started(  # noqa: PLR0913
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         pricing_plan_id=pricing_plan_id,
-        pricing_detail_id=pricing_detail_id,
+        pricing_unit_id=pricing_unit_id,
+        pricing_unit_cost_id=pricing_unit_cost_id,
         product_name=product_name,
         simcore_user_agent=simcore_user_agent,
         user_id=user_id,
@@ -162,5 +164,22 @@ async def publish_service_progress(
         project_id=project_id,
         node_id=node_id,
         progress=progress,
+    )
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def publish_project_log(
+    rabbitmq_client: RabbitMQClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    log: str,
+    log_level: LogLevelInt,
+) -> None:
+    message = LoggerRabbitMessage.construct(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=None,
+        messages=[log],
+        log_level=log_level,
     )
     await rabbitmq_client.publish(message.channel_name, message)

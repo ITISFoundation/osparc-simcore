@@ -32,6 +32,7 @@ def app_environment(
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "PAYMENTS_FAKE_GATEWAY_URL": "https://some-fake-gateway.com",
         },
     )
 

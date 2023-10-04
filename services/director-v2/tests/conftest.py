@@ -27,6 +27,7 @@ from starlette.testclient import ASGI3App, TestClient
 pytest_plugins = [
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.dask_gateway",
+    "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -169,6 +170,7 @@ def mock_env(
         "POSTGRES_DB": "test",
         "R_CLONE_PROVIDER": "MINIO",
         "SC_BOOT_MODE": "production",
+        "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars

@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.28.0
+  version: 0.31.0
 servers:
 - url: ''
   description: webserver
@@ -799,6 +799,35 @@ paths:
               schema:
                 title: Response Get Service Resources
                 type: object
+  /v0/catalog/services/{service_key}/{service_version}/pricing-plan:
+    get:
+      tags:
+      - catalog
+      - pricing-plans
+      summary: Retrieve default pricing plan for provided service
+      operationId: get_service_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ServicePricingPlanGet_'
   /v0/clusters:
     get:
       tags:
@@ -1761,6 +1790,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__'
+  /v0/credits-price:
+    get:
+      tags:
+      - products
+      summary: Get Current Product Price
+      operationId: get_current_product_price
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
+  /v0/invitation:generate:
+    post:
+      tags:
+      - products
+      summary: Generate Invitation
+      operationId: generate_invitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvitation'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_InvitationGenerated_'
   /v0/projects/{project_uuid}/comments:
     get:
       tags:
@@ -2835,7 +2896,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/resource-usage/services:
+  /v0/services/-/resource-usages:
     get:
       tags:
       - usage
@@ -2873,6 +2934,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+  /v0/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
+    get:
+      tags:
+      - pricing-plans
+      summary: Retrieve detail information about pricing unit
+      operationId: get_pricing_plan_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitGet_'
   /v0/storage/locations:
     get:
       tags:
@@ -3806,8 +3897,8 @@ paths:
               $ref: '#/components/schemas/CreateWalletPayment'
         required: true
       responses:
-        '200':
-          description: Successful Response
+        '202':
+          description: Successfully initialized
           content:
             application/json:
               schema:
@@ -3870,7 +3961,130 @@ paths:
         in: path
       responses:
         '204':
+          description: Successfully cancelled
+  /v0/wallets/{wallet_id}/payments-methods:init:
+    post:
+      tags:
+      - wallets
+      summary: Init Creation Of Payment Method
+      operationId: init_creation_of_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '202':
+          description: Successfully initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PaymentMethodInit_'
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Creation Of Payment Method
+      operationId: cancel_creation_of_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '204':
+          description: Successfully cancelled
+  /v0/wallets/{wallet_id}/payments-methods:
+    get:
+      tags:
+      - wallets
+      summary: List Payments Methods
+      description: Lists all payments method associated to `wallet_id`
+      operationId: list_payments_methods
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.PaymentMethodGet__'
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:
+    get:
+      tags:
+      - wallets
+      summary: Get Payment Method
+      operationId: get_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PaymentMethodGet_'
+    delete:
+      tags:
+      - wallets
+      summary: Delete Payment Method
+      operationId: delete_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '204':
+          description: Successfully deleted
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4654,6 +4868,7 @@ components:
       enum:
       - AWS
       - ON_PREMISE
+      - ON_DEMAND
       type: string
       description: An enumeration.
     CodePageParams:
@@ -4709,6 +4924,22 @@ components:
           title: Comment
           maxLength: 100
           type: string
+    CreditPriceGet:
+      title: CreditPriceGet
+      required:
+      - productName
+      - usdPerCredit
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        usdPerCredit:
+          title: Usdpercredit
+          minimum: 0.0
+          type: number
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -4850,6 +5081,14 @@ components:
           $ref: '#/components/schemas/ComputationTaskGet'
         error:
           title: Error
+    Envelope_CreditPriceGet_:
+      title: Envelope[CreditPriceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreditPriceGet'
+        error:
+          title: Error
     Envelope_Error_:
       title: Envelope[Error]
       type: object
@@ -4914,6 +5153,14 @@ components:
           $ref: '#/components/schemas/HealthInfoDict'
         error:
           title: Error
+    Envelope_InvitationGenerated_:
+      title: Envelope[InvitationGenerated]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/InvitationGenerated'
+        error:
+          title: Error
     Envelope_InvitationInfo_:
       title: Envelope[InvitationInfo]
       type: object
@@ -4954,12 +5201,36 @@ components:
           $ref: '#/components/schemas/NodeRetrieved'
         error:
           title: Error
+    Envelope_PaymentMethodGet_:
+      title: Envelope[PaymentMethodGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PaymentMethodGet'
+        error:
+          title: Error
+    Envelope_PaymentMethodInit_:
+      title: Envelope[PaymentMethodInit]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PaymentMethodInit'
+        error:
+          title: Error
     Envelope_PresignedLink_:
       title: Envelope[PresignedLink]
       type: object
       properties:
         data:
           $ref: '#/components/schemas/PresignedLink'
+        error:
+          title: Error
+    Envelope_PricingUnitGet_:
+      title: Envelope[PricingUnitGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingUnitGet'
         error:
           title: Error
     Envelope_ProfileGet_:
@@ -5032,6 +5303,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ServiceInputGet'
+        error:
+          title: Error
+    Envelope_ServicePricingPlanGet_:
+      title: Envelope[ServicePricingPlanGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ServicePricingPlanGet'
         error:
           title: Error
     Envelope_StatusDiagnosticsGet_:
@@ -5326,6 +5605,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceRunGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.wallets.PaymentMethodGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.wallets.PaymentMethodGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethodGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__:
@@ -5709,6 +5999,12 @@ components:
           type: boolean
           description: if True this is a directory
           default: false
+        sha256_checksum:
+          title: Sha256 Checksum
+          pattern: ^[a-fA-F0-9]{64}$
+          type: string
+          description: 'SHA256 message digest of the file content. Main purpose: cheap
+            lookup.'
       additionalProperties: false
     FileUploadCompleteFutureResponse:
       title: FileUploadCompleteFutureResponse
@@ -5798,6 +6094,21 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    GenerateInvitation:
+      title: GenerateInvitation
+      required:
+      - guest
+      type: object
+      properties:
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -5933,6 +6244,42 @@ components:
           type: string
           description: Invitation code
       additionalProperties: false
+    InvitationGenerated:
+      title: InvitationGenerated
+      required:
+      - productName
+      - issuer
+      - guest
+      - created
+      - invitationLink
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        issuer:
+          title: Issuer
+          type: string
+          format: email
+        guest:
+          title: Guest
+          type: string
+          format: email
+        trialAccountDays:
+          title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        created:
+          title: Created
+          type: string
+          format: date-time
+        invitationLink:
+          title: Invitationlink
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     InvitationInfo:
       title: InvitationInfo
       type: object
@@ -6679,6 +7026,83 @@ components:
       properties:
         value:
           title: Value
+    PaymentMethodGet:
+      title: PaymentMethodGet
+      required:
+      - idr
+      - walletId
+      - cardHolderName
+      - cardNumberMasked
+      - cardType
+      - expirationMonth
+      - expirationYear
+      - streetAddress
+      - zipcode
+      - country
+      - created
+      type: object
+      properties:
+        idr:
+          title: Idr
+          minLength: 1
+          type: string
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        cardHolderName:
+          title: Cardholdername
+          type: string
+        cardNumberMasked:
+          title: Cardnumbermasked
+          type: string
+        cardType:
+          title: Cardtype
+          type: string
+        expirationMonth:
+          title: Expirationmonth
+          type: integer
+        expirationYear:
+          title: Expirationyear
+          type: integer
+        streetAddress:
+          title: Streetaddress
+          type: string
+        zipcode:
+          title: Zipcode
+          type: string
+        country:
+          title: Country
+          type: string
+        created:
+          title: Created
+          type: string
+          format: date-time
+    PaymentMethodInit:
+      title: PaymentMethodInit
+      required:
+      - walletId
+      - paymentMethodId
+      - paymentMethodFormUrl
+      type: object
+      properties:
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+        paymentMethodFormUrl:
+          title: Paymentmethodformurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Link to external site that holds the payment submission form
+          format: uri
     PaymentTransaction:
       title: PaymentTransaction
       required:
@@ -6833,6 +7257,35 @@ components:
           minLength: 1
           type: string
           format: uri
+    PricingPlanClassification:
+      title: PricingPlanClassification
+      enum:
+      - TIER
+      type: string
+      description: An enumeration.
+    PricingUnitGet:
+      title: PricingUnitGet
+      required:
+      - pricingUnitId
+      - unitName
+      - currentCostPerUnit
+      - default
+      type: object
+      properties:
+        pricingUnitId:
+          title: Pricingunitid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        unitName:
+          title: Unitname
+          type: string
+        currentCostPerUnit:
+          title: Currentcostperunit
+          type: number
+        default:
+          title: Default
+          type: boolean
     ProfileGet:
       title: ProfileGet
       required:
@@ -6860,11 +7313,12 @@ components:
         role:
           title: Role
           enum:
-          - Anonymous
-          - Guest
-          - User
-          - Tester
-          - Admin
+          - ANONYMOUS
+          - GUEST
+          - USER
+          - TESTER
+          - PRODUCT_OWNER
+          - ADMIN
           type: string
         groups:
           $ref: '#/components/schemas/AllUsersGroups'
@@ -7795,6 +8249,7 @@ components:
       - SUCCESS
       - FAILED
       - ABORTED
+      - WAITING_FOR_CLUSTER
       type: string
       description: 'State of execution of a project''s computational workflow
 
@@ -8020,6 +8475,43 @@ components:
         unitLong: seconds
         unitShort: sec
         keyId: output_2
+    ServicePricingPlanGet:
+      title: ServicePricingPlanGet
+      required:
+      - pricingPlanId
+      - displayName
+      - description
+      - classification
+      - createdAt
+      - pricingPlanKey
+      - pricingUnits
+      type: object
+      properties:
+        pricingPlanId:
+          title: Pricingplanid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        pricingPlanKey:
+          title: Pricingplankey
+          type: string
+        pricingUnits:
+          title: Pricingunits
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingUnitGet'
     ServiceRunGet:
       title: ServiceRunGet
       required:

@@ -71,7 +71,7 @@ def _base_configuration(
 async def _assert_cluster_instance_created(
     ec2_client: EC2Client,
     user_id: UserID,
-    wallet_id: WalletID,
+    wallet_id: WalletID | None,
 ) -> None:
     instances = await ec2_client.describe_instances()
     assert len(instances["Reservations"]) == 1
@@ -92,11 +92,16 @@ async def _assert_cluster_instance_created(
     assert instances["Reservations"][0]["Instances"][0]["Tags"][1]["Key"] == "Name"
     assert "Value" in instances["Reservations"][0]["Instances"][0]["Tags"][1]
     instance_name = instances["Reservations"][0]["Instances"][0]["Tags"][1]["Value"]
-
-    parse_result = search("user_id:{user_id:d}-wallet_id:{wallet_id:d}", instance_name)
+    search_str = (
+        "user_id:{user_id:d}-wallet_id:{wallet_id:d}"
+        if wallet_id
+        else "user_id:{user_id:d}-wallet_id:None"
+    )
+    parse_result = search(search_str, instance_name)
     assert isinstance(parse_result, Result)
     assert parse_result["user_id"] == user_id
-    assert parse_result["wallet_id"] == wallet_id
+    if wallet_id:
+        assert parse_result["wallet_id"] == wallet_id
 
 
 async def _assert_cluster_heartbeat_on_instance(
@@ -122,56 +127,60 @@ async def _assert_cluster_heartbeat_on_instance(
 
 @dataclass
 class MockedDaskModule:
-    ping_gateway: MagicMock
+    ping_scheduler: MagicMock
 
 
 @pytest.fixture
-def mocked_dask_ping_gateway(mocker: MockerFixture) -> MockedDaskModule:
+def mocked_dask_ping_scheduler(mocker: MockerFixture) -> MockedDaskModule:
     return MockedDaskModule(
-        ping_gateway=mocker.patch(
-            "simcore_service_clusters_keeper.rpc.clusters.ping_gateway",
+        ping_scheduler=mocker.patch(
+            "simcore_service_clusters_keeper.rpc.clusters.ping_scheduler",
             autospec=True,
             return_value=True,
         ),
     )
 
 
+@pytest.mark.parametrize("use_wallet_id", [True, False])
 async def test_get_or_create_cluster(
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
-    mocked_dask_ping_gateway: MockedDaskModule,
+    use_wallet_id: bool,
+    mocked_dask_ping_scheduler: MockedDaskModule,
 ):
     # send rabbitmq rpc to create_cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
         CLUSTERS_KEEPER_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
         user_id=user_id,
-        wallet_id=wallet_id,
+        wallet_id=wallet_id if use_wallet_id else None,
     )
     assert rpc_response
     assert isinstance(rpc_response, OnDemandCluster)
     created_cluster = rpc_response
     # check we do have a new machine in AWS
-    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+    await _assert_cluster_instance_created(
+        ec2_client, user_id, wallet_id if use_wallet_id else None
+    )
     # it is called once as moto server creates instances instantly
-    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
-    mocked_dask_ping_gateway.ping_gateway.reset_mock()
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
 
     # calling it again returns the existing cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
         CLUSTERS_KEEPER_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
         user_id=user_id,
-        wallet_id=wallet_id,
+        wallet_id=wallet_id if use_wallet_id else None,
     )
     assert rpc_response
     assert isinstance(rpc_response, OnDemandCluster)
     returned_cluster = rpc_response
     # check we still have only 1 instance
     await _assert_cluster_heartbeat_on_instance(ec2_client)
-    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
 
     assert created_cluster == returned_cluster

@@ -45,6 +45,28 @@
         }
       }
     },
+    "/metrics": {
+      "get": {
+        "summary": "Metrics Endpoint",
+        "description": "Exposes metrics form the underlying user service.\n\nPossible responses:\n- HTTP 200 & empty body: user services did not start\n- HTTP 200 & prometheus metrics: was able to fetch data from user service\n- HTTP 500 & error message: something went wrong when fetching data from user service",
+        "operationId": "metrics_endpoint_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "error in recovering data from user service"
+          }
+        }
+      }
+    },
     "/v1/containers": {
       "get": {
         "tags": [
@@ -826,9 +848,13 @@
             "type": "integer",
             "title": "Pricing Plan Id"
           },
-          "pricing_detail_id": {
+          "pricing_unit_id": {
             "type": "integer",
-            "title": "Pricing Detail Id"
+            "title": "Pricing Unit Id"
+          },
+          "pricing_unit_cost_id": {
+            "type": "integer",
+            "title": "Pricing Unit Cost Id"
           },
           "product_name": {
             "type": "string",
@@ -889,7 +915,8 @@
           "wallet_id": 1,
           "wallet_name": "a private wallet for me",
           "pricing_plan_id": 1,
-          "pricing_detail_id": 1,
+          "pricing_unit_id": 1,
+          "pricing_unit_detail_id": 1,
           "product_name": "osparc",
           "simcore_user_agent": "undefined",
           "user_email": "test@test.com",

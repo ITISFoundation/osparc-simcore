@@ -1,4 +1,4 @@
-mypy~=1.2.0
+mypy~=1.2.0            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4750
 pydantic[email]~=1.10  # plugin for primary lib: keep in sync. SEE https://docs.pydantic.dev/mypy_plugin/#plugin-settings
 sqlalchemy[mypy]~=1.4  # plugin for primary lib: keep in sync. SEE https://docs.sqlalchemy.org/en/14/orm/extensions/mypy.html#installation
 types-aiofiles

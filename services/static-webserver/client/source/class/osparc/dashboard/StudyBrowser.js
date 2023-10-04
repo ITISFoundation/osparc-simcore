@@ -212,14 +212,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           // Show Quick Start if studies.length === 0
-          const tutorial = osparc.product.tutorial.Utils.getTutorial();
-          if (tutorial) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
+          const quickStart = osparc.product.quickStart.Utils.getQuickStart();
+          if (quickStart) {
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStart.localStorageStr);
             if (dontShow === "true") {
               return;
             }
             if (nStudies === 0) {
-              const tutorialWindow = tutorial.tutorial();
+              const tutorialWindow = quickStart.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
             }
@@ -644,7 +644,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
           const size = file.size;
-          const maxSize = 10 * 1024 * 1024 * 1024; // 10 GB
+          const maxSize = 10 * 1000 * 1000 * 1000; // 10 GB
           if (size > maxSize) {
             osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;

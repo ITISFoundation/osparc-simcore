@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import TypeAlias
 
 from fastapi import FastAPI
-from models_library.clusters import BaseCluster
+from models_library.clusters import BaseCluster, ClusterTypeInModel
 from pydantic import AnyUrl
 
 from ..core.errors import (
@@ -80,6 +80,10 @@ class DaskClientsPool:
                         tasks_file_link_type = (
                             self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
                         )
+                    if cluster.type is ClusterTypeInModel.ON_DEMAND:
+                        tasks_file_link_type = (
+                            self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
+                        )
                     self._cluster_to_client_map[
                         cluster.endpoint
                     ] = dask_client = await DaskClient.create(
@@ -88,6 +92,7 @@ class DaskClientsPool:
                         endpoint=cluster.endpoint,
                         authentication=cluster.authentication,
                         tasks_file_link_type=tasks_file_link_type,
+                        cluster_type=cluster.type,
                     )
                     if self._task_handlers:
                         dask_client.register_handlers(self._task_handlers)

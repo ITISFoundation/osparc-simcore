@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Iterator
 from typing import Any
@@ -69,8 +70,11 @@ async def list_services(
     )
     for service in services:
         try:
-            replace_service_input_outputs(
-                service, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY
+            await asyncio.to_thread(
+                replace_service_input_outputs,
+                service,
+                unit_registry=unit_registry,
+                **RESPONSE_MODEL_POLICY,
             )
         except KeyError:  # noqa: PERF203
             # This will limit the effect of a any error in the formatting of
@@ -93,8 +97,11 @@ async def get_service(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    replace_service_input_outputs(
-        service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+    await asyncio.to_thread(
+        replace_service_input_outputs,
+        service,
+        unit_registry=ctx.unit_registry,
+        **RESPONSE_MODEL_POLICY,
     )
     return service
 
@@ -113,8 +120,11 @@ async def update_service(
         ctx.product_name,
         update_data,
     )
-    replace_service_input_outputs(
-        service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+    await asyncio.to_thread(
+        replace_service_input_outputs,
+        service,
+        unit_registry=ctx.unit_registry,
+        **RESPONSE_MODEL_POLICY,
     )
     return service
 

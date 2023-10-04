@@ -9,14 +9,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import (
-    Field,
-    NonNegativeInt,
-    PositiveInt,
-    SecretStr,
-    parse_obj_as,
-    validator,
-)
+from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
@@ -28,45 +21,45 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
 class EC2Settings(BaseCustomSettings):
-    EC2_ACCESS_KEY_ID: str
-    EC2_ENDPOINT: str | None = Field(
+    CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID: str
+    CLUSTERS_KEEPER_EC2_ENDPOINT: str | None = Field(
         default=None, description="do not define if using standard AWS"
     )
-    EC2_REGION_NAME: str = "us-east-1"
-    EC2_SECRET_ACCESS_KEY: str
+    CLUSTERS_KEEPER_EC2_REGION_NAME: str = "us-east-1"
+    CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: str
 
 
 class EC2InstancesSettings(BaseCustomSettings):
-    EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
         ...,
         min_items=1,
         unique_items=True,
         description="Defines which EC2 instances are considered as candidates for new EC2 instance",
     )
-    EC2_INSTANCES_AMI_ID: str = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID: str = Field(
         ...,
         min_length=1,
         description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
     )
-    EC2_INSTANCES_MAX_INSTANCES: int = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
         description="Defines the maximum number of instances the clusters_keeper app may create",
     )
-    EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
         description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
         " this is required to start a new EC2 instance",
     )
-    EC2_INSTANCES_SUBNET_ID: str = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID: str = Field(
         ...,
         min_length=1,
         description="A subnet is a range of IP addresses in your VPC "
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
-    EC2_INSTANCES_KEY_NAME: str = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
         description="SSH key filename (without ext) to access the instance through SSH"
@@ -74,17 +67,17 @@ class EC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
-    EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
     )
 
-    EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
+    CLUSTERS_KEEPER_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
-    @validator("EC2_INSTANCES_ALLOWED_TYPES")
+    @validator("CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_intance_names(cls, value):
         # NOTE: needed because of a flaw in BaseCustomSettings
@@ -168,13 +161,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="defines the image tag to use for the computational backend",
     )
 
-    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD: SecretStr = Field(
-        default=SecretStr("my_secure_P1ssword"),
-        description="very secure password, should change soon",
+    SWARM_STACK_NAME: str = Field(
+        ..., description="Stack name defined upon deploy (see main Makefile)"
     )
 
     @cached_property
-    def LOG_LEVEL(self):  # noqa: N802
+    def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.CLUSTERS_KEEPER_LOGLEVEL
 
     @validator("CLUSTERS_KEEPER_LOGLEVEL")

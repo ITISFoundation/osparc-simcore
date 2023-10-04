@@ -4,6 +4,7 @@ from pydantic import BaseModel, ByteSize, Field
 
 from ..services import ServicePortKey
 from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
+from ..wallets import WalletInfo
 from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
 
 
@@ -41,6 +42,10 @@ class DynamicServiceCreate(ServiceDetails):
     can_save: bool = Field(
         ..., description="the service data must be saved when closing"
     )
+    wallet_info: WalletInfo | None = Field(
+        default=None,
+        description="contains information about the wallet used to bill the running service",
+    )
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -56,6 +61,7 @@ class DynamicServiceCreate(ServiceDetails):
                 "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
                     "examples"
                 ][0],
+                "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
             }
         }
 

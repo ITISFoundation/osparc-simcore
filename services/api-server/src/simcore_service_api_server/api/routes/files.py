@@ -11,7 +11,9 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
+from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -37,7 +39,12 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...services.storage import (
+    AccessRight,
+    StorageApi,
+    StorageFileMetaData,
+    to_file_api_model,
+)
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -58,6 +65,41 @@ _COMMON_ERROR_RESPONSES: Final[dict] = {
         "model": ErrorGet,
     },
 }
+
+
+async def _get_file(
+    *,
+    file_id: UUID,
+    storage_client: StorageApi,
+    user_id: int,
+    access_right: AccessRight,
+):
+    """Gets metadata for a given file resource"""
+
+    try:
+        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+            user_id=user_id,
+            file_id=file_id,
+            sha256_checksum=None,
+            access_right=access_right,
+        )
+        if not stored_files:
+            msg = "Not found in storage"
+            raise ValueError(msg)  # noqa: TRY301
+
+        assert len(stored_files) == 1
+        stored_file_meta = stored_files[0]
+        assert stored_file_meta.file_id  # nosec
+
+        # Adapts storage API model to API model
+        return to_file_api_model(stored_file_meta)
+
+    except (ValueError, ValidationError) as err:
+        _logger.debug("File %d not found: %s", file_id, err)
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
 
 
 @router.get(
@@ -170,12 +212,13 @@ async def upload_file(
             file_object=file.file,
             file_name=file.filename,
             file_size=file_size,
+            sha256_checksum=file_meta.sha256_checksum,
         ),
         io_log_redirect_cb=None,
     )
     assert isinstance(upload_result, UploadedFile)  # nosec
 
-    file_meta.checksum = upload_result.etag
+    file_meta.e_tag = upload_result.etag
     return file_meta
 
 
@@ -217,6 +260,7 @@ async def get_upload_links(
         link_type=LinkType.PRESIGNED,
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
+        sha256_checksum=file_meta.sha256_checksum,
     )
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
@@ -244,25 +288,53 @@ async def get_file(
 ):
     """Gets metadata for a given file resource"""
 
+    return await _get_file(
+        file_id=file_id,
+        storage_client=storage_client,
+        user_id=user_id,
+        access_right="read",
+    )
+
+
+@router.get(
+    ":search",
+    response_model=Page[File],
+    responses={**_COMMON_ERROR_RESPONSES},
+)
+async def search_files_page(
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    page_params: Annotated[PaginationParams, Depends()],
+    sha256_checksum: SHA256Str | None = None,
+    file_id: UUID | None = None,
+):
+    """Search files"""
     try:
         stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-            user_id, file_id
+            user_id=user_id,
+            file_id=file_id,
+            sha256_checksum=sha256_checksum,
+            access_right="read",
         )
-        if not stored_files:
-            msg = "Not found in storage"
-            raise ValueError(msg)  # noqa: TRY301
-
-        stored_file_meta = stored_files[0]
-        assert stored_file_meta.file_id  # nosec
-
-        # Adapts storage API model to API model
-        return to_file_api_model(stored_file_meta)
+        error_message: str = "Not found in storage"
+        if page_params.offset > len(stored_files):
+            raise ValueError(error_message)
+        stored_files = stored_files[page_params.offset :]
+        if len(stored_files) > page_params.limit:
+            stored_files = stored_files[: page_params.limit]
+        return create_page(
+            [to_file_api_model(fmd) for fmd in stored_files],
+            total=len(stored_files),
+            params=page_params,
+        )
 
     except (ValueError, ValidationError) as err:
-        _logger.debug("File %d not found: %s", file_id, err)
+        _logger.debug(
+            "File with sha256_checksum=%d not found: %s", sha256_checksum, err
+        )
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"File with identifier {file_id} not found",
+            detail=f"File with {sha256_checksum=} not found",
         ) from err
 
 
@@ -275,8 +347,11 @@ async def delete_file(
     user_id: Annotated[int, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    file: File = await get_file(
-        file_id=file_id, storage_client=storage_client, user_id=user_id
+    file: File = await _get_file(
+        file_id=file_id,
+        storage_client=storage_client,
+        user_id=user_id,
+        access_right="write",
     )
     await storage_client.delete_file(
         user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id
@@ -296,7 +371,12 @@ async def abort_multipart_upload(
 ):
     assert request  # nosec
     assert user_id  # nosec
-    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    file: File = File(
+        id=file_id,
+        filename=client_file.filename,
+        sha256_checksum=client_file.sha256_checksum,
+        e_tag=None,
+    )
     abort_link: URL = await storage_client.create_abort_upload_link(
         file, query={"user_id": str(user_id)}
     )
@@ -320,7 +400,12 @@ async def complete_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    file: File = File(
+        id=file_id,
+        filename=client_file.filename,
+        sha256_checksum=client_file.sha256_checksum,
+        e_tag=None,
+    )
     complete_link: URL = await storage_client.create_complete_upload_link(
         file, {"user_id": str(user_id)}
     )
@@ -330,7 +415,7 @@ async def complete_multipart_upload(
         upload_completion_link=parse_obj_as(AnyUrl, f"{complete_link}"),
     )
 
-    file.checksum = e_tag
+    file.e_tag = e_tag
     return file
 
 

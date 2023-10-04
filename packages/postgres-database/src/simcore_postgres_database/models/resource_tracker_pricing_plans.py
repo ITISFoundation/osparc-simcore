@@ -38,7 +38,7 @@ resource_tracker_pricing_plans = sa.Table(
         index=True,
     ),
     sa.Column(
-        "name",
+        "display_name",
         sa.String,
         nullable=False,
         doc="Name of the pricing plan, ex. DYNAMIC_SERVICES_TIERS, CPU_HOURS, STORAGE",
@@ -64,5 +64,15 @@ resource_tracker_pricing_plans = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    sa.Column(
+        "pricing_plan_key",
+        sa.String,
+        nullable=False,
+        default=False,
+        doc="Unique human readable pricing plan key that might be used for integration",
+    ),
     # ---------------------------
+    sa.UniqueConstraint(
+        "product_name", "pricing_plan_key", name="pricing_plans_pricing_plan_key"
+    ),
 )

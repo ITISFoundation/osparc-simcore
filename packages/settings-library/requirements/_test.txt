@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-coverage==7.3.0
+coverage==7.3.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -16,9 +16,9 @@ packaging==23.1
     # via
     #   pytest
     #   pytest-sugar
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
-pytest==7.4.0
+pytest==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov

@@ -3,7 +3,7 @@
 from aiohttp import web
 
 from .._meta import api_version_prefix
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..utils_aiohttp import envelope_json_response
 from . import _api
 from ._models import Announcement

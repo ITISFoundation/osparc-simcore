@@ -2,7 +2,7 @@ import os
 from functools import cached_property
 
 from aiohttp import web
-from pydantic import Field, PositiveInt, SecretStr, parse_obj_as, validator
+from pydantic import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -30,6 +30,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         min_length=10,
     )
 
+    # NOTE: PAYMENTS_FAKE_* settings are temporary until some features are moved to the payments service
     PAYMENTS_FAKE_COMPLETION: bool = Field(
         default=False, description="Enables fake completion. ONLY for testing purposes"
     )
@@ -37,6 +38,11 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     PAYMENTS_FAKE_COMPLETION_DELAY_SEC: PositiveInt = Field(
         default=10,
         description="Delay in seconds sbefore completion. ONLY for testing purposes",
+    )
+
+    PAYMENTS_FAKE_GATEWAY_URL: HttpUrl = Field(
+        default=parse_obj_as(HttpUrl, "https://fake-payment-gateway.com"),
+        description="FAKE Base url to the payment gateway",
     )
 
     @cached_property
@@ -61,9 +67,9 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
 
     @validator("PAYMENTS_FAKE_COMPLETION")
     @classmethod
-    def check_dev_feature_enabled(cls, v):
-        if v and not os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", False):
-            msg = "PAYMENTS_FAKE_COMPLETION only allowed when WEBSERVER_DEV_FEATURES_ENABLED=1"
+    def _payments_cannot_be_faken_in_production(cls, v):
+        if v is True and "production" in os.environ.get("SWARM_STACK_NAME", ""):
+            msg = "PAYMENTS_FAKE_COMPLETION only allowed FOR TESTING PURPOSES and cannot be released to production"
             raise ValueError(msg)
         return v
 

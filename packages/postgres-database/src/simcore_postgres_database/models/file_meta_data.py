@@ -47,4 +47,11 @@ file_meta_data = sa.Table(
         server_default=sa.text("false"),
         doc="Set True when file_id is a directory",
     ),
+    sa.Column(
+        "sha256_checksum",
+        sa.String(),
+        nullable=True,
+        server_default=sa.null(),
+        doc="SHA256 checksum of the file content",
+    ),
 )

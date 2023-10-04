@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(this.__getMiniProfileView());
+    tabViews.getChildControl("bar").add(this.self().createMiniProfileView());
 
     if (this.__walletsEnabled) {
       const overviewPage = this.__overviewPage = this.__getOverviewPage();
@@ -55,6 +55,11 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     }
 
     if (this.__walletsEnabled) {
+      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
+      tabViews.add(paymentMethodsPage);
+    }
+
+    if (this.__walletsEnabled) {
       const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
       tabViews.add(transactionsPage);
     }
@@ -68,27 +73,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
   },
 
   statics: {
-    openWindow: function(walletsEnabled = false) {
-      const accountWindow = new osparc.desktop.credits.UserCenter(walletsEnabled);
-      accountWindow.center();
-      accountWindow.open();
-      return accountWindow;
-    }
-  },
-
-  members: {
-    __walletsEnabled: null,
-    __tabsView: null,
-    __overviewPage: null,
-    __profilePage: null,
-    __walletsPage: null,
-    __buyCreditsPage: null,
-    __transactionsPage: null,
-    __usageOverviewPage: null,
-    __buyCredits: null,
-    __transactionsTable: null,
-
-    __getMiniProfileView: function() {
+    createMiniProfileView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
         minWidth: 120,
@@ -121,18 +106,37 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
         converter: lastName => authData.getFirstName() + " " + lastName
       });
 
+      const role = authData.getFriendlyRole();
+      const roleLabel = new qx.ui.basic.Label(role).set({
+        font: "text-13",
+        alignX: "center"
+      });
+      layout.add(roleLabel);
+
       const emailLabel = new qx.ui.basic.Label(email).set({
         font: "text-13",
         alignX: "center"
       });
       layout.add(emailLabel);
 
-      layout.add(new qx.ui.core.Spacer(15, 15), {
-        flex: 1
-      });
+      layout.add(new qx.ui.core.Spacer(15, 15));
 
       return layout;
-    },
+    }
+  },
+
+  members: {
+    __walletsEnabled: null,
+    __tabsView: null,
+    __overviewPage: null,
+    __profilePage: null,
+    __walletsPage: null,
+    __buyCreditsPage: null,
+    __paymentMethodsPage: null,
+    __transactionsPage: null,
+    __usageOverviewPage: null,
+    __buyCredits: null,
+    __transactionsTable: null,
 
     __getOverviewPage: function() {
       const title = this.tr("Overview");
@@ -205,6 +209,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return page;
     },
 
+    __getPaymentMethodsPage: function() {
+      const title = this.tr("Payment Methods");
+      const iconSrc = "@FontAwesome5Solid/credit-card/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
+      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
+      paymentMethods.set({
+        margin: 10
+      });
+      page.add(paymentMethods);
+      return page;
+    },
+
     __getTransactionsPage: function() {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
@@ -234,25 +251,27 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __openPage: function(page) {
       if (page) {
         this.__tabsView.setSelection([page]);
+        return true;
       }
+      return false;
     },
 
     openOverview: function() {
       if (this.__overviewPage) {
-        this.__openPage(this.__overviewPage);
-      } else {
-        // fallback
-        this.__openPage(this.__profilePage);
+        return this.__openPage(this.__overviewPage);
       }
+      // fallback
+      this.__openPage(this.__profilePage);
+      return false;
     },
 
     openWallets: function() {
       if (this.__walletsPage) {
-        this.__openPage(this.__walletsPage);
-      } else {
-        // fallback
-        this.__openPage(this.__profilePage);
+        return this.__openPage(this.__walletsPage);
       }
+      // fallback
+      this.__openPage(this.__profilePage);
+      return false;
     },
 
     __openBuyCredits: function() {

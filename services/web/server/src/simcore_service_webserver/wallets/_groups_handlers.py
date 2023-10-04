@@ -93,6 +93,7 @@ async def create_wallet_group(request: web.Request):
         read=body_params.read,
         write=body_params.write,
         delete=body_params.delete,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(wallet_groups, web.HTTPCreated)
@@ -106,8 +107,13 @@ async def list_wallet_groups(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    wallets: list[WalletGroupGet] = await _groups_api.list_wallet_groups(
-        request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
+    wallets: list[
+        WalletGroupGet
+    ] = await _groups_api.list_wallet_groups_by_user_and_wallet(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(wallets, web.HTTPOk)
@@ -133,6 +139,7 @@ async def update_wallet_group(request: web.Request):
         read=body_params.read,
         write=body_params.write,
         delete=body_params.delete,
+        product_name=req_ctx.product_name,
     )
 
 
@@ -152,5 +159,6 @@ async def delete_wallet_group(request: web.Request):
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
         group_id=path_params.group_id,
+        product_name=req_ctx.product_name,
     )
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

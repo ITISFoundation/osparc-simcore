@@ -82,7 +82,12 @@ def setup_wallets_db(
     with postgres_db.connect() as con:
         result = con.execute(
             wallets.insert()
-            .values(name="My wallet", owner=logged_user["primary_gid"], status="ACTIVE")
+            .values(
+                name="My wallet",
+                owner=logged_user["primary_gid"],
+                status="ACTIVE",
+                product_name="osparc",
+            )
             .returning(sa.literal_column("*"))
         )
         row = result.fetchone()

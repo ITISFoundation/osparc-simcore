@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt --strip-extras requirements/_migration.in
 #
-alembic==1.11.2
+alembic==1.12.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
@@ -14,7 +14,7 @@ certifi==2023.7.22
     #   requests
 charset-normalizer==3.2.0
     # via requests
-click==8.1.6
+click==8.1.7
     # via -r requirements/_migration.in
 docker==6.1.3
     # via -r requirements/_migration.in
@@ -56,5 +56,5 @@ urllib3==2.0.4
     #   -r requirements/_migration.in
     #   docker
     #   requests
-websocket-client==1.6.1
+websocket-client==1.6.3
     # via docker

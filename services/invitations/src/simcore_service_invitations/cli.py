@@ -6,6 +6,7 @@ import rich
 import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
+from models_library.invitations import InvitationContent, InvitationInputs
 from pydantic import HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
@@ -15,9 +16,7 @@ from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .invitations import (
-    InvalidInvitationCode,
-    InvitationContent,
-    InvitationInputs,
+    InvalidInvitationCodeError,
     create_invitation_link,
     extract_invitation_code_from,
     extract_invitation_content,
@@ -93,7 +92,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = ApplicationSettings.create_from_envs(
-        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000", # NOSONAR
+        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",  # NOSONAR
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=username,
         INVITATIONS_PASSWORD=password,
@@ -157,7 +156,7 @@ def extract(ctx: typer.Context, invitation_url: str):
         )
 
         rich.print(invitation.json(indent=1))
-    except (InvalidInvitationCode, ValidationError):
+    except (InvalidInvitationCodeError, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
 
 

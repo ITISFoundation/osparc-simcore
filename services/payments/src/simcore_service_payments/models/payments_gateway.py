@@ -44,6 +44,9 @@ class GetPaymentMethod(BaseModel):
     card_type: str
     expiration_month: int
     expiration_year: int
+    street_address: str
+    zipcode: str
+    country: str
     created: datetime
 
 

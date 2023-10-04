@@ -13,6 +13,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
@@ -152,6 +153,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
                 only_files=False,
+                sha256_checksum=None,
             )
 
             # add all the entries from file_meta_data without
@@ -242,6 +244,7 @@ class SimcoreS3DataManager(BaseDataManager):
         link_type: LinkType,
         file_size_bytes: ByteSize,
         *,
+        sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
@@ -270,6 +273,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
                 else None,
                 is_directory=is_directory,
+                sha256_checksum=sha256_checksum,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
@@ -379,6 +383,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 file_id=fmd.file_id,
                 upload_id=fmd.upload_id,
                 uploaded_parts=uploaded_parts,
+                sha256_checksum=fmd.sha256_checksum,
             )
         async with self.engine.acquire() as conn:
             fmd = await self._update_database_from_storage(conn, fmd)
@@ -676,24 +681,51 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
-    async def search_files_starting_with(
-        self, user_id: UserID, prefix: str
+    async def search_read_access_files(
+        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
+    ):
+        async with self.engine.acquire() as conn:
+            can_read_projects_ids = await get_readable_project_ids(conn, user_id)
+        return await self._search_files(
+            user_id=user_id,
+            project_ids=can_read_projects_ids,
+            file_id_prefix=file_id_prefix,
+            sha256_checksum=sha256_checksum,
+        )
+
+    async def search_owned_files(
+        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
+    ):
+        return await self._search_files(
+            user_id=user_id,
+            project_ids=[],
+            file_id_prefix=file_id_prefix,
+            sha256_checksum=sha256_checksum,
+        )
+
+    async def _search_files(
+        self,
+        *,
+        user_id: UserID,
+        project_ids: list[ProjectID],
+        file_id_prefix: str,
+        sha256_checksum: SHA256Str | None,
     ) -> list[FileMetaData]:
         # NOTE: this entrypoint is solely used by api-server. It is the exact
         # same as list_files but does not rename the found files with project
         # name/node name which filters out this files
         # TODO: unify, or use a query parameter?
         async with self.engine.acquire() as conn:
-            can_read_projects_ids = await get_readable_project_ids(conn, user_id)
             file_metadatas: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_id=user_id,
-                project_ids=can_read_projects_ids,
-                file_id_prefix=prefix,
+                project_ids=project_ids,
+                file_id_prefix=file_id_prefix,
                 partial_file_id=None,
                 only_files=True,
+                sha256_checksum=sha256_checksum,
             )
             resolved_fmds = []
             for fmd in file_metadatas:
@@ -986,6 +1018,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     dst_file_id,
                     upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
                     is_directory=False,
+                    sha256_checksum=None,
                 )
                 # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
                 await transaction.commit()
@@ -1026,6 +1059,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 dst_file_id,
                 upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
                 is_directory=src_fmd.is_directory,
+                sha256_checksum=src_fmd.sha256_checksum,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
@@ -1073,6 +1107,7 @@ class SimcoreS3DataManager(BaseDataManager):
         upload_id: UploadID | None,
         *,
         is_directory: bool,
+        sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
         now = datetime.datetime.utcnow()
         upload_expiration_date = now + datetime.timedelta(
@@ -1087,6 +1122,7 @@ class SimcoreS3DataManager(BaseDataManager):
             upload_expires_at=upload_expiration_date,
             upload_id=upload_id,
             is_directory=is_directory,
+            sha256_checksum=sha256_checksum,
         )
         return await db_file_meta_data.upsert(conn, fmd)
 

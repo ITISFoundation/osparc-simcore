@@ -13,7 +13,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..products.plugin import Product, get_current_product
+from ..products.api import Product, get_current_product
 from ..security.api import encrypt_password
 from ..session.access_policies import session_access_required
 from ..utils import MINUTE
@@ -35,7 +35,14 @@ from .settings import (
     get_plugin_settings,
 )
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
-from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_response
+from .utils import (
+    ACTIVE,
+    CHANGE_EMAIL,
+    REGISTRATION,
+    RESET_PASSWORD,
+    flash_response,
+    notify_user_confirmation,
+)
 
 log = logging.getLogger(__name__)
 
@@ -66,6 +73,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
@@ -83,6 +91,10 @@ async def validate_confirmation_and_redirect(request: web.Request):
                     user_id=user_id,
                     updates={"status": ACTIVE},
                     confirmation=confirmation,
+                )
+
+                await notify_user_confirmation(
+                    request.app, user_id=user_id, product_name=product.name
                 )
 
                 redirect_to_login_url = redirect_to_login_url.with_fragment(

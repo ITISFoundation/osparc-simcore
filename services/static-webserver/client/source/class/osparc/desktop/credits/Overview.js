@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
     __createWalletsView: function() {
       const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       const oneWallet = activeWallet ? activeWallet : preferredWallet;
       if (oneWallet) {
         // show one wallet
@@ -162,15 +162,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       titleLayout.add(walletName);
       layout.add(titleLayout);
 
-      const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "vertical").set({
-        allowShrinkY: true
-      });
-      progressBar.getChildControl("credits-indicator").set({
-        minWidth: 100
-      });
-      progressBar.getChildControl("credits-text").set({
-        font: "text-16"
-      });
+      const progressBar = new osparc.desktop.credits.CreditsLabel(wallet);
       layout.add(progressBar);
 
       const buyButton = new qx.ui.form.Button().set({
@@ -240,13 +232,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         column++;
 
         // indicator
-        const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "horizontal").set({
-          allowShrinkY: true
-        });
-        progressBar.getChildControl("credits-indicator").set({
-          minWidth: 100
-        });
-        layout.add(progressBar, {
+        const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet);
+        layout.add(creditsLabel, {
           column,
           row: i
         });
@@ -292,8 +279,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
                 }
                 const entry = [
                   osparc.utils.Utils.formatDateAndTime(new Date(transaction["createdAt"])),
-                  transaction["priceDollars"].toString(),
-                  transaction["osparcCredits"].toString(),
+                  transaction["priceDollars"].toFixed(2).toString(),
+                  transaction["osparcCredits"].toFixed(2).toString(),
                   walletName,
                   transaction["comment"]
                 ];

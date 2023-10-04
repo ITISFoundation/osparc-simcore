@@ -223,7 +223,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/services?offset={offset}&limit={limit}"
+            url: statics.API + "/services/-/resource-usages?offset={offset}&limit={limit}"
           }
         }
       },
@@ -232,7 +232,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/services?wallet_id={walletId}&offset={offset}&limit={limit}"
+            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
           }
         }
       },
@@ -653,6 +653,25 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PRODUCTS
+       */
+      "credits-price": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/credits-price"
+          }
+        }
+      },
+      "invitations": {
+        endpoints: {
+          post: {
+            method: "POST",
+            url: statics.API + "/invitation:generate"
+          }
+        }
+      },
+      /*
        * PAYMENTS
        */
       "payments": {
@@ -668,6 +687,50 @@ qx.Class.define("osparc.data.Resources", {
           cancelPayment: {
             method: "POST",
             url: statics.API + "/wallets/{walletId}/payments/{paymentId}:cancel"
+          }
+        }
+      },
+      /*
+       * PAYMENTS METHODS
+       */
+      "payments-methods": {
+        useCache: false,
+        endpoints: {
+          init: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods:init"
+          },
+          cancel: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:cancel"
+          },
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/payments-methods"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}"
+          }
+        }
+      },
+      /*
+       * AUTO RECHARGE
+       */
+      "auto-recharge": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          start: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          stop: {
+            method: "DELETE",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
       },
@@ -873,7 +936,7 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * Test/Diagnonstic entrypoint
+       * Test/Diagnostic entrypoint
        */
       "checkEP": {
         useCache: false,
@@ -1129,7 +1192,7 @@ qx.Class.define("osparc.data.Resources", {
     /**
      * Add the given data to the cached version of a resource, or a collection of them.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
-     * @param {*} data Resource or collection of resources to be addded to the cache.
+     * @param {*} data Resource or collection of resources to be added to the cache.
      */
     __addCached: function(resource, data) {
       osparc.store.Store.getInstance().append(resource, data, this.self().resources[resource].idField || "uuid");

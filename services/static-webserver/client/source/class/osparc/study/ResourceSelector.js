@@ -221,7 +221,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
         });
       }
 
-      // OM: puppeteer has no walelts. Enable it when BE is ready
+      // OM: puppeteer has no wallets. Enable it when BE is ready
       // this.getChildControl("open-button").setEnabled(Boolean(wallet));
     },
 
@@ -367,7 +367,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
         const selection = e.getData();
         selectWallet(selection[0].walletId);
       });
-      const favWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const favWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       if (this.__projectWalletId) {
         selectWallet(this.__projectWalletId);
       } else if (favWallet) {
@@ -408,7 +408,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
     },
 
     __getCreditsLeftView: function() {
-      const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
+      const creditsLeftView = new osparc.desktop.credits.CreditsLabel();
       this.bind("wallet", creditsLeftView, "wallet");
       return creditsLeftView;
     }

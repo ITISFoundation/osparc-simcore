@@ -59,7 +59,7 @@ async def test_rpc_create_payment_fail(
         )
 
     exc = exc_info.value
-    assert exc.exc_type == httpx.ConnectError
+    assert exc.exc_type == f"{httpx.ConnectError}"
     assert exc.method_name == "create_payment"
     assert exc.msg
 

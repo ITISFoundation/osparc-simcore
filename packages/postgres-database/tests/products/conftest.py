@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 
 
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from aiopg.sa.exc import ResourceClosedError
@@ -38,12 +38,12 @@ def make_products_table(
                 )
                 .on_conflict_do_update(
                     index_elements=[products.c.name],
-                    set_=dict(
-                        display_name=f"Product {name.capitalize()}",
-                        short_name=name[:3].lower(),
-                        host_regex=regex,
-                        priority=n,
-                    ),
+                    set_={
+                        "display_name": f"Product {name.capitalize()}",
+                        "short_name": name[:3].lower(),
+                        "host_regex": regex,
+                        "priority": n,
+                    },
                 )
             )
 

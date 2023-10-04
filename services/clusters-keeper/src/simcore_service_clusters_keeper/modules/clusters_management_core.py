@@ -7,9 +7,9 @@ from fastapi import FastAPI
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
 from ..modules.clusters import delete_clusters, get_all_clusters, set_instance_heartbeat
-from ..utils.dask import get_gateway_authentication, get_gateway_url
-from ..utils.ec2 import HEARTBEAT_TAG_KEY, get_user_id_from_tags
-from .dask import is_gateway_busy, ping_gateway
+from ..utils.dask import get_scheduler_url
+from ..utils.ec2 import HEARTBEAT_TAG_KEY
+from .dask import is_scheduler_busy, ping_scheduler
 
 _logger = logging.getLogger(__name__)
 
@@ -54,23 +54,13 @@ async def _find_terminateable_instances(
 
 async def check_clusters(app: FastAPI) -> None:
     instances = await get_all_clusters(app)
-    app_settings = get_application_settings(app)
     connected_intances = [
         instance
         for instance in instances
-        if await ping_gateway(
-            url=get_gateway_url(instance),
-            password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
-        )
+        if await ping_scheduler(get_scheduler_url(instance))
     ]
     for instance in connected_intances:
-        is_busy = await is_gateway_busy(
-            url=get_gateway_url(instance),
-            gateway_auth=get_gateway_authentication(
-                user_id=get_user_id_from_tags(instance.tags),
-                password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
-            ),
-        )
+        is_busy = await is_scheduler_busy(get_scheduler_url(instance))
         _logger.info(
             "%s currently %s",
             f"{instance.id=} for {instance.tags=}",

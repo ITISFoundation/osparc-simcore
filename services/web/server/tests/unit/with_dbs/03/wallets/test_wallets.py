@@ -6,15 +6,35 @@
 
 
 from collections.abc import AsyncIterator
+from decimal import Decimal
+from unittest import mock
 
 import arrow
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
+from models_library.products import ProductName
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.login.utils import notify_user_confirmation
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.fixture
+def mock_rut_sum_total_available_credits_in_the_wallet(
+    mocker: MockerFixture,
+) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
+        return_value=WalletTotalCredits(
+            wallet_id=1, available_osparc_credits=Decimal(10.2)
+        ),
+    )
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
@@ -24,6 +44,7 @@ async def test_wallets_full_workflow(
     user_project: ProjectDict,
     expected: type[web.HTTPException],
     wallets_clean_db: AsyncIterator[None],
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
 ):
     assert client.app
 
@@ -50,7 +71,9 @@ async def test_wallets_full_workflow(
     assert data[0]["description"] == "Custom description"
     assert data[0]["thumbnail"] is None
     assert data[0]["status"] == "ACTIVE"
-    assert data[0]["availableCredits"] == 0.0
+    assert data[0]["availableCredits"] == float(
+        mock_rut_sum_total_available_credits_in_the_wallet.return_value.available_osparc_credits
+    )
     store_modified_field = arrow.get(data[0]["modified"])
 
     # update user wallet
@@ -126,3 +149,30 @@ async def test_wallets_full_workflow(
             web.HTTPForbidden,
         )
         assert errors
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+async def test_auto_wallet_on_user_registration_confirmation(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: type[web.HTTPException],
+    wallets_clean_db: AsyncIterator[None],
+    osparc_product_name: ProductName,
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+):
+    assert client.app
+
+    url = client.app.router["list_wallets"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert len(data) == 0
+
+    await notify_user_confirmation(
+        client.app, user_id=logged_user["id"], product_name=osparc_product_name
+    )
+
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert len(data) == 1
+
+    assert mock_rut_sum_total_available_credits_in_the_wallet.called

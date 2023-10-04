@@ -15,7 +15,7 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
 
-from ..products.plugin import get_product_name
+from ..products.api import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._catalog import ValidService, validate_requested_service

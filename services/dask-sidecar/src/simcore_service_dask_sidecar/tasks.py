@@ -24,7 +24,7 @@ from models_library.services_resources import BootMode
 from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
-from ._meta import print_banner
+from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
 from .settings import Settings
@@ -76,7 +76,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
     logger.info("Setting up worker...")
     logger.info("Settings: %s", pformat(settings.dict()))
 
-    print_banner()
+    print_dask_sidecar_banner()
 
     if threading.current_thread() is threading.main_thread():
         loop = asyncio.get_event_loop()
