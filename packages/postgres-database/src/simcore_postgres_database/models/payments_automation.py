@@ -9,22 +9,39 @@ from ._common import (
 from .base import metadata
 from .payments_methods import payments_methods
 
+#
+# NOTE:
+#  - This table was designed to work in an isolated database. For that reason
+#    we do not use ForeignKeys to establish relations (e.g. user_id) with other tables
+#    except for payments_methods or payments_transactions
+#  - One automation per wallet_id BUT cannot use Foreign-Key to wallets
+
 payments_automation = sa.Table(
     "payments_automation",
     metadata,
+    # NOTE:
+    sa.Column(
+        "wallet_id",
+        sa.BigInteger,
+        #   cannot use foreign-key because it would require a link to wallets table
+        nullable=False,
+        doc="Wallet associated to the auto-recharge",
+        index=True,
+        unique=True,  # only one automation per wallet
+    ),
     sa.Column(
         "payment_method_id",
         sa.BigInteger,
         sa.ForeignKey(
             payments_methods.c.payment_method_id,
-            name="fk_payments_automation_payments_method_id",
+            name="fk_payments_automation_payment_method_id",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
         nullable=False,
-        doc="[Required] Payment method selected for auto-recharge",
+        doc="[Required] Primary payment method selected for auto-recharge",
         index=True,
-        unique=True,  # only one automation per payment method
+        unique=True,  # only one primary payment method
     ),
     #
     # Recharge Limits and Controls
