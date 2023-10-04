@@ -52,8 +52,6 @@ qx.Class.define("osparc.study.TierButton", {
     __buildLayout: function() {
       const pricingUnit = this.__pricingUnit;
 
-      const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
-
       this._removeAll();
       if (this.isAdvanced()) {
         this._setLayout(new qx.ui.layout.VBox(5));
@@ -62,12 +60,7 @@ qx.Class.define("osparc.study.TierButton", {
           value: pricingUnit.unitName,
           font: "text-16"
         }));
-        Object.keys(pricingUnit.resources).forEach(resourceKey => {
-          this._add(new qx.ui.basic.Label().set({
-            value: resourceKey + ": " + toFixedIfNecessary(pricingUnit.resources[resourceKey]),
-            font: "text-12"
-          }));
-        });
+        // add tier extra info
         this._add(new qx.ui.basic.Label().set({
           value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
           font: "text-14"
