@@ -37,7 +37,7 @@ class BaseHttpApi:
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
-            await self.client.get("/")  # TODO: tune to short timeout!
+            await self.client.get("/")
             return True
         except httpx.RequestError:
             return False
