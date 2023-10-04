@@ -6,7 +6,7 @@ include ../../scripts/common-service.Makefile
 
 
 .env-ignore:
-	$(APP_CLI_NAME) generate-dotenv --auto-password > $@
+	$(APP_CLI_NAME) echo-dotenv --auto-password > $@
 
 .PHONY: openapi.json
 openapi-specs: openapi.json
