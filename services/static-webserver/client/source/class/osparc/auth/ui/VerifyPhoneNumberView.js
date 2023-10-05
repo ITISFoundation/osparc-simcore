@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaz)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -59,11 +59,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     _buildPage: function() {
       this.__buildVerificationLayout();
       const validationLayout = this.__createValidationLayout().set({
-        zIndex: 1 // the contries list that goes on top has a z-index of 2
+        zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       this.add(validationLayout);
       const sendViaEmailBtn = this.__createSendViaEmailButton().set({
-        zIndex: 1 // the contries list that goes on top has a z-index of 2
+        zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       this.add(sendViaEmailBtn);
       this.__attachHandlers();
