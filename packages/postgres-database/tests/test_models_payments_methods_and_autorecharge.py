@@ -14,7 +14,7 @@ from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import FAKE
 from simcore_postgres_database import errors
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.payments_automation import payments_autorecharge
+from simcore_postgres_database.models.payments_autorecharge import payments_autorecharge
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
