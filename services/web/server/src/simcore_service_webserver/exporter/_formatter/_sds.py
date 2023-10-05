@@ -27,7 +27,29 @@ from .xlsx.writer import write_xlsx_files
 
 _logger = logging.getLogger(__name__)
 
-_EXPECTED_TSR_KEYS: Final[int] = 18
+_ORIGINAL_TSR_KEYS: Final[set[str]] = {
+    "r01",
+    "r02",
+    "r03",
+    "r04",
+    "r05",
+    "r06",
+    "r07",
+    "r08",
+    "r09",
+    "r10",
+}
+_ONLY_REFERENCE_TSR_KEYS: Final[set[str]] = {
+    "r03b",
+    "r03c",
+    "r07b",
+    "r07c",
+    "r07d",
+    "r07e",
+    "r08b",
+    "r10b",
+}
+_EXPECTED_TSR_KEYS: Final[set[str]] = _ORIGINAL_TSR_KEYS | _ONLY_REFERENCE_TSR_KEYS
 
 
 def _write_sds_directory_content(
@@ -93,27 +115,37 @@ async def create_sds_directory(
     # adding TSR data
     quality_data = project_data["quality"]
     if quality_data.get("enabled", False):
-        # some projects may not have a "tsr_current" entry,
-        #  because this field is enforced by the frontend
-        tsr_data = quality_data.get("tsr_current", {})
-        tsr_data_len = len(tsr_data)
+        # check if the TSR data is in the expected format
+        # otherwise ask the user to save it once more
+        tsr_target: dict[str, Any] = quality_data.get("tsr_target", {})
+        tsr_current = quality_data.get("tsr_current", {})
+        tsr_target_keys = set(tsr_target.keys())
+        tsr_current_keys = set(tsr_current.keys())
 
-        # make sure all 10 entries are present for a valid format
-        if tsr_data_len == _EXPECTED_TSR_KEYS:
-            for i in range(1, tsr_data_len + 1):
-                tsr_entry_key = "r%.02d" % i
-                tsr_entry = tsr_data[tsr_entry_key]
+        tsr_entries: dict[str, Any] = {}
 
-                rating_store_key = f"tsr{i}_rating" if i != 10 else f"tsr{i}a_rating"
-                reference_store_key = (
-                    f"tsr{i}_reference" if i != 10 else f"tsr{i}a_reference"
-                )
+        if tsr_target_keys == tsr_current_keys == _EXPECTED_TSR_KEYS:
+            # since the data is in the expected format, extract it
+            for key in _ORIGINAL_TSR_KEYS:
+                if key not in tsr_entries:
+                    tsr_entries[key] = {}
 
-                params_code_description[rating_store_key] = tsr_entry["level"]
-                params_code_description[reference_store_key] = tsr_entry["references"]
+                target_level: int = tsr_target.get(key, {}).get("level", 4)
+                current_level: int = tsr_current.get(key, {}).get("level", 0)
+                tsr_entries[key]["target_level"] = target_level
+                tsr_entries[key]["current_level"] = current_level
+
+            for key in _EXPECTED_TSR_KEYS:
+                if key not in tsr_entries:
+                    tsr_entries[key] = {}
+
+                references = tsr_current.get(key, {}).get("references", "")
+                tsr_entries[key]["references"] = references.split("\n")
+
+            params_code_description["tsr_entries"] = tsr_entries
         else:
-            # NOTE: user might have a deprecated version here, let's ask him to regenerate the TSR
-            # this should make it exportable once again after he is done.
+            # User might have a deprecated version here, asking to regenerate the TSR.
+            # This should make it exportable once again after the format is saved.
             msg = (
                 "Current TSR data format is too old. Please `Edit` and `Save` it again."
             )

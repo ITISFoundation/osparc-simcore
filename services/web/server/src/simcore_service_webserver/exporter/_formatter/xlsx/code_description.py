@@ -1,11 +1,11 @@
 from abc import abstractmethod
 from collections import deque
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, Final, cast
 
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
 
-from .core.styling_components import TB, Backgrounds, Borders, Link, T
+from .core.styling_components import TB, Backgrounds, Borders, Comment, Link, T
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
 from .utils import column_generator, ensure_correct_instance
 
@@ -27,176 +27,23 @@ class RRIDEntry(BaseModel):
     )
 
 
+class TSROnlYReferenceEntry(BaseModel):
+    references: list[str]
+
+
+class TSRFullEntry(TSROnlYReferenceEntry):
+    target_level: int  # max value allowed
+    current_level: int  # current selection
+
+
 class CodeDescriptionModel(BaseModel):
     rrid_entires: list[RRIDEntry] = Field(
         default_factory=list, description="composed from the classifiers"
     )
 
     # TSR
-    tsr1_rating: int | None = Field(
-        None,
-        description=(
-            "Develop and document the subject, purpose and intended use(s) of model,"
-            " simulation or data processing (MSoP) submission"
-        ),
-    )
-    tsr1_reference: StrictStr = Field("", description=("Reference to context of use"))
-    tsr2_rating: int | None = Field(
-        None,
-        description=(
-            "Employ relevant and traceable information in the development or "
-            "operation of the MSoP submission"
-        ),
-    )
-    tsr2_reference: StrictStr = Field(
-        "",
-        description=(
-            "Reference to relevant and traceable information employed in the "
-            "development or operation"
-        ),
-    )
-    tsr3_rating: int | None = Field(
-        None,
-        description=(
-            "Reference to relevant and traceable information employed in the "
-            "development or operation"
-        ),
-    )
-    tsr3_reference: StrictStr = Field(
-        "",
-        description=(
-            "Reference to verification, validation, uncertainty quantification "
-            "and sensitivity analysis"
-        ),
-    )
-    tsr4_rating: int | None = Field(
-        None,
-        description=(
-            "Restrictions, constraints or qualifications for, or on, the use "
-            "of the submission are available for consideration by the users"
-        ),
-    )
-    tsr4_reference: StrictStr = Field(
-        "",
-        description="Reference to restrictions, constraints or qualifcations for use",
-    )
-    tsr5_rating: int | None = Field(
-        None,
-        description=(
-            "Implement a system to trace the time history of MSoP activities, "
-            "including delineation of contributors' efforts"
-        ),
-    )
-    tsr5_reference: StrictStr = Field(
-        "", description="Reference to version control system"
-    )
-    tsr6_rating: int | None = Field(
-        None,
-        description=(
-            "Maintain up-to-date informative records of all MSoP activities, "
-            "including simulation code, model mark-up, scope and intended use "
-            "of the MSoP activities, as well as users' and developers' guides"
-        ),
-    )
-    tsr6_reference: StrictStr = Field(
-        "", description="Reference to documentation described above"
-    )
-    tsr7_rating: int | None = Field(
-        None,
-        description=(
-            "Publish all components of MSoP including simulation software, "
-            "models, simulation scenarios and results"
-        ),
-    )
-    tsr7_reference: StrictStr = Field("", description="Reference to publications")
-    tsr8_rating: int | None = Field(
-        None,
-        description=(
-            "Have the MSoP submission reviewed by nonpartisan third-party "
-            "users and developers"
-        ),
-    )
-    tsr8_reference: StrictStr = Field(
-        "", description="Reference to independent reviews"
-    )
-    tsr9_rating: int | None = Field(
-        None,
-        description=(
-            "Use contrasting MSoP execution strategies to compare the "
-            "conclusions of the different execution strategies against "
-            "each other"
-        ),
-    )
-    tsr9_reference: StrictStr = Field(
-        "", description="Reference to implementations tested"
-    )
-    tsr10a_rating: int | None = Field(
-        None,
-        description=(
-            "Adopt and promote generally applicable and discipline-specific "
-            "operating procedures, guidelines and regulation accepted as "
-            "best practices"
-        ),
-    )
-    tsr10a_reference: StrictStr = Field(
-        "", description="Reference to conformance to standards"
-    )
-    tsr10b_relevant_standards: StrictStr = Field(
-        "", description="Reference to relevant standards"
-    )
-
-    # Annotations
-    ann1_status: StrictStr = Field(
-        "no",
-        description=(
-            "Provide assurance that the MSoP submissions is free of bugs "
-            "in the source code and numerical algorithms (yes/no)"
-        ),
-    )
-    ann1_reference: StrictStr = Field(
-        "", description="Link to the verification documentation"
-    )
-    ann2_status: StrictStr = Field(
-        "no",
-        description=(
-            "Assess the degree to which a computer model and simulation "
-            "framework is able to simulate a reality of interest"
-        ),
-    )
-    ann2_reference: StrictStr = Field("", description="Reference to assessment")
-    ann3_status: StrictStr = Field(
-        "no", description="The code has been certified externally (yes/no)"
-    )
-    ann3_reference: StrictStr = Field(
-        "", description="Reference to the certification, if it has been certified"
-    )
-    ann4_status: StrictStr = Field(
-        "no",
-        description=(
-            "The MSoP submission has been integrated into the o²S²PARC "
-            "platform and is publicly available"
-        ),
-    )
-    ann4_reference: StrictStr = Field(
-        "",
-        description=(
-            "The name of the onboarded service or template on the o²S²PARC platform"
-        ),
-    )
-    ann5_status: StrictStr = Field(
-        "no",
-        description=(
-            "The MSoP submission includes unit and integration testing on "
-            "the o²S²PARC platform"
-        ),
-    )
-    ann5_reference: StrictStr = Field(
-        "", description="Reference to the tests run on the onboarded MSoP submission"
-    )
-
-    # other
-    reppresentation_in_cell_ml: StrictStr = Field(
-        "", description="Analogous CellML/SED-ML model representation, if any"
+    tsr_entries: dict[str, TSRFullEntry | TSROnlYReferenceEntry] = Field(
+        default_factory=dict, description="list of rules to generate tsr"
     )
 
 
@@ -813,7 +660,7 @@ def _include_ports_from_this_service(service_key: ServiceKey) -> bool:
 
 
 def _format_value_label(index: int) -> str:
-    return f"Value {index}" if index > 0 else "Value"
+    return f"Value {index+1}" if index > 0 else "Value"
 
 
 class BaseSheetDivisionParts(BaseModel):
@@ -913,6 +760,280 @@ class RRIDSheetPart(BaseSheetDivisionParts):
             )
 
         return static_cells + rrid_cells + styles
+
+
+_SORTED_REFERENCE_ITEMS: Final[list[str]] = [
+    "r01",
+    "r02",
+    "r03",
+    "r03b",
+    "r03c",
+    "r04",
+    "r05",
+    "r06",
+    "r07",
+    "r07b",
+    "r07c",
+    "r07d",
+    "r07e",
+    "r08",
+    "r08b",
+    "r09",
+    "r10",
+    "r10b",
+]
+
+
+class TSRSheetPart(BaseSheetDivisionParts):
+    total_columns: int = 20
+
+    def get_cell_styles(
+        self, o: int, sheet_data: BaseModel
+    ) -> list[tuple[str, BaseXLSXCellData]]:
+        static_cells: list[tuple[str, BaseXLSXCellData]] = [
+            # HEADERS
+            (f"A{o+1}", T("Ten Simple Rules (TSR)")),
+            (
+                f"B{o+1}",
+                Link(
+                    "See TSR conformance for a definition of the Levels",
+                    "https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric",
+                ),
+            ),
+            (f"C{o+1}", T("Example")),
+            (f"A{o+2}", T("TSR Column Type")),
+            (
+                f"B{o+2}",
+                T(
+                    "Column type. Valid values are: Link, Text, Rating, Target, Target Justification"
+                )
+                | Comment(
+                    (
+                        "Note that the actual requirements for TSR rows are a bit more complex. "
+                        "For example, the at least one link column must always be present, but for any "
+                        "given row it may be empty if there is a text column present with a value."
+                    ),
+                    "",
+                    width=400,
+                ),
+            ),
+            (f"C{o+2}", T("Link")),
+            # TSR Legend
+            (f"A{o+3}", T("TSR1: Clearly Defined Context")),
+            (f"B{o+3}", T("Description of use cases for the project.")),
+            (f"C{o+3}", T("https://doi.org/10.1101/2021.02.10.430563")),
+            (f"A{o+4}", T("TSR2: Use of Appropriate Data")),
+            (
+                f"B{o+4}",
+                T(
+                    "Links to data that was used to create, validate, test, etc. the project."
+                ),
+            ),
+            (f"C{o+4}", T("https://sparc.science/data?type=dataset")),
+            (f"A{o+5}", T("TSR3a: Verification")),
+            (f"B{o+5}", T("Link to test suite for project.")),
+            (
+                f"C{o+5}",
+                T("https://github.com/SciCrunch/sparc-curation/tree/master/test"),
+            ),
+            (f"A{o+6}", T("TSR3b: Verification Results")),
+            (
+                f"B{o+6}",
+                T(
+                    "Link to test results from running the tests for the project, e.g., "
+                    "on the o²S²PARC platform"
+                ),
+            ),
+            (f"A{o+7}", T("TSR3c: Evaluation Within Context")),
+            (
+                f"B{o+7}",
+                T(
+                    "Link to scientific validation (experimental comparator), sensitivity "
+                    "analysis and uncertainty quantification for the project in the context "
+                    "of the use cases described in TSR1."
+                ),
+            ),
+            (f"A{o+8}", T("TSR4: Explicitly Listed Limitations")),
+            (
+                f"B{o+8}",
+                T(
+                    "Link to documentation of known issues and limitations of the project."
+                ),
+            ),
+            (f"A{o+9}", T("TSR5: Version Control")),
+            (
+                f"B{o+9}",
+                T(
+                    "Link to primary forge repository for the project. For example, o²S²PARC, github, or gitlab instance."
+                ),
+            ),
+            (f"C{o+9}", T("https://github.com/SciCrunch/sparc-curation")),
+            (f"A{o+10}", T("TSR6: Adequate Documentation")),
+            (
+                f"B{o+10}",
+                T("Link to user and/or developer documentation for the project."),
+            ),
+            (
+                f"C{o+10}",
+                T("https://github.com/SciCrunch/sparc-curation/blob/master/README.md"),
+            ),
+            (f"A{o+11}", T("TSR7a: Broad Dissemination: Releases")),
+            (
+                f"B{o+11}",
+                T(
+                    "Link to the download or release page for the project, e.g., on the SPARC Portal."
+                ),
+            ),
+            (f"C{o+11}", T("https://github.com/SciCrunch/sparc-curation/releases")),
+            (f"A{o+12}", T("TSR7b: Broad Dissemination: Issues")),
+            (f"B{o+12}", T("Link to project issue tracker.")),
+            (f"C{o+12}", T("https://github.com/SciCrunch/sparc-curation/issues")),
+            (f"A{o+13}", T("TSR7c: Broad Dissemination: License")),
+            (f"B{o+13}", T("Link to project license.")),
+            (
+                f"C{o+13}",
+                T("https://github.com/SciCrunch/sparc-curation/blob/master/LICENSE"),
+            ),
+            (f"A{o+14}", T("TSR7d: Broad Dissemination: Packages")),
+            (
+                f"B{o+14}",
+                T(
+                    "Link to language ecosystem package repository. For example, PyPI for python projects."
+                ),
+            ),
+            (f"C{o+14}", T("https://pypi.org/project/sparcur/")),
+            (f"A{o+15}", T("TSR7e: Broad Dissemination: Interactive")),
+            (
+                f"B{o+15}",
+                T(
+                    "Link to the project on an interactive software hosting platform e.g. o²S²PARC"
+                ),
+            ),
+            (
+                f"C{o+15}",
+                T(
+                    "https://github.com/tgbugs/dockerfiles/blob/master/source.org#sparcron-user"
+                ),
+            ),
+            (f"A{o+16}", T("TSR8a: Independent Reviews")),
+            (
+                f"B{o+16}",
+                T(
+                    "Links to reviews of project by independent members of the community."
+                ),
+            ),
+            (f"C{o+16}", T("https://www.incf.org/sparc-data-structure")),
+            (f"A{o+17}", T("TSR8b: External Certification")),
+            (f"B{o+17}", T("Link to external certification of project.")),
+            (
+                f"C{o+17}",
+                T("https://www.nlm.nih.gov/NIHbmic/domain_specific_repositories.html"),
+            ),
+            (f"A{o+18}", T("TSR9: Competing Implementation Testing")),
+            (
+                f"B{o+18}",
+                T(
+                    "Link to benchmarking against other projects operating in the same domain."
+                ),
+            ),
+            (f"A{o+19}", T("TSR10a: Relevant standards")),
+            (
+                f"B{o+19}",
+                T(
+                    "List and/or link to standards/guidelines that this project conforms to or implements."
+                ),
+            ),
+            (f"A{o+20}", T("TSR10b: Standards Adherence")),
+            (f"A{o+20}", T("Link to demonstration that project conforms to standard.")),
+        ]
+
+        tsr_entries = cast(dict[str, TSRFullEntry | TSROnlYReferenceEntry], sheet_data)
+
+        rating_and_target_values: list[tuple[str, BaseXLSXCellData]] = [
+            (f"D{o+2}", T("Rating")),
+            (f"E{o+2}", T("Target")),
+            (f"D{o+3}", T(tsr_entries["r01"].current_level)),
+            (f"E{o+3}", T(tsr_entries["r01"].target_level)),
+            (f"D{o+4}", T(tsr_entries["r02"].current_level)),
+            (f"E{o+4}", T(tsr_entries["r02"].target_level)),
+            (f"D{o+5}", T(tsr_entries["r03"].current_level)),
+            (f"E{o+5}", T(tsr_entries["r03"].target_level)),
+            (f"D{o+8}", T(tsr_entries["r04"].current_level)),
+            (f"E{o+8}", T(tsr_entries["r04"].target_level)),
+            (f"D{o+9}", T(tsr_entries["r05"].current_level)),
+            (f"E{o+9}", T(tsr_entries["r05"].target_level)),
+            (f"D{o+10}", T(tsr_entries["r06"].current_level)),
+            (f"E{o+10}", T(tsr_entries["r06"].target_level)),
+            (f"D{o+11}", T(tsr_entries["r07"].current_level)),
+            (f"E{o+11}", T(tsr_entries["r07"].target_level)),
+            (f"D{o+16}", T(tsr_entries["r08"].current_level)),
+            (f"E{o+16}", T(tsr_entries["r08"].target_level)),
+            (f"D{o+18}", T(tsr_entries["r09"].current_level)),
+            (f"E{o+18}", T(tsr_entries["r09"].target_level)),
+            (f"D{o+19}", T(tsr_entries["r10"].current_level)),
+            (f"E{o+19}", T(tsr_entries["r10"].target_level)),
+        ]
+
+        max_references_length = max(
+            len(tsr_entries[k].references) for k in _SORTED_REFERENCE_ITEMS
+        )
+
+        value_labels_cells: list[tuple[str, BaseXLSXCellData]] = [
+            (f"{c}{o+1}", T(_format_value_label(i)) | Backgrounds.gray_background)
+            for i, c in enumerate(column_generator(4, max_references_length + 2))
+        ]
+        link_labels_cells: list[tuple[str, BaseXLSXCellData]] = [
+            (f"{c}{o+2}", T("Link")) for c in column_generator(6, max_references_length)
+        ]
+
+        references_cells: list[tuple[str, BaseXLSXCellData]] = []
+        for i, key in enumerate(_SORTED_REFERENCE_ITEMS):
+            references = tsr_entries[key].references
+            for c, reference in zip(
+                column_generator(6, len(references)), references, strict=True
+            ):
+                references_cells.append((f"{c}{o+3+i}", T(reference)))
+
+        items_already_converted_cells: list[tuple[str, BaseXLSXCellData]] = [
+            (f"D{o+6}", T("All TSR3 items are covered by the rating on the TSR3a row")),
+            (f"D{o+6}:E{o+7}", Backgrounds.gray_background),
+            (
+                f"D{o+12}",
+                T("All TSR7 items are covered by the rating on the TSR7a row"),
+            ),
+            (f"D{o+12}:E{o+16}", Backgrounds.gray_background),
+            (
+                f"D{o+17}",
+                T("All TSR8 items are covered by the rating on the TSR8a row"),
+            ),
+            (f"D{o+17}:E{o+17}", Backgrounds.gray_background),
+            (
+                f"D{o+20}",
+                T("All TSR10 items are covered by the rating on the TSR10a row"),
+            ),
+            (f"D{o+20}:E{o+20}", Backgrounds.gray_background),
+        ]
+
+        style_cells: list[tuple[str, BaseXLSXCellData]] = [
+            (f"A{o+1}:C{o+1}", Backgrounds.gray_background),
+            (f"A{o+2}:B{o+3}", Backgrounds.blue),
+            (f"A{o+4}:B{o+7}", Backgrounds.green_light),
+            (f"A{o+8}:B{o+8}", Backgrounds.blue),
+            (f"A{o+9}:B{o+9}", Backgrounds.green_light),
+            (f"A{o+10}:B{o+10}", Backgrounds.blue),
+            (f"A{o+11}:B{o+20}", Backgrounds.green_light),
+            (f"A{o+1}:B{o+20}", Borders.medium_grid),
+        ]
+
+        return (
+            static_cells
+            + rating_and_target_values
+            + value_labels_cells
+            + link_labels_cells
+            + references_cells
+            + items_already_converted_cells
+            + style_cells
+        )
 
 
 class InputsOutputsSheetPart(BaseSheetDivisionParts):
@@ -1118,6 +1239,7 @@ class SheetCodeDescriptionV2(BaseXLSXSheet):
 
         entries: list[tuple[BaseSheetDivisionParts, Any]] = [
             (RRIDSheetPart(), code_description_params.code_description.rrid_entires),
+            (TSRSheetPart(), code_description_params.code_description.tsr_entries),
             (InputsOutputsSheetPart(), code_description_params),
         ]
         for sheet_division, sheet_data in entries:
@@ -1135,5 +1257,5 @@ class SheetCodeDescriptionV2(BaseXLSXSheet):
 
 
 class CodeDescriptionXLSXDocument(BaseXLSXDocument):
-    file_name = "code_submission.xlsx"
+    file_name = "code_description.xlsx"
     sheet1 = SheetCodeDescriptionV2()
