@@ -29,6 +29,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
   events: {
     "toRegister": "qx.event.type.Event",
+    "toRequestAccount": "qx.event.type.Event",
     "toReset": "qx.event.type.Event",
     "toVerifyPhone": "qx.event.type.Data",
     "to2FAValidationCode": "qx.event.type.Data"
@@ -80,27 +81,38 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       //  (create account/request account) | forgot password? links
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
-      const registerBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
-      registerBtn.addListener("execute", () => {
-        registerBtn.setEnabled(false);
+      const createAccountBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
+      osparc.data.Resources.getOne("config")
+        .then(config => {
+          if (config["invitation_required"]) {
+            createAccountBtn.setLabel(this.tr("Request Account"));
+          }
+        })
+        .catch(err => console.error(err));
+      createAccountBtn.addListener("execute", () => {
+        createAccountBtn.setEnabled(false);
         osparc.data.Resources.getOne("config")
           .then(config => {
             if (config["invitation_required"]) {
-              osparc.store.Support.openInvitationRequiredDialog();
+              if (osparc.product.Utils.getProductName().includes("s4l")) {
+                this.fireEvent("toRequestAccount");
+              } else {
+                osparc.store.Support.openInvitationRequiredDialog();
+              }
             } else {
               this.fireEvent("toRegister");
             }
           })
           .catch(err => console.error(err));
-        registerBtn.setEnabled(true);
+        createAccountBtn.setEnabled(true);
       }, this);
-      osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
+      osparc.utils.Utils.setIdToWidget(createAccountBtn, "loginCreateAccountBtn");
 
       const forgotBtn = new osparc.ui.form.LinkButton(this.tr("Forgot Password?"));
       forgotBtn.addListener("execute", () => this.fireEvent("toReset"), this);
       osparc.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
-      [registerBtn, forgotBtn].forEach(btn => {
+      [createAccountBtn, forgotBtn].forEach(btn => {
         grp.add(btn.set({
           center: true,
           allowGrowX: true
