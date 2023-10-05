@@ -164,9 +164,15 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       submitBtn.addListener("execute", e => {
         const valid = this._form.validate();
         if (valid) {
-          const formData = {
-            email: email.getValue()
-          };
+          const formData = {};
+          Object.entries(this._form.getItems()).forEach(([key, field]) => {
+            const val = field.getValue();
+            if (val && ("classname" in val)) {
+              formData[key] = val.getModel();
+            } else {
+              formData[key] = val;
+            }
+          });
           this.__submit(formData);
         }
       }, this);
@@ -178,17 +184,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
     __submit: function(formData) {
       console.log(formData);
-      /*
-      osparc.auth.Manager.getInstance().register(formData)
-        .then(log => {
-          this.fireDataEvent("done", log.message);
-          osparc.FlashMessenger.getInstance().log(log);
-        })
-        .catch(err => {
-          const msg = err.message || this.tr("Cannot register user");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
-      */
+      const msg = this.tr("The request is being processed, you will here from us in the coming hours");
+      osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+      this.fireDataEvent("done");
     },
 
     _onAppear: function() {
