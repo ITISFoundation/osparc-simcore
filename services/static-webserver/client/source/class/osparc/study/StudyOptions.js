@@ -119,38 +119,10 @@ qx.Class.define("osparc.study.StudyOptions", {
           control.getContentElement().addClass("rotate");
           this.getChildControl("options-layout").add(control);
           break;
-        case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-            alignX: "right"
-          }));
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
-          });
-          break;
-        case "open-button":
-          control = new qx.ui.form.Button(this.tr("Open")).set({
-            appearance: "strong-button",
-            font: "text-14",
-            width: 120,
-            height: 35,
-            center: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
-          this.getChildControl("buttons-layout").add(control);
-          break;
-        case "cancel-button":
-          control = new qx.ui.form.Button(this.tr("Cancel")).set({
-            font: "text-14",
-            width: 120,
-            height: 35,
-            center: true
-          });
-          this.getChildControl("buttons-layout").add(control);
-          break;
         case "wallet-selector-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
             maxWidth: 150
-          });
+          }));
           this.getChildControl("top-summary-layout").add(control, {
             flex: 1
           });
@@ -164,6 +136,36 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "credits-left-view":
           control = this.__getCreditsLeftView();
           this.getChildControl("wallet-selector-layout").add(control);
+          break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignX: "right"
+          }).set({
+            maxWidth: 150
+          }));
+          this.getChildControl("top-summary-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "open-button":
+          control = new qx.ui.form.Button(this.tr("Open")).set({
+            appearance: "strong-button",
+            font: "text-14",
+            allowGrowX: true,
+            height: 35,
+            center: true
+          });
+          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
+          this.getChildControl("buttons-layout").add(control);
+          break;
+        case "cancel-button":
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            font: "text-14",
+            allowGrowX: true,
+            height: 35,
+            center: true
+          });
+          this.getChildControl("buttons-layout").add(control);
           break;
         case "services-resources-layout":
           control = this.self().createGroupBox(this.tr("Select Resources"));
