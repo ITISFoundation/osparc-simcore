@@ -5,10 +5,10 @@ from pathlib import Path
 import rich
 import typer
 import yaml
+from models_library.utils.labels_annotations import to_labels
 from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
-from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
