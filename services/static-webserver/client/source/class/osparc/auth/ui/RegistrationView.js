@@ -56,7 +56,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         required: true
       });
       osparc.utils.Utils.setIdToWidget(pass1.getChildControl("passwordField"), "registrationPass1Fld");
-      this._form.add(email, this.tr("Type a password"), null, "pass1");
+      this._form.add(pass1, this.tr("Type a password"), null, "pass1");
 
       const pass2 = new osparc.ui.form.PasswordField().set({
         required: true
