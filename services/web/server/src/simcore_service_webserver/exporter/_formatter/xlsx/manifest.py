@@ -11,7 +11,8 @@ class Sheet1Manifest(BaseXLSXSheet):
         ("A1", TB("filename") | Backgrounds.blue | Borders.light_grid),
         ("B1", TB("timestamp") | Backgrounds.green_light | Borders.light_grid),
         ("C1", TB("description") | Backgrounds.green_light | Borders.light_grid),
-        ("D1", TB("file type") | Backgrounds.yellow | Borders.light_grid),
+        ("D1", TB("file type") | Backgrounds.green_light | Borders.light_grid),
+        ("E1", TB("Additional Metadata") | Backgrounds.yellow | Borders.light_grid),
         # entry
         ("A2", TB("template.json")),
         (
@@ -21,7 +22,13 @@ class Sheet1Manifest(BaseXLSXSheet):
             ),
         ),
     ]
-    column_dimensions: ClassVar[dict[str, int]] = {"A": 15, "B": 40, "C": 25, "D": 10}
+    column_dimensions: ClassVar[dict[str, int]] = {
+        "A": 15,
+        "B": 15,
+        "C": 55,
+        "D": 10,
+        "E": 15,
+    }
 
 
 class ManifestXLSXDocument(BaseXLSXDocument):
