@@ -77,7 +77,7 @@ def create_payment_router():
     return router
 
 
-def auth_session(X_Init_Api_Secret: Annotated[str | None, Header()] = None):
+def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None):
     return 1
 
 
