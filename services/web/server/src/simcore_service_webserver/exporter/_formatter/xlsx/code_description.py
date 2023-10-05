@@ -265,6 +265,19 @@ _SORTED_REFERENCE_ITEMS: Final[list[str]] = [
 ]
 
 
+_LEVEL_TO_LABEL_MAPPING: dict[int, str] = {
+    0: "Not Applicable",
+    1: "Partial",
+    2: "Adequate",
+    3: "Extensive",
+    4: "Comprehensive",
+}
+
+
+def _level_to_label(level: int) -> str:
+    return _LEVEL_TO_LABEL_MAPPING.get(level, f"{level}")
+
+
 class TSRSheetPart(BaseSheetDivisionParts):
     total_columns: int = 20
 
@@ -433,26 +446,26 @@ class TSRSheetPart(BaseSheetDivisionParts):
         rating_and_target_values: list[tuple[str, BaseXLSXCellData]] = [
             (f"D{o+2}", T("Rating")),
             (f"E{o+2}", T("Target")),
-            (f"D{o+3}", T(tsr_entries["r01"].current_level)),
-            (f"E{o+3}", T(tsr_entries["r01"].target_level)),
-            (f"D{o+4}", T(tsr_entries["r02"].current_level)),
-            (f"E{o+4}", T(tsr_entries["r02"].target_level)),
-            (f"D{o+5}", T(tsr_entries["r03"].current_level)),
-            (f"E{o+5}", T(tsr_entries["r03"].target_level)),
-            (f"D{o+8}", T(tsr_entries["r04"].current_level)),
-            (f"E{o+8}", T(tsr_entries["r04"].target_level)),
-            (f"D{o+9}", T(tsr_entries["r05"].current_level)),
-            (f"E{o+9}", T(tsr_entries["r05"].target_level)),
-            (f"D{o+10}", T(tsr_entries["r06"].current_level)),
-            (f"E{o+10}", T(tsr_entries["r06"].target_level)),
-            (f"D{o+11}", T(tsr_entries["r07"].current_level)),
-            (f"E{o+11}", T(tsr_entries["r07"].target_level)),
-            (f"D{o+16}", T(tsr_entries["r08"].current_level)),
-            (f"E{o+16}", T(tsr_entries["r08"].target_level)),
-            (f"D{o+18}", T(tsr_entries["r09"].current_level)),
-            (f"E{o+18}", T(tsr_entries["r09"].target_level)),
-            (f"D{o+19}", T(tsr_entries["r10"].current_level)),
-            (f"E{o+19}", T(tsr_entries["r10"].target_level)),
+            (f"D{o+3}", T(_level_to_label(tsr_entries["r01"].current_level))),
+            (f"E{o+3}", T(_level_to_label(tsr_entries["r01"].target_level))),
+            (f"D{o+4}", T(_level_to_label(tsr_entries["r02"].current_level))),
+            (f"E{o+4}", T(_level_to_label(tsr_entries["r02"].target_level))),
+            (f"D{o+5}", T(_level_to_label(tsr_entries["r03"].current_level))),
+            (f"E{o+5}", T(_level_to_label(tsr_entries["r03"].target_level))),
+            (f"D{o+8}", T(_level_to_label(tsr_entries["r04"].current_level))),
+            (f"E{o+8}", T(_level_to_label(tsr_entries["r04"].target_level))),
+            (f"D{o+9}", T(_level_to_label(tsr_entries["r05"].current_level))),
+            (f"E{o+9}", T(_level_to_label(tsr_entries["r05"].target_level))),
+            (f"D{o+10}", T(_level_to_label(tsr_entries["r06"].current_level))),
+            (f"E{o+10}", T(_level_to_label(tsr_entries["r06"].target_level))),
+            (f"D{o+11}", T(_level_to_label(tsr_entries["r07"].current_level))),
+            (f"E{o+11}", T(_level_to_label(tsr_entries["r07"].target_level))),
+            (f"D{o+16}", T(_level_to_label(tsr_entries["r08"].current_level))),
+            (f"E{o+16}", T(_level_to_label(tsr_entries["r08"].target_level))),
+            (f"D{o+18}", T(_level_to_label(tsr_entries["r09"].current_level))),
+            (f"E{o+18}", T(_level_to_label(tsr_entries["r09"].target_level))),
+            (f"D{o+19}", T(_level_to_label(tsr_entries["r10"].current_level))),
+            (f"E{o+19}", T(_level_to_label(tsr_entries["r10"].target_level))),
         ]
 
         max_references_length = max(
@@ -734,6 +747,7 @@ class SheetCodeDescriptionV2(BaseXLSXSheet):
         "B": 40,
         "C": 40,
         "D": 40,
+        "E": 40,
     }
 
 
