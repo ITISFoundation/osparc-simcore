@@ -53,6 +53,7 @@ from simcore_service_dask_sidecar.computational_sidecar.errors import (
 )
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
+    ImageLabels,
 )
 from simcore_service_dask_sidecar.dask_utils import _DEFAULT_MAX_RESOURCES
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
@@ -431,8 +432,8 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 def mocked_get_image_labels(
     integration_version: version.Version, mocker: MockerFixture
 ) -> mock.Mock:
-    labels: ServiceDockerData = parse_obj_as(
-        ServiceDockerData, ServiceDockerData.Config.schema_extra["examples"][0]
+    labels: ImageLabels = parse_obj_as(
+        ImageLabels, ServiceDockerData.Config.schema_extra["examples"][0]
     )
     labels.integration_version = f"{integration_version}"
     mocked_get_image_labels = mocker.patch(
