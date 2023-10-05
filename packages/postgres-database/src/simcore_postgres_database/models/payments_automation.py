@@ -12,13 +12,13 @@ from .payments_methods import payments_methods
 #
 # NOTE:
 #  - This table was designed to work in an isolated database that contains only payments_* tables
-#
+#  - Specifies autorecharge settings for each wallet, including a minimum balance and primary payment methods.
 
 payments_autorecharge = sa.Table(
     "payments_autorecharge",
     metadata,
     sa.Column(
-        "autorecharge_id",
+        "id",
         sa.BigInteger,
         primary_key=True,
         autoincrement=True,
@@ -82,6 +82,11 @@ payments_autorecharge = sa.Table(
     # time-stamps
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    #
+    sa.CheckConstraint(
+        "(inc_payments_countdown >= 0) OR (inc_payments_countdown IS NULL)",
+        name="check_inc_payments_countdown_nonnegative",
+    ),
 )
 
 
