@@ -16,17 +16,22 @@ from .payments_methods import payments_methods
 #    except for payments_methods or payments_transactions
 #  - One automation per wallet_id BUT cannot use Foreign-Key to wallets
 
-payments_automation = sa.Table(
+payments_autorecharge = sa.Table(
     "payments_automation",
     metadata,
-    # NOTE:
+    sa.Column(
+        "id",
+        sa.String,
+        nullable=False,
+        primary_key=True,
+        doc="Unique payment-automation identifier",
+    ),
     sa.Column(
         "wallet_id",
         sa.BigInteger,
-        #   cannot use foreign-key because it would require a link to wallets table
+        # NOTE: cannot use foreign-key because it would require a link to wallets table
         nullable=False,
         doc="Wallet associated to the auto-recharge",
-        index=True,
         unique=True,  # only one automation per wallet
     ),
     sa.Column(
@@ -40,8 +45,9 @@ payments_automation = sa.Table(
         ),
         nullable=False,
         doc="[Required] Primary payment method selected for auto-recharge",
-        index=True,
-        unique=True,  # only one primary payment method
+        unique=True,
+        # NOTE: Only one primary payment method
+        # in the future we might have an extra secondary_payment_method_id
     ),
     #
     # Recharge Limits and Controls
@@ -82,4 +88,4 @@ payments_automation = sa.Table(
 )
 
 
-register_modified_datetime_auto_update_trigger(payments_automation)
+register_modified_datetime_auto_update_trigger(payments_autorecharge)
