@@ -215,7 +215,6 @@ async def get_solver_release(
 @router.get(
     "/{solver_key:path}/releases/{version}/ports",
     response_model=OnePage[SolverPort],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
@@ -226,7 +225,7 @@ async def list_solver_ports(
 ):
     """Lists inputs and outputs of a given solver
 
-    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    New in *version 0.5.0*
     """
     try:
         ports = await catalog_client.get_service_ports(
