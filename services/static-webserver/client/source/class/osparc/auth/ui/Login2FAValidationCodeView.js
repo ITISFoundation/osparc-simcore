@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaz)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 

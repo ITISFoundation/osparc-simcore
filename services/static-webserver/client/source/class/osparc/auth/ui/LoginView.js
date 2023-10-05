@@ -45,9 +45,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.add(announcementUIFactory.createLoginAnnouncement());
       }
 
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form).set({
-        allowGrowX: true
-      });
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
       this.add(formRenderer);
 
       const email = new qx.ui.form.TextField().set({

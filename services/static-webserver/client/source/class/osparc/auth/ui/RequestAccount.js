@@ -33,46 +33,41 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     _buildPage: function() {
       this._addTitleHeader(this.tr("Request Account"));
 
+      const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      this.add(formRenderer);
+
       const firstName = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("First Name")
+        required: true
       });
-      this.add(firstName);
+      this._form.add(firstName, this.tr("First Name"), null, "firstName");
 
       const lastName = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Last Name")
+        required: true
       });
-      this.add(lastName);
+      this._form.add(lastName, this.tr("Last Name"), null, "lastName");
 
       const email = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Email")
+        required: true
       });
-      this.add(email);
+      this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
 
-      const phone = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Phone Number")
-      });
-      this.add(phone);
+      const phone = new qx.ui.form.TextField();
+      this._form.add(phone, this.tr("Phone Number"), null, "phone");
 
       const company = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Company/University Name")
+        required: true
       });
-      this.add(company);
+      this._form.add(company, this.tr("Company/University Name"), null, "company");
 
       const address = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Address")
+        required: true
       });
-      this.add(address);
+      this._form.add(address, this.tr("Address"), null, "address");
 
       const country = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Country")
+        required: true
       });
-      this.add(country);
+      this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox().set({
         required: true
@@ -111,12 +106,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
         application.add(lItem);
       });
-      this.add(application, null, "Application");
+      this._form.add(application, this.tr("Application"), null, "application");
 
-      const description = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Description")
-      });
-      this.add(description);
+      const description = new qx.ui.form.TextField();
+      this._form.add(description, this.tr("Description"), null, "description");
 
       const hear = new qx.ui.form.SelectBox().set({
         required: true
@@ -140,16 +133,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
       });
-      this.add(hear, null, "How did you hear about us?");
+      this._form.add(hear, this.tr("How did you hear about us?"), null, "hear");
 
-      const message = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Message")
-      });
-      this.add(message);
-
-      // validation
-      const validator = new qx.ui.form.validation.Manager();
-      validator.add(email, qx.util.Validate.email());
+      const message = new qx.ui.form.TextField();
+      this._form.add(message, this.tr("Message"), null, "message");
 
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -170,7 +157,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // interaction
       submitBtn.addListener("execute", e => {
-        const valid = validator.validate();
+        const valid = this._form.validate();
         if (valid) {
           const formData = {
             email: email.getValue()
