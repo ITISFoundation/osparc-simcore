@@ -252,6 +252,8 @@ async def test_payments_automation(
         await _decrease_countdown(connection, wallet_id)
 
     exc = err_info.value
+    assert exc.pgerror
+    assert "check_inc_payments_countdown_nonnegative" in exc.pgerror
 
     # deactivate countdown
     await _update_autorecharge(connection, wallet_id, inc_payments_countdown=None)
