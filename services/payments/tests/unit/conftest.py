@@ -26,7 +26,7 @@ from simcore_service_payments.models.payments_gateway import (
 
 
 @pytest.fixture
-def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
+def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     def _doit():
         # The following moduls are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
@@ -47,10 +47,13 @@ async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
 
 
 @pytest.fixture
-def mock_payments_gateway_service_api_base(
-    app: FastAPI,
-) -> Iterator[MockRouter]:
+def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
+    """
+    If external_secret_envs is present, then this mock is not really used
+    and instead the test runs against some real services
+    """
     settings: ApplicationSettings = app.state.settings
+
     with respx.mock(
         base_url=settings.PAYMENTS_GATEWAY_URL,
         assert_all_called=False,
@@ -60,18 +63,31 @@ def mock_payments_gateway_service_api_base(
 
 
 @pytest.fixture
-def mock_init_payment_route(faker: Faker) -> Callable:
+def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
-        def _init_payment(request: httpx.Request):
+        def _init_200(request: httpx.Request):
             assert InitPayment.parse_raw(request.content) is not None
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+
             return httpx.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
             )
 
+        def _cancel_200(request: httpx.Request):
+            assert PaymentInitiated.parse_raw(request.content) is not None
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+
+            return httpx.Response(status.HTTP_200_OK, json={})
+
         mock_router.post(
             path="/init",
             name="init_payment",
-        ).mock(side_effect=_init_payment)
+        ).mock(side_effect=_init_200)
+
+        mock_router.post(
+            path="/cancel",
+            name="cancel_payment",
+        ).mock(side_effect=_cancel_200)
 
     return _mock
