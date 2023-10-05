@@ -144,7 +144,7 @@ class PaymentMethodGet(OutputSchema):
                     "idr": "pm_1234567890",
                     "walletId": 1,
                     "cardHolderName": "John Doe",
-                    "cardNumber_masked": "**** **** **** 1234",
+                    "cardNumberMasked": "**** **** **** 1234",
                     "cardType": "Visa",
                     "expirationMonth": 10,
                     "expirationYear": 2025,
