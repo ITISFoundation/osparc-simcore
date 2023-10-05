@@ -68,14 +68,14 @@ class DockerContainerConfig(BaseModel):
 
 class ImageLabels(BaseModel):
     integration_version: str = Field(
-        default=LEGACY_INTEGRATION_VERSION,
+        default=str(LEGACY_INTEGRATION_VERSION),
         alias="integration-version",
         description="integration version number",
         regex=VERSION_RE,
         examples=["1.0.0"],
     )
     progress_regexp: str = Field(
-        default=PROGRESS_REGEXP,
+        default=PROGRESS_REGEXP.pattern,
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
     )
