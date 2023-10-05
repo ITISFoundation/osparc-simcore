@@ -120,12 +120,15 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("options-layout").add(control);
           break;
         case "wallet-selector-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-            maxWidth: 150
-          }));
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("top-summary-layout").add(control);
+          break;
+        case "wallet-selector-label":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Credit Account:"),
+            font: "text-14"
           });
+          this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "wallet-selector":
           control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true).set({
@@ -140,8 +143,6 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
             alignX: "right"
-          }).set({
-            maxWidth: 150
           }));
           this.getChildControl("top-summary-layout").add(control, {
             flex: 1
@@ -151,7 +152,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.form.Button(this.tr("Open")).set({
             appearance: "strong-button",
             font: "text-14",
-            allowGrowX: true,
+            maxWidth: 150,
             height: 35,
             center: true
           });
@@ -161,7 +162,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
             font: "text-14",
-            allowGrowX: true,
+            maxWidth: 150,
             height: 35,
             center: true
           });
@@ -240,14 +241,13 @@ qx.Class.define("osparc.study.StudyOptions", {
         });
         Promise.all(promises)
           .then(values => {
-            console.log(values);
             if (values) {
               // eslint-disable-next-line no-underscore-dangle
               this.getChildControl("options-layout")._removeAll();
               this.getChildControl("options-layout").add(servicesBox);
               const advancedCB = new qx.ui.form.CheckBox().set({
                 label: this.tr("Advanced"),
-                value: false
+                value: true
               });
               servicesBox.add(advancedCB);
               values.forEach((pricingPlans, idx) => {
