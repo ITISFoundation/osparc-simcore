@@ -72,17 +72,35 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       [{
-        id: "em",
-        label: "EM"
+        id: "Antenna_Design",
+        label: "Antenna Design"
       }, {
-        id: "neuron",
-        label: "Neuron"
+        id: "MRI_System_Design_and_Optimization",
+        label: "MRI System Design and Optimization"
       }, {
-        id: "implant_safety",
-        label: "Implant Safety"
+        id: "MRI_Implant_Safety",
+        label: "MRI Implant Safety"
       }, {
-        id: "wireless_power_transfer",
+        id: "MRI_Safety",
+        label: "MRI Safety"
+      }, {
+        id: "Focused_Ultrasound",
+        label: "Focused Ultrasound"
+      }, {
+        id: "EM-induced_Neuronal_Dynamics",
+        label: "EM-induced Neuronal Dynamics"
+      }, {
+        id: "Thermal_Therapies",
+        label: "Thermal Therapies"
+      }, {
+        id: "Wireless_Body_Area_Networks",
+        label: "Wireless Body Area Networks"
+      }, {
+        id: "Wireless_Power_Transfer",
         label: "Wireless Power Transfer"
+      }, {
+        id: "Other",
+        label: "Other (please specify below)"
       }].forEach(appData => {
         const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
         application.add(lItem);
@@ -98,14 +116,20 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       [{
-        id: "Nik",
-        label: "Nik"
+        id: "Search Engine",
+        label: "Search_Engine"
       }, {
-        id: "niels",
-        label: "Niels"
+        id: "Conference",
+        label: "Conference"
       }, {
-        id: "twenty",
-        label: "20 Minuten"
+        id: "Publication",
+        label: "Publication"
+      }, {
+        id: "Social Media",
+        label: "Social Media"
+      }, {
+        id: "Other",
+        label: "Other (please specify below)"
       }].forEach(hearData => {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
