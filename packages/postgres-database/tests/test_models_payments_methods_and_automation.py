@@ -13,7 +13,7 @@ from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import FAKE
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.payments_automation import payments_autorecharge
+from simcore_postgres_database.models.payments_autorecharge import payments_autorecharge
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -111,7 +111,7 @@ async def _get_auto_recharge(connection, wallet_id) -> RowProxy | None:
         sa.select(
             payments_autorecharge.c.id.label("payments_autorecharge_id"),
             payments_methods.c.user_id,
-            payments_autorecharge.c.wallet_id,
+            payments_methods.c.wallet_id,
             payments_autorecharge.c.payment_method_id,
             payments_autorecharge.c.enabled,
             payments_autorecharge.c.min_balance_in_usd,
@@ -126,7 +126,7 @@ async def _get_auto_recharge(connection, wallet_id) -> RowProxy | None:
             )
         )
         .where(
-            (payments_autorecharge.c.wallet_id == wallet_id)
+            (payments_methods.c.wallet_id == wallet_id)
             & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
         )
     )
@@ -134,15 +134,47 @@ async def _get_auto_recharge(connection, wallet_id) -> RowProxy | None:
     return await result.first()
 
 
-async def _upsert_autorecharge(
-    connection, wallet_id, payment_method, th=UNSET, ip=UNSET, cd=UNSET
-) -> RowProxy:
-    # using this primary payment-method, create an autorecharge
+async def _is_valid_payment_method(
+    connection, user_id, wallet_id, payment_method_id
+) -> bool:
+    stmt = sa.select(payments_methods.c.payment_method_id).where(
+        (payments_methods.c.user_id == user_id)
+        & (payments_methods.c.wallet_id == wallet_id)
+        & (payments_methods.c.payment_method_id == payment_method_id)
+        & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
+    )
+    pmid = await connection.scalar(stmt)
+    return pmid == payment_method_id
 
+
+async def _upsert_autorecharge(connection, payment_method_id, th, ip, cd) -> RowProxy:
+    # using this primary payment-method, create an autorecharge
+    # NOTE: requires the entire
     values = {
         # ids
-        "wallet_id": wallet_id,
-        "payment_method_id": payment_method,
+        "payment_method_id": payment_method_id,
+        "min_balance_in_usd": th,
+        "inc_payment_amount_in_usd": ip,
+        "inc_payments_countdown": cd,
+    }
+
+    insert_stmt = pg_insert(payments_autorecharge).values(**values)
+    upsert_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=[payments_autorecharge.c.payment_method_id],
+        set_=values,
+    ).returning(sa.literal_column("*"))
+
+    row = await (await connection.execute(upsert_stmt)).first()
+    assert row
+    return row
+
+
+async def _update_autorecharge(
+    connection, wallet_id, payment_method_id, th=UNSET, ip=UNSET, cd=UNSET
+) -> int | None:
+    values = {
+        # ids
+        "payment_method_id": payment_method_id,
     }
     if th is not UNSET:
         values["min_balance_in_usd"] = th
@@ -151,18 +183,15 @@ async def _upsert_autorecharge(
     if cd is not UNSET:
         values["inc_payments_countdown"] = cd
 
-    insert_stmt = pg_insert(payments_autorecharge).values(*values)
-    upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[
-            payments_autorecharge.c.wallet_id,
-            payments_autorecharge.c.payment_method_id,
-        ],
-        set_=values,
-    ).returning(sa.literal_column("*"))
+    stmt = (
+        payments_autorecharge.update()
+        .values(**values)
+        .where(payment_method_id.c.wallet_id == wallet_id)
+        .returning(payments_autorecharge.c.id)
+    )
 
-    row = await (await connection.execute(upsert_stmt)).first()
-    assert row
-    return row
+    scalar = await connection.scalar(stmt)
+    return scalar
 
 
 async def _decrease_countdown(connection, wallet_id, payment_method) -> int | None:
@@ -186,14 +215,25 @@ async def test_payments_automation(
     connection: SAConnection,
     payment_method_id: str,
 ):
-    init_values = _random_payment_method(payment_method_id=payment_method_id)
-    result = await connection.execute(
-        payments_methods.insert().values(**init_values).returning(sa.text("*"))
+    raw_payment_method = _random_payment_method(
+        payment_method_id=payment_method_id,
+        initiated_at=_utcnow(),
+        completed_at=_utcnow() + datetime.timedelta(seconds=1),
+        state=InitPromptAckFlowState.SUCCESS,
     )
-    payment_method_row = await result.first()
-    assert payment_method_row
-    assert payment_method_row.payment_method_id == payment_method_id
-    wallet_id = payment_method_row.wallet_id
+    result = await connection.execute(
+        payments_methods.insert()
+        .values(**raw_payment_method)
+        .returning(sa.literal_column("*"))
+    )
+    row = await result.first()
+    assert row
+    assert row.payment_method_id == payment_method_id
+
+    wallet_id = row.wallet_id
+    user_id = row.user_id
+
+    assert _is_valid_payment_method(connection, user_id, wallet_id, payment_method_id)
 
     # get
     auto_recharge = await _get_auto_recharge(connection, wallet_id)
@@ -209,14 +249,14 @@ async def test_payments_automation(
     assert auto_recharge.payment_method_id == payment_method_id
 
     # countdown
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) == 4
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) == 3
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) == 2
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) == 1
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) == 0
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) == -1
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) == 4
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) == 3
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) == 2
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) == 1
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) == 0
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) == -1
 
     # deactivate countdown
     await _upsert_autorecharge(connection, wallet_id, payment_method_id, cd=None)
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) is None
-    assert _decrease_countdown(connection, wallet_id, payment_method_id) is None
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) is None
+    assert await _decrease_countdown(connection, wallet_id, payment_method_id) is None

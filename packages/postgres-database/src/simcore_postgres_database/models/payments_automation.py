@@ -11,19 +11,18 @@ from .payments_methods import payments_methods
 
 #
 # NOTE:
-#  - This table was designed to work in an isolated database. For that reason
-#    we do not use ForeignKeys to establish relations (e.g. user_id) with other tables
-#    except for payments_methods or payments_transactions
-#  - One automation per wallet_id BUT cannot use Foreign-Key to wallets
+#  - This table was designed to work in an isolated database that contains only payments_* tables
+#
 
 payments_autorecharge = sa.Table(
-    "payments_automation",
+    "payments_autorecharge",
     metadata,
     sa.Column(
-        "id",
-        sa.String,
-        nullable=False,
+        "autorecharge_id",
+        sa.BigInteger,
         primary_key=True,
+        autoincrement=True,
+        nullable=False,
         doc="Unique payment-automation identifier",
     ),
     sa.Column(
@@ -32,22 +31,7 @@ payments_autorecharge = sa.Table(
         # NOTE: cannot use foreign-key because it would require a link to wallets table
         nullable=False,
         doc="Wallet associated to the auto-recharge",
-        unique=True,  # only one automation per wallet
-    ),
-    sa.Column(
-        "payment_method_id",
-        sa.BigInteger,
-        sa.ForeignKey(
-            payments_methods.c.payment_method_id,
-            name="fk_payments_automation_payment_method_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-        nullable=False,
-        doc="[Required] Primary payment method selected for auto-recharge",
         unique=True,
-        # NOTE: Only one primary payment method
-        # in the future we might have an extra secondary_payment_method_id
     ),
     #
     # Recharge Limits and Controls
@@ -57,7 +41,20 @@ payments_autorecharge = sa.Table(
         sa.Boolean,
         nullable=False,
         server_default=sa.false(),
-        doc="If true, the auto-recharge is triggered",
+        doc="If true, the auto-recharge is enabled on this wallet",
+    ),
+    sa.Column(
+        "primary_payment_method_id",
+        sa.String,
+        sa.ForeignKey(
+            payments_methods.c.payment_method_id,
+            name="fk_payments_autorecharge_primary_payment_method_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        doc="[Required] Primary payment method selected for auto-recharge",
+        unique=True,
     ),
     sa.Column(
         "min_balance_in_usd",
