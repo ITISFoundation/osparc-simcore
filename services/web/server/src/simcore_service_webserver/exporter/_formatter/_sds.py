@@ -110,10 +110,11 @@ async def create_sds_directory(
                 params_code_description[rating_store_key] = tsr_entry["level"]
                 params_code_description[reference_store_key] = tsr_entry["references"]
         else:
-            _logger.warning(
-                "Skipping TSR entries, not all 10 entries were present: %s",
-                quality_data,
+            msg = (
+                "Current TSR data format is too old. Please `Edit` and `Save` it again."
             )
+            _logger.warning("%s Stored data: %s", msg, quality_data)
+            raise SDSException(msg)
 
     workbench = project_data["workbench"]
 
