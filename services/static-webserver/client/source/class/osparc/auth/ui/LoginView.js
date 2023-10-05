@@ -56,6 +56,10 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       email.getContentElement().setAttribute("autocomplete", "username");
       osparc.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
       this._form.add(email, " Your email address", qx.util.Validate.email(), "email");
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
 
       const pass = new osparc.ui.form.PasswordField().set({
         width: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
@@ -65,11 +69,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       pass.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
       this._form.add(pass, " Your password", null, "password");
-
-      this.addListener("appear", () => {
-        email.focus();
-        email.activate();
-      });
 
       const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in")).set({
         center: true,

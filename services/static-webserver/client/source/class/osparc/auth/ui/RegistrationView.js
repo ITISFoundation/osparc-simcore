@@ -36,8 +36,6 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
 
     // overrides base
     _buildPage: function() {
-      const validator = new qx.ui.form.validation.Manager();
-
       this._addTitleHeader(this.tr("Registration"));
 
       const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
@@ -49,6 +47,10 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       });
       osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
       this._form.add(email, this.tr("Type your email"), null, "email");
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
 
       const pass1 = new osparc.ui.form.PasswordField().set({
         required: true
@@ -60,7 +62,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         required: true
       });
       osparc.utils.Utils.setIdToWidget(pass2.getChildControl("passwordField"), "registrationPass2Fld");
-      this._form.add(pass2, this.tr("Retype a password"), null, "pass2");
+      this._form.add(pass2, this.tr("Retype the password"), null, "pass2");
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       const invitationToken = urlFragment.params ? urlFragment.params.invitation || null : null;
@@ -76,12 +78,8 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
           });
       }
 
-      this.addListener("appear", () => {
-        email.focus();
-        email.activate();
-      });
-
       // validation
+      const validator = new qx.ui.form.validation.Manager();
       validator.add(email, qx.util.Validate.email());
       validator.add(pass1, osparc.auth.core.Utils.passwordLengthValidator);
       validator.add(pass2, osparc.auth.core.Utils.passwordLengthValidator);

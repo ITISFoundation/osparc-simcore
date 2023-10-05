@@ -41,6 +41,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       this._form.add(firstName, this.tr("First Name"), null, "firstName");
 
+      this.addListener("appear", () => {
+        firstName.focus();
+        firstName.activate();
+      });
+
       const lastName = new qx.ui.form.TextField().set({
         required: true
       });
@@ -167,11 +172,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       }, this);
 
       cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
-
-      this.addListener("appear", () => {
-        email.focus();
-        email.activate();
-      });
 
       this.add(grp);
     },
