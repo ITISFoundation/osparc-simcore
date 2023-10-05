@@ -37,20 +37,11 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     // TODO: remove fix dimensions for the outer container?
     this.set({
       layout: new qx.ui.layout.VBox(20),
-      width: 300,
+      width: this.self().FORM_WIDTH,
       height: 300
     });
-    // at least chrome hates it when a password input field exists
-    // outside a form, so lets accommodate him
-    this.addListenerOnce("appear", e => {
-      const el = this.getContentElement();
-      const form = this._formElement = new qx.html.Element("form", null, {
-        name: "baseLoginForm",
-        autocomplete: "on"
-      });
-      form.insertBefore(el);
-      el.insertInto(form);
-    });
+
+    this._form = new qx.ui.form.Form();
     this._buildPage();
 
     this.addListener("appear", this._onAppear, this);
@@ -67,6 +58,10 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     "done": "qx.event.type.Data"
   },
 
+  statics: {
+    FORM_WIDTH: 300
+  },
+
   /*
   *****************************************************************************
      MEMBERS
@@ -78,7 +73,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      * when all is said and done we should remove the form so that the password manager
      * knows to save the content of the form. so we save it here.
      */
-    _formElement: null,
+    _form: null,
     /**
      * This method gets called upon construction and
      * must be overriden in a subclass

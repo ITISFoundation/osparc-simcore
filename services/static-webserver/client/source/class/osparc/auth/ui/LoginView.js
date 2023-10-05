@@ -36,38 +36,40 @@ qx.Class.define("osparc.auth.ui.LoginView", {
   },
 
   members: {
-    // overrides base
-    __form: null,
     __loginBtn: null,
 
+    // overrides base
     _buildPage: function() {
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasLoginAnnouncement()) {
         this.add(announcementUIFactory.createLoginAnnouncement());
       }
 
-      this.__form = new qx.ui.form.Form();
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form).set({
+        allowGrowX: true
+      });
+      this.add(formRenderer);
 
       const email = new qx.ui.form.TextField().set({
-        placeholder: this.tr(" Your email address"),
-        required: true
+        width: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
+        required: true,
+        allowGrowX: true
       });
-      this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
       osparc.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
-      this.__form.add(email, "", qx.util.Validate.email(), "email", null);
+      this._form.add(email, " Your email address", qx.util.Validate.email(), "email");
       this.addListener("appear", () => {
         email.focus();
         email.activate();
       });
       const pass = new osparc.ui.form.PasswordField().set({
-        placeholder: this.tr(" Your password"),
-        required: true
+        width: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
+        required: true,
+        placeholder: this.tr(" Your password")
       });
       pass.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
-      this.add(pass);
-      this.__form.add(pass, "", null, "password", null);
+      this._form.add(pass, " Your password", null, "password");
 
       const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in")).set({
         center: true,
@@ -125,26 +127,26 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     },
 
     getEmail: function() {
-      const email = this.__form.getItems().email;
+      const email = this._form.getItems().email;
       return email.getValue();
     },
 
     __login: function() {
-      if (!this.__form.validate()) {
+      if (!this._form.validate()) {
         return;
       }
 
       this.__loginBtn.setFetching(true);
 
-      const email = this.__form.getItems().email;
-      const pass = this.__form.getItems().password;
+      const email = this._form.getItems().email;
+      const pass = this._form.getItems().password;
 
       const loginFun = function(log) {
         this.__loginBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._formElement.dispose();
+        this._form.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
@@ -153,7 +155,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.fireDataEvent("toVerifyPhone", email.getValue());
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._formElement.dispose();
+        this._form.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
@@ -163,7 +165,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.fireDataEvent("to2FAValidationCode", msg);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._formElement.dispose();
+        this._form.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
@@ -186,7 +188,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     },
 
     resetValues: function() {
-      const fieldItems = this.__form.getItems();
+      const fieldItems = this._form.getItems();
       for (const key in fieldItems) {
         fieldItems[key].resetValue();
       }
