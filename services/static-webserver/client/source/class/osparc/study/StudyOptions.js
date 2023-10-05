@@ -266,6 +266,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       const store = osparc.store.Store.getInstance();
 
       // Wallet Selector
+      this._createChildControlImpl("wallet-selector-label");
       const walletSelector = this.getChildControl("wallet-selector");
       this._createChildControlImpl("credits-left-view");
 
