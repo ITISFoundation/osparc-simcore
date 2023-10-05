@@ -68,7 +68,7 @@ qx.Class.define("osparc.study.TierButton", {
       } else {
         this._setLayout(new qx.ui.layout.HBox(5));
         this._add(new qx.ui.basic.Label().set({
-          value: pricingUnit.unitName + ": " + pricingUnit.currentCostPerUnit,
+          value: pricingUnit.unitName + ": " + pricingUnit.currentCostPerUnit + " C/h",
           font: "text-16"
         }));
       }

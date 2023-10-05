@@ -73,33 +73,6 @@ qx.Class.define("osparc.study.ResourceSelector", {
       return win;
     },
 
-    getMachineInfo: function(machineId) {
-      switch (machineId) {
-        case "sm":
-          return {
-            id: "sm",
-            title: qx.locale.Manager.tr("Small"),
-            resources: {},
-            price: 4
-          };
-        case "md":
-          return {
-            id: "md",
-            title: qx.locale.Manager.tr("Medium"),
-            resources: {},
-            price: 7
-          };
-        case "lg":
-          return {
-            id: "lg",
-            title: qx.locale.Manager.tr("Large"),
-            resources: {},
-            price: 10
-          };
-      }
-      return null;
-    },
-
     createGroupBox: function(label) {
       const box = new qx.ui.groupbox.GroupBox(label);
       box.getChildControl("legend").set({
@@ -230,41 +203,16 @@ qx.Class.define("osparc.study.ResourceSelector", {
       this.__buildOptionsLayout();
     },
 
-    createTierButtonsGroup: function(serviceLabel, pricingPlans, advancedCB) {
+    __createTierButtonsGroup: function(serviceLabel, pricingPlans, advancedCB) {
       if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
         const machinesLayout = this.self().createGroupBox(serviceLabel);
-        machinesLayout.setLayout(new qx.ui.layout.HBox(5));
 
-        const buttons = [];
-        pricingPlans["pricingUnits"].forEach(pricingUnit => {
-          const button = new osparc.study.TierButton(pricingUnit);
-          advancedCB.bind("value", button, "advanced");
-          buttons.push(button);
-          machinesLayout.add(button);
+        const tierButtons = new osparc.study.TierButtons(pricingPlans["pricingUnits"]);
+        advancedCB.bind("value", tierButtons, "advanced");
+        advancedCB.addListener("selectedTier", selectedTier => {
+          console.log("selectedTier", selectedTier);
         });
-
-        const buttonSelected = button => {
-          buttons.forEach(btn => {
-            if (btn !== button) {
-              btn.setValue(false);
-            }
-          });
-        };
-        buttons.forEach(btn => btn.addListener("execute", () => buttonSelected(btn)));
-        buttons.forEach(btn => btn.addListener("changeValue", e => {
-          if (e.getData()) {
-            this.getChildControl("summary-label").set({
-              value: serviceLabel + ": " + btn.getTierInfo().currentCostPerUnit
-            });
-          }
-        }));
-
-        // preselect default
-        buttons.forEach(button => {
-          if (button.getTierInfo()["default"]) {
-            button.execute();
-          }
-        });
+        machinesLayout.add(tierButtons);
 
         return machinesLayout;
       }
@@ -312,7 +260,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
               });
               servicesBox.add(advancedCB);
               values.forEach((pricingPlans, idx) => {
-                const serviceGroup = this.createTierButtonsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
+                const serviceGroup = this.__createTierButtonsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
                 if (serviceGroup) {
                   servicesBox.add(serviceGroup);
                   tiersAdded();
@@ -333,7 +281,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
       // Credits Summary
       const summaryLayout = this.getChildControl("summary-layout");
       summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
-        font: "text-14"
+        font: "text-16"
       }));
       this.getChildControl("summary-label");
 
