@@ -36,35 +36,33 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
 
     // overrides base
     _buildPage: function() {
-      const validator = new qx.ui.form.validation.Manager();
-
       this._addTitleHeader(this.tr("Registration"));
+
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
 
       // email, pass1 == pass2
       const email = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Type your email")
+        required: true
       });
-      this.add(email);
       osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
+      this._form.add(email, this.tr("Type your email"), null, "email");
       this.addListener("appear", () => {
         email.focus();
         email.activate();
       });
 
       const pass1 = new osparc.ui.form.PasswordField().set({
-        required: true,
-        placeholder: this.tr("Type a password")
+        required: true
       });
       osparc.utils.Utils.setIdToWidget(pass1.getChildControl("passwordField"), "registrationPass1Fld");
-      this.add(pass1);
+      this._form.add(pass1, this.tr("Type a password"), null, "pass1");
 
       const pass2 = new osparc.ui.form.PasswordField().set({
-        required: true,
-        placeholder: this.tr("Retype the password")
+        required: true
       });
       osparc.utils.Utils.setIdToWidget(pass2.getChildControl("passwordField"), "registrationPass2Fld");
-      this.add(pass2);
+      this._form.add(pass2, this.tr("Retype the password"), null, "pass2");
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       const invitationToken = urlFragment.params ? urlFragment.params.invitation || null : null;
@@ -81,6 +79,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       }
 
       // validation
+      const validator = new qx.ui.form.validation.Manager();
       validator.add(email, qx.util.Validate.email());
       validator.add(pass1, osparc.auth.core.Utils.passwordLengthValidator);
       validator.add(pass2, osparc.auth.core.Utils.passwordLengthValidator);
@@ -104,15 +103,17 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       });
 
       // interaction
-      submitBtn.addListener("execute", e => {
-        const valid = validator.validate();
-        if (valid) {
-          this.__submit({
-            email: email.getValue(),
-            password: pass1.getValue(),
-            confirm: pass2.getValue(),
-            invitation: invitationToken ? invitationToken : ""
-          });
+      submitBtn.addListener("execute", () => {
+        if (this._form.validate()) {
+          const valid = validator.validate();
+          if (valid) {
+            this.__submit({
+              email: email.getValue(),
+              password: pass1.getValue(),
+              confirm: pass2.getValue(),
+              invitation: invitationToken ? invitationToken : ""
+            });
+          }
         }
       }, this);
 

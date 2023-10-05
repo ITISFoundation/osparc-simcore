@@ -34,21 +34,21 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
 
     // overrides base
     _buildPage: function() {
-      const manager = new qx.ui.form.validation.Manager();
-
       this._addTitleHeader(this.tr("Reset Password"));
 
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
       // email
-      const email = new qx.ui.form.TextField();
+      const email = new qx.ui.form.TextField().set({
+        required: true
+      });
       email.setRequired(true);
-      email.setPlaceholder(this.tr("Type your registration email"));
-      this.add(email);
+      this._form.add(email, this.tr("Type your registration email"), qx.util.Validate.email(), "email");
       this.addListener("appear", () => {
         email.focus();
         email.activate();
       });
-
-      manager.add(email, qx.util.Validate.email());
 
       // submit and cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -67,29 +67,26 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
       });
 
       // interaction
-      submitBtn.addListener("execute", e => {
-        const valid = manager.validate();
-        if (valid) {
+      submitBtn.addListener("execute", () => {
+        if (this._form.validate()) {
           this.__submit(email);
         }
       }, this);
 
-      cancelBtn.addListener("execute", e => this.fireDataEvent("done", null), this);
+      cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
 
       this.add(grp);
     },
 
     __submit: function(email) {
-      console.debug("sends email to reset password to ", email);
-
       const manager = osparc.auth.Manager.getInstance();
 
-      const successFun = function(log) {
+      const successFun = log => {
         this.fireDataEvent("done", log.message);
         osparc.FlashMessenger.getInstance().log(log);
       };
 
-      const failFun = function(msg) {
+      const failFun = msg => {
         msg = msg || this.tr("Could not request password reset");
         osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
