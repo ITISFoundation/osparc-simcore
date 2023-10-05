@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.study.ResourceSelector", {
+qx.Class.define("osparc.study.StudyOptions", {
   extend: qx.ui.core.Widget,
 
   construct: function(studyId) {
@@ -25,7 +25,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
 
     this.__studyId = studyId;
 
-    this.getChildControl("loading-services-resources");
+    this.getChildControl("loading-options");
     const params = {
       url: {
         "studyId": studyId
@@ -109,7 +109,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
             flex: 1
           });
           break;
-        case "loading-services-resources":
+        case "loading-options":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/48",
             alignX: "center",
@@ -128,9 +128,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
             minWidth: 100,
             maxWidth: 150
           });
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
-          });
+          this.getChildControl("top-summary-layout").add(control);
           break;
         case "open-button":
           control = new qx.ui.form.Button(this.tr("Open")).set({
@@ -169,16 +167,6 @@ qx.Class.define("osparc.study.ResourceSelector", {
         case "credits-left-view":
           control = this.__getCreditsLeftView();
           this.getChildControl("wallet-selector-layout").add(control);
-          break;
-        case "summary-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
-          });
-          break;
-        case "summary-label":
-          control = new qx.ui.basic.Label();
-          this.getChildControl("summary-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -224,7 +212,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
     },
 
     __buildNodeResources: function() {
-      const loadingImage = this.getChildControl("loading-services-resources");
+      const loadingImage = this.getChildControl("loading-options");
       const servicesBox = this.getChildControl("services-resources-layout");
       const tiersLoading = () => {
         loadingImage.show();
@@ -277,13 +265,6 @@ qx.Class.define("osparc.study.ResourceSelector", {
       // Wallet Selector
       const walletSelector = this.getChildControl("wallet-selector");
       this._createChildControlImpl("credits-left-view");
-
-      // Credits Summary
-      const summaryLayout = this.getChildControl("summary-layout");
-      summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
-        font: "text-16"
-      }));
-      this.getChildControl("summary-label");
 
       const wallets = store.getWallets();
       const selectWallet = walletId => {

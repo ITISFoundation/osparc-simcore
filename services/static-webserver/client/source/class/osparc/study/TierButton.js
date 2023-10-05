@@ -23,8 +23,6 @@ qx.Class.define("osparc.study.TierButton", {
 
     this.set({
       padding: 10,
-      minWidth: 120,
-      maxWidth: 120,
       center: true
     });
     this.getContentElement().setStyles({
