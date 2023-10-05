@@ -167,7 +167,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           const formData = {};
           Object.entries(this._form.getItems()).forEach(([key, field]) => {
             const val = field.getValue();
-            if (val && ("classname" in val)) {
+            if (val && (typeof val === "object") && ("classname" in val)) {
               formData[key] = val.getModel();
             } else {
               formData[key] = val;
