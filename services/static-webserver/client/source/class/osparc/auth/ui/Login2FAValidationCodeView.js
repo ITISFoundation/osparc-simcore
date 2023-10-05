@@ -51,7 +51,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.add(formRenderer);
 
       const validateCodeTF = new qx.ui.form.TextField().set({
-        placeholder: this.tr(""),
         required: true
       });
       this._form.add(validateCodeTF, this.tr("Type code"), null, "validationCode");
