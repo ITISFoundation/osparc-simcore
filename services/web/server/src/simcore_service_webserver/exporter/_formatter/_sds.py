@@ -110,6 +110,8 @@ async def create_sds_directory(
                 params_code_description[rating_store_key] = tsr_entry["level"]
                 params_code_description[reference_store_key] = tsr_entry["references"]
         else:
+            # NOTE: user might have a deprecated version here, let's ask him to regenerate the TSR
+            # this should make it exportable once again after he is done.
             msg = (
                 "Current TSR data format is too old. Please `Edit` and `Save` it again."
             )
