@@ -13,6 +13,7 @@ from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
+from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
 
 _logger = logging.getLogger(__name__)
@@ -155,15 +156,20 @@ async def _state_metadata_entry_exists(
 
 
 async def _delete_legacy_archive(
-    user_id: UserID, project_id: ProjectID, node_uuid: NodeID, path: Path
+    project_id: ProjectID, node_uuid: NodeID, path: Path
 ) -> None:
     """removes the .zip state archive from storage"""
     s3_object = __create_s3_object_key(
         project_id, node_uuid, __get_s3_name(path, is_archive=True)
     )
     _logger.debug("Deleting s3_object='%s' is archive", s3_object)
+
+    # NOTE: if service is opened by a person which the users shared it with,
+    # they will not have the permission to delete the node
+    # Removing it via it's owner allows to always have access to the delete operation.
+    owner_id = await DBManager().get_project_owner_user_id(project_id)
     await filemanager.delete_file(
-        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
+        user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
 
 
@@ -203,7 +209,6 @@ async def push(
 
     with log_context(_logger, logging.INFO, "removing legacy data archive"):
         await _delete_legacy_archive(
-            user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
             path=source_path,

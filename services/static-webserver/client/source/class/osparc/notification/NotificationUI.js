@@ -130,6 +130,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
             case "ANNOTATION_NOTE":
               source = "@FontAwesome5Solid/file/14";
               break;
+            case "WALLET_SHARED":
+              source = "@MaterialIcons/account_balance_wallet/14";
+              break;
           }
           return source;
         }
@@ -181,51 +184,87 @@ qx.Class.define("osparc.notification.NotificationUI", {
 
       // open actionable path
       const actionablePath = notification.getActionablePath();
+      const items = actionablePath.split("/");
+      const resourceId = items.pop();
       const category = notification.getCategory();
       switch (category) {
-        case "NEW_ORGANIZATION": {
-          const items = actionablePath.split("/");
-          const orgId = items.pop();
-          // make sure org is available
-          osparc.store.Store.getInstance().getGroup(orgId)
-            .then(org => {
-              if (org) {
-                const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
-                orgsWindow.openOrganizationDetails(parseInt(orgId));
-              } else {
-                const msg = this.tr("You don't have access anymore");
-                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-              }
-            });
+        case "NEW_ORGANIZATION":
+          this.__openOrganizationDetails(parseInt(resourceId));
           break;
-        }
         case "TEMPLATE_SHARED":
         case "STUDY_SHARED":
-        case "ANNOTATION_NOTE": {
-          const items = actionablePath.split("/");
-          const studyId = items.pop();
-          const params = {
-            url: {
-              "studyId": studyId
-            }
-          };
-          osparc.data.Resources.getOne("studies", params)
-            .then(studyData => {
-              if (studyData) {
-                const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-                studyDataCopy["resourceType"] = notification.getCategory() === "TEMPLATE_SHARED" ? "template" : "study";
-                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyDataCopy);
-                const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
-                moreOpts.addListener("openingStudy", () => win.close());
+        case "ANNOTATION_NOTE":
+          this.__openStudyDetails(resourceId, notification);
+          break;
+        case "WALLET_SHARED":
+          osparc.desktop.credits.Utils.areWalletsEnabled()
+            .then(walletsEnabled => {
+              if (walletsEnabled) {
+                this.__openWalletDetails(parseInt(resourceId));
               }
-            })
-            .catch(err => {
-              console.error(err);
-              const msg = this.tr("You don't have access anymore");
-              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
             });
           break;
+      }
+    },
+
+    __openOrganizationDetails: function(orgId) {
+      // make sure org is available
+      osparc.store.Store.getInstance().getGroup(orgId)
+        .then(org => {
+          if (org) {
+            const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
+            orgsWindow.openOrganizationDetails(orgId);
+          } else {
+            const msg = this.tr("You don't have access anymore");
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          }
+        });
+    },
+
+    __openStudyDetails: function(studyId, notification) {
+      const params = {
+        url: {
+          "studyId": studyId
         }
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(studyData => {
+          if (studyData) {
+            const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+            studyDataCopy["resourceType"] = notification.getCategory() === "TEMPLATE_SHARED" ? "template" : "study";
+            const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyDataCopy);
+            const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+            moreOpts.addListener("openingStudy", () => win.close());
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          const msg = this.tr("You don't have access anymore");
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        });
+    },
+
+    __openWalletDetails: function(walletId) {
+      const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
+      if (wallet) {
+        const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(true);
+        if (userCenterWindow.openWallets()) {
+          const msg = this.tr("Do you want to make it the default Credit Account?");
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmAction: "create"
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              const preferenceSettings = osparc.Preferences.getInstance();
+              preferenceSettings.requestChangePreferredWalletId(walletId);
+            }
+          }, this);
+        }
+      } else {
+        const msg = this.tr("You don't have access anymore");
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
       }
     }
   }

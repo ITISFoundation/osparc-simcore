@@ -20,149 +20,139 @@ qx.Theme.define("osparc.theme.Font", {
   extend: osparc.theme.common.Font,
 
   fonts: {
-    "text-30": {
-      size: 30,
-      family: ["Roboto", "sanf-serif"],
+    "defaults": {
+      family: ["Manrope", "Roboto", "sanf-serif"],
       color: "text"
+    },
+
+    "default": {
+      include: "defaults",
+      size: 13
+    },
+
+    "text-30": {
+      include: "defaults",
+      size: 30
     },
 
     "text-26": {
-      size: 24,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 24
     },
 
     "text-24": {
-      size: 24,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 24
     },
 
     "text-22": {
-      size: 22,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 22
     },
 
     "title-20": {
+      include: "defaults",
       size: 20,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-20": {
-      size: 20,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 20
     },
 
     "title-18": {
+      include: "defaults",
       size: 18,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-18": {
-      size: 18,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 18
     },
 
     "title-16": {
+      include: "defaults",
       size: 16,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-16": {
-      size: 16,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 16
     },
 
     "text-15": {
-      size: 15,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 15
     },
 
     "title-14": {
+      include: "defaults",
       size: 14,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-14": {
-      size: 14,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 14
     },
 
     "link-label-14": {
+      include: "defaults",
       size: 14,
-      family: ["Roboto", "sanf-serif"],
       color: "text-darker",
       decoration: "underline"
     },
 
     "text-13": {
-      size: 13,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 13
     },
 
     "text-12": {
-      size: 12,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 12
     },
 
     "text-12-italic": {
+      include: "defaults",
       size: 12,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       italic: true
     },
 
     "link-label-12": {
+      include: "defaults",
       size: 12,
-      family: ["Roboto", "sanf-serif"],
       color: "text-darker",
       decoration: "underline"
     },
 
     "text-11": {
-      size: 11,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 11
     },
 
     "text-11-italic": {
+      include: "defaults",
       size: 11,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       italic: true
     },
 
     "text-10": {
-      size: 10,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 10
     },
 
     "text-9": {
-      size: 9,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 9
     },
 
     "workbench-start-hint": {
+      include: "defaults",
       size: 20,
-      family: ["Roboto", "sanf-serif"],
       color: "workbench-start-hint",
       bold: true
     }

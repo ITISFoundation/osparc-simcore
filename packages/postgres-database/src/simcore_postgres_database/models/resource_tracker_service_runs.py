@@ -56,16 +56,22 @@ resource_tracker_service_runs = sa.Table(
         doc="Pricing plan id for billing purposes",
     ),
     sa.Column(
-        "pricing_detail_id",
+        "pricing_unit_id",
         sa.BigInteger,
         nullable=True,
-        doc="Pricing detail id for billing purposes",
+        doc="Pricing unit id for billing purposes",
     ),
     sa.Column(
-        "pricing_detail_cost_per_unit",
+        "pricing_unit_cost_id",
+        sa.BigInteger,
+        nullable=True,
+        doc="Pricing unit cost id for billing purposes",
+    ),
+    sa.Column(
+        "pricing_unit_cost",
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=True,
-        doc="Pricing detail cost per unit used for billing purposes",
+        doc="Pricing unit cost used for billing purposes",
     ),
     # User agent field
     sa.Column(

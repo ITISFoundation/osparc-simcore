@@ -7,14 +7,14 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
+from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 
-resource_tracker_pricing_details = sa.Table(
-    "resource_tracker_pricing_details",
+resource_tracker_pricing_units = sa.Table(
+    "resource_tracker_pricing_units",
     metadata,
     sa.Column(
-        "pricing_detail_id",
+        "pricing_unit_id",
         sa.BigInteger,
         nullable=False,
         primary_key=True,
@@ -25,9 +25,9 @@ resource_tracker_pricing_details = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "resource_tracker_pricing_plans.pricing_plan_id",
-            name="fk_resource_tracker_pricing_details_pricing_plan_id",
+            name="fk_resource_tracker_pricing_units_pricing_plan_id",
             onupdate="CASCADE",
-            ondelete="RESTRICT",
+            ondelete="CASCADE",
         ),
         nullable=False,
         doc="Foreign key to pricing plan",
@@ -37,29 +37,10 @@ resource_tracker_pricing_details = sa.Table(
         "unit_name",
         sa.String,
         nullable=False,
-        doc="The custom name of the pricing plan, ex. DYNAMIC_SERVICES_TIERS, COMPUTATIONAL_SERVICES_TIERS, CPU_HOURS, STORAGE",
+        doc="The custom name of the pricing plan, ex. SMALL, MEDIUM, LARGE",
     ),
     sa.Column(
-        "cost_per_unit",
-        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
-        nullable=False,
-        doc="The cost per unit of the pricing plan in credits.",
-    ),
-    sa.Column(
-        "valid_from",
-        sa.DateTime(timezone=True),
-        nullable=False,
-        doc="From when the pricing unit is active",
-    ),
-    sa.Column(
-        "valid_to",
-        sa.DateTime(timezone=True),
-        nullable=True,
-        doc="To when the pricing unit was active, if null it is still active",
-        index=True,
-    ),
-    sa.Column(
-        "simcore_default",
+        "default",
         sa.Boolean(),
         nullable=False,
         default=False,
@@ -75,4 +56,9 @@ resource_tracker_pricing_details = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     # ---------------------------
+    sa.UniqueConstraint(
+        "pricing_plan_id",
+        "unit_name",
+        name="pricing_plan_and_unit_constrain_key",
+    ),
 )

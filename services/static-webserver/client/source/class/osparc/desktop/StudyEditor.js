@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       "backToDashboardPressed",
       "slidesEdit",
       "slidesAppStart"
-    ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
+    ].forEach(signalName => workbenchView.addListener(signalName, () => this.fireEvent(signalName)));
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     workbenchView.addListener("createIterations", () => this.__createIterations(), this);
@@ -51,7 +51,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       "expandNavBar",
       "backToDashboardPressed",
       "slidesStop"
-    ].forEach(singalName => slideshowView.addListener(singalName, () => this.fireEvent(singalName)));
+    ].forEach(signalName => slideshowView.addListener(signalName, () => this.fireEvent(signalName)));
     viewsStack.add(slideshowView);
 
     const wbAppear = new Promise(resolve => workbenchView.addListenerOnce("appear", resolve, false));
@@ -339,7 +339,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", this.__onPipelinesubmitted, this);
+      req.addListener("success", this.__onPipelineSubmitted, this);
       req.addListener("error", () => {
         this.getStudyLogger().error(null, "Error submitting pipeline");
         this.getStudy().setPipelineRunning(false);
@@ -386,7 +386,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return true;
     },
 
-    __onPipelinesubmitted: function(e) {
+    __onPipelineSubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
       const iterationRefIds = resp.data["ref_ids"];

@@ -102,7 +102,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         icon: "@FontAwesome5Solid/redo-alt/14",
         paddingLeft: 8,
         paddingRight: 4,
-        paddingTop: 6,
+        paddingTop: 3,
         paddingBottom: 6,
         gap: 10
       });
