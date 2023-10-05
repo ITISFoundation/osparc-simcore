@@ -1,7 +1,9 @@
 import re
 
+from models_library.basic_types import VERSION_RE
+from models_library.services import ServiceDockerData
 from packaging import version
-from pydantic import BaseModel, ByteSize, Field, validator
+from pydantic import BaseModel, ByteSize, Extra, Field, validator
 
 LEGACY_INTEGRATION_VERSION = version.Version("0")
 PROGRESS_REGEXP: re.Pattern[str] = re.compile(
@@ -62,3 +64,46 @@ class DockerContainerConfig(BaseModel):
     image: str = Field(..., alias="Image")
     labels: dict[str, str] = Field(..., alias="Labels")
     host_config: ContainerHostConfig = Field(..., alias="HostConfig")
+
+
+class ImageLabels(BaseModel):
+    integration_version: str = Field(
+        default=LEGACY_INTEGRATION_VERSION,
+        alias="integration-version",
+        description="integration version number",
+        regex=VERSION_RE,
+        examples=["1.0.0"],
+    )
+    progress_regexp: str = Field(
+        default=PROGRESS_REGEXP,
+        alias="progress_regexp",
+        description="regexp pattern for detecting computational service's progress",
+    )
+
+    class Config:
+        extra = Extra.ignore
+
+    @validator("integration_version", pre=True)
+    @classmethod
+    def default_integration_version(cls, v):
+        if v is None:
+            return ImageLabels().integration_version
+        return v
+
+    @validator("progress_regexp", pre=True)
+    @classmethod
+    def default_progress_regexp(cls, v):
+        if v is None:
+            return ImageLabels().progress_regexp
+        return v
+
+    def get_integration_version(self) -> version.Version:
+        return version.Version(self.integration_version)
+
+    def get_progress_regexp(self) -> re.Pattern[str]:
+        return re.compile(self.progress_regexp)
+
+
+assert set(ImageLabels.__fields__).issubset(
+    ServiceDockerData.__fields__
+), "ImageLabels must be compatible with ServiceDockerData"
