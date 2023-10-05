@@ -129,8 +129,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const txt = this.tr("Skip phone registration and send code via email");
       const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.LinkButton(txt).set({
         iconPosition: "left",
-        zIndex: 1, // the contries list that goes on top has a z-index of 2
-        appearance: "link-button"
+        zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       return sendViaEmail;
     },

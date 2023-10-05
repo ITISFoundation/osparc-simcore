@@ -26,15 +26,6 @@
 
 qx.Class.define("osparc.auth.ui.LoginView", {
   extend: osparc.auth.core.BaseAuthPage,
-  include: [
-    osparc.auth.core.MAuth
-  ],
-
-  /*
-  *****************************************************************************
-     EVENTS
-  *****************************************************************************
-  */
 
   events: {
     "toRegister": "qx.event.type.Event",
@@ -43,11 +34,13 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     "to2FAValidationCode": "qx.event.type.Data"
   },
 
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
+  statics: {
+    __createLinkButton: function(txt, cbk, ctx) {
+      const atm = new osparc.ui.form.LinkButton(txt);
+      atm.addListener("execute", () => cbk.call(this), ctx);
+      return atm;
+    }
+  },
 
   members: {
     // overrides base
@@ -92,10 +85,11 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(loginBtn);
 
 
-      //  create account | forgot password? links
+      //  (create account/request account) | forgot password? links
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
-      const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
+
+      const registerBtn = this.__createLinkButton(this.tr("Create Account"), () => {
         registerBtn.setEnabled(false);
         osparc.data.Resources.getOne("config")
           .then(config => {
@@ -110,7 +104,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       }, this);
       osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
-      const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => this.fireEvent("toReset"), this);
+      const forgotBtn = this.__createLinkButton(this.tr("Forgot Password?"), () => this.fireEvent("toReset"), this);
       osparc.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
       [registerBtn, forgotBtn].forEach(btn => {
@@ -124,7 +118,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       this.add(grp);
 
-      // TODO: add here loging with NIH and openID
+      // TODO: add here login with NIH and openID
       // this.add(this.__buildExternals());
     },
 
@@ -132,7 +126,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       [this.tr("Login with NIH"), this.tr("Login with OpenID")].forEach(txt => {
-        const btn = this.createLinkButton(txt, function() {
+        const btn = this.__createLinkButton(txt, () => {
           // TODO add here callback
           console.error("Login with external services are still not implemented");
         }, this);
