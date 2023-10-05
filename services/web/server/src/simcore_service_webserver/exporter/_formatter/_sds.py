@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import deque
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from pydantic import parse_obj_as
@@ -26,6 +26,8 @@ from .xlsx.dataset_description import DatasetDescriptionParams
 from .xlsx.writer import write_xlsx_files
 
 _logger = logging.getLogger(__name__)
+
+_EXPECTED_TSR_KEYS: Final[int] = 18
 
 
 def _write_sds_directory_content(
@@ -97,7 +99,7 @@ async def create_sds_directory(
         tsr_data_len = len(tsr_data)
 
         # make sure all 10 entries are present for a valid format
-        if tsr_data_len == 10:
+        if tsr_data_len == _EXPECTED_TSR_KEYS:
             for i in range(1, tsr_data_len + 1):
                 tsr_entry_key = "r%.02d" % i
                 tsr_entry = tsr_data[tsr_entry_key]
@@ -117,6 +119,9 @@ async def create_sds_directory(
             )
             _logger.warning("%s Stored data: %s", msg, quality_data)
             raise SDSException(msg)
+    else:
+        msg = "TSR is disabled, please enable it and try to export again"
+        raise SDSException(msg)
 
     workbench = project_data["workbench"]
 
