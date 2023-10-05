@@ -58,14 +58,14 @@ payments_autorecharge = sa.Table(
     ),
     sa.Column(
         "min_balance_in_usd",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         server_default=sa.text("0"),
         doc="[Required] Minimum or equal balance in USD that triggers auto-recharge",
     ),
     sa.Column(
         "inc_payment_amount_in_usd",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="[Required] Increase in USD when balance reaches min_balance_in_usd",
     ),

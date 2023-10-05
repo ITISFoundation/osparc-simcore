@@ -36,7 +36,7 @@ payments_transactions = sa.Table(
     ),
     sa.Column(
         "price_dollars",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="Total amount of the transaction (in dollars). E.g. 1234.12 $",
     ),
@@ -45,7 +45,7 @@ payments_transactions = sa.Table(
     #
     sa.Column(
         "osparc_credits",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="Amount of credits that will be added to the wallet_id "
         "once the transaction completes successfuly."

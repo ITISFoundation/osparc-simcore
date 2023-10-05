@@ -320,4 +320,6 @@ async def update_wallet_payment_autorecharge(
     await check_wallet_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
+
+    assert updated  # nosec
     raise NotImplementedError
