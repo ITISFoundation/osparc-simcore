@@ -34,14 +34,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     "to2FAValidationCode": "qx.event.type.Data"
   },
 
-  statics: {
-    __createLinkButton: function(txt, cbk, ctx) {
-      const atm = new osparc.ui.form.LinkButton(txt);
-      atm.addListener("execute", () => cbk.call(this), ctx);
-      return atm;
-    }
-  },
-
   members: {
     // overrides base
     __form: null,
@@ -88,8 +80,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       //  (create account/request account) | forgot password? links
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
-
-      const registerBtn = this.__createLinkButton(this.tr("Create Account"), () => {
+      const registerBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
+      registerBtn.addListener("execute", () => {
         registerBtn.setEnabled(false);
         osparc.data.Resources.getOne("config")
           .then(config => {
@@ -104,7 +96,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       }, this);
       osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
-      const forgotBtn = this.__createLinkButton(this.tr("Forgot Password?"), () => this.fireEvent("toReset"), this);
+      const forgotBtn = new osparc.ui.form.LinkButton(this.tr("Forgot Password?"));
+      forgotBtn.addListener("execute", () => this.fireEvent("toReset"), this);
       osparc.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
       [registerBtn, forgotBtn].forEach(btn => {
@@ -117,28 +110,6 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       });
 
       this.add(grp);
-
-      // TODO: add here login with NIH and openID
-      // this.add(this.__buildExternals());
-    },
-
-    __buildExternals: function() {
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-
-      [this.tr("Login with NIH"), this.tr("Login with OpenID")].forEach(txt => {
-        const btn = this.__createLinkButton(txt, () => {
-          // TODO add here callback
-          console.error("Login with external services are still not implemented");
-        }, this);
-
-        grp.add(btn.set({
-          center: true
-        }), {
-          flex:1
-        });
-      });
-
-      return grp;
     },
 
     getEmail: function() {
