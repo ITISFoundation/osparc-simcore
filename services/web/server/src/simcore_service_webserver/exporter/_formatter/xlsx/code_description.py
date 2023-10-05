@@ -312,6 +312,7 @@ class TSRSheetPart(BaseSheetDivisionParts):
                 ),
             ),
             (f"C{o+2}", T("Link")),
+            (f"F{o+2}", T("Text")),
             # TSR Legend
             (f"A{o+3}", T("TSR1: Clearly Defined Context")),
             (f"B{o+3}", T("Description of use cases for the project.")),
@@ -474,17 +475,17 @@ class TSRSheetPart(BaseSheetDivisionParts):
 
         value_labels_cells: list[tuple[str, BaseXLSXCellData]] = [
             (f"{c}{o+1}", T(_format_value_label(i)) | Backgrounds.gray_background)
-            for i, c in enumerate(column_generator(4, max_references_length + 2))
+            for i, c in enumerate(column_generator(4, max_references_length + 3))
         ]
         link_labels_cells: list[tuple[str, BaseXLSXCellData]] = [
-            (f"{c}{o+2}", T("Link")) for c in column_generator(6, max_references_length)
+            (f"{c}{o+2}", T("Link")) for c in column_generator(7, max_references_length)
         ]
 
         references_cells: list[tuple[str, BaseXLSXCellData]] = []
         for i, key in enumerate(_SORTED_REFERENCE_ITEMS):
             references = tsr_entries[key].references
             for c, reference in zip(
-                column_generator(6, len(references)), references, strict=True
+                column_generator(7, len(references)), references, strict=True
             ):
                 references_cells.append((f"{c}{o+3+i}", T(reference)))
 
