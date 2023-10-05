@@ -496,7 +496,7 @@ class TSRSheetPart(BaseSheetDivisionParts):
                 f"D{o+12}",
                 T("All TSR7 items are covered by the rating on the TSR7a row"),
             ),
-            (f"D{o+12}:E{o+16}", Backgrounds.gray_background),
+            (f"D{o+12}:E{o+15}", Backgrounds.gray_background),
             (
                 f"D{o+17}",
                 T("All TSR8 items are covered by the rating on the TSR8a row"),
