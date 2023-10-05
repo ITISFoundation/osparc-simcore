@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import json
 import logging
 import re
 import socket
@@ -24,8 +23,9 @@ from dask_task_models_library.container_tasks.protocol import (
     LogFileUploadURL,
 )
 from models_library.services_resources import BootMode
+from models_library.utils.labels_annotations import OSPARC_LABEL_PREFIXES, from_labels
 from packaging import version
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -38,11 +38,12 @@ from settings_library.s3 import S3Settings
 from ..dask_utils import TaskPublisher
 from ..file_utils import push_file_to_remote
 from ..settings import Settings
-from .constants import LEGACY_SERVICE_LOG_FILE_NAME, PROGRESS_REGEXP
+from .constants import LEGACY_SERVICE_LOG_FILE_NAME
 from .models import (
     LEGACY_INTEGRATION_VERSION,
     ContainerHostConfig,
     DockerContainerConfig,
+    ImageLabels,
 )
 from .task_shared_volume import TaskSharedVolumes
 
@@ -151,7 +152,7 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
 
 
 async def _try_parse_progress(
-    line: str,
+    line: str, *, progress_regexp: re.Pattern[str]
 ) -> float | None:
     with log_catch(logger, reraise=False):
         # pattern might be like "timestamp log"
@@ -160,7 +161,7 @@ async def _try_parse_progress(
         with contextlib.suppress(arrow.ParserError):
             if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
                 log = splitted_log[1]
-        if match := re.search(PROGRESS_REGEXP, log.lower()):
+        if match := re.search(progress_regexp, log):
             return _guess_progress_value(match)
 
     return None
@@ -170,8 +171,11 @@ async def _parse_and_publish_logs(
     log_line: str,
     *,
     task_publishers: TaskPublisher,
+    progress_regexp: re.Pattern[str],
 ) -> None:
-    progress_value = await _try_parse_progress(log_line)
+    progress_value = await _try_parse_progress(
+        log_line, progress_regexp=progress_regexp
+    )
     if progress_value is not None:
         task_publishers.publish_progress(progress_value)
 
@@ -181,7 +185,9 @@ async def _parse_and_publish_logs(
 
 
 async def _parse_container_log_file(
+    *,
     container: DockerContainer,
+    progress_regexp: re.Pattern[str],
     service_key: ContainerImage,
     service_version: ContainerTag,
     container_name: str,
@@ -208,6 +214,7 @@ async def _parse_container_log_file(
                     await _parse_and_publish_logs(
                         line,
                         task_publishers=task_publishers,
+                        progress_regexp=progress_regexp,
                     )
 
             # finish reading the logs if possible
@@ -220,6 +227,7 @@ async def _parse_container_log_file(
                 await _parse_and_publish_logs(
                     line,
                     task_publishers=task_publishers,
+                    progress_regexp=progress_regexp,
                 )
 
             # copy the log file to the log_file_url
@@ -229,7 +237,9 @@ async def _parse_container_log_file(
 
 
 async def _parse_container_docker_logs(
+    *,
     container: DockerContainer,
+    progress_regexp: re.Pattern[str],
     service_key: ContainerImage,
     service_version: ContainerTag,
     container_name: str,
@@ -265,6 +275,7 @@ async def _parse_container_docker_logs(
                     await _parse_and_publish_logs(
                         log_msg_without_timestamp,
                         task_publishers=task_publishers,
+                        progress_regexp=progress_regexp,
                     )
 
             # copy the log file to the log_file_url
@@ -274,7 +285,9 @@ async def _parse_container_docker_logs(
 
 
 async def _monitor_container_logs(
+    *,
     container: DockerContainer,
+    progress_regexp: re.Pattern[str],
     service_key: ContainerImage,
     service_version: ContainerTag,
     task_publishers: TaskPublisher,
@@ -299,32 +312,35 @@ async def _monitor_container_logs(
         ):
             if integration_version > LEGACY_INTEGRATION_VERSION:
                 await _parse_container_docker_logs(
-                    container,
-                    service_key,
-                    service_version,
-                    container_name,
-                    task_publishers,
-                    log_file_url,
-                    log_publishing_cb,
-                    s3_settings,
+                    container=container,
+                    progress_regexp=progress_regexp,
+                    service_key=service_key,
+                    service_version=service_version,
+                    container_name=container_name,
+                    task_publishers=task_publishers,
+                    log_file_url=log_file_url,
+                    log_publishing_cb=log_publishing_cb,
+                    s3_settings=s3_settings,
                 )
             else:
                 await _parse_container_log_file(
-                    container,
-                    service_key,
-                    service_version,
-                    container_name,
-                    task_publishers,
-                    task_volumes,
-                    log_file_url,
-                    log_publishing_cb,
-                    s3_settings,
+                    container=container,
+                    progress_regexp=progress_regexp,
+                    service_key=service_key,
+                    service_version=service_version,
+                    container_name=container_name,
+                    task_publishers=task_publishers,
+                    task_volumes=task_volumes,
+                    log_file_url=log_file_url,
+                    log_publishing_cb=log_publishing_cb,
+                    s3_settings=s3_settings,
                 )
 
 
 @contextlib.asynccontextmanager
 async def managed_monitor_container_log_task(
     container: DockerContainer,
+    progress_regexp: re.Pattern[str],
     service_key: ContainerImage,
     service_version: ContainerTag,
     task_publishers: TaskPublisher,
@@ -343,15 +359,16 @@ async def managed_monitor_container_log_task(
         monitoring_task = asyncio.shield(
             asyncio.create_task(
                 _monitor_container_logs(
-                    container,
-                    service_key,
-                    service_version,
-                    task_publishers,
-                    integration_version,
-                    task_volumes,
-                    log_file_url,
-                    log_publishing_cb,
-                    s3_settings,
+                    container=container,
+                    progress_regexp=progress_regexp,
+                    service_key=service_key,
+                    service_version=service_version,
+                    task_publishers=task_publishers,
+                    integration_version=integration_version,
+                    task_volumes=task_volumes,
+                    log_file_url=log_file_url,
+                    log_publishing_cb=log_publishing_cb,
+                    s3_settings=s3_settings,
                 ),
                 name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
             )
@@ -392,40 +409,24 @@ async def pull_image(
     )
 
 
-async def get_integration_version(
+async def get_image_labels(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
     service_key: ContainerImage,
     service_version: ContainerTag,
-) -> version.Version:
+) -> ImageLabels:
     image_cfg = await docker_client.images.inspect(
         f"{docker_auth.server_address}/{service_key}:{service_version}"
     )
     # NOTE: old services did not have the integration-version label
-    integration_version = LEGACY_INTEGRATION_VERSION
     # image labels are set to None when empty
     if image_labels := image_cfg["Config"].get("Labels"):
         logger.debug("found following image labels:\n%s", pformat(image_labels))
-        service_integration_label = image_labels.get(
-            "io.simcore.integration-version", "{}"
+        data = from_labels(
+            image_labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-
-        service_integration_label = json.loads(service_integration_label).get(
-            "integration-version", f"{LEGACY_INTEGRATION_VERSION}"
-        )
-        logger.debug(
-            "found following integration version: %s",
-            pformat(service_integration_label),
-        )
-        integration_version = version.Version(service_integration_label)
-
-    logger.info(
-        "%s:%s has integration version %s",
-        service_key,
-        service_version,
-        integration_version,
-    )
-    return integration_version
+        return parse_obj_as(ImageLabels, data)
+    return ImageLabels()
 
 
 async def get_computational_shared_data_mount_point(docker_client: Docker) -> Path:

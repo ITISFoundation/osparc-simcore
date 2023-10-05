@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.study.ResourceSelector", {
+qx.Class.define("osparc.study.StudyOptions", {
   extend: qx.ui.core.Widget,
 
   construct: function(studyId) {
@@ -25,7 +25,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
 
     this.__studyId = studyId;
 
-    this.getChildControl("loading-services-resources");
+    this.getChildControl("loading-options");
     const params = {
       url: {
         "studyId": studyId
@@ -73,33 +73,6 @@ qx.Class.define("osparc.study.ResourceSelector", {
       return win;
     },
 
-    getMachineInfo: function(machineId) {
-      switch (machineId) {
-        case "sm":
-          return {
-            id: "sm",
-            title: qx.locale.Manager.tr("Small"),
-            resources: {},
-            price: 4
-          };
-        case "md":
-          return {
-            id: "md",
-            title: qx.locale.Manager.tr("Medium"),
-            resources: {},
-            price: 7
-          };
-        case "lg":
-          return {
-            id: "lg",
-            title: qx.locale.Manager.tr("Large"),
-            resources: {},
-            price: 10
-          };
-      }
-      return null;
-    },
-
     createGroupBox: function(label) {
       const box = new qx.ui.groupbox.GroupBox(label);
       box.getChildControl("legend").set({
@@ -136,7 +109,7 @@ qx.Class.define("osparc.study.ResourceSelector", {
             flex: 1
           });
           break;
-        case "loading-services-resources":
+        case "loading-options":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/48",
             alignX: "center",
@@ -146,15 +119,31 @@ qx.Class.define("osparc.study.ResourceSelector", {
           control.getContentElement().addClass("rotate");
           this.getChildControl("options-layout").add(control);
           break;
-        case "services-resources-layout":
-          control = this.self().createGroupBox(this.tr("Select Resources"));
-          this.getChildControl("options-layout").add(control);
+        case "wallet-selector-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("top-summary-layout").add(control);
+          break;
+        case "wallet-selector-label":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Credit Account:"),
+            font: "text-14"
+          });
+          this.getChildControl("wallet-selector-layout").add(control);
+          break;
+        case "wallet-selector":
+          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true).set({
+            width: 150
+          });
+          this.getChildControl("wallet-selector-layout").add(control);
+          break;
+        case "credits-left-view":
+          control = this.__getCreditsLeftView();
+          this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            minWidth: 100,
-            maxWidth: 150
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignX: "right"
+          }));
           this.getChildControl("top-summary-layout").add(control, {
             flex: 1
           });
@@ -163,9 +152,8 @@ qx.Class.define("osparc.study.ResourceSelector", {
           control = new qx.ui.form.Button(this.tr("Open")).set({
             appearance: "strong-button",
             font: "text-14",
-            alignX: "right",
+            maxWidth: 150,
             height: 35,
-            width: 70,
             center: true
           });
           osparc.utils.Utils.setIdToWidget(control, "openWithResources");
@@ -174,38 +162,15 @@ qx.Class.define("osparc.study.ResourceSelector", {
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
             font: "text-14",
-            alignX: "right",
+            maxWidth: 150,
             height: 35,
-            width: 70,
             center: true
           });
           this.getChildControl("buttons-layout").add(control);
           break;
-        case "wallet-selector-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            maxWidth: 150
-          });
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
-          });
-          break;
-        case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true);
-          this.getChildControl("wallet-selector-layout").add(control);
-          break;
-        case "credits-left-view":
-          control = this.__getCreditsLeftView();
-          this.getChildControl("wallet-selector-layout").add(control);
-          break;
-        case "summary-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
-          });
-          break;
-        case "summary-label":
-          control = new qx.ui.basic.Label();
-          this.getChildControl("summary-layout").add(control);
+        case "services-resources-layout":
+          control = this.self().createGroupBox(this.tr("Select Resources"));
+          this.getChildControl("options-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -230,74 +195,18 @@ qx.Class.define("osparc.study.ResourceSelector", {
       this.__buildOptionsLayout();
     },
 
-    createTierButtonsGroup: function(serviceLabel, servicesResources, advancedCB) {
-      const imageKeys = Object.keys(servicesResources);
-      if (imageKeys && imageKeys.length) {
-        // hack to show "s4l-core"
-        const mainImageKey = imageKeys.length > 1 ? imageKeys[1] : imageKeys[0];
-        const serviceResources = servicesResources[mainImageKey];
-        if (serviceResources && "resources" in serviceResources) {
-          const machinesLayout = this.self().createGroupBox(serviceLabel);
-          machinesLayout.setLayout(new qx.ui.layout.HBox(5));
-          machinesLayout.exclude();
+    __createTierButtonsGroup: function(serviceLabel, pricingPlans, advancedCB) {
+      if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
+        const machinesLayout = this.self().createGroupBox(serviceLabel);
 
-          const smInfo = this.self().getMachineInfo("sm");
-          const mdInfo = this.self().getMachineInfo("md");
-          const lgInfo = this.self().getMachineInfo("lg");
-          if ("CPU" in serviceResources["resources"]) {
-            const lgValue = serviceResources["resources"]["CPU"]["limit"];
-            smInfo["resources"]["CPU"] = lgValue/4;
-            mdInfo["resources"]["CPU"] = lgValue/2;
-            lgInfo["resources"]["CPU"] = lgValue;
-          }
-          if ("RAM" in serviceResources["resources"]) {
-            const lgValue = serviceResources["resources"]["RAM"]["limit"];
-            smInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue/4);
-            mdInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue/2);
-            lgInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue);
-          }
-          if ("VRAM" in serviceResources["resources"]) {
-            const lgValue = serviceResources["resources"]["VRAM"]["limit"];
-            smInfo["resources"]["VRAM"] = lgValue;
-            mdInfo["resources"]["VRAM"] = lgValue;
-            lgInfo["resources"]["VRAM"] = lgValue;
-          }
-          if (Object.keys(lgInfo["resources"]).length) {
-            const buttons = [];
-            const smallButton = new osparc.study.TierButton(smInfo);
-            const mediumButton = new osparc.study.TierButton(mdInfo);
-            const largeButton = new osparc.study.TierButton(lgInfo);
-            [
-              smallButton,
-              mediumButton,
-              largeButton
-            ].forEach(btn => {
-              advancedCB.bind("value", btn, "advanced");
-              buttons.push(btn);
-              machinesLayout.add(btn);
-            });
-            machinesLayout.show();
+        const tierButtons = new osparc.study.TierButtons(pricingPlans["pricingUnits"]);
+        advancedCB.bind("value", tierButtons, "advanced");
+        advancedCB.addListener("selectedTier", selectedTier => {
+          console.log("selectedTier", selectedTier);
+        });
+        machinesLayout.add(tierButtons);
 
-            const buttonSelected = button => {
-              buttons.forEach(btn => {
-                if (btn !== button) {
-                  btn.setValue(false);
-                }
-              });
-            };
-            buttons.forEach(btn => btn.addListener("execute", () => buttonSelected(btn)));
-            buttons.forEach(btn => btn.addListener("changeValue", e => {
-              if (e.getData()) {
-                this.getChildControl("summary-label").set({
-                  value: serviceLabel + ": " + btn.getTierInfo().price
-                });
-              }
-            }));
-            // medium by default
-            mediumButton.execute();
-          }
-          return machinesLayout;
-        }
+        return machinesLayout;
       }
       return null;
     },
@@ -307,36 +216,49 @@ qx.Class.define("osparc.study.ResourceSelector", {
     },
 
     __buildNodeResources: function() {
-      const loadingImage = this.getChildControl("loading-services-resources");
+      const loadingImage = this.getChildControl("loading-options");
       const servicesBox = this.getChildControl("services-resources-layout");
-      servicesBox.exclude();
+      const tiersLoading = () => {
+        loadingImage.show();
+        servicesBox.exclude();
+      };
+      const tiersAdded = () => {
+        loadingImage.exclude();
+        servicesBox.show();
+      };
+      tiersLoading();
       if ("workbench" in this.__studyData) {
-        for (const nodeId in this.__studyData["workbench"]) {
-          const node = this.__studyData["workbench"][nodeId];
+        const promises = [];
+        const nodes = Object.values(this.__studyData["workbench"]);
+        nodes.forEach(node => {
           const params = {
-            url: {
-              studyId: this.__studyId,
-              nodeId
-            }
+            url: osparc.data.Resources.getServiceUrl(
+              node["key"],
+              node["version"]
+            )
           };
-          osparc.data.Resources.get("nodesInStudyResources", params)
-            .then(serviceResources => {
+          promises.push(osparc.data.Resources.fetch("services", "pricingPlans", params));
+        });
+        Promise.all(promises)
+          .then(values => {
+            if (values) {
               // eslint-disable-next-line no-underscore-dangle
               this.getChildControl("options-layout")._removeAll();
               this.getChildControl("options-layout").add(servicesBox);
               const advancedCB = new qx.ui.form.CheckBox().set({
                 label: this.tr("Advanced"),
-                value: false
+                value: true
               });
               servicesBox.add(advancedCB);
-              const serviceGroup = this.createTierButtonsGroup(node["label"], serviceResources, advancedCB);
-              if (serviceGroup) {
-                loadingImage.exclude();
-                servicesBox.add(serviceGroup);
-                servicesBox.show();
-              }
-            });
-        }
+              values.forEach((pricingPlans, idx) => {
+                const serviceGroup = this.__createTierButtonsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
+                if (serviceGroup) {
+                  servicesBox.add(serviceGroup);
+                  tiersAdded();
+                }
+              });
+            }
+          });
       }
     },
 
@@ -344,15 +266,9 @@ qx.Class.define("osparc.study.ResourceSelector", {
       const store = osparc.store.Store.getInstance();
 
       // Wallet Selector
+      this._createChildControlImpl("wallet-selector-label");
       const walletSelector = this.getChildControl("wallet-selector");
       this._createChildControlImpl("credits-left-view");
-
-      // Credits Summary
-      const summaryLayout = this.getChildControl("summary-layout");
-      summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
-        font: "text-14"
-      }));
-      this.getChildControl("summary-label");
 
       const wallets = store.getWallets();
       const selectWallet = walletId => {

@@ -4,30 +4,34 @@
 
 
 import json
+from collections.abc import AsyncIterable, Iterator
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from simcore_postgres_database.models.users import users
+from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_NOTIFICATIONS": "0",
+            "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_META_MODELING": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
@@ -37,7 +41,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
-            "WEBSERVER_WALLETS": "0",
+            "WEBSERVER_WALLETS": "1",
         },
     )
 
@@ -122,7 +126,7 @@ async def registered_user(
     fake_user_password: str,
     fake_user_phone_number: str,
     client: TestClient,
-) -> UserInfoDict:
+) -> AsyncIterable[UserInfoDict]:
     async with NewUser(
         params={
             "name": fake_user_name,
@@ -146,3 +150,11 @@ def mocked_email_core_remove_comments(mocker: MockerFixture):
         autospec=True,
         side_effect=_do_not_remove_comments,
     )
+
+
+@pytest.fixture
+def cleanup_db_tables(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    yield
+    with postgres_db.connect() as conn:
+        conn.execute(wallets.delete())
+        conn.execute(users.delete())

@@ -31,6 +31,11 @@ from models_library.services import (
     ServiceDockerData,
     ServiceType,
 )
+from models_library.utils.labels_annotations import (
+    OSPARC_LABEL_PREFIXES,
+    from_labels,
+    to_labels,
+)
 from pydantic import NonNegativeInt, ValidationError
 from pydantic.class_validators import root_validator, validator
 from pydantic.config import Extra
@@ -39,7 +44,6 @@ from pydantic.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
 from .errors import ConfigNotFound
-from .labels_annotations import from_labels, to_labels
 from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
@@ -52,15 +56,6 @@ SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
     ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
 }
-
-# SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
-#  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
-#   domain they own, such as com.example.some-label ""
-# FIXME: review and define a z43-wide inverse DNS e.g. swiss.z43
-OSPARC_LABEL_PREFIXES = (
-    "io.simcore",
-    "simcore.service",
-)
 
 
 ## MODELS ---------------------------------------------------------------------------------
@@ -129,11 +124,12 @@ class MetaConfig(ServiceDockerData):
         return model
 
     def to_labels_annotations(self) -> dict[str, str]:
-        return to_labels(
+        labels: dict[str, str] = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
             trim_key_head=False,
         )
+        return labels
 
     def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
@@ -258,10 +254,11 @@ class RuntimeConfig(BaseModel):
         return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
-        return to_labels(
+        labels: dict[str, str] = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
+        return labels
 
 
 ## FILES -----------------------------------------------------------
