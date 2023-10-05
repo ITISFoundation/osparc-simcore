@@ -119,24 +119,20 @@ qx.Class.define("osparc.study.StudyOptions", {
           control.getContentElement().addClass("rotate");
           this.getChildControl("options-layout").add(control);
           break;
-        case "services-resources-layout":
-          control = this.self().createGroupBox(this.tr("Select Resources"));
-          this.getChildControl("options-layout").add(control);
-          break;
         case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            minWidth: 100,
-            maxWidth: 150
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignX: "right"
+          }));
+          this.getChildControl("top-summary-layout").add(control, {
+            flex: 1
           });
-          this.getChildControl("top-summary-layout").add(control);
           break;
         case "open-button":
           control = new qx.ui.form.Button(this.tr("Open")).set({
             appearance: "strong-button",
             font: "text-14",
-            alignX: "right",
+            width: 120,
             height: 35,
-            width: 70,
             center: true
           });
           osparc.utils.Utils.setIdToWidget(control, "openWithResources");
@@ -145,9 +141,8 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
             font: "text-14",
-            alignX: "right",
+            width: 120,
             height: 35,
-            width: 70,
             center: true
           });
           this.getChildControl("buttons-layout").add(control);
@@ -161,12 +156,18 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true);
+          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true).set({
+            width: 150
+          });
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "credits-left-view":
           control = this.__getCreditsLeftView();
           this.getChildControl("wallet-selector-layout").add(control);
+          break;
+        case "services-resources-layout":
+          control = this.self().createGroupBox(this.tr("Select Resources"));
+          this.getChildControl("options-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);
