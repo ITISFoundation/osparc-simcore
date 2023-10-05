@@ -88,12 +88,12 @@ qx.Class.define("osparc.Application", {
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
 
-      this.__initRouting();
       this.__loadCommonCss();
 
       this.__updateTabName();
       this.__updateFavicon();
 
+      this.__initRouting();
       this.__startupChecks();
     },
 
