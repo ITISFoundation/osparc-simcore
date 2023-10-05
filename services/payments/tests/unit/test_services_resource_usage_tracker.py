@@ -80,9 +80,7 @@ def mock_resource_usage_tracker_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-        #
-        # /
-        #
+
         assert "healthcheck" in get_in(
             ["paths", "/", "get", "operationId"],
             rut_service_openapi_specs,
