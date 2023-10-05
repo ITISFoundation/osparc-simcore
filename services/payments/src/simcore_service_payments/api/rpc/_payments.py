@@ -37,7 +37,7 @@ async def create_payment(
             amount_dollars=amount_dollars,
             credits=target_credits,
             user_name=user_name,
-            user_email=user_email,
+            user_email=user_email,  # type: ignore
             wallet_name=wallet_name,
         )
     )
