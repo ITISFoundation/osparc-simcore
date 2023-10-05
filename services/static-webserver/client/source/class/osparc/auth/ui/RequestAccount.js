@@ -87,7 +87,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
         application.add(lItem);
       });
-      this.add(application);
+      this.add(application, null, "Application");
+
+      const description = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Description")
+      });
+      this.add(description);
 
       const hear = new qx.ui.form.SelectBox().set({
         required: true
@@ -105,7 +110,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
       });
-      this.add(hear);
+      this.add(hear, null, "How did you hear about us?");
+
+      const message = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Message")
+      });
+      this.add(message);
 
       // validation
       const validator = new qx.ui.form.validation.Manager();
