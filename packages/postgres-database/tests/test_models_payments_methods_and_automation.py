@@ -190,8 +190,7 @@ async def _update_autorecharge(
         .returning(payments_autorecharge.c.id)
     )
 
-    scalar = await connection.scalar(stmt)
-    return scalar
+    return await connection.scalar(stmt)
 
 
 async def _decrease_countdown(connection, wallet_id, payment_method) -> int | None:
