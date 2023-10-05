@@ -41,7 +41,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
       height: 300
     });
     // at least chrome hates it when a password input field exists
-    // outside a form, so lets accomodate him
+    // outside a form, so lets accommodate him
     this.addListenerOnce("appear", e => {
       const el = this.getContentElement();
       const form = this._formElement = new qx.html.Element("form", null, {
@@ -93,7 +93,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     */
     resetValues: function() {
       this.getChildren().forEach(item => {
-        // FIXME: should check issubclass of AbstractField
+        // FIXME: should check is subclass of AbstractField
         if (qx.Class.implementsInterface(item, qx.ui.form.IForm) && qx.Class.implementsInterface(item, qx.ui.form.IField)) {
           item.resetValue();
         }

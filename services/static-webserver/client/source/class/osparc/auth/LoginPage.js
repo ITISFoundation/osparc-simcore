@@ -92,6 +92,7 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       pages.add(login);
       pages.add(register);
+      pages.add(requestAccount);
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
@@ -171,6 +172,11 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       register.addListener("done", msg => {
+        osparc.utils.Utils.cookie.deleteCookie("user");
+        this.fireDataEvent("done", msg);
+      });
+
+      requestAccount.addListener("done", msg => {
         osparc.utils.Utils.cookie.deleteCookie("user");
         this.fireDataEvent("done", msg);
       });

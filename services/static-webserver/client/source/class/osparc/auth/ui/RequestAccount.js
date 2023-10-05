@@ -26,65 +26,95 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
   */
 
   members: {
-    __submitBtn: null,
-    __cancelBtn: null,
+    __requestButton: null,
+    __cancelButton: null,
 
     // overrides base
     _buildPage: function() {
-      const validator = new qx.ui.form.validation.Manager();
+      this._addTitleHeader(this.tr("Request Account"));
 
-      this._addTitleHeader(this.tr("Registration"));
+      const firstName = new qx.ui.form.TextField().set({
+        required: true,
+        placeholder: this.tr("First Name")
+      });
+      this.add(firstName);
 
-      // email, pass1 == pass2
+      const lastName = new qx.ui.form.TextField().set({
+        required: true,
+        placeholder: this.tr("Last Name")
+      });
+      this.add(lastName);
+
       const email = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("Type your email")
+        placeholder: this.tr("Email")
       });
       this.add(email);
-      osparc.utils.Utils.setIdToWidget(email, "registrationEmailFld");
-      this.addListener("appear", () => {
-        email.focus();
-        email.activate();
-      });
 
-      const pass1 = new osparc.ui.form.PasswordField().set({
+      const phone = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Phone Number")
+      });
+      this.add(phone);
+
+      const address = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("Type a password")
+        placeholder: this.tr("Address")
       });
-      osparc.utils.Utils.setIdToWidget(pass1.getChildControl("passwordField"), "registrationPass1Fld");
-      this.add(pass1);
+      this.add(address);
 
-      const pass2 = new osparc.ui.form.PasswordField().set({
+      const country = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("Retype the password")
+        placeholder: this.tr("Country")
       });
-      osparc.utils.Utils.setIdToWidget(pass2.getChildControl("passwordField"), "registrationPass2Fld");
-      this.add(pass2);
+      this.add(country);
 
-      const urlFragment = osparc.utils.Utils.parseURLFragment();
-      const invitationToken = urlFragment.params ? urlFragment.params.invitation || null : null;
-      if (invitationToken) {
-        osparc.auth.Manager.getInstance().checkInvitation(invitationToken)
-          .then(data => {
-            if (data && data.email) {
-              email.set({
-                value: data.email,
-                enabled: false
-              });
-            }
-          });
-      }
+      const application = new qx.ui.form.SelectBox().set({
+        required: true
+      });
+      [{
+        id: "em",
+        label: "EM"
+      }, {
+        id: "neuron",
+        label: "Neuron"
+      }, {
+        id: "implant_safety",
+        label: "Implant Safety"
+      }, {
+        id: "wireless_power_transfer",
+        label: "Wireless Power Transfer"
+      }].forEach(appData => {
+        const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
+        application.add(lItem);
+      });
+      this.add(application);
+
+      const hear = new qx.ui.form.SelectBox().set({
+        required: true
+      });
+      [{
+        id: "Nik",
+        label: "Nik"
+      }, {
+        id: "niels",
+        label: "Niels"
+      }, {
+        id: "twenty",
+        label: "20 Minuten"
+      }].forEach(hearData => {
+        const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
+        hear.add(lItem);
+      });
+      this.add(hear);
 
       // validation
+      const validator = new qx.ui.form.validation.Manager();
       validator.add(email, qx.util.Validate.email());
-      validator.add(pass1, osparc.auth.core.Utils.passwordLengthValidator);
-      validator.add(pass2, osparc.auth.core.Utils.passwordLengthValidator);
-      validator.setValidator(() => osparc.auth.core.Utils.checkSamePasswords(pass1, pass2));
 
       // submit & cancel buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
+      const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
         appearance: "strong-button"
       });
@@ -93,7 +123,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         flex:1
       });
 
-      const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
       grp.add(cancelBtn, {
         flex:1
       });
@@ -102,22 +132,27 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       submitBtn.addListener("execute", e => {
         const valid = validator.validate();
         if (valid) {
-          this.__submit({
-            email: email.getValue(),
-            password: pass1.getValue(),
-            confirm: pass2.getValue(),
-            invitation: invitationToken ? invitationToken : ""
-          });
+          const formData = {
+            email: email.getValue()
+          };
+          this.__submit(formData);
         }
       }, this);
 
-      cancelBtn.addListener("execute", e => this.fireDataEvent("done", null), this);
+      cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
+
+      this.addListener("appear", () => {
+        email.focus();
+        email.activate();
+      });
 
       this.add(grp);
     },
 
-    __submit: function(userData) {
-      osparc.auth.Manager.getInstance().register(userData)
+    __submit: function(formData) {
+      console.log(formData);
+      /*
+      osparc.auth.Manager.getInstance().register(formData)
         .then(log => {
           this.fireDataEvent("done", log.message);
           osparc.FlashMessenger.getInstance().log(log);
@@ -126,21 +161,22 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           const msg = err.message || this.tr("Cannot register user");
           osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
+      */
     },
 
     _onAppear: function() {
       // Listen to "Enter" key
       const commandEnter = new qx.ui.command.Command("Enter");
-      this.__submitBtn.setCommand(commandEnter);
+      this.__requestButton.setCommand(commandEnter);
 
       // Listen to "Esc" key
       const commandEsc = new qx.ui.command.Command("Esc");
-      this.__cancelBtn.setCommand(commandEsc);
+      this.__cancelButton.setCommand(commandEsc);
     },
 
     _onDisappear: function() {
-      this.__submitBtn.setCommand(null);
-      this.__cancelBtn.setCommand(null);
+      this.__requestButton.setCommand(null);
+      this.__cancelButton.setCommand(null);
     }
   }
 });
