@@ -380,6 +380,11 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{key}/{version}"
+          },
+          pricingPlans: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
           }
         }
       },
