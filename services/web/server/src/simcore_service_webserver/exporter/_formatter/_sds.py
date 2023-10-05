@@ -5,14 +5,16 @@ from pathlib import Path
 from typing import Any
 
 from aiohttp import web
+from pydantic import parse_obj_as
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog.client import get_service
 from ...projects.exceptions import BaseProjectError
+from ...projects.models import ProjectDict
 from ...projects.projects_api import get_project_for_user
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import SDSException
-from ._text_files import write_text_files
+from .template_json import write_template_json
 from .xlsx.code_description import (
     CodeDescriptionModel,
     CodeDescriptionParams,
@@ -21,7 +23,6 @@ from .xlsx.code_description import (
     RRIDEntry,
 )
 from .xlsx.dataset_description import DatasetDescriptionParams
-from .xlsx.submission import SubmissionDocumentParams
 from .xlsx.writer import write_xlsx_files
 
 _logger = logging.getLogger(__name__)
@@ -29,14 +30,11 @@ _logger = logging.getLogger(__name__)
 
 def _write_sds_directory_content(
     base_path: Path,
-    submission_params: SubmissionDocumentParams,
     dataset_description_params: DatasetDescriptionParams,
     code_description_params: CodeDescriptionParams,
 ) -> None:
-    write_text_files(base_path=base_path)
     write_xlsx_files(
         base_path=base_path,
-        submission_params=submission_params,
         dataset_description_params=dataset_description_params,
         code_description_params=code_description_params,
     )
@@ -50,23 +48,22 @@ async def create_sds_directory(
     product_name: str,
 ) -> None:
     try:
-        project_data = await get_project_for_user(
+        project_data: ProjectDict = await get_project_for_user(
             app=app,
             project_uuid=project_id,
             user_id=user_id,
             include_state=True,
         )
     except BaseProjectError as e:
-        raise SDSException(f"Could not find project {project_id}") from e
+        msg = f"Could not find project {project_id}"
+        raise SDSException(msg) from e
 
     _logger.debug("Project data: %s", project_data)
 
     # assemble params here
-    submission_params = SubmissionDocumentParams(
-        award_number="", milestone_archived="", milestone_completion_date=None
-    )
-    dataset_description_params = DatasetDescriptionParams(
-        name=project_data["name"], description=project_data["description"]
+    dataset_description_params = parse_obj_as(
+        DatasetDescriptionParams,
+        {"name": project_data["name"], "description": project_data["description"]},
     )
 
     params_code_description: dict[str, Any] = {}
@@ -81,9 +78,12 @@ async def create_sds_directory(
             continue
 
         rrid_entires.append(
-            RRIDEntry(
-                rrid_term=scicrunch_resource.name,
-                rrid_identifier=scicrunch_resource.rrid,
+            parse_obj_as(
+                RRIDEntry,
+                {
+                    "rrid_term": scicrunch_resource.name,
+                    "rrid_identifier": scicrunch_resource.rrid,
+                },
             )
         )
     params_code_description["rrid_entires"] = list(rrid_entires)
@@ -177,13 +177,14 @@ async def create_sds_directory(
         code_description=code_description, inputs=list(inputs), outputs=list(outputs)
     )
 
+    await write_template_json(target_dir=base_path, project_data=project_data)
+
     # writing SDS structure with process pool to avoid blocking
     with non_blocking_process_pool_executor(max_workers=1) as pool:
         return await asyncio.get_event_loop().run_in_executor(
             pool,
             _write_sds_directory_content,
             base_path,
-            submission_params,
             dataset_description_params,
             code_description_params,
         )
