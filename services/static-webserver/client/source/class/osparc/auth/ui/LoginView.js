@@ -21,7 +21,7 @@
  * - Form data validation
  * - Adds links to register and reset pages. Transitions are fired as events.
  * - To execute login, it delegates on the auth.manager
- * - Minimal layout and apperance is delegated to the selected theme
+ * - Minimal layout and appearance is delegated to the selected theme
  */
 
 qx.Class.define("osparc.auth.ui.LoginView", {
