@@ -56,6 +56,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       this.add(phone);
 
+      const company = new qx.ui.form.TextField().set({
+        required: true,
+        placeholder: this.tr("Company/University Name")
+      });
+      this.add(company);
+
       const address = new qx.ui.form.TextField().set({
         required: true,
         placeholder: this.tr("Address")
@@ -116,8 +122,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       [{
-        id: "Search Engine",
-        label: "Search_Engine"
+        id: "Search_Engine",
+        label: "Search Engine"
       }, {
         id: "Conference",
         label: "Conference"
@@ -125,7 +131,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         id: "Publication",
         label: "Publication"
       }, {
-        id: "Social Media",
+        id: "Social_Media",
         label: "Social Media"
       }, {
         id: "Other",
