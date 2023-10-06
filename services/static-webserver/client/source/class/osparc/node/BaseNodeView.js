@@ -360,7 +360,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
       this.__preparingInputs.setMonitoredNodes(monitoredNodes);
     },
 
-    __dependeciesChanged: function() {
+    __dependenciesChanged: function() {
       const preparingNodes = this.__preparingInputs.getPreparingNodes();
       const waiting = Boolean(preparingNodes && preparingNodes.length);
       const buttonsIcon = this.__inputsButton.getChildControl("icon");
@@ -385,10 +385,10 @@ qx.Class.define("osparc.node.BaseNodeView", {
       }
 
       this.__preparingInputs = new osparc.widget.PreparingInputs(node.getStudy());
-      this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
+      this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependenciesChanged());
       this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
       this.__preparingInputs.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
-      this.__dependeciesChanged();
+      this.__dependenciesChanged();
 
       this.__instructionsBtn.setVisibility(node.getSlideshowInstructions() ? "visible" : "excluded");
 
