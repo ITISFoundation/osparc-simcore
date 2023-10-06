@@ -20,7 +20,7 @@
  *
  * It is the entry point to start editing or creating a new study.
  *
- * Also takes care of retrieveing the list of services and pushing the changes in the metadata.
+ * Also takes care of retrieving the list of services and pushing the changes in the metadata.
  *
  * *Example*
  *
@@ -68,12 +68,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
-        newStudyLabel: "New Sim4Life project",
+        newStudyLabel: "New S4L project",
         idToWidget: "startS4LButton"
       },
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
-        description: "Jupyter powered by Sim4Life",
+        description: "Jupyter powered by S4L",
         newStudyLabel: "New Sim4Life lab project",
         idToWidget: "startJSmashButton"
       }
@@ -212,14 +212,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           // Show Quick Start if studies.length === 0
-          const tutorial = osparc.product.tutorial.Utils.getTutorial();
-          if (tutorial) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
+          const quickStart = osparc.product.quickStart.Utils.getQuickStart();
+          if (quickStart) {
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStart.localStorageStr);
             if (dontShow === "true") {
               return;
             }
             if (nStudies === 0) {
-              const tutorialWindow = tutorial.tutorial();
+              const tutorialWindow = quickStart.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
             }
@@ -644,7 +644,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
           const size = file.size;
-          const maxSize = 10 * 1024 * 1024 * 1024; // 10 GB
+          const maxSize = 10 * 1000 * 1000 * 1000; // 10 GB
           if (size > maxSize) {
             osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
@@ -1050,9 +1050,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const percentComplete = ep.loaded / ep.total * 100;
           importingStudyCard.getChildControl("progress-bar").setValue(percentComplete);
           if (percentComplete === 100) {
-            const processinglabel = this.tr("Processing study");
-            importingStudyCard.getChildControl("state-label").setValue(processinglabel);
-            importTask.setSubtitle(processinglabel);
+            const processingLabel = this.tr("Processing study");
+            importingStudyCard.getChildControl("state-label").setValue(processingLabel);
+            importTask.setSubtitle(processingLabel);
             importingStudyCard.getChildControl("progress-bar").exclude();
           }
         } else {
@@ -1062,9 +1062,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.addEventListener("load", e => {
         // transferComplete
         if (req.status == 200) {
-          const processinglabel = this.tr("Processing study");
-          importingStudyCard.getChildControl("state-label").setValue(processinglabel);
-          importTask.setSubtitle(processinglabel);
+          const processingLabel = this.tr("Processing study");
+          importingStudyCard.getChildControl("state-label").setValue(processingLabel);
+          importTask.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
           const params = {

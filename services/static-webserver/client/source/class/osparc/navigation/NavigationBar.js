@@ -184,10 +184,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "logo-powered":
           control = new osparc.ui.basic.PoweredByOsparc().set({
-            width: 50,
             padding: 3,
             paddingTop: 1,
-            maxHeight: 50
+            maxHeight: this.self().HEIGHT - 2
           });
           this.getChildControl("left-items").add(control);
           break;
@@ -204,6 +203,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             paddingLeft: 10,
             font: "text-14"
           });
+          osparc.utils.Utils.setIdToWidget(control, "dashboardLabel");
           this.getChildControl("left-items").add(control);
           break;
         case "study-menu-info":
@@ -272,8 +272,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
-            maxWidth: 60,
-            minWidth: 60,
             maxHeight: this.self().HEIGHT
           });
           this.getChildControl("right-items").add(control);
@@ -397,8 +395,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
       osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addPanddyToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
+      osparc.utils.Utils.setIdToWidget(menuButton, "manualsButton");
+      osparc.utils.Utils.setIdToWidget(menu, "manualsMenu");
       return menuButton;
     },
 
@@ -411,6 +411,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
+      osparc.utils.Utils.setIdToWidget(menuButton, "feedbackButton");
+      osparc.utils.Utils.setIdToWidget(menu, "feedbackMenu");
       return menuButton;
     },
 

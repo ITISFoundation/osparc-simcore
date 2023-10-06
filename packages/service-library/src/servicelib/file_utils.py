@@ -21,7 +21,7 @@ class AsyncStream(Protocol):
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 
 
-async def _rm(path: Path, ignore_errors: bool):
+async def _rm(path: Path, *, ignore_errors: bool):
     """Removes file or directory"""
     try:
         await remove(path)
@@ -30,19 +30,19 @@ async def _rm(path: Path, ignore_errors: bool):
 
 
 async def remove_directory(
-    path: Path, only_children: bool = False, ignore_errors: bool = False
+    path: Path, *, only_children: bool = False, ignore_errors: bool = False
 ) -> None:
     """Optional parameter allows to remove all children and keep directory"""
     if only_children:
-        await asyncio.gather(*[_rm(child, ignore_errors) for child in path.glob("*")])
+        await asyncio.gather(
+            *[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")]
+        )
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
 async def create_sha256_checksum(
-    async_stream: AsyncStream,
-    *,
-    chunk_size: ByteSize = CHUNK_4KB,
+    async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_4KB
 ) -> str:
     """
     Usage:
@@ -55,13 +55,12 @@ async def create_sha256_checksum(
     WARNING: bandit reports the use of insecure MD2, MD4, MD5, or SHA1 hash function.
     """
     sha256_hash = hashlib.sha256()  # nosec
-    sha256check = await _eval_hash_async(async_stream, sha256_hash, chunk_size)
-    return sha256check
+    return await _eval_hash_async(async_stream, sha256_hash, chunk_size)
 
 
 async def _eval_hash_async(
     async_stream: AsyncStream,
-    hasher: "hashlib._Hash",
+    hasher: "hashlib._Hash",  # noqa: SLF001
     chunk_size: ByteSize,
 ) -> str:
     while chunk := await async_stream.read(chunk_size):

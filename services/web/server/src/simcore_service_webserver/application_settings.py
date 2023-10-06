@@ -102,6 +102,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
+    WEBSERVER_CREDIT_COMPUTATION_ENABLED: bool = Field(
+        default=False, description="Enables credit computation features."
+    )
     WEBSERVER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],

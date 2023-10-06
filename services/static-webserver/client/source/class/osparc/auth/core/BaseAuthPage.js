@@ -37,20 +37,11 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     // TODO: remove fix dimensions for the outer container?
     this.set({
       layout: new qx.ui.layout.VBox(20),
-      width: 300,
+      width: this.self().FORM_WIDTH,
       height: 300
     });
-    // at least chrome hates it when a password input field exists
-    // outside a form, so lets accomodate him
-    this.addListenerOnce("appear", e => {
-      const el = this.getContentElement();
-      const form = this._formElement = new qx.html.Element("form", null, {
-        name: "baseLoginForm",
-        autocomplete: "on"
-      });
-      form.insertBefore(el);
-      el.insertInto(form);
-    });
+
+    this._form = new qx.ui.form.Form();
     this._buildPage();
 
     this.addListener("appear", this._onAppear, this);
@@ -67,6 +58,10 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     "done": "qx.event.type.Data"
   },
 
+  statics: {
+    FORM_WIDTH: 300
+  },
+
   /*
   *****************************************************************************
      MEMBERS
@@ -78,7 +73,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      * when all is said and done we should remove the form so that the password manager
      * knows to save the content of the form. so we save it here.
      */
-    _formElement: null,
+    _form: null,
     /**
      * This method gets called upon construction and
      * must be overriden in a subclass
@@ -93,7 +88,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     */
     resetValues: function() {
       this.getChildren().forEach(item => {
-        // FIXME: should check issubclass of AbstractField
+        // FIXME: should check is subclass of AbstractField
         if (qx.Class.implementsInterface(item, qx.ui.form.IForm) && qx.Class.implementsInterface(item, qx.ui.form.IField)) {
           item.resetValue();
         }
@@ -105,7 +100,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      */
     _addTitleHeader: function(txt) {
       let lbl = new qx.ui.basic.Label(txt).set({
-        font: "headline",
+        font: "text-20",
         alignX: "center"
       });
       this.add(lbl, {

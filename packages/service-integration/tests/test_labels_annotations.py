@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 import yaml
-from service_integration.labels_annotations import from_labels, to_labels
+from models_library.utils.labels_annotations import from_labels, to_labels
 
 
 @pytest.fixture

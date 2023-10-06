@@ -300,6 +300,7 @@ async def get_file(
     ":search",
     response_model=Page[File],
     responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def search_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -317,9 +318,7 @@ async def search_files_page(
             access_right="read",
         )
         error_message: str = "Not found in storage"
-        if not stored_files:
-            raise ValueError(error_message)  # noqa: TRY301
-        if page_params.offset >= len(stored_files):
+        if page_params.offset > len(stored_files):
             raise ValueError(error_message)
         stored_files = stored_files[page_params.offset :]
         if len(stored_files) > page_params.limit:

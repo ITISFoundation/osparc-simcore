@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.4.5"
+    "version": "0.5.0"
   },
   "paths": {
     "/v0/meta": {
@@ -513,6 +513,65 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Solver"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/ports": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Solver Ports",
+        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5.0*",
+        "operationId": "list_solver_ports",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnePage_SolverPort_"
                 }
               }
             }
@@ -1161,8 +1220,14 @@
           },
           "checksum": {
             "title": "Checksum",
+            "pattern": "^[a-fA-F0-9]{64}$",
             "type": "string",
-            "description": "MD5 hash of the file's content [EXPERIMENTAL]"
+            "description": "SHA256 hash of the file's content"
+          },
+          "e_tag": {
+            "title": "E Tag",
+            "type": "string",
+            "description": "S3 entity tag"
           }
         },
         "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud."
@@ -1490,6 +1555,28 @@
           "docs_dev_url": "https://api.osparc.io/dev/doc"
         }
       },
+      "OnePage_SolverPort_": {
+        "title": "OnePage[SolverPort]",
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "title": "Items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SolverPort"
+            }
+          },
+          "total": {
+            "title": "Total",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "description": "A single page is used to envelope a small sequence that does not require\npagination\n\nIf total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this\nentrypoint to proper pagination"
+      },
       "Profile": {
         "title": "Profile",
         "required": [
@@ -1574,7 +1661,8 @@
           "STARTED",
           "SUCCESS",
           "FAILED",
-          "ABORTED"
+          "ABORTED",
+          "WAITING_FOR_CLUSTER"
         ],
         "type": "string",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
@@ -1634,6 +1722,46 @@
           "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1"
         }
       },
+      "SolverPort": {
+        "title": "SolverPort",
+        "required": [
+          "key",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key name",
+            "pattern": "^[^_\\W0-9]\\w*$",
+            "type": "string",
+            "description": "port identifier name"
+          },
+          "kind": {
+            "title": "Kind",
+            "enum": [
+              "input",
+              "output"
+            ],
+            "type": "string"
+          },
+          "content_schema": {
+            "title": "Content Schema",
+            "type": "object",
+            "description": "jsonschema for the port's value. SEE https://json-schema.org"
+          }
+        },
+        "example": {
+          "key": "input_2",
+          "kind": "input",
+          "content_schema": {
+            "title": "Sleep interval",
+            "type": "integer",
+            "x_unit": "second",
+            "minimum": 0,
+            "maximum": 5
+          }
+        }
+      },
       "UserRoleEnum": {
         "title": "UserRoleEnum",
         "enum": [
@@ -1641,6 +1769,7 @@
           "GUEST",
           "USER",
           "TESTER",
+          "PRODUCT_OWNER",
           "ADMIN"
         ],
         "type": "string",
