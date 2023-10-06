@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       switch (id) {
         case "credits-label":
           control = new qx.ui.basic.Label().set({
-            alignX: "right",
+            alignX: "center",
             font: "text-16"
           });
           this._add(control);
