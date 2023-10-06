@@ -324,7 +324,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __getCreditsLeftView: function() {
-      const creditsLeftView = new osparc.desktop.credits.CreditsLabel();
+      const creditsLeftView = new osparc.desktop.credits.CreditsIndicator();
       this.bind("wallet", creditsLeftView, "wallet");
       return creditsLeftView;
     }

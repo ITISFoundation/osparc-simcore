@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
+      const creditsLabel = new osparc.desktop.credits.CreditsIndicator(wallet, true).set({
         alignX: "right"
       });
       creditsLabel.addListener("tap", () => {

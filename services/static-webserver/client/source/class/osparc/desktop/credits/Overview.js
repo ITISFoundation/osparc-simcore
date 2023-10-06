@@ -162,8 +162,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       titleLayout.add(walletName);
       layout.add(titleLayout);
 
-      const progressBar = new osparc.desktop.credits.CreditsLabel(wallet);
-      layout.add(progressBar);
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
+      layout.add(creditsIndicator);
 
       const buyButton = new qx.ui.form.Button().set({
         label: this.tr("Buy Credits"),
@@ -232,7 +232,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         column++;
 
         // indicator
-        const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet);
+        const creditsLabel = new osparc.desktop.credits.CreditsIndicator(wallet);
         layout.add(creditsLabel, {
           column,
           row: i

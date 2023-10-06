@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.CreditsLabel", {
+qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   extend: qx.ui.basic.Atom,
 
   construct: function(wallet, shortWording) {
