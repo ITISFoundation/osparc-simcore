@@ -5,6 +5,8 @@
 # pylint: disable=unused-variable
 
 
+from pathlib import Path
+
 from fastapi import status
 from httpx import AsyncClient
 from models_library.app_diagnostics import AppStatusCheck
@@ -29,9 +31,12 @@ async def test_get_service_state(
     response = await client.get(f"{API_VTAG}/state")
     assert response.status_code == status.HTTP_200_OK
 
+    version_file: Path = Path(__file__).parent.parent.parent / "VERSION"
+    assert version_file.is_file()
+
     assert response.json() == {
         "app_name": "simcore-service-api-server",
-        "version": "0.4.5",
+        "version": version_file.read_text().strip(),
         "services": {
             "catalog": {"healthy": True},
             "director_v2": {"healthy": True},
