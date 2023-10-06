@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
     creditsToFixed: function(credits) {
       if (credits < 100) {
-        return credits.toFixed(1);
+        return (credits).toFixed(1);
       }
       return parseInt(credits);
     },
