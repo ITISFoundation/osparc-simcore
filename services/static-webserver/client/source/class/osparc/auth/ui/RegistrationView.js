@@ -38,9 +38,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
     _buildPage: function() {
       this._addTitleHeader(this.tr("Registration"));
 
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
-      this.add(formRenderer);
-
+      // form
       // email, pass1 == pass2
       const email = new qx.ui.form.TextField().set({
         required: true
@@ -85,7 +83,11 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       validator.add(pass2, osparc.auth.core.Utils.passwordLengthValidator);
       validator.setValidator(() => osparc.auth.core.Utils.checkSamePasswords(pass1, pass2));
 
-      // submit & cancel buttons
+      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({

@@ -98,7 +98,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
         appearance: "strong-button",
         center: true,
-        maxHeight: 23,
         minWidth: 80
       });
       phoneNumberVerifyLayout.add(verifyPhoneNumberBtn);
