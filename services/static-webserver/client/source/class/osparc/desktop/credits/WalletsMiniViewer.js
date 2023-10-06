@@ -130,17 +130,17 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const creditsLabel = new osparc.desktop.credits.CreditsIndicator(wallet, true).set({
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet, true).set({
         alignX: "right"
       });
-      creditsLabel.addListener("tap", () => {
+      creditsIndicator.addListener("tap", () => {
         osparc.desktop.credits.Utils.areWalletsEnabled()
           .then(walletsEnabled => {
             const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
             creditsWindow.openOverview();
           });
       }, this);
-      this._add(creditsLabel, {
+      this._add(creditsIndicator, {
         flex: 1
       });
     }

@@ -232,8 +232,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         column++;
 
         // indicator
-        const creditsLabel = new osparc.desktop.credits.CreditsIndicator(wallet);
-        layout.add(creditsLabel, {
+        const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
+        layout.add(creditsIndicator, {
           column,
           row: i
         });
