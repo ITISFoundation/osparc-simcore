@@ -20,7 +20,7 @@
  *
  * It is the entry point to start editing or creating a new study.
  *
- * Also takes care of retrieveing the list of services and pushing the changes in the metadata.
+ * Also takes care of retrieving the list of services and pushing the changes in the metadata.
  *
  * *Example*
  *
@@ -68,12 +68,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
-        newStudyLabel: "New Sim4Life project",
+        newStudyLabel: "New S4L project",
         idToWidget: "startS4LButton"
       },
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
-        description: "Jupyter powered by Sim4Life",
+        description: "Jupyter powered by S4L",
         newStudyLabel: "New Sim4Life lab project",
         idToWidget: "startJSmashButton"
       }
@@ -1050,9 +1050,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const percentComplete = ep.loaded / ep.total * 100;
           importingStudyCard.getChildControl("progress-bar").setValue(percentComplete);
           if (percentComplete === 100) {
-            const processinglabel = this.tr("Processing study");
-            importingStudyCard.getChildControl("state-label").setValue(processinglabel);
-            importTask.setSubtitle(processinglabel);
+            const processingLabel = this.tr("Processing study");
+            importingStudyCard.getChildControl("state-label").setValue(processingLabel);
+            importTask.setSubtitle(processingLabel);
             importingStudyCard.getChildControl("progress-bar").exclude();
           }
         } else {
@@ -1062,9 +1062,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.addEventListener("load", e => {
         // transferComplete
         if (req.status == 200) {
-          const processinglabel = this.tr("Processing study");
-          importingStudyCard.getChildControl("state-label").setValue(processinglabel);
-          importTask.setSubtitle(processinglabel);
+          const processingLabel = this.tr("Processing study");
+          importingStudyCard.getChildControl("state-label").setValue(processingLabel);
+          importTask.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
           const params = {

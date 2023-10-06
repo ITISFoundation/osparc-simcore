@@ -84,6 +84,7 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       const login = new osparc.auth.ui.LoginView();
       const register = new osparc.auth.ui.RegistrationView();
+      const requestAccount = new osparc.auth.ui.RequestAccount();
       const verifyPhoneNumber = new osparc.auth.ui.VerifyPhoneNumberView();
       const resetRequest = new osparc.auth.ui.ResetPassRequestView();
       const reset = new osparc.auth.ui.ResetPassView();
@@ -91,6 +92,7 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       pages.add(login);
       pages.add(register);
+      pages.add(requestAccount);
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
@@ -106,6 +108,8 @@ qx.Class.define("osparc.auth.LoginPage", {
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "registration") {
           pages.setSelection([register]);
+        } else if (urlFragment.nav[0] === "request-account") {
+          pages.setSelection([requestAccount]);
         } else if (urlFragment.nav[0] === "reset-password") {
           pages.setSelection([reset]);
         }
@@ -119,13 +123,18 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       }, this);
 
-      login.addListener("toReset", e => {
-        pages.setSelection([resetRequest]);
+      login.addListener("toRegister", () => {
+        pages.setSelection([register]);
         login.resetValues();
       }, this);
 
-      login.addListener("toRegister", e => {
-        pages.setSelection([register]);
+      login.addListener("toRequestAccount", () => {
+        pages.setSelection([requestAccount]);
+        login.resetValues();
+      }, this);
+
+      login.addListener("toReset", e => {
+        pages.setSelection([resetRequest]);
         login.resetValues();
       }, this);
 
@@ -163,6 +172,11 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       register.addListener("done", msg => {
+        osparc.utils.Utils.cookie.deleteCookie("user");
+        this.fireDataEvent("done", msg);
+      });
+
+      requestAccount.addListener("done", msg => {
         osparc.utils.Utils.cookie.deleteCookie("user");
         this.fireDataEvent("done", msg);
       });
