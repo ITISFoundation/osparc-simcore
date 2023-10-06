@@ -4,17 +4,16 @@
 import asyncio
 import logging
 import sys
+from collections.abc import AsyncIterable, Callable, Iterable
 from copy import deepcopy
 from email.message import EmailMessage
 from pathlib import Path
-from typing import AsyncIterable, Callable, Iterable
 from zipfile import ZipFile
 
 import aiofiles
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
-from pytest import FixtureRequest
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.helpers.utils_projects import (
     create_project,
@@ -86,7 +85,7 @@ def _get_fake_template_projects() -> set[Path]:
 
 
 @pytest.fixture(params=_get_fake_template_projects())
-def template_path(request: FixtureRequest) -> Path:
+def template_path(request: pytest.FixtureRequest) -> Path:
     return request.param
 
 
