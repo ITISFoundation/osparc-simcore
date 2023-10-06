@@ -63,6 +63,16 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     }
   },
 
+  statics: {
+    normalizeCredits: function(credits) {
+      const logBase = (n, base) => Math.log(n) / Math.log(base);
+
+      let normalized = logBase(credits, 10000) + 0.01;
+      normalized = Math.min(Math.max(normalized, 0), 1);
+      return normalized;
+    }
+  },
+
   members: {
     __applyWallet: function(wallet) {
       if (wallet) {
