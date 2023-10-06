@@ -18,22 +18,16 @@
 qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   extend: qx.ui.basic.Atom,
 
-  construct: function(wallet, shortWording) {
+  construct: function(wallet) {
     this.base(arguments);
 
     this.set({
       font: "text-16",
       allowGrowX: false
-      // icon: "@MaterialIcons/monetization_on/16",
-      // iconPosition: "right"
     });
 
     if (wallet) {
       this.setWallet(wallet);
-    }
-
-    if (shortWording !== undefined) {
-      this.setShortWording(shortWording);
     }
 
     this.bind("creditsAvailable", this, "label", {
@@ -49,10 +43,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
         }
         return "danger-red";
       }
-    });
-
-    this.bind("shortWording", this, "label", {
-      converter: () => this.__recomputeLabel()
     });
   },
 
@@ -70,13 +60,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       init: 0,
       nullable: false,
       event: "changeCreditsAvailable"
-    },
-
-    shortWording: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeShortWording"
     }
   },
 
@@ -92,13 +75,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       if (creditsAvailable === null) {
         return "-";
       }
-      let label = creditsAvailable.toFixed(2);
-      if (this.isShortWording()) {
-        label += this.tr(" credits");
-      } else {
-        label += this.tr(" credits");
-      }
-      return label;
+      return osparc.desktop.credits.Utils.creditsToFixed(creditsAvailable) + this.tr(" credits");
     }
   }
 });
