@@ -63,6 +63,7 @@ async def _new_project(
 ) -> ProjectDict:
     """returns a project for the given user"""
     project_data = empty_project_data()
+    project_data["quality"] = {"enabled": True}
 
     assert client.app
     return await create_project(
@@ -136,7 +137,7 @@ def client(
     setup_socketio(app)
     setup_resource_manager(app)
 
-    yield event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
