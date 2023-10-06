@@ -23,32 +23,12 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const atom = new qx.ui.basic.Atom().set({
-      alignX: "right",
-      font: "text-16"
-    });
-    this._add(atom);
-
-    const progressBar = this.__progressBar = new qx.ui.core.Widget().set({
-      allowGrowX: true,
-      height: 4
-    });
-    this._add(progressBar);
-
     if (wallet) {
       this.setWallet(wallet);
     }
 
-    this.addListener("changeCreditsAvailable", () => this.__recomputeProgressBar());
-    this.__recomputeProgressBar();
-
-    this.bind("creditsAvailable", atom, "label", {
-      converter: () => this.__recomputeLabel()
-    });
-
-    this.bind("creditsAvailable", atom, "textColor", {
-      converter: credits => this.self().creditsToColor(credits, "text")
-    });
+    this.addListener("changeCreditsAvailable", () => this.__updateCredits());
+    this.__updateCredits();
   },
 
   properties: {
@@ -62,9 +42,10 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
 
     creditsAvailable: {
       check: "Number",
-      init: 0,
+      init: null,
       nullable: false,
-      event: "changeCreditsAvailable"
+      event: "changeCreditsAvailable",
+      apply: "__updateCredits"
     }
   },
 
@@ -73,7 +54,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       let color = defaultColor;
       if (credits < 0) {
         color = "danger-red";
-      } else if (credits < 20) {
+      } else if (credits < 21) {
         color = "warning-yellow";
       }
       return color;
@@ -89,7 +70,25 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   },
 
   members: {
-    __progressBar: null,
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "credits-label":
+          control = new qx.ui.basic.Label().set({
+            alignX: "right",
+            font: "text-16"
+          });
+          this._add(control);
+          break;
+        case "credits-indicator":
+          control = new qx.ui.core.Widget().set({
+            height: 5
+          });
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __applyWallet: function(wallet) {
       if (wallet) {
@@ -97,24 +96,24 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       }
     },
 
-    __recomputeProgressBar: function() {
+    __updateCredits: function() {
       const credits = this.getCreditsAvailable();
       if (credits !== null) {
-        const bgColor = this.self().creditsToColor(credits, "strong-main");
+        const label = this.getChildControl("credits-label");
+        label.set({
+          value: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
+          textColor: this.self().creditsToColor(credits, "text")
+        });
+
+        const indicator = this.getChildControl("credits-indicator");
         const progress = this.self().normalizeCredits(credits);
-        this.__progressBar.setBackgroundColor(bgColor);
-        this.__progressBar.getContentElement().setStyles({
-          width: progress + "%"
+        const bgColor = this.self().creditsToColor(credits, "strong-main");
+        indicator.setBackgroundColor(bgColor);
+        indicator.getContentElement().setStyles({
+          minWidth: parseInt(progress) + "%",
+          maxWidth: parseInt(progress) + "%"
         });
       }
-    },
-
-    __recomputeLabel: function() {
-      const creditsAvailable = this.getCreditsAvailable();
-      if (creditsAvailable === null) {
-        return "-";
-      }
-      return osparc.desktop.credits.Utils.creditsToFixed(creditsAvailable) + this.tr(" credits");
     }
   }
 });
