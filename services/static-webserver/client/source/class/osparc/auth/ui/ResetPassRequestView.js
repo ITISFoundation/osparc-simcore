@@ -36,9 +36,7 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
     _buildPage: function() {
       this._addTitleHeader(this.tr("Reset Password"));
 
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
-      this.add(formRenderer);
-
+      // form
       // email
       const email = new qx.ui.form.TextField().set({
         required: true
@@ -50,7 +48,11 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
         email.activate();
       });
 
-      // submit and cancel buttons
+      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
       const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
