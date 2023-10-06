@@ -288,7 +288,7 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
                 Backgrounds.gray_dark,
             ),
             (
-                f"E5:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}5",
+                f"E5:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}6",
                 Backgrounds.gray_background,
             ),
             (
