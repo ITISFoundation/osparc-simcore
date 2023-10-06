@@ -21,7 +21,7 @@
  * This is the main application class of "osparc"
  *
  * @asset(osparc/*)
- * @asset(common/common.css)
+ * @asset(common/*)
  */
 
 qx.Class.define("osparc.Application", {

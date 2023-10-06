@@ -33,9 +33,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     _buildPage: function() {
       this._addTitleHeader(this.tr("Request Account"));
 
-      const formRenderer = new qx.ui.form.renderer.Single(this._form);
-      this.add(formRenderer);
-
+      // form
       const firstName = new qx.ui.form.TextField().set({
         required: true
       });
@@ -143,7 +141,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const message = new qx.ui.form.TextField();
       this._form.add(message, this.tr("Message"), null, "message");
 
-      // submit & cancel buttons
+      const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({

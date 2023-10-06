@@ -47,9 +47,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       });
       this.add(introText);
 
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
-      this.add(formRenderer);
-
+      // form
       const validateCodeTF = new qx.ui.form.TextField().set({
         required: true
       });
@@ -60,6 +58,11 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         this.__restartTimers();
       });
 
+      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
         center: true,
         appearance: "strong-button"
