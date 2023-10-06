@@ -27,8 +27,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this.set({
       alignX: "center",
-      padding: 5,
-      margin: 10,
+      padding: 4,
+      margin: 6,
       marginRight: 20
     });
 
