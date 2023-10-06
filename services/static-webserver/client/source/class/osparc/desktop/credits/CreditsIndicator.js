@@ -52,9 +52,9 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   statics: {
     creditsToColor: function(credits, defaultColor = "text") {
       let color = defaultColor;
-      if (credits < 0) {
+      if (credits <= 0) {
         color = "danger-red";
-      } else if (credits < 21) {
+      } else if (credits <= 20) {
         color = "warning-yellow";
       }
       return color;
