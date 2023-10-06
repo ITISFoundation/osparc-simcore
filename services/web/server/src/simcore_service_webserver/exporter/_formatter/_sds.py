@@ -64,34 +64,11 @@ def _write_sds_directory_content(
     )
 
 
-async def create_sds_directory(
+async def _add_rrid_entries(
     app: web.Application,
-    base_path: Path,
-    project_id: str,
-    user_id: int,
-    product_name: str,
+    project_data: ProjectDict,
+    params_code_description: dict[str, Any],
 ) -> None:
-    try:
-        project_data: ProjectDict = await get_project_for_user(
-            app=app,
-            project_uuid=project_id,
-            user_id=user_id,
-            include_state=True,
-        )
-    except BaseProjectError as e:
-        msg = f"Could not find project {project_id}"
-        raise SDSException(msg) from e
-
-    _logger.debug("Project data: %s", project_data)
-
-    # assemble params here
-    dataset_description_params = parse_obj_as(
-        DatasetDescriptionParams,
-        {"name": project_data["name"], "description": project_data["description"]},
-    )
-
-    params_code_description: dict[str, Any] = {}
-
     rrid_entires: deque[RRIDEntry] = deque()
 
     repo = ResearchResourceRepository(app)
@@ -112,6 +89,10 @@ async def create_sds_directory(
         )
     params_code_description["rrid_entires"] = list(rrid_entires)
 
+
+def _add_tsr_entries(
+    project_data: ProjectDict, params_code_description: dict[str, Any]
+) -> None:
     # adding TSR data
     quality_data = project_data["quality"]
     if quality_data.get("enabled", False):
@@ -154,6 +135,39 @@ async def create_sds_directory(
     else:
         msg = "TSR is disabled, please enable it and try to export again"
         raise SDSException(msg)
+
+
+async def create_sds_directory(
+    app: web.Application,
+    base_path: Path,
+    project_id: str,
+    user_id: int,
+    product_name: str,
+) -> None:
+    try:
+        project_data: ProjectDict = await get_project_for_user(
+            app=app,
+            project_uuid=project_id,
+            user_id=user_id,
+            include_state=True,
+        )
+    except BaseProjectError as e:
+        msg = f"Could not find project {project_id}"
+        raise SDSException(msg) from e
+
+    _logger.debug("Project data: %s", project_data)
+
+    # assemble params here
+    dataset_description_params = parse_obj_as(
+        DatasetDescriptionParams,
+        {"name": project_data["name"], "description": project_data["description"]},
+    )
+
+    params_code_description: dict[str, Any] = {}
+
+    await _add_rrid_entries(app, project_data, params_code_description)
+
+    _add_tsr_entries(project_data, params_code_description)
 
     workbench = project_data["workbench"]
 

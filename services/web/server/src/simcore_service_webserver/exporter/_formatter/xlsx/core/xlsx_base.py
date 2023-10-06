@@ -160,6 +160,8 @@ class BaseXLSXSheet:
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name}, cell_styles={self.cell_styles}"
 
+    # pylint: disable=no-self-use
+    # pylint: disable=unused-argument
     def assemble_data_for_template(
         self, template_data: BaseModel
     ) -> list[tuple[str, BaseXLSXCellData]]:
