@@ -8,6 +8,7 @@ from collections.abc import AsyncIterable, Callable, Iterable
 from copy import deepcopy
 from email.message import EmailMessage
 from pathlib import Path
+from typing import Any
 from zipfile import ZipFile
 
 import aiofiles
@@ -53,6 +54,50 @@ CURRENT_DIR = (
     .parent
 )
 
+_MOCK_FRONTEND_NEW_TSR_FORMAT: dict[str, Any] = {
+    "enabled": True,
+    "tsr_target": {
+        "r01": {"level": 4, "references": ""},
+        "r02": {"level": 4, "references": ""},
+        "r03": {"level": 4, "references": ""},
+        "r04": {"level": 4, "references": ""},
+        "r05": {"level": 4, "references": ""},
+        "r06": {"level": 4, "references": ""},
+        "r07": {"level": 4, "references": ""},
+        "r08": {"level": 4, "references": ""},
+        "r09": {"level": 4, "references": ""},
+        "r10": {"level": 4, "references": ""},
+        "r03b": {"references": ""},
+        "r03c": {"references": ""},
+        "r07b": {"references": ""},
+        "r07c": {"references": ""},
+        "r07d": {"references": ""},
+        "r07e": {"references": ""},
+        "r08b": {"references": ""},
+        "r10b": {"references": ""},
+    },
+    "tsr_current": {
+        "r01": {"level": 0, "references": ""},
+        "r02": {"level": 0, "references": ""},
+        "r03": {"level": 0, "references": ""},
+        "r04": {"level": 0, "references": ""},
+        "r05": {"level": 0, "references": ""},
+        "r06": {"level": 0, "references": ""},
+        "r07": {"level": 0, "references": ""},
+        "r08": {"level": 0, "references": ""},
+        "r09": {"level": 0, "references": ""},
+        "r10": {"level": 0, "references": ""},
+        "r03b": {"references": ""},
+        "r03c": {"references": ""},
+        "r07b": {"references": ""},
+        "r07c": {"references": ""},
+        "r07d": {"references": ""},
+        "r07e": {"references": ""},
+        "r08b": {"references": ""},
+        "r10b": {"references": ""},
+    },
+}
+
 
 async def _new_project(
     client: TestClient,
@@ -62,7 +107,7 @@ async def _new_project(
 ) -> ProjectDict:
     """returns a project for the given user"""
     project_data = empty_project_data()
-    project_data["quality"] = {"enabled": True}
+    project_data["quality"] = _MOCK_FRONTEND_NEW_TSR_FORMAT
 
     assert client.app
     return await create_project(
