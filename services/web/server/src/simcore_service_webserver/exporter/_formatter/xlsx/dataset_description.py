@@ -34,7 +34,7 @@ class DatasetDescriptionParams(BaseModel):
 
 class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
     name = "Sheet1"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] = []
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]]] = []
 
     def assemble_data_for_template(
         self, template_data: BaseModel
@@ -278,7 +278,7 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
             (f"{c}1", T(f"Value {i}") | Backgrounds.blue | Borders.light_grid)
             for i, c in enumerate(column_generator(5, _NUMBER_OF_COLUMNS_TO_PREFILL), 1)
         )
-        empty_background_cells = [
+        empty_background_cells: list[tuple[str, BaseXLSXCellData]] = [
             (
                 f"E2:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}3",
                 Backgrounds.gray_background,

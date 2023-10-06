@@ -141,7 +141,7 @@ class BaseXLSXSheet:
     name: str | None = None
     # cell style contents, using a list of tuples instead of dict
     # to allow for "duplicate keys"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] | None = None
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]] | None] = None
 
     # used to merge cells via ranges like A1:B2
     cell_merge: ClassVar[set[str]] = set()

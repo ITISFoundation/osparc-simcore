@@ -26,13 +26,10 @@ class RRIDEntry(BaseModel):
     )
 
 
-class TSROnlYReferenceEntry(BaseModel):
+class TSREntry(BaseModel):
     references: list[str]
-
-
-class TSRFullEntry(TSROnlYReferenceEntry):
-    target_level: int  # max value allowed
-    current_level: int  # current selection
+    target_level: int | None  # max value allowed
+    current_level: int | None  # current selection
 
 
 class CodeDescriptionModel(BaseModel):
@@ -41,7 +38,7 @@ class CodeDescriptionModel(BaseModel):
     )
 
     # TSR
-    tsr_entries: dict[str, TSRFullEntry | TSROnlYReferenceEntry] = Field(
+    tsr_entries: dict[str, TSREntry] = Field(
         default_factory=dict, description="list of rules to generate tsr"
     )
 
@@ -132,11 +129,14 @@ class CodeDescriptionParams(BaseModel):
 
 
 def _include_ports_from_this_service(service_key: ServiceKey) -> bool:
-    return service_key.startswith(
-        (
-            "simcore/services/frontend/parameter/",
-            "simcore/services/frontend/iterator-consumer/probe/",
-        )
+    return cast(
+        bool,
+        service_key.startswith(
+            (
+                "simcore/services/frontend/parameter/",
+                "simcore/services/frontend/iterator-consumer/probe/",
+            )
+        ),
     )
 
 
@@ -265,16 +265,17 @@ _SORTED_REFERENCE_ITEMS: Final[list[str]] = [
 ]
 
 
-_LEVEL_TO_LABEL_MAPPING: dict[int, str] = {
+_LEVEL_TO_LABEL_MAPPING: dict[int | None, str] = {
     0: "Not Applicable",
     1: "Partial",
     2: "Adequate",
     3: "Extensive",
     4: "Comprehensive",
+    None: "None",
 }
 
 
-def _level_to_label(level: int) -> str:
+def _level_to_label(level: int | None) -> str:
     return _LEVEL_TO_LABEL_MAPPING.get(level, f"{level}")
 
 
@@ -442,7 +443,7 @@ class TSRSheetPart(BaseSheetDivisionParts):
             (f"A{o+20}", T("Link to demonstration that project conforms to standard.")),
         ]
 
-        tsr_entries = cast(dict[str, TSRFullEntry | TSROnlYReferenceEntry], sheet_data)
+        tsr_entries = cast(dict[str, TSREntry], sheet_data)
 
         rating_and_target_values: list[tuple[str, BaseXLSXCellData]] = [
             (f"D{o+2}", T("Rating")),
