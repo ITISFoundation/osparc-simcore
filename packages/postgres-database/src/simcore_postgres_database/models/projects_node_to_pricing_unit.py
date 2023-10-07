@@ -19,7 +19,7 @@ projects_node_to_pricing_unit = sa.Table(
     metadata,
     sa.Column(
         "project_node_id",
-        sa.BigInteger,
+        sa.Integer,
         sa.ForeignKey(
             projects_nodes.c.project_node_id,
             onupdate="CASCADE",
@@ -30,6 +30,12 @@ projects_node_to_pricing_unit = sa.Table(
         doc="The project node unique identifier",
     ),
     sa.Column(
+        "pricing_plan_id",
+        sa.BigInteger,
+        nullable=False,
+        doc="The pricing plan unique identifier",
+    ),
+    sa.Column(
         "pricing_unit_id",
         sa.BigInteger,
         nullable=False,
@@ -38,7 +44,7 @@ projects_node_to_pricing_unit = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.UniqueConstraint("project_node_id", "pricing_unit_id"),
+    sa.UniqueConstraint("project_node_id"),
 )
 
 

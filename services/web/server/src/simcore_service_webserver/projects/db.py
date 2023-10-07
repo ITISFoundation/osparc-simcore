@@ -18,6 +18,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
@@ -26,6 +27,9 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.projects_node_to_pricing_unit import (
+    projects_node_to_pricing_unit,
+)
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
@@ -789,6 +793,75 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             list_of_nodes = await repo.list(conn)
         return {f"{node.node_id}" for node in list_of_nodes}
+
+    #
+    # Project NODES to Pricing Units
+    #
+
+    async def get_project_node_pricing_unit_id(
+        self,
+        project_uuid: ProjectID,
+        node_uuid: NodeID,
+    ) -> tuple[PricingPlanId, PricingUnitId] | None:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(
+                    projects_node_to_pricing_unit.c.pricing_plan_id,
+                    projects_node_to_pricing_unit.c.pricing_unit_id,
+                )
+                .select_from(
+                    projects_nodes.join(
+                        projects_node_to_pricing_unit,
+                        projects_nodes.c.project_node_id
+                        == projects_node_to_pricing_unit.c.project_node_id,
+                    )
+                )
+                .where(
+                    (projects_nodes.c.project_uuid == f"{project_uuid}")
+                    & (projects_nodes.c.node_id == f"{node_uuid}")
+                )
+            )
+            row = await result.fetchone()
+            return (
+                parse_obj_as(tuple[PricingPlanId, PricingUnitId], (row[0], row[1]))
+                if row
+                else None
+            )
+
+    async def connect_pricing_unit_to_project_node(
+        self,
+        project_uuid: ProjectID,
+        node_uuid: NodeID,
+        pricing_plan_id: PricingPlanId,
+        pricing_unit_id: PricingUnitId,
+    ) -> None:
+        async with self.engine.acquire() as conn:
+            result = await conn.scalar(
+                sa.select(projects_nodes.c.project_node_id).where(
+                    (projects_nodes.c.project_uuid == f"{project_uuid}")
+                    & (projects_nodes.c.node_id == f"{node_uuid}")
+                )
+            )
+            project_node_id = parse_obj_as(int, result) if result else 0
+
+            insert_stmt = pg_insert(projects_node_to_pricing_unit).values(
+                project_node_id=project_node_id,
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+                created=sa.func.now(),
+                modified=sa.func.now(),
+            )
+            on_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=[
+                    projects_node_to_pricing_unit.c.project_node_id,
+                ],
+                set_={
+                    "pricing_plan_id": insert_stmt.excluded.pricing_plan_id,
+                    "pricing_unit_id": insert_stmt.excluded.pricing_unit_id,
+                    "modified": sa.func.now(),
+                },
+            )
+            await conn.execute(on_update_stmt)
 
     #
     # Project ACCESS RIGHTS/PERMISSIONS

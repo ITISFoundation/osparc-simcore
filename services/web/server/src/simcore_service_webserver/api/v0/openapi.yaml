@@ -6794,6 +6794,7 @@ components:
       - STUDY_SHARED
       - TEMPLATE_SHARED
       - ANNOTATION_NOTE
+      - WALLET_SHARED
       type: string
       description: An enumeration.
     OrderDirection:
@@ -9791,6 +9792,10 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: integration version number
+        progress_regexp:
+          title: Progress Regexp
+          type: string
+          description: regexp pattern for detecting computational service's progress
         type:
           allOf:
           - $ref: '#/components/schemas/ServiceType'

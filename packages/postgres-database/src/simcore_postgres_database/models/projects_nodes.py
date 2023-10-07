@@ -20,7 +20,7 @@ projects_nodes = sa.Table(
     metadata,
     sa.Column(
         "project_node_id",
-        sa.BigInteger,
+        sa.Integer,
         nullable=False,
         autoincrement=True,
         primary_key=True,
@@ -36,14 +36,14 @@ projects_nodes = sa.Table(
             name="fk_projects_to_projects_nodes_to_projects_uuid",
         ),
         nullable=False,
-        primary_key=False,
+        index=True,
         doc="The project unique identifier",
     ),
     sa.Column(
         "node_id",
         sa.String,
         nullable=False,
-        primary_key=False,
+        index=True,
         doc="The node unique identifier",
     ),
     sa.Column(
