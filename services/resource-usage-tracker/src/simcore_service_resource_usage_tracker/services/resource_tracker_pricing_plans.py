@@ -8,6 +8,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
+from simcore_service_resource_usage_tracker.core.errors import MyHTTPException
 
 from ..api.dependencies import get_repository
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
@@ -32,8 +33,7 @@ async def get_service_default_pricing_plan(
             break
 
     if default_pricing_plan is None:
-        raise Exception
-        # raise MyHTTPException(404, "No default pricing plan for the specified service")
+        raise MyHTTPException(404, "No default pricing plan for the specified service")
 
     pricing_plan_unit_db = (
         await resource_tracker_repo.list_pricing_units_by_pricing_plan(
