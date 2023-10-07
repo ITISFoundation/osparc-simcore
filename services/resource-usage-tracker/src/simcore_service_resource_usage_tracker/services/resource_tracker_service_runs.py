@@ -8,7 +8,7 @@ from models_library.wallets import WalletID
 from pydantic import PositiveInt
 
 from ..api.dependencies import get_repository
-from ..core.errors import ResourceUsageTrackerCustomRuntimeError
+from ..core.errors import MyHTTPException
 from ..models.pagination import LimitOffsetParamsWithDefault
 from ..models.resource_tracker_service_runs import (
     ServiceRunPage,
@@ -58,8 +58,8 @@ async def list_service_runs(
             product_name, user_id, wallet_id, page_params.offset, page_params.limit
         )
     else:
-        msg = "wallet_id and access_all_wallet_usage parameters must be specified together"
-        raise ResourceUsageTrackerCustomRuntimeError(msg=msg)
+        detail = "wallet_id and access_all_wallet_usage parameters must be specified together"
+        raise MyHTTPException(status_code=404, detail=detail)
 
     service_runs_api_model: list[ServiceRunGet] = []
     for service in service_runs_db_model:

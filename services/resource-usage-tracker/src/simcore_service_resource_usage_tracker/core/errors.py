@@ -1,3 +1,5 @@
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic.errors import PydanticErrorMixin
 
 
@@ -9,13 +11,9 @@ class ConfigurationError(ResourceUsageTrackerRuntimeError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
-class CreateServiceRunError(ResourceUsageTrackerRuntimeError):
-    msg_template: str = "Error during creation of new service run record in DB: {msg}"
+class MyHTTPException(HTTPException):
+    pass
 
 
-class CreateTransactionError(ResourceUsageTrackerRuntimeError):
-    msg_template: str = "Error during creation of new transaction record in DB: {msg}"
-
-
-class ResourceUsageTrackerCustomRuntimeError(ResourceUsageTrackerRuntimeError):
-    msg_template: str = "Error: {msg}"
+def my_http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
