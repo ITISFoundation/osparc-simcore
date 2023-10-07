@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Manrope";
+  font-weight: normal;
+  font-style: normal;
+  src: url("Manrope/Manrope-VariableFont_wght.ttf") format("truetype");
+}
+
 @keyframes rotation {
   from {
     transform: rotate(0deg);
