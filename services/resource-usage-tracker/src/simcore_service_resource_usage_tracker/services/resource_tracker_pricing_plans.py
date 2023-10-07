@@ -52,6 +52,7 @@ async def get_service_default_pricing_plan(
             PricingUnitGet(
                 pricing_unit_id=unit.pricing_unit_id,
                 unit_name=unit.unit_name,
+                unit_attributes=unit.unit_attributes,
                 current_cost_per_unit=unit.current_cost_per_unit,
                 current_cost_per_unit_id=unit.current_cost_per_unit_id,
                 default=unit.default,
@@ -77,6 +78,7 @@ async def get_pricing_unit(
     return PricingUnitGet(
         pricing_unit_id=pricing_unit.pricing_unit_id,
         unit_name=pricing_unit.unit_name,
+        unit_attributes=pricing_unit.unit_attributes,
         current_cost_per_unit=pricing_unit.current_cost_per_unit,
         current_cost_per_unit_id=pricing_unit.current_cost_per_unit_id,
         default=pricing_unit.default,
