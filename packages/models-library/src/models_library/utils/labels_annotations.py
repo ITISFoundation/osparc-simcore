@@ -12,6 +12,15 @@ from pydantic.json import pydantic_encoder
 
 LabelsAnnotationsDict: TypeAlias = dict[str, str]
 
+# SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
+#  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
+#   domain they own, such as com.example.some-label ""
+# FIXME: review and define a z43-wide inverse DNS e.g. swiss.z43
+OSPARC_LABEL_PREFIXES = (
+    "io.simcore",
+    "simcore.service",
+)
+
 
 def _json_dumps(obj: Any, **kwargs) -> str:
     return json.dumps(obj, default=pydantic_encoder, **kwargs)

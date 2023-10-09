@@ -49,7 +49,6 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
             "/init",
             json=jsonable_encoder(payment),
         )
-        # FIXME: handle exceptions! SEE ErrorModel
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
 
@@ -61,7 +60,6 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
             "/cancel",
             json=jsonable_encoder(payment_initiated),
         )
-        # FIXME: handle exceptions! SEE ErrorModel
         response.raise_for_status()
 
     #

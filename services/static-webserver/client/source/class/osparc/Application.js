@@ -21,7 +21,7 @@
  * This is the main application class of "osparc"
  *
  * @asset(osparc/*)
- * @asset(common/common.css)
+ * @asset(common/*)
  */
 
 qx.Class.define("osparc.Application", {
@@ -44,7 +44,7 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
-      this.__preventAutofillBrowserSyles();
+      this.__preventAutofillBrowserStyles();
 
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
@@ -88,12 +88,12 @@ qx.Class.define("osparc.Application", {
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
 
-      this.__initRouting();
       this.__loadCommonCss();
 
       this.__updateTabName();
       this.__updateFavicon();
 
+      this.__initRouting();
       this.__startupChecks();
     },
 
@@ -165,6 +165,12 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
+        case "request-account": {
+          // Route: /#/request-account
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          this.__restart();
+          break;
+        }
         case "reset-password": {
           // Route: /#/reset-password/?code={resetCode}
           if (urlFragment.params && urlFragment.params.code) {
@@ -193,7 +199,7 @@ qx.Class.define("osparc.Application", {
           // Route: /#/error/?message={errorMessage}&status_code={statusCode}
           if (urlFragment.params && urlFragment.params.message) {
             let msg = urlFragment.params.message;
-            // Relpace plus sign in URL query string by spaces
+            // Replace plus sign in URL query string by spaces
             msg = msg.replace(/\+/g, "%20");
             msg = decodeURIComponent(msg);
             osparc.utils.Utils.cookie.deleteCookie("user");
@@ -493,7 +499,7 @@ qx.Class.define("osparc.Application", {
       osparc.wrapper.WebSocket.getInstance().disconnect();
     },
 
-    __preventAutofillBrowserSyles: function() {
+    __preventAutofillBrowserStyles: function() {
       const stylesheet = qx.ui.style.Stylesheet.getInstance();
       if (qx.bom.client.Browser.getName() === "chrome" && qx.bom.client.Browser.getVersion() >= 71) {
         stylesheet.addRule(

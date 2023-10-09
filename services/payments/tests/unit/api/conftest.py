@@ -25,8 +25,6 @@ def app_environment(
     # disables rabbit before creating app
     disable_rabbitmq_and_rpc_setup()
     disable_db_setup()
-
-    #
     return app_environment
 
 

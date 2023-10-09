@@ -21,8 +21,16 @@ qx.Theme.define("osparc.theme.Font", {
 
   fonts: {
     "defaults": {
-      family: ["Manrope", "Roboto", "sanf-serif"],
-      color: "text"
+      family: ["sans-serif"],
+      color: "text",
+      sources: [
+        {
+          family: "Manrope",
+          source: [
+            "common/Manrope/Manrope-VariableFont_wght.ttf"
+          ]
+        }
+      ]
     },
 
     "default": {

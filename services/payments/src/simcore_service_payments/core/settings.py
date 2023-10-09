@@ -110,6 +110,10 @@ class ApplicationSettings(_BaseApplicationSettings):
         auto_default_from_env=True, description="settings for postgres service"
     )
 
+    PAYMENTS_SWAGGER_API_DOC_ENABLED: bool = Field(
+        default=True, description="If true, it displays swagger doc at /doc"
+    )
+
     PAYMENTS_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
         auto_default_from_env=True, description="settings for RUT service"
     )

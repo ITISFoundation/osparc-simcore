@@ -1,10 +1,10 @@
 from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
 from typing import Literal, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel
+from models_library.basic_types import NonEmptyStr, PositiveDecimal
+from pydantic import BaseModel, EmailStr, Extra
 
 
 class ErrorModel(BaseModel):
@@ -16,12 +16,15 @@ class ErrorModel(BaseModel):
 
 
 class InitPayment(BaseModel):
-    amount_dollars: Decimal
+    amount_dollars: PositiveDecimal
     # metadata to store for billing or reference
-    credits: Decimal
-    user_name: str
-    user_email: str
-    wallet_name: str
+    credits: PositiveDecimal
+    user_name: NonEmptyStr
+    user_email: EmailStr
+    wallet_name: NonEmptyStr
+
+    class Config:
+        extra = Extra.forbid
 
 
 PaymentID: TypeAlias = UUID
@@ -37,9 +40,12 @@ PaymentMethodID: TypeAlias = UUID
 class InitPaymentMethod(BaseModel):
     method: Literal["CC"] = "CC"
     # metadata to store for billing or reference
-    user_name: str
-    user_email: str
-    wallet_name: str
+    user_name: NonEmptyStr
+    user_email: EmailStr
+    wallet_name: NonEmptyStr
+
+    class Config:
+        extra = Extra.forbid
 
 
 class PaymentMethodInitiated(BaseModel):
