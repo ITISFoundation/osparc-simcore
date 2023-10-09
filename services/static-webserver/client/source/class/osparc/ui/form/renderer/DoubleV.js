@@ -22,20 +22,22 @@
 qx.Class.define("osparc.ui.form.renderer.DoubleV", {
   extend: qx.ui.form.renderer.AbstractRenderer,
 
-  construct: function(form, doubleSpacedNames) {
+  construct: function(form, doubleSpacedItems) {
     const layout = new qx.ui.layout.Grid();
     layout.setSpacing(15);
     layout.setColumnAlign(0, "left", "bottom");
     layout.setColumnAlign(1, "left", "bottom");
+    layout.setColumnFlex(0, 1);
+    layout.setColumnFlex(1, 1);
     this._setLayout(layout);
 
-    this.__doubleSpacedNames = doubleSpacedNames || [];
+    this.__doubleSpacedItems = doubleSpacedItems || [];
 
     this.base(arguments, form);
   },
 
   members: {
-    __doubleSpacedNames: null,
+    __doubleSpacedItems: null,
     __row: 0,
     __buttonRow: null,
 
@@ -71,12 +73,16 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
       }
 
       // add the items
-      let i = 0;
+      let i = null;
       let col = 0;
-      for (; i < items.length; i++) {
+      for (i = 0; i < items.length; i++) {
         const name = names[i];
         const item = items[i];
-        const takeDouble = this.__doubleSpacedNames.includes(item);
+        const takeDouble = this.__doubleSpacedItems.includes(item);
+        if (takeDouble && col === 1) {
+          col = 0;
+          this.__row++;
+        }
 
         const itemLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
         const label = this._createLabel(name, item).set({

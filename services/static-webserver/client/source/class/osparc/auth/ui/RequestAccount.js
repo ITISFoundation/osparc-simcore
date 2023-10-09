@@ -148,7 +148,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._form.add(message, this.tr("Message"), null, "message");
 
       // const formRenderer = new qx.ui.form.renderer.Single(this._form);
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
       this.add(formRenderer);
 
       // buttons
