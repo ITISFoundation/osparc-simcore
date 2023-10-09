@@ -9,7 +9,7 @@ from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
 from simcore_service_resource_usage_tracker.core.errors import (
-    CustomResourceUsageTrackerRuntimeError,
+    CustomResourceUsageTrackerError,
 )
 
 from ..api.dependencies import get_repository
@@ -35,7 +35,7 @@ async def get_service_default_pricing_plan(
             break
 
     if default_pricing_plan is None:
-        raise CustomResourceUsageTrackerRuntimeError(
+        raise CustomResourceUsageTrackerError(
             msg="No default pricing plan for the specified service"
         )
 

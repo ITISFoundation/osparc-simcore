@@ -43,7 +43,7 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import CustomResourceUsageTrackerRuntimeError
+from ....core.errors import CustomResourceUsageTrackerError
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
@@ -106,7 +106,7 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerRuntimeError(
+            raise CustomResourceUsageTrackerError(
                 msg=f"Service was not created: {data}"
             )
         return row[0]
@@ -290,7 +290,7 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerRuntimeError(
+            raise CustomResourceUsageTrackerError(
                 msg=f"Transaction was not created: {data}"
             )
         return row[0]
@@ -591,7 +591,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerRuntimeError(
+            raise CustomResourceUsageTrackerError(
                 msg=f"Pricing unit id {pricing_unit_id} not found"
             )
         return PricingUnitsDB.from_orm(row)
@@ -624,7 +624,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerRuntimeError(
+            raise CustomResourceUsageTrackerError(
                 msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
             )
         return PricingUnitCostsDB.from_orm(row)
