@@ -49,7 +49,7 @@ class UserServicesPreferencesManager:
 
 async def save_user_services_preferences(app: FastAPI) -> None:
     if not is_feature_enabled(app):
-        _logger.info("preferences features is disabled, skipping save")
+        _logger.warning("preferences features is disabled, skipping save")
         return
 
     user_services_preferences_manager: UserServicesPreferencesManager = (
