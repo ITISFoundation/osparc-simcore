@@ -1,7 +1,7 @@
-import json
 from pathlib import Path
 
 import aiofiles
+from servicelib.json_serialization import json_dumps
 
 from ...projects.models import ProjectDict
 
@@ -14,7 +14,7 @@ def get_content(project_data: ProjectDict) -> str:
         "name": project_data["name"],
         "description": project_data["description"],
     }
-    return json.dumps(data)
+    return json_dumps(data)
 
 
 async def write_template_json(target_dir: Path, project_data: ProjectDict) -> None:
