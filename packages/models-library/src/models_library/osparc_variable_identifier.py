@@ -10,6 +10,8 @@ T = TypeVar("T")
 
 class OsparcVariableIdentifier(BaseModel):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
+    # NOTE: When dealing with str types, to avoid unexpected behavior, the following
+    # order is suggested `OsparcVariableIdentifier | str`
     __root__: str = Field(
         ..., regex=rf"^\${{?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+}}?(:-.+)?$"
     )
