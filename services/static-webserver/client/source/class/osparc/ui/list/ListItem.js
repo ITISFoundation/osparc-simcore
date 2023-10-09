@@ -185,8 +185,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
             font: "text-13"
           });
           this._add(control, {
-            row: 1,
-            column: 2
+            row: 0,
+            column: 2,
+            rowSpan: 2
           });
           break;
       }
