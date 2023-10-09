@@ -1,7 +1,7 @@
 """refactor pricing units table
 
 Revision ID: f613247f5bb1
-Revises: b102946c8134
+Revises: 57ab8c419ca6
 Create Date: 2023-10-07 15:13:38.557368+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "f613247f5bb1"
-down_revision = "b102946c8134"
+down_revision = "57ab8c419ca6"
 branch_labels = None
 depends_on = None
 
