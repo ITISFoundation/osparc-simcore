@@ -48,11 +48,6 @@ qx.Theme.define("osparc.theme.Font", {
       size: 24
     },
 
-    "text-24": {
-      include: "defaults",
-      size: 24
-    },
-
     "text-22": {
       include: "defaults",
       size: 22
