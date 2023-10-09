@@ -138,7 +138,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           break;
         case "favourite-button":
           control = new qx.ui.form.Button().set({
-            backgroundColor: "transparent",
+            iconPosition: "right",
+            width: 110, // make Primary and Secondary buttons same width
             maxHeight: 30,
             alignY: "middle"
           });
@@ -255,21 +256,20 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     __applyPreferredWallet: function(isPreferredWallet) {
       const favouriteButton = this.getChildControl("favourite-button");
-      const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
         this.setToolTipText(this.tr("Default Credit Account"));
         favouriteButton.set({
           label: this.tr("Primary"),
-          icon: "@FontAwesome5Solid/toggle-on/16"
+          icon: "@FontAwesome5Solid/toggle-on/20",
+          backgroundColor: "strong-main"
         });
-        favouriteButtonIcon.setTextColor("strong-main");
       } else {
         this.setToolTipText(this.tr("Make it Default Credit Account"));
         favouriteButton.set({
           label: this.tr("Secondary"),
-          icon: "@FontAwesome5Solid/toggle-off/16"
+          icon: "@FontAwesome5Solid/toggle-off/20",
+          backgroundColor: null
         });
-        favouriteButtonIcon.resetTextColor();
       }
     }
   }
