@@ -64,7 +64,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("inc_payment_amount_in_usd", sa.Numeric(scale=2), nullable=False),
-        sa.Column("inc_payments_countdown", sa.Integer(), nullable=True),
+        sa.Column("inc_payment_countdown", sa.Integer(), nullable=True),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -78,8 +78,8 @@ def upgrade():
             nullable=False,
         ),
         sa.CheckConstraint(
-            "(inc_payments_countdown >= 0) OR (inc_payments_countdown IS NULL)",
-            name="check_inc_payments_countdown_nonnegative",
+            "(inc_payment_countdown >= 0) OR (inc_payment_countdown IS NULL)",
+            name="check_inc_payment_countdown_nonnegative",
         ),
         sa.ForeignKeyConstraint(
             ["primary_payment_method_id"],

@@ -193,7 +193,7 @@ class ReplaceWalletAutoRecharge(InputSchema):
     payment_method_id: PaymentMethodID | None
     min_balance_in_usd: NonNegativeDecimal | None
     inc_payment_amount_in_usd: NonNegativeDecimal | None
-    max_number_of_incs: PositiveInt | UnlimitedLiteral
+    inc_payment_countdown: PositiveInt | UnlimitedLiteral
 
     @validator("payment_method_id", "min_balance_in_usd", "inc_payment_amount_in_usd")
     @classmethod

@@ -28,7 +28,7 @@ class Statements:
                 payments_autorecharge.c.enabled,
                 payments_autorecharge.c.min_balance_in_usd,
                 payments_autorecharge.c.inc_payment_amount_in_usd,
-                payments_autorecharge.c.inc_payments_countdown,
+                payments_autorecharge.c.inc_payment_countdown,
             )
             .select_from(
                 payments_methods.join(
@@ -55,7 +55,7 @@ class Statements:
             "primary_payment_method_id": ppm,
             "min_balance_in_usd": th,
             "inc_payment_amount_in_usd": ip,
-            "inc_payments_countdown": cd,
+            "inc_payment_countdown": cd,
         }
 
         insert_stmt = pg_insert(payments_autorecharge).values(**values)
@@ -79,11 +79,10 @@ class Statements:
             payments_autorecharge.update()
             .where(
                 (payments_autorecharge.c.wallet_id == wallet_id)
-                & (payments_autorecharge.c.inc_payments_countdown is not None)
+                & (payments_autorecharge.c.inc_payment_countdown is not None)
             )
             .values(
-                inc_payments_countdown=payments_autorecharge.c.inc_payments_countdown
-                - 1,
+                inc_payment_countdown=payments_autorecharge.c.inc_payment_countdown - 1,
             )
-            .returning(payments_autorecharge.c.inc_payments_countdown)
+            .returning(payments_autorecharge.c.inc_payment_countdown)
         )

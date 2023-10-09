@@ -8339,7 +8339,7 @@ components:
     ReplaceWalletAutoRecharge:
       title: ReplaceWalletAutoRecharge
       required:
-      - maxNumberOfIncs
+      - incPaymentCountdown
       type: object
       properties:
         enabled:
@@ -8358,8 +8358,8 @@ components:
           title: Incpaymentamountinusd
           minimum: 0.0
           type: number
-        maxNumberOfIncs:
-          title: Maxnumberofincs
+        incPaymentCountdown:
+          title: Incpaymentcountdown
           anyOf:
           - exclusiveMinimum: true
             type: integer

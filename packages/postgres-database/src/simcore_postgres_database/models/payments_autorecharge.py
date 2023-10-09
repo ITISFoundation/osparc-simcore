@@ -70,7 +70,7 @@ payments_autorecharge = sa.Table(
         doc="[Required] Increase in USD when balance reaches min_balance_in_usd",
     ),
     sa.Column(
-        "inc_payments_countdown",
+        "inc_payment_countdown",
         sa.Integer(),
         nullable=True,
         server_default=None,
@@ -84,8 +84,8 @@ payments_autorecharge = sa.Table(
     column_modified_datetime(timezone=True),
     #
     sa.CheckConstraint(
-        "(inc_payments_countdown >= 0) OR (inc_payments_countdown IS NULL)",
-        name="check_inc_payments_countdown_nonnegative",
+        "(inc_payment_countdown >= 0) OR (inc_payment_countdown IS NULL)",
+        name="check_inc_payment_countdown_nonnegative",
     ),
 )
 
