@@ -87,7 +87,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-class _NodePathParams(ProjectPathParams):
+class NodePathParams(ProjectPathParams):
     node_id: NodeID
 
 
@@ -139,7 +139,7 @@ async def create_node(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     try:
         # ensure the project exists
@@ -195,7 +195,7 @@ async def get_node(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def delete_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
     await projects_api.get_project_for_user(
@@ -221,7 +221,7 @@ async def delete_node(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def retrieve_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
@@ -239,7 +239,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
 async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
     try:
         await projects_api.start_project_node(
             request,
@@ -281,7 +281,7 @@ async def _stop_dynamic_service_with_progress(
 async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     save_state = await ProjectDBAPI.get_from_app_context(request.app).has_permission(
         user_id=req_ctx.user_id,
@@ -317,7 +317,7 @@ async def stop_node(request: web.Request) -> web.Response:
 async def restart_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
 
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     await api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
@@ -338,7 +338,7 @@ async def restart_node(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def get_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
     project = await projects_api.get_project_for_user(
@@ -369,7 +369,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
     body = await parse_request_body_as(ServiceResourcesDict, request)
 
     # ensure the project exists
@@ -549,7 +549,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def get_project_node_preview(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
     assert req_ctx  # nosec
 
     project_data = await projects_api.get_project_for_user(
