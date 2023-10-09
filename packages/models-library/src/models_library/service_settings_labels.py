@@ -289,7 +289,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    user_preferences_path: Json[Path] | None = Field(
+    user_preferences_path: Path | None = Field(
         None,
         alias="simcore.service.user-preferences-path",
         description=(
@@ -415,6 +415,11 @@ class DynamicSidecarServiceLabels(BaseModel):
                     err_msg = f"{service_name=} not found in {compose_spec=}"
                     raise ValueError(err_msg)
         return v
+
+    @validator("user_preferences_path", pre=True)
+    @classmethod
+    def deserialize_from_json(cls, v):
+        return json.loads(v)
 
     @validator("user_preferences_path")
     @classmethod
