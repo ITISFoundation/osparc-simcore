@@ -1,4 +1,5 @@
-from typing import Iterable, TypeVar
+from collections.abc import Iterable
+from typing import TypeVar
 
 from openpyxl.utils import get_column_letter
 from pydantic import BaseModel
@@ -10,10 +11,11 @@ def ensure_correct_instance(
     template_data: BaseModel, class_to_check_against: type[T]
 ) -> T:
     if not isinstance(template_data, class_to_check_against):
-        raise ValueError(
+        msg = (
             f"Expected '{class_to_check_against.__name__}', but "
             f"'{template_data.__class__.__name__}' was provided"
         )
+        raise TypeError(msg)
 
     return template_data
 
