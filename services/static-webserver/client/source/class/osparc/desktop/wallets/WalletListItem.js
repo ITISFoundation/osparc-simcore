@@ -247,7 +247,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
           label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
           toolTipText: status === "ACTIVE" ? this.tr("Credit Account enabled") : this.tr("Credit Account blocked"),
-          enabled: this.__canIWrite()
+          enabled: this.__canIWrite(),
+          visibility: "excluded" // excluded until the backed implements it
         });
       }
     },
