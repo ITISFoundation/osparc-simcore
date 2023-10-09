@@ -6,6 +6,7 @@ from .xlsx_base import BaseXLSXCellData
 
 COLOR_BLACK = "FF000000"
 COLOR_GRAY = "FFC9C9C9"
+COLOR_GRAY_DARK = "999999"
 COLOR_GRAY_BACKGROUND = "D0D0D0"
 COLOR_LINK = "0563C1"
 COLOR_BLUE = "8CB3DF"
@@ -59,6 +60,7 @@ class Backgrounds:
     green_light = BackgroundWithColor(color=COLOR_GREEN_LIGHT)
     yellow = BackgroundWithColor(color=COLOR_YELLOW)
     yellow_dark = BackgroundWithColor(color=COLOR_YELLOW_DARK)
+    gray_dark = BackgroundWithColor(color=COLOR_GRAY_DARK)
     gray_background = BackgroundWithColor(color=COLOR_GRAY_BACKGROUND)
 
 
@@ -103,6 +105,9 @@ class Borders:
     )
 
     border_bottom_light = BorderWithStyle(
+        "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
+    )
+    border_bottom_medium = BorderWithStyle(
         "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
     )
     border_top_light = BorderWithStyle(
