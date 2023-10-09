@@ -36,7 +36,6 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import Schedu
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
-from tenacity import RetryError
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
@@ -107,7 +106,7 @@ async def ensure_network_cleanup(
     # in the on fixture teardown, relaxing a bit
     # this is mainly used for keeping the
     # dev environment clean
-    with suppress(RetryError):
+    with suppress(aiodocker.DockerError):
         await _try_to_clean()
 
 
