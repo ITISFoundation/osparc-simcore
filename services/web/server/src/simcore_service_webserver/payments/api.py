@@ -11,7 +11,7 @@ from ._methods_api import (
     get_wallet_payment_method,
     init_creation_of_wallet_payment_method,
     list_wallet_payment_methods,
-    update_wallet_payment_autorecharge,
+    replace_wallet_payment_autorecharge,
 )
 
 __all__: tuple[str, ...] = (
@@ -25,6 +25,6 @@ __all__: tuple[str, ...] = (
     "get_wallet_payment_method",
     "init_creation_of_wallet_payment_method",
     "list_wallet_payment_methods",
-    "update_wallet_payment_autorecharge",
+    "replace_wallet_payment_autorecharge",
 )
 # nopycln: file

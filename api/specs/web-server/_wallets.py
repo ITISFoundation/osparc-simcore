@@ -13,14 +13,14 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
+    GetWalletAutoRecharge,
     PaymentID,
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInit,
     PaymentTransaction,
     PutWalletBodyParams,
-    UpdateWalletAutoRecharge,
-    WalletAutoRecharge,
+    ReplaceWalletAutoRecharge,
     WalletGet,
     WalletGetWithAvailableCredits,
     WalletPaymentCreated,
@@ -164,18 +164,18 @@ async def delete_payment_method(
 
 @router.get(
     "/wallets/{wallet_id}/auto-recharge",
-    response_model=Envelope[WalletAutoRecharge],
+    response_model=Envelope[GetWalletAutoRecharge],
 )
 async def get_wallet_autorecharge(wallet_id: WalletID):
     ...
 
 
-@router.patch(
+@router.put(
     "/wallets/{wallet_id}/auto-recharge",
-    response_model=Envelope[WalletAutoRecharge],
+    response_model=Envelope[GetWalletAutoRecharge],
 )
-async def update_wallet_autorecharge(
-    wallet_id: WalletID, update: UpdateWalletAutoRecharge
+async def replace_wallet_autorecharge(
+    wallet_id: WalletID, _body: ReplaceWalletAutoRecharge
 ):
     ...
 

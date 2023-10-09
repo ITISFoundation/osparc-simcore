@@ -309,17 +309,17 @@ async def get_wallet_payment_autorecharge(
     raise NotImplementedError
 
 
-async def update_wallet_payment_autorecharge(
+async def replace_wallet_payment_autorecharge(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
-    updated: dict[str, Any],
+    replace: dict[str, Any],
 ):
     await check_wallet_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    assert updated  # nosec
+    assert replace  # nosec
     raise NotImplementedError

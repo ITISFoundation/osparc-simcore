@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import Field, HttpUrl, PositiveInt
+from pydantic import Field, HttpUrl, PositiveInt, validator
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -162,29 +162,42 @@ class PaymentMethodGet(OutputSchema):
 # Auto-recharge mechanism associated to a wallet
 #
 
+UnlimitedLiteral: TypeAlias = Literal["UNLIMITED"]
 
-class WalletAutoRecharge(OutputSchema):
+
+class GetWalletAutoRecharge(OutputSchema):
     enabled: bool = Field(
-        ..., description="Enables/disables auto-recharge trigger in this wallet"
+        default=False,
+        description="Enables/disables auto-recharge trigger in this wallet",
     )
-    payment_method_id: PaymentMethodID = Field(
-        ...,
+    payment_method_id: PaymentMethodID | None = Field(
+        default=None,
         description="Payment method in the wallet used to perform the auto-recharge payments",
     )
-    min_balance_in_usd: NonNegativeDecimal = Field(
-        ..., description="Minimum balance in USD that triggers an auto-recharge"
+    min_balance_in_usd: NonNegativeDecimal | None = Field(
+        default=None,
+        description="Minimum balance in USD that triggers an auto-recharge",
     )
-    inc_payment_amount_in_usd: NonNegativeDecimal = Field(
-        ..., description="Amount in USD payed when auto-recharge condition is satisfied"
+    inc_payment_amount_in_usd: NonNegativeDecimal | None = Field(
+        default=None,
+        description="Amount in USD payed when auto-recharge condition is satisfied",
     )
-    max_number_of_incs: PositiveInt | None = Field(
-        ..., description="Maximum number of top-ups or None if unlimited"
+    max_number_of_incs: PositiveInt | UnlimitedLiteral = Field(
+        default="UNLIMITED",
+        description="Maximum number of top-ups or None if unlimited",
     )
 
 
-class UpdateWalletAutoRecharge(InputSchema):
-    enabled: bool | None = None
-    payment_method_id: PaymentMethodID | None = None
-    min_balance_in_usd: NonNegativeDecimal | None = None
-    inc_payment_amount_in_usd: NonNegativeDecimal | None = None
-    max_number_of_incs: PositiveInt | None = None
+class ReplaceWalletAutoRecharge(InputSchema):
+    enabled: bool = False
+    payment_method_id: PaymentMethodID | None
+    min_balance_in_usd: NonNegativeDecimal | None
+    inc_payment_amount_in_usd: NonNegativeDecimal | None
+    max_number_of_incs: PositiveInt | UnlimitedLiteral
+
+    @validator("payment_method_id", "min_balance_in_usd", "inc_payment_amount_in_usd")
+    @classmethod
+    def validate_if_enabled(cls, v, values, field):
+        if values.get("enabled") and v is None:
+            msg = f"{field.name} is required when autorecharge is enabled"
+            raise ValueError(msg)

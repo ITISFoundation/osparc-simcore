@@ -3,12 +3,12 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
+    GetWalletAutoRecharge,
     PaymentID,
     PaymentMethodGet,
     PaymentMethodInit,
     PaymentTransaction,
-    UpdateWalletAutoRecharge,
-    WalletAutoRecharge,
+    ReplaceWalletAutoRecharge,
     WalletPaymentCreated,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -33,7 +33,7 @@ from ..payments.api import (
     get_wallet_payment_method,
     init_creation_of_wallet_payment_method,
     list_wallet_payment_methods,
-    update_wallet_payment_autorecharge,
+    replace_wallet_payment_autorecharge,
 )
 from ..products.api import get_current_product_credit_price
 from ..security.decorators import permission_required
@@ -307,12 +307,12 @@ async def get_wallet_autorecharge(request: web.Request):
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
     )
-    return envelope_json_response(WalletAutoRecharge.parse_obj(auto_recharge))
+    return envelope_json_response(GetWalletAutoRecharge.parse_obj(auto_recharge))
 
 
-@routes.patch(
+@routes.put(
     f"/{VTAG}/wallets/{{wallet_id}}/auto-recharge",
-    name="update_wallet_autorecharge",
+    name="replace_wallet_autorecharge",
 )
 @login_required
 @permission_required("wallets.*")
@@ -320,13 +320,13 @@ async def get_wallet_autorecharge(request: web.Request):
 async def update_wallet_autorecharge(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    body_params = await parse_request_body_as(UpdateWalletAutoRecharge, request)
+    body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)
 
-    udpated = await update_wallet_payment_autorecharge(
+    udpated = await replace_wallet_payment_autorecharge(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
-        updated=body_params.dict(exclude_unset=True),
+        replace=body_params.dict(),
     )
-    return envelope_json_response(WalletAutoRecharge.parse_obj(udpated))
+    return envelope_json_response(GetWalletAutoRecharge.parse_obj(udpated))

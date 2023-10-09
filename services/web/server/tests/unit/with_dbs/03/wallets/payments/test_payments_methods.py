@@ -8,9 +8,9 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import (
+    GetWalletAutoRecharge,
     PaymentMethodGet,
     PaymentMethodInit,
-    WalletAutoRecharge,
     WalletGet,
 )
 from pydantic import parse_obj_as
@@ -145,8 +145,7 @@ async def test_wallet_autorecharge(
 ):
     wallet = logged_user_wallet
 
-    # have a two payment_method s
-
+    # a wallet with two payment methods.
     payment_method_id = 1
 
     # assert all(not pm.is_primary_recharge_card for pm in wallet_payments_methods)
@@ -154,21 +153,24 @@ async def test_wallet_autorecharge(
     # wallet has no auto-recharge activated
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/auto-recharge")
     data, _ = await assert_status(response, web.HTTPOk)
-    assert data is None
+    autorecharge = GetWalletAutoRecharge(**data)  # gets a default
+    assert autorecharge.enabled is False
+    assert autorecharge.max_number_of_incs == "UNLIMITED"
 
     # activate auto-rechange
-    response = await client.patch(
+    response = await client.put(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
             "minBalanceInUsd": 0.0,
-            "incPaymentAmountInUsd": 10.0,  # $
+            "incPaymentAmountInUsd": 100.0,  # $
             "paymentMethodId": payment_method_id,
+            "maxNumberOfIncs": 3,
             "enable": True,
         },
     )
     data, _ = await assert_status(response, web.HTTPOk)
 
-    auto_recharge = WalletAutoRecharge.parse_obj(data)
+    auto_recharge = GetWalletAutoRecharge.parse_obj(data)
 
     # get info to fill
     response = await client.get(
@@ -176,7 +178,7 @@ async def test_wallet_autorecharge(
     )
     data, _ = await assert_status(response, web.HTTPOk)
 
-    assert auto_recharge == WalletAutoRecharge.parse_obj(data)
+    assert auto_recharge == GetWalletAutoRecharge.parse_obj(data)
 
     # payment-methods.auto_recharge
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
