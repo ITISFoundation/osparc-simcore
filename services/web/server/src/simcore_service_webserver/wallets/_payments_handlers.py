@@ -327,6 +327,6 @@ async def update_wallet_autorecharge(request: web.Request):
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
-        replace=body_params.dict(),
+        new=body_params,
     )
     return envelope_json_response(GetWalletAutoRecharge.parse_obj(udpated))
