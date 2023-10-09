@@ -182,7 +182,8 @@ qx.Class.define("osparc.ui.list.ListItem", {
           break;
         case "contact":
           control = new qx.ui.basic.Label().set({
-            font: "text-13"
+            font: "text-13",
+            alignY: "middle"
           });
           this._add(control, {
             row: 0,

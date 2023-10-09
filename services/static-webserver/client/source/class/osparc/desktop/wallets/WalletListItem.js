@@ -190,9 +190,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (found) {
         const subtitle = this.getChildControl("contact");
         if (found["write"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
+          subtitle.setValue(osparc.data.Roles.WALLET[2].label);
         } else if (found["read"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
+          subtitle.setValue(osparc.data.Roles.WALLET[1].label);
         }
       }
     },
