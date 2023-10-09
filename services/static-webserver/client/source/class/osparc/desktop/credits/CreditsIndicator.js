@@ -27,7 +27,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       this.setWallet(wallet);
     }
 
-    this.addListener("changeCreditsAvailable", () => this.__updateCredits());
     this.__updateCredits();
   },
 
