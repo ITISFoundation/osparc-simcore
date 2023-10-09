@@ -200,15 +200,6 @@ async def test_payments_automation(
     assert auto_recharge is not None
     assert auto_recharge.primary_payment_method_id == payment_method_id
 
-    await _upsert_autorecharge(
-        connection,
-        wallet_id,
-        primary_payment_method_id=payment_method_id,
-        min_balance_in_usd=2.50,
-        top_up_amount_in_usd=100,
-        top_up_countdown=None,
-    )
-
     # countdown
     assert await _decrease_countdown(connection, wallet_id) == 4
     assert await _decrease_countdown(connection, wallet_id) == 3
@@ -223,10 +214,16 @@ async def test_payments_automation(
     assert exc.pgerror
     assert "check_top_up_countdown_nonnegative" in exc.pgerror
 
-    # deactivate countdown
-    await _update_autorecharge(connection, wallet_id, inc_payments_countdown=None)
+    # upsert: deactivate countdown
+    auto_recharge = await _upsert_autorecharge(
+        connection,
+        wallet_id,
+        primary_payment_method_id=payment_method_id,
+        min_balance_in_usd=10,
+        top_up_amount_in_usd=100,
+        top_up_countdown=None,  # <----
+    )
+    assert auto_recharge.top_up_countdown is None
+
+    await _update_autorecharge(connection, wallet_id, top_up_countdown=None)
     assert await _decrease_countdown(connection, wallet_id) is None
-
-    # change primary-payment-method
-
-    # list payment-methods and mark if primary or not
