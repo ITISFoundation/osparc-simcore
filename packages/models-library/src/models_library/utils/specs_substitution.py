@@ -71,23 +71,21 @@ class SpecsSubstitutionsResolver:
         if not provided
         """
 
-        needed_identifiers = self.get_identifiers()
+        required_identifiers = self.get_identifiers()
 
-        needed_identifiers_with_defaults: dict[str, str | None] = {}
-        for identifier in needed_identifiers:
+        required_identifiers_with_defaults: dict[str, str | None] = {}
+        for identifier in required_identifiers:
             parts = identifier.split(":-")
-            needed_identifiers_with_defaults[identifier] = (
+            required_identifiers_with_defaults[identifier] = (
                 parts[1] if ":-" in identifier else None
             )
 
         resolved_identifiers: dict[str, str] = {}
-        for identifier in needed_identifiers_with_defaults:
+        for identifier, default_value in required_identifiers_with_defaults.items():
             if identifier in mappings:
                 resolved_identifiers[identifier] = cast(str, mappings[identifier])
-            elif needed_identifiers_with_defaults[identifier] is not None:
-                resolved_identifiers[identifier] = cast(
-                    str, needed_identifiers_with_defaults[identifier]
-                )
+            elif default_value is not None:
+                resolved_identifiers[identifier] = cast(str, default_value)
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)
         return self._substitutions
