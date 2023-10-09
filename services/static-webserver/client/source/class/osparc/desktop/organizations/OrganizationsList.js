@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     this._add(intro);
 
     this._add(this.__getOrganizationsFilter());
+    this._add(osparc.data.Roles.createRolesOrgInfo());
     this._add(this.__getOrganizationsList(), {
       flex: 1
     });
