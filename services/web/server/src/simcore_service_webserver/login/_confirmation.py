@@ -54,8 +54,7 @@ def get_expiration_date(
     cfg: LoginOptions, confirmation: ConfirmationTokenDict
 ) -> datetime:
     lifetime = cfg.get_confirmation_lifetime(confirmation["action"])
-    estimated_expiration = confirmation["created_at"] + lifetime
-    return estimated_expiration
+    return confirmation["created_at"] + lifetime
 
 
 async def is_confirmation_allowed(

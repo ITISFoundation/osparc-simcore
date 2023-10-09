@@ -30,14 +30,14 @@ async def create_payment(
     user_email: str,
 ) -> WalletPaymentCreated:
     # Payment-Gateway
-    payments_gateway_api = PaymentsGatewayApi.get_from_state(app)
+    payments_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
 
     init = await payments_gateway_api.init_payment(
         payment=InitPayment(
             amount_dollars=amount_dollars,
             credits=target_credits,
             user_name=user_name,
-            user_email=user_email,
+            user_email=user_email,  # type: ignore
             wallet_name=wallet_name,
         )
     )

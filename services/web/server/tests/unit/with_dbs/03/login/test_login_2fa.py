@@ -114,6 +114,7 @@ async def test_workflow_register_and_login_with_2fa(
     fake_user_phone_number: str,
     mocked_twilio_service: dict[str, Mock],
     mocked_email_core_remove_comments: None,
+    cleanup_db_tables: None,
 ):
     assert client.app
 
@@ -238,15 +239,13 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["phone"] == fake_user_phone_number
     assert user["status"] == UserStatus.ACTIVE.value
 
-    # cleanup
-    await db.delete_user(user)
-
 
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
+    cleanup_db_tables: None,
 ):
     """
     Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
@@ -334,6 +333,7 @@ async def test_2fa_sms_failure_during_login(
     fake_user_phone_number: str,
     caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
+    cleanup_db_tables: None,
 ):
     assert client.app
 

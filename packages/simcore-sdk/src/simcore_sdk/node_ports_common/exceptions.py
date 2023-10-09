@@ -5,13 +5,11 @@
 #
 #
 
-from typing import Optional
-
 
 class NodeportsException(Exception):
     """Basic exception for errors raised in nodeports"""
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg or "An error occured in simcore")
 
 
@@ -26,7 +24,7 @@ class ReadOnlyError(NodeportsException):
 class UnboundPortError(NodeportsException, IndexError):
     """Accessed port is not configured"""
 
-    def __init__(self, port_index, msg: Optional[str] = None):
+    def __init__(self, port_index, msg: str | None = None):
         super().__init__(f"No port bound at index {port_index}")
         self.port_index = port_index
 
@@ -34,7 +32,7 @@ class UnboundPortError(NodeportsException, IndexError):
 class InvalidKeyError(NodeportsException):
     """Accessed key does not exist"""
 
-    def __init__(self, item_key: str, msg: Optional[str] = None):
+    def __init__(self, item_key: str, msg: str | None = None):
         super().__init__(f"No port bound with key {item_key}")
         self.item_key = item_key
 
@@ -42,7 +40,7 @@ class InvalidKeyError(NodeportsException):
 class InvalidItemTypeError(NodeportsException):
     """Item type incorrect"""
 
-    def __init__(self, item_type: str, item_value: str, msg: Optional[str] = None):
+    def __init__(self, item_type: str, item_value: str, msg: str | None = None):
         super().__init__(
             msg
             or f"Invalid item type, value [{item_value}] does not qualify as type [{item_type}]"
@@ -54,7 +52,7 @@ class InvalidItemTypeError(NodeportsException):
 class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
 
-    def __init__(self, dct, msg: Optional[str] = None):
+    def __init__(self, dct, msg: str | None = None):
         super().__init__(f"Invalid protocol used: {dct} [{msg}]")
         self.dct = dct
 
@@ -70,7 +68,7 @@ class StorageServerIssue(NodeportsException):
 class S3TransferError(NodeportsException):
     """S3 transfer error"""
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg or "Error while transferring to/from S3 storage")
 
 
@@ -124,6 +122,14 @@ class NodeNotFound(NodeportsException):
     def __init__(self, node_uuid):
         self.node_uuid = node_uuid
         super().__init__(f"the node id {node_uuid} was not found")
+
+
+class ProjectNotFoundError(NodeportsException):
+    """The given node_uuid was not found"""
+
+    def __init__(self, project_id):
+        self.project_id = project_id
+        super().__init__(f"the {project_id=} was not found")
 
 
 class SymlinkToSymlinkIsNotUploadableException(NodeportsException):

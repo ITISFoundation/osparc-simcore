@@ -17,6 +17,10 @@ class NonNegativeDecimal(ConstrainedDecimal):
     ge = 0
 
 
+class PositiveDecimal(ConstrainedDecimal):
+    gt = 0
+
+
 # port number range
 class PortInt(ConstrainedInt):
     gt = 0
@@ -60,9 +64,12 @@ class UUIDStr(ConstrainedStr):
 
 
 # non-empty string identifier e.g. "123" or "name_id1" (avoids "" identifiers)
-class IDStr(ConstrainedStr):
+class NonEmptyStr(ConstrainedStr):
     strip_whitespace = True
     min_length = 1
+
+
+IDStr: TypeAlias = NonEmptyStr
 
 
 # auto-incremented primary-key IDs

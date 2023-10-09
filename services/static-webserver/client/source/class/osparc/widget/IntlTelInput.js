@@ -36,6 +36,7 @@ qx.Class.define("osparc.widget.IntlTelInput", {
     const randId = Math.floor(Math.random() * 100);
     const html = `<input type='tel' id='phone-${randId}' name='phone' autocomplete='off'>`;
     const phoneNumber = new qx.ui.embed.Html(html).set({
+      marginTop: 2,
       marginLeft: 2,
       marginRight: 2,
       minWidth: 185,

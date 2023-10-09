@@ -16,8 +16,12 @@ class Action(str, Enum):
 
 
 @app.command()
-def main(deployment: Deployment, action: Action):
-    settings = get_settings(deployment)
+def main(
+    deployment: Deployment,
+    action: Action,
+    env_file: str = typer.Option(".env", help="Path to .env file"),
+):
+    settings = get_settings(env_file, deployment)
     console.print(f"Deployment: {deployment}")
     console.print(f"Action: {action}")
 

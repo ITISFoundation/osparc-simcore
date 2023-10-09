@@ -46,7 +46,7 @@ class _RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
-class _ListServicesPathParams(BaseModel):
+class _ListServicesResourceUsagesPathParams(BaseModel):
     limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
@@ -69,13 +69,15 @@ class _ListServicesPathParams(BaseModel):
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{VTAG}/resource-usage/services", name="list_resource_usage_services")
+@routes.get(f"/{VTAG}/services/-/resource-usages", name="list_resource_usage_services")
 @login_required
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ListServicesPathParams, request)
+    query_params = parse_request_query_parameters_as(
+        _ListServicesResourceUsagesPathParams, request
+    )
 
     services: dict = await api.list_usage_services(
         app=request.app,
