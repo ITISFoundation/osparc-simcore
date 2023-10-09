@@ -559,7 +559,7 @@
             "type": "string"
           },
           "unit_extra_info": {
-            "title": "Unit Attributes",
+            "title": "Unit Extra Info",
             "type": "object"
           },
           "current_cost_per_unit": {
