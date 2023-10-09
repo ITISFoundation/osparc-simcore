@@ -29,11 +29,9 @@ def from_db(got: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
         enabled=got.enabled,
         payment_method_id=got.primary_payment_method_id,
         min_balance_in_usd=got.min_balance_in_usd,
-        inc_payment_amount_in_usd=got.inc_payment_amount_in_usd,
-        inc_payment_countdown=(
-            "UNLIMITED"
-            if got.inc_payment_countdown is None
-            else got.inc_payment_countdown
+        top_up_amount_in_usd=got.top_up_amount_in_usd,
+        top_up_countdown=(
+            "UNLIMITED" if got.top_up_countdown is None else got.top_up_countdown
         ),
     )
 
@@ -42,21 +40,19 @@ def to_db(
     wallet_id: WalletID, new: ReplaceWalletAutoRecharge
 ) -> PaymentsAutorechargeDB:
     # There is a validator in  ReplaceWalletAutoRecharge to ensure these
-    assert new.enabled
+    assert new.enabled  # nosec
     assert new.payment_method_id  # nosec
     assert new.min_balance_in_usd  # nosec
-    assert new.inc_payment_amount_in_usd  # nosec
+    assert new.top_up_amount_in_usd  # nosec
 
     return PaymentsAutorechargeDB(
         wallet_id=wallet_id,
         enabled=new.enabled,
         primary_payment_method_id=new.payment_method_id,
         min_balance_in_usd=new.min_balance_in_usd,
-        inc_payment_amount_in_usd=new.inc_payment_amount_in_usd,
-        inc_payment_countdown=(
-            None
-            if new.inc_payment_countdown == "UNLIMITED"
-            else new.inc_payment_countdown
+        top_up_amount_in_usd=new.top_up_amount_in_usd,
+        top_up_countdown=(
+            None if new.top_up_countdown == "UNLIMITED" else new.top_up_countdown
         ),
     )
 
@@ -81,8 +77,8 @@ async def get_wallet_payment_autorecharge(
             enabled=False,
             payment_method_id=None,
             min_balance_in_usd=None,
-            inc_payment_amount_in_usd=None,
-            inc_payment_countdown="UNLIMITED",
+            top_up_amount_in_usd=None,
+            top_up_countdown="UNLIMITED",
         )
     return from_db(ar_db)
 

@@ -50,7 +50,7 @@ payments_autorecharge = sa.Table(
             payments_methods.c.payment_method_id,
             name="fk_payments_autorecharge_primary_payment_method_id",
             onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="SET NULL",  # FIXME:
         ),
         nullable=False,
         doc="[Required] Primary payment method selected for auto-recharge",
@@ -64,13 +64,13 @@ payments_autorecharge = sa.Table(
         doc="[Required] Minimum or equal balance in USD that triggers auto-recharge",
     ),
     sa.Column(
-        "inc_payment_amount_in_usd",
+        "top_up_amount_in_usd",
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="[Required] Increase in USD when balance reaches min_balance_in_usd",
     ),
     sa.Column(
-        "inc_payment_countdown",
+        "top_up_countdown",
         sa.Integer(),
         nullable=True,
         server_default=None,
@@ -84,8 +84,8 @@ payments_autorecharge = sa.Table(
     column_modified_datetime(timezone=True),
     #
     sa.CheckConstraint(
-        "(inc_payment_countdown >= 0) OR (inc_payment_countdown IS NULL)",
-        name="check_inc_payment_countdown_nonnegative",
+        "(top_up_countdown >= 0) OR (top_up_countdown IS NULL)",
+        name="check_top_up_countdown_nonnegative",
     ),
 )
 

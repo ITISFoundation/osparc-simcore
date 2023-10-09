@@ -178,11 +178,11 @@ class GetWalletAutoRecharge(OutputSchema):
         default=None,
         description="Minimum balance in USD that triggers an auto-recharge",
     )
-    inc_payment_amount_in_usd: NonNegativeDecimal | None = Field(
+    top_up_amount_in_usd: NonNegativeDecimal | None = Field(
         default=None,
         description="Amount in USD payed when auto-recharge condition is satisfied",
     )
-    inc_payment_countdown: PositiveInt | UnlimitedLiteral = Field(
+    top_up_countdown: PositiveInt | UnlimitedLiteral = Field(
         default="UNLIMITED",
         description="Maximum number of top-ups left",
     )
@@ -192,10 +192,10 @@ class ReplaceWalletAutoRecharge(InputSchema):
     enabled: bool = False
     payment_method_id: PaymentMethodID | None
     min_balance_in_usd: NonNegativeDecimal | None
-    inc_payment_amount_in_usd: NonNegativeDecimal | None
-    inc_payment_countdown: PositiveInt | UnlimitedLiteral
+    top_up_amount_in_usd: NonNegativeDecimal | None
+    top_up_countdown: PositiveInt | UnlimitedLiteral
 
-    @validator("payment_method_id", "min_balance_in_usd", "inc_payment_amount_in_usd")
+    @validator("payment_method_id", "min_balance_in_usd", "top_up_amount_in_usd")
     @classmethod
     def validate_if_enabled(cls, v, values, field):
         if values.get("enabled") and v is None:

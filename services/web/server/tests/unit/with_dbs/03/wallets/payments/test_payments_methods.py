@@ -155,7 +155,7 @@ async def test_wallet_autorecharge(
     data, _ = await assert_status(response, web.HTTPOk)
     autorecharge = GetWalletAutoRecharge(**data)  # gets a default
     assert autorecharge.enabled is False
-    assert autorecharge.inc_payment_countdown == "UNLIMITED"
+    assert autorecharge.top_up_countdown == "UNLIMITED"
 
     # activate auto-rechange
     response = await client.put(
