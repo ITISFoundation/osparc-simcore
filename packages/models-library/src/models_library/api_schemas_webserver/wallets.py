@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import Field, HttpUrl, PositiveInt, validator
+from pydantic import Field, HttpUrl, PositiveInt
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -162,8 +162,6 @@ class PaymentMethodGet(OutputSchema):
 # Auto-recharge mechanism associated to a wallet
 #
 
-UnlimitedLiteral: TypeAlias = Literal["UNLIMITED"]
-
 
 class GetWalletAutoRecharge(OutputSchema):
     enabled: bool = Field(
@@ -171,33 +169,26 @@ class GetWalletAutoRecharge(OutputSchema):
         description="Enables/disables auto-recharge trigger in this wallet",
     )
     payment_method_id: PaymentMethodID | None = Field(
-        default=None,
-        description="Payment method in the wallet used to perform the auto-recharge payments",
+        ...,
+        description="Payment method in the wallet used to perform the auto-recharge payments or None if still undefined",
     )
-    min_balance_in_usd: NonNegativeDecimal | None = Field(
-        default=None,
+    min_balance_in_usd: NonNegativeDecimal = Field(
+        ...,
         description="Minimum balance in USD that triggers an auto-recharge",
     )
-    top_up_amount_in_usd: NonNegativeDecimal | None = Field(
-        default=None,
+    top_up_amount_in_usd: NonNegativeDecimal = Field(
+        ...,
         description="Amount in USD payed when auto-recharge condition is satisfied",
     )
-    top_up_countdown: PositiveInt | UnlimitedLiteral = Field(
-        default="UNLIMITED",
-        description="Maximum number of top-ups left",
+    top_up_countdown: PositiveInt | None = Field(
+        default=None,
+        description="Maximum number of top-ups left or None to denote unlimited",
     )
 
 
 class ReplaceWalletAutoRecharge(InputSchema):
-    enabled: bool = False
-    payment_method_id: PaymentMethodID | None
-    min_balance_in_usd: NonNegativeDecimal | None
-    top_up_amount_in_usd: NonNegativeDecimal | None
-    top_up_countdown: PositiveInt | UnlimitedLiteral
-
-    @validator("payment_method_id", "min_balance_in_usd", "top_up_amount_in_usd")
-    @classmethod
-    def validate_if_enabled(cls, v, values, field):
-        if values.get("enabled") and v is None:
-            msg = f"{field.name} is required when autorecharge is enabled"
-            raise ValueError(msg)
+    enabled: bool
+    payment_method_id: PaymentMethodID
+    min_balance_in_usd: NonNegativeDecimal
+    top_up_amount_in_usd: NonNegativeDecimal
+    top_up_countdown: PositiveInt | None

@@ -15,46 +15,38 @@ from ._autorecharge_db import (
     get_wallet_autorecharge,
     replace_wallet_autorecharge,
 )
+from ._methods_db import list_successful_payment_methods
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
 
-#
-# payment-autorecharge
-#
-
-
-def from_db(got: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
+def _from_db(db_model: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
     return GetWalletAutoRecharge(
-        enabled=got.enabled,
-        payment_method_id=got.primary_payment_method_id,
-        min_balance_in_usd=got.min_balance_in_usd,
-        top_up_amount_in_usd=got.top_up_amount_in_usd,
-        top_up_countdown=(
-            "UNLIMITED" if got.top_up_countdown is None else got.top_up_countdown
-        ),
+        enabled=db_model.enabled,
+        payment_method_id=db_model.primary_payment_method_id,
+        min_balance_in_usd=db_model.min_balance_in_usd,
+        top_up_amount_in_usd=db_model.top_up_amount_in_usd,
+        top_up_countdown=db_model.top_up_countdown,
     )
 
 
-def to_db(
-    wallet_id: WalletID, new: ReplaceWalletAutoRecharge
+def _to_db(
+    wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge
 ) -> PaymentsAutorechargeDB:
-    # There is a validator in  ReplaceWalletAutoRecharge to ensure these
-    assert new.enabled  # nosec
-    assert new.payment_method_id  # nosec
-    assert new.min_balance_in_usd  # nosec
-    assert new.top_up_amount_in_usd  # nosec
-
     return PaymentsAutorechargeDB(
         wallet_id=wallet_id,
-        enabled=new.enabled,
-        primary_payment_method_id=new.payment_method_id,
-        min_balance_in_usd=new.min_balance_in_usd,
-        top_up_amount_in_usd=new.top_up_amount_in_usd,
-        top_up_countdown=(
-            None if new.top_up_countdown == "UNLIMITED" else new.top_up_countdown
-        ),
+        enabled=api_model.enabled,
+        primary_payment_method_id=api_model.payment_method_id,
+        min_balance_in_usd=api_model.min_balance_in_usd,
+        top_up_amount_in_usd=api_model.top_up_amount_in_usd,
+        top_up_countdown=api_model.top_up_countdown,
     )
+
+
+#
+# payment-autorecharge api
+#
 
 
 async def get_wallet_payment_autorecharge(
@@ -68,19 +60,29 @@ async def get_wallet_payment_autorecharge(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    ar_db: PaymentsAutorechargeDB | None = await get_wallet_autorecharge(
+    got: PaymentsAutorechargeDB | None = await get_wallet_autorecharge(
         app, wallet_id=wallet_id
     )
-    if not ar_db:
-        # default
+    if not got:
+        settings = get_plugin_settings(app)
+        payment_method_id = None
+        wallet_payment_methods = await list_successful_payment_methods(
+            app,
+            user_id=user_id,
+            wallet_id=wallet_id,
+        )
+        if wallet_payment_methods:
+            payment_method_id = wallet_payment_methods[0].payment_method_id
+
         return GetWalletAutoRecharge(
             enabled=False,
-            payment_method_id=None,
-            min_balance_in_usd=None,
-            top_up_amount_in_usd=None,
-            top_up_countdown="UNLIMITED",
+            payment_method_id=payment_method_id,
+            min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE,
+            top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
+            top_up_countdown=None,
         )
-    return from_db(ar_db)
+
+    return _from_db(got)
 
 
 async def replace_wallet_payment_autorecharge(
@@ -90,13 +92,13 @@ async def replace_wallet_payment_autorecharge(
     user_id: UserID,
     wallet_id: WalletID,
     new: ReplaceWalletAutoRecharge,
-):
+) -> GetWalletAutoRecharge:
     await check_wallet_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    ar_db: PaymentsAutorechargeDB = await replace_wallet_autorecharge(
-        app, user_id=user_id, wallet_id=wallet_id, auto_recharge=to_db(new)
+    got: PaymentsAutorechargeDB = await replace_wallet_autorecharge(
+        app, user_id=user_id, wallet_id=wallet_id, new=_to_db(wallet_id, new)
     )
 
-    return from_db(ar_db)
+    return _from_db(got)

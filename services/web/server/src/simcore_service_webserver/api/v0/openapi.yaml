@@ -6280,6 +6280,10 @@ components:
           minimum: 0
     GetWalletAutoRecharge:
       title: GetWalletAutoRecharge
+      required:
+      - paymentMethodId
+      - minBalanceInUsd
+      - topUpAmountInUsd
       type: object
       properties:
         enabled:
@@ -6292,28 +6296,23 @@ components:
           minLength: 1
           type: string
           description: Payment method in the wallet used to perform the auto-recharge
-            payments
+            payments or None if still undefined
         minBalanceInUsd:
           title: Minbalanceinusd
           minimum: 0.0
           type: number
           description: Minimum balance in USD that triggers an auto-recharge
-        incPaymentAmountInUsd:
-          title: Incpaymentamountinusd
+        topUpAmountInUsd:
+          title: Topupamountinusd
           minimum: 0.0
           type: number
           description: Amount in USD payed when auto-recharge condition is satisfied
-        incPaymentCountdown:
-          title: Incpaymentcountdown
-          anyOf:
-          - exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          - enum:
-            - UNLIMITED
-            type: string
-          description: Maximum number of top-ups left
-          default: UNLIMITED
+        topUpCountdown:
+          title: Topupcountdown
+          exclusiveMinimum: true
+          type: integer
+          description: Maximum number of top-ups left or None to denote unlimited
+          minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -8339,13 +8338,15 @@ components:
     ReplaceWalletAutoRecharge:
       title: ReplaceWalletAutoRecharge
       required:
-      - incPaymentCountdown
+      - enabled
+      - paymentMethodId
+      - minBalanceInUsd
+      - topUpAmountInUsd
       type: object
       properties:
         enabled:
           title: Enabled
           type: boolean
-          default: false
         paymentMethodId:
           title: Paymentmethodid
           minLength: 1
@@ -8354,19 +8355,15 @@ components:
           title: Minbalanceinusd
           minimum: 0.0
           type: number
-        incPaymentAmountInUsd:
-          title: Incpaymentamountinusd
+        topUpAmountInUsd:
+          title: Topupamountinusd
           minimum: 0.0
           type: number
-        incPaymentCountdown:
-          title: Incpaymentcountdown
-          anyOf:
-          - exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          - enum:
-            - UNLIMITED
-            type: string
+        topUpCountdown:
+          title: Topupcountdown
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     RepoApiModel:
       title: RepoApiModel
       required:
