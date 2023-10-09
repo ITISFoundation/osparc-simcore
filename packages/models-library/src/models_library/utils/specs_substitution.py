@@ -96,5 +96,4 @@ class SpecsSubstitutionsResolver:
 
     def run(self) -> dict[str, Any]:
         new_specs_txt: str = self._template.safe_substitute(self._substitutions)
-        new_specs = _deserializer(new_specs_txt)
-        return cast(dict[str, Any], new_specs)
+        return _deserializer(new_specs_txt)
