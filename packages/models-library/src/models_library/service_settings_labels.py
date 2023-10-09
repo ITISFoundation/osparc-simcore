@@ -217,10 +217,10 @@ class PathMappingsLabel(BaseModel):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
-                    "outputs_path": "/tmp/outputs",  # nosec
-                    "inputs_path": "/tmp/inputs",  # nosec
-                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
-                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
+                    "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
+                    "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
+                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
+                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108 nosec
                 },
                 {
                     "outputs_path": "/t_out",
@@ -414,6 +414,25 @@ class DynamicSidecarServiceLabels(BaseModel):
                 if service_name not in containers_in_compose_spec:
                     err_msg = f"{service_name=} not found in {compose_spec=}"
                     raise ValueError(err_msg)
+        return v
+
+    @validator("user_preferences_path")
+    @classmethod
+    def user_preferences_path_no_included_in_other_volumes(
+        cls, v: CallbacksMapping, values
+    ):
+        paths_mapping: PathMappingsLabel | None = values.get("paths_mapping", None)
+        if paths_mapping is None:
+            return v
+
+        for test_path in [
+            paths_mapping.inputs_path,
+            paths_mapping.outputs_path,
+            *paths_mapping.state_paths,
+        ]:
+            if f"{test_path}".startswith(f"{v}"):
+                msg = f"user_preferences_path={v} cannot be a subpath of {test_path}"
+                raise ValueError(msg)
         return v
 
     @root_validator

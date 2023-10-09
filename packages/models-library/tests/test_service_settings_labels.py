@@ -79,7 +79,10 @@ def test_service_settings():
     # ensure private attribute assignment
     for service_setting in simcore_settings_settings_label:
         # pylint: disable=protected-access
-        service_setting._destination_containers = ["random_value1", "random_value2"]
+        service_setting._destination_containers = [  # noqa: SLF001
+            "random_value1",
+            "random_value2",
+        ]
 
 
 @pytest.mark.parametrize("model_cls", [SimcoreServiceLabels])
@@ -101,7 +104,7 @@ def test_raises_error_if_http_entrypoint_is_missing():
     )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         SimcoreServiceLabels(**simcore_service_labels)
 
 
@@ -137,7 +140,7 @@ def test_raises_error_wrong_restart_policy():
     )
     simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         SimcoreServiceLabels(**simcore_service_labels)
 
 
@@ -396,10 +399,10 @@ def service_labels() -> dict[str, str]:
     return {
         "simcore.service.paths-mapping": json.dumps(
             {
-                "inputs_path": "/tmp/inputs",
-                "outputs_path": "/tmp/outputs",
-                "state_paths": ["/tmp/save_1", "/tmp_save_2"],
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],
+                "inputs_path": "/tmp/inputs",  # noqa: S108
+                "outputs_path": "/tmp/outputs",  # noqa: S108
+                "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
+                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
             }
         ),
         "simcore.service.compose-spec": json.dumps(
@@ -416,7 +419,7 @@ def service_labels() -> dict[str, str]:
                         "runtime": "nvidia",
                         "init": True,
                         "environment": ["DISPLAY=${DISPLAY}"],
-                        "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
+                        "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],  # noqa: S108
                     },
                 },
             }
@@ -473,8 +476,8 @@ def service_labels() -> dict[str, str]:
                     "value": [
                         {
                             "ReadOnly": True,
-                            "Source": "/tmp/.X11-unix",
-                            "Target": "/tmp/.X11-unix",
+                            "Source": "/tmp/.X11-unix",  # noqa: S108
+                            "Target": "/tmp/.X11-unix",  # noqa: S108
                             "Type": "bind",
                         }
                     ],
@@ -550,3 +553,16 @@ def test_resolving_some_service_labels_at_load_time(
     labels = SimcoreServiceLabels.parse_obj(service_labels)
 
     print("After", labels.json(indent=1))
+
+
+def test_user_preferences_path_is_part_of_exiting_volume():
+    labels_data = {
+        "simcore.service.paths-mapping": json.dumps(
+            PathMappingsLabel.Config.schema_extra["examples"][0]
+        ),
+        "simcore.service.user-preferences-path": json.dumps(
+            "/tmp/outputs"  # noqa: S108
+        ),
+    }
+    with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(labels_data))
