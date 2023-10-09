@@ -3847,6 +3847,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
   /v0/wallets/{wallet_id}:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet
+      operationId: get_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
     put:
       tags:
       - wallets
@@ -5397,6 +5418,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UsersGroup'
+        error:
+          title: Error
+    Envelope_WalletGetWithAvailableCredits_:
+      title: Envelope[WalletGetWithAvailableCredits]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
     Envelope_WalletGet_:
