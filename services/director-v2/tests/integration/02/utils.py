@@ -90,7 +90,7 @@ async def ensure_network_cleanup(
 ) -> None:
     async def _try_to_clean():
         async for attempt in AsyncRetrying(
-            reraise=False,
+            reraise=True,
             stop=stop_after_attempt(20),
             wait=wait_fixed(5),
         ):
@@ -107,7 +107,7 @@ async def ensure_network_cleanup(
     # in the on fixture teardown, relaxing a bit
     # this is mainly used for keeping the
     # dev environment clean
-    with suppress(aiodocker.DockerError, RetryError):
+    with suppress(RetryError):
         await _try_to_clean()
 
 
