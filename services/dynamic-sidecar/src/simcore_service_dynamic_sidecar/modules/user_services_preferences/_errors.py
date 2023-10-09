@@ -1,17 +1,13 @@
-from pathlib import Path
+from pydantic.errors import PydanticErrorMixin
 
 
-class BaseServicesPreferencesError(Exception):
-    ...
+class BaseServicesPreferencesError(PydanticErrorMixin, Exception):
+    code = "dynamic_sidecar.user_service_preferences"
 
 
 class DestinationIsNotADirectoryError(BaseServicesPreferencesError):
-    def __init__(self, destination_to: Path) -> None:
-        super().__init__(f"Provided {destination_to=} must be a directory")
+    msg_template = "Provided destination_to={destination_to} must be a directory"
 
 
 class PreferencesAreTooBigError(BaseServicesPreferencesError):
-    def __init__(self, size: int, limit: int) -> None:
-        super().__init__(
-            f"Preferences amount to a size of {size=} bytes. Allowed {limit=} bytes."
-        )
+    msg_template = "Preferences amount to a size of size={size} bytes. Allowed limit={limit} bytes."

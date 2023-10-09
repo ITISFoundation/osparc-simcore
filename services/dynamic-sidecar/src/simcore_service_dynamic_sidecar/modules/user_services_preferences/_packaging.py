@@ -13,7 +13,7 @@ _MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "128kib")
 
 async def dir_to_bytes(source: Path) -> bytes:
     if not source.is_dir():
-        raise DestinationIsNotADirectoryError(source)
+        raise DestinationIsNotADirectoryError(destination_to=source)
 
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         archive_path = Path(tmp_dir) / "archive"
@@ -22,14 +22,16 @@ async def dir_to_bytes(source: Path) -> bytes:
 
         archive_size = archive_path.stat().st_size
         if archive_size > _MAX_PREFERENCES_TOTAL_SIZE:
-            raise PreferencesAreTooBigError(archive_size, _MAX_PREFERENCES_TOTAL_SIZE)
+            raise PreferencesAreTooBigError(
+                size=archive_size, limit=_MAX_PREFERENCES_TOTAL_SIZE
+            )
 
         return archive_path.read_bytes()
 
 
 async def dir_from_bytes(payload: bytes, destination: Path) -> None:
     if not destination.is_dir():
-        raise DestinationIsNotADirectoryError(destination)
+        raise DestinationIsNotADirectoryError(destination_to=destination)
 
     await remove_directory(destination, only_children=True)
 
