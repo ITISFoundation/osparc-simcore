@@ -6303,8 +6303,8 @@ components:
           minimum: 0.0
           type: number
           description: Amount in USD payed when auto-recharge condition is satisfied
-        maxNumberOfIncs:
-          title: Maxnumberofincs
+        incPaymentCountdown:
+          title: Incpaymentcountdown
           anyOf:
           - exclusiveMinimum: true
             type: integer
@@ -6312,7 +6312,7 @@ components:
           - enum:
             - UNLIMITED
             type: string
-          description: Maximum number of top-ups or None if unlimited
+          description: Maximum number of top-ups left
           default: UNLIMITED
     GroupAccessRights:
       title: GroupAccessRights

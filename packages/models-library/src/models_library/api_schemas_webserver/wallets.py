@@ -182,9 +182,9 @@ class GetWalletAutoRecharge(OutputSchema):
         default=None,
         description="Amount in USD payed when auto-recharge condition is satisfied",
     )
-    max_number_of_incs: PositiveInt | UnlimitedLiteral = Field(
+    inc_payment_countdown: PositiveInt | UnlimitedLiteral = Field(
         default="UNLIMITED",
-        description="Maximum number of top-ups or None if unlimited",
+        description="Maximum number of top-ups left",
     )
 
 
