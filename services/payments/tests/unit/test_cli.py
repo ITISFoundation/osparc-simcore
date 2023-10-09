@@ -24,9 +24,9 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
-    # simcore-service-payments generate-dotenv --auto-password
-    result = cli_runner.invoke(cli_main, "generate-dotenv --auto-password")
+def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
+    # simcore-service-payments echo-dotenv --auto-password
+    result = cli_runner.invoke(cli_main, "echo-dotenv --auto-password")
     assert result.exit_code == os.EX_OK, result.output
 
     environs = load_dotenv(result.stdout)

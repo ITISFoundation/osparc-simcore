@@ -25,16 +25,15 @@ main.callback()(create_version_callback(__version__))
 
 
 @main.command()
-def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
-    """Generates an example of environment variables file (or dot-envfile)
+def echo_dotenv(
+    ctx: typer.Context, *, auto_password: bool = True, minimal: bool = True
+):
+    """Generates and displays a valid environment variables file (also known as dot-envfile)
 
-    Usage sample:
-
-    $ simcore-service-payments generate-dotenv > .env
-
-    $ cat .env
-
-    $ set -o allexport; source .env; set +o allexport
+    Usage:
+        $ simcore-service-payments echo-dotenv > .env
+        $ cat .env
+        $ set -o allexport; source .env; set +o allexport
     """
     assert ctx  # nosec
 
@@ -76,4 +75,10 @@ def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
         ),
     )
 
-    print_as_envfile(settings, compact=False, verbose=True, show_secrets=True)
+    print_as_envfile(
+        settings,
+        compact=False,
+        verbose=True,
+        show_secrets=True,
+        exclude_unset=minimal,
+    )
