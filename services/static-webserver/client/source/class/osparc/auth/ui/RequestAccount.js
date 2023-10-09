@@ -33,6 +33,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     _buildPage: function() {
       this._addTitleHeader(this.tr("Request Account"));
 
+      const doubleSpaced = [];
+
       // form
       const firstName = new qx.ui.form.TextField().set({
         required: true
@@ -60,6 +62,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const company = new qx.ui.form.TextField().set({
         required: true
       });
+      doubleSpaced.push(company);
       this._form.add(company, this.tr("Company/University Name"), null, "company");
 
       const address = new qx.ui.form.TextField().set({
@@ -112,6 +115,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._form.add(application, this.tr("Application"), null, "application");
 
       const description = new qx.ui.form.TextField();
+      doubleSpaced.push(description);
       this._form.add(description, this.tr("Description"), null, "description");
 
       const hear = new qx.ui.form.SelectBox().set({
@@ -136,12 +140,15 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
       });
+      doubleSpaced.push(hear);
       this._form.add(hear, this.tr("How did you hear about us?"), null, "hear");
 
       const message = new qx.ui.form.TextField();
+      doubleSpaced.push(message);
       this._form.add(message, this.tr("Message"), null, "message");
 
-      const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form);
       this.add(formRenderer);
 
       // buttons
