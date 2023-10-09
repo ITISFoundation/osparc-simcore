@@ -56,7 +56,7 @@ def upgrade():
         sa.Column(
             "enabled", sa.Boolean(), server_default=sa.text("false"), nullable=False
         ),
-        sa.Column("primary_payment_method_id", sa.String(), nullable=False),
+        sa.Column("primary_payment_method_id", sa.String(), nullable=True),
         sa.Column(
             "min_balance_in_usd",
             sa.Numeric(scale=2),
@@ -89,7 +89,6 @@ def upgrade():
             ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("primary_payment_method_id"),
         sa.UniqueConstraint("wallet_id"),
     )
     # ### end Alembic commands ###

@@ -50,11 +50,10 @@ payments_autorecharge = sa.Table(
             payments_methods.c.payment_method_id,
             name="fk_payments_autorecharge_primary_payment_method_id",
             onupdate="CASCADE",
-            ondelete="SET NULL",  # FIXME:
+            ondelete="SET NULL",
         ),
-        nullable=False,
-        doc="[Required] Primary payment method selected for auto-recharge",
-        unique=True,
+        nullable=True,
+        doc="Primary payment method selected for auto-recharge or None if unassigned",
     ),
     sa.Column(
         "min_balance_in_usd",
