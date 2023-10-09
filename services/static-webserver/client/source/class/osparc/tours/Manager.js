@@ -42,6 +42,12 @@ qx.Class.define("osparc.tours.Manager", {
       event: "changeTours"
     },
 
+    tour: {
+      check: "Object",
+      init: null,
+      nullable: true
+    },
+
     steps: {
       check: "Array",
       init: [],
@@ -87,6 +93,7 @@ qx.Class.define("osparc.tours.Manager", {
     },
 
     stop: function() {
+      this.setTour(null);
       this.__removeCurrentBubble();
     },
 
@@ -101,6 +108,7 @@ qx.Class.define("osparc.tours.Manager", {
     __selectTour: function(tour) {
       this.close();
       if ("steps" in tour) {
+        this.setTour(tour);
         this.setSteps(tour.steps);
         this.__toStepCheck(0);
       }
@@ -129,8 +137,9 @@ qx.Class.define("osparc.tours.Manager", {
       }
     },
 
-    __createStep: function(element, text) {
-      const stepWidget = new osparc.tours.Step(element, text).set({
+    __createStep: function() {
+      const tour = this.getTour();
+      const stepWidget = new osparc.tours.Step(tour["name"]).set({
         maxWidth: 400
       });
       [

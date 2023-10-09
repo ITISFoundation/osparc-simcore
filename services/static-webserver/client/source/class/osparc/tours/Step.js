@@ -18,10 +18,10 @@
 qx.Class.define("osparc.tours.Step", {
   extend: osparc.ui.basic.FloatingHelper,
 
-  construct: function(element, title, message) {
-    this.base(arguments, element, "large");
+  construct: function(tourTitle) {
+    this.base(arguments, null, "large");
 
-    this.setLayout(new qx.ui.layout.VBox(8));
+    this.setLayout(new qx.ui.layout.VBox(10));
 
     const hintContainer = this.getChildControl("hint-container");
     hintContainer.setPadding(15);
@@ -32,15 +32,11 @@ qx.Class.define("osparc.tours.Step", {
     this.getChildControl("title");
     this.getChildControl("message");
     this.getChildControl("skip-button");
+    const titleLabel = this.getChildControl("tour-title");
+    if (tourTitle) {
+      titleLabel.setValue(tourTitle);
+    }
     this.getChildControl("step-label");
-
-    if (title) {
-      this.setTitle(title);
-    }
-
-    if (message) {
-      this.setMessage(message);
-    }
   },
 
   events: {
@@ -122,6 +118,27 @@ qx.Class.define("osparc.tours.Step", {
           bottomLayout.add(control);
           break;
         }
+        case "bottom-center-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(3).set({
+            alignX: "center"
+          }));
+          const bottomLayout = this.getChildControl("bottom-layout");
+          bottomLayout.add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "tour-title": {
+          control = new qx.ui.basic.Label().set({
+            alignX: "center",
+            alignY: "middle",
+            textAlign: "center",
+            allowGrowX: true
+          });
+          const bottomLayout = this.getChildControl("bottom-center-layout");
+          bottomLayout.add(control);
+          break;
+        }
         case "step-label": {
           control = new qx.ui.basic.Label().set({
             alignX: "center",
@@ -129,10 +146,8 @@ qx.Class.define("osparc.tours.Step", {
             textAlign: "center",
             allowGrowX: true
           });
-          const bottomLayout = this.getChildControl("bottom-layout");
-          bottomLayout.add(control, {
-            flex: 1
-          });
+          const bottomLayout = this.getChildControl("bottom-center-layout");
+          bottomLayout.add(control);
           break;
         }
         case "next-button": {
