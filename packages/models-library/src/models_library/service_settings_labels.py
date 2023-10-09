@@ -419,7 +419,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     @validator("user_preferences_path", pre=True)
     @classmethod
     def deserialize_from_json(cls, v):
-        return json.loads(v)
+        return f"{v}".removeprefix('"').removesuffix('"')
 
     @validator("user_preferences_path")
     @classmethod
