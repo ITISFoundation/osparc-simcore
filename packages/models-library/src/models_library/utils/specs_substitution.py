@@ -14,11 +14,11 @@ from .string_substitution import (
 SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
-def _serializer(data: dict[str, Any]) -> str:
+def _json_dumps(data: dict[str, Any]) -> str:
     return json.dumps(data)
 
 
-def _deserializer(str_data: str) -> dict[str, Any]:
+def _json_loads(str_data: str) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(str_data))
 
 
@@ -39,7 +39,7 @@ class SpecsSubstitutionsResolver:
         cls, specs: dict[str, Any], *, upgrade: bool
     ) -> TextTemplate:
         # convert to yaml (less symbols as in json)
-        service_spec_str: str = _serializer(specs)
+        service_spec_str: str = _json_dumps(specs)
 
         if upgrade:  # legacy
             service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
@@ -63,15 +63,13 @@ class SpecsSubstitutionsResolver:
         return self._substitutions
 
     def set_substitutions(
-        self, mappings: dict[str, SubstitutionValue] | None = None
+        self, mappings: dict[str, SubstitutionValue]
     ) -> SubstitutionsDict:
         """
         NOTE: ONLY targets identifiers declared in the specs
         NOTE:`${identifier:-a_default_value}` will replace the identifier with `a_default_value`
         if not provided
         """
-        if mappings is None:
-            mappings = {}
 
         needed_identifiers = self.get_identifiers()
 
@@ -96,4 +94,4 @@ class SpecsSubstitutionsResolver:
 
     def run(self) -> dict[str, Any]:
         new_specs_txt: str = self._template.safe_substitute(self._substitutions)
-        return _deserializer(new_specs_txt)
+        return _json_loads(new_specs_txt)
