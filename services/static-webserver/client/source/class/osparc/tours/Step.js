@@ -42,7 +42,8 @@ qx.Class.define("osparc.tours.Step", {
   events: {
     "skipPressed": "qx.event.type.Event",
     "nextPressed": "qx.event.type.Event",
-    "endPressed": "qx.event.type.Event"
+    "endPressed": "qx.event.type.Event",
+    "toTours": "qx.event.type.Event"
   },
 
   properties: {
@@ -64,14 +65,14 @@ qx.Class.define("osparc.tours.Step", {
       check: "Integer",
       nullable: true,
       init: 0,
-      apply: "__updateNextButton"
+      apply: "__updateButtons"
     },
 
     nSteps: {
       check: "Integer",
       nullable: true,
       init: 0,
-      apply: "__updateNextButton"
+      apply: "__updateButtons"
     }
   },
 
@@ -164,6 +165,18 @@ qx.Class.define("osparc.tours.Step", {
           bottomLayout.add(control);
           break;
         }
+        case "to-tours-button": {
+          control = new qx.ui.form.Button().set({
+            label: this.tr("To Tours"),
+            iconPosition: "right",
+            allowGrowX: false,
+            alignX: "right"
+          });
+          control.addListener("execute", () => this.fireEvent("toTours"), this);
+          const bottomLayout = this.getChildControl("bottom-layout");
+          bottomLayout.add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -191,17 +204,20 @@ qx.Class.define("osparc.tours.Step", {
       }
     },
 
-    __updateNextButton: function() {
+    __updateButtons: function() {
       const stepLabel = this.getChildControl("step-label");
       stepLabel.setValue(this.tr("Step: ") + this.getStepIndex() + "/" + this.getNSteps());
 
       const nextButton = this.getChildControl("next-button");
-      if (this.getStepIndex() === this.getNSteps()) {
+      const lastStep = this.getStepIndex() === this.getNSteps();
+      if (lastStep) {
         nextButton.set({
           label: this.tr("End"),
           icon: null
         });
       }
+      const toTours = this.getChildControl("to-tours-button");
+      toTours.setVisibility(lastStep ? "visible" : "excluded");
     }
   }
 });

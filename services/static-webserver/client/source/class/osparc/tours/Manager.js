@@ -147,6 +147,10 @@ qx.Class.define("osparc.tours.Manager", {
         "endPressed"
       ].forEach(evName => stepWidget.addListener(evName, () => this.stop(), this));
       stepWidget.addListener("nextPressed", () => this.__toStepCheck(this.__currentIdx+1), this);
+      stepWidget.addListener("toTours", () => {
+        this.stop();
+        this.start();
+      }, this);
       return stepWidget;
     },
 
