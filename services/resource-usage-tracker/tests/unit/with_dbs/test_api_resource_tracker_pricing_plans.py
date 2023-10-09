@@ -155,7 +155,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID_2,
                 unit_name="XXL",
-                unit_unit_extra_infoattributes={},
+                unit_extra_info={},
                 default=True,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
