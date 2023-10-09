@@ -76,6 +76,14 @@ async def test_wallets_full_workflow(
     )
     store_modified_field = arrow.get(data[0]["modified"])
 
+    # get concrete user wallet
+    url = client.app.router["get_wallet"].url_for(
+        wallet_id=f"{added_wallet['walletId']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data["walletId"] == added_wallet["walletId"]
+
     # update user wallet
     url = client.app.router["update_wallet"].url_for(
         wallet_id=f"{added_wallet['walletId']}"
