@@ -23,7 +23,7 @@ from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._crud_handlers import ProjectPathParams
 from simcore_service_webserver.projects._nodes_handlers import (
-    _NodePathParams,
+    NodePathParams,
     _ProjectGroupAccess,
     _ProjectNodePreview,
 )
@@ -170,4 +170,4 @@ async def get_project_node_preview(project_id: ProjectID, node_id: NodeID):
     ...
 
 
-assert_handler_signature_against_model(get_project_node_preview, _NodePathParams)
+assert_handler_signature_against_model(get_project_node_preview, NodePathParams)

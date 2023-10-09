@@ -5,7 +5,6 @@
 """
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import (
     column_created_datetime,
@@ -13,50 +12,39 @@ from ._common import (
     register_modified_datetime_auto_update_trigger,
 )
 from .base import metadata
-from .projects import projects
+from .projects_nodes import projects_nodes
 
-projects_nodes = sa.Table(
-    "projects_nodes",
+projects_node_to_pricing_unit = sa.Table(
+    "projects_node_to_pricing_unit",
     metadata,
     sa.Column(
         "project_node_id",
         sa.Integer,
-        nullable=False,
-        autoincrement=True,
-        primary_key=True,
-        doc="Project node index",
-    ),
-    sa.Column(
-        "project_uuid",
-        sa.String,
         sa.ForeignKey(
-            projects.c.uuid,
+            projects_nodes.c.project_node_id,
             onupdate="CASCADE",
             ondelete="CASCADE",
-            name="fk_projects_to_projects_nodes_to_projects_uuid",
+            name="fk_projects_nodes__project_node_to_pricing_unit__uuid",
         ),
         nullable=False,
-        index=True,
-        doc="The project unique identifier",
+        doc="The project node unique identifier",
     ),
     sa.Column(
-        "node_id",
-        sa.String,
+        "pricing_plan_id",
+        sa.BigInteger,
         nullable=False,
-        index=True,
-        doc="The node unique identifier",
+        doc="The pricing plan unique identifier",
     ),
     sa.Column(
-        "required_resources",
-        JSONB,
+        "pricing_unit_id",
+        sa.BigInteger,
         nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="The node required resources",
+        doc="The pricing unit unique identifier",
     ),
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.UniqueConstraint("project_uuid", "node_id"),
+    sa.UniqueConstraint("project_node_id"),
 )
 
 
