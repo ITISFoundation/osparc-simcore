@@ -14,7 +14,7 @@ from pydantic import BaseModel
 class PricingUnitGet(BaseModel):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_attributes: dict
+    unit_extra_info: dict
     current_cost_per_unit: Decimal
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
@@ -26,7 +26,7 @@ class PricingUnitGet(BaseModel):
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_attributes": {},
+                    "unit_extra_info": {},
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,

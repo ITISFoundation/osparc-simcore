@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Request
+from fastapi import Request
 from fastapi.responses import JSONResponse
 from pydantic.errors import PydanticErrorMixin
 
@@ -11,11 +11,12 @@ class ConfigurationError(ResourceUsageTrackerRuntimeError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
-class MyHTTPException(HTTPException):
-    pass
+class CustomResourceUsageTrackerRuntimeError(ResourceUsageTrackerRuntimeError):
+    msg_template: str = "{msg}"
 
 
-def my_http_exception_handler(
-    request: Request, exc: HTTPException  # pylint: disable=unused-argument
+def http404_error_handler(
+    request: Request,
+    error: CustomResourceUsageTrackerRuntimeError,  # pylint: disable=unused-argument
 ) -> JSONResponse:
-    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
+    return JSONResponse(status_code=404, content={"message": error.msg_template})

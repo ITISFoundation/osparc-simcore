@@ -4,8 +4,8 @@ from fastapi import FastAPI
 from fastapi_pagination import add_pagination as setup_fastapi_pagination
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_service_resource_usage_tracker.core.errors import (
-    MyHTTPException,
-    my_http_exception_handler,
+    CustomResourceUsageTrackerRuntimeError,
+    http404_error_handler,
 )
 
 from .._meta import (
@@ -49,7 +49,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_fastapi_pagination(app)
 
     # ERROR HANDLERS
-    app.add_exception_handler(MyHTTPException, my_http_exception_handler)
+    app.add_exception_handler(
+        CustomResourceUsageTrackerRuntimeError, http404_error_handler
+    )
 
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)

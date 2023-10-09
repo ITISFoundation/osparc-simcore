@@ -43,7 +43,7 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import MyHTTPException
+from ....core.errors import CustomResourceUsageTrackerRuntimeError
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
@@ -106,8 +106,8 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise MyHTTPException(
-                status_code=404, detail=f"Service was not created: {data}"
+            raise CustomResourceUsageTrackerRuntimeError(
+                msg=f"Service was not created: {data}"
             )
         return row[0]
 
@@ -290,8 +290,8 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise MyHTTPException(
-                status_code=404, detail=f"Transaction was not created: {data}"
+            raise CustomResourceUsageTrackerRuntimeError(
+                msg=f"Transaction was not created: {data}"
             )
         return row[0]
 
@@ -496,7 +496,7 @@ class ResourceTrackerRepository(BaseRepository):
             resource_tracker_pricing_units.c.pricing_unit_id,
             resource_tracker_pricing_units.c.pricing_plan_id,
             resource_tracker_pricing_units.c.unit_name,
-            resource_tracker_pricing_units.c.unit_attributes,
+            resource_tracker_pricing_units.c.unit_extra_info,
             resource_tracker_pricing_units.c.default,
             resource_tracker_pricing_units.c.specific_info,
             resource_tracker_pricing_units.c.created,
@@ -591,8 +591,8 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise MyHTTPException(
-                status_code=404, detail=f"Pricing unit id {pricing_unit_id} not found"
+            raise CustomResourceUsageTrackerRuntimeError(
+                msg=f"Pricing unit id {pricing_unit_id} not found"
             )
         return PricingUnitsDB.from_orm(row)
 
@@ -624,8 +624,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise MyHTTPException(
-                status_code=404,
-                detail=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
+            raise CustomResourceUsageTrackerRuntimeError(
+                msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
             )
         return PricingUnitCostsDB.from_orm(row)

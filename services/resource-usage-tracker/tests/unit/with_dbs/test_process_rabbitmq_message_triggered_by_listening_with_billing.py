@@ -56,7 +56,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_attributes={},
+                unit_extra_info={},
                 default=False,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -81,7 +81,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                unit_attributes={},
+                unit_extra_info={},
                 default=True,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -106,7 +106,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                unit_attributes={},
+                unit_extra_info={},
                 default=False,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
