@@ -89,7 +89,7 @@ async def ensure_network_cleanup(
 ) -> None:
     async def _try_to_clean():
         async for attempt in AsyncRetrying(
-            reraise=False,
+            reraise=True,
             stop=stop_after_attempt(20),
             wait=wait_fixed(5),
         ):
