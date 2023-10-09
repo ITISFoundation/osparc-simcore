@@ -67,7 +67,7 @@ routes = web.RouteTableDef()
 @handle_request_errors
 async def _list_repos_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
 
@@ -111,7 +111,7 @@ async def _list_repos_handler(request: web.Request):
 @handle_request_errors
 async def _create_checkpoint_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_ProjectPathParam, request)
     _body = CheckpointNew.parse_obj(await request.json())
@@ -143,7 +143,7 @@ async def _create_checkpoint_handler(request: web.Request):
 @handle_request_errors
 async def _list_checkpoints_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_ProjectPathParam, request)
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
@@ -197,7 +197,7 @@ async def _list_checkpoints_handler(request: web.Request):
 @handle_request_errors
 async def _get_checkpoint_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_CheckpointsPathParam, request)
 
@@ -229,7 +229,7 @@ async def _get_checkpoint_handler(request: web.Request):
 @handle_request_errors
 async def _update_checkpoint_annotations_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_CheckpointsPathParam, request)
     update = await parse_request_body_as(CheckpointAnnotations, request)
@@ -263,7 +263,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
 @handle_request_errors
 async def _checkout_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_CheckpointsPathParam, request)
 
@@ -295,7 +295,7 @@ async def _checkout_handler(request: web.Request):
 @handle_request_errors
 async def _view_project_workbench_handler(request: web.Request):
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlRepository(request)
+    vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_CheckpointsPathParam, request)
 
