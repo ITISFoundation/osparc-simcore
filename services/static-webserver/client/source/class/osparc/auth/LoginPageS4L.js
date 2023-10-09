@@ -23,13 +23,14 @@
 qx.Class.define("osparc.auth.LoginPageS4L", {
   extend: osparc.auth.LoginPage,
 
-  /*
-  *****************************************************************************
-     CONSTRUCTOR
-  *****************************************************************************
-  */
-  construct: function() {
-    this.base(arguments);
+  properties: {
+    compactVersion: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeCompactVersion",
+      apply: "__reloadLayout"
+    }
   },
 
   events: {
@@ -39,10 +40,43 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
   members: {
     // overridden
     _buildLayout: function() {
+      this.__reloadLayout();
+
+      setTimeout(() => this.__resized(), 100);
+      window.addEventListener("resize", () => this.__resized());
+    },
+
+    __resized: function() {
+      const width = document.documentElement.clientWidth;
+      this.setCompactVersion(width < 800);
+    },
+
+    __reloadLayout: function() {
       const layout = new qx.ui.layout.HBox();
       this._setLayout(layout);
 
       this.setBackgroundColor("#025887");
+
+      this._removeAll();
+
+      const loginLayout = this.__getLoginLayout();
+      if (this.isCompactVersion()) {
+        this.__resetBackgroundImage();
+        this._add(loginLayout, {
+          flex: 1
+        });
+      } else {
+        this.__setBackgroundImage();
+        this._add(new qx.ui.core.Spacer(), {
+          width: "50%"
+        });
+        this._add(loginLayout, {
+          width: "50%"
+        });
+      }
+    },
+
+    __setBackgroundImage: function() {
       let backgroundImage = "";
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
@@ -60,17 +94,20 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
         "background-repeat": "no-repeat",
         "background-size": "auto 100%"
       });
+    },
 
-      this._add(new qx.ui.core.Spacer(), {
-        width: "50%"
+    __resetBackgroundImage: function() {
+      this.getContentElement().setStyles({
+        "background-image": "",
+        "background-repeat": "no-repeat",
+        "background-size": "auto 100%"
       });
+    },
 
+    __getLoginLayout: function() {
       const loginLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         alignX: "center",
         alignY: "middle"
-      });
-      this._add(loginLayout, {
-        width: "50%"
       });
 
       loginLayout.add(new qx.ui.core.Spacer(), {
@@ -94,9 +131,9 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       pages.getChildren().forEach(page => {
         page.getChildren().forEach(child => {
           if ("getChildren" in child) {
-            child.getChildren().forEach(chil => {
+            child.getChildren().forEach(c => {
               // "Create account" and "Forgot password"
-              chil.set({
+              c.set({
                 textColor: "#ddd"
               });
             });
@@ -113,6 +150,10 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
           page.setTextColor("#bbb");
         }
       });
+
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(loginLayout);
+      return scrollView;
     }
   }
 });
