@@ -144,8 +144,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement()
+          const thumbnail = item.getChildControl("thumbnail");
+          thumbnail.getContentElement()
             .setStyles({
               "border-radius": "16px"
             });
