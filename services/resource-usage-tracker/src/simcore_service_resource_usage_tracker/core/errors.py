@@ -16,6 +16,6 @@ class MyHTTPException(HTTPException):
 
 
 def my_http_exception_handler(
-    request: Request, exc: HTTPException
-) -> JSONResponse:  # pylint: disable=unused-argument
+    request: Request, exc: HTTPException  # pylint: disable=unused-argument
+) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})

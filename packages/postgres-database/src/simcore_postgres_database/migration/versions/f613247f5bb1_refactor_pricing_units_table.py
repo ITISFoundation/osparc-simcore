@@ -22,7 +22,10 @@ def upgrade():
     op.add_column(
         "resource_tracker_pricing_units",
         sa.Column(
-            "unit_attributes", postgresql.JSONB(astext_type=sa.Text()), nullable=False
+            "unit_attributes",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
         ),
     )
     # ### end Alembic commands ###
