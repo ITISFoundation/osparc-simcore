@@ -143,6 +143,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             maxHeight: 30,
             alignY: "middle"
           });
+          control.getChildControl("label").set({
+            allowGrowX: true,
+            textAlign: "right"
+          });
           control.addListener("execute", () => this.fireDataEvent("toggleFavourite", {
             walletId: this.getKey()
           }), this);
