@@ -14,12 +14,11 @@ from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import FAKE
 from simcore_postgres_database import errors
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.payments_autorecharge import payments_autorecharge
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from simcore_postgres_database.utils_payments_autorecharge import Statements
 
 
 def _utcnow() -> datetime.datetime:
@@ -108,32 +107,7 @@ UNSET = object()
 
 async def _get_auto_recharge(connection, wallet_id) -> RowProxy | None:
     # has recharge trigger?
-    stmt = (
-        sa.select(
-            payments_autorecharge.c.id.label("payments_autorecharge_id"),
-            payments_methods.c.user_id,
-            payments_methods.c.wallet_id,
-            payments_autorecharge.c.primary_payment_method_id,
-            payments_autorecharge.c.enabled,
-            payments_autorecharge.c.min_balance_in_usd,
-            payments_autorecharge.c.inc_payment_amount_in_usd,
-            payments_autorecharge.c.inc_payments_countdown,
-        )
-        .select_from(
-            payments_methods.join(
-                payments_autorecharge,
-                (payments_methods.c.wallet_id == payments_autorecharge.c.wallet_id)
-                & (
-                    payments_methods.c.payment_method_id
-                    == payments_autorecharge.c.primary_payment_method_id
-                ),
-            )
-        )
-        .where(
-            (payments_methods.c.wallet_id == wallet_id)
-            & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
-        )
-    )
+    stmt = Statements.get_wallet_autorecharge(wallet_id)
     result = await connection.execute(stmt)
     return await result.first()
 
@@ -141,12 +115,8 @@ async def _get_auto_recharge(connection, wallet_id) -> RowProxy | None:
 async def _is_valid_payment_method(
     connection, user_id, wallet_id, payment_method_id
 ) -> bool:
-    stmt = sa.select(payments_methods.c.payment_method_id).where(
-        (payments_methods.c.user_id == user_id)
-        & (payments_methods.c.wallet_id == wallet_id)
-        & (payments_methods.c.payment_method_id == payment_method_id)
-        & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
-    )
+
+    stmt = Statements.is_valid_payment_method(user_id, wallet_id, payment_method_id)
     pmid = await connection.scalar(stmt)
     return pmid == payment_method_id
 
@@ -154,50 +124,21 @@ async def _is_valid_payment_method(
 async def _upsert_autorecharge(connection, wallet_id, ppm, th, ip, cd) -> RowProxy:
     # using this primary payment-method, create an autorecharge
     # NOTE: requires the entire
-    values = {
-        "wallet_id": wallet_id,
-        "primary_payment_method_id": ppm,
-        "min_balance_in_usd": th,
-        "inc_payment_amount_in_usd": ip,
-        "inc_payments_countdown": cd,
-    }
-
-    insert_stmt = pg_insert(payments_autorecharge).values(**values)
-    upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[payments_autorecharge.c.wallet_id],
-        set_=values,
-    ).returning(sa.literal_column("*"))
-
-    row = await (await connection.execute(upsert_stmt)).first()
+    stmt = Statements.upsert_wallet_autorecharge(wallet_id, ppm, th, ip, cd)
+    row = await (await connection.execute(stmt)).first()
     assert row
     return row
 
 
 async def _update_autorecharge(connection, wallet_id, **settings) -> int | None:
-
-    stmt = (
-        payments_autorecharge.update()
-        .values(**settings)
-        .where(payments_autorecharge.c.wallet_id == wallet_id)
-        .returning(payments_autorecharge.c.id)
-    )
-
+    stmt = Statements.update_wallet_autorecharge(wallet_id, **settings)
     return await connection.scalar(stmt)
 
 
 async def _decrease_countdown(connection, wallet_id) -> int | None:
+    stmt = Statements.decrease_wallet_autorecharge_countdown(wallet_id)
     # updates payments countdown
-    return await connection.scalar(
-        payments_autorecharge.update()
-        .where(
-            (payments_autorecharge.c.wallet_id == wallet_id)
-            & (payments_autorecharge.c.inc_payments_countdown is not None)
-        )
-        .values(
-            inc_payments_countdown=payments_autorecharge.c.inc_payments_countdown - 1,
-        )
-        .returning(payments_autorecharge.c.inc_payments_countdown)
-    )
+    return await connection.scalar(stmt)
 
 
 @pytest.mark.testit()
