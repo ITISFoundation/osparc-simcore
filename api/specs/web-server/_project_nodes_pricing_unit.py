@@ -46,11 +46,10 @@ assert_handler_signature_against_model(get_project_node_pricing_unit, NodePathPa
 
 @router.put(
     "/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}",
-    response_model=Envelope[None],
     summary="Connect pricing unit to the project node (Project node can have only one pricing unit)",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def connect_wallet_to_project(
+async def connect_pricing_unit_to_project_node(
     project_id: ProjectID,
     node_id: NodeID,
     pricing_plan_id: PricingPlanId,
@@ -60,5 +59,5 @@ async def connect_wallet_to_project(
 
 
 assert_handler_signature_against_model(
-    connect_wallet_to_project, _ProjectNodePricingUnitPathParams
+    connect_pricing_unit_to_project_node, _ProjectNodePricingUnitPathParams
 )
