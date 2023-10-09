@@ -47,9 +47,10 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE: NonNegativeDecimal = Field(
-        default=100.0,
+        default=20.0,
         description="Default value on the minimum balance to top-up for auto-recharge",
     )
+
     PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
         default=100.0,
         description="Default value on the amount to top-up for auto-recharge",

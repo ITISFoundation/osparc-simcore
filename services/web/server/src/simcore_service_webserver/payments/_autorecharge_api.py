@@ -21,7 +21,7 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-def _from_db(db_model: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
+def _from_db_to_api_model(db_model: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
     return GetWalletAutoRecharge(
         enabled=db_model.enabled,
         payment_method_id=db_model.primary_payment_method_id,
@@ -31,7 +31,7 @@ def _from_db(db_model: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
     )
 
 
-def _to_db(
+def _from_api_to_db_model(
     wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge
 ) -> PaymentsAutorechargeDB:
     return PaymentsAutorechargeDB(
@@ -47,6 +47,8 @@ def _to_db(
 #
 # payment-autorecharge api
 #
+
+_NEWEST = 0
 
 
 async def get_wallet_payment_autorecharge(
@@ -72,7 +74,7 @@ async def get_wallet_payment_autorecharge(
             wallet_id=wallet_id,
         )
         if wallet_payment_methods:
-            payment_method_id = wallet_payment_methods[0].payment_method_id
+            payment_method_id = wallet_payment_methods[_NEWEST].payment_method_id
 
         return GetWalletAutoRecharge(
             enabled=False,
@@ -82,7 +84,7 @@ async def get_wallet_payment_autorecharge(
             top_up_countdown=None,
         )
 
-    return _from_db(got)
+    return _from_db_to_api_model(got)
 
 
 async def replace_wallet_payment_autorecharge(
@@ -98,7 +100,10 @@ async def replace_wallet_payment_autorecharge(
     )
 
     got: PaymentsAutorechargeDB = await replace_wallet_autorecharge(
-        app, user_id=user_id, wallet_id=wallet_id, new=_to_db(wallet_id, new)
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        new=_from_api_to_db_model(wallet_id, new),
     )
 
-    return _from_db(got)
+    return _from_db_to_api_model(got)

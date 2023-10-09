@@ -10,9 +10,11 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodGet,
+    PaymentMethodID,
     PaymentMethodInit,
     WalletGet,
 )
+from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -135,7 +137,26 @@ async def test_init_and_cancel_payment_method(
     await assert_status(response, web.HTTPNotFound)
 
 
-@pytest.mark.testit
+async def _add_payment_method(
+    client: TestClient, wallet_id: WalletID
+) -> PaymentMethodID:
+    assert client.app
+    response = await client.post(
+        f"/v0/wallets/{wallet_id}/payments-methods:init",
+    )
+    data, error = await assert_status(response, web.HTTPAccepted)
+    assert error is None
+    inited = PaymentMethodInit.parse_obj(data)
+    await _complete_create_of_wallet_payment_method(
+        client.app,
+        payment_method_id=inited.payment_method_id,
+        completion_state=InitPromptAckFlowState.SUCCESS,
+        message="ACKED by test_add_payment_method_worfklow",
+    )
+
+    return inited.payment_method_id
+
+
 @pytest.mark.acceptance_test(
     "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
 )
@@ -145,40 +166,49 @@ async def test_wallet_autorecharge(
 ):
     wallet = logged_user_wallet
 
-    # a wallet with two payment methods.
-    payment_method_id = 1
+    # get default
+    response = await client.get(f"/v0/wallets/{wallet.wallet_id}/auto-recharge")
 
-    # assert all(not pm.is_primary_recharge_card for pm in wallet_payments_methods)
+    data, _ = await assert_status(response, web.HTTPOk)
+    default_auto_recharge = GetWalletAutoRecharge(**data)
+    assert default_auto_recharge.enabled is False
+    assert default_auto_recharge.top_up_countdown is None
+    assert default_auto_recharge.payment_method_id is None
 
-    # wallet has no auto-recharge activated
+    # A wallet with a payment method
+    older_payment_method_id = await _add_payment_method(
+        client, wallet_id=wallet.wallet_id
+    )
+    payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
+
+    # get default again
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/auto-recharge")
     data, _ = await assert_status(response, web.HTTPOk)
-    autorecharge = GetWalletAutoRecharge(**data)  # gets a default
-    assert autorecharge.enabled is False
-    assert autorecharge.top_up_countdown == "UNLIMITED"
+    default_auto_recharge = GetWalletAutoRecharge(**data)
+    assert default_auto_recharge.enabled is False
+    assert default_auto_recharge.top_up_countdown is None
+    assert default_auto_recharge.payment_method_id == payment_method_id
 
-    # activate auto-rechange
+    # Activate auto-rechange
     response = await client.put(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
-            "minBalanceInUsd": 0.0,
-            "incPaymentAmountInUsd": 100.0,  # $
             "paymentMethodId": payment_method_id,
-            "maxNumberOfIncs": 3,
-            "enable": True,
+            "minBalanceInUsd": 0.0,
+            "topUpAmountInUsd": 100.0,  # $
+            "topUpCountdown": 3,
+            "enabled": True,
         },
     )
     data, _ = await assert_status(response, web.HTTPOk)
+    updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
 
-    auto_recharge = GetWalletAutoRecharge.parse_obj(data)
-
-    # get info to fill
+    # get
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
     data, _ = await assert_status(response, web.HTTPOk)
-
-    assert auto_recharge == GetWalletAutoRecharge.parse_obj(data)
+    assert updated_auto_recharge == GetWalletAutoRecharge.parse_obj(data)
 
     # payment-methods.auto_recharge
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
@@ -187,3 +217,9 @@ async def test_wallet_autorecharge(
 
     for payment_method in wallet_payment_methods:
         assert payment_method.auto_recharge == (payment_method.idr == payment_method_id)
+
+    assert {pm.idr for pm in wallet_payment_methods} == {
+        payment_method_id,
+        older_payment_method_id,
+    }
+    assert sum(pm.auto_recharge for pm in wallet_payment_methods) == 1
