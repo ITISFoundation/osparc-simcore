@@ -8,7 +8,6 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
 from . import _db
-from ._utils import is_feature_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -48,10 +47,6 @@ class UserServicesPreferencesManager:
 
 
 async def save_user_services_preferences(app: FastAPI) -> None:
-    if not is_feature_enabled(app):
-        _logger.warning("preferences features is disabled, skipping save")
-        return
-
     user_services_preferences_manager: UserServicesPreferencesManager = (
         app.state.user_services_preferences_manager
     )
@@ -59,10 +54,6 @@ async def save_user_services_preferences(app: FastAPI) -> None:
 
 
 async def load_user_services_preferences(app: FastAPI) -> None:
-    if not is_feature_enabled(app):
-        _logger.info("preferences features is disabled, skipping load")
-        return
-
     user_services_preferences_manager: UserServicesPreferencesManager = (
         app.state.user_services_preferences_manager
     )
