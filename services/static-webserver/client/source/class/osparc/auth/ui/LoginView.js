@@ -45,13 +45,9 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.add(announcementUIFactory.createLoginAnnouncement());
       }
 
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
-      this.add(formRenderer);
-
+      // form
       const email = new qx.ui.form.TextField().set({
-        width: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
-        required: true,
-        allowGrowX: true
+        required: true
       });
       email.getContentElement().setAttribute("autocomplete", "username");
       osparc.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
@@ -62,14 +58,17 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       });
 
       const pass = new osparc.ui.form.PasswordField().set({
-        width: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
-        required: true,
-        placeholder: this.tr(" Your password")
+        required: true
       });
       pass.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
       this._form.add(pass, " Your password", null, "password");
 
+      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in")).set({
         center: true,
         appearance: "strong-button"

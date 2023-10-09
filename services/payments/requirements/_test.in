@@ -15,6 +15,7 @@ asgi_lifespan
 coverage
 docker
 faker
+jsonref
 pytest
 pytest-asyncio
 pytest-cov

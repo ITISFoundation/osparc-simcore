@@ -6,10 +6,9 @@ import os
 from copy import deepcopy
 from io import StringIO
 from pathlib import Path
-from typing import Union
 
 import dotenv
-from pytest import MonkeyPatch
+import pytest
 
 from .typing_env import EnvVarsDict
 
@@ -18,7 +17,9 @@ from .typing_env import EnvVarsDict
 #
 
 
-def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
+def setenvs_from_dict(
+    monkeypatch: pytest.MonkeyPatch, envs: EnvVarsDict
+) -> EnvVarsDict:
     for key, value in envs.items():
         assert isinstance(key, str)
         assert value is not None  # None keys cannot be is defined w/o value
@@ -30,7 +31,7 @@ def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDic
     return deepcopy(envs)
 
 
-def load_dotenv(envfile_content_or_path: Union[Path, str], **options) -> EnvVarsDict:
+def load_dotenv(envfile_content_or_path: Path | str, **options) -> EnvVarsDict:
     """Convenient wrapper around dotenv.dotenv_values"""
     kwargs = options.copy()
     if isinstance(envfile_content_or_path, Path):
@@ -50,7 +51,7 @@ def load_dotenv(envfile_content_or_path: Union[Path, str], **options) -> EnvVars
 
 
 def setenvs_from_envfile(
-    monkeypatch: MonkeyPatch, content_or_path: Union[str, Path], **dotenv_kwags
+    monkeypatch: pytest.MonkeyPatch, content_or_path: str | Path, **dotenv_kwags
 ) -> EnvVarsDict:
     """Batch monkeypatch.setenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)
@@ -61,14 +62,14 @@ def setenvs_from_envfile(
 
 
 def delenvs_from_envfile(
-    monkeypatch: MonkeyPatch,
-    content_or_path: Union[str, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    content_or_path: str | Path,
     raising: bool,
     **dotenv_kwags
 ) -> EnvVarsDict:
     """Batch monkeypatch.delenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)
-    for key in envs.keys():
+    for key in envs:
         monkeypatch.delenv(key, raising=raising)
 
     assert all(env not in os.environ for env in envs)
