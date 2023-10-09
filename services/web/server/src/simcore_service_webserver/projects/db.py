@@ -802,7 +802,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         project_uuid: ProjectID,
         node_uuid: NodeID,
-    ) -> tuple[PricingPlanId, PricingUnitId] | None:
+    ) -> tuple | None:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
@@ -822,11 +822,11 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
             row = await result.fetchone()
-            return (
-                parse_obj_as(tuple[PricingPlanId, PricingUnitId], (row[0], row[1]))
-                if row
-                else None
-            )
+            if row:
+                return parse_obj_as(
+                    tuple[PricingPlanId, PricingUnitId], (row[0], row[1])
+                )
+            return None
 
     async def connect_pricing_unit_to_project_node(
         self,
