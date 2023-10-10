@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 
 import asyncio
@@ -8,10 +9,11 @@ import pickle
 import socket
 import threading
 from collections import deque
+from collections.abc import AsyncIterator, Iterator
 from logging.handlers import DEFAULT_UDP_LOGGING_PORT, DatagramHandler
 from pathlib import Path
-from typing import AsyncIterator, Final, Iterator
-from unittest.mock import AsyncMock
+from typing import Final
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -149,3 +151,26 @@ async def test_chown_triggers_event(
     assert log_receiver.has_log_within(
         msg=f"Attribute change to: '{file_path}'", levelname="INFO"
     )
+
+
+@pytest.mark.parametrize("file_is_present", [True, False])
+async def test_regression_logging_event_handler_file_does_not_exist(
+    faker: Faker,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+    file_is_present: bool,
+):
+    caplog.clear()
+    mocked_event = Mock()
+    file_path = tmp_path / f"missing-path{faker.uuid4()}"
+    if file_is_present:
+        file_path.touch()
+        assert file_path.exists() is True
+    else:
+        assert file_path.exists() is False
+
+    mocked_event.src_path = file_path
+    _logging_event_handler._LoggingEventHandler().event_handler(  # noqa: SLF001
+        mocked_event
+    )
+    assert (f"Attribute change to: '{file_path}'" in caplog.text) is file_is_present
