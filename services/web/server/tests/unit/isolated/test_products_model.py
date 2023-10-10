@@ -73,4 +73,5 @@ def test_product_to_static():
             {"kind": "email", "label": "email", "email": "more-support@acme.com"},
             {"kind": "web", "label": "web-form", "url": "support.acme.com"},
         ],
+        "isPaymentEnabled": False,
     }
