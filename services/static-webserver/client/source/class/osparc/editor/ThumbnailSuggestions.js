@@ -90,18 +90,12 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       this.fireEvent("thumbnailAdded");
     },
 
-    __setThumbnails: function(nodeId, thumbnailsData) {
-      this.__thumbnailsPerNode[nodeId] = thumbnailsData;
-      this.fireEvent("thumbnailAdded");
-    },
-
     addWorkbenchUIPreviewToSuggestions: function() {
-      // make it first in the list
-      this.__setThumbnails("0000-workbenchUIPreview", [{
+      this.__addThumbnail("0000-workbenchUIPreview", {
         type: "workbenchUIPreview",
         thumbnailUrl: osparc.product.Utils.getWorkbenchUIPreviewPath(),
         fileUrl: osparc.product.Utils.getWorkbenchUIPreviewPath()
-      }]);
+      });
 
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.addWorkbenchUIPreviewToSuggestions());
