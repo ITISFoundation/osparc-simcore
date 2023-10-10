@@ -45,6 +45,7 @@ async def _is_valid_payment_method(
 async def _upsert_autorecharge(
     connection,
     wallet_id,
+    enabled,
     primary_payment_method_id,
     min_balance_in_usd,
     top_up_amount_in_usd,
@@ -53,11 +54,12 @@ async def _upsert_autorecharge(
     # using this primary payment-method, create an autorecharge
     # NOTE: requires the entire
     stmt = AutoRechargeStmts.upsert_wallet_autorecharge(
-        wallet_id,
-        primary_payment_method_id,
-        min_balance_in_usd,
-        top_up_amount_in_usd,
-        top_up_countdown,
+        wallet_id=wallet_id,
+        enabled=enabled,
+        primary_payment_method_id=primary_payment_method_id,
+        min_balance_in_usd=min_balance_in_usd,
+        top_up_amount_in_usd=top_up_amount_in_usd,
+        top_up_countdown=top_up_countdown,
     )
     row = await (await connection.execute(stmt)).first()
     assert row
@@ -119,6 +121,7 @@ async def test_payments_automation_workflow(
     await _upsert_autorecharge(
         connection,
         wallet_id,
+        enabled=True,
         primary_payment_method_id=payment_method_id,
         min_balance_in_usd=10,
         top_up_amount_in_usd=100,
@@ -128,6 +131,7 @@ async def test_payments_automation_workflow(
     auto_recharge = await _get_auto_recharge(connection, wallet_id)
     assert auto_recharge is not None
     assert auto_recharge.primary_payment_method_id == payment_method_id
+    assert auto_recharge.enabled is True
 
     # countdown
     assert await _decrease_countdown(connection, wallet_id) == 4
@@ -147,6 +151,7 @@ async def test_payments_automation_workflow(
     auto_recharge = await _upsert_autorecharge(
         connection,
         wallet_id,
+        enabled=True,
         primary_payment_method_id=payment_method_id,
         min_balance_in_usd=10,
         top_up_amount_in_usd=100,

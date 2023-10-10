@@ -67,7 +67,8 @@ async def replace_wallet_autorecharge(
             )
 
         stmt = AutoRechargeStmts.upsert_wallet_autorecharge(
-            wallet_id,
+            wallet_id=wallet_id,
+            enabled=new.enabled,
             primary_payment_method_id=new.primary_payment_method_id,
             min_balance_in_usd=new.min_balance_in_usd,
             top_up_amount_in_usd=new.top_up_amount_in_usd,
