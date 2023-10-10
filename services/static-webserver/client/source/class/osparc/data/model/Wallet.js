@@ -112,7 +112,7 @@ qx.Class.define("osparc.data.model.Wallet", {
 
   members: {
     getMyAccessRights: function() {
-      this.self().getMyAccessRights(this.getAccessRights());
+      return this.self().getMyAccessRights(this.getAccessRights());
     }
   }
 });

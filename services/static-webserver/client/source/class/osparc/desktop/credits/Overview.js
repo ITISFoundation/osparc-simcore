@@ -174,7 +174,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         height: 25
       });
       const myAccessRights = wallet.getMyAccessRights();
-      buyButton.setVisibility(myAccessRights && myAccessRights["write"] ? "visible" : "excluded");
+      buyButton.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
       buyButton.addListener("execute", () => this.fireDataEvent("buyCredits", {
         walletId: wallet.getWalletId()
       }), this);
