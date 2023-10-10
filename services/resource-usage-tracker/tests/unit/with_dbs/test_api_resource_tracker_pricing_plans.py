@@ -28,9 +28,15 @@ pytest_simcore_ops_services_selection = [
     "adminer",
 ]
 
-_SERVICE_KEY = "simcore/services/comp/itis/sleeper"
+_SERVICE_KEY = "simcore/services/comp/itis/isolve"
 _SERVICE_VERSION = "1.0.16"
 _PRICING_PLAN_ID = 1
+
+_PRICING_UNIT_ID = 2
+
+_SERVICE_KEY_2 = "simcore/services/comp/itis/sleeper"
+_SERVICE_VERSION_2 = "2.10.1"
+_PRICING_PLAN_ID_2 = 2
 
 
 @pytest.fixture()
@@ -47,9 +53,20 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             )
         )
         con.execute(
+            resource_tracker_pricing_plans.insert().values(
+                product_name="osparc",
+                display_name="Sleeper",
+                description="",
+                classification="TIER",
+                is_active=True,
+                pricing_plan_key="sleeper",
+            )
+        )
+        con.execute(
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 unit_name="S",
+                unit_extra_info={},
                 default=False,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -65,7 +82,6 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 cost_per_unit=Decimal(5),
                 valid_from=datetime.now(tz=timezone.utc),
                 valid_to=None,
-                specific_info={},
                 created=datetime.now(tz=timezone.utc),
                 comment="",
                 modified=datetime.now(tz=timezone.utc),
@@ -75,6 +91,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 unit_name="M",
+                unit_extra_info={},
                 default=True,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -90,7 +107,6 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 cost_per_unit=Decimal(15.6),
                 valid_from=datetime.now(tz=timezone.utc),
                 valid_to=None,
-                specific_info={},
                 created=datetime.now(tz=timezone.utc),
                 comment="",
                 modified=datetime.now(tz=timezone.utc),
@@ -100,6 +116,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 unit_name="L",
+                unit_extra_info={},
                 default=False,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -115,7 +132,6 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 cost_per_unit=Decimal(17.7),
                 valid_from=datetime.now(tz=timezone.utc),
                 valid_to=datetime.now(tz=timezone.utc),
-                specific_info={},
                 created=datetime.now(tz=timezone.utc),
                 comment="",
                 modified=datetime.now(tz=timezone.utc),
@@ -130,7 +146,30 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 cost_per_unit=Decimal(28.9),
                 valid_from=datetime.now(tz=timezone.utc),
                 valid_to=None,
+                created=datetime.now(tz=timezone.utc),
+                comment="",
+                modified=datetime.now(tz=timezone.utc),
+            )
+        )
+        con.execute(
+            resource_tracker_pricing_units.insert().values(
+                pricing_plan_id=_PRICING_PLAN_ID_2,
+                unit_name="XXL",
+                unit_extra_info={},
+                default=True,
                 specific_info={},
+                created=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=timezone.utc),
+            ),
+        )
+        con.execute(
+            resource_tracker_pricing_unit_costs.insert().values(
+                pricing_plan_id=_PRICING_PLAN_ID_2,
+                pricing_plan_key="sleeper",
+                pricing_unit_id=4,
+                pricing_unit_name="XXL",
+                cost_per_unit=Decimal(68),
+                valid_from=datetime.now(tz=timezone.utc),
                 created=datetime.now(tz=timezone.utc),
                 comment="",
                 modified=datetime.now(tz=timezone.utc),
@@ -141,6 +180,14 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_plan_id=_PRICING_PLAN_ID,
                 service_key=_SERVICE_KEY,
                 service_version=_SERVICE_VERSION,
+                service_default_plan=True,
+            )
+        )
+        con.execute(
+            resource_tracker_pricing_plan_to_service.insert().values(
+                pricing_plan_id=_PRICING_PLAN_ID_2,
+                service_key=_SERVICE_KEY_2,
+                service_version=_SERVICE_VERSION_2,
                 service_default_plan=True,
             )
         )
@@ -170,10 +217,31 @@ async def test_get_default_pricing_plan_for_service(
     assert data["pricing_units"][1]["unit_name"] == "M"
     assert data["pricing_units"][2]["unit_name"] == "L"
 
-    _PRICING_UNIT_ID = 2
     url = URL(f"/v1/pricing-plans/{_PRICING_PLAN_ID}/pricing-units/{_PRICING_UNIT_ID}")
     response = await async_client.get(f'{url.with_query({"product_name": "osparc"})}')
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
     assert data["pricing_unit_id"] == _PRICING_UNIT_ID
+
+    url = URL(f"/v1/services/{_SERVICE_KEY_2}/{_SERVICE_VERSION_2}/pricing-plan")
+    response = await async_client.get(f'{url.with_query({"product_name": "osparc"})}')
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    assert len(data["pricing_units"]) == 1
+    assert data["pricing_units"][0]["unit_name"] == "XXL"
+
+    bigger_version = "3.10.5"
+    url = URL(f"/v1/services/{_SERVICE_KEY_2}/{bigger_version}/pricing-plan")
+    response = await async_client.get(f'{url.with_query({"product_name": "osparc"})}')
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    assert len(data["pricing_units"]) == 1
+    assert data["pricing_units"][0]["unit_name"] == "XXL"
+
+    smaller_verion = "1.0.0"
+    url = URL(f"/v1/services/{_SERVICE_KEY_2}/{smaller_verion}/pricing-plan")
+    response = await async_client.get(f'{url.with_query({"product_name": "osparc"})}')
+    assert response.status_code == status.HTTP_404_NOT_FOUND
