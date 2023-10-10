@@ -86,9 +86,10 @@ def upgrade():
             ["payments_methods.payment_method_id"],
             name="fk_payments_autorecharge_primary_payment_method_id",
             onupdate="CASCADE",
-            ondelete="SET NULL",
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("primary_payment_method_id"),
         sa.UniqueConstraint("wallet_id"),
     )
     # ### end Alembic commands ###

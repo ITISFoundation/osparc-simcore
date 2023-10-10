@@ -223,3 +223,56 @@ async def test_wallet_autorecharge(
         older_payment_method_id,
     }
     assert sum(pm.auto_recharge for pm in wallet_payment_methods) == 1
+
+
+@pytest.mark.testit
+async def test_delete_primary_payment_method_in_autorecharge(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+):
+    wallet = logged_user_wallet
+    payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
+
+    # attach this payment method to the wallet's auto-recharge
+    response = await client.put(
+        f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
+        json={
+            "paymentMethodId": payment_method_id,
+            "minBalanceInUsd": 0.0,
+            "topUpAmountInUsd": 100.0,  # $
+            "topUpCountdown": 3,
+            "enabled": True,
+        },
+    )
+    data, _ = await assert_status(response, web.HTTPOk)
+    auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+    assert auto_recharge.enabled is True
+    assert auto_recharge.payment_method_id == payment_method_id
+
+    # delete payment-method
+    response = await client.delete(
+        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{payment_method_id}"
+    )
+    await assert_status(response, web.HTTPNoContent)
+
+    # get -> has no payment-method
+    response = await client.get(
+        f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
+    )
+    data, _ = await assert_status(response, web.HTTPOk)
+    auto_recharge_after_delete = GetWalletAutoRecharge.parse_obj(data)
+
+    assert auto_recharge_after_delete.payment_method_id is None
+    assert auto_recharge_after_delete.enabled is False
+
+    # Having a new payment method
+    new_payment_method_id = await _add_payment_method(
+        client, wallet_id=wallet.wallet_id
+    )
+    response = await client.get(
+        f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
+    )
+    data, _ = await assert_status(response, web.HTTPOk)
+    auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+    assert auto_recharge.payment_method_id == new_payment_method_id
+    assert auto_recharge.enabled is False
