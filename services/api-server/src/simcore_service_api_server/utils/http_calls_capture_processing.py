@@ -5,9 +5,13 @@ from urllib.parse import unquote
 import httpx
 import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
-from simcore_service_api_server.core.settings import CatalogSettings, StorageSettings
+from simcore_service_api_server.core.settings import (
+    CatalogSettings,
+    StorageSettings,
+    WebServerSettings,
+)
 
-service_hosts = Literal["storage", "catalog"]
+service_hosts = Literal["storage", "catalog", "webserver"]
 
 
 class CapturedParameterSchema(BaseModel):
@@ -146,7 +150,9 @@ class PathDescription(BaseModel):
 
 
 def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
-    assert response.url.host in get_args(service_hosts)
+    assert response.url.host in get_args(
+        service_hosts
+    ), f"{response.url.host} is not in {service_hosts} - please add it yourself"
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
@@ -161,6 +167,9 @@ def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     elif host == "catalog":
         settings = CatalogSettings()
         url = settings.base_url + "/api/v0/openapi.json"
+    elif host == "webserver":
+        settings = WebServerSettings()
+        url = settings.base_url + "/dev/doc/swagger.json"
     else:
         raise OpenApiSpecIssue(
             f"{host=} has not been added yet to the testing system. Please do so yourself"
