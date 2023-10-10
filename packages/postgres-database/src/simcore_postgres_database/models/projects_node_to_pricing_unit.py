@@ -19,7 +19,7 @@ projects_node_to_pricing_unit = sa.Table(
     metadata,
     sa.Column(
         "project_node_id",
-        sa.Integer,
+        sa.BIGINT,
         sa.ForeignKey(
             projects_nodes.c.project_node_id,
             onupdate="CASCADE",

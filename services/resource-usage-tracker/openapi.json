@@ -540,6 +540,7 @@
         "required": [
           "pricing_unit_id",
           "unit_name",
+          "unit_extra_info",
           "current_cost_per_unit",
           "current_cost_per_unit_id",
           "default",
@@ -556,6 +557,10 @@
           "unit_name": {
             "title": "Unit Name",
             "type": "string"
+          },
+          "unit_extra_info": {
+            "title": "Unit Extra Info",
+            "type": "object"
           },
           "current_cost_per_unit": {
             "title": "Current Cost Per Unit",
