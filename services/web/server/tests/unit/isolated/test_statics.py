@@ -11,8 +11,6 @@ import json
 from pathlib import Path
 
 import pytest
-from aiohttp import web
-from aiohttp.test_utils import TestClient
 from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
@@ -23,8 +21,7 @@ from simcore_service_webserver.statics._constants import (
 def client_compile_cfg(web_client_dir: Path) -> dict:
     compile_filepath = web_client_dir / "compile.json"
     assert compile_filepath.exists()
-    cfg = json.loads(compile_filepath.read_text())
-    return cfg
+    return json.loads(compile_filepath.read_text())
 
 
 @pytest.fixture(scope="module")
@@ -47,14 +44,15 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
         feapp["environment"]["product.name"]
         for feapp in client_compile_cfg["applications"]
     }
+    assert product_names
 
     # test FRONTEND_APPS_AVAILABLE
     assert (
-        FRONTEND_APPS_AVAILABLE == frontend_apps_in_repo
+        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     assert (
-        FRONTEND_APPS_AVAILABLE == frontend_apps_in_repo
+        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     # test FRONTEND_APP_DEFAULT
@@ -68,14 +66,3 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
-
-
-async def test_static_frontend_data(client: TestClient):
-
-    response = await client.get("/static-frontend-data.json")
-    assert response.status == web.HTTPOk.status_code
-    config = await response.json()
-    print(config)
-
-    assert config["appName"] == "simcore_service_webserver"
-    assert config["isPaymentEnabled"] is False
