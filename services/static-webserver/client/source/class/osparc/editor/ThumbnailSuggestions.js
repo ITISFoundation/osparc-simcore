@@ -132,20 +132,24 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       this.setSuggestions(suggestions);
     },
 
+    thumbnailTapped: function(thumbnail) {
+      this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
+      osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
+      this.fireDataEvent("thumbnailTapped", {
+        type: thumbnail.thumbnailType,
+        source: thumbnail.thumbnailFileUrl
+      });
+    },
+
     setSuggestions: function(suggestions) {
       this.removeAll();
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
         const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.thumbnailUrl, maxHeight, parseInt(maxHeight*2/3));
+        thumbnail.thumbnailType = suggestion.type;
+        thumbnail.thumbnailFileUrl = suggestion.fileUrl;
         thumbnail.setMarginLeft(1); // give some extra space to the selection border
-        thumbnail.addListener("tap", () => {
-          this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
-          osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
-          this.fireDataEvent("thumbnailTapped", {
-            type: suggestion.type,
-            source: suggestion.fileUrl
-          });
-        }, this);
+        thumbnail.addListener("tap", () => this.thumbnailTapped(thumbnail), this);
         this.add(thumbnail);
       });
     }
