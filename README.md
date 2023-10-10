@@ -35,7 +35,7 @@ To achieve this, the platform will comprise both state-of-the art and highly det
 
 ## Getting Started
 
-A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at (oSPARC.io)[https://osparc.io]. 
+A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at [oSPARC.io](https://osparc.io). 
 
 If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended). 
 Make sure you first install all the [requirements](#Requirements) mentioned in the section below.
