@@ -18,7 +18,6 @@ class PricingUnitCostsDB(BaseModel):
     cost_per_unit: Decimal
     valid_from: datetime
     valid_to: datetime | None
-    specific_info: dict
     created: datetime
     comment: str
     modified: datetime

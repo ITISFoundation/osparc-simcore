@@ -99,8 +99,8 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      * Creates and adds an underlined title at the header
      */
     _addTitleHeader: function(txt) {
-      let lbl = new qx.ui.basic.Label(txt).set({
-        font: "text-20",
+      const lbl = new qx.ui.basic.Label(txt).set({
+        font: "text-18",
         alignX: "center"
       });
       this.add(lbl, {

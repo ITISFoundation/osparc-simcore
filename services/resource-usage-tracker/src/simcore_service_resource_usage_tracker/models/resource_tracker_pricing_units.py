@@ -13,6 +13,7 @@ class PricingUnitsDB(BaseModel):
     pricing_unit_id: PricingUnitId
     pricing_plan_id: PricingPlanId
     unit_name: str
+    unit_extra_info: dict
     default: bool
     specific_info: dict
     created: datetime
