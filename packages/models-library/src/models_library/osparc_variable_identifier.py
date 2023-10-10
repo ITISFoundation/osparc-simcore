@@ -73,7 +73,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
 
     Or like so:
     ```
-    obj.to_replace_attribute =r eplace_osparc_variable_identifier(obj.to_replace_attribute)
+    obj.to_replace_attribute = replace_osparc_variable_identifier(obj.to_replace_attribute)
     ```
     """
 
