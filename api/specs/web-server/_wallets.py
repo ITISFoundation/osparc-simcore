@@ -58,6 +58,14 @@ async def list_wallets():
     ...
 
 
+@router.get(
+    "/wallets/{wallet_id}",
+    response_model=Envelope[WalletGetWithAvailableCredits],
+)
+async def get_wallet(wallet_id: WalletID):
+    ...
+
+
 @router.put(
     "/wallets/{wallet_id}",
     response_model=Envelope[WalletGet],
