@@ -128,8 +128,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       let existingCollabs = [];
       if (this.__resourceData) {
         if (this.__resourceData["accessRights"]) {
-          // study/template
-          existingCollabs = Object.keys(this.__resourceData["accessRights"]);
+          // study/template/wallet
+          if (this.__resourceData["resourceType"] === "wallet") {
+            existingCollabs = this.__resourceData["accessRights"].map(collab => collab["gid"]);
+          } else {
+            existingCollabs = Object.keys(this.__resourceData["accessRights"]);
+          }
         } else if (this.__resourceData["access_rights"]) {
           // service
           existingCollabs = Object.keys(this.__resourceData["access_rights"]);

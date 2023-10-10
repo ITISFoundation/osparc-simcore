@@ -113,6 +113,10 @@ qx.Class.define("osparc.data.model.Wallet", {
   members: {
     getMyAccessRights: function() {
       return this.self().getMyAccessRights(this.getAccessRights());
+    },
+
+    serialize: function() {
+      return JSON.parse(qx.util.Serializer.toJson(this));
     }
   }
 });
