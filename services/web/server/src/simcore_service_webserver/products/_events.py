@@ -10,6 +10,7 @@ from simcore_postgres_database.utils_products import (
     get_default_product_name,
     get_or_create_product_group,
 )
+from simcore_postgres_database.utils_products_prices import is_payment_enabled
 
 from .._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
 from ..statics._constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
@@ -28,7 +29,6 @@ async def setup_product_templates(app: web.Application):
     with tempfile.TemporaryDirectory(
         suffix=APP_PRODUCTS_TEMPLATES_DIR_KEY
     ) as templates_dir:
-
         app[APP_PRODUCTS_TEMPLATES_DIR_KEY] = Path(templates_dir)
 
         yield
@@ -77,7 +77,10 @@ async def load_products_on_startup(app: web.Application):
         async for row in iter_products(connection):
             try:
                 name = row.name
-                app_products[name] = Product.from_orm(row)
+                is_enabled = await is_payment_enabled(connection, product_name=name)
+                app_products[name] = Product(
+                    **dict(row.items()), is_payment_enabled=is_enabled
+                )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
 
