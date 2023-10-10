@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 class AutoRechargeStmts:
     @staticmethod
-    def is_valid_payment_method(user_id, wallet_id, payment_method_id):
+    def is_valid_payment_method(user_id, wallet_id, payment_method_id) -> sa.sql.Select:
         return sa.select(payments_methods.c.payment_method_id).where(
             (payments_methods.c.user_id == user_id)
             & (payments_methods.c.wallet_id == wallet_id)
@@ -18,7 +18,7 @@ class AutoRechargeStmts:
         )
 
     @staticmethod
-    def get_wallet_autorecharge(wallet_id):
+    def get_wallet_autorecharge(wallet_id) -> sa.sql.Select:
         return (
             sa.select(
                 payments_autorecharge.c.id.label("payments_autorecharge_id"),
@@ -48,16 +48,19 @@ class AutoRechargeStmts:
 
     @staticmethod
     def upsert_wallet_autorecharge(
+        *,
         wallet_id,
+        enabled,
         primary_payment_method_id,
         min_balance_in_usd,
         top_up_amount_in_usd,
         top_up_countdown,
-    ):
+    ) -> sa.sql.Insert:
         # using this primary payment-method, create an autorecharge
         # NOTE: requires the entire
         values = {
             "wallet_id": wallet_id,
+            "enabled": enabled,
             "primary_payment_method_id": primary_payment_method_id,
             "min_balance_in_usd": min_balance_in_usd,
             "top_up_amount_in_usd": top_up_amount_in_usd,
@@ -71,7 +74,7 @@ class AutoRechargeStmts:
         ).returning(sa.literal_column("*"))
 
     @staticmethod
-    def update_wallet_autorecharge(wallet_id, **values):
+    def update_wallet_autorecharge(wallet_id, **values) -> sa.sql.Update:
         return (
             payments_autorecharge.update()
             .values(**values)
@@ -80,7 +83,7 @@ class AutoRechargeStmts:
         )
 
     @staticmethod
-    def decrease_wallet_autorecharge_countdown(wallet_id):
+    def decrease_wallet_autorecharge_countdown(wallet_id) -> sa.sql.Update:
         return (
             payments_autorecharge.update()
             .where(
