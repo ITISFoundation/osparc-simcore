@@ -3,40 +3,18 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import datetime
-from typing import Any
 
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import FAKE
+from pytest_simcore.helpers.rawdata_fakers import random_payment_method
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-
-
-def _utcnow() -> datetime.datetime:
-    return datetime.datetime.now(tz=datetime.timezone.utc)
-
-
-def _random_payment_method(
-    **overrides,
-) -> dict[str, Any]:
-    data = {
-        "payment_method_id": FAKE.uuid4(),
-        "user_id": FAKE.pyint(),
-        "wallet_id": FAKE.pyint(),
-        "initiated_at": _utcnow(),
-    }
-    # state is not added on purpose
-    assert set(data.keys()).issubset({c.name for c in payments_methods.columns})
-
-    data.update(overrides)
-    return data
 
 
 @pytest.fixture
@@ -48,7 +26,7 @@ async def test_create_payment_method(
     connection: SAConnection,
     payment_method_id: str,
 ):
-    init_values = _random_payment_method(payment_method_id=payment_method_id)
+    init_values = random_payment_method(payment_method_id=payment_method_id)
     await connection.execute(payments_methods.insert().values(**init_values))
 
     # unique payment_method_id
@@ -65,7 +43,7 @@ async def test_create_payment_method(
         for _ in range(3):  # payments to wallet_id by user_id
             await connection.execute(
                 payments_methods.insert().values(
-                    **_random_payment_method(wallet_id=wallet_id, user_id=user_id)
+                    **random_payment_method(wallet_id=wallet_id, user_id=user_id)
                 )
             )
 
