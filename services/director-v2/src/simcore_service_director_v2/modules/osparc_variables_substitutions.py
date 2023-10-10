@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import Any
 
 from fastapi import FastAPI
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
@@ -31,6 +32,7 @@ async def substitute_vendor_secrets_in_specs(
     *,
     service_key: ServiceKey,
     service_version: ServiceVersion,
+    product_name: ProductName,
 ) -> dict[str, Any]:
     assert specs  # nosec
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
@@ -39,7 +41,9 @@ async def substitute_vendor_secrets_in_specs(
     if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
         # checks before to avoid unnecesary calls to pg
         vendor_secrets = await repo.get_vendor_secrets(
-            service_key=service_key, service_version=service_version
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
         )
 
         # resolve substitutions
