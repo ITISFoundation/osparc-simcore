@@ -7375,6 +7375,7 @@ components:
       required:
       - pricingUnitId
       - unitName
+      - unitAttributes
       - currentCostPerUnit
       - default
       type: object
@@ -7387,6 +7388,9 @@ components:
         unitName:
           title: Unitname
           type: string
+        unitAttributes:
+          title: Unitattributes
+          type: object
         currentCostPerUnit:
           title: Currentcostperunit
           type: number
