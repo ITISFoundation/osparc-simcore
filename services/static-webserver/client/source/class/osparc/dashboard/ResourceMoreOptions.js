@@ -68,7 +68,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // Page title
       if (title) {
         tabPage.add(new qx.ui.basic.Label(title).set({
-          font: "text-15"
+          font: "text-14"
         }));
       }
 
