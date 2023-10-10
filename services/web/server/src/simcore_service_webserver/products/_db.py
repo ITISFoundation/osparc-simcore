@@ -9,6 +9,7 @@ from pydantic import parse_obj_as
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
     get_product_latest_credit_price_or_none,
+    is_payment_enabled,
 )
 
 from ..db.base_repository import BaseRepository
@@ -57,7 +58,10 @@ class ProductRepository(BaseRepository):
                 sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
             )
             row: RowProxy | None = await result.first()
-            return Product.from_orm(row) if row else None
+            if row:
+                enabled = await is_payment_enabled(conn, product_name=row.name)
+                return Product(**dict(row.items()), is_payment_enabled=enabled)
+            return None
 
     async def get_product_latest_credit_price_or_none(
         self, product_name: str

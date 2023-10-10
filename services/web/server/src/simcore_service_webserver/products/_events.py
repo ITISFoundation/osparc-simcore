@@ -77,9 +77,9 @@ async def load_products_on_startup(app: web.Application):
         async for row in iter_products(connection):
             try:
                 name = row.name
-                app_products[name] = product = Product.from_orm(row)
-                product.is_payment_enabled = await is_payment_enabled(
-                    connection, product_name=name
+                is_enabled = await is_payment_enabled(connection, product_name=name)
+                app_products[name] = Product(
+                    **dict(row.items()), is_payment_enabled=is_enabled
                 )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec

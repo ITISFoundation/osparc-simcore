@@ -13,7 +13,9 @@ from simcore_service_webserver.products._db import Product
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Product,),
+    [
+        Product,
+    ],
 )
 def test_product_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
