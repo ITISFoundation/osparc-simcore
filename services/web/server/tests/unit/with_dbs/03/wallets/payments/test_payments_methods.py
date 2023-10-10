@@ -202,6 +202,13 @@ async def test_wallet_autorecharge(
     )
     data, _ = await assert_status(response, web.HTTPOk)
     updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+    assert updated_auto_recharge == GetWalletAutoRecharge(
+        payment_method_id=payment_method_id,
+        min_balance_in_usd=0.0,
+        top_up_amount_in_usd=100.0,  # $
+        top_up_countdown=3,
+        enabled=True,
+    )
 
     # get
     response = await client.get(
@@ -225,7 +232,6 @@ async def test_wallet_autorecharge(
     assert sum(pm.auto_recharge for pm in wallet_payment_methods) == 1
 
 
-@pytest.mark.testit
 async def test_delete_primary_payment_method_in_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
