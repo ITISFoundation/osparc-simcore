@@ -556,6 +556,6 @@ async def get_job_wallet(
 
     except ProjectNotFoundError:
         return create_error_json_response(
-            f"Cannot find job={job_name} to delete",
+            f"Cannot find job={job_name}",
             status_code=status.HTTP_404_NOT_FOUND,
         )

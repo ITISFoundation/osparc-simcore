@@ -371,13 +371,12 @@ class AuthSession:
 
     async def get_project_wallet(self, project_id: ProjectID) -> WalletGet:
         with _handle_webserver_api_errors():
-            response = await self.client.patch(
+            response = await self.client.get(
                 f"/projects/{project_id}/wallet",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
             data = Envelope[WalletGet].parse_raw(response.text).data
-            assert data  # nosec
             return data
 
     # WALLETS -------------------------------------------------
