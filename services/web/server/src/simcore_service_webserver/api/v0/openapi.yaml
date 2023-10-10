@@ -5560,12 +5560,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/WalletGetWithAvailableCredits'
-    Envelope_WalletAutoRecharge_:
-      title: Envelope[WalletAutoRecharge]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/WalletAutoRecharge'
         error:
           title: Error
     Envelope_WalletGet_:
