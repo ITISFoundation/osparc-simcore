@@ -100,13 +100,19 @@ qx.Class.define("osparc.data.model.Wallet", {
     }
   },
 
-  members: {
-    getMyAccessRights: function() {
+  statics: {
+    getMyAccessRights: function(accessRights) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid && this.getAccessRights()) {
-        return this.getAccessRights().find(accessRight => accessRight["gid"] === myGid);
+      if (myGid && accessRights) {
+        return accessRights.find(aR => aR["gid"] === myGid);
       }
       return null;
+    }
+  },
+
+  members: {
+    getMyAccessRights: function() {
+      this.self().getMyAccessRights(this.getAccessRights());
     }
   }
 });

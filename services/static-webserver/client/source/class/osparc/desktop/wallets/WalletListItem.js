@@ -127,6 +127,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             alignY: "middle",
             visibility: "hidden"
           });
+          this.bind("accessRights", control, "enabled", {
+            converter: accessRights => {
+              const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
+              return Boolean(myAr && myAr["write"]);
+            }
+          });
           control.addListener("execute", () => this.fireDataEvent("buyCredits", {
             walletId: this.getKey()
           }), this);
