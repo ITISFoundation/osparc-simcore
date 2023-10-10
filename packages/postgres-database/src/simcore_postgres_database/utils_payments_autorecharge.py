@@ -55,7 +55,7 @@ class AutoRechargeStmts:
         min_balance_in_usd,
         top_up_amount_in_usd,
         top_up_countdown,
-    ) -> sa.sql.Insert:
+    ):
         # using this primary payment-method, create an autorecharge
         # NOTE: requires the entire
         values = {
