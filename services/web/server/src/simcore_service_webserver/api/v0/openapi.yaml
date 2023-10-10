@@ -2593,6 +2593,75 @@ paths:
                 $ref: '#/components/schemas/Envelope__ProjectNodePreview_'
         '404':
           description: Node has no preview
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
+    get:
+      tags:
+      - projects
+      summary: Get currently connected pricing unit to the project node.
+      operationId: get_project_node_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
+    put:
+      tags:
+      - projects
+      summary: Connect pricing unit to the project node (Project node can have only
+        one pricing unit)
+      operationId: connect_pricing_unit_to_project_node
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/inputs:
     get:
       tags:
@@ -3847,6 +3916,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
   /v0/wallets/{wallet_id}:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet
+      operationId: get_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
     put:
       tags:
       - wallets
@@ -5372,6 +5462,14 @@ components:
           - $ref: '#/components/schemas/NodeGetIdle'
         error:
           title: Error
+    Envelope_Union_PricingUnitGet__NoneType__:
+      title: Envelope[Union[PricingUnitGet, NoneType]]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingUnitGet'
+        error:
+          title: Error
     Envelope_Union_TestFailed__TestPassed__:
       title: Envelope[Union[TestFailed, TestPassed]]
       type: object
@@ -5397,6 +5495,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UsersGroup'
+        error:
+          title: Error
+    Envelope_WalletGetWithAvailableCredits_:
+      title: Envelope[WalletGetWithAvailableCredits]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
     Envelope_WalletGet_:
@@ -6794,6 +6900,7 @@ components:
       - STUDY_SHARED
       - TEMPLATE_SHARED
       - ANNOTATION_NOTE
+      - WALLET_SHARED
       type: string
       description: An enumeration.
     OrderDirection:
@@ -7268,6 +7375,7 @@ components:
       required:
       - pricingUnitId
       - unitName
+      - unitAttributes
       - currentCostPerUnit
       - default
       type: object
@@ -7280,6 +7388,9 @@ components:
         unitName:
           title: Unitname
           type: string
+        unitAttributes:
+          title: Unitattributes
+          type: object
         currentCostPerUnit:
           title: Currentcostperunit
           type: number
@@ -9791,6 +9902,10 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: integration version number
+        progress_regexp:
+          title: Progress Regexp
+          type: string
+          description: regexp pattern for detecting computational service's progress
         type:
           allOf:
           - $ref: '#/components/schemas/ServiceType'

@@ -199,7 +199,9 @@ qx.Class.define("osparc.editor.ClusterEditor", {
         }
         case "save": {
           const buttons = this.getChildControl("buttonsLayout");
-          control = new osparc.ui.form.FetchButton(this.tr("Save"));
+          control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
+            appearance: "strong-button"
+          });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
               control.setFetching(true);

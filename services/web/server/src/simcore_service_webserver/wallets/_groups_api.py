@@ -27,6 +27,7 @@ class WalletGroupGet(BaseModel):
 
 async def create_wallet_group(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     group_id: GroupID,
@@ -58,6 +59,7 @@ async def create_wallet_group(
 
 async def list_wallet_groups_by_user_and_wallet(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     product_name: ProductName,
@@ -83,6 +85,7 @@ async def list_wallet_groups_by_user_and_wallet(
 
 async def list_wallet_groups_with_read_access_by_wallet(
     app: web.Application,
+    *,
     wallet_id: WalletID,
 ) -> list[WalletGroupGet]:
     wallet_groups_db: list[
@@ -100,6 +103,7 @@ async def list_wallet_groups_with_read_access_by_wallet(
 
 async def update_wallet_group(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     group_id: GroupID,
@@ -138,6 +142,7 @@ async def update_wallet_group(
 
 async def delete_wallet_group(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     group_id: GroupID,

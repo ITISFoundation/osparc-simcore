@@ -68,9 +68,9 @@ async def test_webserver_one_time_payment_workflow(
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mock_payments_gateway_service_api_base: MockRouter,
-    mock_init_payment_route: Callable,
+    mock_payments_routes: Callable,
 ):
-    mock_init_payment_route(mock_payments_gateway_service_api_base)
+    mock_payments_routes(mock_payments_gateway_service_api_base)
 
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 

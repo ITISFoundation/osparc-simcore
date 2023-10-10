@@ -40,6 +40,13 @@ resource_tracker_pricing_units = sa.Table(
         doc="The custom name of the pricing plan, ex. SMALL, MEDIUM, LARGE",
     ),
     sa.Column(
+        "unit_extra_info",
+        JSONB,
+        nullable=False,
+        default="'{}'::jsonb",
+        doc="Additional public information about pricing unit, ex. more detail description or how many CPUs there are.",
+    ),
+    sa.Column(
         "default",
         sa.Boolean(),
         nullable=False,

@@ -96,6 +96,7 @@ qx.Class.define("osparc.po.Invitations", {
       const form = new qx.ui.form.Form();
 
       const userEmail = new qx.ui.form.TextField().set({
+        required: true,
         placeholder: this.tr("new.user@email.address")
       });
       form.add(userEmail, this.tr("User Email"));
@@ -120,28 +121,30 @@ qx.Class.define("osparc.po.Invitations", {
         if (!osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
           return;
         }
-        if (this.__generatedInvitationLayout) {
-          this._remove(this.__generatedInvitationLayout);
-        }
-        const params = {
-          data: {
-            "guest": userEmail.getValue()
+        if (form.validate()) {
+          if (this.__generatedInvitationLayout) {
+            this._remove(this.__generatedInvitationLayout);
           }
-        };
-        if (withExpiration.getValue()) {
-          params.data["trialAccountDays"] = trialDays.getValue();
+          const params = {
+            data: {
+              "guest": userEmail.getValue()
+            }
+          };
+          if (withExpiration.getValue()) {
+            params.data["trialAccountDays"] = trialDays.getValue();
+          }
+          generateInvitationBtn.setFetching(true);
+          osparc.data.Resources.fetch("invitations", "post", params)
+            .then(data => {
+              const generatedInvitationLayout = this.__generatedInvitationLayout = this.__createGeneratedInvitationLayout(data);
+              this._add(generatedInvitationLayout);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
+            })
+            .finally(() => generateInvitationBtn.setFetching(false));
         }
-        generateInvitationBtn.setFetching(true);
-        osparc.data.Resources.fetch("invitations", "post", params)
-          .then(data => {
-            const generatedInvitationLayout = this.__generatedInvitationLayout = this.__createGeneratedInvitationLayout(data);
-            this._add(generatedInvitationLayout);
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-          })
-          .finally(() => generateInvitationBtn.setFetching(false));
       }, this);
       form.addButton(generateInvitationBtn);
 

@@ -28,13 +28,20 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           .then(values => {
             const isDevel = values[0];
             const isStaging = values[1];
-            if ((isDevel || isStaging) && osparc.product.Utils.isProduct("s4l")) {
+            if ((isDevel || isStaging) && (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4lacad"))) {
               resolve(true);
             } else {
               resolve(false);
             }
           });
       });
+    },
+
+    creditsToFixed: function(credits) {
+      if (credits < 100) {
+        return (credits).toFixed(1);
+      }
+      return parseInt(credits);
     },
 
     createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {

@@ -22,6 +22,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..payments.errors import (
     PaymentCompletedError,
@@ -83,6 +84,7 @@ class WalletsPathParams(StrictRequestParams):
 
 
 @routes.post(f"/{VTAG}/wallets", name="create_wallet")
+@requires_dev_feature_enabled  # NOTE: one wallet per user+product. SEE _events.py:_auto_add_default_wallet
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
@@ -116,6 +118,26 @@ async def list_wallets(request: web.Request):
     )
 
     return envelope_json_response(wallets)
+
+
+@routes.get(f"/{VTAG}/wallets/{{wallet_id}}", name="get_wallet")
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def get_wallet(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(WalletsPathParams, request)
+
+    wallet: WalletGetWithAvailableCredits = (
+        await _api.get_wallet_with_available_credits_by_user_and_wallet(
+            app=request.app,
+            wallet_id=path_params.wallet_id,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
+    )
+
+    return envelope_json_response(wallet)
 
 
 @routes.put(

@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaz)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -35,7 +35,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
   },
 
   members: {
-    __validateCodeTF: null,
     __validateCodeBtn: null,
     __resendCodeSMSBtn: null,
     __resendCodeEmailBtn: null,
@@ -48,17 +47,22 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       });
       this.add(introText);
 
-      const validateCodeTF = this.__validateCodeTF = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Type code"),
+      // form
+      const validateCodeTF = new qx.ui.form.TextField().set({
         required: true
       });
-      this.add(validateCodeTF);
+      this._form.add(validateCodeTF, this.tr("Type code"), null, "validationCode");
       this.addListener("appear", () => {
         validateCodeTF.focus();
         validateCodeTF.activate();
         this.__restartTimers();
       });
 
+      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
         center: true,
         appearance: "strong-button"
@@ -76,10 +80,10 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       });
       resendLayout.add(resendCodeDesc);
 
-      const resendBtnsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const resendButtonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      resendLayout.add(resendBtnsLayout);
+      resendLayout.add(resendButtonsLayout);
 
       const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Via SMS") + ` (60)`,
@@ -88,7 +92,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.bind("userPhoneNumber", resendCodeSMSBtn, "visibility", {
         converter: pNumber => pNumber ? "visible" : "excluded"
       });
-      resendBtnsLayout.add(resendCodeSMSBtn, {
+      resendButtonsLayout.add(resendCodeSMSBtn, {
         flex: 1
       });
       resendCodeSMSBtn.addListener("execute", () => {
@@ -110,7 +114,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         label: this.tr("Via email") + ` (60)`,
         enabled: false
       });
-      resendBtnsLayout.add(resendCodeEmailBtn, {
+      resendButtonsLayout.add(resendCodeEmailBtn, {
         flex: 1
       });
       resendCodeEmailBtn.addListener("execute", () => {
@@ -140,6 +144,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     __validateCodeLogin: function() {
       this.__validateCodeBtn.setFetching(true);
 
+      const validationCodeTF = this._form.getItems()["validationCode"];
+      const validationCode = validationCodeTF.getValue();
+
       const loginFun = log => {
         this.__validateCodeBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
@@ -149,16 +156,17 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         this.__validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Invalid code");
-        this.__validateCodeTF.set({
-          invalidMessage: msg,
-          valid: false
-        });
+        validationCodeTF.setInvalidMessage(msg);
 
         osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
-      const manager = osparc.auth.Manager.getInstance();
-      manager.validateCodeLogin(this.getUserEmail(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
+      if (this._form.validate()) {
+        const manager = osparc.auth.Manager.getInstance();
+        manager.validateCodeLogin(this.getUserEmail(), validationCode, loginFun, failFun, this);
+      } else {
+        this.__validateCodeBtn.setFetching(true);
+      }
     },
 
     _onAppear: function() {
