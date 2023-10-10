@@ -60,8 +60,8 @@ class _ContentWithShortNames(InvitationContent):
             "trial_account_days": {
                 "alias": "t",
             },
-            "free_credits": {
-                "alias": "f",
+            "extra_credits": {
+                "alias": "e",
             },
             "created": {
                 "alias": "c",
