@@ -113,8 +113,18 @@ qx.Class.define("osparc.auth.LoginPage", {
       const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
 
       pages.add(login);
-      pages.add(register);
-      pages.add(requestAccount);
+      osparc.data.Resources.getOne("config")
+        .then(config => {
+          if (config["invitation_required"]) {
+            if (osparc.product.Utils.getProductName().includes("s4l")) {
+              // all S4Ls
+              pages.add(requestAccount);
+            }
+            // TIS  pops up a 'send us an email' dialog
+          } else {
+            pages.add(register);
+          }
+        });
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
@@ -169,7 +179,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
-      login.addListener("toReset", e => {
+      login.addListener("toReset", () => {
         pages.setSelection([resetRequest]);
         login.resetValues();
       }, this);
