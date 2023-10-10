@@ -23,13 +23,28 @@ _logger = logging.getLogger(__name__)
 #
 
 # NOTE: This also asserts that all model fields are in sync with sqlalchemy columns
-_COLUMNS_IN_MODEL = [products.columns[f] for f in Product.__fields__]
+_PRODUCTS_COLUMNS = [
+    products.c.name,
+    products.c.display_name,
+    products.c.short_name,
+    products.c.host_regex,
+    products.c.support_email,
+    products.c.twilio_messaging_sid,
+    products.c.vendor,
+    products.c.issues,
+    products.c.manuals,
+    products.c.support,
+    products.c.login_settings,
+    products.c.registration_email_template,
+    products.c.max_open_studies_per_user,
+    products.c.group_id,
+]
 
 
 async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     """Iterates on products sorted by priority i.e. the first is considered the default"""
     async for row in conn.execute(
-        sa.select(*_COLUMNS_IN_MODEL).order_by(products.c.priority)
+        sa.select(*_PRODUCTS_COLUMNS).order_by(products.c.priority)
     ):
         assert row  # nosec
         yield row
@@ -39,7 +54,7 @@ class ProductRepository(BaseRepository):
     async def get_product(self, product_name: str) -> Product | None:
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
-                sa.select(_COLUMNS_IN_MODEL).where(products.c.name == product_name)
+                sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
             )
             row: RowProxy | None = await result.first()
             return Product.from_orm(row) if row else None
