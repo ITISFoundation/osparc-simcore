@@ -188,6 +188,13 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
+          "free_credits": {
+            "title": "Free Credits",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, the account's primary wallet will top this amount of credits",
+            "minimum": 0
+          },
           "created": {
             "title": "Created",
             "type": "string",
@@ -231,6 +238,13 @@
             "exclusiveMinimum": true,
             "type": "integer",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          },
+          "free_credits": {
+            "title": "Free Credits",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, the account's primary wallet will top this amount of credits",
             "minimum": 0
           },
           "created": {
@@ -283,6 +297,13 @@
             "exclusiveMinimum": true,
             "type": "integer",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          },
+          "free_credits": {
+            "title": "Free Credits",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, the account's primary wallet will top this amount of credits",
             "minimum": 0
           }
         },
