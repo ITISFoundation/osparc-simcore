@@ -86,7 +86,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       if (!(nodeId in this.__thumbnailsPerNode)) {
         this.__thumbnailsPerNode[nodeId] = [];
       }
-      this.__thumbnailsPerNode[nodeId].push(thumbnailData);
+      this.__thumbnailsPerNode[nodeId].unshift(thumbnailData);
       this.fireEvent("thumbnailAdded");
     },
 
