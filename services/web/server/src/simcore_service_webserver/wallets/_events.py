@@ -38,7 +38,7 @@ async def _auto_add_default_wallet(
                 wallet_name=wallet.name,
                 user_id=user_id,
                 user_email=user.email,
-                osparc_credits=extra_credits,
+                osparc_credits=extra_credits,  # type: ignore
                 payment_id="INVITATION",  # TODO: invitation id???
                 created_at=wallet.created,
             )
