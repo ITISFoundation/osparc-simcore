@@ -7,7 +7,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, PositiveInt
-from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmt
+from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmts
 
 from ..db.plugin import get_database_engine
 from .errors import InvalidPaymentMethodError
@@ -36,7 +36,7 @@ async def get_wallet_autorecharge(
     wallet_id: WalletID,
 ) -> PaymentsAutorechargeDB | None:
     async with get_database_engine(app).acquire() as conn:
-        stmt = AutoRechargeStmt.get_wallet_autorecharge(wallet_id)
+        stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
         result = await conn.execute(stmt)
         row = await result.first()
         return PaymentsAutorechargeDB.from_orm(row) if row else None
@@ -55,7 +55,7 @@ async def replace_wallet_autorecharge(
 
     """
     async with get_database_engine(app).acquire() as conn:
-        stmt = AutoRechargeStmt.is_valid_payment_method(
+        stmt = AutoRechargeStmts.is_valid_payment_method(
             user_id=user_id,
             wallet_id=new.wallet_id,
             payment_method_id=new.primary_payment_method_id,
@@ -66,7 +66,7 @@ async def replace_wallet_autorecharge(
                 payment_method_id=new.primary_payment_method_id
             )
 
-        stmt = AutoRechargeStmt.upsert_wallet_autorecharge(
+        stmt = AutoRechargeStmts.upsert_wallet_autorecharge(
             wallet_id,
             primary_payment_method_id=new.primary_payment_method_id,
             min_balance_in_usd=new.min_balance_in_usd,

@@ -17,7 +17,7 @@ from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmt
+from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmts
 
 #
 # HELPERS
@@ -26,7 +26,7 @@ from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeSt
 
 async def _get_auto_recharge(connection, wallet_id) -> RowProxy | None:
     # has recharge trigger?
-    stmt = AutoRechargeStmt.get_wallet_autorecharge(wallet_id)
+    stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
     result = await connection.execute(stmt)
     return await result.first()
 
@@ -35,7 +35,7 @@ async def _is_valid_payment_method(
     connection, user_id, wallet_id, payment_method_id
 ) -> bool:
 
-    stmt = AutoRechargeStmt.is_valid_payment_method(
+    stmt = AutoRechargeStmts.is_valid_payment_method(
         user_id, wallet_id, payment_method_id
     )
     primary_payment_method_id = await connection.scalar(stmt)
@@ -52,7 +52,7 @@ async def _upsert_autorecharge(
 ) -> RowProxy:
     # using this primary payment-method, create an autorecharge
     # NOTE: requires the entire
-    stmt = AutoRechargeStmt.upsert_wallet_autorecharge(
+    stmt = AutoRechargeStmts.upsert_wallet_autorecharge(
         wallet_id,
         primary_payment_method_id,
         min_balance_in_usd,
@@ -65,12 +65,12 @@ async def _upsert_autorecharge(
 
 
 async def _update_autorecharge(connection, wallet_id, **settings) -> int | None:
-    stmt = AutoRechargeStmt.update_wallet_autorecharge(wallet_id, **settings)
+    stmt = AutoRechargeStmts.update_wallet_autorecharge(wallet_id, **settings)
     return await connection.scalar(stmt)
 
 
 async def _decrease_countdown(connection, wallet_id) -> int | None:
-    stmt = AutoRechargeStmt.decrease_wallet_autorecharge_countdown(wallet_id)
+    stmt = AutoRechargeStmts.decrease_wallet_autorecharge_countdown(wallet_id)
     # updates payments countdown
     return await connection.scalar(stmt)
 
