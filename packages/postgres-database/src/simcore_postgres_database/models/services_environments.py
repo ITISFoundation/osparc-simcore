@@ -31,6 +31,20 @@ services_vendor_secrets = sa.Table(
         doc="Defines the minimum version (included) from which these secrets apply",
     ),
     sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            name="fk_services_name_products",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        # NOTE: since this is part of ta primary key this is required
+        # NOTE: an alternative would be to not use this as a primary key
+        server_default="osparc",
+        doc="Product Identifier",
+    ),
+    sa.Column(
         "secrets_map",
         JSONB,
         nullable=False,
@@ -51,6 +65,9 @@ services_vendor_secrets = sa.Table(
         # all versions above will take the secret_map for the previous one.
     ),
     sa.PrimaryKeyConstraint(
-        "service_key", "service_base_version", name="services_vendor_secrets_pk"
+        "service_key",
+        "service_base_version",
+        "product_name",
+        name="services_vendor_secrets_pk",
     ),
 )
