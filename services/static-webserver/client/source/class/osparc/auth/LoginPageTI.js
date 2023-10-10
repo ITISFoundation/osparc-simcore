@@ -23,19 +23,6 @@
 qx.Class.define("osparc.auth.LoginPageTI", {
   extend: osparc.auth.LoginPage,
 
-  /*
-  *****************************************************************************
-     CONSTRUCTOR
-  *****************************************************************************
-  */
-  construct: function() {
-    this.base(arguments);
-  },
-
-  events: {
-    "done": "qx.event.type.Data"
-  },
-
   members: {
     // overridden
     _buildLayout: function() {

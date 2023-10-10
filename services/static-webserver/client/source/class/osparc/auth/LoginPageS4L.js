@@ -33,10 +33,6 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
     }
   },
 
-  events: {
-    "done": "qx.event.type.Data"
-  },
-
   members: {
     // overridden
     _buildLayout: function() {
