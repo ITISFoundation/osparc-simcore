@@ -8,9 +8,11 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
+from simcore_service_resource_usage_tracker.core.errors import (
+    CustomResourceUsageTrackerError,
+)
 
 from ..api.dependencies import get_repository
-from ..core.errors import ResourceUsageTrackerCustomRuntimeError
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
@@ -33,7 +35,7 @@ async def get_service_default_pricing_plan(
             break
 
     if default_pricing_plan is None:
-        raise ResourceUsageTrackerCustomRuntimeError(
+        raise CustomResourceUsageTrackerError(
             msg="No default pricing plan for the specified service"
         )
 
@@ -54,6 +56,7 @@ async def get_service_default_pricing_plan(
             PricingUnitGet(
                 pricing_unit_id=unit.pricing_unit_id,
                 unit_name=unit.unit_name,
+                unit_extra_info=unit.unit_extra_info,
                 current_cost_per_unit=unit.current_cost_per_unit,
                 current_cost_per_unit_id=unit.current_cost_per_unit_id,
                 default=unit.default,
@@ -79,6 +82,7 @@ async def get_pricing_unit(
     return PricingUnitGet(
         pricing_unit_id=pricing_unit.pricing_unit_id,
         unit_name=pricing_unit.unit_name,
+        unit_extra_info=pricing_unit.unit_extra_info,
         current_cost_per_unit=pricing_unit.current_cost_per_unit,
         current_cost_per_unit_id=pricing_unit.current_cost_per_unit_id,
         default=pricing_unit.default,

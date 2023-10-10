@@ -43,11 +43,7 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import (
-    CreateServiceRunError,
-    CreateTransactionError,
-    ResourceUsageTrackerCustomRuntimeError,
-)
+from ....core.errors import CustomResourceUsageTrackerError
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
@@ -110,7 +106,9 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CreateServiceRunError(msg=f"Service was not created: {data}")
+            raise CustomResourceUsageTrackerError(
+                msg=f"Service was not created: {data}"
+            )
         return row[0]
 
     async def update_service_run_last_heartbeat(
@@ -292,7 +290,9 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CreateTransactionError(msg=f"Transaction was not created: {data}")
+            raise CustomResourceUsageTrackerError(
+                msg=f"Transaction was not created: {data}"
+            )
         return row[0]
 
     async def update_credit_transaction_credits(
@@ -399,12 +399,22 @@ class ResourceTrackerRepository(BaseRepository):
             return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
 
         async with self.db_engine.begin() as conn:
-            query = sa.select(
-                resource_tracker_pricing_plan_to_service.c.service_key,
-                resource_tracker_pricing_plan_to_service.c.service_version,
-            )
+            # Firstly find the correct service version
             query = (
-                query.where(
+                sa.select(
+                    resource_tracker_pricing_plan_to_service.c.service_key,
+                    resource_tracker_pricing_plan_to_service.c.service_version,
+                )
+                .select_from(
+                    resource_tracker_pricing_plan_to_service.join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                            == resource_tracker_pricing_plans.c.pricing_plan_id
+                        ),
+                    )
+                )
+                .where(
                     (
                         _version(
                             resource_tracker_pricing_plan_to_service.c.service_version
@@ -425,36 +435,49 @@ class ResourceTrackerRepository(BaseRepository):
                 )
                 .limit(1)
             )
-
             result = await conn.execute(query)
             row = result.first()
             if row is None:
                 return []
             latest_service_key, latest_service_version = row
-
-            query = sa.select(
-                resource_tracker_pricing_plans.c.pricing_plan_id,
-                resource_tracker_pricing_plans.c.display_name,
-                resource_tracker_pricing_plans.c.description,
-                resource_tracker_pricing_plans.c.classification,
-                resource_tracker_pricing_plans.c.is_active,
-                resource_tracker_pricing_plans.c.created,
-                resource_tracker_pricing_plans.c.pricing_plan_key,
-                resource_tracker_pricing_plan_to_service.c.service_default_plan,
-            )
-            query = query.where(
-                (
-                    _version(resource_tracker_pricing_plan_to_service.c.service_version)
-                    == _version(latest_service_version)
+            # Now choose all pricing plans connected to this service
+            query = (
+                sa.select(
+                    resource_tracker_pricing_plans.c.pricing_plan_id,
+                    resource_tracker_pricing_plans.c.display_name,
+                    resource_tracker_pricing_plans.c.description,
+                    resource_tracker_pricing_plans.c.classification,
+                    resource_tracker_pricing_plans.c.is_active,
+                    resource_tracker_pricing_plans.c.created,
+                    resource_tracker_pricing_plans.c.pricing_plan_key,
+                    resource_tracker_pricing_plan_to_service.c.service_default_plan,
                 )
-                & (
-                    resource_tracker_pricing_plan_to_service.c.service_key
-                    == latest_service_key
+                .select_from(
+                    resource_tracker_pricing_plan_to_service.join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                            == resource_tracker_pricing_plans.c.pricing_plan_id
+                        ),
+                    )
                 )
-                & (resource_tracker_pricing_plans.c.product_name == product_name)
-                & (resource_tracker_pricing_plans.c.is_active.is_(True))
-            ).order_by(
-                resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
+                .where(
+                    (
+                        _version(
+                            resource_tracker_pricing_plan_to_service.c.service_version
+                        )
+                        == _version(latest_service_version)
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_key
+                        == latest_service_key
+                    )
+                    & (resource_tracker_pricing_plans.c.product_name == product_name)
+                    & (resource_tracker_pricing_plans.c.is_active.is_(True))
+                )
+                .order_by(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
+                )
             )
             result = await conn.execute(query)
 
@@ -473,6 +496,7 @@ class ResourceTrackerRepository(BaseRepository):
             resource_tracker_pricing_units.c.pricing_unit_id,
             resource_tracker_pricing_units.c.pricing_plan_id,
             resource_tracker_pricing_units.c.unit_name,
+            resource_tracker_pricing_units.c.unit_extra_info,
             resource_tracker_pricing_units.c.default,
             resource_tracker_pricing_units.c.specific_info,
             resource_tracker_pricing_units.c.created,
@@ -567,7 +591,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise ResourceUsageTrackerCustomRuntimeError(
+            raise CustomResourceUsageTrackerError(
                 msg=f"Pricing unit id {pricing_unit_id} not found"
             )
         return PricingUnitsDB.from_orm(row)
@@ -589,7 +613,6 @@ class ResourceTrackerRepository(BaseRepository):
                 resource_tracker_pricing_unit_costs.c.cost_per_unit,
                 resource_tracker_pricing_unit_costs.c.valid_from,
                 resource_tracker_pricing_unit_costs.c.valid_to,
-                resource_tracker_pricing_unit_costs.c.specific_info,
                 resource_tracker_pricing_unit_costs.c.created,
                 resource_tracker_pricing_unit_costs.c.comment,
                 resource_tracker_pricing_unit_costs.c.modified,
@@ -601,7 +624,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         row = result.first()
         if row is None:
-            raise ResourceUsageTrackerCustomRuntimeError(
-                msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table"
+            raise CustomResourceUsageTrackerError(
+                msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
             )
         return PricingUnitCostsDB.from_orm(row)

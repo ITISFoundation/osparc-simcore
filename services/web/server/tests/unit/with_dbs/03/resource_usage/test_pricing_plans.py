@@ -65,7 +65,7 @@ async def test_list_service_usage(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert mock_rut_api_responses
-    assert len(data.keys()) == 4
+    assert len(data.keys()) == 5
     assert data["unitName"] == "SMALL"
 
     # Get default pricing plan for service
