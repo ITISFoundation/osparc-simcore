@@ -24,7 +24,15 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -481,6 +489,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         if run_id:
             obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)  # type: ignore[no-any-return]
+
+    @validator("user_preferences_path", pre=True)
+    @classmethod
+    def strip_path_serialization_to_none(cls, v):
+        if v == "None":
+            return None
+        return v
 
     @classmethod
     def from_service_inspect(
