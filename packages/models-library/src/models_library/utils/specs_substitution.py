@@ -85,7 +85,7 @@ class SpecsSubstitutionsResolver:
             if identifier in mappings:
                 resolved_identifiers[identifier] = cast(str, mappings[identifier])
             elif default_value is not None:
-                resolved_identifiers[identifier] = cast(str, default_value)
+                resolved_identifiers[identifier] = default_value
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)
         return self._substitutions
