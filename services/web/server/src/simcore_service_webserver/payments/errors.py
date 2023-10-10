@@ -38,3 +38,12 @@ class PaymentMethodAlreadyAckedError(PaymentsMethodsError):
 
 class PaymentMethodUniqueViolationError(PaymentsMethodsError):
     msg_template = "Payment method '{payment_method_id}' aready exists"
+
+
+#
+# autorecharge
+#
+
+
+class InvalidPaymentMethodError(PaymentsMethodsError):
+    msg_template = "Invalid payment method '{payment_method_id}'"
