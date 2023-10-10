@@ -380,6 +380,19 @@ class AuthSession:
             assert data  # nosec
             return data
 
+    # WALLETS -------------------------------------------------
+
+    async def get_wallet(self, wallet_id: int) -> WalletGet:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/wallets/{wallet_id}",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[WalletGet].parse_raw(response.text).data
+            assert data  # nosec
+            return data
+
 
 # MODULES APP SETUP -------------------------------------------------------------
 
