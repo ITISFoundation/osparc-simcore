@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 
 import asyncio
@@ -152,14 +153,24 @@ async def test_chown_triggers_event(
     )
 
 
+@pytest.mark.parametrize("file_is_present", [True, False])
 async def test_regression_logging_event_handler_file_does_not_exist(
-    faker: Faker, log_receiver: LogRecordKeeper
+    faker: Faker,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+    file_is_present: bool,
 ):
+    caplog.clear()
     mocked_event = Mock()
-    missing_path = f"/missing-path{faker.uuid4()}"
-    mocked_event.src_path = Path(missing_path)
-    _logging_event_handler._LoggingEventHandler().event_handler(mocked_event)
-    assert (
-        log_receiver.has_log_within(msg="Attribute change to", levelname="INFO")
-        is False
+    file_path = tmp_path / f"missing-path{faker.uuid4()}"
+    if file_is_present:
+        file_path.touch()
+        assert file_path.exists() is True
+    else:
+        assert file_path.exists() is False
+
+    mocked_event.src_path = file_path
+    _logging_event_handler._LoggingEventHandler().event_handler(  # noqa: SLF001
+        mocked_event
     )
+    assert (f"Attribute change to: '{file_path}'" in caplog.text) is file_is_present
