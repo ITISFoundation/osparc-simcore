@@ -137,7 +137,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "credits-left-view":
-          control = this.__getCreditsLeftView();
+          control = this.__getCreditsIndicator();
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "buttons-layout":
@@ -323,10 +323,10 @@ qx.Class.define("osparc.study.StudyOptions", {
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
     },
 
-    __getCreditsLeftView: function() {
-      const creditsLeftView = new osparc.desktop.credits.CreditsLabel();
-      this.bind("wallet", creditsLeftView, "wallet");
-      return creditsLeftView;
+    __getCreditsIndicator: function() {
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
+      this.bind("wallet", creditsIndicator, "wallet");
+      return creditsIndicator;
     }
   }
 });
