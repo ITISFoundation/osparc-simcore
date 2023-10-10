@@ -69,17 +69,17 @@ qx.Class.define("osparc.auth.LoginPage", {
         flex: 1
       });
 
-      const image = this._getLogoWPlatform();
+      const image = this.__getLogoWPlatform();
       loginLayout.add(image);
 
-      const pages = this._getLoginStack();
+      const pages = this.__getLoginStack();
       loginLayout.add(pages);
 
       loginLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
-      const versionLink = this._getVersionLink();
+      const versionLink = this.__getVersionLink();
       loginLayout.add(versionLink);
 
       const scrollView = new qx.ui.container.Scroll();
@@ -87,7 +87,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return scrollView;
     },
 
-    _getLogoWPlatform: function() {
+    __getLogoWPlatform: function() {
       const image = new osparc.ui.basic.LogoWPlatform();
       image.setSize({
         width: 240,
@@ -97,7 +97,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return image;
     },
 
-    _getLoginStack: function() {
+    __getLoginStack: function() {
       const pages = new qx.ui.container.Stack().set({
         allowGrowX: false,
         allowGrowY: false,
@@ -232,7 +232,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return pages;
     },
 
-    _getVersionLink: function() {
+    __getVersionLink: function() {
       const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
