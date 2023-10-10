@@ -39,7 +39,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
 
   statics: {
     LAYOUT_HEIGHT: 320,
-    NODES_TREE_WIDTH: 160,
     THUMBNAIL_SLIDER_HEIGHT: 60
   },
 
@@ -49,16 +48,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "nodes-tree":
-          control = this.__getNodesTree().set({
-            backgroundColor: "transparent",
-            minWidth: this.self().NODES_TREE_WIDTH,
-            maxWidth: this.self().NODES_TREE_WIDTH,
-            maxHeight: this.self().LAYOUT_HEIGHT,
-            marginLeft: -18
-          });
-          this._add(control);
-          break;
         case "thumbnails-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this._add(control, {
@@ -87,18 +76,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       return control || this.base(arguments, id);
     },
 
-    __getNodesTree: function() {
-      const nodesTree = new osparc.widget.NodesTree().set({
-        hideRoot: false,
-        simpleNodes: true
-      });
-      // Do not show the nodes tree if it's a mononode study
-      if (this.__study.isPipelineMononode()) {
-        nodesTree.exclude();
-      }
-      return nodesTree;
-    },
-
     __getThumbnailSuggestions: function() {
       const thumbnailSuggestions = new osparc.editor.ThumbnailSuggestions().set({
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
@@ -108,20 +85,11 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __buildLayout: function() {
-      // For now, do not show the Nodes Tree
-      // this.getChildControl("nodes-tree");
       this.getChildControl("thumbnail-suggestions");
       this.getChildControl("thumbnail-viewer-layout");
     },
 
     __attachEventHandlers: function() {
-      /*
-      const nodesTree = this.getChildControl("nodes-tree");
-      nodesTree.addListener("changeSelectedNode", e => {
-        const selectedNodeId = e.getData();
-        scrollThumbnails.setSelectedNodeId(selectedNodeId);
-      });
-      */
       const scrollThumbnails = this.getChildControl("thumbnail-suggestions");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
@@ -176,11 +144,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __initComponents: function() {
-      /*
-      const nodesTree = this.getChildControl("nodes-tree");
-      nodesTree.setStudy(this.__study);
-      */
-
       const thumbnailSuggestions = this.getChildControl("thumbnail-suggestions");
       // make it visible only if there are thumbnails
       this.exclude();
@@ -204,15 +167,13 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
         .then(previewsPerNodes => {
           thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes);
-          // select the latest preview
+          // show the last preview by default
           const thumbnails = thumbnailSuggestions.getChildren();
           if (thumbnails && thumbnails.length) {
-            thumbnailSuggestions.thumbnailTapped(thumbnails[0]);
+            thumbnailSuggestions.thumbnailTapped(thumbnails[thumbnails.length-1]);
           }
         })
         .catch(err => console.error(err));
-
-      thumbnailSuggestions.setSelectedNodeId(null);
     },
 
     __isWorkbenchUIPreviewVisible: function() {
