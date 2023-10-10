@@ -38,37 +38,6 @@ qx.Theme.define("osparc.theme.Font", {
       size: 13
     },
 
-    "text-30": {
-      include: "defaults",
-      size: 30
-    },
-
-    "text-26": {
-      include: "defaults",
-      size: 24
-    },
-
-    "text-24": {
-      include: "defaults",
-      size: 24
-    },
-
-    "text-22": {
-      include: "defaults",
-      size: 22
-    },
-
-    "title-20": {
-      include: "defaults",
-      size: 20,
-      bold: true
-    },
-
-    "text-20": {
-      include: "defaults",
-      size: 20
-    },
-
     "title-18": {
       include: "defaults",
       size: 18,
@@ -89,11 +58,6 @@ qx.Theme.define("osparc.theme.Font", {
     "text-16": {
       include: "defaults",
       size: 16
-    },
-
-    "text-15": {
-      include: "defaults",
-      size: 15
     },
 
     "title-14": {
@@ -122,12 +86,6 @@ qx.Theme.define("osparc.theme.Font", {
     "text-12": {
       include: "defaults",
       size: 12
-    },
-
-    "text-12-italic": {
-      include: "defaults",
-      size: 12,
-      italic: true
     },
 
     "link-label-12": {

@@ -21,12 +21,11 @@ from simcore_service_webserver.statics._constants import (
 def client_compile_cfg(web_client_dir: Path) -> dict:
     compile_filepath = web_client_dir / "compile.json"
     assert compile_filepath.exists()
-    cfg = json.loads(compile_filepath.read_text())
-    return cfg
+    return json.loads(compile_filepath.read_text())
 
 
 @pytest.fixture(scope="module")
-def source_boot_index_html(web_client_dir: Path) -> str:
+def source_boot_index_html(web_client_dir: Path) -> Path:
     index_html = web_client_dir / "source" / "boot" / "index.html"
     assert index_html.exists()
     return index_html
@@ -45,14 +44,15 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
         feapp["environment"]["product.name"]
         for feapp in client_compile_cfg["applications"]
     }
+    assert product_names
 
     # test FRONTEND_APPS_AVAILABLE
     assert (
-        FRONTEND_APPS_AVAILABLE == frontend_apps_in_repo
+        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     assert (
-        FRONTEND_APPS_AVAILABLE == frontend_apps_in_repo
+        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     # test FRONTEND_APP_DEFAULT

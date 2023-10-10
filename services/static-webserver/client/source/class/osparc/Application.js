@@ -128,14 +128,7 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => {
-                osparc.store.VendorInfo.getInstance().getVendor()
-                  .then(vendor => {
-                    const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
-                    this.__loadLoginPage(landingPage);
-                  })
-                  .catch(() => this.__loadLoginPage(false));
-              });
+              .catch(() => this.__loadLoginPage(false));
           }
           break;
         }
@@ -185,14 +178,7 @@ qx.Class.define("osparc.Application", {
           osparc.utils.Utils.cookie.deleteCookie("user");
           osparc.auth.Manager.getInstance().validateToken()
             .then(() => this.__loadMainPage())
-            .catch(() => {
-              osparc.store.VendorInfo.getInstance().getVendor()
-                .then(vendor => {
-                  const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
-                  this.__loadLoginPage(landingPage);
-                })
-                .catch(() => this.__loadLoginPage(false));
-            });
+            .catch(() => this.__loadLoginPage(false));
           break;
         }
         case "error": {
@@ -321,33 +307,18 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => {
-            osparc.store.VendorInfo.getInstance().getVendor()
-              .then(vendor => {
-                const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
-                this.__loadLoginPage(landingPage);
-              })
-              .catch(() => this.__loadLoginPage(false));
-          });
+          .catch(() => this.__loadLoginPage(false));
       }
     },
 
-    __loadLoginPage: function(landingPage = false) {
+    __loadLoginPage: function() {
       this.__disconnectWebSocket();
       let view = null;
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
         case "s4llite":
         case "s4lacad":
-          if (landingPage) {
-            view = new osparc.product.landingPage.s4llite.Page();
-            view.addListener("loginPressed", () => {
-              view.close();
-              this.__loadLoginPage(false);
-            });
-          } else {
-            view = new osparc.auth.LoginPageS4L();
-          }
+          view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;
         case "tis":
@@ -355,7 +326,7 @@ qx.Class.define("osparc.Application", {
           this.__loadView(view);
           break;
         default: {
-          view = new osparc.auth.LoginPage();
+          view = new osparc.auth.LoginPageOsparc();
           this.__loadView(view, {
             top: "15%"
           });
@@ -455,7 +426,7 @@ qx.Class.define("osparc.Application", {
       }
       doc.add(view, options);
       this.__current = view;
-      if (!(view instanceof osparc.desktop.MainPage || view instanceof osparc.product.landingPage.s4llite.Page)) {
+      if (!(view instanceof osparc.desktop.MainPage)) {
         this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
           backgroundColor: "transparent"
         });

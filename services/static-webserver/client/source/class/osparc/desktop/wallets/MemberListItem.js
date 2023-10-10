@@ -50,9 +50,9 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
       if ("getWrite" in accessRights && accessRights.getWrite()) {
-        subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
+        subtitle.setValue(osparc.data.Roles.WALLET[2].label);
       } else if ("getRead" in accessRights && accessRights.getRead()) {
-        subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
+        subtitle.setValue(osparc.data.Roles.WALLET[1].label);
       }
     },
 

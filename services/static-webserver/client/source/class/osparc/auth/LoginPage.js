@@ -22,6 +22,7 @@
 
 qx.Class.define("osparc.auth.LoginPage", {
   extend: qx.ui.core.Widget,
+  type: "abstract",
 
   /*
   *****************************************************************************
@@ -40,32 +41,53 @@ qx.Class.define("osparc.auth.LoginPage", {
 
   members: {
     _buildLayout: function() {
-      // Layout guarantees it gets centered in parent's page
-      const layout = new qx.ui.layout.Grid(20, 20);
-      layout.setRowFlex(1, 1);
-      layout.setColumnFlex(0, 1);
-      this._setLayout(layout);
+      throw new Error("Abstract method called!");
+    },
 
-      const image = this._getLogoWPlatform();
-      this._add(image, {
-        row: 0,
-        column: 0
-      });
-
-      const pages = this._getLoginStack();
-      this._add(pages, {
-        row: 1,
-        column: 0
-      });
-
-      const versionLink = this._getVersionLink();
-      this._add(versionLink, {
-        row: 2,
-        column: 0
+    _setBackgroundImage: function(backgroundImage) {
+      this.getContentElement().setStyles({
+        "background-image": backgroundImage,
+        "background-repeat": "no-repeat",
+        "background-size": "auto 85%", // auto width, 85% height
+        "background-position": "0% 100%" // left bottom
       });
     },
 
-    _getLogoWPlatform: function() {
+    _resetBackgroundImage: function() {
+      this.getContentElement().setStyles({
+        "background-image": ""
+      });
+    },
+
+    _getMainLayout: function() {
+      const loginLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      loginLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const image = this.__getLogoWPlatform();
+      loginLayout.add(image);
+
+      const pages = this.__getLoginStack();
+      loginLayout.add(pages);
+
+      loginLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const versionLink = this.__getVersionLink();
+      loginLayout.add(versionLink);
+
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(loginLayout);
+      return scrollView;
+    },
+
+    __getLogoWPlatform: function() {
       const image = new osparc.ui.basic.LogoWPlatform();
       image.setSize({
         width: 240,
@@ -75,7 +97,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return image;
     },
 
-    _getLoginStack: function() {
+    __getLoginStack: function() {
       const pages = new qx.ui.container.Stack().set({
         allowGrowX: false,
         allowGrowY: false,
@@ -91,12 +113,36 @@ qx.Class.define("osparc.auth.LoginPage", {
       const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
 
       pages.add(login);
-      pages.add(register);
-      pages.add(requestAccount);
+      osparc.data.Resources.getOne("config")
+        .then(config => {
+          if (config["invitation_required"]) {
+            if (osparc.product.Utils.getProductName().includes("s4l")) {
+              // all S4Ls
+              pages.add(requestAccount);
+            }
+            // TIS  pops up a 'send us an email' dialog
+          } else {
+            pages.add(register);
+          }
+        });
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
       pages.add(login2FAValidationCode);
+
+      // styling
+      pages.getChildren().forEach(page => {
+        page.getChildren().forEach(child => {
+          if ("getChildren" in child) {
+            child.getChildren().forEach(c => {
+              // "Create account" and "Forgot password"
+              c.set({
+                textColor: "#ddd"
+              });
+            });
+          }
+        });
+      });
 
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
@@ -133,7 +179,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
-      login.addListener("toReset", e => {
+      login.addListener("toReset", () => {
         pages.setSelection([resetRequest]);
         login.resetValues();
       }, this);
@@ -196,7 +242,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return pages;
     },
 
-    _getVersionLink: function() {
+    __getVersionLink: function() {
       const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({

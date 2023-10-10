@@ -33,6 +33,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     this._add(intro);
 
     this._add(this.__getWalletsFilter());
+    this._add(osparc.data.Roles.createRolesWalletInfo());
     this._add(this.__getWalletsList(), {
       flex: 1
     });

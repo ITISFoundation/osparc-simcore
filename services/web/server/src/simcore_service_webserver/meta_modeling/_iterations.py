@@ -203,7 +203,7 @@ async def get_or_create_runnable_projects(
     If project_uuid is a meta-project, then it returns iterations
     """
 
-    vc_repo = VersionControlForMetaModeling(request)
+    vc_repo = VersionControlForMetaModeling.create_from_request(request)
     assert vc_repo.user_id  # nosec
 
     try:
@@ -313,7 +313,7 @@ async def get_runnable_projects_ids(
     request: web.Request,
     project_uuid: ProjectID,
 ) -> list[ProjectID]:
-    vc_repo = VersionControlForMetaModeling(request)
+    vc_repo = VersionControlForMetaModeling.create_from_request(request)
     assert vc_repo.user_id  # nosec
 
     project: ProjectDict = await vc_repo.get_project(str(project_uuid))

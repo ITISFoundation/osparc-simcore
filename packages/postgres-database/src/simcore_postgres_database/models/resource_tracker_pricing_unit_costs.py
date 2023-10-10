@@ -5,7 +5,6 @@
     history and do not update the rows of this table.
 """
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
 from .base import metadata
@@ -64,13 +63,6 @@ resource_tracker_pricing_unit_costs = sa.Table(
         nullable=True,
         doc="To when the pricing unit was active, if null it is still active",
         index=True,
-    ),
-    sa.Column(
-        "specific_info",
-        JSONB,
-        nullable=False,
-        default="'{}'::jsonb",
-        doc="Specific internal info of the pricing unit, ex. for tiers we can store in which EC2 instance type we run the service.",
     ),
     column_created_datetime(timezone=True),
     sa.Column(
