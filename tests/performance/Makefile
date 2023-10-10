@@ -5,6 +5,7 @@ include ../../scripts/common.Makefile
 
 LOCUST_VERSION=2.5.1
 export LOCUST_VERSION
+
 # UTILS
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
@@ -21,10 +22,6 @@ __check_defined = \
     $(if $(value $1),, \
       $(error Undefined $1$(if $2, ($2))))
 
-.env: .env-devel ## creates .env file from defaults in .env-devel
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 .PHONY: build
 build: ## builds distributed osparc locust docker image
