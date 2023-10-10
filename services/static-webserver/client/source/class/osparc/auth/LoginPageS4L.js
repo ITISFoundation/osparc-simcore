@@ -44,7 +44,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
 
     __resized: function() {
       const width = document.documentElement.clientWidth;
-      this.setCompactVersion(width < 800);
+      this.setCompactVersion(width < 2*(osparc.auth.core.BaseAuthPage.FORM_WIDTH + 50));
     },
 
     __reloadLayout: function() {
@@ -88,15 +88,14 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       this.getContentElement().setStyles({
         "background-image": backgroundImage,
         "background-repeat": "no-repeat",
-        "background-size": "auto 100%"
+        "background-size": "auto 85%", // auto width, 85% height
+        "background-position": "0% 100%" // left bottom
       });
     },
 
     __resetBackgroundImage: function() {
       this.getContentElement().setStyles({
-        "background-image": "",
-        "background-repeat": "no-repeat",
-        "background-size": "auto 100%"
+        "background-image": ""
       });
     },
 
