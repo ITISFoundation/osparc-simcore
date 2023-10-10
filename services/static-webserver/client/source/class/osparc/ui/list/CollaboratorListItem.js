@@ -143,11 +143,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
       if (this.self().canDelete(accessRights)) {
-        subtitle.setValue(osparc.data.Roles.RESOURCE[3].longLabel);
+        subtitle.setValue(osparc.data.Roles.RESOURCE[3].label);
       } else if (this.self().canWrite(accessRights)) {
-        subtitle.setValue(osparc.data.Roles.RESOURCE[2].longLabel);
+        subtitle.setValue(osparc.data.Roles.RESOURCE[2].label);
       } else {
-        subtitle.setValue(osparc.data.Roles.RESOURCE[1].longLabel);
+        subtitle.setValue(osparc.data.Roles.RESOURCE[1].label);
       }
     },
 

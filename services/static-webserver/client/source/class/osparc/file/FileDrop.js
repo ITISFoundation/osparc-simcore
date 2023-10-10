@@ -227,7 +227,7 @@ qx.Class.define("osparc.file.FileDrop", {
       const boxHeight = 60;
       if (this.__dropMe === null) {
         this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
-          font: "text-15",
+          font: "text-14",
           textAlign: "center"
         });
         this._add(this.__dropMe);
