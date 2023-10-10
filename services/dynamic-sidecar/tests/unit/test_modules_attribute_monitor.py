@@ -8,10 +8,11 @@ import pickle
 import socket
 import threading
 from collections import deque
+from collections.abc import AsyncIterator, Iterator
 from logging.handlers import DEFAULT_UDP_LOGGING_PORT, DatagramHandler
 from pathlib import Path
-from typing import AsyncIterator, Final, Iterator
-from unittest.mock import AsyncMock
+from typing import Final
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -148,4 +149,17 @@ async def test_chown_triggers_event(
     await asyncio.sleep(ENSURE_LOGS_DELIVERED)
     assert log_receiver.has_log_within(
         msg=f"Attribute change to: '{file_path}'", levelname="INFO"
+    )
+
+
+async def test_regression_logging_event_handler_file_does_not_exist(
+    faker: Faker, log_receiver: LogRecordKeeper
+):
+    mocked_event = Mock()
+    missing_path = f"/missing-path{faker.uuid4()}"
+    mocked_event.src_path = Path(missing_path)
+    _logging_event_handler._LoggingEventHandler().event_handler(mocked_event)
+    assert (
+        log_receiver.has_log_within(msg="Attribute change to", levelname="INFO")
+        is False
     )
