@@ -6306,6 +6306,10 @@ components:
           exclusiveMinimum: true
           type: integer
           description: Maximum number of top-ups left or None to denote unlimited
+        extraCredits:
+          title: Extracredits
+          exclusiveMinimum: true
+          type: integer
           minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
@@ -6465,6 +6469,11 @@ components:
           format: email
         trialAccountDays:
           title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        extraCredits:
+          title: Extracredits
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -7472,7 +7481,7 @@ components:
       required:
       - pricingUnitId
       - unitName
-      - unitAttributes
+      - unitExtraInfo
       - currentCostPerUnit
       - default
       type: object
@@ -7485,8 +7494,8 @@ components:
         unitName:
           title: Unitname
           type: string
-        unitAttributes:
-          title: Unitattributes
+        unitExtraInfo:
+          title: Unitextrainfo
           type: object
         currentCostPerUnit:
           title: Currentcostperunit
