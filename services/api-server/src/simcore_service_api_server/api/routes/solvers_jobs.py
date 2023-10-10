@@ -11,6 +11,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
@@ -533,3 +534,28 @@ async def replace_job_custom_metadata(
                 f"Cannot find job={job_name} ",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
+    response_model=WalletGet,
+    responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_job_wallet(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Getting wallet for job '%s'", job_name)
+
+    try:
+        return await webserver_api.get_project_wallet(project_id=job_id)
+
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find job={job_name} to delete",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
