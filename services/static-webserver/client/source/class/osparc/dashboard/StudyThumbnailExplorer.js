@@ -185,28 +185,37 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       // make it visible only if there are thumbnails
       this.exclude();
       thumbnailSuggestions.addListener("thumbnailAdded", () => this.show());
-      if (this.__showWorkbenchUIPreview()) {
+
+      if (this.__isWorkbenchUIPreviewVisible()) {
         thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
       }
+
       thumbnailSuggestions.setStudy(this.__study);
+
+      if (this.__isWorkbenchUIPreviewVisible()) {
+        this.__showInThumbnailViewer("workbenchUIPreview");
+      }
+
       const params = {
         url: {
           studyId: this.__study.getUuid()
         }
       };
       osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
-        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes))
+        .then(previewsPerNodes => {
+          thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes);
+          // select the latest preview
+          const thumbnails = thumbnailSuggestions.getChildren();
+          if (thumbnails && thumbnails.length) {
+            thumbnailSuggestions.thumbnailTapped(thumbnails[0]);
+          }
+        })
         .catch(err => console.error(err));
 
       thumbnailSuggestions.setSelectedNodeId(null);
-
-      // Do not add the preview if the study is in App Mode
-      if (this.__showWorkbenchUIPreview()) {
-        this.__showInThumbnailViewer("workbenchUIPreview");
-      }
     },
 
-    __showWorkbenchUIPreview: function() {
+    __isWorkbenchUIPreviewVisible: function() {
       return !["guided", "app"].includes(this.__study.getUi().getMode());
     }
   }
