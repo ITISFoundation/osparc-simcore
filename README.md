@@ -35,7 +35,10 @@ To achieve this, the platform will comprise both state-of-the art and highly det
 
 ## Getting Started
 
-This is the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended). Make sure you first install all the [requirements](#Requirements) mentioned below.
+A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at (oSPARC.io)[https://osparc.io]. 
+
+If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended). 
+Make sure you first install all the [requirements](#Requirements) mentioned in the section below.
 
 ```bash
   # clone code repository
@@ -88,7 +91,7 @@ To verify current base OS, Docker and Python build versions have a look at:
 
 When developing on these platforms you are on your own.
 
-In **Windows**, it works under [WSL2] (Windows Subsystem for Linux **version2**). Some details on the setup:
+On **Windows**, it works under [WSL2] (Windows Subsystem for Linux **version2**). Some details on the setup:
 
 - Follow **all details** on [how to setup WSL2 with docker and ZSH](https://nickymeuleman.netlify.app/blog/linux-on-windows-wsl2-zsh-docker) docker for windows and [WSL2]
 
