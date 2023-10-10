@@ -176,7 +176,10 @@ async def test_auto_wallet_on_user_registration_confirmation(
     assert len(data) == 0
 
     await notify_user_confirmation(
-        client.app, user_id=logged_user["id"], product_name=osparc_product_name
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        extra_credits=10,
     )
 
     resp = await client.get(f"{url}")
