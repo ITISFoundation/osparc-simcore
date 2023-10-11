@@ -10,6 +10,7 @@ from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -48,7 +49,7 @@ from ..core.validation import (
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
-from ..modules import nodeports
+from ..modules import nodeports, user_services_preferences
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, event_propagation_disabled
 from .long_running_tasksutils import run_before_shutdown_actions
@@ -168,6 +169,10 @@ async def task_create_service_containers(
     assert shared_store.compose_spec  # nosec
 
     async with event_propagation_disabled(app), _reset_on_error(shared_store):
+        with log_context(_logger, logging.INFO, "load user services preferences"):
+            if user_services_preferences.is_feature_enabled(app):
+                await user_services_preferences.load_user_services_preferences(app)
+
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
@@ -267,6 +272,10 @@ async def task_runs_docker_compose_down(
             await send_service_stopped(app, simcore_platform_status)
 
     try:
+        with log_context(_logger, logging.INFO, "save user services preferences"):
+            if user_services_preferences.is_feature_enabled(app):
+                await user_services_preferences.save_user_services_preferences(app)
+
         progress.update(message="running docker-compose-down", percent=0.1)
 
         await run_before_shutdown_actions(

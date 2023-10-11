@@ -1225,54 +1225,6 @@ qx.Class.define("osparc.data.Resources", {
       return this.getInstance().get(resource, params, useCache);
     },
 
-    dummy: {
-      newWalletData: function() {
-        return {
-          "walletId": Math.floor(Math.random() * 1000),
-          name: "New Wallet",
-          description: "",
-          thumbnail: null,
-          owner: null,
-          "availableCredits": 0,
-          status: "ACTIVE",
-          accessRights: []
-        };
-      },
-
-      getUsageDetailed: function() {
-        return new Promise(resolve => {
-          resolve([{
-            "studyName": "Prj_1",
-            "jobType": "MESH",
-            "start": "2023-06-05T09:35:29.026Z",
-            "end": "2023-06-05T09:40:29.026Z",
-            "duration": 277233,
-            "computingTime": 1200000,
-            "numberOfCores": 4,
-            "status": "FINISHED"
-          }, {
-            "studyName": "Prj_1",
-            "jobType": "SIMULATION",
-            "start": "2023-06-06T09:35:29.026Z",
-            "end": "2023-06-06T09:40:29.026Z",
-            "duration": 1429861,
-            "computingTime": 11520000,
-            "numberOfCores": 8,
-            "status": "FINISHED"
-          }, {
-            "studyName": "Prj_2",
-            "jobType": "SIMULATION",
-            "start": "2023-06-06T10:37:29.026Z",
-            "end": "2023-06-06T10:42:29.026Z",
-            "duration": 1182460,
-            "computingTime": 9600000,
-            "numberOfCores": 8,
-            "status": "CANCELED"
-          }]);
-        });
-      }
-    },
-
     getServiceUrl: function(key, version) {
       return {
         "key": encodeURIComponent(key),

@@ -28,7 +28,12 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           .then(values => {
             const isDevel = values[0];
             const isStaging = values[1];
-            if ((isDevel || isStaging) && (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4lacad"))) {
+            if ((isDevel || isStaging) && (
+              osparc.product.Utils.isProduct("s4l") ||
+              osparc.product.Utils.isProduct("s4lacad") ||
+              osparc.product.Utils.isProduct("s4ldesktop") ||
+              osparc.product.Utils.isProduct("s4lacaddesktop")
+            )) {
               resolve(true);
             } else {
               resolve(false);
