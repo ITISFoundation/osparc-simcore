@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import dataclass
 from decimal import Decimal
 
 from models_library.api_schemas_webserver.wallets import PaymentID
@@ -7,11 +8,22 @@ from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..models.db import PaymentsTransactionsDB
 
 
-class PaymentsTransactionsRepo:
+@dataclass
+class BaseRepository:
+    """
+    Repositories are pulled at every request
+    """
+
+    db_engine: AsyncEngine
+
+
+class PaymentsTransactionsRepo(BaseRepository):
+
     #
     # Next PRs should move most of the implementations in
     # services/web/server/src/simcore_service_webserver/payments/_db.py
