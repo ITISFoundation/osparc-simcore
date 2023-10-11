@@ -1,7 +1,6 @@
 # pylint: disable=unsubscriptable-object
 
 import json
-import re
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -10,7 +9,6 @@ from typing import Any, ClassVar, Literal, TypeAlias
 from pydantic import (
     BaseModel,
     ByteSize,
-    ConstrainedStr,
     Extra,
     Field,
     Json,
@@ -25,16 +23,10 @@ from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
-from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
-
-# NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
-
-
-class OEnvSubstitutionStr(ConstrainedStr):
-    regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
 
 class _BaseConfig:
+    arbitrary_types_allowed = True
     extra = Extra.forbid
     keep_untouched = (cached_property,)
 
@@ -98,6 +90,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         return v
 
     class Config(_BaseConfig):
+        allow_population_by_field_name = True
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # constraints

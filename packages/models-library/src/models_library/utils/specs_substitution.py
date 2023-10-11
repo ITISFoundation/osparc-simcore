@@ -1,6 +1,6 @@
+import json
 from typing import Any, TypeAlias, cast
 
-import yaml
 from pydantic import StrictBool, StrictFloat, StrictInt
 
 from .string_substitution import (
@@ -14,6 +14,14 @@ from .string_substitution import (
 SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
+def _json_dumps(data: dict[str, Any]) -> str:
+    return json.dumps(data)
+
+
+def _json_loads(str_data: str) -> dict[str, Any]:
+    return cast(dict[str, Any], json.loads(str_data))
+
+
 class SpecsSubstitutionsResolver:
     """
     Resolve specs dict by substituting identifiers
@@ -22,7 +30,7 @@ class SpecsSubstitutionsResolver:
 
     """
 
-    def __init__(self, specs: dict[str, Any], upgrade: bool):
+    def __init__(self, specs: dict[str, Any], *, upgrade: bool):
         self._template = self._create_text_template(specs, upgrade=upgrade)
         self._substitutions: SubstitutionsDict = SubstitutionsDict()
 
@@ -31,7 +39,7 @@ class SpecsSubstitutionsResolver:
         cls, specs: dict[str, Any], *, upgrade: bool
     ) -> TextTemplate:
         # convert to yaml (less symbols as in json)
-        service_spec_str: str = yaml.safe_dump(specs)
+        service_spec_str: str = _json_dumps(specs)
 
         if upgrade:  # legacy
             service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
@@ -55,22 +63,33 @@ class SpecsSubstitutionsResolver:
         return self._substitutions
 
     def set_substitutions(
-        self, environs: dict[str, SubstitutionValue]
+        self, mappings: dict[str, SubstitutionValue]
     ) -> SubstitutionsDict:
-        """NOTE: ONLY targets identifiers declared in the specs"""
-        identifiers_needed = self.get_identifiers()
+        """
+        NOTE: ONLY targets identifiers declared in the specs
+        NOTE:`${identifier:-a_default_value}` will replace the identifier with `a_default_value`
+        if not provided
+        """
 
+        required_identifiers = self.get_identifiers()
+
+        required_identifiers_with_defaults: dict[str, str | None] = {}
+        for identifier in required_identifiers:
+            parts = identifier.split(":-")
+            required_identifiers_with_defaults[identifier] = (
+                parts[1] if ":-" in identifier else None
+            )
+
+        resolved_identifiers: dict[str, str] = {}
+        for identifier, default_value in required_identifiers_with_defaults.items():
+            if identifier in mappings:
+                resolved_identifiers[identifier] = cast(str, mappings[identifier])
+            elif default_value is not None:
+                resolved_identifiers[identifier] = default_value
         # picks only needed for substitution
-        self._substitutions = SubstitutionsDict(
-            {
-                identifier: environs[identifier]
-                for identifier in identifiers_needed
-                if identifier in environs
-            }
-        )
+        self._substitutions = SubstitutionsDict(resolved_identifiers)
         return self._substitutions
 
     def run(self) -> dict[str, Any]:
         new_specs_txt: str = self._template.safe_substitute(self._substitutions)
-        new_specs = yaml.safe_load(new_specs_txt)
-        return cast(dict[str, Any], new_specs)
+        return _json_loads(new_specs_txt)

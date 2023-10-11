@@ -15,7 +15,7 @@ import itertools
 import json
 import random
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Final
 from uuid import uuid4
 
@@ -146,7 +146,7 @@ def random_product(
     group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = FAKE,
-    **overrides
+    **overrides,
 ):
     """
 
@@ -181,5 +181,27 @@ def random_product(
     }
 
     assert set(data.keys()).issubset({c.name for c in products.columns})
+    data.update(overrides)
+    return data
+
+
+def utcnow() -> datetime:
+    return datetime.now(tz=timezone.utc)
+
+
+def random_payment_method(
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.payments_methods import payments_methods
+
+    data = {
+        "payment_method_id": FAKE.uuid4(),
+        "user_id": FAKE.pyint(),
+        "wallet_id": FAKE.pyint(),
+        "initiated_at": utcnow(),
+    }
+    # state is not added on purpose
+    assert set(data.keys()).issubset({c.name for c in payments_methods.columns})
+
     data.update(overrides)
     return data
