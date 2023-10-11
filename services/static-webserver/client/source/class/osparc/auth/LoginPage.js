@@ -119,10 +119,8 @@ qx.Class.define("osparc.auth.LoginPage", {
           // all S4Ls
           pages.add(requestAccount);
         }
-        // TIS  pops up a 'send us an email' dialog
-      } else {
-        pages.add(register);
       }
+      pages.add(register);
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
