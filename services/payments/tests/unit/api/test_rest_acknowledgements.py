@@ -8,7 +8,7 @@ async def test_login_complete_payment(
     client: httpx.AsyncClient, faker: Faker, auth_headers: dict[str, str]
 ):
     payments_id = faker.uuid4()
-    payment_ack = AckPayment(success=True).dict()
+    payment_ack = AckPayment(success=True, invoice_url=faker.url()).dict()
 
     # w/o header
     response = await client.post(
