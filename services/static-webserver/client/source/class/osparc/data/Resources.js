@@ -66,6 +66,34 @@ qx.Class.define("osparc.data.Resources", {
      */
     statics.resources = {
       /*
+       * CONFIG
+       */
+      "config": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/config"
+          }
+        }
+      },
+
+      /*
+       * STATICS
+       * Gets the json file containing some runtime server variables.
+       */
+      "statics": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/static-frontend-data.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
        * STUDIES
        */
       "studies": {
@@ -425,18 +453,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/catalog/dags/{dagId}"
-          }
-        }
-      },
-      /*
-       * CONFIG
-       */
-      "config": {
-        useCache: true,
-        endpoints: {
-          getOne: {
-            method: "GET",
-            url: statics.API + "/config"
           }
         }
       },
@@ -981,21 +997,6 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/tags/{tagId}"
           }
         }
-      },
-
-      /*
-       * STATICS
-       * Gets the json file containing some runtime server variables.
-       */
-      "statics": {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: "/static-frontend-data.json",
-            isJsonFile: true
-          }
-        }
       }
     };
   },
@@ -1223,54 +1224,6 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
-    },
-
-    dummy: {
-      newWalletData: function() {
-        return {
-          "walletId": Math.floor(Math.random() * 1000),
-          name: "New Wallet",
-          description: "",
-          thumbnail: null,
-          owner: null,
-          "availableCredits": 0,
-          status: "ACTIVE",
-          accessRights: []
-        };
-      },
-
-      getUsageDetailed: function() {
-        return new Promise(resolve => {
-          resolve([{
-            "studyName": "Prj_1",
-            "jobType": "MESH",
-            "start": "2023-06-05T09:35:29.026Z",
-            "end": "2023-06-05T09:40:29.026Z",
-            "duration": 277233,
-            "computingTime": 1200000,
-            "numberOfCores": 4,
-            "status": "FINISHED"
-          }, {
-            "studyName": "Prj_1",
-            "jobType": "SIMULATION",
-            "start": "2023-06-06T09:35:29.026Z",
-            "end": "2023-06-06T09:40:29.026Z",
-            "duration": 1429861,
-            "computingTime": 11520000,
-            "numberOfCores": 8,
-            "status": "FINISHED"
-          }, {
-            "studyName": "Prj_2",
-            "jobType": "SIMULATION",
-            "start": "2023-06-06T10:37:29.026Z",
-            "end": "2023-06-06T10:42:29.026Z",
-            "duration": 1182460,
-            "computingTime": 9600000,
-            "numberOfCores": 8,
-            "status": "CANCELED"
-          }]);
-        });
-      }
     },
 
     getServiceUrl: function(key, version) {

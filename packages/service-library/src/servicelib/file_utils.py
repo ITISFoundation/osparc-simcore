@@ -12,6 +12,12 @@ from pydantic import ByteSize, parse_obj_as
 
 CHUNK_4KB: Final[ByteSize] = parse_obj_as(ByteSize, "4kb")  # 4K blocks
 
+
+class AsyncStream(Protocol):
+    async def read(self, size: int = -1) -> bytes:
+        ...
+
+
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 
 
@@ -33,11 +39,6 @@ async def remove_directory(
         )
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
-
-
-class AsyncStream(Protocol):
-    async def read(self, size: int = -1) -> bytes:
-        ...
 
 
 async def create_sha256_checksum(

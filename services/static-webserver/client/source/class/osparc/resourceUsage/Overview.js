@@ -26,12 +26,10 @@ qx.Class.define("osparc.resourceUsage.Overview", {
     this.getChildControl("wallet-selector-title");
     const walletSelector = this.getChildControl("wallet-selector");
     this.getChildControl("wallet-selector-layout").exclude();
-    osparc.desktop.credits.Utils.areWalletsEnabled()
-      .then(walletsEnabled => {
-        if (walletsEnabled) {
-          this.getChildControl("wallet-selector-layout").show();
-        }
-      });
+    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+    if (walletsEnabled) {
+      this.getChildControl("wallet-selector-layout").show();
+    }
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();

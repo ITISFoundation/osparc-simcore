@@ -270,13 +270,11 @@ qx.Class.define("osparc.ErrorPage", {
     },
 
     __supportEmail: function() {
-      osparc.store.VendorInfo.getInstance().getSupportEmail()
-        .then(supportEmail => {
-          const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Support", null, qx.locale.Manager.tr("Please send us an email to:"));
-          const mailto = osparc.store.Support.getMailToLabel(supportEmail, "Access error");
-          giveEmailFeedbackWindow.addWidget(mailto);
-          giveEmailFeedbackWindow.open();
-        });
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Support", null, qx.locale.Manager.tr("Please send us an email to:"));
+      const mailto = osparc.store.Support.getMailToLabel(supportEmail, "Access error");
+      giveEmailFeedbackWindow.addWidget(mailto);
+      giveEmailFeedbackWindow.open();
     },
 
     __logIn: function() {

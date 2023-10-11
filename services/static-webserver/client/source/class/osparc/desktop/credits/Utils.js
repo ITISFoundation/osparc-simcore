@@ -20,21 +20,8 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
   statics: {
     areWalletsEnabled: function() {
-      return new Promise(resolve => {
-        Promise.all([
-          osparc.utils.Utils.isDevelopmentPlatform(),
-          osparc.utils.Utils.isStagingPlatform()
-        ])
-          .then(values => {
-            const isDevel = values[0];
-            const isStaging = values[1];
-            if ((isDevel || isStaging) && (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4lacad"))) {
-              resolve(true);
-            } else {
-              resolve(false);
-            }
-          });
-      });
+      const statics = osparc.store.Store.getInstance().get("statics");
+      return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
     creditsToFixed: function(credits) {

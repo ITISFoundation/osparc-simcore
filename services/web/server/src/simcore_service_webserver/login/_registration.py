@@ -29,7 +29,7 @@ from .settings import LoginOptions
 from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
 from .utils import CONFIRMATION_PENDING
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ConfirmationTokenInfoDict(ConfirmationTokenDict):
@@ -50,6 +50,7 @@ class InvitationData(BaseModel):
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
     )
+    extra_credits: PositiveInt | None = None
 
 
 class _InvitationValidator(BaseModel):
@@ -100,7 +101,7 @@ async def check_other_registrations(
                         user=user, confirmation=_confirmation
                     )
 
-                log.warning(
+                _logger.warning(
                     "Re-registration of %s with expired %s"
                     "Deleting user and proceeding to a new registration",
                     f"{user=}",
@@ -120,6 +121,7 @@ async def create_invitation_token(
     user_email: LowerCaseEmailStr | None = None,
     tag: str | None = None,
     trial_days: PositiveInt | None = None,
+    extra_credits: PositiveInt | None = None,
 ) -> ConfirmationTokenDict:
     """Creates an invitation token for a guest to register in the platform and returns
 
@@ -130,12 +132,11 @@ async def create_invitation_token(
     :type host: Dict-like
     :param guest: some description of the guest, e.g. email, name or a json
     """
-    data_model = InvitationData.parse_obj(
-        {
-            "issuer": user_email,
-            "guest": tag,
-            "trial_account_days": trial_days,
-        }
+    data_model = InvitationData(
+        issuer=user_email,
+        guest=tag,
+        trial_account_days=trial_days,
+        extra_credits=extra_credits,
     )
     return await db.create_confirmation(
         user_id=user_id,
@@ -191,7 +192,7 @@ async def check_and_consume_invitation(
     guest_email: str,
     db: AsyncpgStorage,
     cfg: LoginOptions,
-    app=web.Application,
+    app: web.Application,
 ) -> InvitationData:
     """Consumes invitation: the code is validated, the invitation retrieives and then deleted
        since it only has one use
@@ -210,15 +211,17 @@ async def check_and_consume_invitation(
                 invitation_url=f"{url}",
             )
 
-            log.info("Consuming invitation from service:\n%s", content.json(indent=1))
+            _logger.info(
+                "Consuming invitation from service:\n%s", content.json(indent=1)
+            )
             return InvitationData(
                 issuer=content.issuer,
                 guest=content.guest,
                 trial_account_days=content.trial_account_days,
+                extra_credits=content.extra_credits,
             )
 
     # database-type invitations
-
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
             invitation_data: InvitationData = _InvitationValidator.parse_obj(
@@ -227,7 +230,7 @@ async def check_and_consume_invitation(
             return invitation_data
 
         except ValidationError as err:
-            log.warning(
+            _logger.warning(
                 "%s is associated with an invalid %s.\nDetails: %s",
                 f"{invitation_code=}",
                 f"{confirmation_token=}",
@@ -236,7 +239,7 @@ async def check_and_consume_invitation(
 
         finally:
             await db.delete_confirmation(confirmation_token)
-            log.info("Invitation with %s was consumed", f"{confirmation_token=}")
+            _logger.info("Invitation with %s was consumed", f"{confirmation_token=}")
 
     raise web.HTTPForbidden(
         reason=(

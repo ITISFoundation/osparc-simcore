@@ -77,12 +77,10 @@ qx.Class.define("osparc.po.Invitations", {
         textColor: "warning-yellow"
       });
       disclaimer.exclude();
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if ("invitation_required" in config && config["invitation_required"] === false) {
-            disclaimer.show();
-          }
-        });
+      const config = osparc.store.Store.getInstance().get("config");
+      if ("invitation_required" in config && config["invitation_required"] === false) {
+        disclaimer.show();
+      }
       invitationGroupBox.add(disclaimer);
 
       const newTokenForm = this.__createInvitationForm();
@@ -100,6 +98,13 @@ qx.Class.define("osparc.po.Invitations", {
         placeholder: this.tr("new.user@email.address")
       });
       form.add(userEmail, this.tr("User Email"));
+
+      const extraCredits = new qx.ui.form.Spinner().set({
+        minimum: 0,
+        maximum: 1000,
+        value: 0
+      });
+      form.add(extraCredits, this.tr("Welcome Credits"));
 
       const withExpiration = new qx.ui.form.CheckBox().set({
         value: false
@@ -130,6 +135,9 @@ qx.Class.define("osparc.po.Invitations", {
               "guest": userEmail.getValue()
             }
           };
+          if (extraCredits.getValue() > 0) {
+            params.data["extraCredits"] = extraCredits.getValue();
+          }
           if (withExpiration.getValue()) {
             params.data["trialAccountDays"] = trialDays.getValue();
           }

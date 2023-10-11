@@ -149,6 +149,7 @@ class DynamicSidecarVolumesPathsResolver:
         project_id: ProjectID,
         user_id: UserID,
         swarm_stack_name: str,
+        *,
         has_quota_support: bool,
     ) -> dict[str, Any]:
         return cls.mount_entry(
@@ -159,6 +160,31 @@ class DynamicSidecarVolumesPathsResolver:
             project_id=project_id,
             user_id=user_id,
             volume_size_limit="1M" if has_quota_support else None,
+        )
+
+    @classmethod
+    def mount_user_preferences(
+        cls,
+        user_preferences_path: Path,
+        run_id: RunID,
+        node_uuid: NodeID,
+        project_id: ProjectID,
+        user_id: UserID,
+        swarm_stack_name: str,
+        *,
+        has_quota_support: bool,
+    ):
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=user_preferences_path,
+            node_uuid=node_uuid,
+            run_id=run_id,
+            project_id=project_id,
+            user_id=user_id,
+            # NOTE: the contents of this volume will be zipped and much
+            # be at most `_MAX_PREFERENCES_TOTAL_SIZE`, this 10M accounts
+            # for files and data that can be compressed a lot
+            volume_size_limit="10M" if has_quota_support else None,
         )
 
     @classmethod

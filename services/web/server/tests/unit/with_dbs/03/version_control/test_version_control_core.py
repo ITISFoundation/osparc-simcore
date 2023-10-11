@@ -39,7 +39,7 @@ async def test_workflow(
     request_update_project: Callable[[TestClient, UUID], Awaitable],
     director_v2_service_mock: None,
 ):
-    vc_repo = VersionControlRepository(aiohttp_mocked_request)
+    vc_repo = VersionControlRepository.create_from_request(aiohttp_mocked_request)
 
     # -------------------------------------
     checkpoint1 = await create_checkpoint(

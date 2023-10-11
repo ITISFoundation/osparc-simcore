@@ -69,8 +69,7 @@ async def product_repository(
     fake_request = mocker.MagicMock()
     fake_request.app = app
 
-    repo = ProductRepository(request=fake_request)
-    return repo
+    return ProductRepository.create_from_request(request=fake_request)
 
 
 @pytest.mark.parametrize(
