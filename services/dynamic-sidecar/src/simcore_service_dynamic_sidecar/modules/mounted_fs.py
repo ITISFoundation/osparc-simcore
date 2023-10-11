@@ -40,6 +40,7 @@ class MountedVolumes:
         node_id: NodeID,
         inputs_path: Path,
         outputs_path: Path,
+        user_preferences_path: Path | None,
         state_paths: list[Path],
         state_exclude: set[str],
         compose_namespace: str,
@@ -49,6 +50,7 @@ class MountedVolumes:
         self.node_id: NodeID = node_id
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
+        self.user_preferences_path = user_preferences_path
         self.state_paths: list[Path] = state_paths
         self.state_exclude: set[str] = state_exclude
         self.compose_namespace = compose_namespace
@@ -69,6 +71,15 @@ class MountedVolumes:
         return (
             f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
             f"_{_name_from_full_path(self.outputs_path)[::-1]}"
+        )
+
+    @cached_property
+    def volume_user_preferences(self) -> str | None:
+        if self.user_preferences_path is None:
+            return None
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+            f"_{_name_from_full_path(self.user_preferences_path)[::-1]}"
         )
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
@@ -121,6 +132,15 @@ class MountedVolumes:
         )
         return f"{bind_path}:{self.outputs_path}"
 
+    async def get_user_preferences_path_volume(self, run_id: RunID) -> str | None:
+        if self.volume_user_preferences is None:
+            return None
+
+        bind_path: Path = await self._get_bind_path_from_label(
+            self.volume_user_preferences, run_id
+        )
+        return f"{bind_path}:{self.user_preferences_path}"
+
     async def iter_state_paths_to_docker_volumes(
         self, run_id: RunID
     ) -> AsyncGenerator[str, None]:
@@ -141,6 +161,7 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
         node_id=settings.DY_SIDECAR_NODE_ID,
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
+        user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
         state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
         compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
