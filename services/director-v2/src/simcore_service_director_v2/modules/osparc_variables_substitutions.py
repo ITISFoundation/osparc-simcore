@@ -7,13 +7,18 @@ from copy import deepcopy
 from typing import Any
 
 from fastapi import FastAPI
+from models_library.osparc_variable_identifier import (
+    UnresolvedOsparcVariableIdentifierError,
+    raise_if_unresolved_osparc_variable_identifier_found,
+    replace_osparc_variable_identifier,
+)
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
-from pydantic import EmailStr
+from pydantic import BaseModel, EmailStr
 
 from ..utils.db import get_repository
 from ..utils.osparc_variables import (
@@ -26,20 +31,84 @@ from .db.repositories.services_environments import ServicesEnvironmentsRepositor
 _logger = logging.getLogger(__name__)
 
 
+async def substitute_vendor_secrets_in_model(
+    app: FastAPI,
+    model: BaseModel,
+    *,
+    safe: bool = True,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: ProductName,
+) -> BaseModel:
+    result: BaseModel = model
+    try:
+        # checks before to avoid unnecessary calls to pg
+        # if it raises an error vars need replacement
+        raise_if_unresolved_osparc_variable_identifier_found(model)
+    except UnresolvedOsparcVariableIdentifierError:
+        repo = get_repository(app, ServicesEnvironmentsRepository)
+        vendor_secrets = await repo.get_vendor_secrets(
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+        result = replace_osparc_variable_identifier(model, vendor_secrets)
+
+    if not safe:
+        raise_if_unresolved_osparc_variable_identifier_found(result)
+
+    return result
+
+
+async def resolve_and_substitute_session_variables_in_model(
+    app: FastAPI,
+    model: BaseModel,
+    *,
+    safe: bool = True,
+    user_id: UserID,
+    product_name: str,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> BaseModel:
+    result: BaseModel = model
+    try:
+        # checks before to avoid unnecessary calls to pg
+        # if it raises an error vars need replacement
+        raise_if_unresolved_osparc_variable_identifier_found(model)
+    except UnresolvedOsparcVariableIdentifierError:
+        table: OsparcVariablesTable = app.state.session_variables_table
+        identifiers = await resolve_variables_from_context(
+            table.copy(),
+            context=ContextDict(
+                app=app,
+                user_id=user_id,
+                product_name=product_name,
+                project_id=project_id,
+                node_id=node_id,
+            ),
+        )
+        result = replace_osparc_variable_identifier(model, identifiers)
+
+    if not safe:
+        raise_if_unresolved_osparc_variable_identifier_found(result)
+
+    return result
+
+
 async def substitute_vendor_secrets_in_specs(
     app: FastAPI,
     specs: dict[str, Any],
     *,
+    safe: bool = True,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: ProductName,
 ) -> dict[str, Any]:
-    assert specs  # nosec
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
     repo = get_repository(app, ServicesEnvironmentsRepository)
 
     if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
-        # checks before to avoid unnecesary calls to pg
+        # checks before to avoid unnecessary calls to pg
         vendor_secrets = await repo.get_vendor_secrets(
             service_key=service_key,
             service_version=service_version,
@@ -48,7 +117,7 @@ async def substitute_vendor_secrets_in_specs(
 
         # resolve substitutions
         resolver.set_substitutions(mappings=vendor_secrets)
-        new_specs: dict[str, Any] = resolver.run()
+        new_specs: dict[str, Any] = resolver.run(safe=safe)
         return new_specs
 
     return deepcopy(specs)
@@ -58,13 +127,12 @@ async def resolve_and_substitute_session_variables_in_specs(
     app: FastAPI,
     specs: dict[str, Any],
     *,
+    safe: bool = True,
     user_id: UserID,
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
 ) -> dict[str, Any]:
-    assert specs  # nosec
-
     table: OsparcVariablesTable = app.state.session_variables_table
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
@@ -84,7 +152,7 @@ async def resolve_and_substitute_session_variables_in_specs(
             )
 
             resolver.set_substitutions(mappings=environs)
-            new_specs: dict[str, Any] = resolver.run()
+            new_specs: dict[str, Any] = resolver.run(safe=safe)
             return new_specs
 
     return deepcopy(specs)
@@ -95,6 +163,7 @@ async def resolve_and_substitute_lifespan_variables_in_specs(
     _specs: dict[str, Any],
     *,
     _callbacks_registry: Mapping[str, Callable],
+    safe: bool = True,
 ):
     raise NotImplementedError
 

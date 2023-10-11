@@ -5,6 +5,7 @@ from typing import Any, Final
 
 import yaml
 from models_library.basic_types import PortInt
+from models_library.osparc_variable_identifier import raise_if_unresolved
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -163,7 +164,7 @@ def _get_egress_proxy_network_name(egress_proxy_name: str) -> str:
 def _add_egress_proxy_network(
     service_spec: ComposeSpecLabelDict, egress_proxy_name: str
 ) -> None:
-    networks = service_spec.get("networks")
+    networks = service_spec.get("networks", {})
     networks[_get_egress_proxy_network_name(egress_proxy_name)] = {"internal": True}
     service_spec["networks"] = networks
 
@@ -219,9 +220,13 @@ def _get_egress_proxy_dns_port_rules(
                 port_to_hostname[port] = OrderedSet()
             port_to_hostname[port].add(
                 _HostData(
-                    hostname=host_permit_list_policy.hostname,
-                    dns_resolver_address=host_permit_list_policy.dns_resolver.address,
-                    dns_resolver_port=host_permit_list_policy.dns_resolver.port,
+                    hostname=raise_if_unresolved(host_permit_list_policy.hostname),
+                    dns_resolver_address=raise_if_unresolved(
+                        host_permit_list_policy.dns_resolver.address
+                    ),
+                    dns_resolver_port=raise_if_unresolved(
+                        host_permit_list_policy.dns_resolver.port
+                    ),
                 )
             )
 
@@ -289,6 +294,8 @@ def add_egress_configuration(
 
     # allow internet access to containers based on DNS:PORT rules
     if simcore_service_labels.containers_allowed_outgoing_permit_list:
+        # TODO: apply replacement last possible moment to replace ???
+
         # get all HostPermitListPolicy entries from all containers
         all_host_permit_list_policies: list[NATRule] = []
 
@@ -304,7 +311,10 @@ def add_egress_configuration(
 
                 for port in host_permit_list_policy.iter_tcp_ports():
                     hostname_port_to_container_name[
-                        (host_permit_list_policy.hostname, port)
+                        (
+                            raise_if_unresolved(host_permit_list_policy.hostname),
+                            port,
+                        )
                     ] = container_name
 
         # assemble proxy configuration based on all HostPermitListPolicy entries
