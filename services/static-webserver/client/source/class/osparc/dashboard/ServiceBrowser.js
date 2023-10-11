@@ -247,7 +247,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
               osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
               addServiceWindow.close();
             } else {
-              osparc.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
+              osparc.FlashMessenger.logAs(`A problem occurred while processing your data: ${resp.statusText}`, "ERROR");
             }
           })
           .finally(() => form.setFetching(false));

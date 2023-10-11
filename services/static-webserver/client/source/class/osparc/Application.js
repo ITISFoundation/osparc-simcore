@@ -353,8 +353,8 @@ qx.Class.define("osparc.Application", {
         this.__connectWebSocket();
 
         if (osparc.auth.Data.getInstance().isGuest()) {
-          osparc.utils.Utils.createAccountMessage()
-            .then(msg => osparc.FlashMessenger.getInstance().logAs(msg, "WARNING"));
+          const msg = osparc.utils.Utils.createAccountMessage();
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
         } else if ("expirationDate" in profile) {
           const now = new Date();
           const today = new Date(now.toISOString().slice(0, 10));

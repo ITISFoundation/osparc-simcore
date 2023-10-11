@@ -142,16 +142,15 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           osparc.utils.Utils.setIdToWidget(control, "userMenuAboutBtn");
           this.getMenu().add(control);
           break;
-        case "about-product":
+        case "about-product": {
           control = new qx.ui.menu.Button(this.tr("About Product"));
-          osparc.store.StaticInfo.getInstance().getDisplayName()
-            .then(displayName => {
-              control.getChildControl("label").setRich(true);
-              control.setLabel(this.tr("About ") + displayName);
-            });
+          const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+          control.getChildControl("label").setRich(true);
+          control.setLabel(this.tr("About ") + displayName);
           control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
+        }
         case "log-out": {
           const authData = osparc.auth.Data.getInstance();
           control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));

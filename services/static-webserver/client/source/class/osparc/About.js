@@ -56,11 +56,9 @@ qx.Class.define("osparc.About", {
         wrap: true
       });
       this.add(poweredByLabel);
-      osparc.store.StaticInfo.getInstance().getDisplayName()
-        .then(displayName => {
-          const aboutText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
-          poweredByLabel.setValue(displayName + aboutText);
-        });
+      const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const poweredText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
+      poweredByLabel.setValue(displayName + poweredText);
 
       const text = this.tr("\
          is an online-accessible, cloud-based, and collaborative computational modeling platform \

@@ -163,27 +163,20 @@ qx.Class.define("osparc.store.Support", {
       const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
         maxWidth: 380
       });
-      Promise.all([
-        osparc.store.StaticInfo.getInstance().getDisplayName()
-      ])
-        .then(values => {
-          const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-          const displayName = values[1];
-          if ("invitation_url" in vendor) {
-            let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
-            message += "<br>";
-            message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
-            message += "<br>";
-            createAccountWindow.setMessage(message);
-            const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
-            createAccountWindow.addWidget(linkLabel);
-          } else {
-            osparc.utils.Utils.createAccountMessage()
-              .then(message => {
-                createAccountWindow.setMessage(message);
-              });
-          }
-        });
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if ("invitation_url" in vendor) {
+        const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+        let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
+        message += "<br>";
+        message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
+        message += "<br>";
+        createAccountWindow.setMessage(message);
+        const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
+        createAccountWindow.addWidget(linkLabel);
+      } else {
+        const message = osparc.utils.Utils.createAccountMessage();
+        createAccountWindow.setMessage(message);
+      }
       createAccountWindow.center();
       createAccountWindow.open();
     }

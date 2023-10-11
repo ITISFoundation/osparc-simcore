@@ -344,26 +344,19 @@ qx.Class.define("osparc.utils.Utils", {
 
     // used for showing it to Guest users
     createAccountMessage: function() {
-      return new Promise(resolve => {
-        Promise.all([
-          osparc.store.StaticInfo.getInstance().getDisplayName()
-        ])
-          .then(values => {
-            const productName = values[0];
-            const manuals = osparc.store.Support.getManuals();
-            const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-            const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
-            let msg = "";
-            msg += qx.locale.Manager.tr("To use all ");
-            const color = qx.theme.manager.Color.getInstance().resolve("text");
-            msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
-            msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
-            msg += "</br>";
-            msg += mailto;
-            resolve(msg);
-          });
-      });
+      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const manuals = osparc.store.Support.getManuals();
+      const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
+      let msg = "";
+      msg += qx.locale.Manager.tr("To use all ");
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
+      msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
+      msg += "</br>";
+      msg += mailto;
+      return msg;
     },
 
     getNameFromEmail: function(email) {

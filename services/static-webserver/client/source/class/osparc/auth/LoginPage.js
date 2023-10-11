@@ -255,29 +255,27 @@ qx.Class.define("osparc.auth.LoginPage", {
         textColor: "text-darker"
       });
       const staticInfo = osparc.store.StaticInfo.getInstance();
-      staticInfo.getReleaseData()
-        .then(rData => {
-          if (rData) {
-            const releaseDate = rData["date"];
-            const releaseTag = rData["tag"];
-            const releaseUrl = rData["url"];
-            if (releaseDate && releaseTag && releaseUrl) {
-              const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
-              versionLink.set({
-                value: date + " (" + releaseTag + ")&nbsp",
-                url: releaseUrl
-              });
-            }
-          } else {
-            // fallback to old style
-            const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-            versionLink.setUrl(platformVersion.url);
-            let text = platformVersion.name + " " + platformVersion.version;
-            const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-            text += platformName.length ? ` (${platformName})` : " (production)";
-            versionLink.setValue(text);
-          }
-        });
+      const rData = staticInfo.getReleaseData()
+      if (rData) {
+        const releaseDate = rData["date"];
+        const releaseTag = rData["tag"];
+        const releaseUrl = rData["url"];
+        if (releaseDate && releaseTag && releaseUrl) {
+          const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
+          versionLink.set({
+            value: date + " (" + releaseTag + ")&nbsp",
+            url: releaseUrl
+          });
+        }
+      } else {
+        // fallback to old style
+        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+        versionLink.setUrl(platformVersion.url);
+        let text = platformVersion.name + " " + platformVersion.version;
+        const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+        text += platformName.length ? ` (${platformName})` : " (production)";
+        versionLink.setValue(text);
+      }
       versionLinkLayout.add(versionLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
