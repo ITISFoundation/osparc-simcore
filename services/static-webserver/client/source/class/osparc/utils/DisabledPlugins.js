@@ -31,26 +31,26 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     CLUSTERS: "WEBSERVER_CLUSTERS",
 
     isExportDisabled: function() {
-      return this.self().isPluginDisabled(this.self().EXPORT);
+      return this.__isPluginDisabled(this.EXPORT);
     },
 
     isImportDisabled: function() {
-      return this.self().isPluginDisabled(this.self().EXPORT);
+      return this.__isPluginDisabled(this.EXPORT);
     },
 
     isVersionControlDisabled: function() {
-      return this.self().isPluginDisabled(this.self().VERSION_CONTROL);
+      return this.__isPluginDisabled(this.VERSION_CONTROL);
     },
 
     isMetaModelingDisabled: function() {
-      return this.self().isPluginDisabled(this.self().META_MODELING);
+      return this.__isPluginDisabled(this.META_MODELING);
     },
 
     isClustersDisabled: function() {
-      return this.self().isPluginDisabled(this.self().CLUSTERS);
+      return this.__isPluginDisabled(this.CLUSTERS);
     },
 
-    isPluginDisabled: function(key) {
+    __isPluginDisabled: function(key) {
       const statics = osparc.store.Store.getInstance().get("statics");
       if (statics) {
         if ("pluginsDisabled" in statics) {
