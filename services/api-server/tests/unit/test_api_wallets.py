@@ -11,6 +11,9 @@ from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 
 @pytest.mark.parametrize(
     "capture", ["get_wallet_success.json", "get_wallet_failure.json"]
