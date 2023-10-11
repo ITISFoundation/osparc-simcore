@@ -40,7 +40,7 @@ qx.Class.define("osparc.Application", {
      * This method contains the initial application code and gets called
      * during startup of the application
      */
-    main: function() {
+    main: async function() {
       // Call super class
       this.base();
 
@@ -51,6 +51,8 @@ qx.Class.define("osparc.Application", {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
       }
+
+      await this.__preloadCalls();
 
       const intlTelInput = osparc.wrapper.IntlTelInput.getInstance();
       intlTelInput.init();
@@ -97,6 +99,11 @@ qx.Class.define("osparc.Application", {
       this.__startupChecks();
     },
 
+    __preloadCalls: async function() {
+      await osparc.data.Resources.get("config");
+      await osparc.data.Resources.get("statics");
+    },
+
     __initRouting: function() {
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
@@ -128,7 +135,7 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => this.__loadLoginPage(false));
+              .catch(() => this.__loadLoginPage());
           }
           break;
         }
@@ -178,7 +185,7 @@ qx.Class.define("osparc.Application", {
           osparc.utils.Utils.cookie.deleteCookie("user");
           osparc.auth.Manager.getInstance().validateToken()
             .then(() => this.__loadMainPage())
-            .catch(() => this.__loadLoginPage(false));
+            .catch(() => this.__loadLoginPage());
           break;
         }
         case "error": {
@@ -208,15 +215,13 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateTabName: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          if (osparc.utils.Utils.isInZ43()) {
-            document.title += " Z43";
-          }
-          if (platformName) {
-            document.title += ` (${platformName})`;
-          }
-        });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (osparc.utils.Utils.isInZ43()) {
+        document.title += " Z43";
+      }
+      if (platformName) {
+        document.title += ` (${platformName})`;
+      }
     },
 
     __updateFavicon: function() {
@@ -230,15 +235,13 @@ qx.Class.define("osparc.Application", {
     },
 
     __startupChecks: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          if (platformName !== "master") {
-            // first, pop up new release window
-            this.__checkNewRelease();
-            // then, pop up cookies accepted window. It will go on top.
-            this.__checkCookiesAccepted();
-          }
-        });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (platformName !== "master") {
+        // first, pop up new release window
+        this.__checkNewRelease();
+        // then, pop up cookies accepted window. It will go on top.
+        this.__checkCookiesAccepted();
+      }
     },
 
     __checkNewRelease: function() {
@@ -307,7 +310,7 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage(false));
+          .catch(() => this.__loadLoginPage());
       }
     },
 
@@ -338,69 +341,69 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function(studyId = null) {
+    __loadMainPage: async function(studyId = null) {
       // logged in
 
       // Invalidate the entire cache
-      osparc.store.Store.getInstance().invalidate();
+      osparc.store.Store.getInstance().invalidateEntireCache();
+      await this.__preloadCalls();
+      await osparc.data.Resources.get("permissions");
+      const profile = await osparc.data.Resources.getOne("profile");
+      if (profile) {
+        this.__connectWebSocket();
 
-      osparc.data.Resources.get("permissions");
+        if (osparc.auth.Data.getInstance().isGuest()) {
+          const msg = osparc.utils.Utils.createAccountMessage();
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        } else if ("expirationDate" in profile) {
+          const now = new Date();
+          const today = new Date(now.toISOString().slice(0, 10));
+          const expirationDay = new Date(profile["expirationDate"]);
+          const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
+          if (daysToExpiration < 7) {
+            const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          }
+        }
 
-      osparc.data.Resources.getOne("profile")
-        .then(profile => {
-          this.__connectWebSocket();
-
-          if (osparc.auth.Data.getInstance().isGuest()) {
-            osparc.utils.Utils.createAccountMessage()
-              .then(msg => osparc.FlashMessenger.getInstance().logAs(msg, "WARNING"));
-          } else if ("expirationDate" in profile) {
-            const now = new Date();
-            const today = new Date(now.toISOString().slice(0, 10));
-            const expirationDay = new Date(profile["expirationDate"]);
-            const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
-            if (daysToExpiration < 7) {
-              osparc.utils.Utils.expirationMessage(daysToExpiration)
-                .then(msg => osparc.FlashMessenger.getInstance().logAs(msg, "WARNING"));
+        if ("preferences" in profile) {
+          const bePreferences = profile["preferences"];
+          const fePreferences = Object.keys(qx.util.PropertyUtil.getProperties(osparc.Preferences));
+          const preferencesSettings = osparc.Preferences.getInstance();
+          Object.entries(bePreferences).forEach(([key, data]) => {
+            const value = data.value;
+            switch (key) {
+              case "themeName":
+                if (value) {
+                  preferencesSettings.setThemeName(value);
+                }
+                break;
+              case "preferredWalletId":
+                if (value) {
+                  preferencesSettings.setPreferredWalletId(parseInt(value));
+                }
+                break;
+              default:
+                if (fePreferences.includes(key)) {
+                  preferencesSettings.set(key, value);
+                }
             }
-          }
+          });
+        }
 
-          if ("preferences" in profile) {
-            const bePreferences = profile["preferences"];
-            const fePreferences = Object.keys(qx.util.PropertyUtil.getProperties(osparc.Preferences));
-            const preferencesSettings = osparc.Preferences.getInstance();
-            Object.entries(bePreferences).forEach(([key, data]) => {
-              const value = data.value;
-              switch (key) {
-                case "themeName":
-                  if (value) {
-                    preferencesSettings.setThemeName(value);
-                  }
-                  break;
-                case "preferredWalletId":
-                  if (value) {
-                    preferencesSettings.setPreferredWalletId(parseInt(value));
-                  }
-                  break;
-                default:
-                  if (fePreferences.includes(key)) {
-                    preferencesSettings.set(key, value);
-                  }
-              }
-            });
-          }
+        if (studyId) {
+          osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+        }
 
-          if (studyId) {
-            osparc.store.Store.getInstance().setCurrentStudyId(studyId);
-          }
-
-          const mainPage = this.__mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
-          this.__loadView(mainPage);
-        });
+        const mainPage = this.__mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
+        this.__loadView(mainPage);
+      }
     },
 
-    __loadNodeViewerPage: function(studyId, viewerNodeId) {
+    __loadNodeViewerPage: async function(studyId, viewerNodeId) {
       // Invalidate the entire cache
-      osparc.store.Store.getInstance().invalidate();
+      osparc.store.Store.getInstance().invalidateEntireCache();
+      await this.__preloadCalls();
 
       this.__connectWebSocket();
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));

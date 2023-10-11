@@ -29,8 +29,10 @@ from simcore_service_webserver.projects.models import ProjectDict
 def mock_rut_sum_total_available_credits_in_the_wallet(
     mocker: MockerFixture,
 ) -> mock.Mock:
+    # NOTE: PC->MD should rather use aioresponse to mock RUT responses
     return mocker.patch(
         "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
+        autospec=True,
         return_value=WalletTotalCredits(
             wallet_id=1, available_osparc_credits=Decimal(10.2)
         ),
@@ -167,8 +169,15 @@ async def test_auto_wallet_on_user_registration_confirmation(
     wallets_clean_db: AsyncIterator[None],
     osparc_product_name: ProductName,
     mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+    mocker: MockerFixture,
 ):
     assert client.app
+
+    mocker.patch(
+        "simcore_service_webserver.wallets._events.add_credits_to_wallet",
+        autospec=True,
+        return_value=None,
+    )
 
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(f"{url}")
@@ -176,7 +185,10 @@ async def test_auto_wallet_on_user_registration_confirmation(
     assert len(data) == 0
 
     await notify_user_confirmation(
-        client.app, user_id=logged_user["id"], product_name=osparc_product_name
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        extra_credits=10,
     )
 
     resp = await client.get(f"{url}")

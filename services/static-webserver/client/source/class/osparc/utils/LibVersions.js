@@ -141,13 +141,11 @@ qx.Class.define("osparc.utils.LibVersions", {
     },
 
     getBackendLibs: function() {
-      return osparc.data.Resources.get("statics")
-        .then(statics => {
-          if ("thirdPartyReferences" in statics) {
-            return statics["thirdPartyReferences"];
-          }
-          return [];
-        });
+      const statics = osparc.store.Store.getInstance().get("statics");
+      if ("thirdPartyReferences" in statics) {
+        return statics["thirdPartyReferences"];
+      }
+      return [];
     }
   }
 });

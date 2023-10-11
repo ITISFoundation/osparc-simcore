@@ -325,14 +325,12 @@ async def test_registration_without_confirmation(
             "confirm": fake_user_password,
         },
     )
-    data, error = unwrap_envelope(await response.json())
 
-    assert response.status == 200, (data, error)
+    data, _ = await assert_status(response, web.HTTPOk)
     assert MSG_LOGGED_IN in data["message"]
 
     user = await db.get_user({"email": fake_user_email})
     assert user
-    await db.delete_user(user)
 
 
 async def test_registration_with_confirmation(

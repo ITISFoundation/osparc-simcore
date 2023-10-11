@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.32.0
+  version: 0.33.0
 servers:
 - url: ''
   description: webserver
@@ -6272,6 +6272,11 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        extraCredits:
+          title: Extracredits
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     GetWalletAutoRecharge:
       title: GetWalletAutoRecharge
       required:
@@ -6465,6 +6470,11 @@ components:
           format: email
         trialAccountDays:
           title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        extraCredits:
+          title: Extracredits
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -7472,7 +7482,7 @@ components:
       required:
       - pricingUnitId
       - unitName
-      - unitAttributes
+      - unitExtraInfo
       - currentCostPerUnit
       - default
       type: object
@@ -7485,8 +7495,8 @@ components:
         unitName:
           title: Unitname
           type: string
-        unitAttributes:
-          title: Unitattributes
+        unitExtraInfo:
+          title: Unitextrainfo
           type: object
         currentCostPerUnit:
           title: Currentcostperunit

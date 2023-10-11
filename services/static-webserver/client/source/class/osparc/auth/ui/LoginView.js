@@ -82,28 +82,21 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const createAccountBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if (config["invitation_required"]) {
-            createAccountBtn.setLabel(this.tr("Request Account"));
-          }
-        })
-        .catch(err => console.error(err));
+      const config = osparc.store.Store.getInstance().get("config");
+      if (config["invitation_required"]) {
+        createAccountBtn.setLabel(this.tr("Request Account"));
+      }
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
-        osparc.data.Resources.getOne("config")
-          .then(config => {
-            if (config["invitation_required"]) {
-              if (osparc.product.Utils.getProductName().includes("s4l")) {
-                this.fireEvent("toRequestAccount");
-              } else {
-                osparc.store.Support.openInvitationRequiredDialog();
-              }
-            } else {
-              this.fireEvent("toRegister");
-            }
-          })
-          .catch(err => console.error(err));
+        if (config["invitation_required"]) {
+          if (osparc.product.Utils.getProductName().includes("s4l")) {
+            this.fireEvent("toRequestAccount");
+          } else {
+            osparc.store.Support.openInvitationRequiredDialog();
+          }
+        } else {
+          this.fireEvent("toRegister");
+        }
         createAccountBtn.setEnabled(true);
       }, this);
       osparc.utils.Utils.setIdToWidget(createAccountBtn, "loginCreateAccountBtn");
