@@ -135,7 +135,7 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 this.__loadMainPage(studyId);
               })
-              .catch(() => this.__loadLoginPage(false));
+              .catch(() => this.__loadLoginPage());
           }
           break;
         }
@@ -185,7 +185,7 @@ qx.Class.define("osparc.Application", {
           osparc.utils.Utils.cookie.deleteCookie("user");
           osparc.auth.Manager.getInstance().validateToken()
             .then(() => this.__loadMainPage())
-            .catch(() => this.__loadLoginPage(false));
+            .catch(() => this.__loadLoginPage());
           break;
         }
         case "error": {
@@ -310,7 +310,7 @@ qx.Class.define("osparc.Application", {
               this.__loadMainPage();
             }
           })
-          .catch(() => this.__loadLoginPage(false));
+          .catch(() => this.__loadLoginPage());
       }
     },
 
