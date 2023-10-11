@@ -66,7 +66,7 @@ async def init_payment(
         f"{init.payment_id=}",
         get_log_record_extra(user_id=user_id),
     ):
-        repo = PaymentsTransactionsRepo()
+        repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
         await repo.insert_init_payment_transaction(
             payment_id=init.payment_id,
             price_dollars=amount_dollars,

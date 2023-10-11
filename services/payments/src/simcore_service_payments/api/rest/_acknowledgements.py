@@ -17,7 +17,7 @@ from ...models.schemas.acknowledgements import (
     PaymentMethodID,
 )
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
-from ._dependencies import get_current_session, get_rut_api
+from ._dependencies import get_current_session, get_repository, get_rut_api
 
 _logger = logging.getLogger(__name__)
 
@@ -59,6 +59,7 @@ async def acknowledge_payment(
     payment_id: PaymentID,
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
+    repo: Annotated[PaymentsTransactionsRepo, Depends(get_repository)],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
     background_tasks: BackgroundTasks,
 ):
@@ -70,7 +71,6 @@ async def acknowledge_payment(
         "Annotate ACK transaction %s in db",
         f"{payment_id=}",
     ):
-        repo = PaymentsTransactionsRepo()
         transaction = await repo.ack_payment_transaction(
             payment_id=f"{payment_id}",
             completion_state=(
