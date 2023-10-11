@@ -372,6 +372,7 @@ async def test_regression_io_log_redirect_cb(
         node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
+        user_preferences_path=None,
         state_paths=[],
         state_exclude=set(),
         compose_namespace="",

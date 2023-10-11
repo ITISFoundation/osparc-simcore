@@ -43,7 +43,7 @@ async def substitute_vendor_secrets_in_specs(
         )
 
         # resolve substitutions
-        resolver.set_substitutions(environs=vendor_secrets)
+        resolver.set_substitutions(mappings=vendor_secrets)
         new_specs: dict[str, Any] = resolver.run()
         return new_specs
 
@@ -79,7 +79,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                 ),
             )
 
-            resolver.set_substitutions(environs=environs)
+            resolver.set_substitutions(mappings=environs)
             new_specs: dict[str, Any] = resolver.run()
             return new_specs
 
