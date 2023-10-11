@@ -720,26 +720,26 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * PAYMENTS METHODS
+       * PAYMENT METHODS
        */
-      "payments-methods": {
+      "payment-methods": {
         useCache: false,
         endpoints: {
           init: {
             method: "POST",
-            url: statics.API + "/wallets/{walletId}/payments-methods:init"
+            url: statics.API + "/wallets/{walletId}/payment-methods:init"
           },
           cancel: {
             method: "POST",
-            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:cancel"
+            url: statics.API + "/wallets/{walletId}/payment-methods/{paymentMethodId}:cancel"
           },
           get: {
             method: "GET",
-            url: statics.API + "/wallets/{walletId}/payments-methods"
+            url: statics.API + "/wallets/{walletId}/payment-methods"
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}"
+            url: statics.API + "/wallets/{walletId}/payment-methods/{paymentMethodId}"
           }
         }
       },
