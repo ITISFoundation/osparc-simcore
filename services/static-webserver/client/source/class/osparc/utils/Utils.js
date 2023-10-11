@@ -230,17 +230,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDevelopmentPlatform: function() {
-      return new Promise(resolve => {
-        osparc.store.StaticInfo.getInstance().getPlatformName()
-          .then(platformName => resolve(["dev", "master"].includes(platformName)));
-      });
-    },
-
-    isStagingPlatform: function() {
-      return new Promise(resolve => {
-        osparc.store.StaticInfo.getInstance().getPlatformName()
-          .then(platformName => resolve(platformName === "staging"));
-      });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      return (["dev", "master"].includes(platformName));
     },
 
     getEditButton: function() {

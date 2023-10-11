@@ -164,19 +164,17 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addNewServiceButtons: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          if (platformName === "dev") {
-            const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
-            testDataButton.addListener("execute", () => {
-              osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
-                .then(data => {
-                  this.__displayServiceSubmissionForm(data);
-                });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (platformName === "dev") {
+        const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+        testDataButton.addListener("execute", () => {
+          osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+            .then(data => {
+              this.__displayServiceSubmissionForm(data);
             });
-            this._toolbar.add(testDataButton);
-          }
         });
+        this._toolbar.add(testDataButton);
+      }
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
@@ -184,12 +182,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addSortingButtons: function() {
-      const containterSortBtns = new osparc.service.SortServicesButtons();
-      containterSortBtns.addListener("sortBy", e => {
+      const containerSortButtons = new osparc.service.SortServicesButtons();
+      containerSortButtons.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);
       }, this);
-      this._toolbar.add(containterSortBtns);
+      this._toolbar.add(containerSortButtons);
     },
     // LAYOUT //
 

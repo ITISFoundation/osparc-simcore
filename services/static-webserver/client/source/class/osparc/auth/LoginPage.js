@@ -273,13 +273,9 @@ qx.Class.define("osparc.auth.LoginPage", {
             const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
             versionLink.setUrl(platformVersion.url);
             let text = platformVersion.name + " " + platformVersion.version;
-            staticInfo.getPlatformName()
-              .then(platformName => {
-                text += platformName.length ? ` (${platformName})` : " (production)";
-              })
-              .finally(() => {
-                versionLink.setValue(text);
-              });
+            const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+            text += platformName.length ? ` (${platformName})` : " (production)";
+            versionLink.setValue(text);
           }
         });
       versionLinkLayout.add(versionLink);

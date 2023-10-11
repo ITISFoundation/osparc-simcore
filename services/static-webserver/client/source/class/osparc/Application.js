@@ -215,15 +215,13 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateTabName: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          if (osparc.utils.Utils.isInZ43()) {
-            document.title += " Z43";
-          }
-          if (platformName) {
-            document.title += ` (${platformName})`;
-          }
-        });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (osparc.utils.Utils.isInZ43()) {
+        document.title += " Z43";
+      }
+      if (platformName) {
+        document.title += ` (${platformName})`;
+      }
     },
 
     __updateFavicon: function() {
@@ -237,15 +235,13 @@ qx.Class.define("osparc.Application", {
     },
 
     __startupChecks: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          if (platformName !== "master") {
-            // first, pop up new release window
-            this.__checkNewRelease();
-            // then, pop up cookies accepted window. It will go on top.
-            this.__checkCookiesAccepted();
-          }
-        });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (platformName !== "master") {
+        // first, pop up new release window
+        this.__checkNewRelease();
+        // then, pop up cookies accepted window. It will go on top.
+        this.__checkCookiesAccepted();
+      }
     },
 
     __checkNewRelease: function() {
