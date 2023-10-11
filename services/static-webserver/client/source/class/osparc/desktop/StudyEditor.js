@@ -265,31 +265,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __reloadSnapshotsAndIterations: function() {
-      osparc.utils.DisabledPlugins.isVersionControlDisabled()
-        .then(isVCDisabled => {
-          if (!isVCDisabled) {
-            const store = osparc.store.Store.getInstance();
-            store.invalidate("snapshots");
-            store.invalidate("iterations");
+      const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
+      if (!isVCDisabled) {
+        const store = osparc.store.Store.getInstance();
+        store.invalidate("snapshots");
+        store.invalidate("iterations");
 
-            const study = this.getStudy();
-            study.getSnapshots()
-              .then(snapshots => {
-                store.setSnapshots(snapshots);
-                if (snapshots.length) {
-                  osparc.utils.DisabledPlugins.isMetaModelingDisabled()
-                    .then(isMMDisabled => {
-                      if (!isMMDisabled) {
-                        study.getIterations()
-                          .then(iterations => {
-                            store.setIterations(iterations);
-                          });
-                      }
-                    });
-                }
-              });
-          }
-        });
+        const study = this.getStudy();
+        study.getSnapshots()
+          .then(snapshots => {
+            store.setSnapshots(snapshots);
+            if (snapshots.length) {
+              const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
+              if (!isMMDisabled) {
+                study.getIterations()
+                  .then(iterations => {
+                    store.setIterations(iterations);
+                  });
+              }
+            }
+          });
+      }
     },
 
     editSlides: function() {

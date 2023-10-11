@@ -891,23 +891,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();
+      const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
+      snaps.setVisibility(isVCDisabled ? "exclude" : "visible");
       this.__studyOptionsPage.add(snaps);
-      osparc.utils.DisabledPlugins.isVersionControlDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
-            snaps.show();
-          }
-        });
 
       const iters = this.__getIterationsSection();
-      iters.exclude();
+      const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
+      snaps.setVisibility(isMMDisabled ? "exclude" : "visible");
       this.__studyOptionsPage.add(iters);
-      osparc.utils.DisabledPlugins.isMetaModelingDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
-            iters.show();
-          }
-        });
     },
 
     __getSlideshowSection: function() {

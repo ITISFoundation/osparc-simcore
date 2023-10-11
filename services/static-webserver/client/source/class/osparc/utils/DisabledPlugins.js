@@ -38,10 +38,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return this.self().isPluginDisabled(this.self().EXPORT);
     },
 
-    isScicrunchDisabled: function() {
-      return this.self().isPluginDisabled(this.self().SCICRUNCH);
-    },
-
     isVersionControlDisabled: function() {
       return this.self().isPluginDisabled(this.self().VERSION_CONTROL);
     },
