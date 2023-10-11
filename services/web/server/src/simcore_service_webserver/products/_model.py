@@ -88,6 +88,11 @@ class Product(BaseModel):
         default=None, description="Groups associated to this product"
     )
 
+    is_payment_enabled: bool = Field(
+        default=False,
+        description="True if this product offers credits",
+    )
+
     @validator("*", pre=True)
     @classmethod
     def parse_empty_string_as_null(cls, v):
@@ -198,6 +203,7 @@ class Product(BaseModel):
                         "LOGIN_2FA_REQUIRED": False,
                     },
                     "group_id": 12345,
+                    "is_payment_enabled": False,
                 },
             ]
         }
@@ -221,6 +227,7 @@ class Product(BaseModel):
                 "issues",
                 "manuals",
                 "support",
+                "is_payment_enabled",
             },
             exclude_none=True,
             exclude_unset=True,

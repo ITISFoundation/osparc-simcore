@@ -38,18 +38,6 @@ qx.Theme.define("osparc.theme.Font", {
       size: 13
     },
 
-
-    "title-20": {
-      include: "defaults",
-      size: 20,
-      bold: true
-    },
-
-    "text-20": {
-      include: "defaults",
-      size: 20
-    },
-
     "title-18": {
       include: "defaults",
       size: 18,

@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.31.0
+  version: 0.32.0
 servers:
 - url: ''
   description: webserver
@@ -4175,6 +4175,55 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+  /v0/wallets/{wallet_id}/auto-recharge:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet Autorecharge
+      operationId: get_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
+    put:
+      tags:
+      - wallets
+      summary: Replace Wallet Autorecharge
+      operationId: replace_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceWalletAutoRecharge'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -5227,6 +5276,14 @@ components:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
+    Envelope_GetWalletAutoRecharge_:
+      title: Envelope[GetWalletAutoRecharge]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetWalletAutoRecharge'
+        error:
+          title: Error
     Envelope_GroupUserGet_:
       title: Envelope[GroupUserGet]
       type: object
@@ -6215,6 +6272,41 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    GetWalletAutoRecharge:
+      title: GetWalletAutoRecharge
+      required:
+      - paymentMethodId
+      - minBalanceInUsd
+      - topUpAmountInUsd
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+          description: Enables/disables auto-recharge trigger in this wallet
+          default: false
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+          description: Payment method in the wallet used to perform the auto-recharge
+            payments or None if still undefined
+        minBalanceInUsd:
+          title: Minbalanceinusd
+          minimum: 0.0
+          type: number
+          description: Minimum balance in USD that triggers an auto-recharge
+        topUpAmountInUsd:
+          title: Topupamountinusd
+          minimum: 0.0
+          type: number
+          description: Amount in USD payed when auto-recharge condition is satisfied
+        topUpCountdown:
+          title: Topupcountdown
+          exclusiveMinimum: true
+          type: integer
+          description: Maximum number of top-ups left or None to denote unlimited
+          minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -7186,6 +7278,11 @@ components:
           title: Created
           type: string
           format: date-time
+        autoRecharge:
+          title: Autorecharge
+          type: boolean
+          description: If true, this payment-method is used for auto-recharge
+          default: false
     PaymentMethodInit:
       title: PaymentMethodInit
       required:
@@ -7375,6 +7472,7 @@ components:
       required:
       - pricingUnitId
       - unitName
+      - unitAttributes
       - currentCostPerUnit
       - default
       type: object
@@ -7387,6 +7485,9 @@ components:
         unitName:
           title: Unitname
           type: string
+        unitAttributes:
+          title: Unitattributes
+          type: object
         currentCostPerUnit:
           title: Currentcostperunit
           type: number
@@ -8228,6 +8329,35 @@ components:
         but
 
         using a path+query in the fragment of the URL'
+    ReplaceWalletAutoRecharge:
+      title: ReplaceWalletAutoRecharge
+      required:
+      - enabled
+      - paymentMethodId
+      - minBalanceInUsd
+      - topUpAmountInUsd
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+        minBalanceInUsd:
+          title: Minbalanceinusd
+          minimum: 0.0
+          type: number
+        topUpAmountInUsd:
+          title: Topupamountinusd
+          minimum: 0.0
+          type: number
+        topUpCountdown:
+          title: Topupcountdown
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     RepoApiModel:
       title: RepoApiModel
       required:

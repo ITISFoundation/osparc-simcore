@@ -47,6 +47,7 @@ async def get_pricing_plan_unit(
     return webserver_api_schemas.PricingUnitGet(
         pricing_unit_id=data.pricing_unit_id,
         unit_name=data.unit_name,
+        unit_extra_info=data.unit_extra_info,
         current_cost_per_unit=data.current_cost_per_unit,
         default=data.default,
     )

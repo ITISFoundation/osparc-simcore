@@ -2,6 +2,7 @@ import os
 from functools import cached_property
 
 from aiohttp import web
+from models_library.basic_types import NonNegativeDecimal
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
@@ -43,6 +44,16 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     PAYMENTS_FAKE_GATEWAY_URL: HttpUrl = Field(
         default=parse_obj_as(HttpUrl, "https://fake-payment-gateway.com"),
         description="FAKE Base url to the payment gateway",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE: NonNegativeDecimal = Field(
+        default=20.0,
+        description="Default value on the minimum balance to top-up for auto-recharge",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
+        default=100.0,
+        description="Default value on the amount to top-up for auto-recharge",
     )
 
     @cached_property

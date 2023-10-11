@@ -21,7 +21,7 @@
  *   Elements in the tree also accept Drag and/or Drop mechanisms which are implemented here.
  * "osparc-file-link" type is used for the Drag&Drop.
  *
- *   If a file is dropped into a folder, this class will start the copying proccess fireing
+ *   If a file is dropped into a folder, this class will start the copying process firing
  * "fileCopied" event if successful
  *
  * Also provides two static methods for checking whether en entry in the tree is File/Directory
@@ -68,7 +68,7 @@ qx.Class.define("osparc.file.FilesTree", {
       init: false
     },
 
-    dropMechnism: {
+    dropMechanism: {
       check: "Boolean",
       init: false
     }
@@ -217,11 +217,11 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __resetTree: function(treeName) {
-      // FIXME: It is not reseting the model
+      // FIXME: It is not resetting the model
       this.resetModel();
       const rootData = {
         label: treeName,
-        itemId: treeName.replace(/\s/g, ""), // remove all whitespaces
+        itemId: treeName.replace(/\s/g, ""), // remove all white spaces
         location: null,
         path: null,
         pathLabel: [treeName],
@@ -609,7 +609,7 @@ qx.Class.define("osparc.file.FilesTree", {
         this.__createDragMechanism(item);
       }
 
-      if (this.isDropMechnism()) {
+      if (this.isDropMechanism()) {
         this.__createDropMechanism(item);
       }
     },

@@ -36,7 +36,9 @@ def setup_statics(app: web.Application) -> None:
 
     # statics.json is computed here and contains information used
     # by the frontend to properly render the client
-    app.router.add_get("/static-frontend-data.json", get_statics_json)
+    app.router.add_get(
+        "/static-frontend-data.json", get_statics_json, name="static_frontend_data"
+    )
 
     # compute statics.json content
     app.on_startup.append(create_statics_json)
