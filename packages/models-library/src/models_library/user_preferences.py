@@ -1,5 +1,4 @@
 from enum import auto
-from pathlib import Path
 from typing import Annotated, Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
@@ -13,20 +12,20 @@ from .utils.enums import StrAutoEnum
 
 
 class _AutoRegisterMeta(ModelMetaclass):
-    _registered_user_preference_classes: ClassVar[dict[str, type]] = {}
+    registered_user_preference_classes: ClassVar[dict[str, type]] = {}
 
     def __new__(cls, name, bases, attrs, *args, **kwargs):
         new_class = super().__new__(cls, name, bases, attrs, *args, **kwargs)
 
         if name != cls.__name__:
-            if name in cls._registered_user_preference_classes:
+            if name in cls.registered_user_preference_classes:
                 msg = (
                     f"Class named '{name}' was already defined at "
-                    f"{cls._registered_user_preference_classes[name]}."
+                    f"{cls.registered_user_preference_classes[name]}."
                     " Please choose a different class name!"
                 )
                 raise TypeError(msg)
-            cls._registered_user_preference_classes[name] = new_class
+            cls.registered_user_preference_classes[name] = new_class
 
         return new_class
 
@@ -63,7 +62,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     ) -> type["_BaseUserPreferenceModel"]:
         preference_class: type[
             "_BaseUserPreferenceModel"
-        ] | None = cls._registered_user_preference_classes.get(preference_name, None)
+        ] | None = cls.registered_user_preference_classes.get(preference_name, None)
         if preference_class is None:
             raise NoPreferenceFoundError(preference_name)
         return preference_class
@@ -103,9 +102,6 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
     )
     service_version: ServiceVersion = Field(
         ..., description="version of the service which manages the preference"
-    )
-    file_path: Path = Field(
-        ..., description="path of the file where the preference is stored"
     )
 
     def to_db(self) -> dict:

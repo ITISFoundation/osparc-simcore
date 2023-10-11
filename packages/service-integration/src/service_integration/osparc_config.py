@@ -211,6 +211,8 @@ class RuntimeConfig(BaseModel):
 
     callbacks_mapping: CallbacksMapping | None = Field(default_factory=dict)
     paths_mapping: PathMappingsLabel | None = None
+
+    user_preferences_path: Path | None = None
     boot_options: BootOptions = None
     min_visible_inputs: NonNegativeInt | None = None
 

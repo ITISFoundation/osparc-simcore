@@ -14,6 +14,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products_prices import (
     get_product_latest_credit_price_or_none,
+    is_payment_enabled,
 )
 
 
@@ -105,6 +106,8 @@ async def test_get_product_latest_price_or_none(
         is None
     )
 
+    assert await is_payment_enabled(connection, product_name="undefined") is False
+
     # defined product but undefined price
     assert (
         await get_product_latest_credit_price_or_none(
@@ -112,6 +115,8 @@ async def test_get_product_latest_price_or_none(
         )
         is None
     )
+
+    assert await is_payment_enabled(connection, product_name=fake_product.name) is False
 
 
 async def test_price_history_of_a_product(
@@ -142,3 +147,5 @@ async def test_price_history_of_a_product(
         )
         == 2
     )
+
+    assert await is_payment_enabled(connection, product_name=fake_product.name) is True

@@ -4,6 +4,7 @@ import re
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 from typing import Any, TypeAlias
 from uuid import UUID
 
@@ -23,7 +24,15 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -372,6 +381,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
+    user_preferences_path: Path | None = None
     callbacks_mapping: CallbacksMapping = Field(default_factory=dict)
 
     dynamic_sidecar_network_name: str = Field(
@@ -470,6 +480,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "simcore_traefik_zone": names_helper.simcore_traefik_zone,
             "request_dns": request_dns,
             "request_scheme": request_scheme,
+            "user_preferences_path": simcore_service_labels.user_preferences_path,
             "proxy_service_name": names_helper.proxy_service_name,
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
@@ -478,6 +489,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         if run_id:
             obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)  # type: ignore[no-any-return]
+
+    @validator("user_preferences_path", pre=True)
+    @classmethod
+    def strip_path_serialization_to_none(cls, v):
+        if v == "None":
+            return None
+        return v
 
     @classmethod
     def from_service_inspect(

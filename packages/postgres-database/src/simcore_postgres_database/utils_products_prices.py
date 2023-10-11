@@ -18,3 +18,8 @@ async def get_product_latest_credit_price_or_none(
     if usd_per_credit is not None:
         return Decimal(usd_per_credit)
     return None
+
+
+async def is_payment_enabled(conn: SAConnection, product_name: str) -> bool:
+    p = await get_product_latest_credit_price_or_none(conn, product_name=product_name)
+    return bool(p)  # zero or None is disabled
