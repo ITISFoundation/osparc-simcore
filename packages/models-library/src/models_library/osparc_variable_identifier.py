@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
+from pydantic.errors import PydanticErrorMixin
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
@@ -36,9 +37,8 @@ class OsparcVariableIdentifier(BaseModel):
         return parts[1] if len(parts) > 1 else None
 
 
-class UnresolvedOsparcVariableIdentifierError(TypeError):
-    def __init__(self, value: OsparcVariableIdentifier) -> None:
-        super().__init__(f"Provided argument is unresolved: {value=}")
+class UnresolvedOsparcVariableIdentifierError(PydanticErrorMixin, TypeError):
+    msg_template = "Provided argument is unresolved: value={value}"
 
 
 def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
@@ -54,7 +54,7 @@ def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
         TypeError: if the the OsparcVariableIdentifier was unresolved
     """
     if isinstance(var, OsparcVariableIdentifier):
-        raise UnresolvedOsparcVariableIdentifierError(var)
+        raise UnresolvedOsparcVariableIdentifierError(value=var)
     return var
 
 

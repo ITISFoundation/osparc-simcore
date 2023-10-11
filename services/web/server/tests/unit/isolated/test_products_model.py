@@ -13,7 +13,9 @@ from simcore_service_webserver.products._db import Product
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Product,),
+    [
+        Product,
+    ],
 )
 def test_product_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
@@ -71,4 +73,5 @@ def test_product_to_static():
             {"kind": "email", "label": "email", "email": "more-support@acme.com"},
             {"kind": "web", "label": "web-form", "url": "support.acme.com"},
         ],
+        "isPaymentEnabled": False,
     }

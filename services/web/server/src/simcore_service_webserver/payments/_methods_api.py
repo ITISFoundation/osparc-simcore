@@ -20,6 +20,7 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from yarl import URL
 
 from ._api import check_wallet_permissions
+from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
     PaymentsMethodsDB,
     delete_payment_method,
@@ -224,6 +225,10 @@ async def list_wallet_payment_methods(
         for ack in acked
     ]
     # -----
+
+    if auto_rechage := await get_wallet_autorecharge(app, wallet_id=wallet_id):
+        for pm in payments_methods:
+            pm.auto_recharge = pm.idr == auto_rechage.primary_payment_method_id
 
     return payments_methods
 

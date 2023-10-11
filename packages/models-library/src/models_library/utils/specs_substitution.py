@@ -14,11 +14,11 @@ from .string_substitution import (
 SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
-def _serializer(data: dict[str, Any]) -> str:
+def _json_dumps(data: dict[str, Any]) -> str:
     return json.dumps(data)
 
 
-def _deserializer(str_data: str) -> dict[str, Any]:
+def _json_loads(str_data: str) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(str_data))
 
 
@@ -39,7 +39,7 @@ class SpecsSubstitutionsResolver:
         cls, specs: dict[str, Any], *, upgrade: bool
     ) -> TextTemplate:
         # convert to yaml (less symbols as in json)
-        service_spec_str: str = _serializer(specs)
+        service_spec_str: str = _json_dumps(specs)
 
         if upgrade:  # legacy
             service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
@@ -63,37 +63,33 @@ class SpecsSubstitutionsResolver:
         return self._substitutions
 
     def set_substitutions(
-        self, mappings: dict[str, SubstitutionValue] | None = None
+        self, mappings: dict[str, SubstitutionValue]
     ) -> SubstitutionsDict:
         """
         NOTE: ONLY targets identifiers declared in the specs
         NOTE:`${identifier:-a_default_value}` will replace the identifier with `a_default_value`
         if not provided
         """
-        if mappings is None:
-            mappings = {}
 
-        needed_identifiers = self.get_identifiers()
+        required_identifiers = self.get_identifiers()
 
-        needed_identifiers_with_defaults: dict[str, str | None] = {}
-        for identifier in needed_identifiers:
+        required_identifiers_with_defaults: dict[str, str | None] = {}
+        for identifier in required_identifiers:
             parts = identifier.split(":-")
-            needed_identifiers_with_defaults[identifier] = (
+            required_identifiers_with_defaults[identifier] = (
                 parts[1] if ":-" in identifier else None
             )
 
         resolved_identifiers: dict[str, str] = {}
-        for identifier in needed_identifiers_with_defaults:
+        for identifier, default_value in required_identifiers_with_defaults.items():
             if identifier in mappings:
                 resolved_identifiers[identifier] = cast(str, mappings[identifier])
-            elif needed_identifiers_with_defaults[identifier] is not None:
-                resolved_identifiers[identifier] = cast(
-                    str, needed_identifiers_with_defaults[identifier]
-                )
+            elif default_value is not None:
+                resolved_identifiers[identifier] = default_value
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)
         return self._substitutions
 
     def run(self) -> dict[str, Any]:
         new_specs_txt: str = self._template.safe_substitute(self._substitutions)
-        return _deserializer(new_specs_txt)
+        return _json_loads(new_specs_txt)
