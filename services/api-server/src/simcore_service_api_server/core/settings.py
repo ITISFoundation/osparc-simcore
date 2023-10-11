@@ -35,7 +35,7 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
 
     @cached_property
     def base_url(self) -> str:
-        # http://webserver:8080/v0
+        # http://webserver:8080/
         url_without_vtag: str = self._compose_url(
             prefix="WEBSERVER",
             port=URLPart.REQUIRED,
