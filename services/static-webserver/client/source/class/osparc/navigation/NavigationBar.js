@@ -134,12 +134,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       // right-items
       const walletsViewer = this.getChildControl("wallets-viewer");
       walletsViewer.exclude();
-      osparc.desktop.credits.Utils.areWalletsEnabled()
-        .then(walletsEnabled => {
-          if (walletsEnabled) {
-            walletsViewer.show();
-          }
-        });
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        walletsViewer.show();
+      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");

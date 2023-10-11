@@ -196,14 +196,13 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "ANNOTATION_NOTE":
           this.__openStudyDetails(resourceId, notification);
           break;
-        case "WALLET_SHARED":
-          osparc.desktop.credits.Utils.areWalletsEnabled()
-            .then(walletsEnabled => {
-              if (walletsEnabled) {
-                this.__openWalletDetails(parseInt(resourceId));
-              }
-            });
+        case "WALLET_SHARED": {
+          const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+          if (walletsEnabled) {
+            this.__openWalletDetails(parseInt(resourceId));
+          }
           break;
+        }
       }
     },
 
