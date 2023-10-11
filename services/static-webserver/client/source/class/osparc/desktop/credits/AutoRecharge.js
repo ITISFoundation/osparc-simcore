@@ -88,6 +88,20 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       if (wallet) {
         myAccessRights = wallet.getMyAccessRights();
         if (myAccessRights["write"]) {
+          // populate the payment methods
+          osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
+            .then(paymentMethods => {
+              this.__paymentMethod.removeAll();
+              paymentMethods.forEach(paymentMethod => {
+                let label = paymentMethod.cardHolderName;
+                label += " ";
+                label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
+                const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
+                this.__paymentMethod.add(lItem);
+              });
+            });
+
+          // populate the form
           const params = {
             url: {
               walletId: wallet.getWalletId()
@@ -103,6 +117,9 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
                 .then(paymentMethod => {
                   if (paymentMethod) {
                     console.log("paymentMethod", paymentMethod);
+                    this.__paymentMethod.getSelectables().forEach(selectable => {
+                      console.log("selectable", selectable);
+                    });
                     // this.__paymentMethod.setValue("Hello");
                   }
                 });
@@ -144,7 +161,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const lowerThresholdField = this.__lowerThreshold = new qx.ui.form.Spinner().set({
         minimum: 0,
         maximum: 10000,
-        maxWidth: 120
+        maxWidth: 200
       });
       layout.add(lowerThresholdField);
 
@@ -157,7 +174,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const paymentAmountField = this.__paymentAmount = new qx.ui.form.Spinner().set({
         minimum: 0,
         maximum: 10000,
-        maxWidth: 120
+        maxWidth: 200
       });
       layout.add(paymentAmountField);
 
@@ -170,7 +187,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const nTopUpsField = this.__nTopUps = new qx.ui.form.Spinner().set({
         minimum: -1,
         maximum: 100,
-        maxWidth: 120
+        maxWidth: 200
       });
       layout.add(nTopUpsField);
 
@@ -181,7 +198,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       layout.add(label);
 
       const paymentMethods = this.__paymentMethod = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
+        allowGrowX: false,
+        maxWidth: 200
       });
       layout.add(paymentMethods);
 

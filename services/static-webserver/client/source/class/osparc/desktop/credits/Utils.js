@@ -99,19 +99,28 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return null;
     },
 
-    getPaymentMethods: function() {
+    getPaymentMethods: function(walletId) {
       return new Promise(resolve => {
-        const wallets = osparc.store.Store.getInstance().getWallets();
-        const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
         const promises = [];
-        myWallets.forEach(myWallet => {
+        if (walletId) {
           const params = {
             url: {
-              walletId: myWallet.getWalletId()
+              walletId
             }
           };
           promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
-        });
+        } else {
+          const wallets = osparc.store.Store.getInstance().getWallets();
+          const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+          myWallets.forEach(myWallet => {
+            const params = {
+              url: {
+                walletId: myWallet.getWalletId()
+              }
+            };
+            promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
+          });
+        }
         Promise.all(promises)
           .then(values => {
             let paymentMethods = [];
@@ -125,7 +134,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return new Promise(resolve => {
         this.getPaymentMethods()
           .then(paymentMethods => {
-            const paymentMethodFound = paymentMethods.find(paymentMethod => paymentMethod["idr"] === paymentMethodId)
+            const paymentMethodFound = paymentMethods.find(paymentMethod => paymentMethod["idr"] === paymentMethodId);
             resolve(paymentMethodFound);
           });
       });
