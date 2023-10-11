@@ -19,7 +19,7 @@ class PaymentsTransactionsRepo:
     # The transition should put all the implementations in the simcore_postgres_database first
     # so it is usable temporarily in both the webserver and here
     #
-    async def init_payment_transaction(
+    async def insert_init_payment_transaction(
         self,
         payment_id: str,
         price_dollars: Decimal,
@@ -31,6 +31,7 @@ class PaymentsTransactionsRepo:
         comment: str | None,
         initiated_at: datetime.datetime,
     ):
+        """Annotates init-payment transaction"""
         raise NotImplementedError
 
     async def ack_payment_transaction(

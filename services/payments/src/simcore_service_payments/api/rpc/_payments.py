@@ -1,9 +1,12 @@
 import logging
 from decimal import Decimal
 
+import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
+from models_library.wallets import WalletID
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
@@ -17,49 +20,64 @@ router = RPCRouter()
 
 
 @router.expose()
-async def create_payment(
+async def init_payment(
     app: FastAPI,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
     product_name: str,
-    wallet_id: str,
+    wallet_id: WalletID,
     wallet_name: str,
     user_id: UserID,
     user_name: str,
     user_email: str,
+    comment: str | None = None,
 ) -> WalletPaymentCreated:
+
+    initiated_at = arrow.utcnow().datetime
+
     # Payment-Gateway
-    payments_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Init payment %s in payments-gateway",
+        f"{wallet_id=}",
+        get_log_record_extra(user_id=user_id),
+    ):
+        payments_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
 
-    init = await payments_gateway_api.init_payment(
-        payment=InitPayment(
-            amount_dollars=amount_dollars,
-            credits=target_credits,
-            user_name=user_name,
-            user_email=user_email,  # type: ignore
-            wallet_name=wallet_name,
+        init = await payments_gateway_api.init_payment(
+            payment=InitPayment(
+                amount_dollars=amount_dollars,
+                credits=target_credits,
+                user_name=user_name,
+                user_email=user_email,  # type: ignore
+                wallet_name=wallet_name,
+            )
         )
-    )
 
-    submission_link = payments_gateway_api.get_form_payment_url(init.payment_id)
+        submission_link = payments_gateway_api.get_form_payment_url(init.payment_id)
 
     # Database
-    repo = PaymentsTransactionsRepo()
-    _logger.debug(
-        "Annotate transaction %s: %s",
-        repo,
-        {
-            "amount_dollars": amount_dollars,
-            "target_credits": target_credits,
-            "product_name": product_name,
-            "wallet_id": wallet_id,
-            "wallet_name": wallet_name,
-            "user_id": user_id,
-            "user_name": user_name,
-            "user_email": user_email,
-        },
-    )
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Annotate init transaction %s in db",
+        f"{init.payment_id=}",
+        get_log_record_extra(user_id=user_id),
+    ):
+        repo = PaymentsTransactionsRepo()
+        await repo.insert_init_payment_transaction(
+            payment_id=init.payment_id,
+            price_dollars=amount_dollars,
+            osparc_credits=target_credits,
+            product_name=product_name,
+            user_id=user_id,
+            user_email=user_email,
+            wallet_id=wallet_id,
+            comment=comment,
+            initiated_at=initiated_at,
+        )
 
     return WalletPaymentCreated(
         payment_id=f"{init.payment_id}",
