@@ -148,24 +148,22 @@ qx.Class.define("osparc.About", {
     },
 
     __populateBackendEntries: function(page) {
-      osparc.utils.LibVersions.getBackendLibs()
-        .then(libs => {
-          for (let i=0; i<libs.length; i++) {
-            const entry = this.__createEntry(libs[i]);
-            if (entry.length) {
-              page.add(entry[0], {
-                row: i,
-                column: 0
-              });
-            }
-            if (entry.length>1) {
-              page.add(entry[1], {
-                row: i,
-                column: 1
-              });
-            }
-          }
-        });
+      const libs = osparc.utils.LibVersions.getBackendLibs();
+      for (let i=0; i<libs.length; i++) {
+        const entry = this.__createEntry(libs[i]);
+        if (entry.length) {
+          page.add(entry[0], {
+            row: i,
+            column: 0
+          });
+        }
+        if (entry.length>1) {
+          page.add(entry[1], {
+            row: i,
+            column: 1
+          });
+        }
+      }
     },
 
     __createFrontendEntries: function(libs) {
