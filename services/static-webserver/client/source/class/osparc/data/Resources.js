@@ -71,7 +71,7 @@ qx.Class.define("osparc.data.Resources", {
       "config": {
         useCache: true,
         endpoints: {
-          getOne: {
+          get: {
             method: "GET",
             url: statics.API + "/config"
           }

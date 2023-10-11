@@ -32,9 +32,7 @@ qx.Class.define("osparc.auth.LoginPage", {
   construct: function() {
     this.base(arguments);
 
-    osparc.data.Resources.getOne("config")
-      .then(() => this._buildLayout())
-      .catch(err => console.error(err));
+    this._buildLayout();
   },
 
   events: {

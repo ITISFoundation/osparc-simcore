@@ -40,7 +40,7 @@ qx.Class.define("osparc.Application", {
      * This method contains the initial application code and gets called
      * during startup of the application
      */
-    main: function() {
+    main: async function() {
       // Call super class
       this.base();
 
@@ -51,6 +51,8 @@ qx.Class.define("osparc.Application", {
         // support native logging capabilities, e.g. Firebug for Firefox
         qx.log.appender.Native;
       }
+
+      await this.__preloadCalls();
 
       const intlTelInput = osparc.wrapper.IntlTelInput.getInstance();
       intlTelInput.init();
@@ -95,6 +97,11 @@ qx.Class.define("osparc.Application", {
 
       this.__initRouting();
       this.__startupChecks();
+    },
+
+    __preloadCalls: async function() {
+      await osparc.data.Resources.get("config");
+      await osparc.data.Resources.get("statics");
     },
 
     __initRouting: function() {
