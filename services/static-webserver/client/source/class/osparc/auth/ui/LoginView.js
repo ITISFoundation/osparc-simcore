@@ -186,9 +186,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     },
 
     resetValues: function() {
-      const fieldItems = this._form.getItems();
-      for (const key in fieldItems) {
-        fieldItems[key].resetValue();
+      if (this._form.getGroups()) {
+        // if there are no groups, getItems will fail
+        const fieldItems = this._form.getItems();
+        for (const key in fieldItems) {
+          fieldItems[key].resetValue();
+        }
       }
     },
 

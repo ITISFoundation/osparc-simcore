@@ -128,7 +128,10 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         allowGrowX: false
       });
       addMemberBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedData);
+        const serializedData = this.__currentModel.serialize();
+        serializedData["resourceType"] = "wallet";
+        const showOrganizations = false;
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
         collaboratorsManager.addListener("addCollaborators", e => {
           const cb = () => collaboratorsManager.close();
           this.__addMembers(e.getData(), cb);
@@ -207,6 +210,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
@@ -224,16 +228,19 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           let options = [];
           if (canIWrite) {
             // accountant...
-            if (collaborator["accessRights"]["write"]) {
+            if (gid === myGroupId) {
+              // it's me
+              options = [];
+            } else if (collaborator["accessRights"]["write"]) {
               // ...on accountant
               options = [
-                "demoteToMember",
+                // "demoteToMember", // only allow one Accountant per Wallet, we shouldn't get here
                 "removeMember"
               ];
             } else if (collaborator["accessRights"]["read"]) {
               // ...on member
               options = [
-                "promoteToAccountant",
+                // "promoteToAccountant", // only allow one Accountant per Wallet
                 "removeMember"
               ];
             }

@@ -27,7 +27,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     });
     this.setButtonsWidth(30);
 
-    this.__thumbnailsPerNode = {};
+    this.__thumbnails = [];
 
     if (study) {
       this.setStudy(study);
@@ -64,7 +64,12 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
   },
 
   members: {
-    __thumbnailsPerNode: null,
+    __thumbnails: null,
+
+    __addThumbnail: function(thumbnailData) {
+      this.__thumbnails.push(thumbnailData);
+      this.fireEvent("thumbnailAdded");
+    },
 
     __applyStudyData: function(study) {
       const wb = study.getWorkbench();
@@ -72,36 +77,23 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       Object.values(nodes).forEach(node => {
         const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
         if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          const nodeId = node.getNodeId();
-          this.__addThumbnail(nodeId, {
+          this.__addThumbnail({
             type: "serviceImage",
             thumbnailUrl: srvMetadata["thumbnail"],
             fileUrl: srvMetadata["thumbnail"]
           });
         }
       });
-    },
-
-    __addThumbnail: function(nodeId, thumbnailData) {
-      if (!(nodeId in this.__thumbnailsPerNode)) {
-        this.__thumbnailsPerNode[nodeId] = [];
-      }
-      this.__thumbnailsPerNode[nodeId].push(thumbnailData);
-      this.fireEvent("thumbnailAdded");
-    },
-
-    __setThumbnails: function(nodeId, thumbnailsData) {
-      this.__thumbnailsPerNode[nodeId] = thumbnailsData;
-      this.fireEvent("thumbnailAdded");
+      this.__reloadSuggestions();
     },
 
     addWorkbenchUIPreviewToSuggestions: function() {
-      // make it first in the list
-      this.__setThumbnails("0000-workbenchUIPreview", [{
+      this.__addThumbnail({
         type: "workbenchUIPreview",
         thumbnailUrl: osparc.product.Utils.getWorkbenchUIPreviewPath(),
         fileUrl: osparc.product.Utils.getWorkbenchUIPreviewPath()
-      }]);
+      });
+      this.__reloadSuggestions();
 
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.addWorkbenchUIPreviewToSuggestions());
@@ -109,49 +101,42 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
 
     addPreviewsToSuggestions: function(previewsPerNodes) {
       previewsPerNodes.forEach(previewsPerNode => {
-        const nodeId = previewsPerNode["node_id"];
         const previews = previewsPerNode["screenshots"];
         if (previews && previews.length) {
           previews.forEach(preview => {
-            this.__addThumbnail(nodeId, {
+            this.__addThumbnail({
               type: preview["mimetype"],
               thumbnailUrl: preview["thumbnail_url"],
               fileUrl: preview["file_url"]
             });
           });
+          this.__reloadSuggestions();
         }
       });
-      this.setSelectedNodeId(null);
     },
 
-    setSelectedNodeId: function(selectedNodeId) {
-      let suggestions = new Set([]);
-      if (selectedNodeId && selectedNodeId in this.__thumbnailsPerNode) {
-        const nodeThumbnails = this.__thumbnailsPerNode[selectedNodeId];
-        nodeThumbnails.forEach(nodeThumbnail => suggestions.add(nodeThumbnail));
-      } else {
-        Object.values(this.__thumbnailsPerNode).forEach(nodeThumbnails => {
-          nodeThumbnails.forEach(nodeThumbnail => suggestions.add(nodeThumbnail));
-        });
-      }
-      suggestions = Array.from(suggestions);
-      this.setSuggestions(suggestions);
+    __reloadSuggestions: function() {
+      this.setSuggestions(this.__thumbnails);
+    },
+
+    thumbnailTapped: function(thumbnail) {
+      this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
+      osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
+      this.fireDataEvent("thumbnailTapped", {
+        type: thumbnail.thumbnailType,
+        source: thumbnail.thumbnailFileUrl
+      });
     },
 
     setSuggestions: function(suggestions) {
       this.removeAll();
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.thumbnailUrl, maxHeight, parseInt(maxHeight*2/3));
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion["thumbnailUrl"], maxHeight, parseInt(maxHeight*2/3));
+        thumbnail.thumbnailType = suggestion["type"];
+        thumbnail.thumbnailFileUrl = suggestion["fileUrl"];
         thumbnail.setMarginLeft(1); // give some extra space to the selection border
-        thumbnail.addListener("tap", () => {
-          this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
-          osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
-          this.fireDataEvent("thumbnailTapped", {
-            type: suggestion.type,
-            source: suggestion.fileUrl
-          });
-        }, this);
+        thumbnail.addListener("tap", () => this.thumbnailTapped(thumbnail), this);
         this.add(thumbnail);
       });
     }

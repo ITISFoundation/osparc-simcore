@@ -318,6 +318,8 @@ qx.Class.define("osparc.Application", {
         case "s4l":
         case "s4llite":
         case "s4lacad":
+        case "s4ldesktop":
+        case "s4lacaddesktop":
           view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;
