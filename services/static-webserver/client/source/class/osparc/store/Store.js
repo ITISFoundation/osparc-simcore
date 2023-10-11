@@ -258,6 +258,11 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    // Invalidate the entire cache:
+    invalidateEntireCache: function() {
+      this.invalidate();
+    },
+
     /**
      * Invalidates the cache for the given resources.
      * If resource is a string, it will invalidate that resource.
