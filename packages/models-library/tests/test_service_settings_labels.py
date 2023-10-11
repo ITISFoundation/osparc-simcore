@@ -594,6 +594,11 @@ def test_resolving_some_service_labels_at_load_time(
     labels = SimcoreServiceLabels.parse_obj(service_labels)
 
     print("After", labels.json(indent=1))
+    formatted_json = service_meta.json(indent=1)
+    print("After", formatted_json)
+    for entry in vendor_environments:
+        print(entry)
+        assert entry not in formatted_json
 
 
 def test_user_preferences_path_is_part_of_exiting_volume():
@@ -607,8 +612,3 @@ def test_user_preferences_path_is_part_of_exiting_volume():
     }
     with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
         assert DynamicSidecarServiceLabels.parse_raw(json.dumps(labels_data))
-    formatted_json = service_meta.json(indent=1)
-    print("After", formatted_json)
-    for entry in vendor_environments:
-        print(entry)
-        assert entry not in formatted_json
