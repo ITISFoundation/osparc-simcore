@@ -753,12 +753,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           },
-          start: {
-            method: "POST",
-            url: statics.API + "/wallets/{walletId}/auto-recharge"
-          },
-          stop: {
-            method: "DELETE",
+          put: {
+            method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
