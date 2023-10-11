@@ -107,11 +107,11 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
         textColor: "danger-red"
       });
       walletsButton.addListener("tap", () => {
-        osparc.desktop.credits.Utils.areWalletsEnabled()
-          .then(walletsEnabled => {
-            const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            userCenterWindow.openWallets();
-          });
+        const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+        if (walletsEnabled) {
+          const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          userCenterWindow.openWallets();
+        }
       }, this);
       this._add(walletsButton, {
         flex: 1
@@ -132,11 +132,11 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     __addWallet: function(wallet) {
       const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
       creditsIndicator.addListener("tap", () => {
-        osparc.desktop.credits.Utils.areWalletsEnabled()
-          .then(walletsEnabled => {
-            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            creditsWindow.openOverview();
-          });
+        const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+        if (walletsEnabled) {
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          creditsWindow.openOverview();
+        }
       }, this);
       this._add(creditsIndicator, {
         flex: 1

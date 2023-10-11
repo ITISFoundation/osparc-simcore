@@ -202,10 +202,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 msg += "</br>";
                 msg += this.tr("Please contact us:");
                 msg += "</br>";
-                osparc.store.VendorInfo.getInstance().getSupportEmail()
-                  .then(supportEmail => {
-                    noAccessText.setValue(msg + supportEmail);
-                  });
+                const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+                noAccessText.setValue(msg + supportEmail);
                 this._addAt(noAccessText, 2);
               }
             });
@@ -546,12 +544,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       const importStudyButton = this.__createImportButton();
+      const isDisabled = osparc.utils.DisabledPlugins.isImportDisabled();
+      importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
       this._toolbar.add(importStudyButton);
-      importStudyButton.exclude();
-      osparc.utils.DisabledPlugins.isImportDisabled()
-        .then(isDisabled => {
-          importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
-        });
 
       const selectStudiesButton = this.__createSelectButton();
       this._toolbar.add(selectStudiesButton);
@@ -924,14 +919,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"));
-      exportButton.exclude();
-      osparc.utils.DisabledPlugins.isExportDisabled()
-        .then(isDisabled => {
-          exportButton.setVisibility(isDisabled ? "excluded" : "visible");
-        });
-      exportButton.addListener("execute", () => {
-        this.__exportStudy(studyData);
-      }, this);
+      const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
+      exportButton.setVisibility(isDisabled ? "excluded" : "visible");
+      exportButton.addListener("execute", () => this.__exportStudy(studyData), this);
       return exportButton;
     },
 

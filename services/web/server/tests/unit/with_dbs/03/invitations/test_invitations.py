@@ -179,6 +179,7 @@ async def test_product_owner_generate_invitation(
     before_dt = datetime.now(tz=timezone.utc)
     guest_email = faker.email()
     trial_account_days = 3
+    extra_credits = 10
 
     # request
     response = await client.post(
@@ -186,6 +187,7 @@ async def test_product_owner_generate_invitation(
         json={
             "guest": guest_email,
             "trialAccountDays": trial_account_days,
+            "extraCredits": extra_credits,
         },
     )
 
@@ -197,6 +199,7 @@ async def test_product_owner_generate_invitation(
             "issuer": logged_user["email"],
             "guest": guest_email,
             "trial_account_days": trial_account_days,
+            "extra_credits": extra_credits,
         }
         assert got.dict(include=set(expected), by_alias=False) == expected
 

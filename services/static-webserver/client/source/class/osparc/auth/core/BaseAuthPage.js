@@ -74,6 +74,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      * knows to save the content of the form. so we save it here.
      */
     _form: null,
+
     /**
      * This method gets called upon construction and
      * must be overriden in a subclass
@@ -81,6 +82,15 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      * @signature function()
      */
     _buildPage: null,
+
+    beautifyFormFields: function() {
+      Object.values(this._form.getItems()).forEach(formItem => {
+        formItem.set({
+          width: this.self().FORM_WIDTH,
+          backgroundColor: "transparent"
+        });
+      });
+    },
 
     /**
      * This method needs to be implemented in subclass

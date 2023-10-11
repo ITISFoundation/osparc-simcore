@@ -53,12 +53,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       backgroundColor: "background-main-1"
     });
 
-    Promise.all([
-      osparc.data.Resources.get("statics"),
-      osparc.data.Resources.get("notifications")
-    ])
-      .then(values => {
-        const notifications = values[1];
+    osparc.data.Resources.get("notifications")
+      .then(notifications => {
         osparc.notification.Notifications.getInstance().addNotifications(notifications);
         this.buildLayout();
         this.setPageContext("dashboard");
@@ -134,12 +130,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       // right-items
       const walletsViewer = this.getChildControl("wallets-viewer");
       walletsViewer.exclude();
-      osparc.desktop.credits.Utils.areWalletsEnabled()
-        .then(walletsEnabled => {
-          if (walletsEnabled) {
-            walletsViewer.show();
-          }
-        });
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        walletsViewer.show();
+      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
@@ -299,8 +293,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
                 const today = new Date(now.toISOString().slice(0, 10));
                 const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
                 if (daysToExpiration < 7) {
-                  osparc.utils.Utils.expirationMessage(daysToExpiration)
-                    .then(msg => control.setToolTipText(msg));
+                  const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
+                  control.setToolTipText(msg);
                   return "visible";
                 }
               }

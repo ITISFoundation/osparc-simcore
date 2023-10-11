@@ -891,23 +891,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();
+      const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
+      snaps.setVisibility(isVCDisabled ? "excluded" : "visible");
       this.__studyOptionsPage.add(snaps);
-      osparc.utils.DisabledPlugins.isVersionControlDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
-            snaps.show();
-          }
-        });
 
       const iters = this.__getIterationsSection();
-      iters.exclude();
+      const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
+      snaps.setVisibility(isMMDisabled ? "excluded" : "visible");
       this.__studyOptionsPage.add(iters);
-      osparc.utils.DisabledPlugins.isMetaModelingDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
-            iters.show();
-          }
-        });
     },
 
     __getSlideshowSection: function() {
@@ -1102,9 +1093,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        const scrollContariner = new qx.ui.container.Scroll();
-        scrollContariner.add(node.getPropsForm());
-        this.__settingsPage.add(scrollContariner, {
+        const scrollContainer = new qx.ui.container.Scroll();
+        scrollContainer.add(node.getPropsForm());
+        this.__settingsPage.add(scrollContainer, {
           flex: 1
         });
       }
@@ -1183,7 +1174,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         if (showStartStopButton) {
           // Only available to dynamic services
-          const instructions = new qx.ui.basic.Label(this.tr("To procceed with the following actions, the service needs to be Stopped.")).set({
+          const instructions = new qx.ui.basic.Label(this.tr("To proceed with the following actions, the service needs to be Stopped.")).set({
             font: "text-13",
             rich: true,
             wrap: true
