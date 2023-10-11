@@ -55,6 +55,7 @@ from .utils import (
     envelope_response,
     flash_response,
     get_client_ip,
+    notify_user_confirmation,
 )
 from .utils_email import get_template_path, send_email_from_template
 
@@ -255,6 +256,10 @@ async def register(request: web.Request):
             "You are registered successfully! To activate your account, please, "
             f"click on the verification link in the email we sent you to {registration.email}.",
             "INFO",
+        )
+    else:
+        await notify_user_confirmation(
+            request.app, user_id=user["id"], product_name=product.name
         )
 
     # No confirmation required: authorize login

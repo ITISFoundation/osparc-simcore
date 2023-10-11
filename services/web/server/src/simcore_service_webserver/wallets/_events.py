@@ -5,6 +5,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
+from ..users import preferences_api
 from ._api import any_wallet_owned_by_user, create_wallet
 
 
@@ -14,13 +15,24 @@ async def _auto_add_default_wallet(
     if not await any_wallet_owned_by_user(
         app, user_id=user_id, product_name=product_name
     ):
-        await create_wallet(
+        wallet = await create_wallet(
             app,
             user_id=user_id,
             wallet_name="Credits",
             description="Purchased credits end up in here",
             thumbnail=None,
             product_name=product_name,
+        )
+
+        preference_id = (
+            preferences_api.PreferredWalletIdFrontendUserPreference().preference_identifier
+        )
+        await preferences_api.set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=preference_id,
+            value=wallet.wallet_id,
         )
 
 

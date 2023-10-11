@@ -16,7 +16,7 @@ from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.utils import logged_gather
 
-from ._preferences_db import get_user_preference, set_user_preference
+from . import _preferences_db
 from ._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
     get_preference_identifier_to_preference_name_map,
@@ -38,7 +38,7 @@ async def _get_frontend_user_preferences(
 ) -> list[FrontendUserPreference]:
     saved_user_preferences: list[FrontendUserPreference | None] = await logged_gather(
         *(
-            get_user_preference(
+            _preferences_db.get_user_preference(
                 app,
                 user_id=user_id,
                 product_name=product_name,
@@ -55,6 +55,20 @@ async def _get_frontend_user_preferences(
             saved_user_preferences, ALL_FRONTEND_PREFERENCES, strict=True
         )
     ]
+
+
+async def get_user_preference(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    preference_class: AnyUserPreference,
+) -> AnyUserPreference | None:
+    return await _preferences_db.get_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=preference_class,
+    )
 
 
 async def get_frontend_user_preferences_aggregation(
@@ -93,7 +107,7 @@ async def set_frontend_user_preference(
         FrontendUserPreference.get_preference_class_from_name(preference_name),
     )
 
-    await set_user_preference(
+    await _preferences_db.set_user_preference(
         app,
         user_id=user_id,
         preference=parse_obj_as(preference_class, {"value": value}),
