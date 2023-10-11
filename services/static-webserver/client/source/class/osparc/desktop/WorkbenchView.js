@@ -892,12 +892,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();
       const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
-      snaps.setVisibility(isVCDisabled ? "exclude" : "visible");
+      snaps.setVisibility(isVCDisabled ? "excluded" : "visible");
       this.__studyOptionsPage.add(snaps);
 
       const iters = this.__getIterationsSection();
       const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
-      snaps.setVisibility(isMMDisabled ? "exclude" : "visible");
+      snaps.setVisibility(isMMDisabled ? "excluded" : "visible");
       this.__studyOptionsPage.add(iters);
     },
 
