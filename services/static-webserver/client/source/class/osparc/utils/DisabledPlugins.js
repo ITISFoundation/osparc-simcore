@@ -55,16 +55,13 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isPluginDisabled: function(key) {
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            if ("pluginsDisabled" in statics) {
-              resolve(statics["pluginsDisabled"].includes(key));
-            }
-            resolve(false);
-          })
-          .catch(err => reject(err));
-      });
+      const statics = osparc.store.Store.getInstance().get("statics");
+      if (statics) {
+        if ("pluginsDisabled" in statics) {
+          return statics["pluginsDisabled"].includes(key);
+        }
+      }
+      return false;
     }
   }
 });
