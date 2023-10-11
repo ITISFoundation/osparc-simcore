@@ -71,7 +71,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
     value provided inside `osparc_variables`.
 
     NOTE: when using make sure that `obj` is of type `BaseModel` or
-    `OsparcVariableIdentifier` it will not work as expected.
+    `OsparcVariableIdentifier` otherwise it will nto work as intended.
 
     NOTE: if the provided `obj` is instance of OsparcVariableIdentifier in place
     replacement cannot be done. You need to assign it to the previous handler.
@@ -120,6 +120,9 @@ def replace_osparc_variable_identifier(  # noqa: C901
 
 def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
     """
+    NOTE: when using make sure that `obj` is of type `BaseModel` or
+    `OsparcVariableIdentifier` otherwise it will nto work as intended.
+
     Raises:
         UnresolvedOsparcVariableIdentifierError: if not all instances of
         `OsparcVariableIdentifier` were replaced
