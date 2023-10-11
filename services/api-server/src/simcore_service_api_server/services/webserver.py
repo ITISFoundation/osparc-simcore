@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
+from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -391,6 +392,20 @@ class AuthSession:
             data = Envelope[WalletGet].parse_raw(response.text).data
             assert data  # nosec
             return data
+
+    async def get_project_node_pricing_unit(
+        self, project_id: UUID, node_id: UUID
+    ) -> PricingUnitGet:
+        response = await self.client.get(
+            f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
+            cookies=self.session_cookies,
+        )
+
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
+        return PricingUnitGet.parse_obj(data)
 
 
 # MODULES APP SETUP -------------------------------------------------------------
