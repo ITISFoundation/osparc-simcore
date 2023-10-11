@@ -3,7 +3,11 @@ import logging
 from models_library.callbacks_mapping import UserServiceCommand
 from servicelib.logging_utils import log_context
 
-from ..core.errors import ContainerExecContainerNotFoundError
+from ..core.errors import (
+    ContainerExecCommandFailedError,
+    ContainerExecContainerNotFoundError,
+    ContainerExecTimeoutError,
+)
 from ..models.shared_store import SharedStore
 from ..modules.container_utils import run_command_in_container
 
@@ -24,8 +28,14 @@ async def run_before_shutdown_actions(
                     command=user_service_command.command,
                     timeout=user_service_command.timeout,
                 )
-            except ContainerExecContainerNotFoundError:
+
+            except (
+                ContainerExecContainerNotFoundError,
+                ContainerExecCommandFailedError,
+                ContainerExecTimeoutError,
+            ):
                 _logger.warning(
-                    "Could not run before_shutdown commands because container %s was not found",
+                    "Could not run before_shutdown in container %s",
                     container_name,
+                    exc_info=True,
                 )

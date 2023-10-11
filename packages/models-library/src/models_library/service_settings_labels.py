@@ -210,10 +210,10 @@ class PathMappingsLabel(BaseModel):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
-                    "outputs_path": "/tmp/outputs",  # nosec
-                    "inputs_path": "/tmp/inputs",  # nosec
-                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
-                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
+                    "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
+                    "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
+                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
+                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108 nosec
                 },
                 {
                     "outputs_path": "/t_out",
@@ -279,6 +279,15 @@ class DynamicSidecarServiceLabels(BaseModel):
             "the container where the traffic must flow has to be "
             "specified. Required by dynamic-sidecar when "
             "compose_spec is set."
+        ),
+    )
+
+    user_preferences_path: Path | None = Field(
+        None,
+        alias="simcore.service.user-preferences-path",
+        description=(
+            "path where the user user preferences folder "
+            "will be mounted in the user services"
         ),
     )
 
@@ -400,6 +409,30 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
+    @validator("user_preferences_path", pre=True)
+    @classmethod
+    def deserialize_from_json(cls, v):
+        return f"{v}".removeprefix('"').removesuffix('"')
+
+    @validator("user_preferences_path")
+    @classmethod
+    def user_preferences_path_no_included_in_other_volumes(
+        cls, v: CallbacksMapping, values
+    ):
+        paths_mapping: PathMappingsLabel | None = values.get("paths_mapping", None)
+        if paths_mapping is None:
+            return v
+
+        for test_path in [
+            paths_mapping.inputs_path,
+            paths_mapping.outputs_path,
+            *paths_mapping.state_paths,
+        ]:
+            if f"{test_path}".startswith(f"{v}"):
+                msg = f"user_preferences_path={v} cannot be a subpath of {test_path}"
+                raise ValueError(msg)
+        return v
+
     @root_validator
     @classmethod
     def not_allowed_in_both_specs(cls, values):
@@ -496,6 +529,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                                 "timeout": 1,
                             }
                         }
+                    ),
+                    "simcore.service.user-preferences-path": json.dumps(
+                        "/tmp/path_to_preferences"  # noqa: S108
                     ),
                 },
                 # dynamic-service with compose spec
