@@ -20,8 +20,8 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
   statics: {
     areWalletsEnabled: function() {
-      const config = osparc.store.Store.getInstance().get("config");
-      return Boolean(config && config["isPaymentEnabled"]);
+      const statics = osparc.store.Store.getInstance().get("statics");
+      return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
     creditsToFixed: function(credits) {
