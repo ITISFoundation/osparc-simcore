@@ -198,7 +198,6 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       layout.add(label);
 
       const paymentMethods = this.__paymentMethod = new qx.ui.form.SelectBox().set({
-        allowGrowX: false,
         maxWidth: 200
       });
       layout.add(paymentMethods);
@@ -216,6 +215,16 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       });
       enableAutoRechargeBtn.addListener("execute", () => {
         enableAutoRechargeBtn.setFetching(true);
+        const params = {
+          data: {
+            minBalanceInUsd: this.__lowerThreshold.getValue(),
+            topUpAmountInUsd: this.__paymentAmount.getValue(),
+            topUpCountdown: this.__nTopUps.getValue(),
+            paymentMethodId: this.__paymentMethod.getSelection()[0].getModel()
+          }
+        };
+        console.log(params);
+        enableAutoRechargeBtn.setFetching(false);
       });
       return enableAutoRechargeBtn;
     },
