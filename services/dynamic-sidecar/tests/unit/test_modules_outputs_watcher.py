@@ -64,6 +64,7 @@ def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
         node_id=faker.uuid4(cast_to=None),
         inputs_path=tmp_path / "inputs",
         outputs_path=tmp_path / "outputs",
+        user_preferences_path=None,
         state_paths=[],
         state_exclude=set(),
         compose_namespace="",
