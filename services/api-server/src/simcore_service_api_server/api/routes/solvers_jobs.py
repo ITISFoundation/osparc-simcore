@@ -538,7 +538,7 @@ async def replace_job_custom_metadata(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
-    response_model=WalletGet,
+    response_model=WalletGet | None,
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )

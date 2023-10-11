@@ -369,7 +369,7 @@ class AuthSession:
             assert data  # nosec
             return data
 
-    async def get_project_wallet(self, project_id: ProjectID) -> WalletGet:
+    async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
         with _handle_webserver_api_errors():
             response = await self.client.get(
                 f"/projects/{project_id}/wallet",
