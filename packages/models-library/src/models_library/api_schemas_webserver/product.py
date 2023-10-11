@@ -29,6 +29,7 @@ class CreditPriceGet(OutputSchema):
 class GenerateInvitation(InputSchema):
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
+    extra_credits: PositiveInt | None = None
 
 
 class InvitationGenerated(OutputSchema):
@@ -36,6 +37,7 @@ class InvitationGenerated(OutputSchema):
     issuer: LowerCaseEmailStr
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
+    extra_credits: PositiveInt | None = None
     created: datetime
     invitation_link: HttpUrl
 
@@ -47,6 +49,15 @@ class InvitationGenerated(OutputSchema):
                     "issuer": "john.doe@email.com",
                     "guest": "guest@example.com",
                     "trialAccountDays": 7,
+                    "extraCredits": 30,
+                    "created": "2023-09-27T15:30:00",
+                    "invitationLink": "https://example.com/invitation#1234",
+                },
+                # w/o optional
+                {
+                    "productName": "osparc",
+                    "issuer": "john.doe@email.com",
+                    "guest": "guest@example.com",
                     "created": "2023-09-27T15:30:00",
                     "invitationLink": "https://example.com/invitation#1234",
                 },

@@ -93,6 +93,10 @@ def create_application() -> web.Application:
     setup_products(app)
     setup_statics(app)
 
+    # users
+    setup_users(app)
+    setup_groups(app)
+
     # resource tracking / billing
     setup_resource_tracker(app)
     setup_payments(app)
@@ -118,10 +122,6 @@ def create_application() -> web.Application:
     # resource management
     setup_resource_manager(app)
     setup_garbage_collector(app)
-
-    # users
-    setup_users(app)
-    setup_groups(app)
 
     # projects
     setup_projects(app)
