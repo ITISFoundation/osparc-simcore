@@ -77,12 +77,10 @@ qx.Class.define("osparc.po.Invitations", {
         textColor: "warning-yellow"
       });
       disclaimer.exclude();
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if ("invitation_required" in config && config["invitation_required"] === false) {
-            disclaimer.show();
-          }
-        });
+      const config = osparc.store.Store.getInstance().get("config");
+      if ("invitation_required" in config && config["invitation_required"] === false) {
+        disclaimer.show();
+      }
       invitationGroupBox.add(disclaimer);
 
       const newTokenForm = this.__createInvitationForm();

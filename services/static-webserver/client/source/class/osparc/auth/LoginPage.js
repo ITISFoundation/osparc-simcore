@@ -32,7 +32,9 @@ qx.Class.define("osparc.auth.LoginPage", {
   construct: function() {
     this.base(arguments);
 
-    this._buildLayout();
+    osparc.data.Resources.getOne("config")
+      .then(() => this._buildLayout())
+      .catch(err => console.error(err));
   },
 
   events: {
@@ -113,18 +115,16 @@ qx.Class.define("osparc.auth.LoginPage", {
       const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
 
       pages.add(login);
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if (config["invitation_required"]) {
-            if (osparc.product.Utils.getProductName().includes("s4l")) {
-              // all S4Ls
-              pages.add(requestAccount);
-            }
-            // TIS  pops up a 'send us an email' dialog
-          } else {
-            pages.add(register);
-          }
-        });
+      const config = osparc.store.Store.getInstance().get("config");
+      if (config["invitation_required"]) {
+        if (osparc.product.Utils.getProductName().includes("s4l")) {
+          // all S4Ls
+          pages.add(requestAccount);
+        }
+        // TIS  pops up a 'send us an email' dialog
+      } else {
+        pages.add(register);
+      }
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
