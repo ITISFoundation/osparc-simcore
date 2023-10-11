@@ -187,6 +187,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __applyWallet: function(wallet) {
+      let myAccessRights = null;
       if (wallet) {
         const walletSelector = this.getChildControl("wallet-selector");
         walletSelector.getSelectables().forEach(selectable => {
@@ -194,7 +195,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             walletSelector.setSelection([selectable]);
           }
         });
+        myAccessRights = wallet.getMyAccessRights();
       }
+      this.getChildControl("wallet-selector").set({
+        enabled: Boolean(myAccessRights && myAccessRights["write"])
+      });
+      this.getChildControl("auto-recharge-button").set({
+        enabled: Boolean(myAccessRights && myAccessRights["write"])
+      });
     },
 
     __buildLayout: function() {
