@@ -62,7 +62,7 @@ async def init_payment(
     with log_context(
         _logger,
         logging.INFO,
-        "Annotate init transaction %s in db",
+        "Annotate INIT transaction %s in db",
         f"{init.payment_id=}",
         get_log_record_extra(user_id=user_id),
     ):
