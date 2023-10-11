@@ -272,12 +272,10 @@ async def _start_dynamic_service(
 
         # Get wallet information
         wallet_info = None
-        is_current_project_billable = await products_api.is_current_product_billable(
-            request
-        )
+        product = products_api.get_current_product(request)
         app_settings = get_settings(request.app)
         if (
-            is_current_project_billable
+            product.is_payment_enabled
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
             project_wallet = await get_project_wallet(

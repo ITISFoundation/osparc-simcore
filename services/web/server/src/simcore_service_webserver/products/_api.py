@@ -44,19 +44,19 @@ async def get_current_product_credit_price(
     return await repo.get_product_latest_credit_price_or_none(current_product_name)
 
 
-async def is_current_product_billable(
-    request: web.Request,
-) -> bool:
-    current_product_credit_price = await get_current_product_credit_price(
-        request=request
-    )
-    if current_product_credit_price is None:
-        raise ValueError(
-            "Product is not defined in the `products_prices` table"
-        )  # Skilled
-    if current_product_credit_price == 0:
-        return False
-    return True
+# async def is_current_product_billable(
+#     request: web.Request,
+# ) -> bool:
+#     current_product_credit_price = await get_current_product_credit_price(
+#         request=request
+#     )
+#     if current_product_credit_price is None:
+#         raise ValueError(
+#             "Product is not defined in the `products_prices` table"
+#         )
+#     if bool(0:
+#         return False
+#     return True
 
 
 #
