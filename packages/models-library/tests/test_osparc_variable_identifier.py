@@ -1,12 +1,16 @@
 # pylint: disable=redefined-outer-name
 
+from typing import Any
+
 import pytest
 from models_library.osparc_variable_identifier import (
     OsparcVariableIdentifier,
     UnresolvedOsparcVariableIdentifierError,
     raise_if_unresolved,
+    raise_if_unresolved_osparc_variable_identifier_found,
+    replace_osparc_variable_identifier,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 VALID_IDENTIFIERS: list[str] = [
     "$OSPARC_VARIABLE_One121_",
@@ -55,6 +59,35 @@ def test_raise_if_unresolved(identifier: OsparcVariableIdentifier):
 
     with pytest.raises(UnresolvedOsparcVariableIdentifierError):
         example_func(identifier)
+
+
+class Example(BaseModel):
+    nested_objects: OsparcVariableIdentifier | str
+
+
+@pytest.mark.parametrize(
+    "object_template",
+    [
+        parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"),
+        [parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")],
+        (parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"),),
+        {parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")},
+        {"test": parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")},
+        {parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"): "test"},
+        Example(
+            nested_objects=parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")
+        ),
+    ],
+)
+def test_raise_if_unresolved_osparc_variable_identifier_found(object_template: Any):
+    with pytest.raises(UnresolvedOsparcVariableIdentifierError):
+        raise_if_unresolved_osparc_variable_identifier_found(object_template)
+
+    replaced = replace_osparc_variable_identifier(
+        object_template, {"OSPARC_VARIABLE_1": "1"}
+    )
+    raise_if_unresolved_osparc_variable_identifier_found(replaced)
+    assert "OSPARC_VARIABLE_1" not in f"{replaced}"
 
 
 @pytest.mark.parametrize(

@@ -17,6 +17,12 @@ class OsparcVariableIdentifier(BaseModel):
         ..., regex=rf"^\${{?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+}}?(:-.+)?$"
     )
 
+    def __hash__(self):
+        return hash(str(self.__root__))
+
+    def __eq__(self, other):
+        return self.__root__ == other.__root__
+
     def _get_without_template_markers(self) -> str:
         # $VAR
         # ${VAR}
@@ -64,6 +70,9 @@ def replace_osparc_variable_identifier(  # noqa: C901
     """Replaces mostly in place an instance of `OsparcVariableIdentifier` with the
     value provided inside `osparc_variables`.
 
+    NOTE: when using make sure that `obj` is of type `BaseModel` or
+    `OsparcVariableIdentifier` it will not work as expected.
+
     NOTE: if the provided `obj` is instance of OsparcVariableIdentifier in place
     replacement cannot be done. You need to assign it to the previous handler.
 
@@ -83,8 +92,11 @@ def replace_osparc_variable_identifier(  # noqa: C901
         if obj.default_value is not None:
             return deepcopy(obj.default_value)  # type: ignore
     elif isinstance(obj, dict):
-        for key, value in obj.items():
-            obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
+        for key, value in list(obj.items()):
+            del obj[key]
+            obj[
+                replace_osparc_variable_identifier(key, osparc_variables)
+            ] = replace_osparc_variable_identifier(value, osparc_variables)
     elif isinstance(obj, BaseModel):
         for key, value in obj.__dict__.items():
             obj.__dict__[key] = replace_osparc_variable_identifier(
@@ -104,3 +116,26 @@ def replace_osparc_variable_identifier(  # noqa: C901
         }
         obj = new_set  # type: ignore
     return obj
+
+
+def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
+    """
+    Raises:
+        UnresolvedOsparcVariableIdentifierError: if not all instances of
+        `OsparcVariableIdentifier` were replaced
+    """
+    if isinstance(obj, OsparcVariableIdentifier):
+        raise_if_unresolved(obj)
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            raise_if_unresolved_osparc_variable_identifier_found(key)
+            raise_if_unresolved_osparc_variable_identifier_found(value)
+    elif isinstance(obj, BaseModel):
+        for value in obj.__dict__.values():
+            raise_if_unresolved_osparc_variable_identifier_found(value)
+    if isinstance(obj, list):
+        for item in enumerate(obj):
+            raise_if_unresolved_osparc_variable_identifier_found(item)
+    elif isinstance(obj, tuple | set):
+        for item in obj:
+            raise_if_unresolved_osparc_variable_identifier_found(item)
