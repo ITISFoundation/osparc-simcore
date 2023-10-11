@@ -25,6 +25,7 @@ from .._meta import API_VTAG as VTAG
 from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..payments.errors import (
+    InvalidPaymentMethodError,
     PaymentCompletedError,
     PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
@@ -58,6 +59,7 @@ def handle_wallets_exceptions(handler: Handler):
             PaymentCompletedError,
             PaymentMethodAlreadyAckedError,
             PaymentMethodUniqueViolationError,
+            InvalidPaymentMethodError,
         ) as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 
