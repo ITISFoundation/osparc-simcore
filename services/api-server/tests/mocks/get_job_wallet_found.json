@@ -22,14 +22,23 @@
             "allOf": null,
             "oneOf": null
           },
-          "response_value": "87643648-3a38-44e2-9cfe-d86ab3d50629"
+          "response_value": "projects"
         }
       ]
     },
     "query": null,
     "request_payload": null,
     "response_body": {
-      "data": null
+      "data": {
+        "walletId": 1,
+        "name": "my_wallet",
+        "description": "my awesome wallet",
+        "owner": 3,
+        "thumbnail": "string",
+        "status": "ACTIVE",
+        "created": "2023-10-10T13:58:20.381826+00:00",
+        "modified": "2023-10-10T13:58:20.381826+00:00"
+      }
     },
     "status_code": 200
   }
