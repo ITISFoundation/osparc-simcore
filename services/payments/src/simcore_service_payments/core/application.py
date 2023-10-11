@@ -11,8 +11,8 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
-from ..db import setup_db
 from ..services.payments_gateway import setup_payments_gateway
+from ..services.postgres import setup_postgres
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.resource_usage_tracker import setup_resource_usage_tracker
 from .settings import ApplicationSettings
@@ -38,7 +38,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # PLUGINS SETUP
     # API w/ postgres db
-    setup_db(app)
+    setup_postgres(app)
 
     # APIs w/ webserver
     setup_rabbitmq(app)
