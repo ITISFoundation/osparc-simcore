@@ -58,11 +58,20 @@ qx.Class.define("osparc.study.TierButton", {
           value: pricingUnit.unitName,
           font: "text-16"
         }));
-        // add tier extra info
+        // add price info
         this._add(new qx.ui.basic.Label().set({
           value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
           font: "text-14"
         }));
+        // add tier extra info
+        if ("unitExtraInfo" in pricingUnit) {
+          Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {
+            this._add(new qx.ui.basic.Label().set({
+              value: key + ": " + value,
+              font: "text-13"
+            }));
+          });
+        }
       } else {
         this._setLayout(new qx.ui.layout.HBox(5));
         this._add(new qx.ui.basic.Label().set({
