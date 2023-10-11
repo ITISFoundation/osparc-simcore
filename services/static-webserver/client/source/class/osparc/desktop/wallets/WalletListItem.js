@@ -127,6 +127,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             alignY: "middle",
             visibility: "hidden"
           });
+          this.bind("accessRights", control, "enabled", {
+            converter: accessRights => {
+              const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
+              return Boolean(myAr && myAr["write"]);
+            }
+          });
           control.addListener("execute", () => this.fireDataEvent("buyCredits", {
             walletId: this.getKey()
           }), this);
@@ -260,20 +266,22 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     __applyPreferredWallet: function(isPreferredWallet) {
       const favouriteButton = this.getChildControl("favourite-button");
+      favouriteButton.setBackgroundColor("transparent");
+      const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
-        this.setToolTipText(this.tr("Default Credit Account"));
         favouriteButton.set({
           label: this.tr("Primary"),
-          icon: "@FontAwesome5Solid/toggle-on/20",
-          backgroundColor: "strong-main"
+          toolTipText: this.tr("Default Credit Account"),
+          icon: "@FontAwesome5Solid/toggle-on/20"
         });
+        favouriteButtonIcon.setTextColor("strong-main");
       } else {
-        this.setToolTipText(this.tr("Make it Default Credit Account"));
         favouriteButton.set({
           label: this.tr("Secondary"),
-          icon: "@FontAwesome5Solid/toggle-off/20",
-          backgroundColor: null
+          toolTipText: this.tr("Make it Default Credit Account"),
+          icon: "@FontAwesome5Solid/toggle-off/20"
         });
+        favouriteButtonIcon.setTextColor("text");
       }
     }
   }

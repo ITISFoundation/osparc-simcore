@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "1.0.2"
+    "version": "1.1.0"
   },
   "paths": {
     "/": {
@@ -188,6 +188,13 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
+          "extra_credits": {
+            "title": "Extra Credits",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, the account's primary wallet will add these extra credits",
+            "minimum": 0
+          },
           "created": {
             "title": "Created",
             "type": "string",
@@ -231,6 +238,13 @@
             "exclusiveMinimum": true,
             "type": "integer",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          },
+          "extra_credits": {
+            "title": "Extra Credits",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, the account's primary wallet will add these extra credits",
             "minimum": 0
           },
           "created": {
@@ -283,6 +297,13 @@
             "exclusiveMinimum": true,
             "type": "integer",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          },
+          "extra_credits": {
+            "title": "Extra Credits",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, the account's primary wallet will add these extra credits",
             "minimum": 0
           }
         },
