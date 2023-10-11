@@ -51,6 +51,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    statics: {
+      check: "Object",
+      init: {}
+    },
     currentStudy: {
       check: "osparc.data.model.Study",
       init: null,
@@ -168,10 +172,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: [],
       event: "changeTags"
-    },
-    statics: {
-      check: "Object",
-      init: {}
     },
     classifiers: {
       check: "Array",
