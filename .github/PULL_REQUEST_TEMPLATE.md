@@ -14,6 +14,7 @@
   ⚠️    Changes in ops configuration etc. are required before deploying.
         [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/osparc-ops-environments or https://git.speag.com/oSparc/osparc-infra ]
   🗃️    Database table changed (relevant for devops).
+  👽️    Public API changes (meaning: dev features are moved to being exposed in production)
 
 
 or from https://gitmoji.dev/
