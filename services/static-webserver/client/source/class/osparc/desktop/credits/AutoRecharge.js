@@ -88,56 +88,59 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       if (wallet) {
         myAccessRights = wallet.getMyAccessRights();
         if (myAccessRights["write"]) {
-          // populate the payment methods
-          osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
-            .then(paymentMethods => {
-              this.__paymentMethod.removeAll();
-              paymentMethods.forEach(paymentMethod => {
-                let label = paymentMethod.cardHolderName;
-                label += " ";
-                label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
-                const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
-                this.__paymentMethod.add(lItem);
-              });
-            });
-
-          // populate the form
-          const params = {
-            url: {
-              walletId: wallet.getWalletId()
-            }
-          };
-          osparc.data.Resources.fetch("auto-recharge", "get", params)
-            .then(data => {
-              console.log("auto-recharge", data);
-              this.__lowerThreshold.setValue(data["minBalanceInUsd"]);
-              this.__paymentAmount.setValue(data["topUpAmountInUsd"]);
-              this.__nTopUps.setValue(data["topUpCountdown"] ? data["topUpCountdown"] : -1);
-              osparc.desktop.credits.Utils.getPaymentMethod(data["paymentMethodId"])
-                .then(paymentMethod => {
-                  if (paymentMethod) {
-                    console.log("paymentMethod", paymentMethod);
-                    this.__paymentMethod.getSelectables().forEach(selectable => {
-                      console.log("selectable", selectable);
-                    });
-                    // this.__paymentMethod.setValue("Hello");
-                  }
-                });
-
-              if (this.__lowerThreshold["enabled"]) {
-                this.getChildControl("enable-auto-recharge-button").exclude();
-                this.getChildControl("save-auto-recharge-button").show();
-                this.getChildControl("disable-auto-recharge-button").show();
-              } else {
-                this.getChildControl("enable-auto-recharge-button").show();
-                this.getChildControl("save-auto-recharge-button").exclude();
-                this.getChildControl("disable-auto-recharge-button").exclude();
-              }
-            })
-            .catch(err => console.error(err.message));
+          this.__populateForms();
         }
       }
       this.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
+    },
+
+    __populateForms: function() {
+      const wallet = this.getWallet();
+      // populate the payment methods
+      osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
+        .then(paymentMethods => {
+          this.__paymentMethod.removeAll();
+          paymentMethods.forEach(paymentMethod => {
+            let label = paymentMethod.cardHolderName;
+            label += " ";
+            label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
+            const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
+            this.__paymentMethod.add(lItem);
+          });
+        });
+
+      // populate the form
+      const params = {
+        url: {
+          walletId: wallet.getWalletId()
+        }
+      };
+      osparc.data.Resources.fetch("auto-recharge", "get", params)
+        .then(data => {
+          this.__lowerThreshold.setValue(data["minBalanceInUsd"]);
+          this.__paymentAmount.setValue(data["topUpAmountInUsd"]);
+          this.__nTopUps.setValue(data["topUpCountdown"] ? data["topUpCountdown"] : -1);
+          osparc.desktop.credits.Utils.getPaymentMethod(data["paymentMethodId"])
+            .then(paymentMethod => {
+              if (paymentMethod) {
+                console.log("paymentMethod", paymentMethod);
+                this.__paymentMethod.getSelectables().forEach(selectable => {
+                  console.log("selectable", selectable);
+                });
+              }
+            });
+
+          if (data["enabled"]) {
+            this.getChildControl("enable-auto-recharge-button").exclude();
+            this.getChildControl("save-auto-recharge-button").show();
+            this.getChildControl("disable-auto-recharge-button").show();
+          } else {
+            this.getChildControl("enable-auto-recharge-button").show();
+            this.getChildControl("save-auto-recharge-button").exclude();
+            this.getChildControl("disable-auto-recharge-button").exclude();
+          }
+        })
+        .catch(err => console.error(err.message));
     },
 
     __buildLayout: function() {
@@ -205,6 +208,15 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       return layout;
     },
 
+    __getFieldsData: function() {
+      return {
+        minBalanceInUsd: this.__lowerThreshold.getValue(),
+        topUpAmountInUsd: this.__paymentAmount.getValue(),
+        topUpCountdown: this.__nTopUps.getValue(),
+        paymentMethodId: this.__paymentMethod.getSelection()[0].getModel()
+      };
+    },
+
     __getEnableAutoRechargeButton: function() {
       const enableAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Enable Auto Recharge"),
@@ -216,15 +228,17 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       enableAutoRechargeBtn.addListener("execute", () => {
         enableAutoRechargeBtn.setFetching(true);
         const params = {
-          data: {
-            minBalanceInUsd: this.__lowerThreshold.getValue(),
-            topUpAmountInUsd: this.__paymentAmount.getValue(),
-            topUpCountdown: this.__nTopUps.getValue(),
-            paymentMethodId: this.__paymentMethod.getSelection()[0].getModel()
-          }
+          url: {
+            walletId: this.getWallet().getWalletId()
+          },
+          data: this.__getFieldsData()
         };
-        console.log(params);
-        enableAutoRechargeBtn.setFetching(false);
+        params.data["enabled"] = true;
+        osparc.data.Resources.fetch("auto-recharge", "put", params)
+          .then(() => {
+            this.__populateForms();
+          })
+          .finally(() => enableAutoRechargeBtn.setFetching(false));
       });
       return enableAutoRechargeBtn;
     },
@@ -247,6 +261,21 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         appearance: "danger-button",
         maxWidth: 200,
         center: true
+      });
+      disableAutoRechargeBtn.addListener("execute", () => {
+        disableAutoRechargeBtn.setFetching(true);
+        const params = {
+          url: {
+            walletId: this.getWallet().getWalletId()
+          },
+          data: this.__getFieldsData()
+        };
+        params.data["enabled"] = false;
+        osparc.data.Resources.fetch("auto-recharge", "put", params)
+          .then(() => {
+            this.__populateForms();
+          })
+          .finally(() => disableAutoRechargeBtn.setFetching(false));
       });
       return disableAutoRechargeBtn;
     }
