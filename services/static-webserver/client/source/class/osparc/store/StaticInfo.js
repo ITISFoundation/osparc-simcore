@@ -21,19 +21,13 @@ qx.Class.define("osparc.store.StaticInfo", {
 
   members: {
     getValue: function(key) {
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.get("statics")
-          .then(staticData => {
-            if (key in staticData) {
-              resolve(staticData[key]);
-            } else {
-              const errorMsg = `${key} not found in statics`;
-              console.warn(errorMsg);
-              reject(errorMsg);
-            }
-          })
-          .catch(err => reject(err));
-      });
+      const statics = osparc.store.Store.getInstance().get("statics");
+      if (key in statics) {
+        return statics[key];
+      }
+      const errorMsg = `${key} not found in statics`;
+      console.warn(errorMsg);
+      return null;
     },
 
     getPlatformName: function() {

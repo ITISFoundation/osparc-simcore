@@ -50,13 +50,11 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
         textAlign: "center",
         rich : true
       });
-      osparc.store.Support.getManuals()
-        .then(manuals => {
-          if (manuals.length > 0) {
-            manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
-          }
-          manualsLabel.show();
-        });
+      const manuals = osparc.store.Support.getManuals();
+      if (manuals && manuals.length > 0) {
+        manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
+        manualsLabel.show();
+      }
       footerItems.push(manualsLabel);
 
       const licenseText = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";

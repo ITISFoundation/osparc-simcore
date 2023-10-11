@@ -346,10 +346,9 @@ qx.Class.define("osparc.utils.Utils", {
       msg += "</br>";
       msg += qx.locale.Manager.tr("Please contact us by email:");
       msg += "</br>";
-      return new Promise(resolve => {
-        osparc.store.VendorInfo.getInstance().getSupportEmail()
-          .then(supportEmail => resolve(msg + supportEmail));
-      });
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      msg += supportEmail;
+      return msg;
     },
 
     // used for showing it to Guest users
@@ -357,14 +356,13 @@ qx.Class.define("osparc.utils.Utils", {
       return new Promise(resolve => {
         Promise.all([
           osparc.store.StaticInfo.getInstance().getDisplayName(),
-          osparc.store.Support.getManuals(),
-          osparc.store.VendorInfo.getInstance().getSupportEmail()
+          osparc.store.Support.getManuals()
         ])
           .then(values => {
             const productName = values[0];
             const manuals = values[1];
             const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
-            const supportEmail = values[2];
+            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
             const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
             let msg = "";
             msg += qx.locale.Manager.tr("To use all ");

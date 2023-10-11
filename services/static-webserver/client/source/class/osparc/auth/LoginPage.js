@@ -287,15 +287,13 @@ qx.Class.define("osparc.auth.LoginPage", {
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      osparc.store.VendorInfo.getInstance().getVendor()
-        .then(vendor => {
-          if (vendor) {
-            organizationLink.set({
-              value: vendor.copyright,
-              url: vendor.url
-            });
-          }
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor) {
+        organizationLink.set({
+          value: vendor.copyright,
+          url: vendor.url
         });
+      }
       versionLinkLayout.add(organizationLink);
 
       versionLinkLayout.add(new qx.ui.core.Spacer(), {

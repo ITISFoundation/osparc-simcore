@@ -293,8 +293,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
                 const today = new Date(now.toISOString().slice(0, 10));
                 const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
                 if (daysToExpiration < 7) {
-                  osparc.utils.Utils.expirationMessage(daysToExpiration)
-                    .then(msg => control.setToolTipText(msg));
+                  const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
+                  control.setToolTipText(msg);
                   return "visible";
                 }
               }

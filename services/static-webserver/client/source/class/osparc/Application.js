@@ -365,8 +365,8 @@ qx.Class.define("osparc.Application", {
           const expirationDay = new Date(profile["expirationDate"]);
           const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
           if (daysToExpiration < 7) {
-            osparc.utils.Utils.expirationMessage(daysToExpiration)
-              .then(msg => osparc.FlashMessenger.getInstance().logAs(msg, "WARNING"));
+            const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           }
         }
 

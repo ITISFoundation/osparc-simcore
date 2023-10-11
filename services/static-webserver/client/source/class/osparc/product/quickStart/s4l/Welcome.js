@@ -112,14 +112,12 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
         textAlign: "center",
         rich : true
       });
-      osparc.store.Support.getManuals()
-        .then(manuals => {
-          if (manuals.length > 0) {
-            const color = qx.theme.manager.Color.getInstance().resolve("text");
-            docLink.setValue(`<a href=${manuals[0].url} style='color: ${color}' target='_blank'>Documentation</a>`);
-          }
-          docLink.show();
-        });
+      const manuals = osparc.store.Support.getManuals();
+      if (manuals && manuals.length > 0) {
+        const color = qx.theme.manager.Color.getInstance().resolve("text");
+        docLink.setValue(`<a href=${manuals[0].url} style='color: ${color}' target='_blank'>Documentation</a>`);
+        docLink.show();
+      }
       footerItems.push(docLink);
 
       const licenseLink = new qx.ui.basic.Label().set({

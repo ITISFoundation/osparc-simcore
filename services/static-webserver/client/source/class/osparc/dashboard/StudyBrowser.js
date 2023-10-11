@@ -202,10 +202,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 msg += "</br>";
                 msg += this.tr("Please contact us:");
                 msg += "</br>";
-                osparc.store.VendorInfo.getInstance().getSupportEmail()
-                  .then(supportEmail => {
-                    noAccessText.setValue(msg + supportEmail);
-                  });
+                const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+                noAccessText.setValue(msg + supportEmail);
                 this._addAt(noAccessText, 2);
               }
             });

@@ -198,43 +198,40 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateMenuCompact: function() {
       this.getMenu().removeAll();
-      osparc.data.Resources.get("statics")
-        .then(async () => {
-          const authData = osparc.auth.Data.getInstance();
-          if (authData.isGuest()) {
-            this.getChildControl("log-in");
-          } else {
-            this.getChildControl("user-center");
-            if (osparc.data.Permissions.getInstance().isProductOwner()) {
-              this.getChildControl("po-center");
-            }
-            this.getChildControl("preferences");
-            this.getChildControl("organizations");
-            this.getChildControl("clusters");
-          }
-          this.getMenu().addSeparator();
+      const authData = osparc.auth.Data.getInstance();
+      if (authData.isGuest()) {
+        this.getChildControl("log-in");
+      } else {
+        this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isProductOwner()) {
+          this.getChildControl("po-center");
+        }
+        this.getChildControl("preferences");
+        this.getChildControl("organizations");
+        this.getChildControl("clusters");
+      }
+      this.getMenu().addSeparator();
 
-          // this part gets injected
-          this.__addQuickStartToMenu();
-          await this.__addManualsToMenu();
-          this.getMenu().addSeparator();
-          await this.__addFeedbacksToMenu();
-          this.getMenu().addSeparator();
-          this.getChildControl("theme-switcher");
+      // this part gets injected
+      this.__addQuickStartToMenu();
+      this.__addManualsToMenu();
+      this.getMenu().addSeparator();
+      this.__addFeedbacksToMenu();
+      this.getMenu().addSeparator();
+      this.getChildControl("theme-switcher");
 
-          this.getMenu().addSeparator();
-          const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-          if (announcementUIFactory.hasUserMenuAnnouncement()) {
-            this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
-          }
-          this.getChildControl("about");
-          if (!osparc.product.Utils.isProduct("osparc")) {
-            this.getChildControl("about-product");
-          }
-          this.getChildControl("license");
-          this.getMenu().addSeparator();
-          this.getChildControl("log-out");
-        });
+      this.getMenu().addSeparator();
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
+      if (announcementUIFactory.hasUserMenuAnnouncement()) {
+        this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
+      }
+      this.getChildControl("about");
+      if (!osparc.product.Utils.isProduct("osparc")) {
+        this.getChildControl("about-product");
+      }
+      this.getChildControl("license");
+      this.getMenu().addSeparator();
+      this.getChildControl("log-out");
     },
 
     __addQuickStartToMenu: function() {
@@ -243,14 +240,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       osparc.store.Support.addGuidedToursToMenu(menu);
     },
 
-    __addManualsToMenu: async function() {
+    __addManualsToMenu: function() {
       const menu = this.getMenu();
-      await osparc.store.Support.addManualButtonsToMenu(menu);
+      osparc.store.Support.addManualButtonsToMenu(menu);
     },
 
-    __addFeedbacksToMenu: async function() {
+    __addFeedbacksToMenu: function() {
       const menu = this.getMenu();
-      await osparc.store.Support.addSupportButtonsToMenu(menu);
+      osparc.store.Support.addSupportButtonsToMenu(menu);
     }
   }
 });
