@@ -114,16 +114,15 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       pages.add(login);
       const config = osparc.store.Store.getInstance().get("config");
-      if (config["invitation_required"]) {
-        if (
+      if (config["invitation_required"] &&
+        (
           osparc.product.Utils.isProduct("s4l") ||
           osparc.product.Utils.isProduct("s4lacad") ||
           osparc.product.Utils.isProduct("s4ldesktop") ||
-          osparc.product.Utils.isProduct("s4ldesktopacad")
-        ) {
-          // all S4Ls
-          pages.add(requestAccount);
-        }
+          osparc.product.Utils.isProduct("s4ldektopacad")
+        )
+      ) {
+        pages.add(requestAccount);
       }
       pages.add(register);
       pages.add(verifyPhoneNumber);
