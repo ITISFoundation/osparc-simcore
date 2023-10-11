@@ -19,12 +19,6 @@ qx.Class.define("osparc.store.StaticInfo", {
   extend: qx.core.Object,
   type: "singleton",
 
-  construct: function() {
-    this.base(arguments);
-
-    osparc.data.Resources.get("statics");
-  },
-
   members: {
     getValue: function(key) {
       return new Promise((resolve, reject) => {
