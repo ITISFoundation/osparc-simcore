@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 import yaml
 from models_library.utils.specs_substitution import (
+    IdentifierSubstitutionError,
     SpecsSubstitutionsResolver,
     SubstitutionValue,
 )
@@ -176,3 +177,25 @@ def test_specs_substitutions_resolver_various_cases(var_template: str, value: st
 
     assert input_dict != replaced_dict
     assert replaced_dict["key"] == value
+
+
+def test_safe_unsafe_substitution():
+    input_dict = {"key": "$VAR"}
+    text_template = SpecsSubstitutionsResolver(input_dict, upgrade=True)
+
+    # var is found
+    replace_with: dict[str, Any] = {"VAR": "a_value"}
+    text_template.set_substitutions(replace_with)
+    replaced_dict = text_template.run(safe=True)
+    assert replaced_dict == {"key": "a_value"}
+
+    # var is not found and not replaced without raising an error
+    text_template.set_substitutions({})
+    replaced_dict = text_template.run(safe=True)
+    assert replaced_dict == {"key": "$VAR"}
+
+    # when var is not replace with safe=False an error will be raised
+    with pytest.raises(
+        IdentifierSubstitutionError, match="Was not able to substitute identifier"
+    ):
+        text_template.run(safe=False)
