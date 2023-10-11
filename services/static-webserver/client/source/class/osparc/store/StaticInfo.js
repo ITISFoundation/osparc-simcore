@@ -62,7 +62,7 @@ qx.Class.define("osparc.store.StaticInfo", {
 
     getMaxNumberDyNodes: function() {
       const staticKey = "webserverProjects";
-      const wsStaticData = this.getValue(staticKey)
+      const wsStaticData = this.getValue(staticKey);
       const key = "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES";
       if (key in wsStaticData) {
         return wsStaticData[key];
