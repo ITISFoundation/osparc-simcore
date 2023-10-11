@@ -39,6 +39,7 @@ def available_osparc_variables(
         "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE_PRODUCT1": "license-p1.txt",
         "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE_PRODUCT2": "license-p2.txt",
         "OSPARC_VARIABLE_VENDOR_SECRET_LIST": "[1, 2, 3]",
+        "OSPARC_VARIABLE__WITH_BRACES": "has_a_value",
     }
 
     environs = {
@@ -76,6 +77,9 @@ def available_osparc_variables(
                     "DISPLAY=${DISPLAY}",
                     "SOME_LIST=$OSPARC_VARIABLE_VENDOR_SECRET_LIST",
                     "MY_LICENSE=$OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE",
+                    "SOMETHIONG=${OSPARC_VARIABLE__EMPTY_DEFAULT:-}",
+                    "SOMETHIONG=${OSPARC_VARIABLE__WITH_A_DEFAULT:-{}}",
+                    "SOMETHIONG=${OSPARC_VARIABLE__WITH_BRACES}",
                 ],
                 "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
             },
@@ -84,6 +88,9 @@ def available_osparc_variables(
                     "DISPLAY=True",
                     "SOME_LIST=[1, 2, 3]",
                     "MY_LICENSE=license.txt",
+                    "SOMETHIONG=",
+                    "SOMETHIONG={}",
+                    "SOMETHIONG=has_a_value",
                 ],
                 "image": "mock_registry_basename/simcore/services/dynamic/this_service:1.2.3",
                 "init": True,
@@ -123,7 +130,6 @@ def test_substitutions_in_compose_spec(
 
 
 def test_nothing_to_substitute():
-
     original_spec = {"x": 33, "y": {"z": True}}
 
     specs_resolver = SpecsSubstitutionsResolver(original_spec, upgrade=False)
@@ -135,7 +141,6 @@ def test_nothing_to_substitute():
 def test_no_identifier_present(
     available_osparc_variables: dict[str, SubstitutionValue]
 ):
-
     original_spec = {"x": 33, "y": {"z": True}, "foo": "$UNREGISTERED_ID"}
 
     specs_resolver = SpecsSubstitutionsResolver(original_spec, upgrade=False)
@@ -145,3 +150,29 @@ def test_no_identifier_present(
 
     # no substitutions
     assert specs_resolver.run() == original_spec
+
+
+@pytest.mark.parametrize("var_template", ["$VAR", "${VAR}", "${VAR:-%s}"])
+@pytest.mark.parametrize("value", ["", "a", "1", "1.1", "aa", "$", "$$$$", "[]", "{}"])
+def test_specs_substitutions_resolver_various_cases(var_template: str, value: str):
+    env_includes_default_value = False
+    try:
+        formatted_template = var_template % value
+        env_includes_default_value = True
+    except TypeError:
+        formatted_template = var_template
+
+    input_dict = {"key": f"{formatted_template}"}
+    text_template = SpecsSubstitutionsResolver(input_dict, upgrade=True)
+
+    replace_with: dict[str, Any] = (
+        {}
+        if env_includes_default_value
+        else {i: value for i in text_template.get_identifiers()}
+    )
+
+    text_template.set_substitutions(replace_with)
+    replaced_dict = text_template.run()
+
+    assert input_dict != replaced_dict
+    assert replaced_dict["key"] == value
