@@ -654,6 +654,14 @@ qx.Class.define("osparc.data.Resources", {
           deleteAccessRights: {
             method: "DELETE",
             url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          getAutoRecharge: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          putAutoRecharge: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
       },
