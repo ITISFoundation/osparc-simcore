@@ -77,9 +77,9 @@ qx.Class.define("osparc.widget.Three", {
     },
 
     addSnappingPlane: function(fixedAxe = 2, fixedPosition = 0) {
-      let instersectionPlane = this.__threeWrapper.createInvisiblePlane(fixedAxe, fixedPosition);
-      instersectionPlane.name = "PlaneForSnapping";
-      this.__entities.push(instersectionPlane);
+      let intersectionPlane = this.__threeWrapper.createInvisiblePlane(fixedAxe, fixedPosition);
+      intersectionPlane.name = "PlaneForSnapping";
+      this.__entities.push(intersectionPlane);
     },
 
     removeSnappingPlane: function() {
