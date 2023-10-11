@@ -40,15 +40,13 @@ qx.Class.define("osparc.NewRelease", {
       let link = osparc.utils.LibVersions.getVcsRefUrl();
       const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
       this._add(linkLabel);
-      osparc.store.StaticInfo.getInstance().getReleaseData()
-        .then(rData => {
-          if (rData) {
-            const releaseUrl = rData["url"];
-            if (releaseUrl) {
-              linkLabel.setUrl(releaseUrl);
-            }
-          }
-        });
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      if (rData) {
+        const releaseUrl = rData["url"];
+        if (releaseUrl) {
+          linkLabel.setUrl(releaseUrl);
+        }
+      }
 
       const hardRefreshText = this.tr("You might need to hard refresh the browser to get the latest version.");
       const hardRefreshLabel = new qx.ui.basic.Label(hardRefreshText).set({

@@ -5,26 +5,21 @@ qx.Class.define("osparc.store.Support", {
   statics: {
     getLicenseURL: function() {
       return new Promise(resolve => {
-        osparc.store.VendorInfo.getInstance().getVendor()
-          .then(vendor => {
-            if (vendor) {
-              if ("license_url" in vendor) {
-                resolve(vendor["license_url"]);
-              } else if ("url" in vendor) {
-                resolve(vendor["url"]);
-              } else {
-                resolve("");
-              }
-            }
-          });
+        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+        if (vendor) {
+          if ("license_url" in vendor) {
+            resolve(vendor["license_url"]);
+          } else if ("url" in vendor) {
+            resolve(vendor["url"]);
+          } else {
+            resolve("");
+          }
+        }
       });
     },
 
     getManuals: function() {
-      return new Promise(resolve => {
-        osparc.store.VendorInfo.getInstance().getManuals()
-          .then(manuals => resolve(manuals));
-      });
+      return osparc.store.VendorInfo.getInstance().getManuals();
     },
 
     addQuickStartToMenu: function(menu) {
@@ -64,93 +59,79 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
-      return new Promise(resolve => {
-        osparc.store.Support.getManuals()
-          .then(manuals => {
-            if (menuButton) {
-              menuButton.setVisibility(manuals.length ? "visible" : "excluded");
-            }
-            manuals.forEach(manual => {
-              const manualBtn = new qx.ui.menu.Button(manual.label);
-              manualBtn.getChildControl("label").set({
-                rich: true
-              });
-              manualBtn.addListener("execute", () => window.open(manual.url), this);
-              menu.add(manualBtn);
-            });
-          })
-          .finally(() => resolve(true));
+      const manuals = osparc.store.Support.getManuals();
+      if (menuButton) {
+        menuButton.setVisibility(manuals && manuals.length ? "visible" : "excluded");
+      }
+      manuals.forEach(manual => {
+        const manualBtn = new qx.ui.menu.Button(manual.label);
+        manualBtn.getChildControl("label").set({
+          rich: true
+        });
+        manualBtn.addListener("execute", () => window.open(manual.url), this);
+        menu.add(manualBtn);
       });
     },
 
     addSupportButtonsToMenu: function(menu, menuButton) {
-      return new Promise(resolve => {
-        Promise.all([
-          osparc.store.VendorInfo.getInstance().getIssues(),
-          osparc.store.VendorInfo.getInstance().getSupports()
-        ])
-          .then(values => {
-            const issues = values[0];
-            const supports = values[1];
-            if (menuButton) {
-              menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
-            }
-            issues.forEach(issueInfo => {
-              const label = issueInfo["label"];
-              const issueButton = new qx.ui.menu.Button(label);
-              issueButton.getChildControl("label").set({
-                rich: true
-              });
-              issueButton.addListener("execute", () => {
-                const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
-                  qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
-                );
-                const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-                contBtn.addListener("execute", () => {
-                  window.open(issueInfo["new_url"]);
-                  issueConfirmationWindow.close();
-                }, this);
-                const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/12");
-                loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
-                issueConfirmationWindow.addButton(contBtn);
-                issueConfirmationWindow.addButton(loginBtn);
-                issueConfirmationWindow.addCancelButton();
-                issueConfirmationWindow.open();
-              }, this);
-              menu.add(issueButton);
-            });
+      const issues = osparc.store.VendorInfo.getInstance().getIssues();
+      const supports = osparc.store.VendorInfo.getInstance().getSupports();
+      if (menuButton) {
+        menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
+      }
+      issues.forEach(issueInfo => {
+        const label = issueInfo["label"];
+        const issueButton = new qx.ui.menu.Button(label);
+        issueButton.getChildControl("label").set({
+          rich: true
+        });
+        issueButton.addListener("execute", () => {
+          const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
+            qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
+          );
+          const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+          contBtn.addListener("execute", () => {
+            window.open(issueInfo["new_url"]);
+            issueConfirmationWindow.close();
+          }, this);
+          const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/12");
+          loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
+          issueConfirmationWindow.addButton(contBtn);
+          issueConfirmationWindow.addButton(loginBtn);
+          issueConfirmationWindow.addCancelButton();
+          issueConfirmationWindow.open();
+        }, this);
+        menu.add(issueButton);
+      });
 
-            if (issues.length && supports.length) {
-              menu.addSeparator();
-            }
+      if (issues.length && supports.length) {
+        menu.addSeparator();
+      }
 
-            supports.forEach(suportInfo => {
-              const supportBtn = new qx.ui.menu.Button(suportInfo["label"]);
-              supportBtn.getChildControl("label").set({
-                rich: true
-              });
-              let icon = null;
-              let cb = null;
-              switch (suportInfo["kind"]) {
-                case "web":
-                  icon = "@FontAwesome5Solid/link/12";
-                  cb = () => window.open(suportInfo["url"]);
-                  break;
-                case "forum":
-                  icon = "@FontAwesome5Solid/comments/12";
-                  cb = () => window.open(suportInfo["url"]);
-                  break;
-                case "email":
-                  icon = "@FontAwesome5Solid/envelope/12";
-                  cb = () => this.__openSendEmailFeedbackDialog(suportInfo["email"]);
-                  break;
-              }
-              supportBtn.setIcon(icon);
-              supportBtn.addListener("execute", () => cb(), this);
-              menu.add(supportBtn);
-            });
-          })
-          .finally(() => resolve(true));
+      supports.forEach(supportInfo => {
+        const supportBtn = new qx.ui.menu.Button(supportInfo["label"]);
+        supportBtn.getChildControl("label").set({
+          rich: true
+        });
+        let icon = null;
+        let cb = null;
+        switch (supportInfo["kind"]) {
+          case "web":
+            icon = "@FontAwesome5Solid/link/12";
+            cb = () => window.open(supportInfo["url"]);
+            break;
+          case "forum":
+            icon = "@FontAwesome5Solid/comments/12";
+            cb = () => window.open(supportInfo["url"]);
+            break;
+          case "email":
+            icon = "@FontAwesome5Solid/envelope/12";
+            cb = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
+            break;
+        }
+        supportBtn.setIcon(icon);
+        supportBtn.addListener("execute", () => cb(), this);
+        menu.add(supportBtn);
       });
     },
 
@@ -182,28 +163,20 @@ qx.Class.define("osparc.store.Support", {
       const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
         maxWidth: 380
       });
-      Promise.all([
-        osparc.store.VendorInfo.getInstance().getVendor(),
-        osparc.store.StaticInfo.getInstance().getDisplayName()
-      ])
-        .then(values => {
-          const vendor = values[0];
-          const displayName = values[1];
-          if ("invitation_url" in vendor) {
-            let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
-            message += "<br>";
-            message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
-            message += "<br>";
-            createAccountWindow.setMessage(message);
-            const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
-            createAccountWindow.addWidget(linkLabel);
-          } else {
-            osparc.utils.Utils.createAccountMessage()
-              .then(message => {
-                createAccountWindow.setMessage(message);
-              });
-          }
-        });
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if ("invitation_url" in vendor) {
+        const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+        let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
+        message += "<br>";
+        message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
+        message += "<br>";
+        createAccountWindow.setMessage(message);
+        const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
+        createAccountWindow.addWidget(linkLabel);
+      } else {
+        const message = osparc.utils.Utils.createAccountMessage();
+        createAccountWindow.setMessage(message);
+      }
       createAccountWindow.center();
       createAccountWindow.open();
     }

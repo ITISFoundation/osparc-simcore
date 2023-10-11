@@ -48,18 +48,16 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
       ));
       box.add(label);
 
-      osparc.data.Resources.get("statics")
-        .then(statics => {
-          const form = new qx.ui.form.Form();
-          for (let [key, value] of Object.entries(statics)) {
-            const textField = new qx.ui.form.TextField().set({
-              value: typeof value === "object" ? JSON.stringify(value) : value.toString(),
-              readOnly: true
-            });
-            form.add(textField, key, null, key);
-          }
-          box.add(new qx.ui.form.renderer.Single(form));
+      const statics = osparc.store.Store.getInstance().get("statics");
+      const form = new qx.ui.form.Form();
+      for (let [key, value] of Object.entries(statics)) {
+        const textField = new qx.ui.form.TextField().set({
+          value: typeof value === "object" ? JSON.stringify(value) : value.toString(),
+          readOnly: true
         });
+        form.add(textField, key, null, key);
+      }
+      box.add(new qx.ui.form.renderer.Single(form));
 
       this.__container.add(box);
     },

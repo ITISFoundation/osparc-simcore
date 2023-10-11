@@ -113,18 +113,14 @@ qx.Class.define("osparc.auth.LoginPage", {
       const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
 
       pages.add(login);
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if (config["invitation_required"]) {
-            if (osparc.product.Utils.getProductName().includes("s4l")) {
-              // all S4Ls
-              pages.add(requestAccount);
-            }
-            // TIS  pops up a 'send us an email' dialog
-          } else {
-            pages.add(register);
-          }
-        });
+      const config = osparc.store.Store.getInstance().get("config");
+      if (config["invitation_required"]) {
+        if (osparc.product.Utils.getProductName().includes("s4l")) {
+          // all S4Ls
+          pages.add(requestAccount);
+        }
+      }
+      pages.add(register);
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
@@ -257,47 +253,39 @@ qx.Class.define("osparc.auth.LoginPage", {
         textColor: "text-darker"
       });
       const staticInfo = osparc.store.StaticInfo.getInstance();
-      staticInfo.getReleaseData()
-        .then(rData => {
-          if (rData) {
-            const releaseDate = rData["date"];
-            const releaseTag = rData["tag"];
-            const releaseUrl = rData["url"];
-            if (releaseDate && releaseTag && releaseUrl) {
-              const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
-              versionLink.set({
-                value: date + " (" + releaseTag + ")&nbsp",
-                url: releaseUrl
-              });
-            }
-          } else {
-            // fallback to old style
-            const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-            versionLink.setUrl(platformVersion.url);
-            let text = platformVersion.name + " " + platformVersion.version;
-            staticInfo.getPlatformName()
-              .then(platformName => {
-                text += platformName.length ? ` (${platformName})` : " (production)";
-              })
-              .finally(() => {
-                versionLink.setValue(text);
-              });
-          }
-        });
+      const rData = staticInfo.getReleaseData();
+      if (rData) {
+        const releaseDate = rData["date"];
+        const releaseTag = rData["tag"];
+        const releaseUrl = rData["url"];
+        if (releaseDate && releaseTag && releaseUrl) {
+          const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
+          versionLink.set({
+            value: date + " (" + releaseTag + ")&nbsp",
+            url: releaseUrl
+          });
+        }
+      } else {
+        // fallback to old style
+        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+        versionLink.setUrl(platformVersion.url);
+        let text = platformVersion.name + " " + platformVersion.version;
+        const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+        text += platformName.length ? ` (${platformName})` : " (production)";
+        versionLink.setValue(text);
+      }
       versionLinkLayout.add(versionLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      osparc.store.VendorInfo.getInstance().getVendor()
-        .then(vendor => {
-          if (vendor) {
-            organizationLink.set({
-              value: vendor.copyright,
-              url: vendor.url
-            });
-          }
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor) {
+        organizationLink.set({
+          value: vendor.copyright,
+          url: vendor.url
         });
+      }
       versionLinkLayout.add(organizationLink);
 
       versionLinkLayout.add(new qx.ui.core.Spacer(), {
