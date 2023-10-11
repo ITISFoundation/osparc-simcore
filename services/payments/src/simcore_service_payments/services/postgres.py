@@ -6,15 +6,15 @@ from ..core.settings import ApplicationSettings
 
 
 def setup_postgres(app: FastAPI):
-    async def on_startup() -> None:
+    async def _on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
         await connect_to_db(app, settings.PAYMENTS_POSTGRES)
         assert app.state.engine  # nosec
-        assert isinstance(app.state.engine, AsyncEngine)
+        assert isinstance(app.state.engine, AsyncEngine)  # nosec
 
-    async def on_shutdown() -> None:
+    async def _on_shutdown() -> None:
         assert app.state.engine  # nosec
         await close_db_connection(app)
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
