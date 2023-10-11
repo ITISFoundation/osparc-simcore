@@ -20,11 +20,11 @@ from simcore_service_payments.models.schemas.auth import Token
 def app_environment(
     app_environment: EnvVarsDict,
     disable_rabbitmq_and_rpc_setup: Callable,
-    disable_db_setup: Callable,
+    disable_postgres_setup: Callable,
 ) -> EnvVarsDict:
     # disables rabbit before creating app
     disable_rabbitmq_and_rpc_setup()
-    disable_db_setup()
+    disable_postgres_setup()
     return app_environment
 
 

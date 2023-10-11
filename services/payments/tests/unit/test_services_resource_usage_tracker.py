@@ -54,11 +54,11 @@ async def test_setup_rut_api(app_environment: EnvVarsDict):
 @pytest.fixture
 def app(
     disable_rabbitmq_and_rpc_setup: Callable,
-    disable_db_setup: Callable,
+    disable_postgres_setup: Callable,
     app_environment: EnvVarsDict,
 ):
     disable_rabbitmq_and_rpc_setup()
-    disable_db_setup()
+    disable_postgres_setup()
     return create_app()
 
 

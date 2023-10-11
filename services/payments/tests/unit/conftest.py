@@ -27,21 +27,21 @@ from simcore_service_payments.models.payments_gateway import (
 
 @pytest.fixture
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
-    def _go():
-        # The following moduls are affected if rabbitmq is not in place
+    def _do():
+        # The following services are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
 
-    return _go
+    return _do
 
 
 @pytest.fixture
-def disable_db_setup(mocker: MockerFixture) -> Callable:
-    def _go():
-        # The following moduls are affected if rabbitmq is not in place
-        mocker.patch("simcore_service_payments.core.application.setup_db")
+def disable_postgres_setup(mocker: MockerFixture) -> Callable:
+    def _do():
+        # The following services are affected if postgres is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_postgres")
 
-    return _go
+    return _do
 
 
 @pytest.fixture

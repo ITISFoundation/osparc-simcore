@@ -29,10 +29,10 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
-    disable_db_setup: Callable,
+    disable_postgres_setup: Callable,
 ):
     # mocks setup
-    disable_db_setup()
+    disable_postgres_setup()
 
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)

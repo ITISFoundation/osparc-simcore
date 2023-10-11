@@ -60,12 +60,12 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     disable_rabbitmq_and_rpc_setup: Callable,
-    disable_db_setup: Callable,
+    disable_postgres_setup: Callable,
     external_secret_envs: EnvVarsDict,
 ):
     # mocks setup
     disable_rabbitmq_and_rpc_setup()
-    disable_db_setup()
+    disable_postgres_setup()
 
     # set environs
     return setenvs_from_dict(
