@@ -722,7 +722,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * PAYMENT METHODS
        */
-      "payment-methods": {
+      "paymentMethods": {
         useCache: false,
         endpoints: {
           init: {

@@ -99,7 +99,13 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
               this.__lowerThreshold.setValue(data["minBalanceInUsd"]);
               this.__paymentAmount.setValue(data["topUpAmountInUsd"]);
               this.__nTopUps.setValue(data["topUpCountdown"] ? data["topUpCountdown"] : -1);
-              // this.__paymentMethod.setValue(data["topUpCountdown"]);
+              osparc.desktop.credits.Utils.getPaymentMethod(data["paymentMethodId"])
+                .then(paymentMethod => {
+                  if (paymentMethod) {
+                    console.log("paymentMethod", paymentMethod);
+                    // this.__paymentMethod.setValue("Hello");
+                  }
+                });
 
               if (this.__lowerThreshold["enabled"]) {
                 this.getChildControl("enable-auto-recharge-button").exclude();

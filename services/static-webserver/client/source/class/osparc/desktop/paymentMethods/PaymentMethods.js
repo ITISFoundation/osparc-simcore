@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
             walletId: myWallet.getWalletId()
           }
         };
-        osparc.data.Resources.fetch("payment-methods", "init", params)
+        osparc.data.Resources.fetch("paymentMethods", "init", params)
           .then(() => this.__fetchPaymentMethods());
       }
     },
@@ -106,7 +106,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
               walletId: wallet.getWalletId()
             }
           };
-          promises.push(osparc.data.Resources.fetch("payment-methods", "get", params));
+          promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
         }
       });
       Promise.all(promises)
@@ -190,7 +190,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
             paymentMethodId: paymentMethod["idr"]
           }
         };
-        osparc.data.Resources.fetch("payment-methods", "delete", params)
+        osparc.data.Resources.fetch("paymentMethods", "delete", params)
           .then(() => this.__fetchPaymentMethods());
       }
     }
