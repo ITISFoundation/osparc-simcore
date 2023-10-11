@@ -182,7 +182,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       layout.add(paymentAmountField);
 
       const nTopUpsLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Number of Top ups left (-1 undefined):"),
+        value: this.tr("Number of Top ups left (-1 unlimited):"),
         font: "text-14"
       });
       layout.add(nTopUpsLabel);
