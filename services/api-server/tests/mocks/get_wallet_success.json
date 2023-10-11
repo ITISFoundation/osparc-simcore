@@ -1,0 +1,46 @@
+[
+  {
+    "name": "GET /wallets/1",
+    "description": "<Request('GET', 'http://webserver:8080/v0/wallets/1')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/wallets/{wallet_id}",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "wallet_id",
+          "required": true,
+          "schema_": {
+            "title": "Wallet Id",
+            "type_": "int",
+            "pattern": null,
+            "format_": null,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "wallets"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "walletId": 1,
+        "name": "my_wallet",
+        "description": "my awesome wallet",
+        "owner": 3,
+        "thumbnail": "string",
+        "status": "ACTIVE",
+        "created": "2023-10-10T13:58:20.381826+00:00",
+        "modified": "2023-10-10T13:58:20.381826+00:00",
+        "availableCredits": 0.0
+      }
+    },
+    "status_code": 200
+  }
+]
