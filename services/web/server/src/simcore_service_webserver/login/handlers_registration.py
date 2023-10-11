@@ -55,6 +55,7 @@ from .utils import (
     envelope_response,
     flash_response,
     get_client_ip,
+    notify_user_confirmation,
 )
 from .utils_email import get_template_path, send_email_from_template
 
@@ -169,6 +170,7 @@ async def register(request: web.Request):
         )
 
     expires_at: datetime | None = None  # = does not expire
+    invitation = None
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         # Only requests with INVITATION can register user
         # to either a permanent or to a trial account
@@ -215,7 +217,7 @@ async def register(request: web.Request):
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
         _confirmation: ConfirmationTokenDict = await db.create_confirmation(
-            user["id"], REGISTRATION
+            user["id"], REGISTRATION, data=invitation.json() if invitation else None
         )
 
         try:
@@ -256,6 +258,15 @@ async def register(request: web.Request):
             f"click on the verification link in the email we sent you to {registration.email}.",
             "INFO",
         )
+
+    # NOTE: Here confirmation is disabled
+    assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
+    await notify_user_confirmation(
+        request.app,
+        user_id=user["id"],
+        product_name=product.name,
+        extra_credits=invitation.extra_credits if invitation else None,
+    )
 
     # No confirmation required: authorize login
     assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec

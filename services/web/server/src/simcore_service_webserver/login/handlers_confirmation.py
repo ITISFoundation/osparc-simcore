@@ -1,9 +1,20 @@
 import logging
+from contextlib import suppress
+from json import JSONDecodeError
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, SecretStr, parse_obj_as, validator
+from models_library.products import ProductName
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveInt,
+    SecretStr,
+    ValidationError,
+    parse_obj_as,
+    validator,
+)
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -27,6 +38,7 @@ from ._constants import (
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
 from ._models import InputSchema, check_confirm_password_match
+from ._registration import InvitationData
 from ._security import login_granted_response
 from .settings import (
     LoginOptions,
@@ -44,7 +56,7 @@ from .utils import (
     notify_user_confirmation,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
@@ -52,6 +64,52 @@ routes = RouteTableDef()
 
 class _PathParam(BaseModel):
     code: SecretStr
+
+
+def _parse_extra_credits_or_none(
+    confirmation: ConfirmationTokenDict,
+) -> PositiveInt | None:
+    with suppress(ValidationError, JSONDecodeError):
+        invitation = InvitationData.parse_raw(confirmation.get("data", "EMPTY"))
+        return invitation.extra_credits
+    return None
+
+
+async def _handle_confirm_registration(
+    app: web.Application,
+    product_name: ProductName,
+    confirmation: ConfirmationTokenDict,
+):
+    db: AsyncpgStorage = get_plugin_storage(app)
+    user_id = confirmation["user_id"]
+
+    # activate user and consume confirmation token
+    await db.delete_confirmation_and_update_user(
+        user_id=user_id,
+        updates={"status": ACTIVE},
+        confirmation=confirmation,
+    )
+
+    await notify_user_confirmation(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        extra_credits=_parse_extra_credits_or_none(confirmation),
+    )
+
+
+async def _handle_confirm_change_email(
+    app: web.Application, confirmation: ConfirmationTokenDict
+):
+    db: AsyncpgStorage = get_plugin_storage(app)
+    user_id = confirmation["user_id"]
+
+    # update and consume confirmation token
+    await db.delete_confirmation_and_update_user(
+        user_id=user_id,
+        updates={"email": parse_obj_as(LowerCaseEmailStr, confirmation["data"])},
+        confirmation=confirmation,
+    )
 
 
 @routes.get("/v0/auth/confirmation/{code}", name="auth_confirmation")
@@ -78,37 +136,27 @@ async def validate_confirmation_and_redirect(request: web.Request):
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
     confirmation: ConfirmationTokenDict | None = await validate_confirmation_code(
-        path_params.code.get_secret_value(), db=db, cfg=cfg
+        path_params.code.get_secret_value(),
+        db=db,
+        cfg=cfg,
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
     if confirmation and (action := confirmation["action"]):
         try:
-            user_id = confirmation["user_id"]
             if action == REGISTRATION:
-                # activate user and consume confirmation token
-                await db.delete_confirmation_and_update_user(
-                    user_id=user_id,
-                    updates={"status": ACTIVE},
+                await _handle_confirm_registration(
+                    app=request.app,
+                    product_name=product.name,
                     confirmation=confirmation,
                 )
-
-                await notify_user_confirmation(
-                    request.app, user_id=user_id, product_name=product.name
-                )
-
                 redirect_to_login_url = redirect_to_login_url.with_fragment(
                     "?registered=true"
                 )
 
             elif action == CHANGE_EMAIL:
-                # update and consume confirmation token
-                await db.delete_confirmation_and_update_user(
-                    user_id=user_id,
-                    updates={
-                        "email": parse_obj_as(LowerCaseEmailStr, confirmation["data"])
-                    },
-                    confirmation=confirmation,
+                await _handle_confirm_change_email(
+                    app=request.app, confirmation=confirmation
                 )
 
             elif action == RESET_PASSWORD:
@@ -120,17 +168,16 @@ async def validate_confirmation_and_redirect(request: web.Request):
                     f"reset-password?code={path_params.code.get_secret_value()}"
                 )
 
-            log.debug(
-                "Confirms %s of %s with %s -> %s",
-                action,
-                f"{user_id=}",
+            _logger.info(
+                "Confirms %s %s -> %s",
+                action.upper(),
                 f"{confirmation=}",
                 f"{redirect_to_login_url=}",
             )
 
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            log.exception(
+            _logger.exception(
                 "Failed during email_confirmation [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
@@ -139,7 +186,8 @@ async def validate_confirmation_and_redirect(request: web.Request):
                 request.app,
                 page="error",
                 message=f"Sorry, we cannot confirm your {action}."
-                "Please try again in a few moments ({error_code})",
+                "Please try again in a few moments. "
+                "If the problem persist please contact support attaching this code ({error_code})",
                 status_code=web.HTTPServiceUnavailable.status_code,
             ) from err
 
