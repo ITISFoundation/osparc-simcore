@@ -237,25 +237,23 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clustersModel = this.__clustersModel;
       clustersModel.removeAll();
 
-      osparc.utils.DisabledPlugins.isClustersDisabled()
-        .then(isDisabled => {
-          if (isDisabled === false) {
-            osparc.data.Resources.get("clusters")
-              .then(clusters => {
-                clusters.forEach(cluster => clustersModel.append(qx.data.marshal.Json.createModel(cluster)));
-                if (reloadClusterKey) {
-                  const selectables = this.__clustersList.getSelectables();
-                  selectables.forEach(selectable => {
-                    if (selectable.getKey() === reloadClusterKey) {
-                      this.__currentCluster = selectable;
-                      this.__reloadClusterMembers();
-                    }
-                  });
+      const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
+      if (isDisabled === false) {
+        osparc.data.Resources.get("clusters")
+          .then(clusters => {
+            clusters.forEach(cluster => clustersModel.append(qx.data.marshal.Json.createModel(cluster)));
+            if (reloadClusterKey) {
+              const selectables = this.__clustersList.getSelectables();
+              selectables.forEach(selectable => {
+                if (selectable.getKey() === reloadClusterKey) {
+                  this.__currentCluster = selectable;
+                  this.__reloadClusterMembers();
                 }
-              })
-              .catch(err => console.error(err));
-          }
-        });
+              });
+            }
+          })
+          .catch(err => console.error(err));
+      }
     },
 
     __reloadClusterMembers: function() {

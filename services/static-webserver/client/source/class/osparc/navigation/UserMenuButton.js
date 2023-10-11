@@ -122,12 +122,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("Clusters"));
           control.exclude();
           if (osparc.product.Utils.showClusters()) {
-            osparc.utils.DisabledPlugins.isClustersDisabled()
-              .then(isDisabled => {
-                if (isDisabled === false) {
-                  control.show();
-                }
-              });
+            const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
+            if (isDisabled === false) {
+              control.show();
+            }
           }
           control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.getMenu().add(control);
