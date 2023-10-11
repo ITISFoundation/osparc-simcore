@@ -21,7 +21,6 @@ from ..wallets.errors import WalletAccessForbiddenError
 from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
-from .db import ProjectDBAPI
 from .exceptions import ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -83,7 +82,6 @@ class _ProjectWalletPathParams(BaseModel):
 @permission_required("project.wallet.*")
 @_handle_project_wallet_exceptions
 async def connect_wallet_to_project(request: web.Request):
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 

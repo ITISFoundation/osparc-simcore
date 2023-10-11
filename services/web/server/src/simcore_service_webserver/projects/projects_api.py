@@ -71,6 +71,7 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
+from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
