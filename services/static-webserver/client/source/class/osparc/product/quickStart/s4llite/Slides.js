@@ -41,7 +41,7 @@ qx.Class.define("osparc.product.quickStart.s4llite.Slides", {
         rich : true
       });
       const manuals = osparc.store.Support.getManuals();
-      if (manuals && manuals.length > 0) {
+      if (manuals.length > 0) {
         const color = qx.theme.manager.Color.getInstance().resolve("text");
         docLink.setValue(`<a href=${manuals[0].url} style='color: ${color}' target='_blank'>Documentation</a>`);
         docLink.show();

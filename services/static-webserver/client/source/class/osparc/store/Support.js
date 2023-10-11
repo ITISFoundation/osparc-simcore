@@ -19,10 +19,7 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getManuals: function() {
-      return new Promise(resolve => {
-        osparc.store.VendorInfo.getInstance().getManuals()
-          .then(manuals => resolve(manuals));
-      });
+      return osparc.store.VendorInfo.getInstance().getManuals();
     },
 
     addQuickStartToMenu: function(menu) {
@@ -62,20 +59,18 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
-      osparc.store.Support.getManuals()
-        .then(manuals => {
-          if (menuButton) {
-            menuButton.setVisibility(manuals.length ? "visible" : "excluded");
-          }
-          manuals.forEach(manual => {
-            const manualBtn = new qx.ui.menu.Button(manual.label);
-            manualBtn.getChildControl("label").set({
-              rich: true
-            });
-            manualBtn.addListener("execute", () => window.open(manual.url), this);
-            menu.add(manualBtn);
-          });
+      const manuals = osparc.store.Support.getManuals();
+      if (menuButton) {
+        menuButton.setVisibility(manuals && manuals.length ? "visible" : "excluded");
+      }
+      manuals.forEach(manual => {
+        const manualBtn = new qx.ui.menu.Button(manual.label);
+        manualBtn.getChildControl("label").set({
+          rich: true
         });
+        manualBtn.addListener("execute", () => window.open(manual.url), this);
+        menu.add(manualBtn);
+      });
     },
 
     addSupportButtonsToMenu: function(menu, menuButton) {

@@ -355,12 +355,11 @@ qx.Class.define("osparc.utils.Utils", {
     createAccountMessage: function() {
       return new Promise(resolve => {
         Promise.all([
-          osparc.store.StaticInfo.getInstance().getDisplayName(),
-          osparc.store.Support.getManuals()
+          osparc.store.StaticInfo.getInstance().getDisplayName()
         ])
           .then(values => {
             const productName = values[0];
-            const manuals = values[1];
+            const manuals = osparc.store.Support.getManuals();
             const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
             const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
             const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);

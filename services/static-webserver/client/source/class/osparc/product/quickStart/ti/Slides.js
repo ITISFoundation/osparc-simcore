@@ -51,7 +51,7 @@ qx.Class.define("osparc.product.quickStart.ti.Slides", {
         rich : true
       });
       const manuals = osparc.store.Support.getManuals();
-      if (manuals && manuals.length > 0) {
+      if (manuals.length > 0) {
         manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
         manualsLabel.show();
       }
