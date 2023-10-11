@@ -12,19 +12,6 @@ from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptu
 from unit.conftest import SideEffectCallback
 
 
-def _get_wallet_side_effect(
-    request: httpx.Request,
-    path_params: dict[str, Any],
-    capture: HttpApiCallCaptureModel,
-) -> Any:
-    response = capture.response_body
-    assert isinstance(response, dict)
-    if isinstance(response.get("data"), dict):
-        assert response.get("data").get("walletId") is not None
-        response["data"]["walletId"] = path_params["wallet_id"]
-    return response
-
-
 @pytest.mark.parametrize(
     "capture", ["get_wallet_success.json", "get_wallet_failure.json"]
 )
@@ -38,6 +25,19 @@ async def test_get_wallet(
     project_tests_dir: Path,
     capture: str,
 ):
+    def _get_wallet_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        response = capture.response_body
+        assert isinstance(response, dict)
+        if data := response.get("data"):
+            assert isinstance(data, dict)
+            assert data.get("walletId")
+            response["data"]["walletId"] = path_params["wallet_id"]
+        return response
+
     respx_mock = respx_mock_from_capture(
         mocked_webserver_service_api_base,
         project_tests_dir / "mocks" / capture,
