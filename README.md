@@ -87,7 +87,7 @@ To verify current base OS, Docker and Python build versions have a look at:
 
 - GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
 
-If you want verify if your system has all the necessary requirements:
+If you want to verify if your system has all the necessary requirements:
 
 ```bash
     make info
