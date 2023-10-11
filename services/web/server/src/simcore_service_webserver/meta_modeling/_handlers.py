@@ -262,7 +262,7 @@ async def list_project_iterations(request: web.Request) -> web.Response:
     meta_project_commit_id = q.ref_id
 
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlForMetaModeling(request)
+    vc_repo = VersionControlForMetaModeling.create_from_request(request)
 
     # core function ----
     iterations_range = await _get_project_iterations_range(
@@ -318,7 +318,7 @@ async def create_project_iteration(request: web.Request) -> web.Response:
     meta_project_commit_id = q.ref_id
 
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlForMetaModeling(request)
+    vc_repo = VersionControlForMetaModeling.create_from_request(request)
 
     # core function ----
     project_iterations = await create_or_get_project_iterations(
@@ -355,7 +355,7 @@ async def list_project_iterations_results(
     meta_project_commit_id = q.ref_id
 
     url_for = create_url_for_function(request)
-    vc_repo = VersionControlForMetaModeling(request)
+    vc_repo = VersionControlForMetaModeling.create_from_request(request)
 
     # core function ----
     iterations_range = await _get_project_iterations_range(
