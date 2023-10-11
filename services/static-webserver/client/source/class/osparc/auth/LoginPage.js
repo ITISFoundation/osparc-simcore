@@ -255,7 +255,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         textColor: "text-darker"
       });
       const staticInfo = osparc.store.StaticInfo.getInstance();
-      const rData = staticInfo.getReleaseData()
+      const rData = staticInfo.getReleaseData();
       if (rData) {
         const releaseDate = rData["date"];
         const releaseTag = rData["tag"];

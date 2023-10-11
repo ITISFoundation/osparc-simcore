@@ -186,19 +186,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
-          osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
-            .then(maxNumber => {
-              if (maxNumber) {
-                const nodes = study.getWorkbench().getNodes();
-                const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
-                if (nDynamics > maxNumber) {
-                  let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
-                  msg += "<br>";
-                  msg += this.tr("Please start them manually.");
-                  osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-                }
-              }
-            });
+          const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+          if (maxNumber) {
+            const nodes = study.getWorkbench().getNodes();
+            const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
+            if (nDynamics > maxNumber) {
+              let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
+              msg += "<br>";
+              msg += this.tr("Please start them manually.");
+              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            }
+          }
 
           osparc.data.Resources.get("organizations")
             .then(() => {
