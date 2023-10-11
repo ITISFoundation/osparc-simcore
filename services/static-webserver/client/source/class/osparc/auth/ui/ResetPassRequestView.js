@@ -48,7 +48,7 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
         email.activate();
       });
 
-      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      this.beautifyFormFields();
       const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
       this.add(formRenderer);
 
