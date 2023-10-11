@@ -258,10 +258,6 @@ async def register(request: web.Request):
             f"click on the verification link in the email we sent you to {registration.email}.",
             "INFO",
         )
-    else:
-        await notify_user_confirmation(
-            request.app, user_id=user["id"], product_name=product.name
-        )
 
     # NOTE: Here confirmation is disabled
     assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
