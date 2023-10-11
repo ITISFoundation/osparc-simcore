@@ -186,19 +186,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
-          osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
-            .then(maxNumber => {
-              if (maxNumber) {
-                const nodes = study.getWorkbench().getNodes();
-                const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
-                if (nDynamics > maxNumber) {
-                  let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
-                  msg += "<br>";
-                  msg += this.tr("Please start them manually.");
-                  osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-                }
-              }
-            });
+          const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+          if (maxNumber) {
+            const nodes = study.getWorkbench().getNodes();
+            const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
+            if (nDynamics > maxNumber) {
+              let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
+              msg += "<br>";
+              msg += this.tr("Please start them manually.");
+              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            }
+          }
 
           osparc.data.Resources.get("organizations")
             .then(() => {
@@ -265,31 +263,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __reloadSnapshotsAndIterations: function() {
-      osparc.utils.DisabledPlugins.isVersionControlDisabled()
-        .then(isVCDisabled => {
-          if (!isVCDisabled) {
-            const store = osparc.store.Store.getInstance();
-            store.invalidate("snapshots");
-            store.invalidate("iterations");
+      const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
+      if (!isVCDisabled) {
+        const store = osparc.store.Store.getInstance();
+        store.invalidate("snapshots");
+        store.invalidate("iterations");
 
-            const study = this.getStudy();
-            study.getSnapshots()
-              .then(snapshots => {
-                store.setSnapshots(snapshots);
-                if (snapshots.length) {
-                  osparc.utils.DisabledPlugins.isMetaModelingDisabled()
-                    .then(isMMDisabled => {
-                      if (!isMMDisabled) {
-                        study.getIterations()
-                          .then(iterations => {
-                            store.setIterations(iterations);
-                          });
-                      }
-                    });
-                }
-              });
-          }
-        });
+        const study = this.getStudy();
+        study.getSnapshots()
+          .then(snapshots => {
+            store.setSnapshots(snapshots);
+            if (snapshots.length) {
+              const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
+              if (!isMMDisabled) {
+                study.getIterations()
+                  .then(iterations => {
+                    store.setIterations(iterations);
+                  });
+              }
+            }
+          });
+      }
     },
 
     editSlides: function() {

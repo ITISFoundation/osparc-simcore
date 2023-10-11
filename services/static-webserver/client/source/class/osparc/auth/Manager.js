@@ -130,7 +130,7 @@ qx.Class.define("osparc.auth.Manager", {
     },
 
     isLoggedIn: function() {
-      // TODO: how to store this localy?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
+      // TODO: how to store this locally?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
       // TODO: check if expired??
       // TODO: request server if token is still valid (e.g. expired, etc)
       const auth = osparc.auth.Data.getInstance().getAuth();
@@ -138,7 +138,7 @@ qx.Class.define("osparc.auth.Manager", {
     },
 
     /*
-     * Function that checks if there is a token and validates it aginst the server.
+     * Function that checks if there is a token and validates it against the server.
      */
     validateToken: function() {
       return new Promise((resolve, reject) => {
@@ -271,13 +271,10 @@ qx.Class.define("osparc.auth.Manager", {
     },
 
     __fetchStartUpResources: function() {
-      osparc.utils.DisabledPlugins.isClustersDisabled()
-        .then(isDisabled => {
-          if (isDisabled === false) {
-            osparc.data.Resources.get("clusters");
-          }
-        })
-        .catch(err => console.error(err));
+      const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
+      if (isDisabled === false) {
+        osparc.data.Resources.get("clusters");
+      }
     },
 
     __logoutUser: function() {

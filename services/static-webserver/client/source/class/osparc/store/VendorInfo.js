@@ -21,13 +21,11 @@ qx.Class.define("osparc.store.VendorInfo", {
 
   members: {
     __getFromStaticInfo: function(key, defaultValue) {
-      return new Promise(resolve => {
-        osparc.store.StaticInfo.getInstance().getValue(key)
-          .then(staticData => {
-            staticData ? resolve(staticData) : resolve(defaultValue);
-          })
-          .catch(() => resolve(defaultValue));
-      });
+      const staticValue = osparc.store.StaticInfo.getInstance().getValue(key);
+      if (staticValue) {
+        return staticValue;
+      }
+      return defaultValue;
     },
 
     getSupportEmail: function() {

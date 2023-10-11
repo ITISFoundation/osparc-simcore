@@ -47,6 +47,14 @@ qx.Class.define("osparc.store.Store", {
   type: "singleton",
 
   properties: {
+    config: {
+      check: "Object",
+      init: {}
+    },
+    statics: {
+      check: "Object",
+      init: {}
+    },
     currentStudy: {
       check: "osparc.data.model.Study",
       init: null,
@@ -91,10 +99,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: [],
       event: "changeIterations"
-    },
-    config: {
-      check: "Object",
-      init: {}
     },
     maintenance: {
       check: "Object",
@@ -168,10 +172,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: [],
       event: "changeTags"
-    },
-    statics: {
-      check: "Object",
-      init: {}
     },
     classifiers: {
       check: "Array",
@@ -256,6 +256,11 @@ qx.Class.define("osparc.store.Store", {
       } else {
         this.set(resource, {});
       }
+    },
+
+    // Invalidate the entire cache:
+    invalidateEntireCache: function() {
+      this.invalidate();
     },
 
     /**

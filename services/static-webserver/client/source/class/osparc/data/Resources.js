@@ -66,6 +66,34 @@ qx.Class.define("osparc.data.Resources", {
      */
     statics.resources = {
       /*
+       * CONFIG
+       */
+      "config": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/config"
+          }
+        }
+      },
+
+      /*
+       * STATICS
+       * Gets the json file containing some runtime server variables.
+       */
+      "statics": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/static-frontend-data.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
        * STUDIES
        */
       "studies": {
@@ -425,18 +453,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/catalog/dags/{dagId}"
-          }
-        }
-      },
-      /*
-       * CONFIG
-       */
-      "config": {
-        useCache: true,
-        endpoints: {
-          getOne: {
-            method: "GET",
-            url: statics.API + "/config"
           }
         }
       },
@@ -987,21 +1003,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
-          }
-        }
-      },
-
-      /*
-       * STATICS
-       * Gets the json file containing some runtime server variables.
-       */
-      "statics": {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: "/static-frontend-data.json",
-            isJsonFile: true
           }
         }
       }
