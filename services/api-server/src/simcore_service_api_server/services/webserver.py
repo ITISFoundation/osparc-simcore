@@ -374,14 +374,17 @@ class AuthSession:
             assert data  # nosec
             return data
 
-    async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
+    async def get_project_node_pricing_unit(
+        self, project_id: UUID, node_id: UUID
+    ) -> PricingUnitGet | None:
         with _handle_webserver_api_errors():
             response = await self.client.get(
-                f"/projects/{project_id}/wallet",
+                f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
                 cookies=self.session_cookies,
             )
+
             response.raise_for_status()
-            data = Envelope[WalletGet].parse_raw(response.text).data
+            data = Envelope[PricingUnitGet].parse_raw(response.text).data
             return data
 
     # WALLETS -------------------------------------------------
@@ -397,17 +400,14 @@ class AuthSession:
             assert data  # nosec
             return data
 
-    async def get_project_node_pricing_unit(
-        self, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGet | None:
+    async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
         with _handle_webserver_api_errors():
             response = await self.client.get(
-                f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
+                f"/projects/{project_id}/wallet",
                 cookies=self.session_cookies,
             )
-
             response.raise_for_status()
-            data = Envelope[PricingUnitGet].parse_raw(response.text).data
+            data = Envelope[WalletGet].parse_raw(response.text).data
             return data
 
 

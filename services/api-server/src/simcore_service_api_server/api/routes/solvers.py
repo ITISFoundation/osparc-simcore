@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
+from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
@@ -16,6 +17,7 @@ from ...services.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
+from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
@@ -255,3 +257,17 @@ async def list_solver_ports(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Ports for solver {solver_key}:{version} not found",
         ) from err
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/pricing_plan",
+    response_model=ServicePricingPlanGet,
+)
+async def get_solver_pricing_plan(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    product_name: Annotated[str, Depends(get_product_name)],
+):
+    pass
