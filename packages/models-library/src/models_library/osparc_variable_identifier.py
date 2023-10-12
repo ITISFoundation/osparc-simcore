@@ -14,7 +14,9 @@ class OsparcVariableIdentifier(BaseModel):
     # NOTE: When dealing with str types, to avoid unexpected behavior, the following
     # order is suggested `OsparcVariableIdentifier | str`
     __root__: str = Field(
-        ..., regex=rf"^\${{?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+}}?(:-.+)?$"
+        ...,
+        # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
+        regex=rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$",
     )
 
     def __hash__(self):
@@ -29,9 +31,12 @@ class OsparcVariableIdentifier(BaseModel):
         # ${VAR:-}
         # ${VAR:-default}
         # ${VAR:-{}}
-        if self.__root__.startswith("${"):
-            return self.__root__.removeprefix("${").removesuffix("}")
-        return self.__root__.removeprefix("$")
+        return (
+            self.__root__.removeprefix("$$")
+            .removeprefix("$")
+            .removeprefix("{")
+            .removesuffix("}")
+        )
 
     @property
     def name(self) -> str:
