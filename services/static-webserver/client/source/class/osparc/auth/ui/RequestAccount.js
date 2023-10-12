@@ -203,7 +203,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
     __submit: function(formData) {
       console.log(formData);
-      const msg = this.tr("The request is being processed, you will here from us in the coming hours");
+      const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
       osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
       this.fireDataEvent("done");
     },
