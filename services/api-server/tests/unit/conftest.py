@@ -499,30 +499,47 @@ def respx_mock_from_capture() -> (
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
 
-        def _side_effect(request: httpx.Request, **kwargs):
-            capture = next(capture_iter)
-            assert isinstance(capture.path, PathDescription)
-            status_code: int = capture.status_code
-            response_body: dict[str, Any] | list | None = capture.response_body
-            assert {param.name for param in capture.path.path_parameters} == set(
-                kwargs.keys()
-            )
-            if len(side_effects_callbacks) > 0:
-                callback = next(side_effect_callback_iter)
-                response_body = callback(request, kwargs, capture)
-            return httpx.Response(status_code=status_code, json=response_body)
+        class CaptureSideEffect:
+            def __init__(
+                self,
+                capture: HttpApiCallCaptureModel,
+                side_effect: SideEffectCallback | None,
+            ):
+                self._capture = capture
+                self._side_effect_callback = side_effect
 
-        for capture in captures:
+            def _side_effect(self, request: httpx.Request, **kwargs):
+                capture = self._capture
+                assert isinstance(capture.path, PathDescription)
+                status_code: int = capture.status_code
+                response_body: dict[str, Any] | list | None = capture.response_body
+                assert {param.name for param in capture.path.path_parameters} == set(
+                    kwargs.keys()
+                )
+                if self._side_effect_callback:
+                    response_body = self._side_effect_callback(request, kwargs, capture)
+                return httpx.Response(status_code=status_code, json=response_body)
+
+        side_effects: list[CaptureSideEffect] = []
+        for ii, capture in enumerate(captures):
             url_path: PathDescription | str = capture.path
             assert isinstance(url_path, PathDescription)
             path_regex: str = str(url_path.path)
+            side_effects.append(
+                CaptureSideEffect(
+                    capture=capture,
+                    side_effect=side_effects_callbacks[ii]
+                    if len(side_effects_callbacks)
+                    else None,
+                )
+            )
             for param in url_path.path_parameters:
                 path_regex = path_regex.replace(
                     "{" + param.name + "}", param.respx_lookup
                 )
             respx_mock.request(
-                capture.method.upper(), url=None, path__regex=path_regex
-            ).mock(side_effect=_side_effect)
+                capture.method.upper(), url=None, path__regex="^" + path_regex + "$"
+            ).mock(side_effect=side_effects[-1]._side_effect)
 
         return respx_mock
 

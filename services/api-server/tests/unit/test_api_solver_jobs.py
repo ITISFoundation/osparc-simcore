@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import Any, Callable
 from uuid import UUID
@@ -8,6 +7,8 @@ import pytest
 import respx
 from httpx import AsyncClient
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.schemas.jobs import Job
+from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
@@ -90,7 +91,12 @@ async def test_get_solver_job_pricing_unit(
     project_tests_dir: Path,
     capture: str,
 ):
-    def _get_job_pricing_unit_side_effect(
+
+    solver_key: str = "simcore/services/comp/my_super_hpc_solver"
+    solver_version: str = "3.14.0"
+    job_id: UUID = UUID("87643648-3a38-44e2-9cfe-d86ab3d50629")
+
+    def _get_job_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
@@ -99,20 +105,31 @@ async def test_get_solver_job_pricing_unit(
         assert isinstance(response, dict)
         if data := response.get("data"):
             assert isinstance(data, dict)
-            assert data.get("walletId")
+            assert data.get("uuid")
+            data["uuid"] = path_params["project_id"]
+            assert data.get("name")
+            data["name"] = Job.compose_resource_name(
+                parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
+                job_id=job_id,
+            )
+            response["data"] = data
         return response
 
-    capture_path: Path = project_tests_dir / "mocks" / capture
-    capture_data: list[Any] = json.loads(capture_path.read_text())
+    def _get_pricing_unit_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
     respx_mock = respx_mock_from_capture(
         mocked_webserver_service_api_base,
-        capture_path,
-        [_get_job_pricing_unit_side_effect] * len(capture_data),
+        project_tests_dir / "mocks" / capture,
+        [_get_job_side_effect, _get_pricing_unit_side_effect]
+        if capture == "get_job_pricing_unit_success.json"
+        else [_get_job_side_effect],
     )
 
-    solver_key: str = "simcore/services/comp/my_super_hpc_solver"
-    solver_version: str = "3.14.0"
-    job_id: UUID = UUID("87643648-3a38-44e2-9cfe-d86ab3d50629")
     response = await client.get(
         f"{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/pricing_unit",
         auth=auth,
