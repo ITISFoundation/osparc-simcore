@@ -64,6 +64,19 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     )
 
 
+def _assert_project_associated_with_solver(
+    solver_key: SolverKeyId, version: VersionStr, project: ProjectGet
+) -> None:
+    expected_job_name: str = _compose_job_resource_name(
+        solver_key, version, project.uuid
+    )
+    if expected_job_name != project.name:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"job {project.uuid} is not associated with solver {solver_key} and version {version}",
+        )
+
+
 # JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
@@ -578,6 +591,7 @@ async def get_job_pricing_unit(
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+    _assert_project_associated_with_solver(solver_key, version, project)
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
     node_id: UUID = UUID(node_ids[0])

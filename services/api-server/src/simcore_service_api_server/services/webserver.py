@@ -88,6 +88,11 @@ def _handle_webserver_api_errors():
             msg = error.get("errors") or resp.reason_phrase or f"{exc}"
             raise HTTPException(resp.status_code, detail=msg) from exc
 
+    except ProjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+
 
 class WebserverApi(BaseServiceClientApi):
     """Access to web-server API
@@ -285,16 +290,15 @@ class AuthSession:
         return ProjectGet.parse_obj(result)
 
     async def get_project(self, project_id: UUID) -> ProjectGet:
-        response = await self.client.get(
-            f"/projects/{project_id}",
-            cookies=self.session_cookies,
-        )
-
-        data = self._get_data_or_raise(
-            response,
-            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
-        )
-        return ProjectGet.parse_obj(data)
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/projects/{project_id}",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[ProjectGet].parse_raw(response.text).data
+            assert data is not None
+            return data
 
     async def get_projects_w_solver_page(
         self, solver_name: str, limit: int, offset: int
@@ -395,17 +399,16 @@ class AuthSession:
 
     async def get_project_node_pricing_unit(
         self, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGet:
-        response = await self.client.get(
-            f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
-            cookies=self.session_cookies,
-        )
+    ) -> PricingUnitGet | None:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
+                cookies=self.session_cookies,
+            )
 
-        data = self._get_data_or_raise(
-            response,
-            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
-        )
-        return PricingUnitGet.parse_obj(data)
+            response.raise_for_status()
+            data = Envelope[PricingUnitGet].parse_raw(response.text).data
+            return data
 
 
 # MODULES APP SETUP -------------------------------------------------------------
