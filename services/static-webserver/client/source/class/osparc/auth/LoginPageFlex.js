@@ -34,8 +34,10 @@ qx.Class.define("osparc.auth.LoginPageFlex", {
     _buildLayout: function() {
       this._reloadLayout();
 
-      setTimeout(() => this.__resized(), 100);
-      window.addEventListener("resize", () => this.__resized());
+      //  Buggy: If the user gets into a page that it's not the Login,
+      // after reloading the layout the Login page will be loaded.
+      // setTimeout(() => this.__resized(), 100);
+      // window.addEventListener("resize", () => this.__resized());
     },
 
     __resized: function() {
