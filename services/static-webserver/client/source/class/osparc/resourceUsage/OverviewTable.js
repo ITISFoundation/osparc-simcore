@@ -40,8 +40,9 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
     columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 60);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
     if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 80);
+      columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
     }
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.cost.pos, 60);
   },
 
   statics: {
