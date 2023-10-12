@@ -37,13 +37,13 @@ qx.Class.define("osparc.auth.ui.ResetPassView", {
       const password = new osparc.ui.form.PasswordField().set({
         required: true
       });
-      this._form.add(password, this.tr("Your new password"), null, "pass1");
+      this._form.add(password, this.tr("Your new password"), null, "password1");
       this.add(password);
 
       const confirm = new osparc.ui.form.PasswordField().set({
         required: true
       });
-      this._form.add(confirm, this.tr("Retype your new password"), null, "pass2");
+      this._form.add(confirm, this.tr("Retype your new password"), null, "password2");
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       const resetCode = urlFragment.params ? urlFragment.params.code || null : null;
