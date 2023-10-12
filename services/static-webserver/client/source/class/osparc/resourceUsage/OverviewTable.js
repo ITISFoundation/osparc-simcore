@@ -21,7 +21,13 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
   construct: function() {
     const model = this.__model = new qx.ui.table.model.Simple();
     const cols = this.self().COLUMNS;
-    const colNames = Object.values(cols).map(col => col.title);
+    const colNames = [];
+    Object.entries(cols).forEach(([key, data]) => {
+      if (key === "wallet" && !osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        return;
+      }
+      colNames.push(data.title);
+    });
     model.setColumns(colNames);
 
     this.base(arguments, model, {
@@ -33,7 +39,9 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
     const columnModel = this.getTableColumnModel();
     columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 60);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 80);
+    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 80);
+    }
   },
 
   statics: {
@@ -91,12 +99,14 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
             if (data["stopped_at"]) {
               const stopTime = new Date(data["stopped_at"]);
               const durationTimeSec = (stopTime - startTime)/1000;
-              newData[cols["duration"].pos] = durationTimeSec;
+              newData[cols["duration"].pos] = osparc.utils.Utils.formatSeconds(durationTimeSec);
             }
           }
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
-          newData[cols["cost"].pos] = "unknown";
+          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+            newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
+          }
+          newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
           newDatas.push(newData);
         });
       }
