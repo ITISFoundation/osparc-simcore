@@ -59,11 +59,22 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const phone = new qx.ui.form.TextField();
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
 
-      const company = new qx.ui.form.TextField().set({
-        required: true
-      });
-      doubleSpaced.push(company);
-      this._form.add(company, this.tr("Company/University Name"), null, "company");
+      if (
+        osparc.product.Utils.isProduct("s4lacad") ||
+        osparc.product.Utils.isProduct("s4ldektopacad")
+      ) {
+        const university = new qx.ui.form.TextField().set({
+          required: true
+        });
+        doubleSpaced.push(university);
+        this._form.add(university, this.tr("University"), null, "university");
+      } else {
+        const company = new qx.ui.form.TextField().set({
+          required: true
+        });
+        doubleSpaced.push(company);
+        this._form.add(company, this.tr("Company Name"), null, "company");
+      }
 
       const address = new qx.ui.form.TextField().set({
         required: true

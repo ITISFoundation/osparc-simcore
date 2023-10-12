@@ -276,17 +276,15 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key);
         paramsMenuBtn.exclude();
         optionsMenu.add(paramsMenuBtn);
-        osparc.utils.Utils.isDevelopmentPlatform()
-          .then(areParamsEnabled => {
-            [
-              newParamBtn,
-              paramsMenuBtn
-            ].forEach(btn => {
-              studyUI.bind("mode", btn, "visibility", {
-                converter: mode => mode === "workbench" && areParamsEnabled ? "visible" : "excluded"
-              });
-            });
+        const areParamsEnabled = osparc.utils.Utils.isDevelopmentPlatform();
+        [
+          newParamBtn,
+          paramsMenuBtn
+        ].forEach(btn => {
+          studyUI.bind("mode", btn, "visibility", {
+            converter: mode => mode === "workbench" && areParamsEnabled ? "visible" : "excluded"
           });
+        });
       }
     },
 

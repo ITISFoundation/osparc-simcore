@@ -66,6 +66,34 @@ qx.Class.define("osparc.data.Resources", {
      */
     statics.resources = {
       /*
+       * CONFIG
+       */
+      "config": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/config"
+          }
+        }
+      },
+
+      /*
+       * STATICS
+       * Gets the json file containing some runtime server variables.
+       */
+      "statics": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/static-frontend-data.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
        * STUDIES
        */
       "studies": {
@@ -429,18 +457,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * CONFIG
-       */
-      "config": {
-        useCache: true,
-        endpoints: {
-          getOne: {
-            method: "GET",
-            url: statics.API + "/config"
-          }
-        }
-      },
-      /*
        * SCHEDULED MAINTENANCE
        */
       "maintenance": {
@@ -654,6 +670,14 @@ qx.Class.define("osparc.data.Resources", {
           deleteAccessRights: {
             method: "DELETE",
             url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          getAutoRecharge: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          putAutoRecharge: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
       },
@@ -696,9 +720,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * PAYMENTS METHODS
+       * PAYMENT METHODS
        */
-      "payments-methods": {
+      "paymentMethods": {
         useCache: false,
         endpoints: {
           init: {
@@ -729,12 +753,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           },
-          start: {
-            method: "POST",
-            url: statics.API + "/wallets/{walletId}/auto-recharge"
-          },
-          stop: {
-            method: "DELETE",
+          put: {
+            method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
@@ -979,21 +999,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
-          }
-        }
-      },
-
-      /*
-       * STATICS
-       * Gets the json file containing some runtime server variables.
-       */
-      "statics": {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: "/static-frontend-data.json",
-            isJsonFile: true
           }
         }
       }
