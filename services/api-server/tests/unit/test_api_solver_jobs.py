@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any, Callable
 from uuid import UUID
@@ -67,5 +68,58 @@ async def test_get_solver_job_wallet(
         assert isinstance(body, dict)
         assert body.get("data") is None
         assert body.get("errors") is not None
+    else:
+        pytest.fail()
+
+
+@pytest.mark.parametrize(
+    "capture",
+    [
+        "get_job_pricing_unit_invalid_job.json",
+        "get_job_pricing_unit_invalid_solver.json",
+        "get_job_pricing_unit_success.json",
+    ],
+)
+async def test_get_solver_job_pricing_unit(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    respx_mock_from_capture: Callable[
+        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+    capture: str,
+):
+    def _get_job_pricing_unit_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        response = capture.response_body
+        assert isinstance(response, dict)
+        if data := response.get("data"):
+            assert isinstance(data, dict)
+            assert data.get("walletId")
+        return response
+
+    capture_path: Path = project_tests_dir / "mocks" / capture
+    capture_data: list[Any] = json.loads(capture_path.read_text())
+    respx_mock = respx_mock_from_capture(
+        mocked_webserver_service_api_base,
+        capture_path,
+        [_get_job_pricing_unit_side_effect] * len(capture_data),
+    )
+
+    solver_key: str = "simcore/services/comp/my_super_hpc_solver"
+    solver_version: str = "3.14.0"
+    job_id: UUID = UUID("87643648-3a38-44e2-9cfe-d86ab3d50629")
+    response = await client.get(
+        f"{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/pricing_unit",
+        auth=auth,
+    )
+    if capture == "get_job_pricing_unit_success.json":
+        assert response.status_code == 200
+        body = response.json()
+        assert isinstance(body, dict)
     else:
         pytest.fail()
