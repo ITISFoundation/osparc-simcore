@@ -74,7 +74,7 @@ async def test_get_solver_job_wallet(
 
 
 @pytest.mark.parametrize(
-    "capture",
+    "capture_file",
     [
         "get_job_pricing_unit_invalid_job.json",
         "get_job_pricing_unit_invalid_solver.json",
@@ -89,7 +89,7 @@ async def test_get_solver_job_pricing_unit(
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
-    capture: str,
+    capture_file: str,
 ):
 
     solver_key: str = "simcore/services/comp/my_super_hpc_solver"
@@ -108,10 +108,11 @@ async def test_get_solver_job_pricing_unit(
             assert data.get("uuid")
             data["uuid"] = path_params["project_id"]
             assert data.get("name")
-            data["name"] = Job.compose_resource_name(
-                parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
-                job_id=job_id,
-            )
+            if capture_file != "get_job_pricing_unit_invalid_solver.json":
+                data["name"] = Job.compose_resource_name(
+                    parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
+                    job_id=job_id,
+                )
             response["data"] = data
         return response
 
@@ -124,9 +125,9 @@ async def test_get_solver_job_pricing_unit(
 
     respx_mock = respx_mock_from_capture(
         mocked_webserver_service_api_base,
-        project_tests_dir / "mocks" / capture,
+        project_tests_dir / "mocks" / capture_file,
         [_get_job_side_effect, _get_pricing_unit_side_effect]
-        if capture == "get_job_pricing_unit_success.json"
+        if capture_file == "get_job_pricing_unit_success.json"
         else [_get_job_side_effect],
     )
 
@@ -134,9 +135,13 @@ async def test_get_solver_job_pricing_unit(
         f"{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/pricing_unit",
         auth=auth,
     )
-    if capture == "get_job_pricing_unit_success.json":
+    if capture_file == "get_job_pricing_unit_success.json":
         assert response.status_code == 200
         body = response.json()
         assert isinstance(body, dict)
+    elif capture_file == "get_job_pricing_unit_invalid_job.json":
+        assert response.status_code == 404
+    elif capture_file == "get_job_pricing_unit_invalid_solver.json":
+        assert response.status_code == 422
     else:
         pytest.fail()

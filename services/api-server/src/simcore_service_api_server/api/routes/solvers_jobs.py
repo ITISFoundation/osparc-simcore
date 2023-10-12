@@ -72,7 +72,7 @@ def _assert_project_associated_with_solver(
     )
     if expected_job_name != project.name:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"job {project.uuid} is not associated with solver {solver_key} and version {version}",
         )
 
@@ -588,7 +588,7 @@ async def get_job_pricing_unit(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Getting wallet for job '%s'", job_name)
+    _logger.debug("Getting pricing unit for job '%s'", job_name)
 
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
     _assert_project_associated_with_solver(solver_key, version, project)
