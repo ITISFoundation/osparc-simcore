@@ -73,6 +73,10 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
                 enabled: false
               });
             }
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
           });
       }
 
