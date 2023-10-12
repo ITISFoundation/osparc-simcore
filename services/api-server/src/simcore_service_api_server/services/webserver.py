@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
@@ -365,6 +366,29 @@ class AuthSession:
             )
             response.raise_for_status()
             data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+            assert data  # nosec
+            return data
+
+    async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/projects/{project_id}/wallet",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[WalletGet].parse_raw(response.text).data
+            return data
+
+    # WALLETS -------------------------------------------------
+
+    async def get_wallet(self, wallet_id: int) -> WalletGet:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/wallets/{wallet_id}",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[WalletGet].parse_raw(response.text).data
             assert data  # nosec
             return data
 

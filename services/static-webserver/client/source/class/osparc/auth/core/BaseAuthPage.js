@@ -84,11 +84,18 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     _buildPage: null,
 
     beautifyFormFields: function() {
-      Object.values(this._form.getItems()).forEach(formItem => {
+      const formItems = this._form.getItems();
+      Object.keys(formItems).forEach(fieldKey => {
+        const formItem = formItems[fieldKey];
         formItem.set({
           width: this.self().FORM_WIDTH,
           backgroundColor: "transparent"
         });
+        if (formItem.classname === "osparc.ui.form.PasswordField") {
+          formItem.getChildControl("passwordField").set({
+            backgroundColor: "transparent"
+          });
+        }
       });
     },
 

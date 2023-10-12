@@ -10,6 +10,7 @@ from .routes import (
     studies,
     studies_jobs,
     users,
+    wallets,
 )
 
 
@@ -28,6 +29,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(solvers_jobs.router, tags=["solvers"], prefix="/solvers")
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
+    router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view

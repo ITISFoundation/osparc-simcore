@@ -50,7 +50,7 @@ def mocked_backend(
     mocked_webserver_service_api_base.request(
         method=capture.method,
         name=capture.name,
-        path=capture.path.removeprefix("/v0"),
+        path=capture.path,
     ).respond(
         status_code=capture.status_code,
         json=capture.response_body,

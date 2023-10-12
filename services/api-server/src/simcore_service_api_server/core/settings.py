@@ -34,6 +34,15 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
     WEBSERVER_SESSION_NAME: str = "osparc.WEBAPI_SESSION"
 
     @cached_property
+    def base_url(self) -> str:
+        # http://webserver:8080/
+        url_without_vtag: str = self._compose_url(
+            prefix="WEBSERVER",
+            port=URLPart.REQUIRED,
+        )
+        return url_without_vtag
+
+    @cached_property
     def api_base_url(self) -> str:
         # http://webserver:8080/v0
         url_with_vtag: str = self._compose_url(
