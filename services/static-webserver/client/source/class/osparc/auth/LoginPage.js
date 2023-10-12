@@ -220,10 +220,12 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
-      login.addListener("toRequestAccount", () => {
-        pages.setSelection([requestAccount]);
-        login.resetValues();
-      }, this);
+      if (requestAccount) {
+        login.addListener("toRequestAccount", () => {
+          pages.setSelection([requestAccount]);
+          login.resetValues();
+        }, this);
+      }
 
       login.addListener("toReset", () => {
         pages.setSelection([resetPasswordRequest]);
@@ -268,10 +270,12 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       });
 
-      requestAccount.addListener("done", msg => {
-        osparc.utils.Utils.cookie.deleteCookie("user");
-        this.fireDataEvent("done", msg);
-      });
+      if (requestAccount) {
+        requestAccount.addListener("done", msg => {
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          this.fireDataEvent("done", msg);
+        });
+      }
 
       verifyPhoneNumber.addListener("done", msg => {
         login.resetValues();
