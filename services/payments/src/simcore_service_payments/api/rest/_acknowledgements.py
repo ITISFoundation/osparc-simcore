@@ -59,7 +59,9 @@ async def acknowledge_payment(
     payment_id: PaymentID,
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
-    repo: Annotated[PaymentsTransactionsRepo, Depends(get_repository)],
+    repo: Annotated[
+        PaymentsTransactionsRepo, Depends(get_repository(PaymentsTransactionsRepo))
+    ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
     background_tasks: BackgroundTasks,
 ):
