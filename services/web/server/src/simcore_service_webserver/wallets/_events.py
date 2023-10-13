@@ -21,17 +21,18 @@ async def _auto_add_default_wallet(
     if not await any_wallet_owned_by_user(
         app, user_id=user_id, product_name=product_name
     ):
+        user = await get_user_name_and_email(app, user_id=user_id)
+        user_name = user.name.capitalize()
         wallet = await create_wallet(
             app,
             user_id=user_id,
-            wallet_name="Credits",
-            description="Purchased credits end up in here",
+            wallet_name=f"{user_name} Credits",
+            description=f"Credits purchased by {user_name} end up in here",
             thumbnail=None,
             product_name=product_name,
         )
 
         if extra_credits_in_usd:
-            user = await get_user_name_and_email(app, user_id=user_id)
             await add_credits_to_wallet(
                 app,
                 product_name=product_name,
