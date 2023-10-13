@@ -1,6 +1,6 @@
 from models_library.products import ProductName
 
-from ._api import (  # is_current_product_billable,
+from ._api import (
     get_current_product,
     get_current_product_credit_price,
     get_product_name,
