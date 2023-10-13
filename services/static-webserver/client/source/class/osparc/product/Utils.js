@@ -161,11 +161,12 @@ qx.Class.define("osparc.product.Utils", {
       return false;
     },
 
-    showStudyPreview: function() {
-      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+    showStudyPreview: function(studyData) {
+      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      if (uiMode && uiMode === "app") {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showAboutProduct: function() {
