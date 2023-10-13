@@ -5,6 +5,7 @@ from decimal import Decimal
 from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import HttpUrl, PositiveInt
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -23,7 +24,6 @@ class BaseRepository:
 
 
 class PaymentsTransactionsRepo(BaseRepository):
-
     #
     # Next PRs should move most of the implementations in
     # services/web/server/src/simcore_service_webserver/payments/_db.py
@@ -51,5 +51,19 @@ class PaymentsTransactionsRepo(BaseRepository):
         payment_id: PaymentID,
         completion_state: PaymentTransactionState,
         state_message: str | None,
+        invoice_url: HttpUrl,
     ) -> PaymentsTransactionsDB:
+        raise NotImplementedError
+
+    async def list_user_payment_transactions(
+        self,
+        user_id: UserID,
+        *,
+        offset: PositiveInt,
+        limit: PositiveInt,
+    ) -> tuple[int, list[PaymentsTransactionsDB]]:
+        """List payments done by a give user (any wallet)
+
+        Sorted by newest-first
+        """
         raise NotImplementedError

@@ -17,7 +17,7 @@ class SavedPaymentMethod(AckPaymentMethod):
 
 
 class AckPayment(_BaseAck):
-    invoice_url: HttpUrl
+    invoice_url: HttpUrl  # FIXME: ask Dennis what value do I get here if fails?
     saved: SavedPaymentMethod | None = Field(
         default=None,
         description="If the user decided to save the payment method"

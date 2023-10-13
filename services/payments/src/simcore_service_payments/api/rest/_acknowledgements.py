@@ -79,6 +79,7 @@ async def acknowledge_payment(
                 else PaymentTransactionState.FAILED
             ),
             state_message=ack.message,
+            invoice_url=ack.invoice_url,
         )
 
     if ack.saved:
