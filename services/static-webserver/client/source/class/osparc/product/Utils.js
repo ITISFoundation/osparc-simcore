@@ -155,10 +155,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad") || this.isProduct("tis")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showStudyPreview: function(studyData) {
@@ -170,10 +170,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showPreferencesTokens: function() {
