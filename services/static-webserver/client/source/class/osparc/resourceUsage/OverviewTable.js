@@ -37,7 +37,7 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
     this.makeItLoose();
 
     const columnModel = this.getTableColumnModel();
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 60);
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 70);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
     if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
       columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
@@ -78,14 +78,18 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
       cost: {
         pos: 7,
         title: qx.locale.Manager.tr("Cost")
+      },
+      user: {
+        pos: 8,
+        title: qx.locale.Manager.tr("User")
       }
     },
 
-    respDataToTableData: function(datas) {
+    respDataToTableData: async function(datas) {
       const newDatas = [];
       if (datas) {
         const cols = this.COLUMNS;
-        datas.forEach(data => {
+        for (const data of datas) {
           const newData = [];
           newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
           newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
@@ -108,8 +112,10 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
             newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
           }
           newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
+          const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
+          newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
           newDatas.push(newData);
-        });
+        }
       }
       return newDatas;
     }
@@ -118,8 +124,8 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
   members: {
     __model: null,
 
-    addData: function(datas) {
-      const newDatas = this.self().respDataToTableData(datas);
+    addData: async function(datas) {
+      const newDatas = await this.self().respDataToTableData(datas);
       this.setData(newDatas);
     }
   }
