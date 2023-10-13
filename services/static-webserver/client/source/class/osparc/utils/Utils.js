@@ -307,6 +307,13 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
+    formatMilliSeconds: function(milliseconds) {
+      const date = new Date(0);
+      date.setMilliseconds(milliseconds);
+      const timeString = date.toISOString().substring(11, 19); // hh:mm:ss
+      return timeString;
+    },
+
     formatSeconds: function(seconds) {
       const min = Math.floor(seconds / 60);
       const sec = seconds - min * 60;

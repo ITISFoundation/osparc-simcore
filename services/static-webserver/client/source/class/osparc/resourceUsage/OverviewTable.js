@@ -21,7 +21,13 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
   construct: function() {
     const model = this.__model = new qx.ui.table.model.Simple();
     const cols = this.self().COLUMNS;
-    const colNames = Object.values(cols).map(col => col.title);
+    const colNames = [];
+    Object.entries(cols).forEach(([key, data]) => {
+      if (key === "wallet" && !osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        return;
+      }
+      colNames.push(data.title);
+    });
     model.setColumns(colNames);
 
     this.base(arguments, model, {
@@ -31,9 +37,12 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
     this.makeItLoose();
 
     const columnModel = this.getTableColumnModel();
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 60);
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 70);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 80);
+    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
+    }
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.cost.pos, 60);
   },
 
   statics: {
@@ -69,14 +78,18 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
       cost: {
         pos: 7,
         title: qx.locale.Manager.tr("Cost")
+      },
+      user: {
+        pos: 8,
+        title: qx.locale.Manager.tr("User")
       }
     },
 
-    respDataToTableData: function(datas) {
+    respDataToTableData: async function(datas) {
       const newDatas = [];
       if (datas) {
         const cols = this.COLUMNS;
-        datas.forEach(data => {
+        for (const data of datas) {
           const newData = [];
           newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
           newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
@@ -90,15 +103,19 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
             newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
             if (data["stopped_at"]) {
               const stopTime = new Date(data["stopped_at"]);
-              const durationTimeSec = (stopTime - startTime)/1000;
-              newData[cols["duration"].pos] = durationTimeSec;
+              const durationTime = stopTime - startTime;
+              newData[cols["duration"].pos] = osparc.utils.Utils.formatMilliSeconds(durationTime);
             }
           }
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
-          newData[cols["cost"].pos] = "unknown";
+          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+            newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
+          }
+          newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
+          const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
+          newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
           newDatas.push(newData);
-        });
+        }
       }
       return newDatas;
     }
@@ -107,8 +124,8 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
   members: {
     __model: null,
 
-    addData: function(datas) {
-      const newDatas = this.self().respDataToTableData(datas);
+    addData: async function(datas) {
+      const newDatas = await this.self().respDataToTableData(datas);
       this.setData(newDatas);
     }
   }
