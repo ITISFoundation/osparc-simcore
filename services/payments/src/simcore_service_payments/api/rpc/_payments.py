@@ -33,7 +33,6 @@ async def init_payment(
     user_email: str,
     comment: str | None = None,
 ) -> WalletPaymentCreated:
-
     initiated_at = arrow.utcnow().datetime
 
     # Payment-Gateway
@@ -42,7 +41,7 @@ async def init_payment(
         logging.INFO,
         "Init payment %s in payments-gateway",
         f"{wallet_id=}",
-        get_log_record_extra(user_id=user_id),
+        extra=get_log_record_extra(user_id=user_id),
     ):
         payments_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
 
@@ -64,7 +63,7 @@ async def init_payment(
         logging.INFO,
         "Annotate INIT transaction %s in db",
         f"{init.payment_id=}",
-        get_log_record_extra(user_id=user_id),
+        extra=get_log_record_extra(user_id=user_id),
     ):
         repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
         await repo.insert_init_payment_transaction(

@@ -6,6 +6,8 @@ from ..core.settings import ApplicationSettings
 
 
 def setup_postgres(app: FastAPI):
+    app.state.engine = None
+
     async def _on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
         await connect_to_db(app, settings.PAYMENTS_POSTGRES)
