@@ -2,12 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Final, Iterator
+from collections.abc import AsyncIterator, Iterator
+from typing import Final
 
 import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -161,7 +164,7 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
             print(
                 f"--> Connecting to {dsn}, attempt {attempt.retry_state.attempt_number}..."
             )
-            with engine.connect() as conn:
+            with engine.connect():
                 print(
                     f"Connection to {dsn} succeeded [{json_dumps(attempt.retry_state.retry_object.statistics)}]"
                 )
@@ -190,7 +193,7 @@ def postgres_db(
         yield postgres_engine
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def aiopg_engine(
     postgres_db: sa.engine.Engine,
 ) -> AsyncIterator:
@@ -206,7 +209,7 @@ async def aiopg_engine(
         await engine.wait_closed()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def sqlalchemy_async_engine(
     postgres_db: sa.engine.Engine,
 ) -> AsyncIterator:
@@ -222,17 +225,24 @@ async def sqlalchemy_async_engine(
     await engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
+def postgres_env_vars_dict(postgres_dsn: PostgresTestConfig) -> EnvVarsDict:
+    return {
+        "POSTGRES_USER": postgres_dsn["user"],
+        "POSTGRES_PASSWORD": postgres_dsn["password"],
+        "POSTGRES_DB": postgres_dsn["database"],
+        "POSTGRES_HOST": postgres_dsn["host"],
+        "POSTGRES_PORT": f"{postgres_dsn['port']}",
+        "POSTGRES_ENDPOINT": f"{postgres_dsn['host']}:{postgres_dsn['port']}",
+    }
+
+
+@pytest.fixture()
 def postgres_host_config(
-    postgres_dsn: PostgresTestConfig, monkeypatch: pytest.MonkeyPatch
+    postgres_dsn: PostgresTestConfig,
+    postgres_env_vars_dict: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> PostgresTestConfig:
     """sets postgres env vars and returns config"""
-    monkeypatch.setenv("POSTGRES_USER", postgres_dsn["user"])
-    monkeypatch.setenv("POSTGRES_PASSWORD", postgres_dsn["password"])
-    monkeypatch.setenv("POSTGRES_DB", postgres_dsn["database"])
-    monkeypatch.setenv("POSTGRES_HOST", postgres_dsn["host"])
-    monkeypatch.setenv("POSTGRES_PORT", str(postgres_dsn["port"]))
-    monkeypatch.setenv(
-        "POSTGRES_ENDPOINT", f"{postgres_dsn['host']}:{postgres_dsn['port']}"
-    )
+    setenvs_from_dict(monkeypatch, postgres_env_vars_dict)
     return postgres_dsn
