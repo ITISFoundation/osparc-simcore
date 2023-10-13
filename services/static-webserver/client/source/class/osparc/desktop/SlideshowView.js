@@ -349,10 +349,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       });
     },
 
-    startSlides: function(context = "guided") {
+    startSlides: function() {
       const study = this.getStudy();
       const slideshow = study.getUi().getSlideshow();
-      if (context === "app" && slideshow.isEmpty()) {
+      if (slideshow.isEmpty()) {
         const sortedPipeline = study.getWorkbench().getPipelineLinearSorted();
         if (sortedPipeline) {
           sortedPipeline.forEach((nodeId, i) => {
@@ -360,7 +360,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
         }
       }
-      this.setPageContext(context);
+      this.setPageContext("app");
       this.__slideshowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
       const isValid = slideshow.getPosition(currentNodeId) !== -1;

@@ -212,7 +212,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           switch (pageContext) {
             case "guided":
             case "app":
-              this.__slideshowView.startSlides(pageContext);
+              this.__slideshowView.startSlides();
               break;
             default:
               this.__workbenchView.openFirstNode();
@@ -467,7 +467,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "guided":
         case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides(newCtxt);
+          this.__slideshowView.startSlides();
           break;
       }
     },
