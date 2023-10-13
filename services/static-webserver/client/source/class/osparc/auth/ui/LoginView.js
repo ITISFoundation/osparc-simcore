@@ -64,7 +64,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
       this._form.add(pass, " Your password", null, "password");
 
-      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      this.beautifyFormFields();
       const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
       this.add(formRenderer);
 
@@ -82,28 +82,26 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const createAccountBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
-      osparc.data.Resources.getOne("config")
-        .then(config => {
-          if (config["invitation_required"]) {
-            createAccountBtn.setLabel(this.tr("Request Account"));
-          }
-        })
-        .catch(err => console.error(err));
+      const config = osparc.store.Store.getInstance().get("config");
+      if (config["invitation_required"]) {
+        createAccountBtn.setLabel(this.tr("Request Account"));
+      }
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
-        osparc.data.Resources.getOne("config")
-          .then(config => {
-            if (config["invitation_required"]) {
-              if (osparc.product.Utils.getProductName().includes("s4l")) {
-                this.fireEvent("toRequestAccount");
-              } else {
-                osparc.store.Support.openInvitationRequiredDialog();
-              }
-            } else {
-              this.fireEvent("toRegister");
-            }
-          })
-          .catch(err => console.error(err));
+        if (config["invitation_required"]) {
+          if (
+            osparc.product.Utils.isProduct("s4l") ||
+            osparc.product.Utils.isProduct("s4lacad") ||
+            osparc.product.Utils.isProduct("s4ldesktop") ||
+            osparc.product.Utils.isProduct("s4ldesktopacad")
+          ) {
+            this.fireEvent("toRequestAccount");
+          } else {
+            osparc.store.Support.openInvitationRequiredDialog();
+          }
+        } else {
+          this.fireEvent("toRegister");
+        }
         createAccountBtn.setEnabled(true);
       }, this);
       osparc.utils.Utils.setIdToWidget(createAccountBtn, "loginCreateAccountBtn");

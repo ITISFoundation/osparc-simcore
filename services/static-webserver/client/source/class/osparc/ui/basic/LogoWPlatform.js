@@ -57,14 +57,12 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
             font: "text-9"
           });
 
-          osparc.store.StaticInfo.getInstance().getPlatformName()
-            .then(platformName => {
-              platformName = platformName.toUpperCase();
-              if (osparc.utils.Utils.isInZ43()) {
-                platformName = "Z43 " + platformName;
-              }
-              control.setValue(platformName);
-            });
+          let platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+          platformName = platformName.toUpperCase();
+          if (osparc.utils.Utils.isInZ43()) {
+            platformName = "Z43 " + platformName;
+          }
+          control.setValue(platformName);
           control.bind("value", this, "paddingTop", {
             converter: value => value ? 3 : 7
           });

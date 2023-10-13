@@ -39,7 +39,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       this._addTitleHeader(this.tr("Registration"));
 
       // form
-      // email, pass1 == pass2
+      // email, password1 == password2
       const email = new qx.ui.form.TextField().set({
         required: true
       });
@@ -50,17 +50,17 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         email.activate();
       });
 
-      const pass1 = new osparc.ui.form.PasswordField().set({
+      const password1 = new osparc.ui.form.PasswordField().set({
         required: true
       });
-      osparc.utils.Utils.setIdToWidget(pass1.getChildControl("passwordField"), "registrationPass1Fld");
-      this._form.add(pass1, this.tr("Type a password"), null, "pass1");
+      osparc.utils.Utils.setIdToWidget(password1.getChildControl("passwordField"), "registrationPass1Fld");
+      this._form.add(password1, this.tr("Type a password"), null, "password1");
 
-      const pass2 = new osparc.ui.form.PasswordField().set({
+      const password2 = new osparc.ui.form.PasswordField().set({
         required: true
       });
-      osparc.utils.Utils.setIdToWidget(pass2.getChildControl("passwordField"), "registrationPass2Fld");
-      this._form.add(pass2, this.tr("Retype the password"), null, "pass2");
+      osparc.utils.Utils.setIdToWidget(password2.getChildControl("passwordField"), "registrationPass2Fld");
+      this._form.add(password2, this.tr("Retype the password"), null, "password2");
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       const invitationToken = urlFragment.params ? urlFragment.params.invitation || null : null;
@@ -73,17 +73,21 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
                 enabled: false
               });
             }
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
           });
       }
 
       // validation
       const validator = new qx.ui.form.validation.Manager();
       validator.add(email, qx.util.Validate.email());
-      validator.add(pass1, osparc.auth.core.Utils.passwordLengthValidator);
-      validator.add(pass2, osparc.auth.core.Utils.passwordLengthValidator);
-      validator.setValidator(() => osparc.auth.core.Utils.checkSamePasswords(pass1, pass2));
+      validator.add(password1, osparc.auth.core.Utils.passwordLengthValidator);
+      validator.add(password2, osparc.auth.core.Utils.passwordLengthValidator);
+      validator.setValidator(() => osparc.auth.core.Utils.checkSamePasswords(password1, password2));
 
-      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      this.beautifyFormFields();
       const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
       this.add(formRenderer);
 
@@ -111,8 +115,8 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
           if (valid) {
             this.__submit({
               email: email.getValue(),
-              password: pass1.getValue(),
-              confirm: pass2.getValue(),
+              password: password1.getValue(),
+              confirm: password2.getValue(),
               invitation: invitationToken ? invitationToken : ""
             });
           }
