@@ -284,7 +284,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             textColor: "danger-red",
             cursor: "pointer"
           });
-          control.addListener("tap", () => osparc.navigation.UserMenuButton.openPreferences(), this);
+          control.addListener("tap", () => osparc.desktop.credits.UserCenterWindow.openWindow(), this);
           const authData = osparc.auth.Data.getInstance();
           authData.bind("expirationDate", control, "visibility", {
             converter: expirationDay => {
