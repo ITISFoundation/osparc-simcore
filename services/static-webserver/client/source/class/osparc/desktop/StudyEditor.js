@@ -469,7 +469,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "guided":
         case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides();
+          if (this.getStudy() && this.getStudy().getUi()) {
+            this.__slideshowView.startSlides();
+          }
           break;
       }
     },
