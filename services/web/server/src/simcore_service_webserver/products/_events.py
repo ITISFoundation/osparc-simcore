@@ -10,11 +10,10 @@ from simcore_postgres_database.utils_products import (
     get_default_product_name,
     get_or_create_product_group,
 )
-from simcore_postgres_database.utils_products_prices import is_payment_enabled
 
 from .._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
 from ..statics._constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
-from ._db import iter_products
+from ._db import get_product_payment_fields, iter_products
 from ._model import Product
 
 _logger = logging.getLogger(__name__)
@@ -77,9 +76,14 @@ async def load_products_on_startup(app: web.Application):
         async for row in iter_products(connection):
             try:
                 name = row.name
-                is_enabled = await is_payment_enabled(connection, product_name=name)
+
+                is_enabled, credits_per_usd = await get_product_payment_fields(
+                    connection, product_name=row.name
+                )
                 app_products[name] = Product(
-                    **dict(row.items()), is_payment_enabled=is_enabled
+                    **dict(row.items()),
+                    is_payment_enabled=is_enabled,
+                    credits_per_usd=credits_per_usd,
                 )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec

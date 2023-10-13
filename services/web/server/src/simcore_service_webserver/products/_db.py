@@ -1,15 +1,17 @@
 import logging
 from collections.abc import AsyncIterator
+from decimal import Decimal
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import NonNegativeDecimal
+from models_library.products import ProductName
 from pydantic import parse_obj_as
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
     get_product_latest_credit_price_or_none,
-    is_payment_enabled,
 )
 
 from ..db.base_repository import BaseRepository
@@ -42,6 +44,27 @@ _PRODUCTS_COLUMNS = [
 ]
 
 
+class PaymentFieldsTuple(NamedTuple):
+    enabled: bool
+    credits_per_usd: Decimal | None
+
+
+async def get_product_payment_fields(
+    conn: SAConnection, product_name: ProductName
+) -> PaymentFieldsTuple:
+    usd_per_credit = await get_product_latest_credit_price_or_none(
+        conn, product_name=product_name
+    )
+    if usd_per_credit is None or usd_per_credit == 0:
+        enabled = False
+        credits_per_usd = None
+    else:
+        enabled = True
+        credits_per_usd = 1 / usd_per_credit
+
+    return PaymentFieldsTuple(enabled=enabled, credits_per_usd=credits_per_usd)
+
+
 async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     """Iterates on products sorted by priority i.e. the first is considered the default"""
     async for row in conn.execute(
@@ -63,8 +86,14 @@ class ProductRepository(BaseRepository):
                 # that the product is not billable when there is no product in the products_prices table
                 # or it's price is 0. We should change it and always assume that the product is billable, unless
                 # explicitely stated that it is free
-                enabled = await is_payment_enabled(conn, product_name=row.name)
-                return Product(**dict(row.items()), is_payment_enabled=enabled)
+                enabled, credits_per_usd = await get_product_payment_fields(
+                    conn, product_name=row.name
+                )
+                return Product(
+                    **dict(row.items()),
+                    is_payment_enabled=enabled,
+                    credits_per_usd=credits_per_usd,
+                )
             return None
 
     async def get_product_latest_credit_price_or_none(

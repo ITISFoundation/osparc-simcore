@@ -1,5 +1,6 @@
 import logging
 import string
+from decimal import Decimal
 from typing import Any, ClassVar, Pattern  # noqa: UP035
 
 from models_library.basic_regex import (
@@ -91,6 +92,11 @@ class Product(BaseModel):
     is_payment_enabled: bool = Field(
         default=False,
         description="True if this product offers credits",
+    )
+
+    credits_per_usd: Decimal | None = Field(
+        default=None,
+        description="Price of the credits in this product given in credit/USD. None for free product.",
     )
 
     @validator("*", pre=True)
