@@ -123,6 +123,11 @@ qx.Class.define("osparc.store.Store", {
       nullable: true,
       event: "changeActiveWallet"
     },
+    creditPrice: {
+      check: "Number",
+      init: null,
+      nullable: true
+    },
     permissions: {
       check: "Array",
       init: []
@@ -608,6 +613,21 @@ qx.Class.define("osparc.store.Store", {
         } else {
           resolve(null);
         }
+      });
+    },
+
+    reloadCreditPrice: function() {
+      const store = osparc.store.Store.getInstance();
+      store.setCreditPrice(null);
+
+      return new Promise(resolve => {
+        osparc.data.Resources.fetch("creditPrice", "get")
+          .then(data => {
+            if (data && data["usdPerCredit"]) {
+              store.setCreditPrice(data["usdPerCredit"]);
+              resolve(data["usdPerCredit"]);
+            }
+          });
       });
     },
 

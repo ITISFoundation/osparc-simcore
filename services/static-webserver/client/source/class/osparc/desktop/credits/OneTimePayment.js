@@ -26,14 +26,10 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     this.__buildLayout();
 
     this.initTotalPrice();
-    osparc.data.Resources.fetch("credits-price", "get")
-      .then(data => {
-        if (data && data["usdPerCredit"]) {
-          this.setCreditPrice(data["usdPerCredit"]);
-        } else {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Credit price couldn't be fetched"), "ERROR");
-        }
-      });
+    const creditPrice = osparc.store.Store.getInstance().getCreditPrice();
+    if (creditPrice) {
+      this.setCreditPrice(creditPrice);
+    }
   },
 
   properties: {

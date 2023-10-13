@@ -684,7 +684,8 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * PRODUCTS
        */
-      "credits-price": {
+      "creditPrice": {
+        useCache: false,
         endpoints: {
           get: {
             method: "GET",
