@@ -426,7 +426,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
+        study.bind("name", this.getChildControl("edit-title-label"), "value");
       }
     },
 
