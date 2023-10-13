@@ -86,13 +86,11 @@ class ProductRepository(BaseRepository):
                 # that the product is not billable when there is no product in the products_prices table
                 # or it's price is 0. We should change it and always assume that the product is billable, unless
                 # explicitely stated that it is free
-                enabled, credits_per_usd = await get_product_payment_fields(
-                    conn, product_name=row.name
-                )
+                payments = await get_product_payment_fields(conn, product_name=row.name)
                 return Product(
                     **dict(row.items()),
-                    is_payment_enabled=enabled,
-                    credits_per_usd=credits_per_usd,
+                    is_payment_enabled=payments.enabled,
+                    credits_per_usd=payments.credits_per_usd,
                 )
             return None
 

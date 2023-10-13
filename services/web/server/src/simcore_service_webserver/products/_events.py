@@ -77,13 +77,13 @@ async def load_products_on_startup(app: web.Application):
             try:
                 name = row.name
 
-                is_enabled, credits_per_usd = await get_product_payment_fields(
+                payments = await get_product_payment_fields(
                     connection, product_name=row.name
                 )
                 app_products[name] = Product(
                     **dict(row.items()),
-                    is_payment_enabled=is_enabled,
-                    credits_per_usd=credits_per_usd,
+                    is_payment_enabled=payments.enabled,
+                    credits_per_usd=payments.credits_per_usd,
                 )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
