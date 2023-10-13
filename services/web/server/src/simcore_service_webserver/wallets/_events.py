@@ -6,6 +6,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
+from ..products.api import get_product
 from ..resource_usage.api import add_credits_to_wallet
 from ..users import preferences_api
 from ..users.api import get_user_name_and_email
@@ -22,6 +23,8 @@ async def _auto_add_default_wallet(
         app, user_id=user_id, product_name=product_name
     ):
         user = await get_user_name_and_email(app, user_id=user_id)
+        product = get_product(app, product_name)
+
         user_name = user.name.capitalize()
         wallet = await create_wallet(
             app,
@@ -32,7 +35,8 @@ async def _auto_add_default_wallet(
             product_name=product_name,
         )
 
-        if extra_credits_in_usd:
+        if extra_credits_in_usd and product.is_payment_enabled:
+            assert product.credits_per_usd  # nosec
             await add_credits_to_wallet(
                 app,
                 product_name=product_name,
@@ -40,7 +44,7 @@ async def _auto_add_default_wallet(
                 wallet_name=wallet.name,
                 user_id=user_id,
                 user_email=user.email,
-                osparc_credits=extra_credits_in_usd,  # type: ignore
+                osparc_credits=extra_credits_in_usd * product.credits_per_usd,
                 payment_id="INVITATION",  # TODO: invitation id???
                 created_at=wallet.created,
             )
