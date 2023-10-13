@@ -99,12 +99,12 @@ qx.Class.define("osparc.po.Invitations", {
       });
       form.add(userEmail, this.tr("User Email"));
 
-      const extraCredits = new qx.ui.form.Spinner().set({
+      const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
         maximum: 1000,
         value: 0
       });
-      form.add(extraCredits, this.tr("Welcome Credits"));
+      form.add(extraCreditsInUsd, this.tr("Welcome Credits (USD)"));
 
       const withExpiration = new qx.ui.form.CheckBox().set({
         value: false
@@ -135,8 +135,8 @@ qx.Class.define("osparc.po.Invitations", {
               "guest": userEmail.getValue()
             }
           };
-          if (extraCredits.getValue() > 0) {
-            params.data["extraCredits"] = extraCredits.getValue();
+          if (extraCreditsInUsd.getValue() > 0) {
+            params.data["extraCreditsInUsd"] = extraCreditsInUsd.getValue();
           }
           if (withExpiration.getValue()) {
             params.data["trialAccountDays"] = trialDays.getValue();
