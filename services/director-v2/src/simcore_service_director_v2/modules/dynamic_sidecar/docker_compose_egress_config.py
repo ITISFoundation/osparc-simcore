@@ -294,8 +294,6 @@ def add_egress_configuration(
 
     # allow internet access to containers based on DNS:PORT rules
     if simcore_service_labels.containers_allowed_outgoing_permit_list:
-        # TODO: apply replacement last possible moment to replace ???
-
         # get all HostPermitListPolicy entries from all containers
         all_host_permit_list_policies: list[NATRule] = []
 
