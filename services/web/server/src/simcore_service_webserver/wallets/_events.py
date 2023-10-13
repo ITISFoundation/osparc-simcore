@@ -16,7 +16,7 @@ async def _auto_add_default_wallet(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-    extra_credits: PositiveInt | None = None,
+    extra_credits_in_usd: PositiveInt | None = None,
 ):
     if not await any_wallet_owned_by_user(
         app, user_id=user_id, product_name=product_name
@@ -30,7 +30,7 @@ async def _auto_add_default_wallet(
             product_name=product_name,
         )
 
-        if extra_credits:
+        if extra_credits_in_usd:
             user = await get_user_name_and_email(app, user_id=user_id)
             await add_credits_to_wallet(
                 app,
@@ -39,7 +39,7 @@ async def _auto_add_default_wallet(
                 wallet_name=wallet.name,
                 user_id=user_id,
                 user_email=user.email,
-                osparc_credits=extra_credits,  # type: ignore
+                osparc_credits=extra_credits_in_usd,  # type: ignore
                 payment_id="INVITATION",  # TODO: invitation id???
                 created_at=wallet.created,
             )
@@ -60,10 +60,13 @@ async def _on_user_confirmation(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-    extra_credits: PositiveInt,
+    extra_credits_in_usd: PositiveInt,
 ):
     await _auto_add_default_wallet(
-        app, user_id=user_id, product_name=product_name, extra_credits=extra_credits
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        extra_credits_in_usd=extra_credits_in_usd,
     )
 
 

@@ -188,7 +188,7 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
-          "extra_credits": {
+          "extra_credits_in_usd": {
             "title": "Extra Credits",
             "exclusiveMinimum": true,
             "type": "integer",
@@ -240,7 +240,7 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
-          "extra_credits": {
+          "extra_credits_in_usd": {
             "title": "Extra Credits",
             "exclusiveMinimum": true,
             "type": "integer",
@@ -299,7 +299,7 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
-          "extra_credits": {
+          "extra_credits_in_usd": {
             "title": "Extra Credits",
             "exclusiveMinimum": true,
             "type": "integer",
