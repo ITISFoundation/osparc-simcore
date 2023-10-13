@@ -350,6 +350,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
 
     startSlides: function() {
+      // If the study is not initialized this will fail
       if (!this.isPropertyInitialized("study")) {
         return;
       }
