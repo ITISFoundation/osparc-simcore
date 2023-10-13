@@ -99,8 +99,8 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
             newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
             if (data["stopped_at"]) {
               const stopTime = new Date(data["stopped_at"]);
-              const durationTimeSec = (stopTime - startTime)/1000;
-              newData[cols["duration"].pos] = osparc.utils.Utils.formatSeconds(durationTimeSec);
+              const durationTime = stopTime - startTime;
+              newData[cols["duration"].pos] = osparc.utils.Utils.formatMilliSeconds(durationTime);
             }
           }
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
