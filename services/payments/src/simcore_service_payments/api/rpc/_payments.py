@@ -66,7 +66,7 @@ async def init_payment(
         extra=get_log_record_extra(user_id=user_id),
     ):
         repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
-        await repo.insert_init_payment_transaction(
+        payment_id = await repo.insert_init_payment_transaction(
             payment_id=init.payment_id,
             price_dollars=amount_dollars,
             osparc_credits=target_credits,
@@ -77,8 +77,9 @@ async def init_payment(
             comment=comment,
             initiated_at=initiated_at,
         )
+        assert payment_id == f"{init.payment_id}"  # nosec
 
     return WalletPaymentCreated(
-        payment_id=f"{init.payment_id}",
+        payment_id=f"{payment_id}",
         payment_form_url=f"{submission_link}",
     )

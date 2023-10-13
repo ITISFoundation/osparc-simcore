@@ -4,7 +4,7 @@ from fastapi import status
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
 
 
-async def test_login_complete_payment(
+async def test_payments_api_authentication(
     client: httpx.AsyncClient, faker: Faker, auth_headers: dict[str, str]
 ):
     payments_id = faker.uuid4()
@@ -23,3 +23,18 @@ async def test_login_complete_payment(
     )
     # NOTE: for the moment this entry is not implemented
     assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED, response.text
+
+
+async def test_ack_successful_payment():
+    # TODO: test using schemathesis
+    # TODO: test ack w/o init
+    # TODO: test ack fail with saved?
+    pass
+
+
+async def test_ack_failed_payment():
+    pass
+
+
+async def test_ack_payment_and_saved_card():
+    pass
