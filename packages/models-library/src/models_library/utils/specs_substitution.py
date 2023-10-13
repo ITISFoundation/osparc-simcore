@@ -26,7 +26,7 @@ def _json_loads(str_data: str) -> dict[str, Any]:
 class IdentifierSubstitutionError(PydanticErrorMixin, KeyError):
     msg_template: str = (
         "Was not able to substitute identifier "
-        "'{name}' because it was not defined in: {template}"
+        "'{name}'. It was not found in: {substitutions}"
     )
 
 
@@ -116,5 +116,5 @@ class SpecsSubstitutionsResolver:
             return _json_loads(new_specs_txt)
         except KeyError as e:
             raise IdentifierSubstitutionError(
-                name=e.args[0], template=self._template.template
+                name=e.args[0], substitutions=self._substitutions
             ) from e
