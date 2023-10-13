@@ -20,7 +20,11 @@ from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
 ]
 
 
@@ -29,18 +33,19 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
-    disable_postgres_setup: Callable,
+    postgres_env_vars_dict: EnvVarsDict,
 ):
-    # mocks setup
-    disable_postgres_setup()
-
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
+    monkeypatch.delenv("PAYMENTS_POSTGRES", raising=False)
+
     return setenvs_from_dict(
         monkeypatch,
         {
             **app_environment,
             **rabbit_env_vars_dict,
+            **postgres_env_vars_dict,
+            "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )
 
