@@ -370,7 +370,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-button").show();
           if (osparc.product.Utils.isProduct("s4llite")) {
             this.getChildControl("study-menu-button").show();
-            this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
             this.getChildControl("edit-title-label").show();
           }
           if (this.__tabButtons) {
@@ -427,6 +426,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+        this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
       }
     },
 
