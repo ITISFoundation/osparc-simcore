@@ -350,6 +350,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
 
     startSlides: function() {
+      if (!this.isPropertyInitialized("study")) {
+        return;
+      }
       const study = this.getStudy();
       const slideshow = study.getUi().getSlideshow();
       if (slideshow.isEmpty()) {
