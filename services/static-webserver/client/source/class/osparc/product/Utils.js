@@ -155,24 +155,25 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad") || this.isProduct("tis")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
-    showStudyPreview: function() {
-      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+    showStudyPreview: function(studyData) {
+      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      if (uiMode && uiMode === "app") {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showPreferencesTokens: function() {
