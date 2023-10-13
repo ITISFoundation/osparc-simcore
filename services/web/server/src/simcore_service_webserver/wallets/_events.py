@@ -7,6 +7,7 @@ from pydantic import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
 from ..resource_usage.api import add_credits_to_wallet
+from ..users import preferences_api
 from ..users.api import get_user_name_and_email
 from ._api import any_wallet_owned_by_user, create_wallet
 
@@ -42,6 +43,17 @@ async def _auto_add_default_wallet(
                 payment_id="INVITATION",  # TODO: invitation id???
                 created_at=wallet.created,
             )
+
+        preference_id = (
+            preferences_api.PreferredWalletIdFrontendUserPreference().preference_identifier
+        )
+        await preferences_api.set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=preference_id,
+            value=wallet.wallet_id,
+        )
 
 
 async def _on_user_confirmation(
