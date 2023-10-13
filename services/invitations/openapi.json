@@ -189,10 +189,10 @@
             "minimum": 0
           },
           "extra_credits_in_usd": {
-            "title": "Extra Credits",
+            "title": "Extra Credits In Usd",
             "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, the account's primary wallet will add these extra credits",
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
           "created": {
@@ -241,10 +241,10 @@
             "minimum": 0
           },
           "extra_credits_in_usd": {
-            "title": "Extra Credits",
+            "title": "Extra Credits In Usd",
             "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, the account's primary wallet will add these extra credits",
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
           "created": {
@@ -300,10 +300,10 @@
             "minimum": 0
           },
           "extra_credits_in_usd": {
-            "title": "Extra Credits",
+            "title": "Extra Credits In Usd",
             "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, the account's primary wallet will add these extra credits",
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           }
         },
