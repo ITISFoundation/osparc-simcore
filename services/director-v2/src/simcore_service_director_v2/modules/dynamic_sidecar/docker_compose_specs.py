@@ -39,7 +39,7 @@ EnvVarsMap = dict[str, str | None]
 
 _COMPOSE_MAJOR_VERSION: Final[int] = 3
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _update_networking_configuration(
@@ -144,7 +144,7 @@ def _update_resource_limits_and_reservations(
             continue
 
         resources: ResourcesDict = service_resources[spec_service_key].resources
-        logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
+        _logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
         cpu: ResourceValue = resources["CPU"]
         memory: ResourceValue = resources["RAM"]
@@ -329,18 +329,21 @@ async def assemble_spec(
         simcore_service_labels = await substitute_vendor_secrets_in_model(
             app=app,
             model=simcore_service_labels,
+            safe=True,
             service_key=service_key,
             service_version=service_version,
             product_name=product_name,
         )
-        simcore_service_labels = (
-            await resolve_and_substitute_session_variables_in_model(
-                app=app,
-                model=simcore_service_labels,
-                service_key=service_key,
-                service_version=service_version,
-                product_name=product_name,
-            )
+        simcore_service_labels = await resolve_and_substitute_session_variables_in_model(
+            app=app,
+            model=simcore_service_labels,
+            # NOTE: at this point all OsparcIdentifiers have to be replaced
+            # an error will be raised otherwise
+            safe=False,
+            user_id=user_id,
+            product_name=product_name,
+            project_id=project_id,
+            node_id=node_id,
         )
 
         add_egress_configuration(
@@ -363,7 +366,7 @@ async def assemble_spec(
     service_spec = await substitute_vendor_secrets_in_specs(
         app=app,
         specs=service_spec,
-        safe=False,
+        safe=True,
         service_key=service_key,
         service_version=service_version,
         product_name=product_name,
@@ -372,6 +375,8 @@ async def assemble_spec(
         app=app,
         specs=service_spec,
         user_id=user_id,
+        # NOTE: at this point all OsparcIdentifiers have to be replaced
+        # an error will be raised otherwise
         safe=False,
         product_name=product_name,
         project_id=project_id,

@@ -19,6 +19,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import BaseModel, EmailStr
+from servicelib.logging_utils import log_context
 
 from ..utils.db import get_repository
 from ..utils.osparc_variables import (
@@ -42,9 +43,15 @@ async def substitute_vendor_secrets_in_model(
 ) -> BaseModel:
     result: BaseModel = model
     try:
-        # checks before to avoid unnecessary calls to pg
-        # if it raises an error vars need replacement
-        raise_if_unresolved_osparc_variable_identifier_found(model)
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            "check if requires migration substitute_vendor_secrets_in_model",
+        ):
+            # checks before to avoid unnecessary calls to pg
+            # if it raises an error vars need replacement
+            _logger.debug("model in which to replace model=%s", model)
+            raise_if_unresolved_osparc_variable_identifier_found(model)
     except UnresolvedOsparcVariableIdentifierError:
         repo = get_repository(app, ServicesEnvironmentsRepository)
         vendor_secrets = await repo.get_vendor_secrets(
@@ -52,6 +59,7 @@ async def substitute_vendor_secrets_in_model(
             service_version=service_version,
             product_name=product_name,
         )
+        _logger.warning("replacing with the vendor_secrets=%s", vendor_secrets)
         result = replace_osparc_variable_identifier(model, vendor_secrets)
 
     if not safe:
@@ -72,9 +80,15 @@ async def resolve_and_substitute_session_variables_in_model(
 ) -> BaseModel:
     result: BaseModel = model
     try:
-        # checks before to avoid unnecessary calls to pg
-        # if it raises an error vars need replacement
-        raise_if_unresolved_osparc_variable_identifier_found(model)
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            "check if requires migration resolve_and_substitute_session_variables_in_model",
+        ):
+            # checks before to avoid unnecessary calls to pg
+            # if it raises an error vars need replacement
+            _logger.debug("model in which to replace model=%s", model)
+            raise_if_unresolved_osparc_variable_identifier_found(model)
     except UnresolvedOsparcVariableIdentifierError:
         table: OsparcVariablesTable = app.state.session_variables_table
         identifiers = await resolve_variables_from_context(
@@ -87,6 +101,7 @@ async def resolve_and_substitute_session_variables_in_model(
                 node_id=node_id,
             ),
         )
+        _logger.debug("replacing with the identifiers=%s", identifiers)
         result = replace_osparc_variable_identifier(model, identifiers)
 
     if not safe:
