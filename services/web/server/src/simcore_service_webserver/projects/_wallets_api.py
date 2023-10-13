@@ -5,7 +5,6 @@ from models_library.users import UserID
 from models_library.wallets import WalletDB, WalletID
 
 from ..wallets import _api as wallet_api
-from . import projects_api
 from .db import ProjectDBAPI
 
 
@@ -26,13 +25,7 @@ async def connect_wallet_to_project(
     wallet_id: WalletID,
 ) -> WalletGet:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
-    # ensure the project exists
-    await projects_api.get_project_for_user(
-        app,
-        project_uuid=f"{project_id}",
-        user_id=user_id,
-        include_state=False,
-    )
+
     # ensure the wallet can be used by the user
     wallet: WalletGet = await wallet_api.get_wallet_by_user(
         app,

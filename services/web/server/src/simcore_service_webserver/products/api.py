@@ -14,7 +14,6 @@ __all__: tuple[str, ...] = (
     "get_current_product",
     "get_product_name",
     "get_product_template_path",
-    # "is_current_product_billable",
     "list_products",
     "Product",
     "ProductName",
