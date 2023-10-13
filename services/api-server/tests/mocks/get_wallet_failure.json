@@ -1,0 +1,55 @@
+[
+  {
+    "name": "GET /wallets/8",
+    "description": "<Request('GET', 'http://webserver:8080/v0/wallets/8')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/wallets/{wallet_id}",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "wallet_id",
+          "required": true,
+          "schema_": {
+            "title": "Wallet Id",
+            "type_": "int",
+            "pattern": null,
+            "format_": null,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "wallets"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": null,
+      "error": {
+        "logs": [
+          {
+            "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist.",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ],
+        "errors": [
+          {
+            "code": "HTTPForbidden",
+            "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist.",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "status": 403,
+        "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist."
+      }
+    },
+    "status_code": 403
+  }
+]

@@ -258,12 +258,10 @@ def mocked_webserver_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_WEBSERVER.api_base_url,
+        base_url=settings.API_SERVER_WEBSERVER.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        # WARNING: For this service, DO NOT include /v0 in the `path` to match !!!!
-        assert settings.API_SERVER_WEBSERVER.api_base_url.endswith("/v0")
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
@@ -272,10 +270,10 @@ def mocked_webserver_service_api_base(
             "api_version": "1.0.0",
         }
 
-        respx_mock.get(path="/", name="healthcheck_readiness_probe").respond(
+        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
-        respx_mock.get(path="/health", name="healthcheck_liveness_probe").respond(
+        respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
 
