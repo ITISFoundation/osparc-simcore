@@ -71,7 +71,7 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
     )
 
     # annotate ack
-    transaction_acked = await repo.ack_payment_transaction(
+    transaction_acked = await repo.update_ack_payment_transaction(
         payment_id=expected.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
         invoice_url=expected.invoice_url,

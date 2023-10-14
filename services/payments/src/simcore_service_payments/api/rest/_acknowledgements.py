@@ -73,7 +73,7 @@ async def acknowledge_payment(
         "Annotate ACK transaction %s in db",
         f"{payment_id=}",
     ):
-        transaction = await repo.ack_payment_transaction(
+        transaction = await repo.update_ack_payment_transaction(
             payment_id=f"{payment_id}",
             completion_state=(
                 PaymentTransactionState.SUCCESS
