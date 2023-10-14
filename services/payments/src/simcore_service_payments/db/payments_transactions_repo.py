@@ -21,15 +21,11 @@ from ..models.payments_gateway import PaymentID
 
 
 class PaymentsValueError(PydanticErrorMixin, ValueError):
-    ...
-
-
-class PaymentAlreadyExistsError(PaymentsValueError):
-    ...
+    msg_template = "Error in payment transaction '{payment_id}'"
 
 
 class PaymentNotFoundError(PaymentsValueError):
-    ...
+    msg_template = "Payment transaction '{payment_id}' not found"
 
 
 class PaymentAlreadyAckedError(PaymentsValueError):
@@ -101,10 +97,15 @@ class PaymentsTransactionsRepo(BaseRepository):
         invoice_url: HttpUrl,
     ) -> PaymentsTransactionsDB:
         """
-
         - ACKs payment by updating state with SUCCESS, ...
 
+        Raises:
+            ValueError
+            PaymentNotFoundError
+            PaymentAlreadyAckedError
+
         """
+
         if completion_state == PaymentTransactionState.PENDING:
             msg = f"cannot update state with {completion_state=} since it is already initiated"
             raise ValueError(msg)
