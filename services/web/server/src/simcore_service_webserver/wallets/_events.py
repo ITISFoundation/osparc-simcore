@@ -12,6 +12,9 @@ from ..users import preferences_api
 from ..users.api import get_user_name_and_email
 from ._api import any_wallet_owned_by_user, create_wallet
 
+_WALLET_NAME_TEMPLATE = "{} Credits"
+_WALLET_DESCRIPTION_TEMPLATE = "Credits purchased by {} end up in here"
+
 
 async def _auto_add_default_wallet(
     app: web.Application,
@@ -29,8 +32,8 @@ async def _auto_add_default_wallet(
         wallet = await create_wallet(
             app,
             user_id=user_id,
-            wallet_name=f"{user_name} Credits",
-            description=f"Credits purchased by {user_name} end up in here",
+            wallet_name=_WALLET_NAME_TEMPLATE.format(user_name),
+            description=_WALLET_DESCRIPTION_TEMPLATE.format(user_name),
             thumbnail=None,
             product_name=product_name,
         )

@@ -16,13 +16,19 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
+from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.wallets._events import (
+    _WALLET_DESCRIPTION_TEMPLATE,
+    _WALLET_NAME_TEMPLATE,
+)
 
 
 @pytest.fixture
@@ -162,7 +168,7 @@ async def test_wallets_full_workflow(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
-async def test_auto_wallet_on_user_registration_confirmation(
+async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: type[web.HTTPException],
@@ -173,9 +179,12 @@ async def test_auto_wallet_on_user_registration_confirmation(
 ):
     assert client.app
 
-    mocker.patch(
+    product = get_product(client.app, osparc_product_name)
+    assert product.name == osparc_product_name
+
+    mock_add_credits_to_wallet = mocker.patch(
         "simcore_service_webserver.wallets._events.add_credits_to_wallet",
-        autospec=True,
+        spec=True,
         return_value=None,
     )
 
@@ -187,12 +196,16 @@ async def test_auto_wallet_on_user_registration_confirmation(
     await notify_user_confirmation(
         client.app,
         user_id=logged_user["id"],
-        product_name=osparc_product_name,
+        product_name=product.name,
         extra_credits_in_usd=10,
     )
 
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
-
+    wallet = WalletGet(**data[0])
+    user_name = logged_user["name"].capitalize()
+    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user_name)
+    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
+    assert mock_add_credits_to_wallet.called == product.is_payment_enabled
