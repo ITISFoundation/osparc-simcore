@@ -4,7 +4,9 @@ from models_library.utils.pydantic_tools_extension import NOT_REQUIRED
 from pydantic import BaseModel, Field
 
 
-class PaymentsError(BaseModel):
-    error: str = Field(..., description="Standarized error name")
-    message: str = Field(..., description="Human readable error message")
-    details: Any = Field(NOT_REQUIRED, description="Further details")
+class DefaultApiError(BaseModel):
+    name: str = Field(None, description="Error identifier as a code or a name")
+    message: str | None = Field(
+        NOT_REQUIRED, description="Human readable error message"
+    )
+    detail: Any | None = Field(NOT_REQUIRED, description="Further details")
