@@ -14,11 +14,20 @@ class DefaultApiError(BaseModel):
     detail: Any | None = Field(NOT_REQUIRED, description="Further details")
 
     @classmethod
-    def from_status_code(cls, code: int) -> "DefaultApiError":
+    def from_status_code(
+        cls, code: int, *, is_human_readable: bool = True
+    ) -> "DefaultApiError":
         assert httpx.codes.is_error(code)  # nosec
         httplib_code = http.HTTPStatus(code)
+
+        message = None
+        detail = None
+        if is_human_readable:
+            message = httplib_code.description or httplib_code.phrase
+            detail = httpx.codes.get_reason_phrase(code)
+
         return DefaultApiError(
             name=httplib_code.phrase,
-            message=httplib_code.description or httplib_code.phrase,
-            detail=httpx.codes.get_reason_phrase(code),
+            message=message,
+            detail=detail,
         )
