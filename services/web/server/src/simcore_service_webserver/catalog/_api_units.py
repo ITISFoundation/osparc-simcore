@@ -10,12 +10,21 @@ from pint import PintError, UnitRegistry
 from ._models import ServiceInputGetFactory, ServiceOutputGetFactory, get_unit_name
 
 
-def _get_type_name(port: BaseServiceIOModel) -> str:
-    _type: str = port.property_type
+def _get_type_name(port: BaseServiceIOModel) -> str | list:
+    _type_name: str = port.property_type
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
-        _type = port.content_schema["type"]
-    return _type
+
+        try:
+            _type_name = port.content_schema["type"]
+
+        except KeyError:
+            # NOTE: hybrid enums do not require 'type'
+            # SEE https://github.com/pcrespov/sandbox-python/blob/98fb613a41e9c6a5a54f52be321cb652bfe047da/json-schemas/test_schemas_with_enums.py
+            #
+            # In this case, the type_name is defined by creating a string of all the enum values
+            _type_name = f"{sorted(port.content_schema.get('enum', []))}"
+    return _type_name
 
 
 def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool:
