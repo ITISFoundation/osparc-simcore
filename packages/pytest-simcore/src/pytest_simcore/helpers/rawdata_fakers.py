@@ -205,3 +205,29 @@ def random_payment_method(
 
     data.update(overrides)
     return data
+
+
+def random_payment_transaction(
+    **overrides,
+) -> dict[str, Any]:
+    """Generates Metadata + concept/info (excludes state)"""
+    from simcore_postgres_database.models.payments_transactions import (
+        payments_transactions,
+    )
+
+    data = {
+        "payment_id": FAKE.uuid4(),
+        "price_dollars": "123456.78",
+        "osparc_credits": "123456.78",
+        "product_name": "osparc",
+        "user_id": FAKE.pyint(),
+        "user_email": FAKE.email().lower(),
+        "wallet_id": 1,
+        "comment": "Free starting credits",
+        "initiated_at": utcnow(),
+    }
+    # state is not added on purpose
+    assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
+
+    data.update(overrides)
+    return data
