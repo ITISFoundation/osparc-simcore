@@ -121,17 +121,17 @@ class PaymentsTransactionsRepo(BaseRepository):
                         payments_transactions.c.initiated_at,
                         payments_transactions.c.completed_at,
                     )
-                    .where(payments_transactions.c.payment_id == payment_id)
+                    .where(payments_transactions.c.payment_id == f"{payment_id}")
                     .with_for_update()
                 )
             ).fetchone()
 
             if row is None:
-                raise PaymentNotFoundError(payment_id=payment_id)
+                raise PaymentNotFoundError(payment_id=f"{payment_id}")
 
             if row.completed_at is not None:
                 assert row.initiated_at < row.completed_at  # nosec
-                raise PaymentAlreadyAckedError(payment_id=payment_id)
+                raise PaymentAlreadyAckedError(payment_id=f"{payment_id}")
 
             assert row.initiated_at  # nosec
 
@@ -143,7 +143,7 @@ class PaymentsTransactionsRepo(BaseRepository):
                     invoice_url=invoice_url,
                     **optional,
                 )
-                .where(payments_transactions.c.payment_id == payment_id)
+                .where(payments_transactions.c.payment_id == f"{payment_id}")
                 .returning(sa.literal_column("*"))
             )
             row = result.first()
