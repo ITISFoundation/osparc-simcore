@@ -60,7 +60,7 @@ async def get_product_payment_fields(
         credits_per_usd = None
     else:
         enabled = True
-        credits_per_usd = 1 / usd_per_credit
+        credits_per_usd = Decimal(1) / usd_per_credit
 
     return PaymentFieldsTuple(enabled=enabled, credits_per_usd=credits_per_usd)
 
