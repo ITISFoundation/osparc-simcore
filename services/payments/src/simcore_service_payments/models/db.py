@@ -23,6 +23,7 @@ _EXAMPLE_AFTER_INIT = {
     "comment": "This is a test comment.",
     "invoice_url": None,
     "initiated_at": "2023-09-27T10:00:00",
+    "state": PaymentTransactionState.PENDING,
 }
 
 #
