@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator, Callable, Iterator
 import httpx
 import pytest
 import respx
+import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -24,6 +25,10 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentInitiated,
 )
 
+#
+# rabbit-MQ
+#
+
 
 @pytest.fixture
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
@@ -33,6 +38,11 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
 
     return _do
+
+
+#
+# postgres
+#
 
 
 @pytest.fixture
@@ -52,6 +62,26 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
+def postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
+    """
+    Typical use-case is to include it in
+
+    @pytest.fixture
+    def app_environment(
+        ...
+        postgres_env_vars_dict: EnvVarsDict,
+        postgres_ready_and_db_migrated: None,
+    )
+    """
+    assert postgres_db
+
+
+#
+# app
+#
+
+
+@pytest.fixture
 async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     test_app = create_app()
     async with LifespanManager(
@@ -60,6 +90,11 @@ async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
         shutdown_timeout=10,
     ):
         yield test_app
+
+
+#
+# mock payments-gateway-service API
+#
 
 
 @pytest.fixture

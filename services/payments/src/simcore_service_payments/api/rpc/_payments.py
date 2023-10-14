@@ -77,7 +77,7 @@ async def init_payment(
             comment=comment,
             initiated_at=initiated_at,
         )
-        assert payment_id == f"{init.payment_id}"  # nosec
+        assert payment_id == init.payment_id  # nosec
 
     return WalletPaymentCreated(
         payment_id=f"{payment_id}",

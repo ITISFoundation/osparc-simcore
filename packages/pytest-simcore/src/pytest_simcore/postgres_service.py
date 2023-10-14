@@ -18,20 +18,21 @@ from tenacity.wait import wait_fixed
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 from .helpers.utils_postgres import PostgresTestConfig, migrated_pg_tables_context
 
-TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
+_TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
 
-def execute_queries(
+def _execute_queries(
     postgres_engine: sa.engine.Engine,
     sql_statements: list[str],
+    *,
     ignore_errors: bool = False,
 ) -> None:
     """runs the queries in the list in order"""
-    with postgres_engine.connect() as con:
+    with postgres_engine.connect() as connection:
         for statement in sql_statements:
             try:
-                with con.begin():
-                    con.execute(statement)
+                with connection.begin():
+                    connection.execute(statement)
 
             except Exception as e:  # pylint: disable=broad-except
                 # when running tests initially the TEMPLATE_DB_TO_RESTORE dose not exist and will cause an error
@@ -40,7 +41,7 @@ def execute_queries(
                 print(f"SQL error which can be ignored {e}")
 
 
-def create_template_db(
+def _create_template_db(
     postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine
 ) -> None:
     # create a template db, the removal is necessary to allow for the usage of --keep-docker-up
@@ -49,30 +50,30 @@ def create_template_db(
         f"""
         SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity
         WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}' AND pid <> pg_backend_pid();
-        """,
+        """,  # noqa: S608
         # drop template database
-        f"ALTER DATABASE {TEMPLATE_DB_TO_RESTORE} is_template false;",
-        f"DROP DATABASE {TEMPLATE_DB_TO_RESTORE};",
+        f"ALTER DATABASE {_TEMPLATE_DB_TO_RESTORE} is_template false;",
+        f"DROP DATABASE {_TEMPLATE_DB_TO_RESTORE};",
         # create template database
         """
         CREATE DATABASE {template_db} WITH TEMPLATE {original_db} OWNER {db_user};
         """.format(
-            template_db=TEMPLATE_DB_TO_RESTORE,
+            template_db=_TEMPLATE_DB_TO_RESTORE,
             original_db=postgres_dsn["database"],
             db_user=postgres_dsn["user"],
         ),
     ]
-    execute_queries(postgres_engine, queries, ignore_errors=True)
+    _execute_queries(postgres_engine, queries, ignore_errors=True)
 
 
-def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
+def _drop_template_db(postgres_engine: sa.engine.Engine) -> None:
     # remove the template db
     queries = [
         # drop template database
-        f"ALTER DATABASE {TEMPLATE_DB_TO_RESTORE} is_template false;",
-        f"DROP DATABASE {TEMPLATE_DB_TO_RESTORE};",
+        f"ALTER DATABASE {_TEMPLATE_DB_TO_RESTORE} is_template false;",
+        f"DROP DATABASE {_TEMPLATE_DB_TO_RESTORE};",
     ]
-    execute_queries(postgres_engine, queries)
+    _execute_queries(postgres_engine, queries)
 
 
 @pytest.fixture(scope="module")
@@ -81,9 +82,9 @@ def postgres_with_template_db(
     postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
 ) -> Iterator[sa.engine.Engine]:
-    create_template_db(postgres_dsn, postgres_engine)
+    _create_template_db(postgres_dsn, postgres_engine)
     yield postgres_engine
-    drop_template_db(postgres_engine)
+    _drop_template_db(postgres_engine)
 
 
 @pytest.fixture
@@ -117,14 +118,14 @@ def database_from_template_before_each_function(
         f"""
         SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity
         WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}';
-        """,
+        """,  # noqa: S608
         # drop database
         f"DROP DATABASE {postgres_dsn['database']};",
         # create from template database
         f"CREATE DATABASE {postgres_dsn['database']} TEMPLATE template_simcore_db;",
     ]
 
-    execute_queries(drop_db_engine, queries)
+    _execute_queries(drop_db_engine, queries)
 
 
 @pytest.fixture(scope="module")
@@ -154,6 +155,8 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
     )
 
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
+    assert isinstance(engine, sa.engine.Engine)  # nosec
+
     # Attempts until responsive
     for attempt in tenacity.Retrying(
         wait=wait_fixed(1),
@@ -187,7 +190,10 @@ def postgres_db(
     postgres_engine: sa.engine.Engine,
     docker_client: docker.DockerClient,
 ) -> Iterator[sa.engine.Engine]:
-    """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
+    """
+    A postgres database init with empty tables
+    and an sqlalchemy engine connected to it
+    """
 
     with migrated_pg_tables_context(postgres_dsn.copy()):
         yield postgres_engine

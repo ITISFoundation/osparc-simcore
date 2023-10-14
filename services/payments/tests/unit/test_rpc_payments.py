@@ -34,6 +34,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
     postgres_env_vars_dict: EnvVarsDict,
+    postgres_ready_and_db_migrated: None,
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
@@ -69,6 +70,7 @@ async def test_rpc_init_payment_fail(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     init_payment_kwargs: dict[str, Any],
 ):
+    assert app
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     with pytest.raises(RPCServerError) as exc_info:
@@ -91,6 +93,7 @@ async def test_webserver_one_time_payment_workflow(
     mock_payments_routes: Callable,
     init_payment_kwargs: dict[str, Any],
 ):
+    assert app
     mock_payments_routes(mock_payments_gateway_service_api_base)
 
     rpc_client = await rabbitmq_rpc_client("web-server-client")
