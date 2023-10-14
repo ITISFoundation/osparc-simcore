@@ -9,7 +9,7 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.rest.routes import setup_rest_api_routes
+from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.payments_gateway import setup_payments_gateway
 from ..services.postgres import setup_postgres
@@ -46,7 +46,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # APIs w/ payments-gateway
     setup_payments_gateway(app)
-    setup_rest_api_routes(app)
+    setup_rest_api(app)
 
     # APIs w/ RUT
     setup_resource_usage_tracker(app)
