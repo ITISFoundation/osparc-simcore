@@ -17,7 +17,7 @@ class DefaultApiError(BaseModel):
         assert httpx.codes.is_error(code)  # nosec
         httplib_code = http.HTTPStatus(code)
 
-        return DefaultApiError(
+        return cls(
             name=httplib_code.phrase,
             detail=detail
             or httplib_code.description

@@ -78,7 +78,7 @@ async def acknowledge_payment(
     ):
         try:
             transaction = await repo.update_ack_payment_transaction(
-                payment_id=f"{payment_id}",
+                payment_id=payment_id,
                 completion_state=(
                     PaymentTransactionState.SUCCESS
                     if ack.success

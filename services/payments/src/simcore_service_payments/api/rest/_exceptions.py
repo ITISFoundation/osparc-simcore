@@ -37,9 +37,7 @@ async def handle_errors_as_500(request: Request, exc: Exception) -> JSONResponse
     assert request  # nosec
     assert isinstance(exc, Exception)  # nosec
 
-    error = DefaultApiError.from_status_code(
-        status.HTTP_500_INTERNAL_SERVER_ERROR, is_human_readable=False
-    )
+    error = DefaultApiError.from_status_code(status.HTTP_500_INTERNAL_SERVER_ERROR)
     _logger.exception("Unhandled exeption responded as %s", error)
     return JSONResponse(
         jsonable_encoder(error, exclude_none=True),
