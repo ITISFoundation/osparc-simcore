@@ -9,7 +9,7 @@ from ..emails import LowerCaseEmailStr
 from ._base import InputSchema, OutputSchema
 
 
-class CreditPriceGet(OutputSchema):
+class GetCreditPrice(OutputSchema):
     product_name: str
     usd_per_credit: NonNegativeDecimal | None = Field(
         ...,
@@ -24,6 +24,28 @@ class CreditPriceGet(OutputSchema):
                 {"productName": "osparc", "usdPerCredit": "10"},
             ]
         }
+
+
+class GetProduct(OutputSchema):
+    name: ProductName
+    display_name: str
+    short_name: str | None = Field(
+        default=None, description="Short display name for SMS"
+    )
+
+    vendor: dict | None = Field(default=None, description="vendor attributes")
+    issues: list[dict] | None = Field(
+        default=None, description="Reference to issues tracker"
+    )
+    manuals: list[dict] | None = Field(default=None, description="List of manuals")
+    support: list[dict] | None = Field(
+        default=None, description="List of support resources"
+    )
+
+    login_settings: dict
+    max_open_studies_per_user: PositiveInt | None
+    is_payment_enabled: bool
+    credits_per_usd: NonNegativeDecimal | None
 
 
 class GenerateInvitation(InputSchema):

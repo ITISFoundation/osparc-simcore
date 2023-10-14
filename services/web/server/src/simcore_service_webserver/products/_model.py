@@ -1,12 +1,12 @@
 import logging
 import string
-from decimal import Decimal
 from typing import Any, ClassVar, Pattern  # noqa: UP035
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
+from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
@@ -94,7 +94,7 @@ class Product(BaseModel):
         description="True if this product offers credits",
     )
 
-    credits_per_usd: Decimal | None = Field(
+    credits_per_usd: NonNegativeDecimal | None = Field(
         default=None,
         description="Price of the credits in this product given in credit/USD. None for free product.",
     )
