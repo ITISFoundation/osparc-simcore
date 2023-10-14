@@ -215,6 +215,7 @@ def random_payment_transaction(
         payments_transactions,
     )
 
+    # initiated
     data = {
         "payment_id": FAKE.uuid4(),
         "price_dollars": "123456.78",

@@ -4,7 +4,7 @@ from decimal import Decimal
 import sqlalchemy as sa
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, PositiveInt
+from pydantic import HttpUrl, PositiveInt, parse_obj_as
 from pydantic.errors import PydanticErrorMixin
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -77,8 +77,8 @@ class PaymentsTransactionsRepo(BaseRepository):
         initiated_at: datetime.datetime,
     ) -> PaymentID:
         """Annotates init-payment transaction"""
-        async with self.db_engine.connect() as connection:
-            await connection.execute(
+        async with self.db_engine.begin() as conn:
+            await conn.execute(
                 payments_transactions.insert().values(
                     payment_id=f"{payment_id}",
                     price_dollars=price_dollars,
@@ -113,40 +113,42 @@ class PaymentsTransactionsRepo(BaseRepository):
         if state_message:
             optional["state_message"] = state_message
 
-        async with self.db_engine.connect() as connection:
-            async with connection.begin():
-                row = (
-                    await connection.execute(
-                        sa.select(
-                            payments_transactions.c.initiated_at,
-                            payments_transactions.c.completed_at,
-                        )
-                        .where(payments_transactions.c.payment_id == payment_id)
-                        .with_for_update()
-                    )
-                ).fetchone()
-
-                if row is None:
-                    raise PaymentNotFoundError(payment_id=payment_id)
-
-                if row.completed_at is not None:
-                    assert row.initiated_at < row.completed_at  # nosec
-                    raise PaymentAlreadyAckedError(payment_id=payment_id)
-
-                assert row.initiated_at  # nosec
-
-                result = await connection.execute(
-                    payments_transactions.update()
-                    .values(
-                        completed_at=sa.func.now(), state=completion_state, **optional
+        async with self.db_engine.begin() as connection:
+            row = (
+                await connection.execute(
+                    sa.select(
+                        payments_transactions.c.initiated_at,
+                        payments_transactions.c.completed_at,
                     )
                     .where(payments_transactions.c.payment_id == payment_id)
-                    .returning(sa.literal_column("*"))
+                    .with_for_update()
                 )
-                row = result.first()
-                assert row, "execute above should have caught this"  # nosec
+            ).fetchone()
 
-                return row
+            if row is None:
+                raise PaymentNotFoundError(payment_id=payment_id)
+
+            if row.completed_at is not None:
+                assert row.initiated_at < row.completed_at  # nosec
+                raise PaymentAlreadyAckedError(payment_id=payment_id)
+
+            assert row.initiated_at  # nosec
+
+            result = await connection.execute(
+                payments_transactions.update()
+                .values(
+                    completed_at=sa.func.now(),
+                    state=completion_state,
+                    invoice_url=invoice_url,
+                    **optional,
+                )
+                .where(payments_transactions.c.payment_id == payment_id)
+                .returning(sa.literal_column("*"))
+            )
+            row = result.first()
+            assert row, "execute above should have caught this"  # nosec
+
+            return PaymentsTransactionsDB.from_orm(row)
 
     async def list_user_payment_transactions(
         self,
@@ -159,12 +161,13 @@ class PaymentsTransactionsRepo(BaseRepository):
 
         Sorted by newest-first
         """
-        async with self.db_engine.connect() as connection:
-            total_number_of_items = await connection.scalar(
+        async with self.db_engine.begin() as connection:
+            result = await connection.execute(
                 sa.select(sa.func.count())
                 .select_from(payments_transactions)
                 .where(payments_transactions.c.user_id == user_id)
             )
+            total_number_of_items = result.scalar()
             assert total_number_of_items is not None  # nosec
 
             # NOTE: what if between these two calls there are new rows? can we get this in an atomic call?å
@@ -182,6 +185,8 @@ class PaymentsTransactionsRepo(BaseRepository):
                 # InvalidRowCountInLimitClause: LIMIT must not be negative
                 stmt = stmt.limit(limit)
 
-            result = connection.execute(stmt)
-            rows = result.fetchall() or []
-            return total_number_of_items, rows
+            result = await connection.execute(stmt)
+            rows = result.fetchall()
+            return total_number_of_items, parse_obj_as(
+                list[PaymentsTransactionsDB], rows
+            )
