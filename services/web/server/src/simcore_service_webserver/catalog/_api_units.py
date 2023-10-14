@@ -10,7 +10,7 @@ from pint import PintError, UnitRegistry
 from ._models import ServiceInputGetFactory, ServiceOutputGetFactory, get_unit_name
 
 
-def _get_type_name(port: BaseServiceIOModel) -> str | list:
+def _get_type_name(port: BaseServiceIOModel) -> str:
     _type_name: str = port.property_type
     if port.property_type == "ref_contentSchema":
         assert port.content_schema is not None  # nosec
