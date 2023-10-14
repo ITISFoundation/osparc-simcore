@@ -7,7 +7,10 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
-from ...db.payments_transactions_repo import PaymentsTransactionsRepo
+from ...db.payments_transactions_repo import (
+    PaymentNotFoundError,
+    PaymentsTransactionsRepo,
+)
 from ...models.auth import SessionData
 from ...models.db import PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
@@ -73,16 +76,21 @@ async def acknowledge_payment(
         "Annotate ACK transaction %s in db",
         f"{payment_id=}",
     ):
-        transaction = await repo.update_ack_payment_transaction(
-            payment_id=f"{payment_id}",
-            completion_state=(
-                PaymentTransactionState.SUCCESS
-                if ack.success
-                else PaymentTransactionState.FAILED
-            ),
-            state_message=ack.message,
-            invoice_url=ack.invoice_url,
-        )
+        try:
+            transaction = await repo.update_ack_payment_transaction(
+                payment_id=f"{payment_id}",
+                completion_state=(
+                    PaymentTransactionState.SUCCESS
+                    if ack.success
+                    else PaymentTransactionState.FAILED
+                ),
+                state_message=ack.message,
+                invoice_url=ack.invoice_url,
+            )
+        except PaymentNotFoundError as err:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
+            ) from err
 
     if ack.saved:
         _logger.debug("TODO Annotate CREATE payment method")

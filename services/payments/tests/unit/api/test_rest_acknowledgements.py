@@ -63,10 +63,10 @@ async def test_payments_api_authentication(
         f"/v1/payments/{payments_id}:ack", json=payment_ack, headers=auth_headers
     )
 
+    print(response.json())
+
     # NOTE: for the moment this entry is not implemented
-    assert (
-        response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    ), response.json()
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
 
     # TODO: test using schemathesis
     # TODO: test ack w/o init

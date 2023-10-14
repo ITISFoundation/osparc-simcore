@@ -16,5 +16,6 @@ def test_default_api_error_model(code: int):
 
     error = DefaultApiError.from_status_code(code)
     assert error.name
-    assert error.message
     assert error.detail
+
+    assert DefaultApiError.from_status_code(code, detail="FOO").detail == "FOO"

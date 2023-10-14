@@ -25,7 +25,7 @@ class PaymentsValueError(PydanticErrorMixin, ValueError):
 
 
 class PaymentNotFoundError(PaymentsValueError):
-    msg_template = "Payment transaction '{payment_id}' not found"
+    msg_template = "Payment transaction '{payment_id}' was not initialized."
 
 
 class PaymentAlreadyAckedError(PaymentsValueError):
