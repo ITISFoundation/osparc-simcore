@@ -34,7 +34,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
     postgres_env_vars_dict: EnvVarsDict,
-    postgres_ready_and_db_migrated: None,
+    wait_for_postgres_ready_and_db_migrated: None,
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)

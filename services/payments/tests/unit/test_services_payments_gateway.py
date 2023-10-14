@@ -59,14 +59,10 @@ def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    disable_rabbitmq_and_rpc_setup: Callable,
-    disable_postgres_setup: Callable,
+    mock_patch_setup_rabbitmq_and_rpc: None,
+    mock_patch_setup_postgres: None,
     external_secret_envs: EnvVarsDict,
 ):
-    # mocks setup
-    disable_rabbitmq_and_rpc_setup()
-    disable_postgres_setup()
-
     # set environs
     return setenvs_from_dict(
         monkeypatch,

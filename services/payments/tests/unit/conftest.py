@@ -6,6 +6,7 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
+from unittest.mock import Mock
 
 import httpx
 import pytest
@@ -40,6 +41,11 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     return _do
 
 
+@pytest.fixture
+def mock_patch_setup_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
+    disable_rabbitmq_and_rpc_setup()
+
+
 #
 # postgres
 #
@@ -48,7 +54,9 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
     def _setup(app: FastAPI):
-        app.state.engine = None
+        app.state.engine = (
+            Mock()
+        )  # NOTE: avoids error in api._dependencies::get_db_engine
 
     def _do():
         # The following services are affected if postgres is not in place
@@ -62,7 +70,12 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
+def mock_patch_setup_postgres(disable_postgres_setup: Callable):
+    disable_postgres_setup()
+
+
+@pytest.fixture
+def wait_for_postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
     """
     Typical use-case is to include it in
 
@@ -70,7 +83,7 @@ def postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
     def app_environment(
         ...
         postgres_env_vars_dict: EnvVarsDict,
-        postgres_ready_and_db_migrated: None,
+        wait_for_postgres_ready_and_db_migrated: None,
     )
     """
     assert postgres_db

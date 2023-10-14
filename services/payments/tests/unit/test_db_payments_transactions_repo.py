@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Callable
 
 import pytest
 from fastapi import FastAPI
@@ -32,11 +31,9 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     postgres_env_vars_dict: EnvVarsDict,
-    postgres_ready_and_db_migrated: None,
-    disable_rabbitmq_and_rpc_setup: Callable,
+    mock_patch_setup_rabbitmq_and_rpc: None,
+    wait_for_postgres_ready_and_db_migrated: None,
 ):
-    disable_rabbitmq_and_rpc_setup()
-
     # set environs
     monkeypatch.delenv("PAYMENTS_POSTGRES", raising=False)
 

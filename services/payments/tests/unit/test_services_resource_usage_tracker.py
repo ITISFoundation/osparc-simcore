@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -53,13 +53,11 @@ async def test_setup_rut_api(app_environment: EnvVarsDict):
 
 @pytest.fixture
 def app(
-    disable_rabbitmq_and_rpc_setup: Callable,
-    disable_postgres_setup: Callable,
     app_environment: EnvVarsDict,
+    mock_patch_setup_rabbitmq_and_rpc: None,
+    mock_patch_setup_postgres: None,
 ):
     # NOTE: overrides services/payments/tests/unit/conftest.py:app fixture
-    disable_rabbitmq_and_rpc_setup()
-    disable_postgres_setup()
     return create_app()
 
 

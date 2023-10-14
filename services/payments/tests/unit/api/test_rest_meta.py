@@ -11,7 +11,11 @@ from simcore_service_payments._meta import API_VTAG
 from simcore_service_payments.models.schemas.meta import Meta
 
 
-async def test_healthcheck(client: httpx.AsyncClient):
+async def test_healthcheck(
+    mock_patch_setup_rabbitmq_and_rpc: None,
+    mock_patch_setup_postgres: None,
+    client: httpx.AsyncClient,
+):
     response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.text.startswith(
@@ -19,7 +23,12 @@ async def test_healthcheck(client: httpx.AsyncClient):
     ), f"got {response.text!r}"
 
 
-async def test_meta(client: httpx.AsyncClient, auth_headers: dict[str, str]):
+async def test_meta(
+    mock_patch_setup_rabbitmq_and_rpc: None,
+    mock_patch_setup_postgres: None,
+    client: httpx.AsyncClient,
+    auth_headers: dict[str, str],
+):
     response = await client.get(f"/{API_VTAG}/meta", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     meta = Meta.parse_obj(response.json())
