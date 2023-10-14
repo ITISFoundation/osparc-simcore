@@ -10,6 +10,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_payment_transaction, utcnow
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -89,6 +90,13 @@ async def test_init_transaction_sets_it_as_pending(
     }
 
 
+@pytest.fixture
+def invoice_url(faker: Faker, expected_state: PaymentTransactionState) -> str | None:
+    if expected_state == PaymentTransactionState.SUCCESS:
+        return faker.url()
+    return None
+
+
 @pytest.mark.parametrize(
     "expected_state,expected_message",
     [
@@ -109,6 +117,7 @@ async def test_complete_transaction(
     payment_id: str,
     expected_state: PaymentTransactionState,
     expected_message: str | None,
+    invoice_url: str | None,
 ):
     await init_transaction(payment_id)
 
@@ -117,6 +126,7 @@ async def test_complete_transaction(
         payment_id=payment_id,
         completion_state=expected_state,
         state_message=expected_message,
+        invoice_url=invoice_url,
     )
 
     assert isinstance(payment_row, PaymentTransactionRow)
