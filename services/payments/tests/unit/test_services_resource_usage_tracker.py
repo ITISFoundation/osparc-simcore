@@ -57,6 +57,7 @@ def app(
     disable_postgres_setup: Callable,
     app_environment: EnvVarsDict,
 ):
+    # NOTE: overrides services/payments/tests/unit/conftest.py:app fixture
     disable_rabbitmq_and_rpc_setup()
     disable_postgres_setup()
     return create_app()
