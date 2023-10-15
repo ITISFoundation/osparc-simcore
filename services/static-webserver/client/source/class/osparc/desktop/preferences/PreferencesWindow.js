@@ -66,18 +66,16 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
       tabView.add(clustersPage);
       clustersBtn.exclude();
-      osparc.utils.DisabledPlugins.isClustersDisabled()
-        .then(isDisabled => {
-          if (isDisabled === false) {
-            osparc.data.Resources.get("clusters")
-              .then(clusters => {
-                if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-                  clustersBtn.show();
-                }
-              })
-              .catch(err => console.error(err));
-          }
-        });
+      const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
+      if (isDisabled === false) {
+        osparc.data.Resources.get("clusters")
+          .then(clusters => {
+            if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
+              clustersBtn.show();
+            }
+          })
+          .catch(err => console.error(err));
+      }
     }
 
     if (osparc.data.Permissions.getInstance().canDo("statics.read")) {

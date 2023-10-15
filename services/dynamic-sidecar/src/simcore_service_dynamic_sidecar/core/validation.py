@@ -3,7 +3,7 @@ import logging
 import os
 import re
 from collections.abc import Generator
-from typing import Any
+from typing import Any, NamedTuple
 
 import yaml
 from servicelib.docker_constants import (
@@ -173,11 +173,17 @@ def parse_compose_spec(compose_file_content: str) -> Any:
         raise InvalidComposeSpecError(msg) from e
 
 
-async def validate_compose_spec(
+class ComposeSpecValidation(NamedTuple):
+    compose_spec: str
+    current_container_names: list[str]
+    original_to_current_container_names: dict[str, str]
+
+
+async def validate_compose_spec(  # pylint: disable=too-many-statements
     settings: ApplicationSettings,
     compose_file_content: str,
     mounted_volumes: MountedVolumes,
-) -> str:
+) -> ComposeSpecValidation:
     """
     Validates what looks like a docker compose spec and injects
     additional data to mainly make sure:
@@ -206,6 +212,9 @@ async def validate_compose_spec(
 
     spec_services_to_container_name: dict[str, str] = {}
 
+    current_container_names: list[str] = []
+    original_to_current_container_names: dict[str, str] = {}
+
     spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]
@@ -217,6 +226,9 @@ async def validate_compose_spec(
         )
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
+
+        current_container_names.append(container_name)
+        original_to_current_container_names[service] = container_name
 
         # inject forwarded environment variables
         environment_entries = service_content.get("environment", [])
@@ -246,6 +258,13 @@ async def validate_compose_spec(
             settings.DY_SIDECAR_RUN_ID
         ):
             service_volumes.append(state_paths_docker_volume)
+
+        if settings.DY_SIDECAR_USER_PREFERENCES_PATH is not None and (
+            user_preferences_volume := await mounted_volumes.get_user_preferences_path_volume(
+                settings.DY_SIDECAR_RUN_ID
+            )
+        ):
+            service_volumes.append(user_preferences_volume)
 
         service_content["volumes"] = service_volumes
 
@@ -291,4 +310,8 @@ async def validate_compose_spec(
         msg = f"Invalid compose-specs:\n{result.message}"
         raise InvalidComposeSpecError(msg)
 
-    return compose_spec
+    return ComposeSpecValidation(
+        compose_spec=compose_spec,
+        current_container_names=current_container_names,
+        original_to_current_container_names=original_to_current_container_names,
+    )

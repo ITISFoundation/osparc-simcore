@@ -33,13 +33,17 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     this._add(intro);
 
     this._add(this.__getWalletsFilter());
+    this._add(osparc.data.Roles.createRolesWalletInfo());
     this._add(this.__getWalletsList(), {
       flex: 1
     });
 
+    // Disabled until create a New Wallet is enabled
+    /*
     const newWalletButton = this.__getCreateWalletSection();
     newWalletButton.setVisibility(osparc.data.Permissions.getInstance().canDo("user.wallets.create") ? "visible" : "excluded");
     this._add(newWalletButton);
+    */
 
     this.loadWallets();
   },
@@ -108,7 +112,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     __getCreateWalletSection: function() {
       const createWalletBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
-        label: this.tr("New Wallet"),
+        label: this.tr("New Credit Account"),
         alignX: "center",
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false

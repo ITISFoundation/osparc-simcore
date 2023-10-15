@@ -20,21 +20,15 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
   statics: {
     areWalletsEnabled: function() {
-      return new Promise(resolve => {
-        Promise.all([
-          osparc.utils.Utils.isDevelopmentPlatform(),
-          osparc.utils.Utils.isStagingPlatform()
-        ])
-          .then(values => {
-            const isDevel = values[0];
-            const isStaging = values[1];
-            if ((isDevel || isStaging) && osparc.product.Utils.isProduct("s4l")) {
-              resolve(true);
-            } else {
-              resolve(false);
-            }
-          });
-      });
+      const statics = osparc.store.Store.getInstance().get("statics");
+      return Boolean(statics && statics["isPaymentEnabled"]);
+    },
+
+    creditsToFixed: function(credits) {
+      if (credits < 100) {
+        return (credits).toFixed(1);
+      }
+      return parseInt(credits);
     },
 
     createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
@@ -88,14 +82,14 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     getWallet: function(walletId) {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
-      const favouriteWallet = wallets.find(wallet => wallet.getWalletId() === walletId);
-      if (favouriteWallet) {
-        return favouriteWallet;
+      const foundWallet = wallets.find(wallet => wallet.getWalletId() === walletId);
+      if (foundWallet) {
+        return foundWallet;
       }
       return null;
     },
 
-    getFavouriteWallet: function() {
+    getPreferredWallet: function() {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
       const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
@@ -103,6 +97,47 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         return favouriteWallet;
       }
       return null;
+    },
+
+    getPaymentMethods: function(walletId) {
+      return new Promise(resolve => {
+        const promises = [];
+        if (walletId) {
+          const params = {
+            url: {
+              walletId
+            }
+          };
+          promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
+        } else {
+          const wallets = osparc.store.Store.getInstance().getWallets();
+          const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+          myWallets.forEach(myWallet => {
+            const params = {
+              url: {
+                walletId: myWallet.getWalletId()
+              }
+            };
+            promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
+          });
+        }
+        Promise.all(promises)
+          .then(values => {
+            let paymentMethods = [];
+            values.forEach(value => paymentMethods = paymentMethods.concat(value));
+            resolve(paymentMethods);
+          });
+      });
+    },
+
+    getPaymentMethod: function(paymentMethodId) {
+      return new Promise(resolve => {
+        this.getPaymentMethods()
+          .then(paymentMethods => {
+            const paymentMethodFound = paymentMethods.find(paymentMethod => paymentMethod["idr"] === paymentMethodId);
+            resolve(paymentMethodFound);
+          });
+      });
     }
   }
 });

@@ -164,19 +164,17 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addNewServiceButtons: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          if (platformName === "dev") {
-            const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
-            testDataButton.addListener("execute", () => {
-              osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
-                .then(data => {
-                  this.__displayServiceSubmissionForm(data);
-                });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (platformName === "dev") {
+        const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+        testDataButton.addListener("execute", () => {
+          osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
+            .then(data => {
+              this.__displayServiceSubmissionForm(data);
             });
-            this._toolbar.add(testDataButton);
-          }
         });
+        this._toolbar.add(testDataButton);
+      }
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
@@ -184,12 +182,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addSortingButtons: function() {
-      const containterSortBtns = new osparc.service.SortServicesButtons();
-      containterSortBtns.addListener("sortBy", e => {
+      const containerSortButtons = new osparc.service.SortServicesButtons();
+      containerSortButtons.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);
       }, this);
-      this._toolbar.add(containterSortBtns);
+      this._toolbar.add(containerSortButtons);
     },
     // LAYOUT //
 
@@ -231,7 +229,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         }));
         if (data.files && data.files.length) {
           const size = data.files[0].size;
-          const maxSize = 10 * 1024 * 1024; // 10 MB
+          const maxSize = 10 * 1000 * 1000; // 10 MB
           if (size > maxSize) {
             osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
@@ -249,7 +247,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
               osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
               addServiceWindow.close();
             } else {
-              osparc.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
+              osparc.FlashMessenger.logAs(`A problem occurred while processing your data: ${resp.statusText}`, "ERROR");
             }
           })
           .finally(() => form.setFetching(false));

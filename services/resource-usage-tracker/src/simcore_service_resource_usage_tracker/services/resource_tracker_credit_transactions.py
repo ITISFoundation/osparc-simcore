@@ -1,9 +1,8 @@
-from datetime import datetime
-from decimal import Decimal
 from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    CreditTransactionCreateBody,
     WalletTotalCredits,
 )
 from models_library.products import ProductName
@@ -12,24 +11,14 @@ from models_library.resource_tracker import (
     CreditTransactionId,
     CreditTransactionStatus,
 )
-from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel
+from servicelib.rabbitmq import RabbitMQClient
 
 from ..api.dependencies import get_repository
 from ..models.resource_tracker_credit_transactions import CreditTransactionCreate
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
-
-
-class CreditTransactionCreateBody(BaseModel):
-    product_name: ProductName
-    wallet_id: WalletID
-    wallet_name: str
-    user_id: UserID
-    user_email: str
-    osparc_credits: Decimal
-    payment_transaction_id: str
-    created_at: datetime
+from ..modules.rabbitmq import get_rabbitmq_client_from_request
+from ..resource_tracker_utils import sum_credit_transactions_and_publish_to_rabbitmq
 
 
 async def create_credit_transaction(
@@ -37,13 +26,17 @@ async def create_credit_transaction(
     resource_tracker_repo: Annotated[
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
+    rabbitmq_client: Annotated[
+        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
+    ],
 ) -> CreditTransactionId:
     transaction_create = CreditTransactionCreate(
         product_name=credit_transaction_create_body.product_name,
         wallet_id=credit_transaction_create_body.wallet_id,
         wallet_name=credit_transaction_create_body.wallet_name,
         pricing_plan_id=None,
-        pricing_detail_id=None,
+        pricing_unit_id=None,
+        pricing_unit_cost_id=None,
         user_id=credit_transaction_create_body.user_id,
         user_email=credit_transaction_create_body.user_email,
         osparc_credits=credit_transaction_create_body.osparc_credits,
@@ -58,15 +51,12 @@ async def create_credit_transaction(
         transaction_create
     )
 
-    # NOTE: Implement fire and forget mechanism
-    wallet_total_credits = (
-        await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-            credit_transaction_create_body.product_name,
-            credit_transaction_create_body.wallet_id,
-        )
+    await sum_credit_transactions_and_publish_to_rabbitmq(
+        resource_tracker_repo,
+        rabbitmq_client,
+        credit_transaction_create_body.product_name,
+        credit_transaction_create_body.wallet_id,
     )
-    assert wallet_total_credits  # nosec
-    # NOTE: Publish wallet total credits to RabbitMQ
 
     return transaction_id
 
@@ -81,4 +71,3 @@ async def sum_credit_transactions_by_product_and_wallet(
     return await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
         product_name, wallet_id
     )
-    # NOTE: Publish wallet total credits to RabbitMQ

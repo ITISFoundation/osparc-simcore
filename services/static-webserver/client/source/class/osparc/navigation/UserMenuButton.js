@@ -87,15 +87,22 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
-        case "account":
+        case "user-center":
           control = new qx.ui.menu.Button(this.tr("User Center"));
           control.addListener("execute", () => {
-            osparc.desktop.credits.Utils.areWalletsEnabled()
-              .then(walletsEnabled => {
-                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
-                creditsWindow.openOverview();
-              });
-            // osparc.desktop.MainPageHandler.getInstance().showUserCenter();
+            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+            const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+            if (walletsEnabled) {
+              userCenterWindow.openOverview();
+            }
+          }, this);
+          this.getMenu().add(control);
+          break;
+        case "po-center":
+          control = new qx.ui.menu.Button(this.tr("PO Center"));
+          control.addListener("execute", () => {
+            const poCenterWindow = osparc.po.POCenterWindow.openWindow();
+            poCenterWindow.openInvitations();
           }, this);
           this.getMenu().add(control);
           break;
@@ -115,12 +122,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("Clusters"));
           control.exclude();
           if (osparc.product.Utils.showClusters()) {
-            osparc.utils.DisabledPlugins.isClustersDisabled()
-              .then(isDisabled => {
-                if (isDisabled === false) {
-                  control.show();
-                }
-              });
+            const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
+            if (isDisabled === false) {
+              control.show();
+            }
           }
           control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.getMenu().add(control);
@@ -137,16 +142,15 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           osparc.utils.Utils.setIdToWidget(control, "userMenuAboutBtn");
           this.getMenu().add(control);
           break;
-        case "about-product":
+        case "about-product": {
           control = new qx.ui.menu.Button(this.tr("About Product"));
-          osparc.store.StaticInfo.getInstance().getDisplayName()
-            .then(displayName => {
-              control.getChildControl("label").setRich(true);
-              control.setLabel(this.tr("About ") + displayName);
-            });
+          const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+          control.getChildControl("label").setRich(true);
+          control.setLabel(this.tr("About ") + displayName);
           control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
+        }
         case "log-out": {
           const authData = osparc.auth.Data.getInstance();
           control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
@@ -161,21 +165,22 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateMenu: function() {
       this.getMenu().removeAll();
-
-      const authData = osparc.auth.Data.getInstance();
-      if (authData.isGuest()) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
         this.getChildControl("log-in");
       } else {
-        this.getChildControl("account");
+        this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isProductOwner()) {
+          this.getChildControl("po-center");
+        }
         this.getChildControl("preferences");
         this.getChildControl("organizations");
         this.getChildControl("clusters");
       }
-      if (osparc.product.tutorial.Utils.getTutorial()) {
+      if (osparc.product.quickStart.Utils.getQuickStart()) {
         this.getMenu().addSeparator();
         osparc.store.Support.addQuickStartToMenu(this.getMenu());
-        osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
+      osparc.store.Support.addGuidedToursToMenu(this.getMenu());
       this.getMenu().addSeparator();
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
@@ -192,56 +197,56 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateMenuCompact: function() {
       this.getMenu().removeAll();
-      osparc.data.Resources.get("statics")
-        .then(async () => {
-          const authData = osparc.auth.Data.getInstance();
-          if (authData.isGuest()) {
-            this.getChildControl("log-in");
-          } else {
-            this.getChildControl("account");
-            this.getChildControl("preferences");
-            this.getChildControl("organizations");
-            this.getChildControl("clusters");
-          }
-          this.getMenu().addSeparator();
+      const authData = osparc.auth.Data.getInstance();
+      if (authData.isGuest()) {
+        this.getChildControl("log-in");
+      } else {
+        this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isProductOwner()) {
+          this.getChildControl("po-center");
+        }
+        this.getChildControl("preferences");
+        this.getChildControl("organizations");
+        this.getChildControl("clusters");
+      }
+      this.getMenu().addSeparator();
 
-          // this part gets injected
-          this.__addQuickStartToMenu();
-          await this.__addManualsToMenu();
-          this.getMenu().addSeparator();
-          await this.__addFeedbacksToMenu();
-          this.getMenu().addSeparator();
-          this.getChildControl("theme-switcher");
+      // this part gets injected
+      this.__addQuickStartToMenu();
+      this.__addManualsToMenu();
+      this.getMenu().addSeparator();
+      this.__addFeedbacksToMenu();
+      this.getMenu().addSeparator();
+      this.getChildControl("theme-switcher");
 
-          this.getMenu().addSeparator();
-          const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-          if (announcementUIFactory.hasUserMenuAnnouncement()) {
-            this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
-          }
-          this.getChildControl("about");
-          if (!osparc.product.Utils.isProduct("osparc")) {
-            this.getChildControl("about-product");
-          }
-          this.getChildControl("license");
-          this.getMenu().addSeparator();
-          this.getChildControl("log-out");
-        });
+      this.getMenu().addSeparator();
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
+      if (announcementUIFactory.hasUserMenuAnnouncement()) {
+        this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
+      }
+      this.getChildControl("about");
+      if (!osparc.product.Utils.isProduct("osparc")) {
+        this.getChildControl("about-product");
+      }
+      this.getChildControl("license");
+      this.getMenu().addSeparator();
+      this.getChildControl("log-out");
     },
 
     __addQuickStartToMenu: function() {
       const menu = this.getMenu();
       osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addPanddyToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
     },
 
-    __addManualsToMenu: async function() {
+    __addManualsToMenu: function() {
       const menu = this.getMenu();
-      await osparc.store.Support.addManualButtonsToMenu(menu);
+      osparc.store.Support.addManualButtonsToMenu(menu);
     },
 
-    __addFeedbacksToMenu: async function() {
+    __addFeedbacksToMenu: function() {
       const menu = this.getMenu();
-      await osparc.store.Support.addSupportButtonsToMenu(menu);
+      osparc.store.Support.addSupportButtonsToMenu(menu);
     }
   }
 });

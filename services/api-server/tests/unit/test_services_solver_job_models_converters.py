@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import pytest
+from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
 from pydantic import create_model, parse_obj_as
@@ -18,7 +19,7 @@ from simcore_service_api_server.services.solver_job_models_converters import (
 )
 
 
-def test_create_project_model_for_job():
+def test_create_project_model_for_job(faker: Faker):
     solver = Solver.parse_obj(
         {
             "id": "simcore/services/comp/itis/sleeper",
@@ -39,7 +40,7 @@ def test_create_project_model_for_job():
                     "id": "e2335f87-6cf9-3148-87d4-262901403621",
                     "filename": "file_with_number.txt",
                     "content_type": "text/plain",
-                    "checksum": "9fdfbdb9686b3391bbea7c9e74aba49e-1",
+                    "checksum": faker.sha256(),
                 },
             }
         }
@@ -71,7 +72,7 @@ def test_job_to_node_inputs_conversion():
             "input_file": File(
                 filename="input.txt",
                 id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                checksum="859fda0cb82fc4acb4686510a172d9a9-1",
+                e_tag="859fda0cb82fc4acb4686510a172d9a9-1",
             ),
         }
     )
@@ -107,7 +108,7 @@ def test_job_to_node_inputs_conversion():
     assert got_node_inputs == node_inputs
 
 
-def test_create_job_from_project():
+def test_create_job_from_project(faker: Faker):
     project = Project.parse_obj(
         {
             "uuid": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
@@ -186,7 +187,7 @@ def test_create_job_from_project():
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "created_at": "2021-03-26T10:43:27.867Z",
             "runner_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
-            "inputs_checksum": "24700556239a25d0da46ccb7d863c10ec8c074d46c8c521742d52ba68a2c69ae",
+            "inputs_checksum": "a887dfcac17f6e6045139ec00fbb3038a450111fdc8e10e94d66590f33b3f10e",
             "url": None,
             "runner_url": None,
             "outputs_url": None,

@@ -55,39 +55,35 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
-    store.reloadWallets()
+    const preloadPromises = [];
+    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+    if (walletsEnabled) {
+      preloadPromises.push(store.reloadCreditPrice());
+      preloadPromises.push(store.reloadWallets());
+    }
+    preloadPromises.push(store.getAllClassifiers(true));
+    preloadPromises.push(store.getTags());
+    Promise.all(preloadPromises)
       .then(() => {
-        if (openView && openView === "wallets") {
-          osparc.desktop.credits.Utils.areWalletsEnabled()
-            .then(walletsEnabled => {
-              if (walletsEnabled) {
-                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(true);
-                creditsWindow.openOverview();
-              }
-            });
-          // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
+        if (openView && openView === "wallets" && walletsEnabled) {
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          creditsWindow.openOverview();
         }
         const preferenceSettings = osparc.Preferences.getInstance();
         const preferenceWalletId = preferenceSettings.getPreferredWalletId();
         const wallets = store.getWallets();
-        if (preferenceWalletId === null && wallets && wallets.length) {
-          // Select one by default: according to the use case, the one larger number of accessRights
-          wallets.sort((a, b) => b.getAccessRights().length - a.getAccessRights().length);
+        if (wallets.length === 1 && (preferenceWalletId === null || osparc.desktop.credits.Utils.getWallet(preferenceWalletId) === null)) {
+          // If there is only one wallet available, make it default
           preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
         }
-      });
 
-    Promise.all([
-      store.getAllClassifiers(true),
-      store.getTags()
-    ]).then(() => {
-      const mainStack = this.__createMainStack();
-      this._add(mainStack, {
-        flex: 1
-      });
+        const mainStack = this.__createMainStack();
+        this._add(mainStack, {
+          flex: 1
+        });
 
-      this.__attachHandlers();
-    });
+        this.__attachHandlers();
+      });
   },
 
   statics: {
@@ -98,7 +94,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     __navBar: null,
     __dashboard: null,
     __dashboardLayout: null,
-    __userCenter: null,
     __loadingPage: null,
     __studyEditor: null,
 
@@ -203,9 +198,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardLayout = this.__dashboardLayout = this.__createDashboardStack();
       mainPageHandler.addDashboard(dashboardLayout);
 
-      const userCenterLayout = this.__createUserCenter();
-      mainPageHandler.addUserCenter(userCenterLayout);
-
       const loadingPage = this.__loadingPage = new osparc.ui.message.Loading();
       mainPageHandler.addLoadingPage(loadingPage);
 
@@ -247,20 +239,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         flex: 1
       });
       return dashboardLayout;
-    },
-
-    __createUserCenter: function() {
-      const userCenter = this.__userCenter = new osparc.desktop.credits.UserCenter(true);
-
-      const userCenterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      userCenterLayout.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      userCenterLayout.add(userCenter);
-      userCenterLayout.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
-      return userCenterLayout;
     },
 
     __attachHandlers: function() {

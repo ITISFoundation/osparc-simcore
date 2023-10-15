@@ -35,3 +35,42 @@
     margin-top: -5px;
     border-left-color: #666;
 }
+
+
+.hint-large:after {
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+    border-width: 10px;
+}
+
+.hint-large-top:after {
+    top: 0;
+    left: 50%;
+    margin-left: -10px;
+    border-top-color: #69747b;
+}
+
+.hint-large-right:after {
+    right: 0;
+    top: 50%;
+    margin-top: -10px;
+    border-right-color: #69747b;
+}
+
+.hint-large-bottom:after {
+    bottom: 0;
+    left: 50%;
+    margin-left: -10px;
+    border-bottom-color: #69747b;
+}
+
+.hint-large-left:after {
+    left: 0;
+    top: 50%;
+    margin-top: -10px;
+    border-left-color: #69747b;
+}

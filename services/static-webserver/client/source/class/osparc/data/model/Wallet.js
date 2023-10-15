@@ -31,6 +31,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       status: walletData["status"] ? walletData["status"] : "INACTIVE",
       creditsAvailable: walletData["availableCredits"] ? walletData["availableCredits"] : 20,
       accessRights: walletData["accessRights"] ? walletData["accessRights"] : [],
+      autoRecharge: walletData["autoRecharge"] ? walletData["autoRecharge"] : null,
       preferredWallet: osparc.Preferences.getInstance().getPreferredWalletId() === walletData["walletId"]
     });
   },
@@ -92,6 +93,12 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeAccessRights"
     },
 
+    autoRecharge: {
+      check: "Object",
+      init: null,
+      nullable: true
+    },
+
     preferredWallet: {
       check: "Boolean",
       init: false,
@@ -100,13 +107,23 @@ qx.Class.define("osparc.data.model.Wallet", {
     }
   },
 
-  members: {
-    getMyAccessRights: function() {
+  statics: {
+    getMyAccessRights: function(accessRights) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid && this.getAccessRights()) {
-        return this.getAccessRights().find(accessRight => accessRight["gid"] === myGid);
+      if (myGid && accessRights) {
+        return accessRights.find(aR => aR["gid"] === myGid);
       }
       return null;
+    }
+  },
+
+  members: {
+    getMyAccessRights: function() {
+      return this.self().getMyAccessRights(this.getAccessRights());
+    },
+
+    serialize: function() {
+      return JSON.parse(qx.util.Serializer.toJson(this));
     }
   }
 });

@@ -1,6 +1,7 @@
 import functools
 import logging
-from typing import Any, AsyncIterator, Callable, Coroutine, Final
+from collections.abc import AsyncIterator, Callable, Coroutine
+from typing import Any, Final
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -10,6 +11,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
     ProgressType,
+    WalletCreditsMessage,
 )
 from pydantic import parse_raw_as
 from servicelib.aiohttp.monitor_services import (
@@ -31,9 +33,12 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
+    SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
     SocketMessageDict,
+    send_group_messages,
     send_messages,
 )
+from ..wallets import api as wallets_api
 from ._constants import APP_RABBITMQ_CONSUMERS_KEY
 
 _logger = logging.getLogger(__name__)
@@ -160,6 +165,27 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
+async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
+    rabbit_message = parse_raw_as(WalletCreditsMessage, data)
+    socket_messages: list[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
+            "data": {
+                "wallet_id": rabbit_message.wallet_id,
+                "osparc_credits": rabbit_message.credits,
+                "created_at": rabbit_message.created_at,
+            },
+        }
+    ]
+    wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
+        app, wallet_id=rabbit_message.wallet_id
+    )
+    rooms_to_notify = [f"{item.gid}" for item in wallet_groups]
+    for room in rooms_to_notify:
+        await send_group_messages(app, room, socket_messages)
+    return True
+
+
 EXCHANGE_TO_PARSER_CONFIG: Final[
     tuple[
         tuple[
@@ -173,22 +199,27 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
     (
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        dict(topics=[]),
+        {"topics": []},
     ),
     (
         ProgressRabbitMessageNode.get_channel_name(),
         _progress_message_parser,
-        dict(topics=[]),
+        {"topics": []},
     ),
     (
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,
-        dict(exclusive_queue=False),
+        {"exclusive_queue": False},
     ),
     (
         EventRabbitMessage.get_channel_name(),
         _events_message_parser,
         {},
+    ),
+    (
+        WalletCreditsMessage.get_channel_name(),
+        _osparc_credits_message_parser,
+        {"topics": []},
     ),
 )
 
@@ -226,7 +257,9 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         )
 
 
-async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
+async def on_cleanup_ctx_rabbitmq_consumers(
+    app: web.Application,
+) -> AsyncIterator[None]:
     app[APP_RABBITMQ_CONSUMERS_KEY] = await _subscribe_to_rabbitmq(app)
     yield
 

@@ -66,66 +66,31 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         placeholder: this.tr("Last Name")
       });
 
-      let role = null;
-      const permissions = osparc.data.Permissions.getInstance();
-      if (permissions.canDo("user.role.update")) {
-        role = new qx.ui.form.SelectBox();
-        const roles = permissions.getChildrenRoles(permissions.getRole());
-        for (let i=0; i<roles.length; i++) {
-          const roleItem = new qx.ui.form.ListItem(roles[i]);
-          role.add(roleItem);
-          role.setSelection([roleItem]);
-        }
-        role.addListener("changeSelection", function(e) {
-          let newRole = e.getData()[0].getLabel();
-          newRole = newRole.toLowerCase();
-          permissions.setRole(newRole);
-        }, this);
-      } else {
-        role = new qx.ui.form.TextField().set({
-          readOnly: true
-        });
-      }
-      role.set({
-        tabIndex: 4
-      });
-
       const form = new qx.ui.form.Form();
       form.add(email, "Email", null, "email");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
-      form.add(role, "Role", null, "role");
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         paddingLeft: 16,
         visibility: "excluded"
       });
-      expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
+      const expirationDateLabel = new qx.ui.basic.Label(this.tr("Expiration date:")).set({
+        textColor: "danger-red"
+      });
+      expirationLayout.add(expirationDateLabel);
       const expirationDate = new qx.ui.basic.Label();
       expirationLayout.add(expirationDate);
       const infoLabel = this.tr("Please contact us by email:<br>");
       const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
-      osparc.store.VendorInfo.getInstance().getSupportEmail()
-        .then(supportEmail => infoExtension.setHintText(infoLabel + supportEmail));
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      infoExtension.setHintText(infoLabel + supportEmail);
       expirationLayout.add(infoExtension);
       box.add(expirationLayout);
 
-      /*
-      const img = new qx.ui.basic.Image().set({
-        maxWidth: 100,
-        maxHeight: 100,
-        scale: true,
-        decorator: new qx.ui.decoration.Decorator().set({
-          radius: 30
-        }),
-        alignX: "center"
-      });
-      box.add(img);
-      */
-
       // binding to a model
-      let raw = {
+      const raw = {
         "firstName": null,
         "lastName": null,
         "email": null,
@@ -150,7 +115,6 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         }
       });
       controller.addTarget(lastName, "value", "lastName", true);
-      controller.addTarget(role, "value", "role", false);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: expirationDay => {
           if (expirationDay) {
@@ -174,7 +138,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
       const namesValidator = new qx.ui.form.validation.Manager();
       namesValidator.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
-      namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also emtpy last name
+      namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also empty last name
 
       const updateBtn = new qx.ui.form.Button("Update Profile").set({
         allowGrowX: false

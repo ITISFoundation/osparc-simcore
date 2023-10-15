@@ -1,6 +1,7 @@
 import io
 import logging
-from typing import Any, Callable, Generic, Literal, TypeAlias, TypeVar
+from collections.abc import Callable
+from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
@@ -54,10 +55,8 @@ def create_url_for_function(request: web.Request) -> Callable:
             return f"{url}"
 
         except KeyError as err:
-            raise RuntimeError(
-                f"Cannot find URL because there is no resource registered as {route_name=}"
-                "Check name spelling or whether the router was not registered"
-            ) from err
+            msg = f"Cannot find URL because there is no resource registered as {route_name=}Check name spelling or whether the router was not registered"
+            raise RuntimeError(msg) from err
 
     return _url_for
 

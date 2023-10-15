@@ -6,7 +6,7 @@ import logging
 import os
 import urllib.parse
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 import aiodocker
@@ -87,19 +87,27 @@ async def ensure_volume_cleanup(
 async def ensure_network_cleanup(
     docker_client: aiodocker.Docker, project_id: str
 ) -> None:
-    async for attempt in AsyncRetrying(
-        reraise=False,
-        stop=stop_after_attempt(20),
-        wait=wait_fixed(5),
-    ):
-        with attempt:
-            for network_name in {
-                x["Name"] for x in await docker_client.networks.list()
-            }:
-                if project_id in network_name:
-                    network = await docker_client.networks.get(network_name)
-                    delete_result = await network.delete()
-                    assert delete_result is True
+    async def _try_to_clean():
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_attempt(20),
+            wait=wait_fixed(5),
+        ):
+            with attempt:
+                for network_name in {
+                    x["Name"] for x in await docker_client.networks.list()
+                }:
+                    if project_id in network_name:
+                        network = await docker_client.networks.get(network_name)
+                        delete_result = await network.delete()
+                        assert delete_result is True
+
+    # NOTE: since this is ONLY used for cleanup
+    # in the on fixture teardown, relaxing a bit
+    # this is mainly used for keeping the
+    # dev environment clean
+    with suppress(aiodocker.DockerError):
+        await _try_to_clean()
 
 
 async def _wait_for_service(service_name: str) -> None:

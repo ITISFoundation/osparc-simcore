@@ -23,15 +23,13 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest import MonkeyPatch
-from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.users import users
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import upload_path
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
@@ -65,29 +63,6 @@ TO_REMOVE: set[Path] = {Path(HIDDEN_FILE_NAME)}
 
 
 @pytest.fixture
-def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
-    # inject user in db
-
-    # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
-    # in time, the webserver service would bring more dependencies to other services
-    # which would turn this test too complex.
-
-    # pylint: disable=no-value-for-parameter
-    stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
-    print(f"{stmt}")
-    with postgres_db.connect() as conn:
-        result = conn.execute(stmt)
-        row = result.first()
-        assert row
-        usr_id = row[users.c.id]
-
-    yield usr_id
-
-    with postgres_db.connect() as conn:
-        conn.execute(users.delete().where(users.c.id == usr_id))
-
-
-@pytest.fixture
 def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectID]:
     # inject project for user in db. This will give user_id, the full project's ownership
 
@@ -115,7 +90,7 @@ def mock_environment(
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
     minio_config: dict[str, Any],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
@@ -133,6 +108,7 @@ def mock_environment(
         "S3_BUCKET_NAME": minio_config["bucket_name"],
         "S3_SECURE": f"{minio_config['client']['secure']}",
         "R_CLONE_PROVIDER": "MINIO",
+        "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         **base_mock_envs,
     }
 

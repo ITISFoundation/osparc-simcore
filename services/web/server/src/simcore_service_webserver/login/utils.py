@@ -5,15 +5,17 @@ from typing import Any, cast
 
 import passlib.hash
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.users import UserID
 from passlib import pwd
+from pydantic import PositiveInt
 from servicelib.aiohttp import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from ..db.models import ConfirmationAction, UserRole, UserStatus
+from ..db.models import ConfirmationAction, UserStatus
 from ._constants import MSG_ACTIVATION_REQUIRED, MSG_USER_BANNED, MSG_USER_EXPIRED
 
 log = logging.getLogger(__name__)
@@ -64,6 +66,23 @@ def validate_user_status(*, user: dict, support_email: str):
     assert user_status == ACTIVE  # nosec
 
 
+async def notify_user_confirmation(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    extra_credits: PositiveInt | None,
+):
+    """Broadcast that user with 'user_id' has login for the first-time in 'product_name'"""
+    # NOTE: Follow up in https://github.com/ITISFoundation/osparc-simcore/issues/4822
+    await observer.emit(
+        app,
+        "SIGNAL_ON_USER_CONFIRMATION",
+        user_id=user_id,
+        product_name=product_name,
+        extra_credits=extra_credits,
+    )
+
+
 async def notify_user_logout(
     app: web.Application, user_id: UserID, client_session_id: Any | None = None
 ):
@@ -87,7 +106,7 @@ def check_password(password: str, password_hash: str) -> bool:
 
 def get_random_string(min_len: int, max_len: int | None = None) -> str:
     max_len = max_len or min_len
-    size = random.randint(min_len, max_len)
+    size = random.randint(min_len, max_len)  # noqa: S311 # nosec # NOSONAR
     return cast(str, pwd.genword(entropy=52, length=size))
 
 

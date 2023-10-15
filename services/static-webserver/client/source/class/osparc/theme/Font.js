@@ -20,149 +20,105 @@ qx.Theme.define("osparc.theme.Font", {
   extend: osparc.theme.common.Font,
 
   fonts: {
-    "text-30": {
-      size: 30,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
-    },
-
-    "text-26": {
-      size: 24,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
-    },
-
-    "text-24": {
-      size: 24,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
-    },
-
-    "text-22": {
-      size: 22,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
-    },
-
-    "title-20": {
-      size: 20,
-      family: ["Roboto", "sanf-serif"],
+    "defaults": {
+      family: ["sans-serif"],
       color: "text",
-      bold: true
+      sources: [
+        {
+          family: "Manrope",
+          source: [
+            "common/Manrope/Manrope-VariableFont_wght.ttf"
+          ]
+        }
+      ]
     },
 
-    "text-20": {
-      size: 20,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+    "default": {
+      include: "defaults",
+      size: 13
     },
 
     "title-18": {
+      include: "defaults",
       size: 18,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-18": {
-      size: 18,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 18
     },
 
     "title-16": {
+      include: "defaults",
       size: 16,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-16": {
-      size: 16,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
-    },
-
-    "text-15": {
-      size: 15,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 16
     },
 
     "title-14": {
+      include: "defaults",
       size: 14,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       bold: true
     },
 
     "text-14": {
-      size: 14,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 14
     },
 
     "link-label-14": {
+      include: "defaults",
       size: 14,
-      family: ["Roboto", "sanf-serif"],
       color: "text-darker",
       decoration: "underline"
     },
 
     "text-13": {
-      size: 13,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 13
     },
 
     "text-12": {
-      size: 12,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
-    },
-
-    "text-12-italic": {
-      size: 12,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
-      italic: true
+      include: "defaults",
+      size: 12
     },
 
     "link-label-12": {
+      include: "defaults",
       size: 12,
-      family: ["Roboto", "sanf-serif"],
       color: "text-darker",
       decoration: "underline"
     },
 
     "text-11": {
-      size: 11,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 11
     },
 
     "text-11-italic": {
+      include: "defaults",
       size: 11,
-      family: ["Roboto", "sanf-serif"],
-      color: "text",
       italic: true
     },
 
     "text-10": {
-      size: 10,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 10
     },
 
     "text-9": {
-      size: 9,
-      family: ["Roboto", "sanf-serif"],
-      color: "text"
+      include: "defaults",
+      size: 9
     },
 
     "workbench-start-hint": {
+      include: "defaults",
       size: 20,
-      family: ["Roboto", "sanf-serif"],
       color: "workbench-start-hint",
       bold: true
     }

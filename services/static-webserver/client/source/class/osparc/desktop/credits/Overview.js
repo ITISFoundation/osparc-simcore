@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
     __createWalletsView: function() {
       const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       const oneWallet = activeWallet ? activeWallet : preferredWallet;
       if (oneWallet) {
         // show one wallet
@@ -162,16 +162,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       titleLayout.add(walletName);
       layout.add(titleLayout);
 
-      const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "vertical").set({
-        allowShrinkY: true
-      });
-      progressBar.getChildControl("credits-indicator").set({
-        minWidth: 100
-      });
-      progressBar.getChildControl("credits-text").set({
-        font: "text-16"
-      });
-      layout.add(progressBar);
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
+      layout.add(creditsIndicator);
 
       const buyButton = new qx.ui.form.Button().set({
         label: this.tr("Buy Credits"),
@@ -182,7 +174,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         height: 25
       });
       const myAccessRights = wallet.getMyAccessRights();
-      buyButton.setVisibility(myAccessRights && myAccessRights["write"] ? "visible" : "excluded");
+      buyButton.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
       buyButton.addListener("execute", () => this.fireDataEvent("buyCredits", {
         walletId: wallet.getWalletId()
       }), this);
@@ -240,13 +232,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         column++;
 
         // indicator
-        const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "horizontal").set({
-          allowShrinkY: true
-        });
-        progressBar.getChildControl("credits-indicator").set({
-          minWidth: 100
-        });
-        layout.add(progressBar, {
+        const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
+        layout.add(creditsIndicator, {
           column,
           row: i
         });
@@ -292,8 +279,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
                 }
                 const entry = [
                   osparc.utils.Utils.formatDateAndTime(new Date(transaction["createdAt"])),
-                  transaction["priceDollars"].toString(),
-                  transaction["osparcCredits"].toString(),
+                  transaction["priceDollars"].toFixed(2).toString(),
+                  transaction["osparcCredits"].toFixed(2).toString(),
                   walletName,
                   transaction["comment"]
                 ];
@@ -339,8 +326,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         }
       };
       osparc.data.Resources.fetch("resourceUsage", "getPage", params)
-        .then(datas => {
-          const entries = osparc.resourceUsage.OverviewTable.respDataToTableData(datas);
+        .then(async datas => {
+          const entries = await osparc.resourceUsage.OverviewTable.respDataToTableData(datas);
           entries.forEach((entry, row) => {
             entry.forEach((data, column) => {
               const text = new qx.ui.basic.Label(data.toString()).set({

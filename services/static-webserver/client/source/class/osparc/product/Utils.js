@@ -129,7 +129,7 @@ qx.Class.define("osparc.product.Utils", {
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
-          logosPath = lightLogo ? "osparc/s4l-white.png" : "osparc/s4l-black.png";
+          logosPath = lightLogo ? "osparc/s4l_logo_short_white.svg" : "osparc/s4l_logo_short_black.svg";
           break;
         case "s4llite":
           logosPath = lightLogo ? "osparc/s4llite-white.png" : "osparc/s4llite-black.png";
@@ -147,7 +147,7 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
-    getWorkbenhUIPreviewPath: function() {
+    getWorkbenchUIPreviewPath: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const darkImage = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
@@ -155,24 +155,25 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad") || this.isProduct("tis")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
-    showStudyPreview: function() {
-      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+    showStudyPreview: function(studyData) {
+      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      if (uiMode && uiMode === "app") {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showPreferencesTokens: function() {

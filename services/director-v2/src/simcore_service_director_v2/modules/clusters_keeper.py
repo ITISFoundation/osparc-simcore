@@ -12,6 +12,7 @@ from servicelib.rabbitmq import (
     RemoteMethodNotRegisteredError,
     RPCMethodName,
     RPCNamespace,
+    RPCServerError,
 )
 
 from ..core.errors import (
@@ -44,7 +45,7 @@ async def get_or_create_on_demand_cluster(
             raise ComputationalBackendOnDemandNotReadyError(
                 eta=_format_delta(returned_cluster.eta)
             )
-        if not returned_cluster.gateway_ready:
+        if not returned_cluster.dask_scheduler_ready:
             raise ComputationalBackendOnDemandNotReadyError(
                 eta=_format_delta(returned_cluster.eta)
             )
@@ -58,4 +59,6 @@ async def get_or_create_on_demand_cluster(
         )
     except RemoteMethodNotRegisteredError as exc:
         # no clusters-keeper, that is not going to work!
+        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
+    except RPCServerError as exc:
         raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc

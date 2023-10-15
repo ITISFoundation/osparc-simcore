@@ -22,8 +22,10 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import login_required
 from ..payments.errors import (
+    InvalidPaymentMethodError,
     PaymentCompletedError,
     PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
@@ -57,6 +59,7 @@ def handle_wallets_exceptions(handler: Handler):
             PaymentCompletedError,
             PaymentMethodAlreadyAckedError,
             PaymentMethodUniqueViolationError,
+            InvalidPaymentMethodError,
         ) as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 
@@ -83,6 +86,7 @@ class WalletsPathParams(StrictRequestParams):
 
 
 @routes.post(f"/{VTAG}/wallets", name="create_wallet")
+@requires_dev_feature_enabled  # NOTE: one wallet per user+product. SEE _events.py:_auto_add_default_wallet
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
@@ -96,6 +100,7 @@ async def create_wallet(request: web.Request):
         wallet_name=body_params.name,
         description=body_params.description,
         thumbnail=body_params.thumbnail,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(wallet, web.HTTPCreated)
@@ -111,10 +116,30 @@ async def list_wallets(request: web.Request):
     wallets: list[
         WalletGetWithAvailableCredits
     ] = await _api.list_wallets_with_available_credits_for_user(
-        request.app, user_id=req_ctx.user_id
+        app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
     return envelope_json_response(wallets)
+
+
+@routes.get(f"/{VTAG}/wallets/{{wallet_id}}", name="get_wallet")
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def get_wallet(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(WalletsPathParams, request)
+
+    wallet: WalletGetWithAvailableCredits = (
+        await _api.get_wallet_with_available_credits_by_user_and_wallet(
+            app=request.app,
+            wallet_id=path_params.wallet_id,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
+    )
+
+    return envelope_json_response(wallet)
 
 
 @routes.put(
@@ -137,5 +162,6 @@ async def update_wallet(request: web.Request):
         description=body_params.description,
         thumbnail=body_params.thumbnail,
         status=body_params.status,
+        product_name=req_ctx.product_name,
     )
     return envelope_json_response(updated_wallet)

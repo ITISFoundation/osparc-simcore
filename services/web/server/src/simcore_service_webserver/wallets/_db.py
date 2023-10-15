@@ -6,6 +6,7 @@
 import logging
 
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 from pydantic import parse_obj_as
@@ -24,6 +25,7 @@ _logger = logging.getLogger(__name__)
 
 async def create_wallet(
     app: web.Application,
+    product_name: ProductName,
     owner: GroupID,
     wallet_name: str,
     description: str | None,
@@ -40,6 +42,7 @@ async def create_wallet(
                 status=WalletStatus.ACTIVE,
                 created=func.now(),
                 modified=func.now(),
+                product_name=product_name,
             )
             .returning(literal_column("*"))
         )
@@ -68,7 +71,9 @@ _JOIN_TABLES = user_to_groups.join(
 
 async def list_wallets_for_user(
     app: web.Application,
+    *,
     user_id: UserID,
+    product_name: ProductName,
 ) -> list[UserWalletDB]:
     stmt = (
         select(*_SELECTION_ARGS)
@@ -76,6 +81,7 @@ async def list_wallets_for_user(
         .where(
             (user_to_groups.c.uid == user_id)
             & (user_to_groups.c.access_rights["read"].astext == "true")
+            & (wallets.c.product_name == product_name)
         )
         .group_by(
             wallets.c.wallet_id,
@@ -96,10 +102,32 @@ async def list_wallets_for_user(
         return output
 
 
+async def list_wallets_owned_by_user(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> list[WalletID]:
+    stmt = (
+        select(wallets.c.wallet_id)
+        .select_from(_JOIN_TABLES)
+        .where(
+            (user_to_groups.c.uid == user_id)
+            & (user_to_groups.c.gid == wallets.c.owner)
+            & (wallets.c.product_name == product_name)
+        )
+    )
+    async with get_database_engine(app).acquire() as conn:
+        results = await conn.execute(stmt)
+        rows = await results.fetchall() or []
+        return [row.wallet_id for row in rows]
+
+
 async def get_wallet_for_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> UserWalletDB:
     stmt = (
         select(*_SELECTION_ARGS)
@@ -108,6 +136,7 @@ async def get_wallet_for_user(
             (user_to_groups.c.uid == user_id)
             & (user_to_groups.c.access_rights["read"].astext == "true")
             & (wallets.c.wallet_id == wallet_id)
+            & (wallets.c.product_name == product_name)
         )
         .group_by(
             wallets.c.wallet_id,
@@ -131,7 +160,9 @@ async def get_wallet_for_user(
         return parse_obj_as(UserWalletDB, row)
 
 
-async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletDB:
+async def get_wallet(
+    app: web.Application, wallet_id: WalletID, product_name: ProductName
+) -> WalletDB:
     stmt = (
         select(
             wallets.c.wallet_id,
@@ -144,7 +175,10 @@ async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletDB:
             wallets.c.modified,
         )
         .select_from(wallets)
-        .where(wallets.c.wallet_id == wallet_id)
+        .where(
+            (wallets.c.wallet_id == wallet_id)
+            & (wallets.c.product_name == product_name)
+        )
     )
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
@@ -161,6 +195,7 @@ async def update_wallet(
     description: str | None,
     thumbnail: str | None,
     status: WalletStatus,
+    product_name: ProductName,
 ) -> WalletDB:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
@@ -172,7 +207,10 @@ async def update_wallet(
                 status=status,
                 modified=func.now(),
             )
-            .where(wallets.c.wallet_id == wallet_id)
+            .where(
+                (wallets.c.wallet_id == wallet_id)
+                & (wallets.c.product_name == product_name)
+            )
             .returning(literal_column("*"))
         )
         row = await result.first()
@@ -184,6 +222,12 @@ async def update_wallet(
 async def delete_wallet(
     app: web.Application,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> None:
     async with get_database_engine(app).acquire() as conn:
-        await conn.execute(wallets.delete().where(wallets.c.wallet_id == wallet_id))
+        await conn.execute(
+            wallets.delete().where(
+                (wallets.c.wallet_id == wallet_id)
+                & (wallets.c.product_name == product_name)
+            )
+        )

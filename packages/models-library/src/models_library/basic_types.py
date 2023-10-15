@@ -2,9 +2,23 @@ import re
 from enum import Enum
 from typing import TypeAlias
 
-from pydantic import ConstrainedInt, ConstrainedStr, HttpUrl, PositiveInt
+from pydantic import (
+    ConstrainedDecimal,
+    ConstrainedInt,
+    ConstrainedStr,
+    HttpUrl,
+    PositiveInt,
+)
 
 from .basic_regex import UUID_RE, VERSION_RE
+
+
+class NonNegativeDecimal(ConstrainedDecimal):
+    ge = 0
+
+
+class PositiveDecimal(ConstrainedDecimal):
+    gt = 0
 
 
 # port number range
@@ -29,6 +43,11 @@ class SHA1Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{40}$")
 
 
+# sha256sum path/to/file
+class SHA256Str(ConstrainedStr):
+    regex = re.compile(r"^[a-fA-F0-9]{64}$")
+
+
 # md5sum path/to/file
 class MD5Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{32}$")
@@ -45,9 +64,12 @@ class UUIDStr(ConstrainedStr):
 
 
 # non-empty string identifier e.g. "123" or "name_id1" (avoids "" identifiers)
-class IDStr(ConstrainedStr):
+class NonEmptyStr(ConstrainedStr):
     strip_whitespace = True
     min_length = 1
+
+
+IDStr: TypeAlias = NonEmptyStr
 
 
 # auto-incremented primary-key IDs

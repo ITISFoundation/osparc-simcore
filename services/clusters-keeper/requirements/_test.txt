@@ -13,7 +13,6 @@ aiohttp==3.8.5
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiodocker
-    #   dask-gateway-server
 aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
@@ -75,8 +74,6 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
-colorlog==6.7.0
-    # via dask-gateway-server
 coverage==7.3.1
     # via
     #   -r requirements/_test.in
@@ -84,12 +81,9 @@ coverage==7.3.1
 cryptography==41.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   dask-gateway-server
     #   moto
     #   python-jose
     #   sshpubkeys
-dask-gateway-server==2023.1.1
-    # via -r requirements/_test.in
 debugpy==1.8.0
     # via -r requirements/_test.in
 deepdiff==6.5.0
@@ -125,8 +119,6 @@ frozenlist==1.4.0
     #   aiosignal
 graphql-core==3.2.3
     # via moto
-greenlet==2.0.2
-    # via sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_base.txt
@@ -339,10 +331,6 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   fakeredis
-sqlalchemy==1.4.49
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   dask-gateway-server
 sshpubkeys==3.3.1
     # via moto
 sympy==1.12
@@ -351,8 +339,6 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-traitlets==5.9.0
-    # via dask-gateway-server
 types-pyyaml==6.0.12.11
     # via responses
 typing-extensions==4.7.1

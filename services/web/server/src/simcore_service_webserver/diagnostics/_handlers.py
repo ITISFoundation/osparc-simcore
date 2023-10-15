@@ -19,9 +19,7 @@ from ..catalog.client import is_catalog_service_responsive
 from ..db import plugin
 from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
-from ..resource_usage.resource_usage_tracker_client import (
-    is_resource_usage_tracking_service_responsive,
-)
+from ..resource_usage._client import is_resource_usage_tracking_service_responsive
 from ..security.decorators import permission_required
 from ..storage import api as storage_api
 from ..utils import TaskInfoDict, get_task_info, get_tracemalloc_info

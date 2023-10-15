@@ -97,9 +97,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     __canIWrite: function() {
       const wallet = this.__currentModel;
       if (wallet) {
-        const myAcessRights = wallet.getMyAccessRights();
-        if (myAcessRights) {
-          return myAcessRights["write"];
+        const myAccessRights = wallet.getMyAccessRights();
+        if (myAccessRights) {
+          return myAccessRights["write"];
         }
       }
       return false;
@@ -128,7 +128,10 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         allowGrowX: false
       });
       addMemberBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedData);
+        const serializedData = this.__currentModel.serialize();
+        serializedData["resourceType"] = "wallet";
+        const showOrganizations = false;
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
         collaboratorsManager.addListener("addCollaborators", e => {
           const cb = () => collaboratorsManager.close();
           this.__addMembers(e.getData(), cb);
@@ -140,7 +143,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __getRolesToolbar: function() {
-      return osparc.data.Roles.createRolesWalleltInfo();
+      return osparc.data.Roles.createRolesWalletInfo();
     },
 
     __getMembersFilter: function() {
@@ -152,7 +155,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __getMembersList: function() {
-      const memebersUIList = new qx.ui.form.List().set({
+      const membersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         width: 150,
@@ -160,7 +163,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();
-      const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
+      const membersCtrl = new qx.data.controller.List(membersModel, membersUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.desktop.wallets.MemberListItem(),
         bindItem: (ctrl, item, id) => {
@@ -195,7 +198,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         }
       });
 
-      return memebersUIList;
+      return membersUIList;
     },
 
     __reloadWalletMembers: async function() {
@@ -207,6 +210,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
@@ -224,16 +228,19 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           let options = [];
           if (canIWrite) {
             // accountant...
-            if (collaborator["accessRights"]["write"]) {
+            if (gid === myGroupId) {
+              // it's me
+              options = [];
+            } else if (collaborator["accessRights"]["write"]) {
               // ...on accountant
               options = [
-                "demoteToMember",
+                // "demoteToMember", // only allow one Accountant per Wallet, we shouldn't get here
                 "removeMember"
               ];
             } else if (collaborator["accessRights"]["read"]) {
               // ...on member
               options = [
-                "promoteToAccountant",
+                // "promoteToAccountant", // only allow one Accountant per Wallet
                 "removeMember"
               ];
             }
@@ -275,6 +282,19 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
               if (cb) {
                 cb();
               }
+            });
+
+          // push 'WALLET_SHARED' notification
+          osparc.store.Store.getInstance().getPotentialCollaborators()
+            .then(potentialCollaborators => {
+              gids.forEach(gid => {
+                if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
+                  // it's a user, not an organization
+                  const collab = potentialCollaborators[gid];
+                  const uid = collab["id"];
+                  osparc.notification.Notifications.postNewWallet(uid, wallet.getWalletId());
+                }
+              });
             });
         });
     },

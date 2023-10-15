@@ -1,3 +1,3 @@
-from ._routing import main_router
+from ._routing import get_main_router
 
-__all__: tuple[str, ...] = ("main_router",)
+__all__: tuple[str, ...] = ("get_main_router",)

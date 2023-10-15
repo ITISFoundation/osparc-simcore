@@ -1,3 +1,5 @@
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from pydantic.errors import PydanticErrorMixin
 
 
@@ -9,9 +11,12 @@ class ConfigurationError(ResourceUsageTrackerRuntimeError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
-class CreateServiceRunError(ResourceUsageTrackerRuntimeError):
-    msg_template: str = "Error during creation of new service run record in DB: {msg}"
+class CustomResourceUsageTrackerError(ResourceUsageTrackerRuntimeError):
+    msg_template: str = "Error: {msg}"
 
 
-class CreateTransactionError(ResourceUsageTrackerRuntimeError):
-    msg_template: str = "Error during creation of new transaction record in DB: {msg}"
+def http404_error_handler(
+    request: Request,  # pylint: disable=unused-argument
+    error: CustomResourceUsageTrackerError,
+) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"message": error.msg_template})

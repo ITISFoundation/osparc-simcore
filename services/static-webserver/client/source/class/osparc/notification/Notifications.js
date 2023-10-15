@@ -75,6 +75,17 @@ qx.Class.define("osparc.notification.Notifications", {
       };
     },
 
+    __newWalletObj: function(userId, walletId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "WALLET_SHARED",
+        "actionable_path": "wallet/"+walletId,
+        "title": "Credits shared",
+        "text": "A Credit account was shared with you",
+        "date": new Date().toISOString()
+      };
+    },
+
     postNewOrganization: function(userId, orgId) {
       const params = {
         data: this.__newOrganizationObj(userId, orgId)
@@ -99,6 +110,13 @@ qx.Class.define("osparc.notification.Notifications", {
     postNewAnnotationNote: function(userId, studyId) {
       const params = {
         data: this.__newAnnotationNoteObj(userId, studyId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewWallet: function(userId, studyId) {
+      const params = {
+        data: this.__newWalletObj(userId, studyId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
     }

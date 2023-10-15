@@ -65,6 +65,7 @@ def auth_user_factory(socket_id: SocketID):
             socketio_session["client_session_id"] = client_session_id
             socketio_session["request"] = request
 
+        # REDIS wrapper
         with managed_resource(user_id, client_session_id, app) as resource_registry:
             _logger.info(
                 "socketio connection from user %s",
@@ -121,6 +122,14 @@ async def connect(
 
         _logger.info("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
+        await emit(
+            app,
+            "SIGNAL_USER_CONNECTED",
+            user_id,
+            app,
+            "s4l",  # NOTE: will be changed after https://github.com/ITISFoundation/osparc-simcore/issues/4776
+        )
+
         heart_beat_messages: list[SocketMessageDict] = [
             {
                 "event_type": SOCKET_IO_HEARTBEAT_EVENT,
@@ -162,7 +171,12 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                     await user_session.remove_socket_id()
                 # signal same user other clients if available
                 await emit(
-                    app, "SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app
+                    app,
+                    "SIGNAL_USER_DISCONNECTED",
+                    user_id,
+                    client_session_id,
+                    app,
+                    "s4l",  # NOTE: will be changed after https://github.com/ITISFoundation/osparc-simcore/issues/4776
                 )
 
         else:

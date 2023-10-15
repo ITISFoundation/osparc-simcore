@@ -60,7 +60,7 @@ async def projects_redirection_middleware(request: web.Request, handler: Handler
 
         project_id, path_param = _match_project_id(request)
         if project_id and path_param:
-            vc_repo = VersionControlForMetaModeling(request)
+            vc_repo = VersionControlForMetaModeling.create_from_request(request)
 
             if repo_id := await vc_repo.get_repo_id(ProjectID(project_id)):
                 # Changes resolved project_id parameter with working copy instead

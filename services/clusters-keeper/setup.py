@@ -50,6 +50,7 @@ SETUP = dict(
     package_dir={
         "": "src",
     },
+    package_data={"": ["data/*.yml"]},
     include_package_data=True,
     install_requires=PROD_REQUIREMENTS,
     test_suite="tests",

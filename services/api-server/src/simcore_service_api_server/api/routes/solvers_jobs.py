@@ -11,10 +11,12 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
+from ...db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -42,7 +44,7 @@ from ...services.storage import StorageApi, to_file_api_model
 from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
-from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.database import Engine, get_db_engine, get_repository
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -272,6 +274,10 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     product_name: Annotated[str, Depends(get_product_name)],
+    groups_extra_properties_repository: Annotated[
+        GroupsExtraPropertiesRepository,
+        Depends(get_repository(GroupsExtraPropertiesRepository)),
+    ],
     cluster_id: ClusterID | None = None,
 ):
     """Starts job job_id created with the solver solver_key:version
@@ -287,6 +293,7 @@ async def start_job(
         user_id=user_id,
         product_name=product_name,
         cluster_id=cluster_id,
+        groups_extra_properties_repository=groups_extra_properties_repository,
     )
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status
@@ -366,7 +373,12 @@ async def get_job_outputs(
             file_id: UUID = File.create_id(*value.path.split("/"))
 
             # TODO: acquire_soft_link will halve calls
-            found = await storage_client.search_files(user_id, file_id)
+            found = await storage_client.search_files(
+                user_id=user_id,
+                file_id=file_id,
+                sha256_checksum=None,
+                access_right="read",
+            )
             if found:
                 assert len(found) == 1  # nosec
                 results[name] = to_file_api_model(found[0])
@@ -522,3 +534,28 @@ async def replace_job_custom_metadata(
                 f"Cannot find job={job_name} ",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
+    response_model=WalletGet | None,
+    responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_job_wallet(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Getting wallet for job '%s'", job_name)
+
+    try:
+        return await webserver_api.get_project_wallet(project_id=job_id)
+
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find job={job_name}",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )

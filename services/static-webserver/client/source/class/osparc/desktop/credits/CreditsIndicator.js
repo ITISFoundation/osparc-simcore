@@ -16,47 +16,18 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
-  extend: qx.ui.indicator.ProgressBar,
+  extend: qx.ui.core.Widget,
 
-  construct: function(wallet, supportTap = false) {
+  construct: function(wallet) {
     this.base(arguments);
 
-    this.set({
-      maximum: 1,
-      width: 50,
-      maxHeight: 20,
-      minHeight: 10,
-      allowGrowY: false,
-      alignY:"middle"
-    });
-
-    this.bind("value", this.getChildControl("progress"), "backgroundColor", {
-      converter: val => {
-        if (val > 0.4) {
-          return "strong-main";
-        } else if (val > 0.1) {
-          return "warning-yellow";
-        }
-        return "danger-red";
-      }
-    });
+    this._setLayout(new qx.ui.layout.VBox());
 
     if (wallet) {
       this.setWallet(wallet);
     }
 
-    if (supportTap) {
-      this.set({
-        cursor: "pointer"
-      });
-      this.addListener("tap", () => {
-        osparc.desktop.credits.Utils.areWalletsEnabled()
-          .then(walletsEnabled => {
-            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
-            creditsWindow.openWallets();
-          });
-      }, this);
-    }
+    this.__updateCredits();
   },
 
   properties: {
@@ -70,48 +41,77 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
 
     creditsAvailable: {
       check: "Number",
-      init: 0,
+      init: null,
       nullable: false,
-      event: "changeCredits",
-      apply: "__applyCreditsAvailable"
+      event: "changeCreditsAvailable",
+      apply: "__updateCredits"
     }
   },
 
   statics: {
-    convertCreditsToIndicatorValue: function(credits) {
+    creditsToColor: function(credits, defaultColor = "text") {
+      let color = defaultColor;
+      if (credits <= 0) {
+        color = "danger-red";
+      } else if (credits <= 20) {
+        color = "warning-yellow";
+      }
+      return color;
+    },
+
+    normalizeCredits: function(credits) {
       const logBase = (n, base) => Math.log(n) / Math.log(base);
 
       let normalized = logBase(credits, 10000) + 0.01;
       normalized = Math.min(Math.max(normalized, 0), 1);
-      return normalized;
+      return normalized * 100;
     }
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "credits-label":
+          control = new qx.ui.basic.Label().set({
+            alignX: "center",
+            font: "text-16"
+          });
+          this._add(control);
+          break;
+        case "credits-indicator":
+          control = new qx.ui.core.Widget().set({
+            height: 5
+          });
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
     __applyWallet: function(wallet) {
       if (wallet) {
         wallet.bind("creditsAvailable", this, "creditsAvailable");
-        wallet.bind("creditsAvailable", this, "toolTipText", {
-          converter: val => wallet.getName() + ": " + val + " credits"
-        });
       }
     },
 
-    __applyCreditsAvailable: function(creditsAvailable) {
-      if (creditsAvailable !== null) {
-        this.setValue(this.self().convertCreditsToIndicatorValue(creditsAvailable));
+    __updateCredits: function() {
+      const credits = this.getCreditsAvailable();
+      if (credits !== null) {
+        const label = this.getChildControl("credits-label");
+        label.set({
+          value: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
+          textColor: this.self().creditsToColor(credits, "text")
+        });
 
-        if (creditsAvailable <= 0) {
-          this.setBackgroundColor("danger-red");
-        } else {
-          this.resetBackgroundColor();
-        }
-
-        let tttext = creditsAvailable + " " + this.tr("credits");
-        if (this.getWallet()) {
-          tttext = this.getWallet().getName() + ": " + tttext;
-        }
-        this.setToolTipText(tttext);
+        const indicator = this.getChildControl("credits-indicator");
+        const progress = this.self().normalizeCredits(credits);
+        const bgColor = this.self().creditsToColor(credits, "strong-main");
+        indicator.setBackgroundColor(bgColor);
+        indicator.getContentElement().setStyles({
+          minWidth: parseInt(progress) + "%",
+          maxWidth: parseInt(progress) + "%"
+        });
       }
     }
   }

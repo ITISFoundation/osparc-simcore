@@ -124,7 +124,7 @@ class SolverPort(BaseModel):
 
     class Config:
         extra = Extra.ignore
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "input_2",
                 "kind": "input",

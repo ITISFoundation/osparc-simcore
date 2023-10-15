@@ -30,16 +30,17 @@ class _LoggingEventHandler(SafeFileSystemEventHandler):
         # NOTE: runs in the created process
 
         file_path = Path(event.src_path)
-        file_stat = file_path.stat()
-        logger.info(
-            "Attribute change to: '%s': permissions=%s uid=%s gid=%s size=%s\nFile stat: %s",
-            file_path,
-            stat.filemode(file_stat.st_mode),
-            file_stat.st_uid,
-            file_stat.st_gid,
-            ByteSize(file_stat.st_size).human_readable(),
-            file_stat,
-        )
+        with suppress(FileNotFoundError):
+            file_stat = file_path.stat()
+            logger.info(
+                "Attribute change to: '%s': permissions=%s uid=%s gid=%s size=%s\nFile stat: %s",
+                file_path,
+                stat.filemode(file_stat.st_mode),
+                file_stat.st_uid,
+                file_stat.st_gid,
+                ByteSize(file_stat.st_size).human_readable(),
+                file_stat,
+            )
 
 
 class _LoggingEventHandlerProcess:

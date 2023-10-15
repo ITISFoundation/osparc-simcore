@@ -53,12 +53,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       backgroundColor: "background-main-1"
     });
 
-    Promise.all([
-      osparc.data.Resources.get("statics"),
-      osparc.data.Resources.get("notifications")
-    ])
-      .then(values => {
-        const notifications = values[1];
+    osparc.data.Resources.get("notifications")
+      .then(notifications => {
         osparc.notification.Notifications.getInstance().addNotifications(notifications);
         this.buildLayout();
         this.setPageContext("dashboard");
@@ -134,12 +130,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       // right-items
       const walletsViewer = this.getChildControl("wallets-viewer");
       walletsViewer.exclude();
-      osparc.desktop.credits.Utils.areWalletsEnabled()
-        .then(walletsEnabled => {
-          if (walletsEnabled) {
-            walletsViewer.show();
-          }
-        });
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        walletsViewer.show();
+      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
@@ -184,10 +178,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "logo-powered":
           control = new osparc.ui.basic.PoweredByOsparc().set({
-            width: 50,
             padding: 3,
             paddingTop: 1,
-            maxHeight: 50
+            maxHeight: this.self().HEIGHT - 2
           });
           this.getChildControl("left-items").add(control);
           break;
@@ -204,6 +197,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             paddingLeft: 10,
             font: "text-14"
           });
+          osparc.utils.Utils.setIdToWidget(control, "dashboardLabel");
           this.getChildControl("left-items").add(control);
           break;
         case "study-menu-info":
@@ -272,8 +266,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
-            maxWidth: 60,
-            minWidth: 60,
             maxHeight: this.self().HEIGHT
           });
           this.getChildControl("right-items").add(control);
@@ -292,7 +284,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             textColor: "danger-red",
             cursor: "pointer"
           });
-          control.addListener("tap", () => osparc.navigation.UserMenuButton.openPreferences(), this);
+          control.addListener("tap", () => osparc.desktop.credits.UserCenterWindow.openWindow(), this);
           const authData = osparc.auth.Data.getInstance();
           authData.bind("expirationDate", control, "visibility", {
             converter: expirationDay => {
@@ -301,8 +293,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
                 const today = new Date(now.toISOString().slice(0, 10));
                 const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
                 if (daysToExpiration < 7) {
-                  osparc.utils.Utils.expirationMessage(daysToExpiration)
-                    .then(msg => control.setToolTipText(msg));
+                  const msg = osparc.utils.Utils.expirationMessage(daysToExpiration);
+                  control.setToolTipText(msg);
                   return "visible";
                 }
               }
@@ -378,7 +370,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-button").show();
           if (osparc.product.Utils.isProduct("s4llite")) {
             this.getChildControl("study-menu-button").show();
-            this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
             this.getChildControl("edit-title-label").show();
           }
           if (this.__tabButtons) {
@@ -397,8 +388,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
       osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addPanddyToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
+      osparc.utils.Utils.setIdToWidget(menuButton, "manualsButton");
+      osparc.utils.Utils.setIdToWidget(menu, "manualsMenu");
       return menuButton;
     },
 
@@ -411,6 +404,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
+      osparc.utils.Utils.setIdToWidget(menuButton, "feedbackButton");
+      osparc.utils.Utils.setIdToWidget(menu, "feedbackMenu");
       return menuButton;
     },
 
@@ -431,6 +426,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+        study.bind("name", this.getChildControl("edit-title-label"), "value");
       }
     },
 

@@ -15,6 +15,7 @@ from tenacity.wait import wait_fixed
 
 from .....core.settings import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import SchedulerData
+from .....modules.resource_usage_client import ResourceUsageApi
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
@@ -122,11 +123,30 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     users_repository = get_repository(app, UsersRepository)
     user_email = await users_repository.get_user_email(scheduler_data.user_id)
 
+    # Billing info
+    wallet_id = None
+    wallet_name = None
+    pricing_plan_id = None
+    pricing_unit_id = None
+    pricing_unit_cost_id = None
+    if scheduler_data.wallet_info:
+        wallet_id = scheduler_data.wallet_info.wallet_id
+        wallet_name = scheduler_data.wallet_info.wallet_name
+        resource_usage_api = ResourceUsageApi.get_from_state(app)
+        (
+            pricing_plan_id,
+            pricing_unit_id,
+            pricing_unit_cost_id,
+        ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
+            scheduler_data.product_name, scheduler_data.key, scheduler_data.version
+        )
+
     metrics_params = CreateServiceMetricsAdditionalParams(
-        wallet_id=None,
-        wallet_name=None,
-        pricing_plan_id=None,
-        pricing_detail_id=None,
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        pricing_plan_id=pricing_plan_id,
+        pricing_unit_id=pricing_unit_id,
+        pricing_unit_cost_id=pricing_unit_cost_id,
         product_name=scheduler_data.product_name,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         user_email=user_email,

@@ -48,7 +48,7 @@
     "/v1/services/-/usages": {
       "get": {
         "tags": [
-          "resource-usage-tracker"
+          "usages"
         ],
         "summary": "List Usage Services",
         "description": "Returns a list of tracked containers for a given user and product",
@@ -145,7 +145,7 @@
     "/v1/credit-transactions/credits:sum": {
       "post": {
         "tags": [
-          "resource-usage-tracker"
+          "credit-transactions"
         ],
         "summary": "Sum total available credits in the wallet",
         "operationId": "get_credit_transactions_sum_v1_credit_transactions_credits_sum_post",
@@ -198,7 +198,7 @@
     "/v1/credit-transactions": {
       "post": {
         "tags": [
-          "resource-usage-tracker"
+          "credit-transactions"
         ],
         "summary": "Top up credits for specific wallet",
         "operationId": "create_credit_transaction_v1_credit_transactions_post",
@@ -218,13 +218,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Create Credit Transaction V1 Credit Transactions Post",
-                  "type": "object",
-                  "additionalProperties": {
-                    "exclusiveMinimum": true,
-                    "type": "integer",
-                    "minimum": 0
-                  }
+                  "$ref": "#/components/schemas/CreditTransactionCreated"
                 }
               }
             }
@@ -242,14 +236,35 @@
         }
       }
     },
-    "/v1/pricing-plans": {
+    "/v1/services/{service_key}/{service_version}/pricing-plan": {
       "get": {
         "tags": [
-          "resource-usage-tracker"
+          "pricing-plans"
         ],
-        "summary": "Retrieve all pricing plans with pricing details for a specific product.",
-        "operationId": "get_pricing_plans_v1_pricing_plans_get",
+        "summary": "Get Service Default Pricing Plan",
+        "description": "Returns a default pricing plan with pricing details for a specified service",
+        "operationId": "get_service_default_pricing_plan",
         "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          },
           {
             "required": true,
             "schema": {
@@ -257,26 +272,6 @@
               "type": "string"
             },
             "name": "product_name",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "type": "string"
-            },
-            "name": "service_key",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
-            "name": "service_version",
             "in": "query"
           }
         ],
@@ -286,11 +281,72 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Pricing Plans V1 Pricing Plans Get",
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PricingPlanGet"
-                  }
+                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}": {
+      "get": {
+        "tags": [
+          "pricing-plans"
+        ],
+        "summary": "Get Pricing Plan Unit",
+        "description": "Returns a list of service pricing plans with pricing details for a specified service",
+        "operationId": "list_service_pricing_plans",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Pricing Plan Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "pricing_plan_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Pricing Unit Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "pricing_unit_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Product Name",
+              "type": "string"
+            },
+            "name": "product_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingUnitGet"
                 }
               }
             }
@@ -363,6 +419,33 @@
             "format": "date-time"
           }
         }
+      },
+      "CreditTransactionCreated": {
+        "title": "CreditTransactionCreated",
+        "required": [
+          "credit_transaction_id"
+        ],
+        "type": "object",
+        "properties": {
+          "credit_transaction_id": {
+            "title": "Credit Transaction Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "description": "Response Create Credit Transaction V1 Credit Transactions Post"
+      },
+      "CreditTransactionStatus": {
+        "title": "CreditTransactionStatus",
+        "enum": [
+          "PENDING",
+          "BILLED",
+          "NOT_BILLED",
+          "REQUIRES_MANUAL_REVIEW"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
@@ -444,42 +527,6 @@
           }
         }
       },
-      "PricingDetailMinimalGet": {
-        "title": "PricingDetailMinimalGet",
-        "required": [
-          "pricingDetailId",
-          "unitName",
-          "costPerUnit",
-          "validFrom",
-          "simcoreDefault"
-        ],
-        "type": "object",
-        "properties": {
-          "pricingDetailId": {
-            "title": "Pricingdetailid",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "unitName": {
-            "title": "Unitname",
-            "type": "string"
-          },
-          "costPerUnit": {
-            "title": "Costperunit",
-            "type": "number"
-          },
-          "validFrom": {
-            "title": "Validfrom",
-            "type": "string",
-            "format": "date-time"
-          },
-          "simcoreDefault": {
-            "title": "Simcoredefault",
-            "type": "boolean"
-          }
-        }
-      },
       "PricingPlanClassification": {
         "title": "PricingPlanClassification",
         "enum": [
@@ -488,26 +535,74 @@
         "type": "string",
         "description": "An enumeration."
       },
-      "PricingPlanGet": {
-        "title": "PricingPlanGet",
+      "PricingUnitGet": {
+        "title": "PricingUnitGet",
         "required": [
-          "pricingPlanId",
-          "name",
-          "description",
-          "classification",
-          "createdAt",
-          "details"
+          "pricing_unit_id",
+          "unit_name",
+          "unit_extra_info",
+          "current_cost_per_unit",
+          "current_cost_per_unit_id",
+          "default",
+          "specific_info"
         ],
         "type": "object",
         "properties": {
-          "pricingPlanId": {
-            "title": "Pricingplanid",
+          "pricing_unit_id": {
+            "title": "Pricing Unit Id",
             "exclusiveMinimum": true,
             "type": "integer",
             "minimum": 0
           },
-          "name": {
-            "title": "Name",
+          "unit_name": {
+            "title": "Unit Name",
+            "type": "string"
+          },
+          "unit_extra_info": {
+            "title": "Unit Extra Info",
+            "type": "object"
+          },
+          "current_cost_per_unit": {
+            "title": "Current Cost Per Unit",
+            "type": "number"
+          },
+          "current_cost_per_unit_id": {
+            "title": "Current Cost Per Unit Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "default": {
+            "title": "Default",
+            "type": "boolean"
+          },
+          "specific_info": {
+            "title": "Specific Info",
+            "type": "object"
+          }
+        }
+      },
+      "ServicePricingPlanGet": {
+        "title": "ServicePricingPlanGet",
+        "required": [
+          "pricing_plan_id",
+          "display_name",
+          "description",
+          "classification",
+          "created_at",
+          "pricing_plan_key",
+          "pricing_units"
+        ],
+        "type": "object",
+        "properties": {
+          "pricing_plan_id": {
+            "title": "Pricing Plan Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "display_name": {
+            "title": "Display Name",
             "type": "string"
           },
           "description": {
@@ -517,16 +612,20 @@
           "classification": {
             "$ref": "#/components/schemas/PricingPlanClassification"
           },
-          "createdAt": {
-            "title": "Createdat",
+          "created_at": {
+            "title": "Created At",
             "type": "string",
             "format": "date-time"
           },
-          "details": {
-            "title": "Details",
+          "pricing_plan_key": {
+            "title": "Pricing Plan Key",
+            "type": "string"
+          },
+          "pricing_units": {
+            "title": "Pricing Units",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PricingDetailMinimalGet"
+              "$ref": "#/components/schemas/PricingUnitGet"
             }
           }
         }
@@ -617,6 +716,13 @@
           },
           "service_run_status": {
             "$ref": "#/components/schemas/ServiceRunStatus"
+          },
+          "credit_cost": {
+            "title": "Credit Cost",
+            "type": "number"
+          },
+          "transaction_status": {
+            "$ref": "#/components/schemas/CreditTransactionStatus"
           }
         }
       },

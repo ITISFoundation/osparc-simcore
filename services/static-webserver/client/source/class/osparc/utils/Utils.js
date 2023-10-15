@@ -230,17 +230,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDevelopmentPlatform: function() {
-      return new Promise(resolve => {
-        osparc.store.StaticInfo.getInstance().getPlatformName()
-          .then(platformName => resolve(["dev", "master"].includes(platformName)));
-      });
-    },
-
-    isStagingPlatform: function() {
-      return new Promise(resolve => {
-        osparc.store.StaticInfo.getInstance().getPlatformName()
-          .then(platformName => resolve(platformName === "staging"));
-      });
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      return (["dev", "master"].includes(platformName));
     },
 
     getEditButton: function() {
@@ -316,6 +307,13 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
+    formatMilliSeconds: function(milliseconds) {
+      const date = new Date(0);
+      date.setMilliseconds(milliseconds);
+      const timeString = date.toISOString().substring(11, 19); // hh:mm:ss
+      return timeString;
+    },
+
     formatSeconds: function(seconds) {
       const min = Math.floor(seconds / 60);
       const sec = seconds - min * 60;
@@ -346,36 +344,26 @@ qx.Class.define("osparc.utils.Utils", {
       msg += "</br>";
       msg += qx.locale.Manager.tr("Please contact us by email:");
       msg += "</br>";
-      return new Promise(resolve => {
-        osparc.store.VendorInfo.getInstance().getSupportEmail()
-          .then(supportEmail => resolve(msg + supportEmail));
-      });
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      msg += supportEmail;
+      return msg;
     },
 
     // used for showing it to Guest users
     createAccountMessage: function() {
-      return new Promise(resolve => {
-        Promise.all([
-          osparc.store.StaticInfo.getInstance().getDisplayName(),
-          osparc.store.Support.getManuals(),
-          osparc.store.VendorInfo.getInstance().getSupportEmail()
-        ])
-          .then(values => {
-            const productName = values[0];
-            const manuals = values[1];
-            const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
-            const supportEmail = values[2];
-            const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
-            let msg = "";
-            msg += qx.locale.Manager.tr("To use all ");
-            const color = qx.theme.manager.Color.getInstance().resolve("text");
-            msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
-            msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
-            msg += "</br>";
-            msg += mailto;
-            resolve(msg);
-          });
-      });
+      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const manuals = osparc.store.Support.getManuals();
+      const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
+      let msg = "";
+      msg += qx.locale.Manager.tr("To use all ");
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
+      msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
+      msg += "</br>";
+      msg += mailto;
+      return msg;
     },
 
     getNameFromEmail: function(email) {
@@ -497,18 +485,18 @@ qx.Class.define("osparc.utils.Utils", {
       if (bytes == 0) {
         return "0 Bytes";
       }
-      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-      return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
+      return Math.round((bytes / Math.pow(1000, i)) * 100) / 100 + " " + sizes[i];
     },
 
     bytesToGB: function(bytes) {
-      const b2gb = 1024*1024*1024;
+      const b2gb = 1000*1000*1000;
       return Math.round(100*bytes/b2gb)/100;
     },
 
-    gBToBytes: function(gbytes) {
-      const b2gb = 1024*1024*1024;
-      return gbytes*b2gb;
+    gBToBytes: function(gBytes) {
+      const b2gb = 1000*1000*1000;
+      return gBytes*b2gb;
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {

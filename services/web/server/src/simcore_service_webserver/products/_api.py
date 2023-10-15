@@ -2,6 +2,7 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import web
+from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
@@ -28,6 +29,21 @@ def list_products(app: web.Application) -> list[Product]:
     return products
 
 
+async def get_current_product_credit_price(
+    request: web.Request,
+) -> NonNegativeDecimal | None:
+    """Gets latest credit price for this product.
+
+    NOTE: Contrary to other product api functions (e.g. get_current_product) this function
+    gets the latest update from the database. Otherwise, products are loaded
+    on startup and cached therefore in those cases would require a restart
+    of the service for the latest changes to take effect.
+    """
+    current_product_name = get_product_name(request)
+    repo = ProductRepository.create_from_request(request)
+    return await repo.get_product_latest_credit_price_or_none(current_product_name)
+
+
 #
 # helpers for get_product_template_path
 #
@@ -39,7 +55,7 @@ def _themed(dirname: str, template: str) -> Path:
 
 
 async def _get_content(request: web.Request, template_name: str):
-    repo = ProductRepository(request)
+    repo = ProductRepository.create_from_request(request)
     content = await repo.get_template_content(template_name)
     if not content:
         msg = f"Missing template {template_name} for product"

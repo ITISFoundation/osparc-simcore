@@ -3,6 +3,7 @@ from typing import AsyncGenerator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
@@ -71,6 +72,7 @@ async def list_filter_with_partial_file_id(
     project_ids: list[ProjectID],
     file_id_prefix: str | None,
     partial_file_id: str | None,
+    sha256_checksum: SHA256Str | None,
     only_files: bool,
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
@@ -91,6 +93,11 @@ async def list_filter_with_partial_file_id(
         & (
             file_meta_data.c.is_directory.is_(False)  # noqa FBT003
             if only_files
+            else True
+        )
+        & (
+            file_meta_data.c.sha256_checksum == f"{sha256_checksum}"
+            if sha256_checksum
             else True
         )
     )

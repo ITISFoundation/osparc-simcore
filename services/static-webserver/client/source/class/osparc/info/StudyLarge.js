@@ -70,7 +70,8 @@ qx.Class.define("osparc.info.StudyLarge", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "text-14"
+        font: "text-14",
+        maxWidth: 380
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
@@ -107,7 +108,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       mainHBox.add(rightVBox);
       vBox.add(mainHBox);
 
-      if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
+      if (osparc.product.Utils.showStudyPreview(this.getStudy().serialize()) && !this.getStudy().isPipelineEmpty()) {
         leftVBox.add(new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize()));
         leftVBox.add(new qx.ui.core.Spacer(15, 15));
       }
@@ -318,7 +319,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
+      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(this.getStudy());
       const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {

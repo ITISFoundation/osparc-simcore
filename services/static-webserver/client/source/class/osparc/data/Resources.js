@@ -66,6 +66,34 @@ qx.Class.define("osparc.data.Resources", {
      */
     statics.resources = {
       /*
+       * CONFIG
+       */
+      "config": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/config"
+          }
+        }
+      },
+
+      /*
+       * STATICS
+       * Gets the json file containing some runtime server variables.
+       */
+      "statics": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/static-frontend-data.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
        * STUDIES
        */
       "studies": {
@@ -223,7 +251,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/services?offset={offset}&limit={limit}"
+            url: statics.API + "/services/-/resource-usages?offset={offset}&limit={limit}"
           }
         }
       },
@@ -232,7 +260,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/services?wallet_id={walletId}&offset={offset}&limit={limit}"
+            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
           }
         }
       },
@@ -380,6 +408,11 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{key}/{version}"
+          },
+          pricingPlans: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/catalog/services/{key}/{version}/pricing-plan"
           }
         }
       },
@@ -420,18 +453,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/catalog/dags/{dagId}"
-          }
-        }
-      },
-      /*
-       * CONFIG
-       */
-      "config": {
-        useCache: true,
-        endpoints: {
-          getOne: {
-            method: "GET",
-            url: statics.API + "/config"
           }
         }
       },
@@ -649,6 +670,34 @@ qx.Class.define("osparc.data.Resources", {
           deleteAccessRights: {
             method: "DELETE",
             url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          getAutoRecharge: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          putAutoRecharge: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          }
+        }
+      },
+      /*
+       * PRODUCTS
+       */
+      "creditPrice": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/credits-price"
+          }
+        }
+      },
+      "invitations": {
+        endpoints: {
+          post: {
+            method: "POST",
+            url: statics.API + "/invitation:generate"
           }
         }
       },
@@ -672,9 +721,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * PAYMENTS METHODS
+       * PAYMENT METHODS
        */
-      "payments-methods": {
+      "paymentMethods": {
         useCache: false,
         endpoints: {
           init: {
@@ -705,12 +754,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           },
-          start: {
-            method: "POST",
-            url: statics.API + "/wallets/{walletId}/auto-recharge"
-          },
-          stop: {
-            method: "DELETE",
+          put: {
+            method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
@@ -917,7 +962,7 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * Test/Diagnonstic entrypoint
+       * Test/Diagnostic entrypoint
        */
       "checkEP": {
         useCache: false,
@@ -955,21 +1000,6 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
-          }
-        }
-      },
-
-      /*
-       * STATICS
-       * Gets the json file containing some runtime server variables.
-       */
-      "statics": {
-        useCache: true,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: "/static-frontend-data.json",
-            isJsonFile: true
           }
         }
       }
@@ -1173,7 +1203,7 @@ qx.Class.define("osparc.data.Resources", {
     /**
      * Add the given data to the cached version of a resource, or a collection of them.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
-     * @param {*} data Resource or collection of resources to be addded to the cache.
+     * @param {*} data Resource or collection of resources to be added to the cache.
      */
     __addCached: function(resource, data) {
       osparc.store.Store.getInstance().append(resource, data, this.self().resources[resource].idField || "uuid");
@@ -1199,54 +1229,6 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
-    },
-
-    dummy: {
-      newWalletData: function() {
-        return {
-          "walletId": Math.floor(Math.random() * 1000),
-          name: "New Wallet",
-          description: "",
-          thumbnail: null,
-          owner: null,
-          "availableCredits": 0,
-          status: "ACTIVE",
-          accessRights: []
-        };
-      },
-
-      getUsageDetailed: function() {
-        return new Promise(resolve => {
-          resolve([{
-            "studyName": "Prj_1",
-            "jobType": "MESH",
-            "start": "2023-06-05T09:35:29.026Z",
-            "end": "2023-06-05T09:40:29.026Z",
-            "duration": 277233,
-            "computingTime": 1200000,
-            "numberOfCores": 4,
-            "status": "FINISHED"
-          }, {
-            "studyName": "Prj_1",
-            "jobType": "SIMULATION",
-            "start": "2023-06-06T09:35:29.026Z",
-            "end": "2023-06-06T09:40:29.026Z",
-            "duration": 1429861,
-            "computingTime": 11520000,
-            "numberOfCores": 8,
-            "status": "FINISHED"
-          }, {
-            "studyName": "Prj_2",
-            "jobType": "SIMULATION",
-            "start": "2023-06-06T10:37:29.026Z",
-            "end": "2023-06-06T10:42:29.026Z",
-            "duration": 1182460,
-            "computingTime": 9600000,
-            "numberOfCores": 8,
-            "status": "CANCELED"
-          }]);
-        });
-      }
     },
 
     getServiceUrl: function(key, version) {

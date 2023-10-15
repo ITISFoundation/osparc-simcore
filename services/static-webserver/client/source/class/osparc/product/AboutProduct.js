@@ -22,10 +22,8 @@ qx.Class.define("osparc.product.AboutProduct", {
   construct: function() {
     this.base(arguments, this.tr("About Product"));
 
-    osparc.store.StaticInfo.getInstance().getDisplayName()
-      .then(displayName => {
-        this.setCaption(this.tr("About ") + displayName);
-      });
+    const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+    this.setCaption(this.tr("About ") + displayName);
 
     this.set({
       layout: new qx.ui.layout.VBox(10),
@@ -63,7 +61,7 @@ qx.Class.define("osparc.product.AboutProduct", {
           break;
         default: {
           const noInfoText = this.tr("Information not available");
-          const noInfoLabel = osparc.product.tutorial.Utils.createLabel(noInfoText).set({
+          const noInfoLabel = osparc.product.quickStart.Utils.createLabel(noInfoText).set({
             maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
           });
           this.add(noInfoLabel);
@@ -89,7 +87,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+        const label = osparc.product.quickStart.Utils.createLabel(text).set({
           maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);
@@ -116,7 +114,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+        const label = osparc.product.quickStart.Utils.createLabel(text).set({
           maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);
@@ -142,7 +140,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         licenseText,
         moreInfoText
       ].forEach(text => {
-        const label = osparc.product.tutorial.Utils.createLabel(text).set({
+        const label = osparc.product.quickStart.Utils.createLabel(text).set({
           maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING
         });
         this.add(label);
@@ -155,15 +153,13 @@ qx.Class.define("osparc.product.AboutProduct", {
       const copyrightLink = new osparc.ui.basic.LinkLabel().set({
         font: "link-label-14"
       });
-      osparc.store.VendorInfo.getInstance().getVendor()
-        .then(vendor => {
-          if (vendor) {
-            copyrightLink.set({
-              value: vendor.copyright,
-              url: vendor.url
-            });
-          }
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor) {
+        copyrightLink.set({
+          value: vendor.copyright,
+          url: vendor.url
         });
+      }
       this.add(copyrightLink);
     }
   }

@@ -41,7 +41,8 @@ qx.Class.define("osparc.ui.form.LinkButton", {
 
     this.set({
       iconPosition: "right",
-      allowGrowX: false
+      allowGrowX: false,
+      appearance: "link-button"
     });
 
     if (url) {

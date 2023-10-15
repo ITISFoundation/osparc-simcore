@@ -21,68 +21,54 @@
  * - Form data validation
  * - Adds links to register and reset pages. Transitions are fired as events.
  * - To execute login, it delegates on the auth.manager
- * - Minimal layout and apperance is delegated to the selected theme
+ * - Minimal layout and appearance is delegated to the selected theme
  */
 
 qx.Class.define("osparc.auth.ui.LoginView", {
   extend: osparc.auth.core.BaseAuthPage,
-  include: [
-    osparc.auth.core.MAuth
-  ],
-
-  /*
-  *****************************************************************************
-     EVENTS
-  *****************************************************************************
-  */
 
   events: {
     "toRegister": "qx.event.type.Event",
+    "toRequestAccount": "qx.event.type.Event",
     "toReset": "qx.event.type.Event",
     "toVerifyPhone": "qx.event.type.Data",
     "to2FAValidationCode": "qx.event.type.Data"
   },
 
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
-
   members: {
-    // overrides base
-    __form: null,
     __loginBtn: null,
 
+    // overrides base
     _buildPage: function() {
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasLoginAnnouncement()) {
         this.add(announcementUIFactory.createLoginAnnouncement());
       }
 
-      this.__form = new qx.ui.form.Form();
-
+      // form
       const email = new qx.ui.form.TextField().set({
-        placeholder: this.tr(" Your email address"),
         required: true
       });
-      this.add(email);
       email.getContentElement().setAttribute("autocomplete", "username");
       osparc.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
-      this.__form.add(email, "", qx.util.Validate.email(), "email", null);
+      this._form.add(email, " Your email address", qx.util.Validate.email(), "email");
       this.addListener("appear", () => {
         email.focus();
         email.activate();
       });
+
       const pass = new osparc.ui.form.PasswordField().set({
-        placeholder: this.tr(" Your password"),
         required: true
       });
       pass.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
-      this.add(pass);
-      this.__form.add(pass, "", null, "password", null);
+      this._form.add(pass, " Your password", null, "password");
 
+      this.beautifyFormFields();
+      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      this.add(formRenderer);
+
+      // buttons
       const loginBtn = this.__loginBtn = new osparc.ui.form.FetchButton(this.tr("Sign in")).set({
         center: true,
         appearance: "strong-button"
@@ -92,28 +78,39 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.add(loginBtn);
 
 
-      //  create account | forgot password? links
+      //  (create account/request account) | forgot password? links
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
-      const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
-        registerBtn.setEnabled(false);
-        osparc.data.Resources.getOne("config")
-          .then(config => {
-            if (config["invitation_required"]) {
-              osparc.store.Support.openInvitationRequiredDialog();
-            } else {
-              this.fireEvent("toRegister");
-            }
-          })
-          .catch(err => console.error(err));
-        registerBtn.setEnabled(true);
+      const createAccountBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
+      const config = osparc.store.Store.getInstance().get("config");
+      if (config["invitation_required"]) {
+        createAccountBtn.setLabel(this.tr("Request Account"));
+      }
+      createAccountBtn.addListener("execute", () => {
+        createAccountBtn.setEnabled(false);
+        if (config["invitation_required"]) {
+          if (
+            osparc.product.Utils.isProduct("s4l") ||
+            osparc.product.Utils.isProduct("s4lacad") ||
+            osparc.product.Utils.isProduct("s4ldesktop") ||
+            osparc.product.Utils.isProduct("s4ldesktopacad")
+          ) {
+            this.fireEvent("toRequestAccount");
+          } else {
+            osparc.store.Support.openInvitationRequiredDialog();
+          }
+        } else {
+          this.fireEvent("toRegister");
+        }
+        createAccountBtn.setEnabled(true);
       }, this);
-      osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
+      osparc.utils.Utils.setIdToWidget(createAccountBtn, "loginCreateAccountBtn");
 
-      const forgotBtn = this.createLinkButton(this.tr("Forgot Password?"), () => this.fireEvent("toReset"), this);
+      const forgotBtn = new osparc.ui.form.LinkButton(this.tr("Forgot Password?"));
+      forgotBtn.addListener("execute", () => this.fireEvent("toReset"), this);
       osparc.utils.Utils.setIdToWidget(forgotBtn, "loginForgotPasswordBtn");
 
-      [registerBtn, forgotBtn].forEach(btn => {
+      [createAccountBtn, forgotBtn].forEach(btn => {
         grp.add(btn.set({
           center: true,
           allowGrowX: true
@@ -123,51 +120,29 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       });
 
       this.add(grp);
-
-      // TODO: add here loging with NIH and openID
-      // this.add(this.__buildExternals());
-    },
-
-    __buildExternals: function() {
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-
-      [this.tr("Login with NIH"), this.tr("Login with OpenID")].forEach(txt => {
-        const btn = this.createLinkButton(txt, function() {
-          // TODO add here callback
-          console.error("Login with external services are still not implemented");
-        }, this);
-
-        grp.add(btn.set({
-          center: true
-        }), {
-          flex:1
-        });
-      });
-
-      return grp;
     },
 
     getEmail: function() {
-      const email = this.__form.getItems().email;
+      const email = this._form.getItems().email;
       return email.getValue();
     },
 
     __login: function() {
-      if (!this.__form.validate()) {
+      if (!this._form.validate()) {
         return;
       }
 
       this.__loginBtn.setFetching(true);
 
-      const email = this.__form.getItems().email;
-      const pass = this.__form.getItems().password;
+      const email = this._form.getItems().email;
+      const pass = this._form.getItems().password;
 
       const loginFun = function(log) {
         this.__loginBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._formElement.dispose();
+        this._form.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
@@ -176,7 +151,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.fireDataEvent("toVerifyPhone", email.getValue());
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._formElement.dispose();
+        this._form.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
@@ -186,7 +161,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.fireDataEvent("to2FAValidationCode", msg);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
-        this._formElement.dispose();
+        this._form.dispose();
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
@@ -209,9 +184,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     },
 
     resetValues: function() {
-      const fieldItems = this.__form.getItems();
-      for (const key in fieldItems) {
-        fieldItems[key].resetValue();
+      if (this._form.getGroups()) {
+        // if there are no groups, getItems will fail
+        const fieldItems = this._form.getItems();
+        for (const key in fieldItems) {
+          fieldItems[key].resetValue();
+        }
       }
     },
 

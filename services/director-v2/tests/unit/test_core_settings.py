@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from models_library.basic_types import LogLevel
 from pydantic import ValidationError
-from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.settings import (
@@ -42,7 +41,7 @@ def test_supported_backends_did_not_change() -> None:
     ],
 )
 def test_expected_s3_endpoint(
-    endpoint: str, is_secure: bool, monkeypatch: MonkeyPatch
+    endpoint: str, is_secure: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
@@ -58,7 +57,7 @@ def test_expected_s3_endpoint(
     assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.endswith(endpoint)
 
 
-def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
+def test_enforce_r_clone_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
     with pytest.raises(ValueError):
@@ -77,7 +76,7 @@ def test_settings_with_project_env_devel(project_env_devel_environment: dict[str
 
 
 def test_settings_with_repository_env_devel(
-    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
 
@@ -111,9 +110,9 @@ def test_settings_with_repository_env_devel(
     ],
 )
 def testing_environ_expected_success(
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
     project_env_devel_environment,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> str:
     container_path: str = request.param
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", container_path)
@@ -122,8 +121,8 @@ def testing_environ_expected_success(
 
 def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None:
     settings = DynamicSidecarSettings.create_from_envs()
-    assert settings.DYNAMIC_SIDECAR_IMAGE == testing_environ_expected_success.lstrip(
-        "/"
+    assert (
+        testing_environ_expected_success.lstrip("/") == settings.DYNAMIC_SIDECAR_IMAGE
     )
 
 
@@ -134,9 +133,9 @@ def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None
     ],
 )
 def environment_with_invalid_values(
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
     project_env_devel_environment,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     container_path: str = request.param
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", container_path)
@@ -152,7 +151,7 @@ def test_expected_failure_dynamic_sidecar_settings(
 
 @pytest.mark.parametrize(
     "custom_constraints, expected",
-    (
+    [
         ("[]", []),
         ('["one==yes"]', ["one==yes"]),
         ('["two!=no"]', ["two!=no"]),
@@ -163,23 +162,23 @@ def test_expected_failure_dynamic_sidecar_settings(
             '["node.labels.standard-worker==true"]',
             ["node.labels.standard-worker==true"],
         ),
-    ),
+    ],
 )
 def test_services_custom_constraints(
     custom_constraints: str,
     expected: list[str],
     project_env_devel_environment: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
     assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
-    assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == expected
+    assert expected == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
 
 
 @pytest.mark.parametrize(
     "custom_constraints, expected",
-    (
+    [
         # Whitespaces in key are not allowed https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
         ('["strips.white spaces==ok "]', ["strips.white spaces==ok"]),
         ('[".starting.trailing.dot.==forbidden"]', [".starting.dot==forbidden"]),
@@ -195,28 +194,28 @@ def test_services_custom_constraints(
             '["node.labels.standard_worker==true"]',
             ["node.labels.standard_worker==true"],
         ),
-    ),
+    ],
 )
 def test_services_custom_constraint_failures(
     custom_constraints: str,
     expected: list[str],
     project_env_devel_environment: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
-    with pytest.raises(Exception) as excinfo:
-        settings = AppSettings.create_from_envs()
+    with pytest.raises(Exception):
+        AppSettings.create_from_envs()
 
 
 def test_services_custom_constraints_default_empty_list(
     project_env_devel_environment: EnvVarsDict,
 ) -> None:
     settings = AppSettings.create_from_envs()
-    assert settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS == []
+    assert [] == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
 
 
 def test_class_dynamicsidecarsettings_in_development(
-    monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, project_env_devel_environment: EnvVarsDict
 ):
     # assume in environ is set
     monkeypatch.setenv(
@@ -236,7 +235,7 @@ def test_class_dynamicsidecarsettings_in_development(
 
 
 def test_class_dynamicsidecarsettings_in_production(
-    monkeypatch: MonkeyPatch, project_env_devel_environment: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, project_env_devel_environment: EnvVarsDict
 ):
     # assume in environ is set
     monkeypatch.setenv(

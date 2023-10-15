@@ -46,15 +46,23 @@ def upgrade():
         "payments_transactions", sa.Column("state_message", sa.Text(), nullable=True)
     )
     connection.execute(
-        "UPDATE payments_transactions SET state = 'SUCCESS' WHERE success = true"
+        sa.DDL(
+            "UPDATE payments_transactions SET state = 'SUCCESS' WHERE success = true"
+        )
     )
     connection.execute(
-        "UPDATE payments_transactions SET state = 'FAILED' WHERE success = false"
+        sa.DDL(
+            "UPDATE payments_transactions SET state = 'FAILED' WHERE success = false"
+        )
     )
     connection.execute(
-        "UPDATE payments_transactions SET state = 'PENDING' WHERE success IS NULL"
+        sa.DDL(
+            "UPDATE payments_transactions SET state = 'PENDING' WHERE success IS NULL"
+        )
     )
-    connection.execute("UPDATE payments_transactions SET state_message = errors")
+    connection.execute(
+        sa.DDL("UPDATE payments_transactions SET state_message = errors")
+    )
 
     op.drop_column("payments_transactions", "success")
     op.drop_column("payments_transactions", "errors")
@@ -72,13 +80,19 @@ def downgrade():
 
     connection = op.get_bind()
     connection.execute(
-        "UPDATE payments_transactions SET success = true WHERE state = 'SUCCESS'"
+        sa.DDL(
+            "UPDATE payments_transactions SET success = true WHERE state = 'SUCCESS'"
+        )
     )
     connection.execute(
-        "UPDATE payments_transactions SET success = false WHERE completed_at IS NOT NULL AND state != 'SUCCESS'"
+        sa.DDL(
+            "UPDATE payments_transactions SET success = false WHERE completed_at IS NOT NULL AND state != 'SUCCESS'"
+        )
     )
     connection.execute(
-        "UPDATE payments_transactions SET success = NULL WHERE completed_at IS NULL AND state != 'SUCCESS'"
+        sa.DDL(
+            "UPDATE payments_transactions SET success = NULL WHERE completed_at IS NULL AND state != 'SUCCESS'"
+        )
     )
 
     op.drop_column("payments_transactions", "state_message")

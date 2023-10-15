@@ -17,6 +17,14 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
 )
+from simcore_postgres_database.utils_payments import (
+    PaymentAlreadyAcked,
+    PaymentNotFound,
+    PaymentTransactionRow,
+    get_user_payments_transactions,
+    insert_init_payment_transaction,
+    update_payment_transaction_state,
+)
 
 
 def utcnow() -> datetime.datetime:
@@ -50,7 +58,7 @@ async def test_numerics_precission_and_scale(connection: SAConnection):
     # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
 
-    for order_of_magnitude in range(0, 8):
+    for order_of_magnitude in range(8):
         expected = 10**order_of_magnitude + 0.123
         got = await connection.scalar(
             payments_transactions.insert()
@@ -71,18 +79,26 @@ def init_transaction(connection: SAConnection):
         values["initiated_at"] = utcnow()
 
         # insert
-        await connection.execute(payments_transactions.insert().values(values))
+        ok = await insert_init_payment_transaction(connection, **values)
+        assert ok
+
         return values
 
     return _init
 
 
-async def test_create_transaction(connection: SAConnection, init_transaction: Callable):
-    payment_id = "5495BF38-4A98-430C-A028-19E4585ADFC7"
+@pytest.fixture
+def payment_id() -> str:
+    return "5495BF38-4A98-430C-A028-19E4585ADFC7"
+
+
+async def test_init_transaction_sets_it_as_pending(
+    connection: SAConnection, init_transaction: Callable, payment_id: str
+):
     values = await init_transaction(payment_id)
     assert values["payment_id"] == payment_id
 
-    # insert
+    # check init-ed but not completed!
     result = await connection.execute(
         sa.select(
             payments_transactions.c.completed_at,
@@ -101,44 +117,131 @@ async def test_create_transaction(connection: SAConnection, init_transaction: Ca
     }
 
 
-async def test_complete_transaction_with_success(
-    connection: SAConnection, init_transaction: Callable
+@pytest.mark.parametrize(
+    "expected_state,expected_message",
+    [
+        (
+            state,
+            None if state is PaymentTransactionState.SUCCESS else f"with {state}",
+        )
+        for state in [
+            PaymentTransactionState.SUCCESS,
+            PaymentTransactionState.FAILED,
+            PaymentTransactionState.CANCELED,
+        ]
+    ],
+)
+async def test_complete_transaction(
+    connection: SAConnection,
+    init_transaction: Callable,
+    payment_id: str,
+    expected_state: PaymentTransactionState,
+    expected_message: str | None,
 ):
-    payment_id = "5495BF38-4A98-430C-A028-19E4585ADFC7"
     await init_transaction(payment_id)
 
-    state_message = await connection.scalar(
-        payments_transactions.update()
-        .values(
-            completed_at=utcnow(),
-            state=PaymentTransactionState.SUCCESS,
-        )
-        .where(payments_transactions.c.payment_id == payment_id)
-        .returning(payments_transactions.c.state_message)
+    payment_row = await update_payment_transaction_state(
+        connection,
+        payment_id=payment_id,
+        completion_state=expected_state,
+        state_message=expected_message,
     )
-    assert state_message is None
+
+    assert isinstance(payment_row, PaymentTransactionRow)
+    assert payment_row.state_message == expected_message
+    assert payment_row.state == expected_state
+    assert payment_row.initiated_at < payment_row.completed_at
 
 
-async def test_complete_transaction_with_failure(
-    connection: SAConnection, init_transaction: Callable
+async def test_update_transaction_failures_and_exceptions(
+    connection: SAConnection,
+    init_transaction: Callable,
+    payment_id: str,
 ):
-    payment_id = "5495BF38-4A98-430C-A028-19E4585ADFC7"
+    kwargs = {
+        "connection": connection,
+        "payment_id": payment_id,
+        "completion_state": PaymentTransactionState.SUCCESS,
+    }
+
+    ok = await update_payment_transaction_state(**kwargs)
+    assert isinstance(ok, PaymentNotFound)
+    assert not ok
+
+    # init & complete
     await init_transaction(payment_id)
+    ok = await update_payment_transaction_state(**kwargs)
+    assert isinstance(ok, PaymentTransactionRow)
+    assert ok
 
-    data = await (
-        await connection.execute(
-            payments_transactions.update()
-            .values(
-                completed_at=utcnow(),
-                state=PaymentTransactionState.FAILED,
-                state_message="some error message",
-            )
-            .where(payments_transactions.c.payment_id == payment_id)
-            .returning(sa.literal_column("*"))
-        )
-    ).fetchone()
+    # repeat -> fails
+    ok = await update_payment_transaction_state(**kwargs)
+    assert isinstance(ok, PaymentAlreadyAcked)
+    assert not ok
 
-    assert data is not None
-    assert data["completed_at"]
-    assert data["state"] == PaymentTransactionState.FAILED
-    assert data["state_message"] is not None
+    with pytest.raises(ValueError):
+        kwargs.update(completion_state=PaymentTransactionState.PENDING)
+        await update_payment_transaction_state(**kwargs)
+
+
+@pytest.fixture
+def user_id() -> int:
+    return 1
+
+
+@pytest.fixture
+def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Callable:
+    async def _go(expected_total=5):
+        payment_ids = []
+        for _ in range(expected_total):
+            values = random_payment_transaction(user_id=user_id)
+            payment_id = await insert_init_payment_transaction(connection, **values)
+            assert payment_id
+            payment_ids.append(payment_id)
+
+        return payment_ids
+
+    return _go
+
+
+async def test_get_user_payments_transactions(
+    connection: SAConnection, create_fake_user_transactions: Callable, user_id: int
+):
+    expected_payments_ids = await create_fake_user_transactions()
+    expected_total = len(expected_payments_ids)
+
+    # test offset and limit defaults
+    total, rows = await get_user_payments_transactions(connection, user_id=user_id)
+    assert total == expected_total
+    assert [r.payment_id for r in rows] == expected_payments_ids[::-1], "newest first"
+
+
+async def test_get_user_payments_transactions_with_pagination_options(
+    connection: SAConnection, create_fake_user_transactions: Callable, user_id: int
+):
+    expected_payments_ids = await create_fake_user_transactions()
+    expected_total = len(expected_payments_ids)
+
+    # test  offset, limit
+    offset = int(expected_total / 4)
+    limit = int(expected_total / 2)
+
+    total, rows = await get_user_payments_transactions(
+        connection, user_id=user_id, limit=limit, offset=offset
+    )
+    assert total == expected_total
+    assert [r.payment_id for r in rows] == expected_payments_ids[::-1][
+        offset : (offset + limit)
+    ], "newest first"
+
+    # test  offset>=expected_total?
+    total, rows = await get_user_payments_transactions(
+        connection, user_id=user_id, offset=expected_total
+    )
+    assert not rows
+
+    # test  limit==0?
+    total, rows = await get_user_payments_transactions(
+        connection, user_id=user_id, limit=0
+    )
+    assert not rows

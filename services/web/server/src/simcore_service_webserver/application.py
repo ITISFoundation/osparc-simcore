@@ -93,6 +93,15 @@ def create_application() -> web.Application:
     setup_products(app)
     setup_statics(app)
 
+    # users
+    setup_users(app)
+    setup_groups(app)
+
+    # resource tracking / billing
+    setup_resource_tracker(app)
+    setup_payments(app)
+    setup_wallets(app)
+
     # monitoring
     setup_diagnostics(app)
     setup_activity(app)
@@ -114,13 +123,6 @@ def create_application() -> web.Application:
     setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    # resource tracking / billing
-    setup_resource_tracker(app)
-
-    # users
-    setup_users(app)
-    setup_groups(app)
-
     # projects
     setup_projects(app)
     # project add-ons
@@ -130,10 +132,6 @@ def create_application() -> web.Application:
     # tagging
     setup_scicrunch(app)
     setup_tags(app)
-
-    # wallets
-    setup_payments(app)
-    setup_wallets(app)
 
     setup_announcements(app)
     setup_publications(app)

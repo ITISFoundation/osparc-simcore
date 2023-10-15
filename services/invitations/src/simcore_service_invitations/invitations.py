@@ -1,30 +1,23 @@
 import base64
 import binascii
 import logging
-from datetime import datetime
-from typing import Optional, cast
+from datetime import datetime, timezone
+from typing import Any, ClassVar, cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
-from models_library.emails import LowerCaseEmailStr
-from pydantic import (
-    BaseModel,
-    Field,
-    HttpUrl,
-    PositiveInt,
-    ValidationError,
-    parse_obj_as,
-)
+from models_library.invitations import InvitationContent, InvitationInputs
+from pydantic import HttpUrl, ValidationError, parse_obj_as
 from starlette.datastructures import URL
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # Errors
 #
 
 
-class InvalidInvitationCode(Exception):
+class InvalidInvitationCodeError(Exception):
     ...
 
 
@@ -33,44 +26,16 @@ class InvalidInvitationCode(Exception):
 #
 
 
-class InvitationInputs(BaseModel):
-    """Input data necessary to create an invitation"""
-
-    issuer: str = Field(
-        ...,
-        description="Identifies who issued the invitation. E.g. an email, a service name etc",
-        min_length=1,
-        max_length=30,
-    )
-    guest: LowerCaseEmailStr = Field(
-        ...,
-        description="Invitee's email. Note that the registration can ONLY be used with this email",
-    )
-    trial_account_days: Optional[PositiveInt] = Field(
-        None,
-        description="If set, this invitation will activate a trial account."
-        "Sets the number of days from creation until the account expires",
-    )
-
-
-class InvitationContent(InvitationInputs):
-    """Data in an invitation"""
-
-    # avoid using default to mark exactly the time
-    created: datetime = Field(..., description="Timestamp for creation")
-
-    def as_invitation_inputs(self) -> InvitationInputs:
-        return self.copy(exclude={"created"})
-
-
 class _ContentWithShortNames(InvitationContent):
     """Helper model to serialize/deserialize to json using shorter field names"""
 
     @classmethod
     def serialize(cls, model_data: InvitationContent) -> str:
         """Exports to json using *short* aliases and values in order to produce shorter codes"""
-        model_w_short_aliases = cls.construct(**model_data.dict(exclude_unset=True))
-        return model_w_short_aliases.json(exclude_unset=True, by_alias=True)
+        model_w_short_aliases_json: str = cls.construct(
+            **model_data.dict(exclude_unset=True)
+        ).json(exclude_unset=True, by_alias=True)
+        return model_w_short_aliases_json
 
     @classmethod
     def deserialize(cls, raw_data: str) -> InvitationContent:
@@ -85,7 +50,7 @@ class _ContentWithShortNames(InvitationContent):
         allow_mutation = False
         anystr_strip_whitespace = True
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
-        fields = {
+        fields: ClassVar[dict[str, Any]] = {
             "issuer": {
                 "alias": "i",
             },
@@ -94,6 +59,9 @@ class _ContentWithShortNames(InvitationContent):
             },
             "trial_account_days": {
                 "alias": "t",
+            },
+            "extra_credits": {
+                "alias": "e",
             },
             "created": {
                 "alias": "c",
@@ -125,8 +93,8 @@ def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
         invitation_code: str = query_params["invitation"]
         return invitation_code
     except KeyError as err:
-        logger.debug("Invalid invitation: %s", err)
-        raise InvalidInvitationCode from err
+        _logger.debug("Invalid invitation: %s", err)
+        raise InvalidInvitationCodeError from err
 
 
 def _fernet_encrypt_as_urlsafe_code(
@@ -146,7 +114,7 @@ def _create_invitation_code(
     # builds content
     content = InvitationContent(
         **invitation_data.dict(),
-        created=datetime.utcnow(),
+        created=datetime.now(tz=timezone.utc),
     )
 
     content_jsonstr: str = _ContentWithShortNames.serialize(content)
@@ -167,16 +135,14 @@ def _create_invitation_code(
 def create_invitation_link(
     invitation_data: InvitationInputs, secret_key: bytes, base_url: HttpUrl
 ) -> HttpUrl:
-
     invitation_code = _create_invitation_code(
         invitation_data=invitation_data, secret_key=secret_key
     )
     # Adds message as the invitation in query
-    url = _build_link(
+    return _build_link(
         base_url=base_url,
         code_url_safe=invitation_code.decode(),
     )
-    return url
 
 
 def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationContent:
@@ -195,8 +161,7 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationCon
     decryted: bytes = fernet.decrypt(token=code)
 
     # parses serialized invitation
-    content = _ContentWithShortNames.deserialize(raw_data=decryted.decode())
-    return content
+    return _ContentWithShortNames.deserialize(raw_data=decryted.decode())
 
 
 def extract_invitation_content(
@@ -208,5 +173,5 @@ def extract_invitation_content(
             invitation_code=invitation_code, secret_key=secret_key
         )
     except (InvalidToken, ValidationError, binascii.Error) as err:
-        logger.debug("Invalid code: %s", err)
-        raise InvalidInvitationCode from err
+        _logger.debug("Invalid code: %s", err)
+        raise InvalidInvitationCodeError from err

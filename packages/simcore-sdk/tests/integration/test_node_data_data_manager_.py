@@ -51,7 +51,7 @@ def _empty_path(path: Path) -> None:
 def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
-        with open(path, "rb") as f:
+        with Path.open(path, "rb") as f:
             # Read and update hash string value in blocks of 4K
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
@@ -156,7 +156,7 @@ async def test_valid_upload_download(
     mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        await data_manager._push_directory(
+        await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -166,13 +166,15 @@ async def test_valid_upload_download(
             r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(1.0)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            1.0
+        )
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
         _empty_path(content_path)
 
-        await data_manager._pull_directory(
+        await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -181,7 +183,9 @@ async def test_valid_upload_download(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(2.0)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            2.0
+        )
 
     downloaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -207,7 +211,7 @@ async def test_valid_upload_download_saved_to(
     mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        await data_manager._push_directory(
+        await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -227,7 +231,7 @@ async def test_valid_upload_download_saved_to(
 
         new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
-        await data_manager._pull_directory(
+        await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -290,7 +294,7 @@ async def test_delete_legacy_archive(
         )
 
         assert (
-            await data_manager._state_metadata_entry_exists(
+            await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
                 node_uuid=node_uuid,
@@ -300,15 +304,14 @@ async def test_delete_legacy_archive(
             is True
         )
 
-        await data_manager._delete_legacy_archive(
-            user_id=user_id,
+        await data_manager._delete_legacy_archive(  # noqa: SLF001
             project_id=project_id,
             node_uuid=node_uuid,
             path=content_path,
         )
 
         assert (
-            await data_manager._state_metadata_entry_exists(
+            await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
                 node_uuid=node_uuid,

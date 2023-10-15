@@ -1,17 +1,16 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint:disable=too-many-arguments
+# pylint: disable=too-many-arguments
 
 import asyncio
 import hashlib
 import json
 import logging
 import os
-from collections import namedtuple
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Coroutine
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
 import aioboto3
@@ -48,6 +47,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
@@ -107,8 +107,16 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-ServicesNodeUUIDs = namedtuple("ServicesNodeUUIDs", "sleeper, dy, dy_compose_spec")
-InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
+class ServicesNodeUUIDs(NamedTuple):
+    sleeper: str
+    dy: str
+    dy_compose_spec: str
+
+
+class InputsOutputs(NamedTuple):
+    inputs: dict[str, Any]
+    outputs: dict[str, Any]
+
 
 DY_VOLUMES: str = "/dy-volumes/"
 DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
@@ -330,43 +338,42 @@ def mock_env(
     image_name = f"{registry}/dynamic-sidecar:{image_tag}"
 
     logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
-    monkeypatch.setenv("PROXY_EXPOSE_PORT", "true")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SIDECAR_IMAGE": image_name,
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+            "SWARM_STACK_NAME": "test_swarm_name",
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
+            "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+            "PROXY_EXPOSE_PORT": "true",
+            "SIMCORE_SERVICES_NETWORK_NAME": network_name,
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+            "DIRECTOR_V2_LOGLEVEL": "DEBUG",
+            "DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG": "true",
+            "DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL": "debug",
+            # patch host for dynamic-sidecar, not reachable via localhost
+            # the dynamic-sidecar (running inside a container) will use
+            # this address to reach the rabbit service
+            "RABBIT_HOST": f"{get_localhost_ip()}",
+            "POSTGRES_HOST": f"{get_localhost_ip()}",
+            "R_CLONE_PROVIDER": "MINIO",
+            "S3_ENDPOINT": minio_config["client"]["endpoint"],
+            "S3_ACCESS_KEY": minio_config["client"]["access_key"],
+            "S3_SECRET_KEY": minio_config["client"]["secret_key"],
+            "S3_BUCKET_NAME": minio_config["bucket_name"],
+            "S3_SECURE": f"{minio_config['client']['secure']}",
+            "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
+            "REDIS_HOST": redis_service.REDIS_HOST,
+            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+            # always test the node limit feature, by default is disabled
+            "DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED": "true",
+        },
+    )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-    monkeypatch.setenv("DIRECTOR_V2_LOGLEVEL", "DEBUG")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG", "true")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", "debug")
-    # patch host for dynamic-sidecar, not reachable via localhost
-    # the dynamic-sidecar (running inside a container) will use
-    # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
-    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
-    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
-    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
-    monkeypatch.setenv("S3_SECURE", f"{minio_config['client']['secure']}")
-    monkeypatch.setenv(
-        "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED", dev_feature_r_clone_enabled
-    )
-    monkeypatch.setenv(
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-        dask_scheduler_service,
-    )
-    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
-    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
-
-    # always test the node limit feature, by default is disabled
-    monkeypatch.setenv("DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED", "true")
 
 
 @pytest.fixture
@@ -494,7 +501,7 @@ async def _assert_port_values(
     # files
 
     async def _int_value_port(port: Port) -> int | None:
-        file_path = cast(Optional[Path], await port.get())
+        file_path = cast(Path | None, await port.get())
         if file_path is None:
             return None
         return int(file_path.read_text())

@@ -13,12 +13,14 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInit,
     PaymentMethodTransaction,
 )
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
 from ._api import check_wallet_permissions
+from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
     PaymentsMethodsDB,
     delete_payment_method,
@@ -68,7 +70,11 @@ def _to_api_model(
 
 
 async def init_creation_of_wallet_payment_method(
-    app: web.Application, *, user_id: UserID, wallet_id: WalletID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
 ) -> PaymentMethodInit:
     """
 
@@ -78,7 +84,9 @@ async def init_creation_of_wallet_payment_method(
     """
 
     # check permissions
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
 
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
@@ -149,9 +157,12 @@ async def cancel_creation_of_wallet_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
+    product_name: ProductName,
 ):
     """Acks as CANCELED"""
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
 
     await _complete_create_of_wallet_payment_method(
         app,
@@ -176,10 +187,16 @@ async def cancel_creation_of_wallet_payment_method(
 
 
 async def list_wallet_payment_methods(
-    app: web.Application, *, user_id: UserID, wallet_id: WalletID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
 ) -> list[PaymentMethodGet]:
     # check permissions
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
 
     # get acked
     acked = await list_successful_payment_methods(
@@ -209,6 +226,10 @@ async def list_wallet_payment_methods(
     ]
     # -----
 
+    if auto_rechage := await get_wallet_autorecharge(app, wallet_id=wallet_id):
+        for pm in payments_methods:
+            pm.auto_recharge = pm.idr == auto_rechage.primary_payment_method_id
+
     return payments_methods
 
 
@@ -218,9 +239,12 @@ async def get_wallet_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
+    product_name: ProductName,
 ) -> PaymentMethodGet:
     # check permissions
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
 
     acked = await get_successful_payment_method(
         app, user_id=user_id, wallet_id=wallet_id, payment_method_id=payment_method_id
@@ -246,9 +270,12 @@ async def delete_wallet_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
+    product_name: ProductName,
 ):
     # check permissions
-    await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+    await check_wallet_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
     assert payment_method_id  # nosec
 
     acked = await get_successful_payment_method(

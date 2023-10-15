@@ -175,7 +175,7 @@ qx.Class.define("osparc.ui.message.Loading", {
 
       const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
         icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
-        font: "title-20",
+        font: "title-18",
         alignX: "center",
         rich: true,
         gap: 15,

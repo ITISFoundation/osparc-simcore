@@ -6,6 +6,7 @@ from aiohttp import web
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
@@ -23,10 +24,15 @@ from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import login_required
+from ..products import api as products_api
+from ..projects import api as projects_api
 from ..security.decorators import permission_required
+from ..users import preferences_api as user_preferences_api
 from ..utils_aiohttp import envelope_json_response
 from ..version_control.models import CommitID
+from ..wallets import api as wallets_api
 from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
@@ -92,6 +98,44 @@ async def start_computation(request: web.Request) -> web.Response:
             )
         )
 
+    # Get wallet information
+    wallet_info = None
+    product = products_api.get_current_product(request)
+    app_settings = get_settings(request.app)
+    if product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED:
+        project_wallet = await projects_api.get_project_wallet(
+            request.app, project_id=project_id
+        )
+        if project_wallet is None:
+            user_default_wallet_preference = await user_preferences_api.get_user_preference(
+                request.app,
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+                preference_class=user_preferences_api.PreferredWalletIdFrontendUserPreference,
+            )
+            if user_default_wallet_preference is None:
+                raise ValueError(
+                    "User does not have default wallet - this should not happen"
+                )
+            project_wallet_id = parse_obj_as(
+                WalletID, user_default_wallet_preference.value
+            )
+            await projects_api.connect_wallet_to_project(
+                request.app,
+                product_name=req_ctx.product_name,
+                project_id=project_id,
+                user_id=req_ctx.user_id,
+                wallet_id=project_wallet_id,
+            )
+        else:
+            project_wallet_id = project_wallet.wallet_id
+
+        # Check whether user has access to the wallet
+        wallet = await wallets_api.get_wallet_by_user(
+            request.app, req_ctx.user_id, project_wallet_id, req_ctx.product_name
+        )
+        wallet_info = WalletInfo(wallet_id=project_wallet_id, wallet_name=wallet.name)
+
     options = {
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
@@ -99,6 +143,7 @@ async def start_computation(request: web.Request) -> web.Response:
         "cluster_id": None if group_properties.use_on_demand_clusters else cluster_id,
         "simcore_user_agent": simcore_user_agent,
         "use_on_demand_clusters": group_properties.use_on_demand_clusters,
+        "wallet_info": wallet_info,
     }
 
     try:

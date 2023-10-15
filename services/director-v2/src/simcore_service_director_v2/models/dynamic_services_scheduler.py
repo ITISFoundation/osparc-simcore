@@ -4,6 +4,7 @@ import re
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 from typing import Any, TypeAlias
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
 )
 from models_library.basic_types import PortInt
+from models_library.callbacks_mapping import CallbacksMapping
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -21,7 +23,16 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
+from models_library.wallets import WalletInfo
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -370,6 +381,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
+    user_preferences_path: Path | None = None
+    callbacks_mapping: CallbacksMapping = Field(default_factory=dict)
+
     dynamic_sidecar_network_name: str = Field(
         ...,
         description="overlay network biding the proxy to the container spaned by the dynamic-sidecar",
@@ -408,6 +422,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     proxy_admin_api_port: PortInt | None = Field(
         default=None, description="used as the admin endpoint API port"
+    )
+    wallet_info: WalletInfo | None = Field(
+        default=None,
+        description="contains information about the wallet used to bill the running service",
     )
 
     @property
@@ -454,6 +472,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "service_resources": service.service_resources,
             "product_name": service.product_name,
             "paths_mapping": simcore_service_labels.paths_mapping,
+            "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json.dumps(simcore_service_labels.compose_spec),
             "container_http_entry": simcore_service_labels.container_http_entry,
             "restart_policy": simcore_service_labels.restart_policy,
@@ -461,13 +480,22 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "simcore_traefik_zone": names_helper.simcore_traefik_zone,
             "request_dns": request_dns,
             "request_scheme": request_scheme,
+            "user_preferences_path": simcore_service_labels.user_preferences_path,
             "proxy_service_name": names_helper.proxy_service_name,
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
+            "wallet_info": service.wallet_info,
         }
         if run_id:
             obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)  # type: ignore[no-any-return]
+
+    @validator("user_preferences_path", pre=True)
+    @classmethod
+    def strip_path_serialization_to_none(cls, v):
+        if v == "None":
+            return None
+        return v
 
     @classmethod
     def from_service_inspect(

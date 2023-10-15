@@ -13,16 +13,21 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
 
 # PLEASE keep alphabetical to simplify debugging
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
+    "DY_SIDECAR_CALLBACKS_MAPPING",
+    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
     "DY_SIDECAR_NODE_ID",
     "DY_SIDECAR_PATH_INPUTS",
     "DY_SIDECAR_PATH_OUTPUTS",
+    "DY_SIDECAR_PRODUCT_NAME",
     "DY_SIDECAR_PROJECT_ID",
     "DY_SIDECAR_RUN_ID",
+    "DY_SIDECAR_SERVICE_KEY",
+    "DY_SIDECAR_SERVICE_VERSION",
     "DY_SIDECAR_STATE_EXCLUDE",
     "DY_SIDECAR_STATE_PATHS",
     "DY_SIDECAR_USER_ID",
+    "DY_SIDECAR_USER_PREFERENCES_PATH",
     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS",
-    "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE",
     "DYNAMIC_SIDECAR_LOG_LEVEL",
     "POSTGRES_DB",
@@ -35,8 +40,8 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "RABBIT_HOST",
     "RABBIT_PASSWORD",
     "RABBIT_PORT",
-    "RABBIT_USER",
     "RABBIT_SECURE",
+    "RABBIT_USER",
     "REGISTRY_AUTH",
     "REGISTRY_PATH",
     "REGISTRY_PW",
@@ -64,7 +69,10 @@ def test_dynamic_sidecar_env_vars(
     app_settings = AppSettings.create_from_envs()
 
     dynamic_sidecar_env_vars = _get_environment_variables(
-        "compose_namespace", scheduler_data_from_http_request, app_settings, False
+        "compose_namespace",
+        scheduler_data_from_http_request,
+        app_settings,
+        allow_internet_access=False,
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 

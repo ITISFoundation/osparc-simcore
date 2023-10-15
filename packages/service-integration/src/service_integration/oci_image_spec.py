@@ -10,11 +10,10 @@ from datetime import datetime
 from typing import Any
 
 from models_library.basic_types import SHA1Str, VersionStr
+from models_library.utils.labels_annotations import from_labels, to_labels
 from pydantic import BaseModel, Field
 from pydantic.config import Extra
 from pydantic.networks import AnyUrl
-
-from .labels_annotations import from_labels, to_labels
 
 #
 # Prefix added to docker image labels using reverse DNS notations of a domain they own
@@ -111,7 +110,7 @@ class OciImageSpecAnnotations(BaseModel):
         return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
-        labels = to_labels(
+        labels: dict[str, str] = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OCI_LABEL_PREFIX,
         )

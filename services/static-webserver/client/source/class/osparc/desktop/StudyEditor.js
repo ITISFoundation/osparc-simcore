@@ -24,35 +24,37 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
-
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
+    viewsStack.add(workbenchView);
+    const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
+    viewsStack.add(slideshowView);
+
     [
       "collapseNavBar",
       "expandNavBar",
-      "backToDashboardPressed",
-      "slidesEdit",
-      "slidesAppStart"
-    ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
+      "backToDashboardPressed"
+    ].forEach(signalName => {
+      workbenchView.addListener(signalName, () => this.fireEvent(signalName));
+      slideshowView.addListener(signalName, () => this.fireEvent(signalName));
+    });
+
+    workbenchView.addListener("slidesEdit", () => this.fireEvent("slidesEdit"), this);
+    workbenchView.addListener("slidesAppStart", () => this.fireEvent("slidesAppStart"), this);
+    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
+
+    workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     workbenchView.addListener("createIterations", () => this.__createIterations(), this);
     workbenchView.addListener("showIterations", () => this.__showIterations(), this);
+
     workbenchView.addListener("changeSelectedNode", e => {
       if (this.__nodesSlidesTree) {
         const nodeId = e.getData();
         this.__nodesSlidesTree.changeSelectedNode(nodeId);
       }
     });
-    viewsStack.add(workbenchView);
 
-    const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
-    [
-      "collapseNavBar",
-      "expandNavBar",
-      "backToDashboardPressed",
-      "slidesStop"
-    ].forEach(singalName => slideshowView.addListener(singalName, () => this.fireEvent(singalName)));
-    viewsStack.add(slideshowView);
 
     const wbAppear = new Promise(resolve => workbenchView.addListenerOnce("appear", resolve, false));
     const ssAppear = new Promise(resolve => slideshowView.addListenerOnce("appear", resolve, false));
@@ -186,19 +188,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
-          osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
-            .then(maxNumber => {
-              if (maxNumber) {
-                const nodes = study.getWorkbench().getNodes();
-                const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
-                if (nDynamics > maxNumber) {
-                  let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
-                  msg += "<br>";
-                  msg += this.tr("Please start them manually.");
-                  osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-                }
-              }
-            });
+          const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+          if (maxNumber) {
+            const nodes = study.getWorkbench().getNodes();
+            const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
+            if (nDynamics > maxNumber) {
+              let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
+              msg += "<br>";
+              msg += this.tr("Please start them manually.");
+              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            }
+          }
 
           osparc.data.Resources.get("organizations")
             .then(() => {
@@ -214,7 +214,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           switch (pageContext) {
             case "guided":
             case "app":
-              this.__slideshowView.startSlides(pageContext);
+              this.__slideshowView.startSlides();
               break;
             default:
               this.__workbenchView.openFirstNode();
@@ -265,31 +265,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __reloadSnapshotsAndIterations: function() {
-      osparc.utils.DisabledPlugins.isVersionControlDisabled()
-        .then(isVCDisabled => {
-          if (!isVCDisabled) {
-            const store = osparc.store.Store.getInstance();
-            store.invalidate("snapshots");
-            store.invalidate("iterations");
+      const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
+      if (!isVCDisabled) {
+        const store = osparc.store.Store.getInstance();
+        store.invalidate("snapshots");
+        store.invalidate("iterations");
 
-            const study = this.getStudy();
-            study.getSnapshots()
-              .then(snapshots => {
-                store.setSnapshots(snapshots);
-                if (snapshots.length) {
-                  osparc.utils.DisabledPlugins.isMetaModelingDisabled()
-                    .then(isMMDisabled => {
-                      if (!isMMDisabled) {
-                        study.getIterations()
-                          .then(iterations => {
-                            store.setIterations(iterations);
-                          });
-                      }
-                    });
-                }
-              });
-          }
-        });
+        const study = this.getStudy();
+        study.getSnapshots()
+          .then(snapshots => {
+            store.setSnapshots(snapshots);
+            if (snapshots.length) {
+              const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
+              if (!isMMDisabled) {
+                study.getIterations()
+                  .then(iterations => {
+                    store.setIterations(iterations);
+                  });
+              }
+            }
+          });
+      }
     },
 
     editSlides: function() {
@@ -339,7 +335,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", this.__onPipelinesubmitted, this);
+      req.addListener("success", this.__onPipelineSubmitted, this);
       req.addListener("error", () => {
         this.getStudyLogger().error(null, "Error submitting pipeline");
         this.getStudy().setPipelineRunning(false);
@@ -386,7 +382,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return true;
     },
 
-    __onPipelinesubmitted: function(e) {
+    __onPipelineSubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
       const iterationRefIds = resp.data["ref_ids"];
@@ -473,7 +469,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "guided":
         case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides(newCtxt);
+          if (this.getStudy() && this.getStudy().getUi()) {
+            this.__slideshowView.startSlides();
+          }
           break;
       }
     },

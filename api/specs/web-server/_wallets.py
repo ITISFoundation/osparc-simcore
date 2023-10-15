@@ -13,12 +13,14 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
+    GetWalletAutoRecharge,
     PaymentID,
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInit,
     PaymentTransaction,
     PutWalletBodyParams,
+    ReplaceWalletAutoRecharge,
     WalletGet,
     WalletGetWithAvailableCredits,
     WalletPaymentCreated,
@@ -55,6 +57,14 @@ async def create_wallet(body: CreateWalletBodyParams):
     response_model=Envelope[list[WalletGetWithAvailableCredits]],
 )
 async def list_wallets():
+    ...
+
+
+@router.get(
+    "/wallets/{wallet_id}",
+    response_model=Envelope[WalletGetWithAvailableCredits],
+)
+async def get_wallet(wallet_id: WalletID):
     ...
 
 
@@ -143,6 +153,29 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
+    ...
+
+
+#
+# payment-autorecharge. Implemented as a singleton-subresource
+#
+
+
+@router.get(
+    "/wallets/{wallet_id}/auto-recharge",
+    response_model=Envelope[GetWalletAutoRecharge],
+)
+async def get_wallet_autorecharge(wallet_id: WalletID):
+    ...
+
+
+@router.put(
+    "/wallets/{wallet_id}/auto-recharge",
+    response_model=Envelope[GetWalletAutoRecharge],
+)
+async def replace_wallet_autorecharge(
+    wallet_id: WalletID, _body: ReplaceWalletAutoRecharge
 ):
     ...
 

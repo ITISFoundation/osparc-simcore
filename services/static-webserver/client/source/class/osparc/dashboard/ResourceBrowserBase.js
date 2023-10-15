@@ -310,39 +310,32 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return;
       }
 
-      osparc.desktop.credits.Utils.areWalletsEnabled()
-        .then(walletsEnabled => {
-          if (walletsEnabled) {
-            const resourceSelector = new osparc.study.ResourceSelector(studyId);
-            const win = osparc.study.ResourceSelector.popUpInWindow(resourceSelector);
-            resourceSelector.addListener("startStudy", () => {
-              win.close();
-              if (openCB) {
-                openCB();
-              }
-              osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
-            });
-            resourceSelector.addListener("cancel", () => {
-              win.close();
-              if (cancelCB) {
-                cancelCB();
-              }
-            });
-            win.getChildControl("close-button").addListener("execute", () => {
-              cancelCB();
-            });
-          } else {
-            if (openCB) {
-              openCB();
-            }
-            osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        const resourceSelector = new osparc.study.StudyOptions(studyId);
+        const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
+        resourceSelector.addListener("startStudy", () => {
+          win.close();
+          if (openCB) {
+            openCB();
           }
-        })
-        .catch(() => {
+          osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+        });
+        resourceSelector.addListener("cancel", () => {
+          win.close();
           if (cancelCB) {
             cancelCB();
           }
         });
+        win.getChildControl("close-button").addListener("execute", () => {
+          cancelCB();
+        });
+      } else {
+        if (openCB) {
+          openCB();
+        }
+        osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      }
     },
 
     _createStudyFromTemplate: function() {

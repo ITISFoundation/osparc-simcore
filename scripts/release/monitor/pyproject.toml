@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "monitor_release"
+version = "1.2.3"
+authors = [{name="Matus Drobuliak", email="drobuliak@itis.swiss" }]
+description = "Helper script for monitoring releases"
+readme = "README.md"
+dependencies = ["python-dotenv","pydantic", "typer[all]", "rich", "requests", "arrow"]
+requires-python = ">=3.10"
+
+[project.scripts]
+monitor-release = "monitor_release.cli:app"

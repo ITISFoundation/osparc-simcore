@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     this._add(intro);
 
     this._add(this.__getOrganizationsFilter());
+    this._add(osparc.data.Roles.createRolesOrgInfo());
     this._add(this.__getOrganizationsList(), {
       flex: 1
     });
@@ -143,8 +144,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement()
+          const thumbnail = item.getChildControl("thumbnail");
+          thumbnail.getContentElement()
             .setStyles({
               "border-radius": "16px"
             });

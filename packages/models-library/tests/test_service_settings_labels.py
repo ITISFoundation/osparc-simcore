@@ -6,24 +6,33 @@
 import json
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 import pytest
+from models_library.basic_types import PortInt
+from models_library.osparc_variable_identifier import (
+    OsparcVariableIdentifier,
+    replace_osparc_variable_identifier,
+)
 from models_library.service_settings_labels import (
-    DEFAULT_DNS_SERVER_ADDRESS,
-    DEFAULT_DNS_SERVER_PORT,
-    DNSResolver,
+    ComposeSpecLabelDict,
     DynamicSidecarServiceLabels,
     NATRule,
     PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
+)
+from models_library.service_settings_nat_rule import (
+    DEFAULT_DNS_SERVER_ADDRESS,
+    DEFAULT_DNS_SERVER_PORT,
+    DNSResolver,
     _PortRange,
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, parse_obj_as, parse_raw_as
+from pydantic.json import pydantic_encoder
 
 
 class _Parametrization(NamedTuple):
@@ -40,12 +49,12 @@ SIMCORE_SERVICE_EXAMPLES = {
     ),
     "dynamic-service": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        items=3,
+        items=5,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        items=5,
+        items=6,
         uses_dynamic_sidecar=True,
     ),
 }
@@ -77,19 +86,20 @@ def test_service_settings():
     # ensure private attribute assignment
     for service_setting in simcore_settings_settings_label:
         # pylint: disable=protected-access
-        service_setting._destination_containers = ["random_value1", "random_value2"]
+        service_setting._destination_containers = [  # noqa: SLF001
+            "random_value1",
+            "random_value2",
+        ]
 
 
-@pytest.mark.parametrize(
-    "model_cls",
-    (SimcoreServiceLabels,),
-)
+@pytest.mark.parametrize("model_cls", [SimcoreServiceLabels])
 def test_correctly_detect_dynamic_sidecar_boot(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
+        model_instance = parse_obj_as(model_cls, example)
+        assert model_instance.callbacks_mapping is not None
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
         )
@@ -101,7 +111,7 @@ def test_raises_error_if_http_entrypoint_is_missing():
     )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         SimcoreServiceLabels(**simcore_service_labels)
 
 
@@ -137,7 +147,7 @@ def test_raises_error_wrong_restart_policy():
     )
     simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         SimcoreServiceLabels(**simcore_service_labels)
 
 
@@ -170,25 +180,26 @@ def test_path_mappings_label_defining_constraing_on_missing_path():
     )
 
 
+PORT_1: Final[PortInt] = parse_obj_as(PortInt, 1)
+PORT_3: Final[PortInt] = parse_obj_as(PortInt, 3)
+PORT_20: Final[PortInt] = parse_obj_as(PortInt, 20)
+PORT_99: Final[PortInt] = parse_obj_as(PortInt, 99)
+
+
 def test_port_range():
     with pytest.raises(ValidationError):
-        _PortRange(lower=1, upper=1)
+        _PortRange(lower=PORT_1, upper=PORT_1)
 
     with pytest.raises(ValidationError):
-        _PortRange(lower=20, upper=1)
+        _PortRange(lower=PORT_20, upper=PORT_1)
 
-    assert _PortRange(lower=1, upper=2)
+    assert _PortRange(lower=PORT_1, upper=PORT_20)
 
 
 def test_host_permit_list_policy():
     host_permit_list_policy = NATRule(
-        hostname="hostname",
-        tcp_ports=[
-            _PortRange(lower=1, upper=3),
-            99,
-        ],
+        hostname="hostname", tcp_ports=[_PortRange(lower=PORT_1, upper=PORT_3), PORT_99]
     )
-
     assert set(host_permit_list_policy.iter_tcp_ports()) == {1, 2, 3, 99}
 
 
@@ -377,6 +388,7 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
 def vendor_environments() -> dict[str, Any]:
     return {
         "OSPARC_VARIABLE_VENDOR_SECRET_DNS_RESOLVER_ADDRESS": "172.0.0.1",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOSTNAME": "license.com",
         "OSPARC_VARIABLE_VENDOR_SECRET_DNS_RESOLVER_PORT": 1234,
         "OSPARC_VARIABLE_VENDOR_SECRET_LICENCE_HOSTNAME": "hostname",
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS": [
@@ -388,6 +400,7 @@ def vendor_environments() -> dict[str, Any]:
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1": 1,
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2": 2,
         "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_3": 3,
+        "OSPARC_VARIABLE_OS_TYPE_LINUX": "linux",
     }
 
 
@@ -396,10 +409,10 @@ def service_labels() -> dict[str, str]:
     return {
         "simcore.service.paths-mapping": json.dumps(
             {
-                "inputs_path": "/tmp/inputs",
-                "outputs_path": "/tmp/outputs",
-                "state_paths": ["/tmp/save_1", "/tmp_save_2"],
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],
+                "inputs_path": "/tmp/inputs",  # noqa: S108
+                "outputs_path": "/tmp/outputs",  # noqa: S108
+                "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
+                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
             }
         ),
         "simcore.service.compose-spec": json.dumps(
@@ -416,7 +429,7 @@ def service_labels() -> dict[str, str]:
                         "runtime": "nvidia",
                         "init": True,
                         "environment": ["DISPLAY=${DISPLAY}"],
-                        "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
+                        "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],  # noqa: S108
                     },
                 },
             }
@@ -427,7 +440,7 @@ def service_labels() -> dict[str, str]:
             {
                 "s4l-core": [
                     {
-                        "hostname": "license.com",
+                        "hostname": "${OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOSTNAME}",
                         "tcp_ports": [
                             "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
                             "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
@@ -446,7 +459,7 @@ def service_labels() -> dict[str, str]:
                 {
                     "name": "constraints",
                     "type": "string",
-                    "value": ["node.platform.os == linux"],
+                    "value": ["node.platform.os == $OSPARC_VARIABLE_OS_TYPE_LINUX"],
                 },
                 {
                     "name": "ContainerSpec",
@@ -473,8 +486,8 @@ def service_labels() -> dict[str, str]:
                     "value": [
                         {
                             "ReadOnly": True,
-                            "Source": "/tmp/.X11-unix",
-                            "Target": "/tmp/.X11-unix",
+                            "Source": "/tmp/.X11-unix",  # noqa: S108
+                            "Target": "/tmp/.X11-unix",  # noqa: S108
                             "Type": "bind",
                         }
                     ],
@@ -501,46 +514,77 @@ def service_labels() -> dict[str, str]:
     }
 
 
-@pytest.mark.xfail(reason="Needs enabling OEnvSubstitutionStr (coming PR)")
 def test_can_parse_labels_with_osparc_identifiers(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
     # can load OSPARC_VARIABLE_ identifiers!!
     service_meta = SimcoreServiceLabels.parse_obj(service_labels)
 
-    assert service_meta.containers_allowed_outgoing_permit_list["s4l-core"][
-        0
-    ].tcp_ports == [
-        "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
-        "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
+    assert service_meta.containers_allowed_outgoing_permit_list
+    nat_rule: NATRule = service_meta.containers_allowed_outgoing_permit_list[
+        "s4l-core"
+    ][0]
+    assert nat_rule.hostname == parse_obj_as(
+        OsparcVariableIdentifier,
+        "${OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOSTNAME}",
+    )
+    assert nat_rule.tcp_ports == [
+        parse_obj_as(
+            OsparcVariableIdentifier,
+            "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
+        ),
+        parse_obj_as(
+            OsparcVariableIdentifier,
+            "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
+        ),
         3,
     ]
 
-    service_meta_str = TextTemplate(
-        service_meta.json(include={"containers_allowed_outgoing_permit_list"})
-    ).safe_substitute(vendor_environments)
+    service_meta = replace_osparc_variable_identifier(service_meta, vendor_environments)
+    service_meta_str = service_meta.json()
+
+    not_replaced_vars = {"OSPARC_VARIABLE_OS_TYPE_LINUX"}
+
+    for osparc_variable_name in vendor_environments:
+        if osparc_variable_name in not_replaced_vars:
+            continue
+        assert osparc_variable_name not in service_meta_str
+
+    service_meta_str = service_meta.json(
+        include={"containers_allowed_outgoing_permit_list"}
+    )
 
     assert "$" not in service_meta_str
 
 
-@pytest.mark.xfail(reason="Needs enabling OEnvSubstitutionStr (coming PR)")
+def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
+    # Analogous to 'servicelib.json_serialization.json_dumps'
+    return json.dumps(obj, default=pydantic_encoder, **kwargs)
+
+
 def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
     print(json.dumps(service_labels, indent=1))
+    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
 
-    # Resolving at load-time (some of them are possible)
+    # NOTE: replacing all OsparcVariableIdentifier instances nested inside objects
+    # this also does a partial replacement if there is no entry inside the vendor_environments
+    # mapped to that name
+    replace_osparc_variable_identifier(service_meta, vendor_environments)
 
-    for label_name in (
-        "simcore.service.compose-spec",
-        "simcore.service.settings",
-        "simcore.service.containers-allowed-outgoing-permit-list",
+    for attribute_name, pydantic_model in (
+        ("compose_spec", ComposeSpecLabelDict),
+        ("settings", SimcoreServiceSettingsLabel),
     ):
-        template = TextTemplate(service_labels[label_name])
-        if template.is_valid() and (identifiers := template.get_identifiers()):
-            assert set(identifiers).issubset(vendor_environments)
-            resolved_label: str = template.substitute(vendor_environments)
-            service_labels[label_name] = json.dumps(json.loads(resolved_label))
+        to_serialize = getattr(service_meta, attribute_name)
+        template = TextTemplate(
+            servicelib__json_serialization__json_dumps(to_serialize)
+        )
+        assert template.is_valid()
+        resolved_label: str = template.safe_substitute(vendor_environments)
+        to_restore = parse_raw_as(pydantic_model, resolved_label)
+        setattr(service_meta, attribute_name, to_restore)
 
     print(json.dumps(service_labels, indent=1))
 
@@ -550,3 +594,21 @@ def test_resolving_some_service_labels_at_load_time(
     labels = SimcoreServiceLabels.parse_obj(service_labels)
 
     print("After", labels.json(indent=1))
+    formatted_json = service_meta.json(indent=1)
+    print("After", formatted_json)
+    for entry in vendor_environments:
+        print(entry)
+        assert entry not in formatted_json
+
+
+def test_user_preferences_path_is_part_of_exiting_volume():
+    labels_data = {
+        "simcore.service.paths-mapping": json.dumps(
+            PathMappingsLabel.Config.schema_extra["examples"][0]
+        ),
+        "simcore.service.user-preferences-path": json.dumps(
+            "/tmp/outputs"  # noqa: S108
+        ),
+    }
+    with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(labels_data))

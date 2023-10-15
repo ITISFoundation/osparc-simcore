@@ -154,14 +154,14 @@ async def _connect_with_gateway_and_create_cluster(
         raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
 
 
-def _is_internal_scheduler(authentication: ClusterAuthentication) -> bool:
+def _is_dask_scheduler(authentication: ClusterAuthentication) -> bool:
     return isinstance(authentication, NoAuthentication)
 
 
 async def create_internal_client_based_on_auth(
     endpoint: AnyUrl, authentication: ClusterAuthentication
 ) -> DaskSubSystem:
-    if _is_internal_scheduler(authentication):
+    if _is_dask_scheduler(authentication):
         # if no auth then we go for a standard scheduler connection
         return await _connect_to_dask_scheduler(endpoint)
     # we do have some auth, so it is going through a gateway
@@ -201,7 +201,7 @@ async def test_scheduler_endpoint(
     :raises ConfigurationError: contians some information as to why the connection failed
     """
     try:
-        if _is_internal_scheduler(authentication):
+        if _is_dask_scheduler(authentication):
             async with distributed.Client(
                 address=endpoint, timeout=f"{_PING_TIMEOUT_S}", asynchronous=True
             ) as dask_client:

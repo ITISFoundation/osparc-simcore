@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import UserWalletDB, WalletID
 from pydantic import BaseModel, parse_obj_as
@@ -26,15 +27,17 @@ class WalletGroupGet(BaseModel):
 
 async def create_wallet_group(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     group_id: GroupID,
     read: bool,
     write: bool,
     delete: bool,
+    product_name: ProductName,
 ) -> WalletGroupGet:
     wallet: UserWalletDB = await wallets_db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
@@ -54,13 +57,15 @@ async def create_wallet_group(
     return wallet_group_api
 
 
-async def list_wallet_groups(
+async def list_wallet_groups_by_user_and_wallet(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
+    product_name: ProductName,
 ) -> list[WalletGroupGet]:
     wallet: UserWalletDB = await wallets_db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
@@ -78,17 +83,37 @@ async def list_wallet_groups(
     return wallet_groups_api
 
 
+async def list_wallet_groups_with_read_access_by_wallet(
+    app: web.Application,
+    *,
+    wallet_id: WalletID,
+) -> list[WalletGroupGet]:
+    wallet_groups_db: list[
+        WalletGroupGetDB
+    ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+
+    wallet_groups_api: list[WalletGroupGet] = [
+        parse_obj_as(WalletGroupGet, group)
+        for group in wallet_groups_db
+        if group.read is True
+    ]
+
+    return wallet_groups_api
+
+
 async def update_wallet_group(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     group_id: GroupID,
     read: bool,
     write: bool,
     delete: bool,
+    product_name: ProductName,
 ) -> WalletGroupGet:
     wallet: UserWalletDB = await wallets_db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
@@ -117,12 +142,14 @@ async def update_wallet_group(
 
 async def delete_wallet_group(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     group_id: GroupID,
+    product_name: ProductName,
 ) -> None:
     wallet: UserWalletDB = await wallets_db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
+        app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if wallet.delete is False:
         raise WalletAccessForbiddenError(
