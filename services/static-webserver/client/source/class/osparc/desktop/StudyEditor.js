@@ -24,35 +24,37 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
-
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
+    viewsStack.add(workbenchView);
+    const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
+    viewsStack.add(slideshowView);
+
     [
       "collapseNavBar",
       "expandNavBar",
-      "backToDashboardPressed",
-      "slidesEdit",
-      "slidesAppStart"
-    ].forEach(signalName => workbenchView.addListener(signalName, () => this.fireEvent(signalName)));
+      "backToDashboardPressed"
+    ].forEach(signalName => {
+      workbenchView.addListener(signalName, () => this.fireEvent(signalName));
+      slideshowView.addListener(signalName, () => this.fireEvent(signalName));
+    });
+
+    workbenchView.addListener("slidesEdit", () => this.fireEvent("slidesEdit"), this);
+    workbenchView.addListener("slidesAppStart", () => this.fireEvent("slidesAppStart"), this);
+    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
+
+    workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     workbenchView.addListener("createIterations", () => this.__createIterations(), this);
     workbenchView.addListener("showIterations", () => this.__showIterations(), this);
+
     workbenchView.addListener("changeSelectedNode", e => {
       if (this.__nodesSlidesTree) {
         const nodeId = e.getData();
         this.__nodesSlidesTree.changeSelectedNode(nodeId);
       }
     });
-    viewsStack.add(workbenchView);
 
-    const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
-    [
-      "collapseNavBar",
-      "expandNavBar",
-      "backToDashboardPressed",
-      "slidesStop"
-    ].forEach(signalName => slideshowView.addListener(signalName, () => this.fireEvent(signalName)));
-    viewsStack.add(slideshowView);
 
     const wbAppear = new Promise(resolve => workbenchView.addListenerOnce("appear", resolve, false));
     const ssAppear = new Promise(resolve => slideshowView.addListenerOnce("appear", resolve, false));
@@ -212,7 +214,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           switch (pageContext) {
             case "guided":
             case "app":
-              this.__slideshowView.startSlides(pageContext);
+              this.__slideshowView.startSlides();
               break;
             default:
               this.__workbenchView.openFirstNode();
@@ -467,7 +469,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         case "guided":
         case "app":
           this.__viewsStack.setSelection([this.__slideshowView]);
-          this.__slideshowView.startSlides(newCtxt);
+          if (this.getStudy() && this.getStudy().getUi()) {
+            this.__slideshowView.startSlides();
+          }
           break;
       }
     },

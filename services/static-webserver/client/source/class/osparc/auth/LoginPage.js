@@ -40,6 +40,91 @@ qx.Class.define("osparc.auth.LoginPage", {
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "main-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignX: "center",
+            alignY: "middle"
+          });
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(control);
+          break;
+        }
+        case "top-spacer":
+          control = new qx.ui.core.Spacer();
+          this.getChildControl("main-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "logo-w-platform":
+          control = new osparc.ui.basic.LogoWPlatform();
+          control.setSize({
+            width: 240,
+            height: 120
+          });
+          control.setFont("text-18");
+          this.getChildControl("main-layout").add(control);
+          break;
+        case "pages-stack":
+          control = new qx.ui.container.Stack().set({
+            allowGrowX: false,
+            allowGrowY: false,
+            alignX: "center"
+          });
+          this.getChildControl("main-layout").add(control);
+          break;
+        case "bottom-spacer":
+          control = new qx.ui.core.Spacer();
+          this.getChildControl("main-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "footer": {
+          control = this.__getVersionLink();
+          this.getChildControl("main-layout").add(control);
+          break;
+        }
+        case "login-view": {
+          control = new osparc.auth.ui.LoginView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "registration-view": {
+          control = new osparc.auth.ui.RegistrationView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "request-account": {
+          control = new osparc.auth.ui.RequestAccount();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "verify-phone-number-view": {
+          control = new osparc.auth.ui.VerifyPhoneNumberView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "reset-password-request-view": {
+          control = new osparc.auth.ui.ResetPassRequestView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "reset-password-view": {
+          control = new osparc.auth.ui.ResetPassView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "login-2FA-validation-code-view": {
+          control = new osparc.auth.ui.Login2FAValidationCodeView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     _buildLayout: function() {
       throw new Error("Abstract method called!");
     },
@@ -60,60 +145,22 @@ qx.Class.define("osparc.auth.LoginPage", {
     },
 
     _getMainLayout: function() {
-      const loginLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        alignX: "center",
-        alignY: "middle"
-      });
-
-      loginLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const image = this.__getLogoWPlatform();
-      loginLayout.add(image);
-
-      const pages = this.__getLoginStack();
-      loginLayout.add(pages);
-
-      loginLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const versionLink = this.__getVersionLink();
-      loginLayout.add(versionLink);
-
-      const scrollView = new qx.ui.container.Scroll();
-      scrollView.add(loginLayout);
-      return scrollView;
-    },
-
-    __getLogoWPlatform: function() {
-      const image = new osparc.ui.basic.LogoWPlatform();
-      image.setSize({
-        width: 240,
-        height: 120
-      });
-      image.setFont("text-18");
-      return image;
+      const mainLayout = this.getChildControl("main-layout");
+      this.getChildControl("top-spacer");
+      this.getChildControl("logo-w-platform");
+      this.__getLoginStack();
+      this.getChildControl("bottom-spacer");
+      this.getChildControl("footer");
+      return mainLayout;
     },
 
     __getLoginStack: function() {
-      const pages = new qx.ui.container.Stack().set({
-        allowGrowX: false,
-        allowGrowY: false,
-        alignX: "center"
-      });
+      const pages = this.getChildControl("pages-stack");
 
-      const login = new osparc.auth.ui.LoginView();
-      const register = new osparc.auth.ui.RegistrationView();
-      const requestAccount = new osparc.auth.ui.RequestAccount();
-      const verifyPhoneNumber = new osparc.auth.ui.VerifyPhoneNumberView();
-      const resetRequest = new osparc.auth.ui.ResetPassRequestView();
-      const reset = new osparc.auth.ui.ResetPassView();
-      const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
-
-      pages.add(login);
+      const login = this.getChildControl("login-view");
+      const registration = this.getChildControl("registration-view");
       const config = osparc.store.Store.getInstance().get("config");
+      let requestAccount = null;
       if (config["invitation_required"] &&
         (
           osparc.product.Utils.isProduct("s4l") ||
@@ -122,13 +169,12 @@ qx.Class.define("osparc.auth.LoginPage", {
           osparc.product.Utils.isProduct("s4ldektopacad")
         )
       ) {
-        pages.add(requestAccount);
+        requestAccount = this.getChildControl("request-account");
       }
-      pages.add(register);
-      pages.add(verifyPhoneNumber);
-      pages.add(resetRequest);
-      pages.add(reset);
-      pages.add(login2FAValidationCode);
+      const verifyPhoneNumber = this.getChildControl("verify-phone-number-view");
+      const resetPasswordRequest = this.getChildControl("reset-password-request-view");
+      const resetPassword = this.getChildControl("reset-password-view");
+      const login2FAValidationCode = this.getChildControl("login-2FA-validation-code-view");
 
       // styling
       pages.getChildren().forEach(page => {
@@ -147,17 +193,17 @@ qx.Class.define("osparc.auth.LoginPage", {
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
       if (page === "reset-password" && code !== null) {
-        pages.setSelection([reset]);
+        pages.setSelection([resetPassword]);
       }
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "registration") {
-          pages.setSelection([register]);
-        } else if (urlFragment.nav[0] === "request-account") {
+          pages.setSelection([registration]);
+        } else if (urlFragment.nav[0] === "request-account" && requestAccount) {
           pages.setSelection([requestAccount]);
         } else if (urlFragment.nav[0] === "reset-password") {
-          pages.setSelection([reset]);
+          pages.setSelection([resetPassword]);
         }
       } else if (urlFragment.params && urlFragment.params.registered) {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
@@ -170,17 +216,19 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       login.addListener("toRegister", () => {
-        pages.setSelection([register]);
+        pages.setSelection([registration]);
         login.resetValues();
       }, this);
 
-      login.addListener("toRequestAccount", () => {
-        pages.setSelection([requestAccount]);
-        login.resetValues();
-      }, this);
+      if (requestAccount) {
+        login.addListener("toRequestAccount", () => {
+          pages.setSelection([requestAccount]);
+          login.resetValues();
+        }, this);
+      }
 
       login.addListener("toReset", () => {
-        pages.setSelection([resetRequest]);
+        pages.setSelection([resetPasswordRequest]);
         login.resetValues();
       }, this);
 
@@ -217,22 +265,24 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       }, this);
 
-      register.addListener("done", msg => {
+      registration.addListener("done", msg => {
         osparc.utils.Utils.cookie.deleteCookie("user");
         this.fireDataEvent("done", msg);
       });
 
-      requestAccount.addListener("done", msg => {
-        osparc.utils.Utils.cookie.deleteCookie("user");
-        this.fireDataEvent("done", msg);
-      });
+      if (requestAccount) {
+        requestAccount.addListener("done", msg => {
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          this.fireDataEvent("done", msg);
+        });
+      }
 
       verifyPhoneNumber.addListener("done", msg => {
         login.resetValues();
         this.fireDataEvent("done", msg);
       }, this);
 
-      [resetRequest, reset].forEach(srcPage => {
+      [resetPasswordRequest, resetPassword].forEach(srcPage => {
         srcPage.addListener("done", msg => {
           pages.setSelection([login]);
           srcPage.resetValues();

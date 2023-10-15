@@ -168,8 +168,8 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         .then(previewsPerNodes => {
           thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes);
           // show the last preview by default
-          const thumbnails = thumbnailSuggestions.getChildren();
-          if (thumbnails && thumbnails.length) {
+          if (previewsPerNodes && previewsPerNodes.length) {
+            const thumbnails = thumbnailSuggestions.getChildren();
             thumbnailSuggestions.thumbnailTapped(thumbnails[thumbnails.length-1]);
           }
         })
