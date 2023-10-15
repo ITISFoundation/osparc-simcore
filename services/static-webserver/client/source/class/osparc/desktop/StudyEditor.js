@@ -38,6 +38,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       slideshowView.addListener(signalName, () => this.fireEvent(signalName));
     });
 
+    workbenchView.addListener("changeMaximized", e => this.fireDataEvent("changeMaximized", e.getData()));
+    slideshowView.addListener("changeMaximized", e => this.fireDataEvent("changeMaximized", e.getData()));
+
     workbenchView.addListener("slidesEdit", () => this.fireEvent("slidesEdit"), this);
     workbenchView.addListener("slidesAppStart", () => this.fireEvent("slidesAppStart"), this);
     slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
@@ -93,6 +96,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     "userIdled": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
+    "changeMaximized": "qx.event.type.Data",
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
