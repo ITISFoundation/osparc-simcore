@@ -21,7 +21,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5).set({
+    this._setLayout(new qx.ui.layout.HBox(10).set({
       alignY: "middle"
     }));
 
