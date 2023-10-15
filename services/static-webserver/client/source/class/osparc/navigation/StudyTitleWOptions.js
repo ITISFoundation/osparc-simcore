@@ -74,7 +74,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control = new qx.ui.form.MenuButton().set({
             menu: optionsMenu,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
-            maxHeight: 28
+            width: 28,
+            height: 28,
+            allowGrowY: false
           });
           this._add(control);
           break;

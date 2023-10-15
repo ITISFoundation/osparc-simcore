@@ -203,7 +203,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "study-title-options":
           control = new osparc.navigation.StudyTitleWOptions();
-          control.addListener("execute", () => this.fireEvent("downloadStudyLogs"));
+          control.addListener("downloadStudyLogs", () => this.fireEvent("downloadStudyLogs"));
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {
