@@ -254,7 +254,7 @@ jobs:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
@@ -1513,7 +1513,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1567,7 +1567,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1623,7 +1623,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1679,7 +1679,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1736,7 +1736,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1882,7 +1882,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "tests/public-api/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1935,7 +1935,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1999,7 +1999,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
