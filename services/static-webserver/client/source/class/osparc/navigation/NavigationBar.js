@@ -71,6 +71,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     study: {
       check: "osparc.data.model.Study",
       nullable: true,
+      event: "changeStudy",
       apply: "_applyStudy"
     },
 
@@ -245,6 +246,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this.getChildControl("left-items").add(control);
           break;
+        case "study-title-options":
+          control = new osparc.navigation.StudyTitleWOptions();
+          control.addListener("execute", () => this.fireEvent("downloadStudyLogs"));
+          this.getChildControl("left-items").add(control);
+          break;
         case "read-only-info": {
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Read only"),
@@ -358,6 +364,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             this.getChildControl("study-menu-button").exclude();
             this.getChildControl("edit-title-label").exclude();
           }
+          this.getChildControl("study-title-options").exclude();
           this.getChildControl("read-only-info").exclude();
           if (this.__tabButtons) {
             this.__tabButtons.show();
@@ -377,6 +384,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           }
           break;
       }
+    },
+
+    iframeMaximized: function(maximized) {
+      this.getChildControl("study-title-options").setVisibility(maximized ? "visible" : "excluded");
     },
 
     __createManualMenuBtn: function() {
@@ -427,6 +438,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           converter: value => value ? "visible" : "excluded"
         });
         study.bind("name", this.getChildControl("edit-title-label"), "value");
+        this.getChildControl("study-title-options").setStudy(study);
       }
     },
 
