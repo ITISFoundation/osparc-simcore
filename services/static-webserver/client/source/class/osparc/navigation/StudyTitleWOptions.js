@@ -53,11 +53,16 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             ...this.self().BUTTON_OPTIONS
           });
           control.addListener("execute", () => {
-            const infoMerged = new osparc.info.MergedLarge(this.getStudy());
+            let widget = null;
+            if (this.getStudy().isPipelineMononode()) {
+              widget = new osparc.info.MergedLarge(this.getStudy());
+            } else {
+              widget = new osparc.info.StudyLarge(this.getStudy());
+            }
             const title = this.tr("Information");
             const width = osparc.info.CardLarge.WIDTH;
             const height = osparc.info.CardLarge.HEIGHT;
-            osparc.ui.window.Window.popUpInWindow(infoMerged, title, width, height);
+            osparc.ui.window.Window.popUpInWindow(widget, title, width, height);
           });
           break;
         case "study-menu-download-logs":
