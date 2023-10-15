@@ -89,7 +89,8 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         case "edit-title-label":
           control = new osparc.ui.form.EditLabel().set({
             labelFont: "text-14",
-            inputFont: "text-14"
+            inputFont: "text-14",
+            maxWidth: 300
           });
           control.addListener("editValue", e => {
             const newLabel = e.getData();
