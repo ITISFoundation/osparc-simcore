@@ -326,15 +326,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
+          this.getChildControl("study-title-options").show();
           if (this.__tabButtons) {
             this.__tabButtons.exclude();
           }
           break;
       }
-    },
-
-    iframeMaximized: function(maximized) {
-      this.getChildControl("study-title-options").setVisibility(maximized ? "visible" : "excluded");
     },
 
     __createManualMenuBtn: function() {

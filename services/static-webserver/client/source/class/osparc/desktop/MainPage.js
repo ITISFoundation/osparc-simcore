@@ -422,7 +422,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       }, this);
       studyEditor.addListener("expandNavBar", () => this.__navBar.show());
       studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
-      studyEditor.addListener("changeMaximized", e => this.__navBar.iframeMaximized(e.getData()));
       studyEditor.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
       studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
       studyEditor.addListener("userIdled", () => this.__backToDashboard(), this);
