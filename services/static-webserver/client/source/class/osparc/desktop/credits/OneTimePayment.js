@@ -133,7 +133,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
-        value: this.tr("Payment amount ($):"),
+        value: this.tr("Payment amount (US$):"),
         font: "text-14"
       });
       vLayout.add(label);
