@@ -35,7 +35,7 @@ OpenApiDict: TypeAlias = dict[str, Any]
 
 
 async def test_payment_on_invalid_wallet(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
@@ -59,7 +59,7 @@ async def test_payment_on_invalid_wallet(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
 async def test_payments_worfklow(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
@@ -128,7 +128,7 @@ async def test_payments_worfklow(
 
 
 async def test_multiple_payments(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
@@ -210,7 +210,7 @@ async def test_multiple_payments(
 
 
 async def test_complete_payment_errors(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
@@ -258,7 +258,7 @@ async def test_complete_payment_errors(
 
 
 async def test_payment_not_found(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     faker: Faker,
@@ -287,7 +287,7 @@ def test_models_state_in_sync():
 
 
 async def test_payment_on_wallet_without_access(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     logged_user_wallet: WalletGet,
     client: TestClient,
 ):
