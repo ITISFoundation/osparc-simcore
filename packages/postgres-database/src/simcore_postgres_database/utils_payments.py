@@ -1,7 +1,7 @@
 import datetime
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -69,12 +69,16 @@ async def insert_init_payment_transaction(
     return payment_id
 
 
+_UNSET: Final[str] = "__UNSET__"
+
+
 async def update_payment_transaction_state(
     connection: SAConnection,
     *,
     payment_id: str,
     completion_state: PaymentTransactionState,
     state_message: str | None = None,
+    invoice_url: str | None = _UNSET,
 ) -> PaymentTransactionRow | PaymentNotFound | PaymentAlreadyAcked:
     """ACKs payment by updating state with SUCCESS, ..."""
     if completion_state == PaymentTransactionState.PENDING:
@@ -84,6 +88,9 @@ async def update_payment_transaction_state(
     optional = {}
     if state_message:
         optional["state_message"] = state_message
+
+    if invoice_url != _UNSET:
+        optional["invoice_url"] = invoice_url
 
     async with connection.begin():
         row = await (
