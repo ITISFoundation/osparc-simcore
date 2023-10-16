@@ -97,6 +97,47 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         return favouriteWallet;
       }
       return null;
+    },
+
+    getPaymentMethods: function(walletId) {
+      return new Promise(resolve => {
+        const promises = [];
+        if (walletId) {
+          const params = {
+            url: {
+              walletId
+            }
+          };
+          promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
+        } else {
+          const wallets = osparc.store.Store.getInstance().getWallets();
+          const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+          myWallets.forEach(myWallet => {
+            const params = {
+              url: {
+                walletId: myWallet.getWalletId()
+              }
+            };
+            promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
+          });
+        }
+        Promise.all(promises)
+          .then(values => {
+            let paymentMethods = [];
+            values.forEach(value => paymentMethods = paymentMethods.concat(value));
+            resolve(paymentMethods);
+          });
+      });
+    },
+
+    getPaymentMethod: function(paymentMethodId) {
+      return new Promise(resolve => {
+        this.getPaymentMethods()
+          .then(paymentMethods => {
+            const paymentMethodFound = paymentMethods.find(paymentMethod => paymentMethod["idr"] === paymentMethodId);
+            resolve(paymentMethodFound);
+          });
+      });
     }
   }
 });

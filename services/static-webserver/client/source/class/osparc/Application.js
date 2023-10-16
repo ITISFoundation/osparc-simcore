@@ -32,7 +32,6 @@ qx.Class.define("osparc.Application", {
 
   members: {
     __current: null,
-    __themeSwitcher: null,
     __mainPage: null,
     __openViewAfterLogin: null,
 
@@ -347,7 +346,6 @@ qx.Class.define("osparc.Application", {
       // Invalidate the entire cache
       osparc.store.Store.getInstance().invalidateEntireCache();
       await this.__preloadCalls();
-      await osparc.data.Resources.get("permissions");
       const profile = await osparc.data.Resources.getOne("profile");
       if (profile) {
         this.__connectWebSocket();
@@ -424,22 +422,9 @@ qx.Class.define("osparc.Application", {
         if (this.__current) {
           doc.remove(this.__current);
         }
-        if (this.__themeSwitcher) {
-          doc.remove(this.__themeSwitcher);
-          this.__themeSwitcher = null;
-        }
       }
       doc.add(view, options);
       this.__current = view;
-      if (!(view instanceof osparc.desktop.MainPage)) {
-        this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
-          backgroundColor: "transparent"
-        });
-        doc.add(this.__themeSwitcher, {
-          top: 10,
-          right: 15
-        });
-      }
 
       // Clear URL
       if (clearUrl) {
@@ -462,6 +447,14 @@ qx.Class.define("osparc.Application", {
       }
       osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();
+
+      // back to the dark theme to make pretty forms
+      const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+      const themeFound = validThemes.find(theme => theme.basename === "ThemeDark");
+      if (themeFound) {
+        qx.theme.manager.Meta.getInstance().setTheme(themeFound);
+      }
+
       this.__restart();
     },
 

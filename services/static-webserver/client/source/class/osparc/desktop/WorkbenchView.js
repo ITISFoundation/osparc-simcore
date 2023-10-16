@@ -81,6 +81,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       check: "osparc.data.model.Study",
       apply: "_applyStudy",
       nullable: false
+    },
+
+    maximized: {
+      check: "Boolean",
+      init: null,
+      nullable: false,
+      apply: "__applyMaximized",
+      event: "changeMaximized"
     }
   },
 
@@ -801,16 +809,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __maximizeIframe: function(maximize) {
+    __applyMaximized: function(maximized) {
       this.getBlocker().setStyles({
-        display: maximize ? "none" : "block"
+        display: maximized ? "none" : "block"
       });
 
-      this.getChildControl("side-panels").setVisibility(maximize ? "excluded" : "visible");
+      this.getChildControl("side-panels").setVisibility(maximized ? "excluded" : "visible");
 
       const tabViewMain = this.getChildControl("main-panel-tabs");
-      const mainViewtopBar = tabViewMain.getChildControl("bar");
-      mainViewtopBar.setVisibility(maximize ? "excluded" : "visible");
+      const mainViewTopBar = tabViewMain.getChildControl("bar");
+      mainViewTopBar.setVisibility(maximized ? "excluded" : "visible");
     },
 
     __addIframe: function(node) {
@@ -824,8 +832,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           iFrame
         ].forEach(widget => {
           if (widget) {
-            widget.addListener("maximize", () => this.__maximizeIframe(true), this);
-            widget.addListener("restore", () => this.__maximizeIframe(false), this);
+            widget.addListener("maximize", () => this.setMaximized(true), this);
+            widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
         this.__iFrameChanged(node);
@@ -1209,17 +1217,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __attachEventHandlers: function() {
-      const maximizeIframeCb = msg => {
-        this.__maximizeIframe(msg.getData());
-      };
-
-      this.addListener("appear", () => {
-        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
-      }, this);
-
-      this.addListener("disappear", () => {
-        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
-      }, this);
+      const maximizeIframeCb = msg => this.setMaximized(msg.getData());
+      this.addListener("appear", () => qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this), this);
+      this.addListener("disappear", () => qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this), this);
     },
 
     __removeNode: function(nodeId) {
@@ -1310,7 +1310,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this, 10);
         return;
       }
-      this.__maximizeIframe(false);
+      this.setMaximized(false);
       this.nodeSelected(this.getStudy().getUuid());
     }
   }

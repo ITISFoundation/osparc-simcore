@@ -34,7 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletInfo
+from models_library.wallets import WalletID, WalletInfo
 from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -55,6 +55,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from ..application_settings import get_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
+from ..products import api as products_api
 from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
@@ -72,10 +73,15 @@ from ..socketio.messages import (
 from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
+from ..users.preferences_api import (
+    PreferredWalletIdFrontendUserPreference,
+    UserDefaultWalletNotFoundError,
+    get_user_preference,
+)
 from ..wallets import api as wallets_api
 from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
-from ._wallets_api import get_project_wallet
+from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -266,15 +272,43 @@ async def _start_dynamic_service(
 
         # Get wallet information
         wallet_info = None
-        project_wallet = await get_project_wallet(request.app, project_id=project_uuid)
+        product = products_api.get_current_product(request)
         app_settings = get_settings(request.app)
-        if project_wallet and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED:
+        if (
+            product.is_payment_enabled
+            and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
+        ):
+            project_wallet = await get_project_wallet(
+                request.app, project_id=project_uuid
+            )
+            if project_wallet is None:
+                user_default_wallet_preference = await get_user_preference(
+                    request.app,
+                    user_id=user_id,
+                    product_name=product_name,
+                    preference_class=PreferredWalletIdFrontendUserPreference,
+                )
+                if user_default_wallet_preference is None:
+                    raise UserDefaultWalletNotFoundError(uid=user_id)
+                project_wallet_id = parse_obj_as(
+                    WalletID, user_default_wallet_preference.value
+                )
+                await connect_wallet_to_project(
+                    request.app,
+                    product_name=product_name,
+                    project_id=project_uuid,
+                    user_id=user_id,
+                    wallet_id=project_wallet_id,
+                )
+            else:
+                project_wallet_id = project_wallet.wallet_id
+
             # Check whether user has access to the wallet
-            await wallets_api.get_wallet_by_user(
-                request.app, user_id, project_wallet.wallet_id, product_name
+            wallet = await wallets_api.get_wallet_by_user(
+                request.app, user_id, project_wallet_id, product_name
             )
             wallet_info = WalletInfo(
-                wallet_id=project_wallet.wallet_id, wallet_name=project_wallet.name
+                wallet_id=project_wallet_id, wallet_name=wallet.name
             )
 
         await director_v2_api.run_dynamic_service(

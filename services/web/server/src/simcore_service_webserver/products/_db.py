@@ -59,6 +59,10 @@ class ProductRepository(BaseRepository):
             )
             row: RowProxy | None = await result.first()
             if row:
+                # NOTE: MD Observation: Currently we are not defensive, we assume automatically
+                # that the product is not billable when there is no product in the products_prices table
+                # or it's price is 0. We should change it and always assume that the product is billable, unless
+                # explicitely stated that it is free
                 enabled = await is_payment_enabled(conn, product_name=row.name)
                 return Product(**dict(row.items()), is_payment_enabled=enabled)
             return None

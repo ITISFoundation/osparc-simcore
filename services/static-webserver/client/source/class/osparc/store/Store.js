@@ -123,6 +123,11 @@ qx.Class.define("osparc.store.Store", {
       nullable: true,
       event: "changeActiveWallet"
     },
+    creditPrice: {
+      check: "Number",
+      init: null,
+      nullable: true
+    },
     permissions: {
       check: "Array",
       init: []
@@ -611,6 +616,21 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    reloadCreditPrice: function() {
+      const store = osparc.store.Store.getInstance();
+      store.setCreditPrice(null);
+
+      return new Promise(resolve => {
+        osparc.data.Resources.fetch("creditPrice", "get")
+          .then(data => {
+            if (data && data["usdPerCredit"]) {
+              store.setCreditPrice(data["usdPerCredit"]);
+              resolve(data["usdPerCredit"]);
+            }
+          });
+      });
+    },
+
     reloadWallets: function() {
       const store = osparc.store.Store.getInstance();
       store.setWallets([]);
@@ -624,6 +644,7 @@ qx.Class.define("osparc.store.Store", {
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
               promises.push(this.reloadWalletAccessRights(wallet));
+              promises.push(this.reloadWalletAutoRecharge(wallet));
             });
             store.setWallets(wallets);
 
@@ -659,9 +680,18 @@ qx.Class.define("osparc.store.Store", {
         }
       };
       return osparc.data.Resources.fetch("wallets", "getAccessRights", params)
-        .then(accessRights => {
-          wallet.setAccessRights(accessRights);
-        })
+        .then(accessRights => wallet.setAccessRights(accessRights))
+        .catch(err => console.error(err));
+    },
+
+    reloadWalletAutoRecharge: function(wallet) {
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId()
+        }
+      };
+      return osparc.data.Resources.fetch("wallets", "getAutoRecharge", params)
+        .then(autoRecharge => wallet.setAutoRecharge(autoRecharge))
         .catch(err => console.error(err));
     },
 

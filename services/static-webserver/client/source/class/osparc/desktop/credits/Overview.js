@@ -326,8 +326,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         }
       };
       osparc.data.Resources.fetch("resourceUsage", "getPage", params)
-        .then(datas => {
-          const entries = osparc.resourceUsage.OverviewTable.respDataToTableData(datas);
+        .then(async datas => {
+          const entries = await osparc.resourceUsage.OverviewTable.respDataToTableData(datas);
           entries.forEach((entry, row) => {
             entry.forEach((data, column) => {
               const text = new qx.ui.basic.Label(data.toString()).set({

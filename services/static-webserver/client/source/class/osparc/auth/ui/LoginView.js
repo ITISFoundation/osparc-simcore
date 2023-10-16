@@ -64,7 +64,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
       this._form.add(pass, " Your password", null, "password");
 
-      Object.values(this._form.getItems()).forEach(formItem => formItem.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH));
+      this.beautifyFormFields();
       const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
       this.add(formRenderer);
 
@@ -89,7 +89,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
         if (config["invitation_required"]) {
-          if (osparc.product.Utils.getProductName().includes("s4l")) {
+          if (
+            osparc.product.Utils.isProduct("s4l") ||
+            osparc.product.Utils.isProduct("s4lacad") ||
+            osparc.product.Utils.isProduct("s4ldesktop") ||
+            osparc.product.Utils.isProduct("s4ldesktopacad")
+          ) {
             this.fireEvent("toRequestAccount");
           } else {
             osparc.store.Support.openInvitationRequiredDialog();

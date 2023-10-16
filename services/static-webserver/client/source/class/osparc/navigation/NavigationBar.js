@@ -71,6 +71,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     study: {
       check: "osparc.data.model.Study",
       nullable: true,
+      event: "changeStudy",
       apply: "_applyStudy"
     },
 
@@ -200,49 +201,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           osparc.utils.Utils.setIdToWidget(control, "dashboardLabel");
           this.getChildControl("left-items").add(control);
           break;
-        case "study-menu-info":
-          control = new qx.ui.menu.Button().set({
-            label: this.tr("Information..."),
-            icon: "@MaterialIcons/info_outline/14",
-            ...this.self().BUTTON_OPTIONS
-          });
-          control.addListener("execute", () => {
-            const infoMerged = new osparc.info.MergedLarge(this.getStudy());
-            const title = this.tr("Information");
-            const width = osparc.info.CardLarge.WIDTH;
-            const height = osparc.info.CardLarge.HEIGHT;
-            osparc.ui.window.Window.popUpInWindow(infoMerged, title, width, height);
-          });
-          break;
-        case "study-menu-download-logs":
-          control = new qx.ui.menu.Button().set({
-            label: this.tr("Download logs"),
-            icon: "@FontAwesome5Solid/download/14",
-            ...this.self().BUTTON_OPTIONS
-          });
-          control.addListener("execute", () => this.fireEvent("downloadStudyLogs"));
-          break;
-        case "study-menu-button": {
-          const optionsMenu = new qx.ui.menu.Menu();
-          optionsMenu.add(this.getChildControl("study-menu-info"));
-          optionsMenu.add(this.getChildControl("study-menu-download-logs"));
-          control = new qx.ui.form.MenuButton().set({
-            ...this.self().BUTTON_OPTIONS,
-            menu: optionsMenu,
-            icon: "@FontAwesome5Solid/ellipsis-v/16"
-          });
-          this.getChildControl("left-items").add(control);
-          break;
-        }
-        case "edit-title-label":
-          control = new osparc.ui.form.EditLabel().set({
-            labelFont: "text-16",
-            inputFont: "text-16"
-          });
-          control.addListener("editValue", e => {
-            const newLabel = e.getData();
-            this.getStudy().setName(newLabel);
-          });
+        case "study-title-options":
+          control = new osparc.navigation.StudyTitleWOptions();
+          control.addListener("downloadStudyLogs", () => this.fireEvent("downloadStudyLogs"));
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {
@@ -284,7 +245,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             textColor: "danger-red",
             cursor: "pointer"
           });
-          control.addListener("tap", () => osparc.navigation.UserMenuButton.openPreferences(), this);
+          control.addListener("tap", () => osparc.desktop.credits.UserCenterWindow.openWindow(), this);
           const authData = osparc.auth.Data.getInstance();
           authData.bind("expirationDate", control, "visibility", {
             converter: expirationDay => {
@@ -354,10 +315,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
-          if (osparc.product.Utils.isProduct("s4llite")) {
-            this.getChildControl("study-menu-button").exclude();
-            this.getChildControl("edit-title-label").exclude();
-          }
+          this.getChildControl("study-title-options").exclude();
           this.getChildControl("read-only-info").exclude();
           if (this.__tabButtons) {
             this.__tabButtons.show();
@@ -368,11 +326,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          if (osparc.product.Utils.isProduct("s4llite")) {
-            this.getChildControl("study-menu-button").show();
-            this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
-            this.getChildControl("edit-title-label").show();
-          }
+          this.getChildControl("study-title-options").show();
           if (this.__tabButtons) {
             this.__tabButtons.exclude();
           }
@@ -427,6 +381,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-info"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+        this.getChildControl("study-title-options").setStudy(study);
       }
     },
 

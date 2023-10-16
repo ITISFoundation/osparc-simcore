@@ -17,12 +17,10 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..wallets import _api as wallet_api
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
-from .db import ProjectDBAPI
 from .exceptions import ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -84,7 +82,6 @@ class _ProjectWalletPathParams(BaseModel):
 @permission_required("project.wallet.*")
 @_handle_project_wallet_exceptions
 async def connect_wallet_to_project(request: web.Request):
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
@@ -95,16 +92,12 @@ async def connect_wallet_to_project(request: web.Request):
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    # ensure the wallet can be used by the user
-    wallet: WalletGet = await wallet_api.get_wallet_by_user(
+    wallet: WalletGet = await wallets_api.connect_wallet_to_project(
         request.app,
+        product_name=req_ctx.product_name,
+        project_id=path_params.project_id,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
-        product_name=req_ctx.product_name,
-    )
-
-    await db.connect_wallet_to_project(
-        project_uuid=path_params.project_id, wallet_id=path_params.wallet_id
     )
 
     return envelope_json_response(wallet)
