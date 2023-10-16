@@ -188,11 +188,11 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
-          "extra_credits": {
-            "title": "Extra Credits",
+          "extra_credits_in_usd": {
+            "title": "Extra Credits In Usd",
             "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, the account's primary wallet will add these extra credits",
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
           "created": {
@@ -240,11 +240,11 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
-          "extra_credits": {
-            "title": "Extra Credits",
+          "extra_credits_in_usd": {
+            "title": "Extra Credits In Usd",
             "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, the account's primary wallet will add these extra credits",
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
           "created": {
@@ -299,11 +299,11 @@
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
-          "extra_credits": {
-            "title": "Extra Credits",
+          "extra_credits_in_usd": {
+            "title": "Extra Credits In Usd",
             "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, the account's primary wallet will add these extra credits",
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           }
         },

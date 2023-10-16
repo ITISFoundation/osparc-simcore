@@ -36,6 +36,7 @@ async def add_credits_to_wallet(
     payment_id: PaymentID,
     created_at: datetime,
 ) -> None:
+    assert osparc_credits != 0  # nosec
     await _client.add_credits_to_wallet(
         app=app,
         product_name=product_name,
