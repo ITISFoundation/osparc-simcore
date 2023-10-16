@@ -265,6 +265,11 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return false;
     },
 
+    openProfile: function() {
+      this.__openPage(this.__profilePage);
+      return true;
+    },
+
     openWallets: function() {
       if (this.__walletsPage) {
         return this.__openPage(this.__walletsPage);

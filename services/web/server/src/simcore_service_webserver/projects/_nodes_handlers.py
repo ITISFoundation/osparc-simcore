@@ -52,6 +52,7 @@ from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_role
+from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
@@ -74,7 +75,11 @@ def _handle_project_nodes_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except (ProjectNotFoundError, NodeNotFoundError) as exc:
+        except (
+            ProjectNotFoundError,
+            NodeNotFoundError,
+            UserDefaultWalletNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     return wrapper

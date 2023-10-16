@@ -55,14 +55,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
-    store.reloadWallets()
+    const preloadPromises = [];
+    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+    if (walletsEnabled) {
+      preloadPromises.push(store.reloadCreditPrice());
+      preloadPromises.push(store.reloadWallets());
+    }
+    preloadPromises.push(store.getAllClassifiers(true));
+    preloadPromises.push(store.getTags());
+    Promise.all(preloadPromises)
       .then(() => {
-        if (openView && openView === "wallets") {
-          const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-          if (walletsEnabled) {
-            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            creditsWindow.openOverview();
-          }
+        if (openView && openView === "wallets" && walletsEnabled) {
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          creditsWindow.openOverview();
         }
         const preferenceSettings = osparc.Preferences.getInstance();
         const preferenceWalletId = preferenceSettings.getPreferredWalletId();
@@ -71,19 +76,14 @@ qx.Class.define("osparc.desktop.MainPage", {
           // If there is only one wallet available, make it default
           preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
         }
-      });
 
-    Promise.all([
-      store.getAllClassifiers(true),
-      store.getTags()
-    ]).then(() => {
-      const mainStack = this.__createMainStack();
-      this._add(mainStack, {
-        flex: 1
-      });
+        const mainStack = this.__createMainStack();
+        this._add(mainStack, {
+          flex: 1
+        });
 
-      this.__attachHandlers();
-    });
+        this.__attachHandlers();
+      });
   },
 
   statics: {
@@ -114,11 +114,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
-          if (
-            osparc.product.Utils.isProduct("s4l") ||
-            osparc.product.Utils.isProduct("s4llite") ||
-            osparc.product.Utils.isProduct("s4lacad")
-          ) {
+          if (osparc.product.Utils.getProductName().includes("s4l")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
             msg += this.tr("Make sure you saved your changes to:");

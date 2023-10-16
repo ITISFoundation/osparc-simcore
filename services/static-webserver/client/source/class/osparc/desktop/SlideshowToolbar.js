@@ -32,22 +32,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "study-info":
-          control = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            toolTipText: this.tr("Study Information")
-          });
-          control.addListener("execute", () => this.__openStudyDetails(), this);
-          this._add(control);
-          break;
-        case "study-title":
-          control = new qx.ui.basic.Label().set({
-            marginLeft: 10,
-            maxWidth: 200,
-            font: "text-16"
-          });
-          this._add(control);
-          break;
         case "edit-slideshow-buttons": {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
@@ -146,9 +130,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
     // overridden
     _buildLayout: function() {
-      this.getChildControl("study-info");
-      this.getChildControl("study-title");
-
+      const spacerLeft = new qx.ui.core.Spacer(); // match "stop-slideshow" to keep breadcrumbs centered
+      this._add(spacerLeft);
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
@@ -161,18 +144,10 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         flex: 1
       });
 
-      this.getChildControl("stop-slideshow");
-    },
-
-    // overridden
-    _applyStudy: function(study) {
-      this.base(arguments, study);
-
-      if (study) {
-        const studyTitle = this.getChildControl("study-title");
-        study.bind("name", studyTitle, "value");
-        study.bind("name", studyTitle, "toolTipText");
-      }
+      const stopSlideshowButton = this.getChildControl("stop-slideshow");
+      stopSlideshowButton.bind("visibility", spacerLeft, "width", {
+        converter: visible => visible ? 120 : 0
+      });
     },
 
     // overridden
@@ -201,14 +176,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           currentModeBtn.execute();
         }
       }
-    },
-
-    __openStudyDetails: function() {
-      const studyDetails = new osparc.info.StudyLarge(this.getStudy());
-      const title = this.tr("Study Information");
-      const width = osparc.info.CardLarge.WIDTH;
-      const height = osparc.info.CardLarge.HEIGHT;
-      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     },
 
     __evalButtonsIfEditing: function() {
