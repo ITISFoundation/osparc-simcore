@@ -63,6 +63,7 @@ async def test_payments_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -99,6 +100,7 @@ async def test_payments_worfklow(
         client.app,
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
+        invoice_url=faker.url(),
     )
 
     # check notification to RUT
@@ -133,6 +135,7 @@ async def test_multiple_payments(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -172,6 +175,7 @@ async def test_multiple_payments(
                 client.app,
                 payment_id=payment.payment_id,
                 completion_state=PaymentTransactionState.SUCCESS,
+                invoice_url=faker.url(),
             )
             assert transaction.payment_id == payment.payment_id
             payments_successful.append(transaction.payment_id)
