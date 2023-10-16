@@ -125,6 +125,7 @@ async def test_payments_worfklow(
     # payment was completed successfully
     assert transaction.completed_at is not None
     assert transaction.created_at < transaction.completed_at
+    assert transaction.invoice_url is not None
 
 
 async def test_multiple_payments(
@@ -201,10 +202,13 @@ async def test_multiple_payments(
 
     for pid in payments_cancelled:
         assert all_transactions[pid].state == PaymentTransactionState.CANCELED
+        assert all_transactions[pid].invoice_url is None
     for pid in payments_successful:
         assert all_transactions[pid].state == PaymentTransactionState.SUCCESS
+        assert all_transactions[pid].invoice_url is not None
     for pid in payments_pending:
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
+        assert all_transactions[pid].invoice_url is None
 
     assert send_message.called
 
