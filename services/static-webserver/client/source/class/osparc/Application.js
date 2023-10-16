@@ -346,7 +346,6 @@ qx.Class.define("osparc.Application", {
       // Invalidate the entire cache
       osparc.store.Store.getInstance().invalidateEntireCache();
       await this.__preloadCalls();
-      await osparc.data.Resources.get("permissions");
       const profile = await osparc.data.Resources.getOne("profile");
       if (profile) {
         this.__connectWebSocket();

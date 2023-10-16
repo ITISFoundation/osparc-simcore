@@ -7,7 +7,7 @@
 
 /**
  * Renders a label and an input combined widget. The idea is to be able to edit a label quickly. Fires an event
- * whenever the input is modified to be able to update the value of the label externaly or to trigger some other
+ * whenever the input is modified to be able to update the value of the label externally or to trigger some other
  * logic (like API calls).
  */
 qx.Class.define("osparc.ui.form.EditLabel", {
@@ -54,7 +54,7 @@ qx.Class.define("osparc.ui.form.EditLabel", {
       apply: "_applyMode"
     },
     /**
-     * Master value of the widget. The label in display mode will allways show this value.
+     * Master value of the widget. The label in display mode will always show this value.
      */
     value: {
       check: "String",
