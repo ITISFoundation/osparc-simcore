@@ -23,7 +23,7 @@ from simcore_service_webserver.users._notifications import (
 )
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
-    ProfileDeleteCheck,
+    ProfileCredentialsCheck,
     ProfileGet,
     ProfileUpdate,
     Token,
@@ -55,7 +55,7 @@ async def update_my_profile(_profile: ProfileUpdate):
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_409_CONFLICT: {"model": Envelope[Error]}},
 )
-async def mark_account_for_deletion(_body: ProfileDeleteCheck):
+async def mark_account_for_deletion(_body: ProfileCredentialsCheck):
     ...
 
 

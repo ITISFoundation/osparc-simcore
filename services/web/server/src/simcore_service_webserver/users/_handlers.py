@@ -20,10 +20,10 @@ from ..login._constants import MSG_LOGGED_OUT
 from ..login.decorators import login_required
 from ..login.utils import flash_response, notify_user_logout
 from ..redis import get_redis_user_notifications_client
-from ..security.api import forget
+from ..security.api import check_password, forget
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _tokens, api
+from . import _db, _tokens, api
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -32,13 +32,12 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
-from .api import get_user_name_and_email
 from .api import list_user_permissions as api_list_user_permissions
 from .exceptions import TokenNotFoundError, UserNotFoundError
 from .schemas import (
     Permission,
     PermissionGet,
-    ProfileDeleteCheck,
+    ProfileCredentialsCheck,
     ProfileGet,
     ProfileUpdate,
     TokenCreate,
@@ -94,31 +93,37 @@ async def update_my_profile(request: web.Request) -> web.Response:
 @permission_required("user.profile.delete")
 async def mark_account_for_deletion(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    user = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
+    body = await parse_request_body_as(ProfileCredentialsCheck, request)
 
-    if ProfileDeleteCheck.email.lower() != user.email.lower():
-        raise web.HTTPConflict(reason="Wrong email")
+    # checks before deleting
+    credentials = await _db.get_email_and_password_hash(
+        request.app, user_id=req_ctx.user_id
+    )
+    if body.email != credentials.email.lower() or not check_password(
+        body.password.get_secret_value(), credentials.password_hash
+    ):
+        raise web.HTTPConflict(
+            reason="Wrong email or password. Please try again to delete this account"
+        )
 
     with log_context(
         _logger,
         logging.INFO,
-        "Marking account for deletion",
+        "Mark account for deletion",
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        #
-        # FIXME: 1. mark user as deleted
-        # FIXME: what happens if he has running tasks?
-        # FIXME: 2. send good-bye email to user and support? (background)
-        # 3. logout user
-        #
 
-        # NOTE: can redirect to logout??
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
+        # notify logout so all services start closing
         await notify_user_logout(
             request.app, user_id=req_ctx.user_id, client_session_id=None
         )
+        response = flash_response(MSG_LOGGED_OUT, "INFO")
         await forget(request, response)
 
+        # mark. Now that all services are closed. We mark
+        await _db.mark_user_as_deleted(request.app, user_id=req_ctx.user_id)
+
+        # FIXME: send good-bye email to user and support? (background)
         return response
 
 

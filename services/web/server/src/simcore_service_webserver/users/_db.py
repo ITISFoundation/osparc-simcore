@@ -83,3 +83,35 @@ async def get_username_and_email(
     assert row.name  # nosec
     assert row.email  # nosec
     return UserNameAndEmailTuple(name=row.name, email=row.email)
+
+
+class UserEmailAndPassHashTuple(NamedTuple):
+    email: str
+    password_hash: str
+
+
+async def get_email_and_password_hash(
+    app: web.Application, *, user_id: UserID
+) -> UserEmailAndPassHashTuple:
+    async with get_database_engine(app).acquire() as conn:
+        row: RowProxy | None = await (
+            await conn.execute(
+                sa.select(users.c.password_hash, users.c.email).where(
+                    users.c.id == user_id
+                )
+            )
+        ).first()
+        if row is None:
+            raise UserNotFoundError(uid=user_id)
+        return UserEmailAndPassHashTuple(
+            email=row.email, password_hash=row.password_hash
+        )
+
+
+async def mark_user_as_deleted(app: web.Application, *, user_id: UserID):
+    async with get_database_engine(app).acquire() as conn:
+        await conn.execute(
+            users.update()
+            .values(status=UserStatus.DELETED)
+            .where(users.c.user_id == user_id)
+        )
