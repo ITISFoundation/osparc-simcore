@@ -14,20 +14,9 @@ from models_library.api_schemas_webserver.product import GetProduct
 from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from simcore_postgres_database.utils_products_prices import QUANTIZE_EXP_ARG
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db.models import UserRole
-
-
-@pytest.fixture(params=["osparc", "tis", "s4l"])
-def product_name(request: pytest.FixtureRequest) -> ProductName:
-    return request.param
-
-
-def product_price(
-    all_product_prices: dict[ProductName, Decimal],
-    product_name: ProductName,
-) -> Decimal:
-    return all_product_prices[product_name]
 
 
 @pytest.mark.parametrize(
@@ -73,35 +62,47 @@ async def test_get_product_access_rights(
     assert operator.xor(data is None, error is None)
 
 
+@pytest.fixture(params=["osparc", "tis", "s4l"])
+def product_name(request: pytest.FixtureRequest) -> ProductName:
+    return request.param
+
+
+@pytest.fixture
+def expected_credits_per_usd(
+    all_product_prices: dict[ProductName, Decimal],
+    product_name: ProductName,
+) -> Decimal | None:
+    if usd_per_credit := all_product_prices[product_name]:
+        return Decimal(1 / usd_per_credit).quantize(QUANTIZE_EXP_ARG)
+    return None
+
+
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role",
     [(UserRole.PRODUCT_OWNER)],
 )
 async def test_get_product(
     product_name: ProductName,
-    product_price: Decimal,
+    expected_credits_per_usd: Decimal | None,
     logged_user: UserInfoDict,
     client: TestClient,
 ):
-    # TODO: create client that adds headers from start
-    headers = {X_PRODUCT_NAME_HEADER: product_name}
-
-    response = await client.get("/v0/products/current", headers=headers)
+    current_project_headers = {X_PRODUCT_NAME_HEADER: product_name}
+    response = await client.get("/v0/products/current", headers=current_project_headers)
     data, error = await assert_status(response, web.HTTPOk)
 
     got_product = GetProduct(**data)
     assert got_product.name == product_name
-    assert got_product.credits_per_usd == (
-        Decimal(1) / product_price if product_price else None
-    )
+    assert got_product.credits_per_usd == expected_credits_per_usd
     assert not error
 
-    response = await client.get(f"/v0/products/{product_name}", headers=headers)
+    response = await client.get(f"/v0/products/{product_name}")
     data, error = await assert_status(response, web.HTTPOk)
     assert got_product == GetProduct(**data)
     assert not error
 
-    response = await client.get("/v0/product/invalid", headers=headers)
+    response = await client.get("/v0/product/invalid")
     data, error = await assert_status(response, web.HTTPNotFound)
     assert not data
     assert error
