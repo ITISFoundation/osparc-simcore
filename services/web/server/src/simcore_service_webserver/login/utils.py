@@ -1,4 +1,3 @@
-import logging
 import random
 from dataclasses import asdict
 from typing import Any, cast
@@ -23,8 +22,6 @@ from ._constants import (
     MSG_USER_EXPIRED,
 )
 
-_logger = logging.getLogger(__name__)
-
 
 def _to_names(enum_cls, names):
     """ensures names are in enum be retrieving each of them"""
@@ -38,7 +35,8 @@ CONFIRMATION_PENDING, ACTIVE, BANNED, EXPIRED, DELETED = (
     UserStatus.EXPIRED.name,
     UserStatus.DELETED.name,
 )
-assert len(UserStatus) == 5  # nosec
+_EXPECTED_ENUMS = 5
+assert len(UserStatus) == _EXPECTED_ENUMS  # nosec
 
 
 ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
@@ -49,6 +47,13 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 
 
 def validate_user_status(*, user: dict, support_email: str):
+    """
+
+    Raises:
+        web.HTTPUnauthorized
+    """
+    assert "role" in user  # nosec
+
     user_status: str = user["status"]
 
     if user_status == DELETED:
@@ -104,30 +109,19 @@ async def notify_user_logout(
 
     Listeners (e.g. sockets) will trigger logout mechanisms
     """
-    await observer.emit(app, "SIGNAL_USER_LOGOUT", user_id, client_session_id, app)
-
-
-def encrypt_password(password: str) -> str:
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3375
-    return cast(str, passlib.hash.sha256_crypt.using(rounds=1000).hash(password))
-
-
-def check_password(password: str, password_hash: str) -> bool:
-    return cast(bool, passlib.hash.sha256_crypt.verify(password, password_hash))
+    await observer.emit(
+        app,
+        "SIGNAL_USER_LOGOUT",
+        user_id,
+        client_session_id,
+        app,
+    )
 
 
 def get_random_string(min_len: int, max_len: int | None = None) -> str:
     max_len = max_len or min_len
     size = random.randint(min_len, max_len)  # noqa: S311 # nosec # NOSONAR
     return cast(str, passlib.pwd.genword(entropy=52, length=size))
-
-
-def get_client_ip(request: web.Request) -> str:
-    try:
-        ips = request.headers["X-Forwarded-For"]
-    except KeyError:
-        ips = request.transport.get_extra_info("peername")[0]
-    return cast(str, ips.split(",")[0])
 
 
 def flash_response(
