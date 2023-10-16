@@ -37,6 +37,7 @@ def _create_possible_outcomes(accepted, rejected):
 _POSSIBLE_PAYMENTS_OUTCOMES = _create_possible_outcomes(
     accepted={
         "completion_state": PaymentTransactionState.SUCCESS,
+        "invoice_url": "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf",
     },
     rejected={
         "completion_state": PaymentTransactionState.FAILED,

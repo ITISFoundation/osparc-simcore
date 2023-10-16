@@ -1,4 +1,5 @@
 import datetime
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Final, TypeAlias
@@ -10,9 +11,14 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from . import errors
 from .models.payments_transactions import PaymentTransactionState, payments_transactions
 
-PaymentID: TypeAlias = str
+_logger = logging.getLogger(__name__)
 
+
+PaymentID: TypeAlias = str
 PaymentTransactionRow: TypeAlias = RowProxy
+
+
+_UNSET: Final[str] = "__UNSET__"
 
 
 @dataclass
@@ -69,9 +75,6 @@ async def insert_init_payment_transaction(
     return payment_id
 
 
-_UNSET: Final[str] = "__UNSET__"
-
-
 async def update_payment_transaction_state(
     connection: SAConnection,
     *,
@@ -88,6 +91,17 @@ async def update_payment_transaction_state(
     optional = {}
     if state_message:
         optional["state_message"] = state_message
+
+    if completion_state == PaymentTransactionState.SUCCESS and invoice_url in (
+        None,
+        _UNSET,
+    ):
+        _logger.warning(
+            "Payment %s completed as %s has not invoice (%s)",
+            payment_id,
+            state_message,
+            f"{invoice_url=}",
+        )
 
     if invoice_url != _UNSET:
         optional["invoice_url"] = invoice_url
