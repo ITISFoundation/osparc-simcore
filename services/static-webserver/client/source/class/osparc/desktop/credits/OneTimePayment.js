@@ -226,7 +226,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         font: "text-14"
       });
       this.bind("creditPrice", creditPriceLabel, "value", {
-        converter: nCredits => nCredits + " $"
+        converter: nCredits => nCredits + " US$"
       });
       layout.add(creditPriceLabel, {
         row,
