@@ -18,6 +18,18 @@ from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db.models import UserRole
 
 
+@pytest.fixture(params=["osparc", "tis", "s4l"])
+def product_name(request: pytest.FixtureRequest) -> ProductName:
+    return request.param
+
+
+def product_price(
+    all_product_prices: dict[ProductName, Decimal],
+    product_name: ProductName,
+) -> Decimal:
+    return all_product_prices[product_name]
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -30,13 +42,13 @@ async def test_get_product_price_when_undefined(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: type[web.HTTPException],
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
 ):
     response = await client.get("/v0/credits-price")
     data, error = await assert_status(response, expected)
 
     if not error:
-        assert data["usdPerCredit"] == new_osparc_price
+        assert data["usdPerCredit"] == latest_osparc_price
 
 
 @pytest.mark.parametrize(
@@ -54,18 +66,11 @@ async def test_get_product_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: type[web.HTTPException],
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
 ):
     response = await client.get("/v0/products/current")
     data, error = await assert_status(response, expected)
     assert operator.xor(data is None, error is None)
-
-
-@pytest.fixture(params=["osparc", "tis", "s4l"])
-def product_name_and_price(
-    request: pytest.FixtureRequest, all_product_prices: dict[ProductName, Decimal]
-) -> tuple[ProductName, Decimal]:
-    return request.param, all_product_prices[request.param]
 
 
 @pytest.mark.parametrize(
@@ -73,14 +78,15 @@ def product_name_and_price(
     [(UserRole.PRODUCT_OWNER)],
 )
 async def test_get_product(
-    product_name_and_price: tuple[ProductName, Decimal],
+    product_name: ProductName,
+    product_price: Decimal,
     logged_user: UserInfoDict,
     client: TestClient,
 ):
-    product_name, product_price = product_name_and_price
-    header = {X_PRODUCT_NAME_HEADER: product_name}
+    # TODO: create client that adds headers from start
+    headers = {X_PRODUCT_NAME_HEADER: product_name}
 
-    response = await client.get("/v0/products/current", headers=header)
+    response = await client.get("/v0/products/current", headers=headers)
     data, error = await assert_status(response, web.HTTPOk)
 
     got_product = GetProduct(**data)
@@ -90,12 +96,12 @@ async def test_get_product(
     )
     assert not error
 
-    response = await client.get(f"/v0/products/{product_name}", headers=header)
+    response = await client.get(f"/v0/products/{product_name}", headers=headers)
     data, error = await assert_status(response, web.HTTPOk)
     assert got_product == GetProduct(**data)
     assert not error
 
-    response = await client.get("/v0/product/invalid", headers=header)
+    response = await client.get("/v0/product/invalid", headers=headers)
     data, error = await assert_status(response, web.HTTPNotFound)
     assert not data
     assert error

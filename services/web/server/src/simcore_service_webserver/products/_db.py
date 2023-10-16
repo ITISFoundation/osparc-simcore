@@ -11,6 +11,7 @@ from models_library.products import ProductName
 from pydantic import parse_obj_as
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
+    QUANTIZE_EXP_ARG,
     get_product_latest_credit_price_or_none,
 )
 
@@ -60,7 +61,7 @@ async def get_product_payment_fields(
         credits_per_usd = None
     else:
         enabled = True
-        credits_per_usd = Decimal(1) / usd_per_credit
+        credits_per_usd = Decimal(1 / usd_per_credit).quantize(QUANTIZE_EXP_ARG)
 
     return PaymentFieldsTuple(enabled=enabled, credits_per_usd=credits_per_usd)
 
