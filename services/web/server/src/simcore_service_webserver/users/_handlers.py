@@ -1,4 +1,5 @@
 import functools
+import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -9,13 +10,17 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
+from ..login._constants import MSG_LOGGED_OUT
 from ..login.decorators import login_required
+from ..login.utils import flash_response, notify_user_logout
 from ..redis import get_redis_user_notifications_client
+from ..security.api import forget
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _tokens, api
@@ -27,9 +32,20 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
+from .api import get_user_name_and_email
 from .api import list_user_permissions as api_list_user_permissions
 from .exceptions import TokenNotFoundError, UserNotFoundError
-from .schemas import Permission, PermissionGet, ProfileGet, ProfileUpdate, TokenCreate
+from .schemas import (
+    Permission,
+    PermissionGet,
+    ProfileDeleteCheck,
+    ProfileGet,
+    ProfileUpdate,
+    TokenCreate,
+)
+
+_logger = logging.getLogger(__name__)
+
 
 routes = web.RouteTableDef()
 
@@ -71,6 +87,39 @@ async def update_my_profile(request: web.Request) -> web.Response:
     profile_update = await parse_request_body_as(ProfileUpdate, request)
     await api.update_user_profile(request.app, req_ctx.user_id, profile_update)
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+@routes.post(f"/{API_VTAG}/me:mark-deleted", name="delete_account")
+@login_required
+@permission_required("user.profile.delete")
+async def mark_account_for_deletion(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    user = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
+
+    if ProfileDeleteCheck.email.lower() != user.email.lower():
+        raise web.HTTPConflict(reason="Wrong email")
+
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Marking account for deletion",
+        extra=get_log_record_extra(user_id=req_ctx.user_id),
+    ):
+        #
+        # FIXME: 1. mark user as deleted
+        # FIXME: what happens if he has running tasks?
+        # FIXME: 2. send good-bye email to user and support? (background)
+        # 3. logout user
+        #
+
+        # NOTE: can redirect to logout??
+        response = flash_response(MSG_LOGGED_OUT, "INFO")
+        await notify_user_logout(
+            request.app, user_id=req_ctx.user_id, client_session_id=None
+        )
+        await forget(request, response)
+
+        return response
 
 
 # me/tokens/ ------------------------------------------------------

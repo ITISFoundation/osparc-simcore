@@ -22,6 +22,7 @@ from simcore_service_webserver.users._notifications import (
 )
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
+    ProfileDeleteCheck,
     ProfileGet,
     ProfileUpdate,
     Token,
@@ -44,6 +45,14 @@ async def get_my_profile():
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def update_my_profile(_profile: ProfileUpdate):
+    ...
+
+
+@router.post(
+    "/me:mark-deleted",
+    status_code=status.HTTP_200_OK,
+)
+async def mark_account_for_deletion(_body: ProfileDeleteCheck):
     ...
 
 

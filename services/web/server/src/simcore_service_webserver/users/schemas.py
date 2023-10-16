@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, EmailStr, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
@@ -66,6 +66,10 @@ class _ProfileCommon(BaseModel):
 
 class ProfileUpdate(_ProfileCommon):
     pass
+
+
+class ProfileDeleteCheck(BaseModel):
+    email: EmailStr
 
 
 class ProfileGet(_ProfileCommon):
