@@ -23,7 +23,8 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
     const cols = this.self().COLUMNS;
     const colNames = [];
     Object.entries(cols).forEach(([key, data]) => {
-      if (key === "wallet" && !osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (["wallet", "user"].includes(key) && !osparc.desktop.credits.Utils.areWalletsEnabled()
+      ) {
         return;
       }
       colNames.push(data.title);
@@ -112,8 +113,10 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
             newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
           }
           newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
-          const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
-          newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
+          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+            const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
+            newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
+          }
           newDatas.push(newData);
         }
       }

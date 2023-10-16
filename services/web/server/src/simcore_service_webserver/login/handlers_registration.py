@@ -265,7 +265,7 @@ async def register(request: web.Request):
         request.app,
         user_id=user["id"],
         product_name=product.name,
-        extra_credits=invitation.extra_credits if invitation else None,
+        extra_credits_in_usd=invitation.extra_credits_in_usd if invitation else None,
     )
 
     # No confirmation required: authorize login

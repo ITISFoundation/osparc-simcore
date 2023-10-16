@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.33.0
+  version: 0.34.0
 servers:
 - url: ''
   description: webserver
@@ -1802,7 +1802,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
+                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
+  /v0/products/{product_name}:
+    get:
+      tags:
+      - products
+      summary: Get Product
+      operationId: get_product
+      parameters:
+      - required: true
+        schema:
+          title: Product Name
+          anyOf:
+          - minLength: 1
+            type: string
+          - enum:
+            - current
+            type: string
+        name: product_name
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetProduct_'
   /v0/invitation:generate:
     post:
       tags:
@@ -5063,22 +5088,6 @@ components:
           title: Comment
           maxLength: 100
           type: string
-    CreditPriceGet:
-      title: CreditPriceGet
-      required:
-      - productName
-      - usdPerCredit
-      type: object
-      properties:
-        productName:
-          title: Productname
-          type: string
-        usdPerCredit:
-          title: Usdpercredit
-          minimum: 0.0
-          type: number
-          description: Price of a credit in USD. If None, then this product's price
-            is UNDEFINED
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -5220,14 +5229,6 @@ components:
           $ref: '#/components/schemas/ComputationTaskGet'
         error:
           title: Error
-    Envelope_CreditPriceGet_:
-      title: Envelope[CreditPriceGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/CreditPriceGet'
-        error:
-          title: Error
     Envelope_Error_:
       title: Envelope[Error]
       type: object
@@ -5274,6 +5275,22 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadSchema'
+        error:
+          title: Error
+    Envelope_GetCreditPrice_:
+      title: Envelope[GetCreditPrice]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetCreditPrice'
+        error:
+          title: Error
+    Envelope_GetProduct_:
+      title: Envelope[GetProduct]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetProduct'
         error:
           title: Error
     Envelope_GetWalletAutoRecharge_:
@@ -6272,11 +6289,83 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        extraCredits:
-          title: Extracredits
+        extraCreditsInUsd:
+          title: Extracreditsinusd
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    GetCreditPrice:
+      title: GetCreditPrice
+      required:
+      - productName
+      - usdPerCredit
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        usdPerCredit:
+          title: Usdpercredit
+          minimum: 0.0
+          type: number
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
+    GetProduct:
+      title: GetProduct
+      required:
+      - name
+      - displayName
+      - loginSettings
+      - isPaymentEnabled
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        displayName:
+          title: Displayname
+          type: string
+        shortName:
+          title: Shortname
+          type: string
+          description: Short display name for SMS
+        vendor:
+          title: Vendor
+          type: object
+          description: vendor attributes
+        issues:
+          title: Issues
+          type: array
+          items:
+            type: object
+          description: Reference to issues tracker
+        manuals:
+          title: Manuals
+          type: array
+          items:
+            type: object
+          description: List of manuals
+        support:
+          title: Support
+          type: array
+          items:
+            type: object
+          description: List of support resources
+        loginSettings:
+          title: Loginsettings
+          type: object
+        maxOpenStudiesPerUser:
+          title: Maxopenstudiesperuser
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        isPaymentEnabled:
+          title: Ispaymentenabled
+          type: boolean
+        creditsPerUsd:
+          title: Creditsperusd
+          minimum: 0.0
+          type: number
     GetWalletAutoRecharge:
       title: GetWalletAutoRecharge
       required:
@@ -6473,8 +6562,8 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        extraCredits:
-          title: Extracredits
+        extraCreditsInUsd:
+          title: Extracreditsinusd
           exclusiveMinimum: true
           type: integer
           minimum: 0

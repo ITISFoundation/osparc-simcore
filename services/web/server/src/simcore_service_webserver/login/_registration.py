@@ -50,7 +50,7 @@ class InvitationData(BaseModel):
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
     )
-    extra_credits: PositiveInt | None = None
+    extra_credits_in_usd: PositiveInt | None = None
 
 
 class _InvitationValidator(BaseModel):
@@ -121,7 +121,7 @@ async def create_invitation_token(
     user_email: LowerCaseEmailStr | None = None,
     tag: str | None = None,
     trial_days: PositiveInt | None = None,
-    extra_credits: PositiveInt | None = None,
+    extra_credits_in_usd: PositiveInt | None = None,
 ) -> ConfirmationTokenDict:
     """Creates an invitation token for a guest to register in the platform and returns
 
@@ -136,7 +136,7 @@ async def create_invitation_token(
         issuer=user_email,
         guest=tag,
         trial_account_days=trial_days,
-        extra_credits=extra_credits,
+        extra_credits_in_usd=extra_credits_in_usd,
     )
     return await db.create_confirmation(
         user_id=user_id,
@@ -218,7 +218,7 @@ async def check_and_consume_invitation(
                 issuer=content.issuer,
                 guest=content.guest,
                 trial_account_days=content.trial_account_days,
-                extra_credits=content.extra_credits,
+                extra_credits_in_usd=content.extra_credits_in_usd,
             )
 
     # database-type invitations
