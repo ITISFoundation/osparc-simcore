@@ -69,15 +69,19 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           control = this.__getEnableAutoRechargeButton();
           this._add(control);
           break;
+        case "buttons-layout-2":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._add(control);
+          break;
         case "save-auto-recharge-button":
           control = this.__getSaveAutoRechargeButton();
           control.exclude();
-          this._add(control);
+          this.getChildControl("buttons-layout-2").add(control);
           break;
         case "disable-auto-recharge-button":
           control = this.__getDisableAutoRechargeButton();
           control.exclude();
-          this._add(control);
+          this.getChildControl("buttons-layout-2").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -219,7 +223,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
 
     __getEnableAutoRechargeButton: function() {
       const enableAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Enable Auto Recharge"),
+        label: this.tr("Enable"),
         font: "text-16",
         appearance: "strong-button",
         maxWidth: 200,
@@ -256,7 +260,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
 
     __getDisableAutoRechargeButton: function() {
       const disableAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Disable Auto Recharge"),
+        label: this.tr("Disable"),
         font: "text-16",
         appearance: "danger-button",
         maxWidth: 200,
