@@ -43,11 +43,7 @@ async def substitute_vendor_secrets_in_model(
 ) -> BaseModel:
     result: BaseModel = model
     try:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            "check if requires migration substitute_vendor_secrets_in_model",
-        ):
+        with log_context(_logger, logging.DEBUG, "substitute_vendor_secrets_in_model"):
             # checks before to avoid unnecessary calls to pg
             # if it raises an error vars need replacement
             _logger.debug("model in which to replace model=%s", model)
@@ -81,9 +77,7 @@ async def resolve_and_substitute_session_variables_in_model(
     result: BaseModel = model
     try:
         with log_context(
-            _logger,
-            logging.DEBUG,
-            "check if requires migration resolve_and_substitute_session_variables_in_model",
+            _logger, logging.DEBUG, "resolve_and_substitute_session_variables_in_model"
         ):
             # checks before to avoid unnecessary calls to pg
             # if it raises an error vars need replacement
@@ -122,12 +116,21 @@ async def substitute_vendor_secrets_in_specs(
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
     repo = get_repository(app, ServicesEnvironmentsRepository)
 
+    _logger.debug(
+        "substitute_vendor_secrets_in_specs detected_identifiers=%s",
+        resolver.get_identifiers(),
+    )
+
     if any(repo.is_vendor_secret_identifier(idr) for idr in resolver.get_identifiers()):
         # checks before to avoid unnecessary calls to pg
         vendor_secrets = await repo.get_vendor_secrets(
             service_key=service_key,
             service_version=service_version,
             product_name=product_name,
+        )
+        _logger.debug(
+            "substitute_vendor_secrets_in_specs stored_vendor_secrets=%s",
+            vendor_secrets,
         )
 
         # resolve substitutions
