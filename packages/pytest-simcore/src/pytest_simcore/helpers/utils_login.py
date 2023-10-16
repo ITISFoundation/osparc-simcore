@@ -28,7 +28,6 @@ class _UserInfoDictRequired(TypedDict, total=True):
 
 class UserInfoDict(_UserInfoDictRequired, total=False):
     created_at: datetime
-    created_ip: int
     password_hash: str
 
 

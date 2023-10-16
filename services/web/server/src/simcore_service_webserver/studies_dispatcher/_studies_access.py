@@ -119,7 +119,7 @@ async def _get_published_template_project(
 
 async def _create_temporary_user(request: web.Request):
     from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
+    from ..login.utils import ACTIVE, GUEST, get_random_string
     from ..security.api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -170,7 +170,6 @@ async def _create_temporary_user(request: web.Request):
                 "password_hash": encrypt_password(password),
                 "status": ACTIVE,
                 "role": GUEST,
-                "created_ip": get_client_ip(request),
                 "expires_at": expires_at,
             }
         )
