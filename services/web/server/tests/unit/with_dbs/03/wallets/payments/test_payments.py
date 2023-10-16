@@ -63,6 +63,7 @@ async def test_payments_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -99,6 +100,7 @@ async def test_payments_worfklow(
         client.app,
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
+        invoice_url=faker.url(),
     )
 
     # check notification to RUT
@@ -125,6 +127,7 @@ async def test_payments_worfklow(
     # payment was completed successfully
     assert transaction.completed_at is not None
     assert transaction.created_at < transaction.completed_at
+    assert transaction.invoice_url is not None
 
 
 async def test_multiple_payments(
@@ -132,6 +135,7 @@ async def test_multiple_payments(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -171,6 +175,7 @@ async def test_multiple_payments(
                 client.app,
                 payment_id=payment.payment_id,
                 completion_state=PaymentTransactionState.SUCCESS,
+                invoice_url=faker.url(),
             )
             assert transaction.payment_id == payment.payment_id
             payments_successful.append(transaction.payment_id)
@@ -201,10 +206,13 @@ async def test_multiple_payments(
 
     for pid in payments_cancelled:
         assert all_transactions[pid].state == PaymentTransactionState.CANCELED
+        assert all_transactions[pid].invoice_url is None
     for pid in payments_successful:
         assert all_transactions[pid].state == PaymentTransactionState.SUCCESS
+        assert all_transactions[pid].invoice_url is not None
     for pid in payments_pending:
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
+        assert all_transactions[pid].invoice_url is None
 
     assert send_message.called
 

@@ -83,6 +83,12 @@ payments_transactions = sa.Table(
         nullable=True,
         doc="Extra comment on this payment (optional)",
     ),
+    sa.Column(
+        "invoice_url",
+        sa.String,
+        nullable=True,
+        doc="Link to invoice of this transaction. Available when completed",
+    ),
     #
     # States
     #
