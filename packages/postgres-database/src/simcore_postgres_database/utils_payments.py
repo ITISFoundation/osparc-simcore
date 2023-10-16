@@ -92,12 +92,9 @@ async def update_payment_transaction_state(
     if state_message:
         optional["state_message"] = state_message
 
-    if completion_state == PaymentTransactionState.SUCCESS and invoice_url in (
-        None,
-        _UNSET,
-    ):
+    if completion_state == PaymentTransactionState.SUCCESS and invoice_url is None:
         _logger.warning(
-            "Payment %s completed as %s has not invoice (%s)",
+            "Payment %s completed as %s without invoice (%s)",
             payment_id,
             state_message,
             f"{invoice_url=}",
