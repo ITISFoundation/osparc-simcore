@@ -329,7 +329,7 @@ async def _start_dynamic_service(
                 pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
                 aws_ec2_instance = pricing_unit_get.specific_info["aws_ec2_instances"]
             else:
-                # As there is no pricing unit connected to the project we will choose default one
+                # As there is no pricing unit connected to the node we will choose default one
                 service_pricing_plan_get = (
                     await rut_api.get_default_service_pricing_plan(
                         request.app,
