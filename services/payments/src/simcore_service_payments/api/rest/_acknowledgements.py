@@ -34,7 +34,7 @@ async def on_payment_completed(
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
 
-    _logger.debug("TODO Notify front-end of payment -> sio ")
+    _logger.debug("TODO next PR Notify front-end of payment -> sio ")
 
     with log_context(
         _logger,
@@ -54,7 +54,11 @@ async def on_payment_completed(
             created_at=transaction.completed_at,
         )
 
-    _logger.debug("TODO Annotate RUT response: %s", credit_transaction_id)
+    _logger.debug(
+        "RUT response to %s was %s",
+        f"{transaction.payment_id=}",
+        f"{credit_transaction_id=}",
+    )
 
 
 @router.post("/payments/{payment_id}:ack")
@@ -94,7 +98,9 @@ async def acknowledge_payment(
 
     if ack.saved:
         _logger.debug("TODO Annotate CREATE payment method")
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        )
 
     if transaction.state == PaymentTransactionState.SUCCESS:
         assert payment_id == transaction.payment_id  # nosec

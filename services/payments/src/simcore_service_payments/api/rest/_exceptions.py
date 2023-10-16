@@ -10,11 +10,9 @@ _logger = logging.getLogger(__name__)
 
 
 # NOTE:  https://www.starlette.io/exceptions/
-#
-# Handled exceptions **do not represent error cases**.
-#  They are coerced into appropriate HTTP responses, which are then sent through the standard
-#  middleware stack.
-#  By default the HTTPException class is used to manage any handled exceptions.
+# Handled exceptions **do not represent error cases** !
+# - They are coerced into appropriate HTTP responses, which are then sent through the standard middleware stack.
+# - By default the HTTPException class is used to manage any handled exceptions.
 
 
 async def http_exception_as_json_response(

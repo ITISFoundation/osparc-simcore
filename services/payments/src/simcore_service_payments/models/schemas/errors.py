@@ -7,7 +7,10 @@ from pydantic import BaseModel, Field
 
 
 class DefaultApiError(BaseModel):
-    name: str = Field(None, description="Error identifier as a code or a name")
+    name: str = Field(
+        ...,
+        description="Error identifier as a code or a name. Mostly for machine-machine communication.",
+    )
     detail: Any | None = Field(NOT_REQUIRED, description="Human readable error message")
 
     @classmethod
