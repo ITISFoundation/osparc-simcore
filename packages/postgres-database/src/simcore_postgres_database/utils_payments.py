@@ -75,9 +75,6 @@ async def insert_init_payment_transaction(
     return payment_id
 
 
-_UNSET: Final[str] = "__UNSET__"
-
-
 async def update_payment_transaction_state(
     connection: SAConnection,
     *,
