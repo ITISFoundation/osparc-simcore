@@ -6,6 +6,7 @@
 
 from typing import Annotated
 
+from _common import Error, Log
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -50,7 +51,9 @@ async def update_my_profile(_profile: ProfileUpdate):
 
 @router.post(
     "/me:mark-deleted",
+    response_model=Envelope[Log],
     status_code=status.HTTP_200_OK,
+    responses={status.HTTP_409_CONFLICT: {"model": Envelope[Error]}},
 )
 async def mark_account_for_deletion(_body: ProfileDeleteCheck):
     ...

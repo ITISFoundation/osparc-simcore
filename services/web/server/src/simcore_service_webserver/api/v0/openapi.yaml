@@ -3537,6 +3537,31 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/me:mark-deleted:
+    post:
+      tags:
+      - user
+      summary: Mark Account For Deletion
+      operationId: mark_account_for_deletion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileDeleteCheck'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Log_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
@@ -7594,6 +7619,16 @@ components:
         default:
           title: Default
           type: boolean
+    ProfileDeleteCheck:
+      title: ProfileDeleteCheck
+      required:
+      - email
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          format: email
     ProfileGet:
       title: ProfileGet
       required:
