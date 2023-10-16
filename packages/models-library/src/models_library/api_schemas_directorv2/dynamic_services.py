@@ -1,5 +1,6 @@
 from typing import Any, ClassVar, TypeAlias
 
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from pydantic import BaseModel, ByteSize, Field
 
 from ..services import ServicePortKey
@@ -46,6 +47,14 @@ class DynamicServiceCreate(ServiceDetails):
         default=None,
         description="contains information about the wallet used to bill the running service",
     )
+    pricing_info: PricingInfo | None = Field(
+        default=None,
+        description="contains pricing information (ex. pricing plan and unit ids)",
+    )
+    hardware_info: HardwareInfo | None = Field(
+        default=None,
+        description="contains harware information (ex. aws_ec2_instances)",
+    )
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -62,6 +71,8 @@ class DynamicServiceCreate(ServiceDetails):
                     "examples"
                 ][0],
                 "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
+                "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
+                "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
             }
         }
 

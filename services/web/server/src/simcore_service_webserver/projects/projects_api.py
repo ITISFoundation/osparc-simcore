@@ -31,6 +31,8 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.resource_tracker import HardwareInfo, PricingInfo
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -63,6 +65,7 @@ from ..resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
+from ..resource_usage import api as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -84,6 +87,7 @@ from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_re
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
+    DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodesError,
@@ -232,6 +236,8 @@ async def _start_dynamic_service(
 
     # this is a dynamic node, let's gather its resources and start it
 
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
     if user_role > UserRole.GUEST:
@@ -270,14 +276,15 @@ async def _start_dynamic_service(
             service_version=service_version,
         )
 
-        # Get wallet information
-        wallet_info = None
+        # Get wallet/pricing/hardware information
+        wallet_info, pricing_info, hardware_info = None, None, None
         product = products_api.get_current_product(request)
         app_settings = get_settings(request.app)
         if (
             product.is_payment_enabled
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
+            # Deal with Wallet
             project_wallet = await get_project_wallet(
                 request.app, project_id=project_uuid
             )
@@ -302,7 +309,6 @@ async def _start_dynamic_service(
                 )
             else:
                 project_wallet_id = project_wallet.wallet_id
-
             # Check whether user has access to the wallet
             wallet = await wallets_api.get_wallet_by_user(
                 request.app, user_id, project_wallet_id, product_name
@@ -310,6 +316,57 @@ async def _start_dynamic_service(
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id, wallet_name=wallet.name
             )
+
+            # Deal with Pricing plan/unit
+            output = await db.get_project_node_pricing_unit_id(
+                project_uuid=project_uuid, node_uuid=node_uuid
+            )
+            if output:
+                pricing_plan_id, pricing_unit_id = output
+                pricing_unit_get = await rut_api.get_pricing_plan_unit(
+                    request.app, product_name, pricing_plan_id, pricing_unit_id
+                )
+                pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+                aws_ec2_instance = pricing_unit_get.specific_info["aws_ec2_instances"]
+            else:
+                # As there is no pricing unit connected to the project we will choose default one
+                service_pricing_plan_get = (
+                    await rut_api.get_default_service_pricing_plan(
+                        request.app,
+                        product_name=product_name,
+                        service_key=ServiceKey(service_key),
+                        service_version=ServiceVersion(service_version),
+                    )
+                )
+                default_unit = None
+                for unit in service_pricing_plan_get.pricing_units:
+                    if unit.default is True:
+                        default_unit = unit
+                        break
+                if default_unit is None:
+                    raise DefaultPricingUnitNotFoundError(
+                        project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
+                    )
+
+                pricing_plan_id, pricing_unit_id, pricing_unit_cost_id = (
+                    service_pricing_plan_get.pricing_plan_id,
+                    default_unit.pricing_unit_id,
+                    default_unit.current_cost_per_unit_id,
+                )
+                aws_ec2_instance = default_unit.specific_info["aws_ec2_instances"]
+                await db.connect_pricing_unit_to_project_node(
+                    project_uuid,
+                    node_uuid,
+                    pricing_plan_id,
+                    pricing_unit_id,
+                )
+
+            pricing_info = PricingInfo(
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+                pricing_unit_cost_id=pricing_unit_cost_id,
+            )
+            hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instance)
 
         await director_v2_api.run_dynamic_service(
             app=request.app,
@@ -327,6 +384,8 @@ async def _start_dynamic_service(
             ),
             service_resources=service_resources,
             wallet_info=wallet_info,
+            pricing_info=pricing_info,
+            hardware_info=hardware_info,
         )
 
 
