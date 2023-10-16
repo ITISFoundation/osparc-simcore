@@ -118,30 +118,30 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         }
       };
       osparc.data.Resources.fetch("auto-recharge", "get", params)
-        .then(data => {
-          this.__form.getItem("minBalanceInUsd").setValue(data["minBalanceInUsd"]);
-          this.__form.getItem("topUpAmountInUsd").setValue(data["topUpAmountInUsd"]);
-          this.__form.getItem("topUpCountdown").setValue(data["topUpCountdown"] ? data["topUpCountdown"] : -1);
-          osparc.desktop.credits.Utils.getPaymentMethod(data["paymentMethodId"])
+        .then(arData => {
+          osparc.desktop.credits.Utils.getPaymentMethod(arData["paymentMethodId"])
             .then(paymentMethod => {
+              console.log("paymentMethod", paymentMethod);
+              this.__form.getItem("minBalanceInUsd").setValue(arData["minBalanceInUsd"]);
+              this.__form.getItem("topUpAmountInUsd").setValue(arData["topUpAmountInUsd"]);
+              this.__form.getItem("topUpCountdown").setValue(arData["topUpCountdown"] ? arData["topUpCountdown"] : -1);
               if (paymentMethod) {
-                console.log("paymentMethod", paymentMethod);
                 const paymentMethodSB = this.__form.getItem("paymentMethod");
                 paymentMethodSB.getSelectables().forEach(selectable => {
                   console.log("selectable", selectable);
                 });
               }
-            });
 
-          if (data["enabled"]) {
-            this.getChildControl("enable-auto-recharge-button").exclude();
-            this.getChildControl("save-auto-recharge-button").show();
-            this.getChildControl("disable-auto-recharge-button").show();
-          } else {
-            this.getChildControl("enable-auto-recharge-button").show();
-            this.getChildControl("save-auto-recharge-button").exclude();
-            this.getChildControl("disable-auto-recharge-button").exclude();
-          }
+              if (arData["enabled"]) {
+                this.getChildControl("enable-auto-recharge-button").exclude();
+                this.getChildControl("save-auto-recharge-button").show();
+                this.getChildControl("disable-auto-recharge-button").show();
+              } else {
+                this.getChildControl("enable-auto-recharge-button").show();
+                this.getChildControl("save-auto-recharge-button").exclude();
+                this.getChildControl("disable-auto-recharge-button").exclude();
+              }
+            });
         })
         .catch(err => console.error(err.message));
     },
@@ -244,7 +244,11 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         };
         params.data["enabled"] = true;
         osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(() => this.__populateForms())
+          .then(() => {
+            this.__populateForms();
+            const msg = this.tr("Auto recharge was successfully enabled");
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          })
           .finally(() => enableAutoRechargeBtn.setFetching(false));
       });
       return enableAutoRechargeBtn;
@@ -257,6 +261,23 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         appearance: "strong-button",
         maxWidth: 200,
         center: true
+      });
+      saveAutoRechargeBtn.addListener("execute", () => {
+        saveAutoRechargeBtn.setFetching(true);
+        const params = {
+          url: {
+            walletId: this.getWallet().getWalletId()
+          },
+          data: this.__getFieldsData()
+        };
+        params.data["enabled"] = true;
+        osparc.data.Resources.fetch("auto-recharge", "put", params)
+          .then(() => {
+            this.__populateForms();
+            const msg = this.tr("Changes on the Auto recharge were successfully saved");
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          })
+          .finally(() => saveAutoRechargeBtn.setFetching(false));
       });
       return saveAutoRechargeBtn;
     },
@@ -279,7 +300,11 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         };
         params.data["enabled"] = false;
         osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(() => this.__populateForms())
+          .then(() => {
+            this.__populateForms();
+            const msg = this.tr("Auto recharge was successfully disabled");
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          })
           .finally(() => disableAutoRechargeBtn.setFetching(false));
       });
       return disableAutoRechargeBtn;
