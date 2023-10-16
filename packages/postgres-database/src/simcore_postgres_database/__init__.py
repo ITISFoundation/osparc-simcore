@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pkg_resources
 
 from . import storage_models, webserver_models
