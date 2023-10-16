@@ -66,12 +66,12 @@ class _PathParam(BaseModel):
     code: SecretStr
 
 
-def _parse_extra_credits_or_none(
+def _parse_extra_credits_in_usd_or_none(
     confirmation: ConfirmationTokenDict,
 ) -> PositiveInt | None:
     with suppress(ValidationError, JSONDecodeError):
         invitation = InvitationData.parse_raw(confirmation.get("data", "EMPTY"))
-        return invitation.extra_credits
+        return invitation.extra_credits_in_usd
     return None
 
 
@@ -94,7 +94,7 @@ async def _handle_confirm_registration(
         app,
         user_id=user_id,
         product_name=product_name,
-        extra_credits=_parse_extra_credits_or_none(confirmation),
+        extra_credits_in_usd=_parse_extra_credits_in_usd_or_none(confirmation),
     )
 
 
