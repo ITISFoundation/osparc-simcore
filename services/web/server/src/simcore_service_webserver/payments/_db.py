@@ -55,7 +55,7 @@ class PaymentsTransactionsDB(BaseModel):
         orm_mode = True
 
 
-async def create_payment_transaction(  # noqa: PLR0913
+async def create_payment_transaction(
     app: web.Application,
     *,
     payment_id: str,
@@ -125,7 +125,7 @@ async def complete_payment_transaction(
     payment_id: PaymentID,
     completion_state: PaymentTransactionState,
     state_message: str | None,
-    invoice_url: HttpUrl | None,
+    invoice_url: HttpUrl | None = None,
 ) -> PaymentsTransactionsDB:
     """
 
@@ -133,13 +133,17 @@ async def complete_payment_transaction(
         PaymentNotFoundError
         PaymentCompletedError
     """
+    optional_kwargs = {}
+    if invoice_url:
+        optional_kwargs["invoice_url"] = invoice_url
+
     async with get_database_engine(app).acquire() as conn:
         row = await update_payment_transaction_state(
             conn,
             payment_id=payment_id,
             completion_state=completion_state,
             state_message=state_message,
-            invoice_url=invoice_url,
+            **optional_kwargs,
         )
 
         if isinstance(row, PaymentNotFound):

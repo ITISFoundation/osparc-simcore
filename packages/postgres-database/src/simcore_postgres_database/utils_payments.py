@@ -18,7 +18,7 @@ PaymentID: TypeAlias = str
 PaymentTransactionRow: TypeAlias = RowProxy
 
 
-_UNSET: Final[str] = "__UNSET__"
+UNSET: Final[str] = "__UNSET__"
 
 
 @dataclass
@@ -81,7 +81,7 @@ async def update_payment_transaction_state(
     payment_id: str,
     completion_state: PaymentTransactionState,
     state_message: str | None = None,
-    invoice_url: str | None = _UNSET,
+    invoice_url: str | None = UNSET,
 ) -> PaymentTransactionRow | PaymentNotFound | PaymentAlreadyAcked:
     """ACKs payment by updating state with SUCCESS, ..."""
     if completion_state == PaymentTransactionState.PENDING:
@@ -100,7 +100,7 @@ async def update_payment_transaction_state(
             f"{invoice_url=}",
         )
 
-    if invoice_url != _UNSET:
+    if invoice_url != UNSET:
         optional["invoice_url"] = invoice_url
 
     async with connection.begin():
