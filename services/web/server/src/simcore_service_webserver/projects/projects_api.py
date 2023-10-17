@@ -221,6 +221,29 @@ def get_delete_project_task(
 #
 
 
+async def _fetch_default_pricing_and_hardware_info(
+    app, product_name, service_key, service_version, project_uuid, node_uuid
+) -> tuple:
+    service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
+        app,
+        product_name=product_name,
+        service_key=ServiceKey(service_key),
+        service_version=ServiceVersion(service_version),
+    )
+    for unit in service_pricing_plan_get.pricing_units:
+        if unit.default:
+            return (
+                service_pricing_plan_get.pricing_plan_id,
+                unit.pricing_unit_id,
+                unit.current_cost_per_unit_id,
+                unit.specific_info["aws_ec2_instances"],
+            )
+
+    raise DefaultPricingUnitNotFoundError(
+        project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
+    )
+
+
 async def _start_dynamic_service(
     request: web.Request,
     *,
@@ -327,33 +350,21 @@ async def _start_dynamic_service(
                     request.app, product_name, pricing_plan_id, pricing_unit_id
                 )
                 pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-                aws_ec2_instance = pricing_unit_get.specific_info["aws_ec2_instances"]
+                aws_ec2_instances = pricing_unit_get.specific_info["aws_ec2_instances"]
             else:
-                # As there is no pricing unit connected to the node we will choose default one
-                service_pricing_plan_get = (
-                    await rut_api.get_default_service_pricing_plan(
-                        request.app,
-                        product_name=product_name,
-                        service_key=ServiceKey(service_key),
-                        service_version=ServiceVersion(service_version),
-                    )
+                (
+                    pricing_plan_id,
+                    pricing_unit_id,
+                    pricing_unit_cost_id,
+                    aws_ec2_instances,
+                ) = await _fetch_default_pricing_and_hardware_info(
+                    request.app,
+                    product_name,
+                    service_key,
+                    service_version,
+                    project_uuid,
+                    node_uuid,
                 )
-                default_unit = None
-                for unit in service_pricing_plan_get.pricing_units:
-                    if unit.default is True:
-                        default_unit = unit
-                        break
-                if default_unit is None:
-                    raise DefaultPricingUnitNotFoundError(
-                        project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
-                    )
-
-                pricing_plan_id, pricing_unit_id, pricing_unit_cost_id = (
-                    service_pricing_plan_get.pricing_plan_id,
-                    default_unit.pricing_unit_id,
-                    default_unit.current_cost_per_unit_id,
-                )
-                aws_ec2_instance = default_unit.specific_info["aws_ec2_instances"]
                 await db.connect_pricing_unit_to_project_node(
                     project_uuid,
                     node_uuid,
@@ -366,7 +377,7 @@ async def _start_dynamic_service(
                 pricing_unit_id=pricing_unit_id,
                 pricing_unit_cost_id=pricing_unit_cost_id,
             )
-            hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instance)
+            hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
 
         await director_v2_api.run_dynamic_service(
             app=request.app,
