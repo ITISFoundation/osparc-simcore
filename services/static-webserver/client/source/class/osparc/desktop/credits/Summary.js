@@ -21,10 +21,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
   construct: function() {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(20, 20);
-    grid.setColumnFlex(0, 1);
-    grid.setColumnFlex(1, 1);
-    this._setLayout(grid);
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
   },
@@ -42,32 +39,23 @@ qx.Class.define("osparc.desktop.credits.Summary", {
       switch (id) {
         case "wallets-card": {
           const content = this.__createWalletsView();
-          const wallets = osparc.store.Store.getInstance().getWallets();
-          control = this.__createOverviewCard(`Credit Accounts (${wallets.length})`, content, "toWallets");
-          control.getChildren()[0].setValue(this.tr("Credits"));
-          this._add(control, {
-            column: 0,
-            row: 0
-          });
+          if (content) {
+            const wallets = osparc.store.Store.getInstance().getWallets();
+            control = this.__createOverviewCard(this.tr("Credits Balance"), content, `All Credit Accounts (${wallets.length})`, "toWallets");
+            this._add(control);
+          }
           break;
         }
         case "transactions-card": {
           const content = this.__createTransactionsView();
-          control = this.__createOverviewCard("Transactions", content, "toTransactions");
-          this._add(control, {
-            column: 1,
-            row: 0
-          });
+          control = this.__createOverviewCard("Transactions", content, "All Transactions", "toTransactions");
+          this._add(control);
           break;
         }
         case "usage-card": {
           const content = this.__createUsageView();
-          control = this.__createOverviewCard("Usage", content, "toUsageOverview");
-          this._add(control, {
-            column: 0,
-            row: 1,
-            colSpan: 2
-          });
+          control = this.__createOverviewCard("Settings", content, "Usage", "toUsageOverview");
+          this._add(control);
           break;
         }
       }
@@ -80,10 +68,8 @@ qx.Class.define("osparc.desktop.credits.Summary", {
       this.getChildControl("usage-card");
     },
 
-    __createOverviewCard: function(cardName, content, signalName) {
+    __createOverviewCard: function(cardLabel, content, buttonLabel, signalName) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        minWidth: 200,
-        minHeight: 200,
         padding: 15,
         backgroundColor: "background-main-1"
       });
@@ -91,24 +77,29 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         "border-radius": "4px"
       });
 
+      const topLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const title = new qx.ui.basic.Label().set({
-        value: cardName,
-        font: "text-14"
+        value: cardLabel,
+        font: "text-14",
+        allowGrowX: true
       });
-      layout.add(title);
+      topLayout.add(title, {
+        flex: 1
+      });
+
+      const goToButton = new qx.ui.form.Button().set({
+        label: buttonLabel,
+        allowGrowX: false,
+        alignX: "right"
+      });
+      goToButton.addListener("execute", () => this.fireEvent(signalName), this);
+      topLayout.add(goToButton);
+      layout.add(topLayout);
 
       content.setPadding(5);
       layout.add(content, {
         flex: 1
       });
-
-      const goToButton = new qx.ui.form.Button().set({
-        label: this.tr("Go to ") + cardName,
-        allowGrowX: false,
-        alignX: "right"
-      });
-      goToButton.addListener("execute", () => this.fireEvent(signalName), this);
-      layout.add(goToButton);
 
       return layout;
     },
@@ -116,84 +107,15 @@ qx.Class.define("osparc.desktop.credits.Summary", {
     __createWalletsView: function() {
       const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
       const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
-      const oneWallet = activeWallet ? activeWallet : preferredWallet;
-      if (oneWallet) {
+      const wallet = activeWallet ? activeWallet : preferredWallet;
+      if (wallet) {
         // show one wallet
-        return this.__showOneWallet(oneWallet);
-      }
-      // show some wallets
-      return this.__showSomeWallets();
-    },
+        const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-    __showOneWallet: function(wallet) {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        alignY: "middle"
-      });
-      const maxSize = 24;
-      // thumbnail or shared or not shared
-      const thumbnail = new qx.ui.basic.Image().set({
-        backgroundColor: "transparent",
-        alignX: "center",
-        alignY: "middle",
-        scale: true,
-        allowShrinkX: true,
-        allowShrinkY: true,
-        maxHeight: maxSize,
-        maxWidth: maxSize
-      });
-      const value = wallet.getThumbnail();
-      if (value) {
-        thumbnail.setSource(value);
-      } else if (wallet.getAccessRights() && wallet.getAccessRights().length > 1) {
-        thumbnail.setSource(osparc.utils.Icons.organization(maxSize-4));
-      } else {
-        thumbnail.setSource(osparc.utils.Icons.user(maxSize-4));
-      }
-      titleLayout.add(thumbnail);
-      // name
-      const walletName = new qx.ui.basic.Label().set({
-        font: "text-14",
-        alignY: "middle",
-        maxWidth: 200
-      });
-      wallet.bind("name", walletName, "value");
-      titleLayout.add(walletName);
-      layout.add(titleLayout);
-
-      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
-      layout.add(creditsIndicator);
-
-      const buyButton = new qx.ui.form.Button().set({
-        label: this.tr("Buy Credits"),
-        icon: "@FontAwesome5Solid/dollar-sign/16",
-        maxHeight: 30,
-        alignY: "middle",
-        allowGrowX: false,
-        height: 25
-      });
-      const myAccessRights = wallet.getMyAccessRights();
-      buyButton.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
-      buyButton.addListener("execute", () => this.fireDataEvent("buyCredits", {
-        walletId: wallet.getWalletId()
-      }), this);
-      layout.add(buyButton);
-
-      return layout;
-    },
-
-    __showSomeWallets: function() {
-      const grid = new qx.ui.layout.Grid(12, 8);
-      const layout = new qx.ui.container.Composite(grid);
-      const maxWallets = 5;
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      for (let i=0; i<wallets.length && i<maxWallets; i++) {
-        let column = 0;
-
-        const wallet = wallets[i];
-
-        const maxSize = 20;
+        const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+          alignY: "middle"
+        });
+        const maxSize = 24;
         // thumbnail or shared or not shared
         const thumbnail = new qx.ui.basic.Image().set({
           backgroundColor: "transparent",
@@ -213,34 +135,40 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         } else {
           thumbnail.setSource(osparc.utils.Icons.user(maxSize-4));
         }
-        layout.add(thumbnail, {
-          column,
-          row: i
-        });
-        column++;
+        titleLayout.add(thumbnail);
 
         // name
         const walletName = new qx.ui.basic.Label().set({
           font: "text-14",
-          maxWidth: 100
+          alignY: "middle"
         });
         wallet.bind("name", walletName, "value");
-        layout.add(walletName, {
-          column,
-          row: i
-        });
-        column++;
+        titleLayout.add(walletName);
+        layout.add(titleLayout);
 
-        // indicator
+        // credits indicator
         const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
-        layout.add(creditsIndicator, {
-          column,
-          row: i
-        });
-        column++;
-      }
+        layout.add(creditsIndicator);
 
-      return layout;
+        // buy button
+        const buyButton = new qx.ui.form.Button().set({
+          label: this.tr("Buy Credits"),
+          icon: "@FontAwesome5Solid/dollar-sign/16",
+          maxHeight: 30,
+          alignY: "middle",
+          allowGrowX: false,
+          height: 25
+        });
+        const myAccessRights = wallet.getMyAccessRights();
+        buyButton.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
+        buyButton.addListener("execute", () => this.fireDataEvent("buyCredits", {
+          walletId: wallet.getWalletId()
+        }), this);
+        layout.add(buyButton);
+
+        return layout;
+      }
+      return null;
     },
 
     __createTransactionsView: function() {
