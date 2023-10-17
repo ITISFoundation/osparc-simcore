@@ -29,6 +29,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
   events: {
     "buyCredits": "qx.event.type.Data",
     "toWallets": "qx.event.type.Event",
+    "toSettings": "qx.event.type.Event",
     "toActivity": "qx.event.type.Event"
   },
 
@@ -43,6 +44,12 @@ qx.Class.define("osparc.desktop.credits.Summary", {
             control = this.__createOverviewCard(this.tr("Credits Balance"), content, `All Credit Accounts (${wallets.length})`, "toWallets");
             this._add(control);
           }
+          break;
+        }
+        case "settings-card": {
+          const content = this.__createSettingsView();
+          control = this.__createOverviewCard("Settings", content, "All Settings", "toSettings");
+          this._add(control);
           break;
         }
         case "activity-card": {
@@ -162,6 +169,49 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           walletId: wallet.getWalletId()
         }), this);
         layout.add(buyButton);
+
+        return layout;
+      }
+      return null;
+    },
+
+    __createSettingsView: function() {
+      const wallet = this.__getWallet();
+      if (wallet) {
+        const grid = new qx.ui.layout.Grid(15, 10);
+        const layout = new qx.ui.container.Composite(grid);
+
+        const t1t = new qx.ui.basic.Label(this.tr("Automatic Payment")).set({
+          font: "text-14"
+        });
+        layout.add(t1t, {
+          row: 0,
+          column: 0
+        });
+        const t1v = new qx.ui.basic.Label().set({
+          value: "On",
+          font: "text-14"
+        });
+        layout.add(t1v, {
+          row: 0,
+          column: 1
+        });
+
+        const t2t = new qx.ui.basic.Label(this.tr("Monthly Spending Limit")).set({
+          font: "text-14"
+        });
+        layout.add(t2t, {
+          row: 1,
+          column: 0
+        });
+        const t2v = new qx.ui.basic.Label().set({
+          value: "1000$",
+          font: "text-14"
+        });
+        layout.add(t2v, {
+          row: 1,
+          column: 1
+        });
 
         return layout;
       }
