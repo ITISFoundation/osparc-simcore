@@ -25,6 +25,7 @@ from faker import Faker
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pydantic import parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_tokens import (
@@ -794,9 +795,13 @@ async def test_list_permissions_with_no_group_defined_returns_default_false_for_
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_mark_account_for_deletion(
-    client: TestClient,
-    logged_user: UserInfoDict,
+    client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
 ):
+    mock = mocker.patch(
+        "simcore_service_webserver.email._core._do_send_mail",
+        spec=True,
+    )
+
     # is logged in
     response = await client.get("/v0/me")
     await assert_status(response, web.HTTPOk)
@@ -811,7 +816,7 @@ async def test_mark_account_for_deletion(
     )
     await assert_status(response, web.HTTPConflict)
 
-    #  success to request deletion of account
+    # success to request deletion of account
     response = await client.post(
         "/v0/me:mark-deleted",
         json={
@@ -820,6 +825,11 @@ async def test_mark_account_for_deletion(
         },
     )
     await assert_status(response, web.HTTPOk)
+
+    # sent email?
+    mimetext = mock.call_args[1]["message"]
+    assert mimetext["Subject"]
+    assert mimetext["To"] == logged_user["email"]
 
     # should be logged-out
     response = await client.get("/v0/me")
