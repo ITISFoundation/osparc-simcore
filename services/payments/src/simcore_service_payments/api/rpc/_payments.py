@@ -9,6 +9,7 @@ from models_library.wallets import WalletID
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
+from ..._constants import PAG, PGDB
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.payments_gateway import InitPayment
 from ...services.payments_gateway import PaymentsGatewayApi
@@ -39,7 +40,8 @@ async def init_payment(
     with log_context(
         _logger,
         logging.INFO,
-        "Init payment %s in payments-gateway",
+        "%s: Init payment %s in payments-gateway",
+        PAG,
         f"{wallet_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
@@ -61,7 +63,8 @@ async def init_payment(
     with log_context(
         _logger,
         logging.INFO,
-        "Annotate INIT transaction %s in db",
+        "%s: Annotate INIT transaction %s in db",
+        PGDB,
         f"{init.payment_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):

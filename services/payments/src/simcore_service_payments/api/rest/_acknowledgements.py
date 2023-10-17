@@ -7,6 +7,7 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
+from ..._constants import ACKED, PGDB, RUT
 from ...db.payments_transactions_repo import (
     PaymentNotFoundError,
     PaymentsTransactionsRepo,
@@ -39,7 +40,8 @@ async def on_payment_completed(
     with log_context(
         _logger,
         logging.INFO,
-        "Top-up %s credits for %s in RUT",
+        "%s: Top-up %s credits for %s",
+        RUT,
         f"{transaction.osparc_credits}",
         f"{transaction.payment_id=}",
     ):
@@ -55,7 +57,8 @@ async def on_payment_completed(
         )
 
     _logger.debug(
-        "RUT response to %s was %s",
+        "%s: Response to %s was %s",
+        RUT,
         f"{transaction.payment_id=}",
         f"{credit_transaction_id=}",
     )
@@ -77,7 +80,9 @@ async def acknowledge_payment(
     with log_context(
         _logger,
         logging.INFO,
-        "Annotate ACK transaction %s in db",
+        "%s: Update %s transaction %s in db",
+        PGDB,
+        ACKED,
         f"{payment_id=}",
     ):
         try:
@@ -97,7 +102,7 @@ async def acknowledge_payment(
             ) from err
 
     if ack.saved:
-        _logger.debug("Annotate CREATE payment method")
+        _logger.debug("%s: Creating payment method", PGDB)
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
         )
