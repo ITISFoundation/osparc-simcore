@@ -25,3 +25,11 @@ class Ec2TooManyInstancesError(AutoscalingRuntimeError):
 
 class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
     msg_template: str = "Invalid EC2 private DNS name {aws_private_dns_name}"
+
+
+class DaskSchedulerNotFoundError(AutoscalingRuntimeError):
+    msg_template: str = "Scheduler in {url} was not found!"
+
+
+class DaskWorkerNotFoundError(AutoscalingRuntimeError):
+    msg_template: str = "Dask worker in {url} was not found!"
