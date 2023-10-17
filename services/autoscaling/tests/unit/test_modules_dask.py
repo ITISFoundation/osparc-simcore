@@ -5,12 +5,12 @@
 
 import asyncio
 from collections.abc import Callable
-from typing import Final
+from typing import Any, Final
 
 import distributed
 import pytest
 from faker import Faker
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from simcore_service_autoscaling.core.errors import (
     DaskSchedulerNotFoundError,
     DaskWorkerNotFoundError,
@@ -44,6 +44,20 @@ async def test__scheduler_client_with_wrong_url(faker: Faker):
 @pytest.fixture
 def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
     return parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address)
+
+
+@pytest.fixture
+def dask_workers_config() -> dict[str, Any]:
+    # NOTE: override of pytest-simcore dask_workers_config to have only 1 worker
+    return {
+        "single-cpu-worker": {
+            "cls": distributed.Worker,
+            "options": {
+                "nthreads": 2,
+                "resources": {"CPU": 2, "RAM": 48e9},
+            },
+        }
+    }
 
 
 async def test__scheduler_client(scheduler_url: AnyUrl):
@@ -249,6 +263,33 @@ async def test_worker_used_resources(
     dask_spec_cluster_client: distributed.Client,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
+    # initial state
+    assert (
+        await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
+        == Resources.create_as_empty()
+    )
+
+    def _add_fct(x: int, y: int) -> int:
+        import time
+
+        time.sleep(_DASK_SCHEDULER_REACTION_TIME_S * 2)
+        return x + y
+
+    # run something that uses resources
+    num_cpus = 2
+    future_queued_task = dask_spec_cluster_client.submit(
+        _add_fct, 2, 5, resources={"CPU": num_cpus}
+    )
+    assert future_queued_task
+    await _wait_for_dask_scheduler_to_change_state()
+    assert await get_worker_used_resources(
+        scheduler_url, fake_localhost_ec2_instance_data
+    ) == Resources(cpus=num_cpus, ram=ByteSize(0))
+
+    result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
+    assert result == 7
+
+    # back to no use
     assert (
         await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
         == Resources.create_as_empty()

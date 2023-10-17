@@ -117,6 +117,7 @@ def _dask_worker_from_ec2_instance(
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
     if not filtered_workers:
         raise DaskWorkerNotFoundError(url=client.scheduler.address)
+    assert len(filtered_workers) == 1  # nosec
     return next(iter(filtered_workers.items()))
 
 

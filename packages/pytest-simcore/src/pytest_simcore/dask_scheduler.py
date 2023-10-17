@@ -63,7 +63,7 @@ async def dask_spec_local_cluster(
     monkeypatch: pytest.MonkeyPatch,
     dask_workers_config: dict[str, Any],
     dask_scheduler_config: dict[str, Any],
-) -> AsyncIterable[distributed.SpecCluster]:
+) -> AsyncIterator[distributed.SpecCluster]:
     # in this mode we can precisely create a specific cluster
 
     async with distributed.SpecCluster(
