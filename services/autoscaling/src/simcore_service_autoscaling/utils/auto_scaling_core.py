@@ -16,6 +16,10 @@ _logger = logging.getLogger(__name__)
 def node_host_name_from_ec2_private_dns(
     ec2_instance_data: EC2InstanceData,
 ) -> str:
+    """returns the node host name 'ip-10-2-3-22' from the ec2 private dns
+    Raises:
+        Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
+    """
     if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
         return match.group("host_name")
     raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
@@ -24,6 +28,10 @@ def node_host_name_from_ec2_private_dns(
 def node_ip_from_ec2_private_dns(
     ec2_instance_data: EC2InstanceData,
 ) -> str:
+    """returns the node ipv4 from the ec2 private dns string
+    Raises:
+        Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
+    """
     return (
         node_host_name_from_ec2_private_dns(ec2_instance_data)
         .removeprefix("ip-")

@@ -668,7 +668,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
                 {
                     "launch_time": faker.date_time(tzinfo=timezone.utc),
                     "id": faker.uuid4(),
-                    "aws_private_dns": faker.name(),
+                    "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
                     "type": faker.pystr(),
                     "state": faker.pystr(),
                 }

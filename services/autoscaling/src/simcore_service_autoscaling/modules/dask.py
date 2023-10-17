@@ -6,11 +6,7 @@ from typing import Any, Final
 import distributed
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 
-from ..core.errors import (
-    DaskSchedulerNotFoundError,
-    DaskWorkerNotFoundError,
-    Ec2InvalidDnsNameError,
-)
+from ..core.errors import DaskSchedulerNotFoundError, DaskWorkerNotFoundError
 from ..models import (
     AssociatedInstance,
     DaskTask,
@@ -38,6 +34,10 @@ _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
 
 @contextlib.asynccontextmanager
 async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
+    """
+    Raises:
+        DaskSchedulerNotFoundError: if the scheduler was not found/cannot be reached
+    """
     try:
         async with distributed.Client(
             url, asynchronous=True, timeout=f"{_DASK_SCHEDULER_CONNECT_TIMEOUT_S}"
@@ -48,6 +48,11 @@ async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
 
 
 async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
+    """
+    Raises:
+        DaskSchedulerNotFoundError
+    """
+
     def _list_tasks(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[str, dict[str, Any]]:
@@ -67,6 +72,10 @@ async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
 
 
 async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
+    """
+    Raises:
+        DaskSchedulerNotFoundError
+    """
     async with _scheduler_client(url) as client:
         processing_tasks = set()
         if worker_to_processing_tasks := await _wrap_client_async_routine(
@@ -79,34 +88,66 @@ async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
         return list(processing_tasks)
 
 
+DaskWorkerUrl = str
+DaskWorkerDetails = dict[str, Any]
+
+
+def _dask_worker_from_ec2_instance(
+    client: distributed.Client, ec2_instance: EC2InstanceData
+) -> tuple[DaskWorkerUrl, DaskWorkerDetails]:
+    """
+    Raises:
+        Ec2InvalidDnsNameError
+        DaskWorkerNotFoundError
+    """
+    node_ip = node_ip_from_ec2_private_dns(ec2_instance)
+    scheduler_info = client.scheduler_info()
+    assert client.scheduler  # nosec
+    if "workers" not in scheduler_info or not scheduler_info["workers"]:
+        raise DaskWorkerNotFoundError(url=client.scheduler.address)
+    workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_info["workers"]
+
+    # dict is of type dask_worker_address: worker_details
+    def _find_by_worker_host(
+        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
+    ) -> bool:
+        _, details = dask_worker
+        return details["host"] == node_ip
+
+    filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
+    if not filtered_workers:
+        raise DaskWorkerNotFoundError(url=client.scheduler.address)
+    return next(iter(filtered_workers.items()))
+
+
 async def get_worker_still_has_results_in_memory(
     url: AnyUrl, ec2_instance: EC2InstanceData
 ) -> int:
+    """
+    Raises:
+        DaskSchedulerNotFoundError
+        Ec2InvalidDnsNameError
+        DaskWorkerNotFoundError: if there are no workers or no worker corresponding to ec2_instance
+    """
     async with _scheduler_client(url) as client:
-        with contextlib.suppress(Ec2InvalidDnsNameError):
-            scheduler_info = client.scheduler_info()
-            if "workers" not in scheduler_info or not scheduler_info["workers"]:
-                raise DaskWorkerNotFoundError(url=url)
-            workers: dict[str, Any] = scheduler_info["workers"]
-            # dict is of type dask_worker_address: worker_details
-            node_worker_name = None
+        _, worker_details = _dask_worker_from_ec2_instance(client, ec2_instance)
 
-            for worker_name, worker_details in workers.items():
-                if worker_details["host"] == node_ip_from_ec2_private_dns(ec2_instance):
-                    node_worker_name = worker_name
-                    break
-            if not node_worker_name:
-                raise DaskWorkerNotFoundError(url=url)
-
-            worker_metrics: dict[str, Any] = workers[node_worker_name]["metrics"]
-            if worker_metrics.get("task_counts", {}) != {}:
-                return 1
-        return 0
+        worker_metrics: dict[str, Any] = worker_details["metrics"]
+        if worker_metrics.get("task_counts", {}) != {}:
+            return 1
+    return 0
 
 
 async def get_worker_used_resources(
     url: AnyUrl, ec2_instance: EC2InstanceData
 ) -> Resources:
+    """
+    Raises:
+        DaskSchedulerNotFoundError
+        Ec2InvalidDnsNameError
+        DaskWorkerNotFoundError: if there are no workers or no worker corresponding to ec2_instance
+    """
+
     def _get_worker_used_resources(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[str, dict]:
@@ -116,19 +157,7 @@ async def get_worker_used_resources(
         return used_resources
 
     async with _scheduler_client(url) as client:
-        scheduler_info = client.scheduler_info()
-        if "workers" not in scheduler_info or not scheduler_info["workers"]:
-            raise DaskWorkerNotFoundError(url=url)
-        workers: dict[str, Any] = scheduler_info["workers"]
-        # dict is of type dask_worker_address: worker_details
-        node_worker_name = None
-
-        for worker_name, worker_details in workers.items():
-            if worker_details["host"] == node_ip_from_ec2_private_dns(ec2_instance):
-                node_worker_name = worker_name
-                break
-        if not node_worker_name:
-            raise DaskWorkerNotFoundError(url=url)
+        worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
 
         # now get the used resources
         used_resources_per_worker: dict[
@@ -136,9 +165,9 @@ async def get_worker_used_resources(
         ] = await _wrap_client_async_routine(
             client.run_on_scheduler(_get_worker_used_resources)
         )
-        if node_worker_name not in used_resources_per_worker:
+        if worker_url not in used_resources_per_worker:
             raise DaskWorkerNotFoundError(url=url)
-        worker_used_resources = used_resources_per_worker[node_worker_name]
+        worker_used_resources = used_resources_per_worker[worker_url]
         return Resources(
             cpus=worker_used_resources.get("CPU", 0),
             ram=parse_obj_as(ByteSize, worker_used_resources.get("RAM", 0)),

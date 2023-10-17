@@ -14,16 +14,19 @@ from pydantic import AnyUrl, parse_obj_as
 from simcore_service_autoscaling.core.errors import (
     DaskSchedulerNotFoundError,
     DaskWorkerNotFoundError,
+    Ec2InvalidDnsNameError,
 )
 from simcore_service_autoscaling.models import (
     DaskTaskId,
     DaskTaskResources,
     EC2InstanceData,
+    Resources,
 )
 from simcore_service_autoscaling.modules.dask import (
     DaskTask,
     _scheduler_client,
     get_worker_still_has_results_in_memory,
+    get_worker_used_resources,
     list_processing_tasks,
     list_unrunnable_tasks,
 )
@@ -97,17 +100,6 @@ async def test_list_processing_tasks(
     assert await list_processing_tasks(url=scheduler_url) == []
 
 
-async def test_get_worker_still_has_results_in_memory_with_invalid_ec2_name(
-    scheduler_url: AnyUrl,
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    faker: Faker,
-):
-    ec2_instance = fake_ec2_instance_data(aws_private_dns=faker.name())
-    assert (
-        await get_worker_still_has_results_in_memory(scheduler_url, ec2_instance) == 0
-    )
-
-
 _DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
 
 
@@ -119,6 +111,23 @@ async def _wait_for_task_done(future: distributed.Future) -> None:
 async def _wait_for_dask_scheduler_to_change_state() -> None:
     # NOTE: I know this is kind of stupid
     await asyncio.sleep(_DASK_SCHEDULER_REACTION_TIME_S)
+
+
+@pytest.fixture
+def fake_ec2_instance_data_with_invalid_ec2_name(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData], faker: Faker
+) -> EC2InstanceData:
+    return fake_ec2_instance_data(aws_private_dns=faker.name())
+
+
+async def test_get_worker_still_has_results_in_memory_with_invalid_ec2_name_raises(
+    scheduler_url: AnyUrl,
+    fake_ec2_instance_data_with_invalid_ec2_name: EC2InstanceData,
+):
+    with pytest.raises(Ec2InvalidDnsNameError):
+        await get_worker_still_has_results_in_memory(
+            scheduler_url, fake_ec2_instance_data_with_invalid_ec2_name
+        )
 
 
 async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
@@ -135,12 +144,9 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
 
 
 async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_raises(
-    dask_local_cluster_without_workers: distributed.SpecCluster,
+    scheduler_url: AnyUrl,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    scheduler_url = parse_obj_as(
-        AnyUrl, dask_local_cluster_without_workers.scheduler_address
-    )
     ec2_instance_data = fake_ec2_instance_data()
     with pytest.raises(DaskWorkerNotFoundError):
         await get_worker_still_has_results_in_memory(scheduler_url, ec2_instance_data)
@@ -205,4 +211,45 @@ async def test_get_worker_still_has_results_in_memory(
             scheduler_url, fake_localhost_ec2_instance_data
         )
         == 0
+    )
+
+
+async def test_worker_used_resources_with_invalid_ec2_name_raises(
+    scheduler_url: AnyUrl,
+    fake_ec2_instance_data_with_invalid_ec2_name: EC2InstanceData,
+):
+    with pytest.raises(Ec2InvalidDnsNameError):
+        await get_worker_used_resources(
+            scheduler_url, fake_ec2_instance_data_with_invalid_ec2_name
+        )
+
+
+async def test_worker_used_resources_with_no_workers_raises(
+    dask_local_cluster_without_workers: distributed.SpecCluster,
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    scheduler_url = parse_obj_as(
+        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    )
+    with pytest.raises(DaskWorkerNotFoundError):
+        await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
+
+
+async def test_worker_used_resources_with_invalid_worker_host_raises(
+    scheduler_url: AnyUrl,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    ec2_instance_data = fake_ec2_instance_data()
+    with pytest.raises(DaskWorkerNotFoundError):
+        await get_worker_used_resources(scheduler_url, ec2_instance_data)
+
+
+async def test_worker_used_resources(
+    scheduler_url: AnyUrl,
+    dask_spec_cluster_client: distributed.Client,
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    assert (
+        await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
+        == Resources.create_as_empty()
     )
