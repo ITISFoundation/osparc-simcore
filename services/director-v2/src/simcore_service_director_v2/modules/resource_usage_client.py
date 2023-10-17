@@ -16,7 +16,11 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     ServicePricingPlanGet,
 )
 from models_library.products import ProductName
-from models_library.resource_tracker import PricingPlanId, PricingUnitId
+from models_library.resource_tracker import (
+    PricingAndHardwareInfoTuple,
+    PricingPlanId,
+    PricingUnitId,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
@@ -90,7 +94,7 @@ class ResourceUsageApi:
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> tuple:
+    ) -> PricingAndHardwareInfoTuple:
         service_pricing_plan_get = await self.get_default_service_pricing_plan(
             product_name=product_name,
             service_key=service_key,
@@ -98,7 +102,7 @@ class ResourceUsageApi:
         )
         for unit in service_pricing_plan_get.pricing_units:
             if unit.default:
-                return (
+                return PricingAndHardwareInfoTuple(
                     service_pricing_plan_get.pricing_plan_id,
                     unit.pricing_unit_id,
                     unit.current_cost_per_unit_id,

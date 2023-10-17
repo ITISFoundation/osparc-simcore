@@ -806,9 +806,13 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> PricingPlanAndUnitIdsTuple | None:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
         async with self.engine.acquire() as conn:
-            return await project_nodes_repo.get_project_node_pricing_unit_id(
+            output = await project_nodes_repo.get_project_node_pricing_unit_id(
                 conn, project_uuid=project_uuid, node_uuid=node_uuid
             )
+            if output:
+                pricing_plan_id, pricing_unit_id = output
+                return PricingPlanAndUnitIdsTuple(pricing_plan_id, pricing_unit_id)
+            return None
 
     async def connect_pricing_unit_to_project_node(
         self,

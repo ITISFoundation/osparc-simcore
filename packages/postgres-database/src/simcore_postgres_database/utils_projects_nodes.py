@@ -5,14 +5,6 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.resource_tracker import (
-    PricingPlanAndUnitIdsTuple,
-    PricingPlanId,
-    PricingUnitId,
-)
-from pydantic import parse_obj_as
 from simcore_postgres_database.models.projects_node_to_pricing_unit import (
     projects_node_to_pricing_unit,
 )
@@ -207,8 +199,8 @@ class ProjectNodesRepo:
         await connection.execute(delete_stmt)
 
     async def get_project_node_pricing_unit_id(
-        self, connection: SAConnection, *, project_uuid: ProjectID, node_uuid: NodeID
-    ) -> PricingPlanAndUnitIdsTuple | None:
+        self, connection: SAConnection, *, project_uuid: uuid.UUID, node_uuid: uuid.UUID
+    ) -> tuple | None:
         """get a pricing unit that is connected to the project node or None if there is non connected
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -232,17 +224,17 @@ class ProjectNodesRepo:
         )
         row = await result.fetchone()
         if row:
-            return PricingPlanAndUnitIdsTuple(row[0], row[1])
+            return (row[0], row[1])
         return None
 
     async def connect_pricing_unit_to_project_node(
         self,
         connection: SAConnection,
         *,
-        project_uuid: ProjectID,
-        node_uuid: NodeID,
-        pricing_plan_id: PricingPlanId,
-        pricing_unit_id: PricingUnitId,
+        project_uuid: uuid.UUID,
+        node_uuid: uuid.UUID,
+        pricing_plan_id: int,
+        pricing_unit_id: int,
     ) -> None:
         result = await connection.scalar(
             sqlalchemy.select(projects_nodes.c.project_node_id).where(
@@ -250,7 +242,7 @@ class ProjectNodesRepo:
                 & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
-        project_node_id = parse_obj_as(int, result) if result else 0
+        project_node_id = int(result) if result else 0
 
         insert_stmt = pg_insert(projects_node_to_pricing_unit).values(
             project_node_id=project_node_id,
