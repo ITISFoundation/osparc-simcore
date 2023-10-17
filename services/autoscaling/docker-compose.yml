@@ -1,0 +1,56 @@
+version: "3.8"
+services:
+  rabbit:
+    image: itisfoundation/rabbitmq:3.11.2-management
+    init: true
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "15692"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+    healthcheck:
+      # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
+      test: rabbitmq-diagnostics -q status
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+
+  redis:
+    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
+    init: true
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    volumes:
+      - redis-data:/data
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    init: true
+    ports:
+      - "18081:8081"
+    environment:
+      - REDIS_HOSTS=resources:${REDIS_HOST}:${REDIS_PORT}:0,locks:${REDIS_HOST}:${REDIS_PORT}:1,validation_codes:${REDIS_HOST}:${REDIS_PORT}:2,scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:3,user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,announcements:${REDIS_HOST}:${REDIS_PORT}:5
+      # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
+
+  autoscaling:
+    image: local/autoscaling:development
+    init: true
+    ports:
+      - "8006:8000"
+      - "3012:3000"
+    env_file:
+      - .env
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./:/devel/services/autoscaling
+      - ../../packages:/devel/packages
+volumes:
+  redis-data:
