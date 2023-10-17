@@ -73,7 +73,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __addNewPaymentMethod: function() {
-      const myWallets = osparc.store.Store.getInstance().getMyWallets();
+      const myWallets = osparc.desktop.credits.Utils.getMyWallets();
       if (myWallets) {
         const params = {
           url: {
@@ -97,7 +97,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       }));
 
       const promises = [];
-      const myWallets = osparc.store.Store.getInstance().getMyWallets();
+      const myWallets = osparc.desktop.credits.Utils.getMyWallets();
       myWallets.forEach(wallet => {
         const params = {
           url: {
