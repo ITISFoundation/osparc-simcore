@@ -89,7 +89,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{API_VTAG}/me:mark-deleted", name="delete_account")
+@routes.post(f"/{API_VTAG}/me:mark-deleted", name="mark_account_for_deletion")
 @login_required
 @permission_required("user.profile.delete")
 async def mark_account_for_deletion(request: web.Request):
