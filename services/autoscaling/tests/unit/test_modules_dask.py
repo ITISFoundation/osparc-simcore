@@ -11,7 +11,10 @@ import distributed
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, parse_obj_as
-from simcore_service_autoscaling.core.errors import DaskSchedulerNotFoundError
+from simcore_service_autoscaling.core.errors import (
+    DaskSchedulerNotFoundError,
+    DaskWorkerNotFoundError,
+)
 from simcore_service_autoscaling.models import (
     DaskTaskId,
     DaskTaskResources,
@@ -117,6 +120,19 @@ async def _wait_for_dask_scheduler_to_change_state() -> None:
     await asyncio.sleep(_DASK_SCHEDULER_REACTION_TIME_S)
 
 
+async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
+    dask_local_cluster_without_workers: distributed.SpecCluster,
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    scheduler_url = parse_obj_as(
+        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    )
+    with pytest.raises(DaskWorkerNotFoundError):
+        await get_worker_still_has_results_in_memory(
+            scheduler_url, fake_localhost_ec2_instance_data
+        )
+
+
 @pytest.mark.parametrize("fct_shall_err", [True, False])
 async def test_get_worker_still_has_results_in_memory(
     scheduler_url: AnyUrl,
@@ -171,7 +187,6 @@ async def test_get_worker_still_has_results_in_memory(
     # this should remove the memory
     del future_queued_task
     await _wait_for_dask_scheduler_to_change_state()
-    # await asyncio.sleep(10000)
     assert (
         await get_worker_still_has_results_in_memory(
             scheduler_url, fake_localhost_ec2_instance_data

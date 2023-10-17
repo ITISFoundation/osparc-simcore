@@ -81,6 +81,26 @@ async def dask_spec_local_cluster(
 
 
 @pytest.fixture
+async def dask_local_cluster_without_workers(
+    monkeypatch: pytest.MonkeyPatch,
+    dask_scheduler_config: dict[str, Any],
+) -> AsyncIterable[distributed.SpecCluster]:
+    # in this mode we can precisely create a specific cluster
+
+    async with distributed.SpecCluster(
+        scheduler=dask_scheduler_config,
+        asynchronous=True,
+        name="pytest_cluster_no_workers",
+    ) as cluster:
+        scheduler_address = URL(cluster.scheduler_address)
+        monkeypatch.setenv(
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
+            f"{scheduler_address}" or "invalid",
+        )
+        yield cluster
+
+
+@pytest.fixture
 async def dask_spec_cluster_client(
     dask_spec_local_cluster: distributed.SpecCluster,
 ) -> AsyncIterator[distributed.Client]:
