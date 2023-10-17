@@ -1,16 +1,16 @@
 """rm created_ip and add DELETED user status
 
-Revision ID: b8589557e318
-Revises: 542e6ee8a8ea
-Create Date: 2023-10-16 19:39:16.787868+00:00
+Revision ID: a49843a036d0
+Revises: 7777d181dc1f
+Create Date: 2023-10-17 13:23:58.839940+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "b8589557e318"
-down_revision = "542e6ee8a8ea"
+revision = "a49843a036d0"
+down_revision = "7777d181dc1f"
 branch_labels = None
 depends_on = None
 
