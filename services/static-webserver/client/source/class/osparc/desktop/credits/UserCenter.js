@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __transactionsTable: null,
 
     __getOverviewPage: function() {
-      const title = this.tr("Overview");
+      const title = this.tr("Summary");
       const iconSrc = "@FontAwesome5Solid/table/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
