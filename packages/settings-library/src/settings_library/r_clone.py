@@ -18,14 +18,14 @@ class RCloneSettings(BaseCustomSettings):
 
     # SEE https://rclone.org/docs/#transfers-n
     R_CLONE_OPTION_TRANSFERS: NonNegativeInt = Field(
-        5, description="`--transfers X`: sets the amount of parallel transfers"
+        default=5, description="`--transfers X`: sets the amount of parallel transfers"
     )
     # SEE https://rclone.org/docs/#retries-int
     R_CLONE_OPTION_RETRIES: NonNegativeInt = Field(
-        3, description="`--retries X`: times to retry each individual transfer"
+        default=3, description="`--retries X`: times to retry each individual transfer"
     )
     # SEE https://rclone.org/docs/#buffer-size-size
     R_CLONE_OPTION_BUFFER_SIZE: str = Field(
-        "0M",
+        default="0M",
         description="`--buffer-size X`: sets the amount of RAM to use for each individual transfer",
     )
