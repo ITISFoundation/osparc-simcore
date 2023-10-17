@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-payments web API",
     "description": " Service that manages creation and validation of registration payments",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "paths": {
     "/": {
@@ -218,6 +218,13 @@
             "type": "string",
             "title": "Message"
           },
+          "invoice_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Invoice Url"
+          },
           "saved": {
             "allOf": [
               {
@@ -230,7 +237,8 @@
         },
         "type": "object",
         "required": [
-          "success"
+          "success",
+          "invoice_url"
         ],
         "title": "AckPayment"
       },
