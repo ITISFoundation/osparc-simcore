@@ -25,8 +25,14 @@ qx.Class.define("osparc.desktop.credits.Usage", {
 
     this.getChildControl("wallet-selector-title");
     const walletSelector = this.getChildControl("wallet-selector");
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-    this.getChildControl("wallet-selector-layout").setVisibility(walletsEnabled ? "visible" : "excluded");
+    const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
+    if (walletSelector.getSelectables() === 1) {
+      // do not show it if there is only noe wallet available
+      walletSelectorLayout.exclude();
+    } else {
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      walletSelectorLayout.setVisibility(walletsEnabled ? "visible" : "excluded");
+    }
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();

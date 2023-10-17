@@ -23,10 +23,18 @@ qx.Class.define("osparc.desktop.credits.Activity", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    this.getChildControl("activity-intro");
+
     this.getChildControl("wallet-selector-title");
     const walletSelector = this.getChildControl("wallet-selector");
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-    this.getChildControl("wallet-selector-layout").setVisibility(walletsEnabled ? "visible" : "excluded");
+    const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
+    if (walletSelector.getSelectables() === 1) {
+      // do not show it if there is only noe wallet available
+      walletSelectorLayout.exclude();
+    } else {
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      walletSelectorLayout.setVisibility(walletsEnabled ? "visible" : "excluded");
+    }
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();
@@ -52,6 +60,13 @@ qx.Class.define("osparc.desktop.credits.Activity", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "activity-intro":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Transactions and Usage both together. Go to their specific sections to get more details"),
+            font: "text-14"
+          });
+          this._add(control);
+          break;
         case "wallet-selector-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           this._add(control);
