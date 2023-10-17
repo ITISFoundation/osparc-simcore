@@ -65,6 +65,15 @@ async def test__scheduler_client(scheduler_url: AnyUrl):
         ...
 
 
+async def test_list_unrunnable_tasks_with_no_workers(
+    dask_local_cluster_without_workers: distributed.SpecCluster,
+):
+    scheduler_url = parse_obj_as(
+        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    )
+    assert await list_unrunnable_tasks(scheduler_url) == []
+
+
 async def test_list_unrunnable_tasks(
     scheduler_url: AnyUrl,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
