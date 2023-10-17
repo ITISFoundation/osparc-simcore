@@ -97,7 +97,7 @@ async def acknowledge_payment(
             ) from err
 
     if ack.saved:
-        _logger.debug("TODO Annotate CREATE payment method")
+        _logger.debug("Annotate CREATE payment method")
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
         )

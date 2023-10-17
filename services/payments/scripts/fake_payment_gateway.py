@@ -77,9 +77,10 @@ def create_payment_router():
     return router
 
 
-# NOTE: keep `X_Init_Api_Secret` with capital letters (even if headers are case-insensitive) to
-# to agree with the specs provided by our partners
 def auth_session(X_Init_Api_Secret: Annotated[str | None, Header()] = None):
+    # NOTE: keep `X_Init_Api_Secret` with capital letters (even if headers are case-insensitive) to
+    # to agree with the specs provided by our partners
+
     return 1
 
 
