@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, TypedDict
+from typing import Any, NamedTuple, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -23,11 +23,9 @@ from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
-from ._db import UserNameAndEmailTuple
-from ._db import list_user_permissions as db_list_of_permissions
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import UserNotFoundError
-from .schemas import Permission, ProfileGet, ProfileUpdate, convert_user_db_to_schema
+from .schemas import ProfileGet, ProfileUpdate, convert_user_db_to_schema
 
 _logger = logging.getLogger(__name__)
 
@@ -161,21 +159,27 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
         return UserRole(user_role)
 
 
+class UserNameAndEmailTuple(NamedTuple):
+    name: str
+    email: str
+
+
 async def get_user_name_and_email(
     app: web.Application, *, user_id: UserID
 ) -> UserNameAndEmailTuple:
     """
     Raises:
-        UserNotFoundError: _description_
+        UserNotFoundError
 
     Returns:
         (user, email)
     """
-    async with get_database_engine(app).acquire() as conn:
-        return await _db.get_username_and_email(
-            conn,
-            user_id=_parse_as_user(user_id),
-        )
+    row = await _db.get_user_or_raise(
+        get_database_engine(app),
+        user_id=_parse_as_user(user_id),
+        return_cols=["name", "email"],
+    )
+    return UserNameAndEmailTuple(name=row.name, email=row.email)
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:
@@ -239,14 +243,8 @@ async def get_user(app: web.Application, user_id: UserID) -> dict:
     """
     :raises UserNotFoundError:
     """
-    engine = get_database_engine(app)
-    user_id = _parse_as_user(user_id)
-    async with engine.acquire() as conn:
-        result = await conn.execute(sa.select(users).where(users.c.id == user_id))
-        row: RowProxy = await result.fetchone()
-        if not row:
-            raise UserNotFoundError(uid=user_id)
-        return dict(row)
+    row = await _db.get_user_or_raise(engine=get_database_engine(app), user_id=user_id)
+    return dict(row)
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID:
@@ -267,12 +265,3 @@ async def get_users_in_group(app: web.Application, gid: GroupID) -> set[UserID]:
 async def update_expired_users(engine: Engine) -> list[UserID]:
     async with engine.acquire() as conn:
         return await _db.do_update_expired_users(conn)
-
-
-async def list_user_permissions(
-    app: web.Application, user_id: UserID, product_name: str
-) -> list[Permission]:
-    list_of_permissions = await db_list_of_permissions(
-        app, user_id=user_id, product_name=product_name
-    )
-    return list_of_permissions

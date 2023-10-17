@@ -23,7 +23,7 @@ from ..redis import get_redis_user_notifications_client
 from ..security.api import check_password, forget
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _db, _tokens, api
+from . import _api, _db, _tokens, api
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -32,7 +32,6 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
-from .api import list_user_permissions as api_list_user_permissions
 from .exceptions import TokenNotFoundError, UserNotFoundError
 from .schemas import (
     Permission,
@@ -112,6 +111,8 @@ async def mark_account_for_deletion(request: web.Request):
         "Mark account for deletion",
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
+        # mark in the database
+        await _api.set_user_as_deleted(request.app, user_id=req_ctx.user_id)
 
         # notify logout so all services start closing
         await notify_user_logout(
@@ -120,10 +121,8 @@ async def mark_account_for_deletion(request: web.Request):
         response = flash_response(MSG_LOGGED_OUT, "INFO")
         await forget(request, response)
 
-        # mark. Now that all services are closed. We mark
-        await _db.mark_user_as_deleted(request.app, user_id=req_ctx.user_id)
-
-        # FIXME: send good-bye email to user and support? (background)
+        # background email
+        _logger.debug("Sending now a good-bye email to user and support? (background)")
         return response
 
 
@@ -268,7 +267,7 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 @permission_required("user.permissions.read")
 async def list_user_permissions(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    list_permissions: list[Permission] = await api_list_user_permissions(
+    list_permissions: list[Permission] = await _api.list_user_permissions(
         request.app, req_ctx.user_id, req_ctx.product_name
     )
     return envelope_json_response(
