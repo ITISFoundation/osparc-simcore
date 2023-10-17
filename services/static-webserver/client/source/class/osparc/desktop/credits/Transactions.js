@@ -108,7 +108,9 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
             newData[cols["status"].pos] = this.addColorTag(data["completedStatus"]);
           }
           newData[cols["comment"].pos] = data["comment"];
-          newData[cols["invoice"].pos] = this.createPdfIconWithLink(data["invoiceUrl"] ? data["invoiceUrl"] : "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf");
+          const invoiceUrl = data["invoiceUrl"];
+          newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
+
           newDatas.push(newData);
         });
       }

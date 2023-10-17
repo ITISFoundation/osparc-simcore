@@ -6,6 +6,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
+from pydantic import HttpUrl, parse_obj_as
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
@@ -37,10 +38,15 @@ def _create_possible_outcomes(accepted, rejected):
 _POSSIBLE_PAYMENTS_OUTCOMES = _create_possible_outcomes(
     accepted={
         "completion_state": PaymentTransactionState.SUCCESS,
+        "message": "Succesful payment (fake)",
+        "invoice_url": parse_obj_as(
+            HttpUrl,
+            "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf",
+        ),
     },
     rejected={
         "completion_state": PaymentTransactionState.FAILED,
-        "message": "Payment rejected",
+        "message": "Payment rejected (fake)",
     },
 )
 
