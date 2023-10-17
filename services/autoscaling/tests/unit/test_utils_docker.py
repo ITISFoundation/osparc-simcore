@@ -40,6 +40,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_max_resources_from_docker_task,
     get_monitored_nodes,
     get_node_total_resources,
+    get_worker_nodes,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     tag_node,
@@ -131,6 +132,14 @@ async def test_get_monitored_nodes_with_valid_label(
     assert host_node.dict(exclude=EXCLUDED_KEYS) == monitored_nodes[0].dict(
         exclude=EXCLUDED_KEYS
     )
+
+
+async def test_worker_nodes(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+):
+    worker_nodes = await get_worker_nodes(autoscaling_docker)
+    assert not worker_nodes
 
 
 async def test_remove_monitored_down_nodes_with_empty_list_does_nothing(
