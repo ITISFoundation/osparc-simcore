@@ -77,7 +77,6 @@ def expected_credits_per_usd(
     return None
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role",
     [(UserRole.PRODUCT_OWNER)],
