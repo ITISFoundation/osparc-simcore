@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -53,10 +53,11 @@ async def test_setup_rut_api(app_environment: EnvVarsDict):
 
 @pytest.fixture
 def app(
-    disable_rabbitmq_and_rpc_setup: Callable,
     app_environment: EnvVarsDict,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
 ):
-    disable_rabbitmq_and_rpc_setup()
+    # NOTE: overrides services/payments/tests/unit/conftest.py:app fixture
     return create_app()
 
 
@@ -80,7 +81,6 @@ def mock_resource_usage_tracker_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-
         assert "healthcheck" in get_in(
             ["paths", "/", "get", "operationId"],
             rut_service_openapi_specs,
