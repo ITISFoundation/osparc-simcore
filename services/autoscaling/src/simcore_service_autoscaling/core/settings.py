@@ -10,7 +10,15 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.docker import DockerGenericTag, DockerLabelKey
-from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
+from pydantic import (
+    AnyUrl,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    parse_obj_as,
+    root_validator,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
@@ -134,6 +142,12 @@ class NodesMonitoringSettings(BaseCustomSettings):
     )
 
 
+class DaskMonitoringSettings(BaseCustomSettings):
+    DASK_MONITORING_URL: AnyUrl = Field(
+        ..., description="the url to the osparc-dask-scheduler"
+    )
+
+
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
@@ -197,6 +211,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_REGISTRY: RegistrySettings | None = Field(auto_default_from_env=True)
 
+    AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
+
     @cached_property
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL
@@ -206,6 +222,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         # NOTE: mypy is not happy without the cast
         return cast(str, cls.validate_log_level(value))
+
+    @root_validator()
+    @classmethod
+    def exclude_both_dynamic_computational_mode(cls, values):
+        if (
+            values.get("AUTOSCALING_DASK") is not None
+            and values.get("AUTOSCALING_NODES_MONITORING") is not None
+        ):
+            raise ValueError(
+                "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
+            )
+        return values
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
