@@ -43,7 +43,7 @@ def app_environment(
 
 
 async def test_payments_api_authentication(
-    mock_patch_setup_rabbitmq_and_rpc: None,
+    with_disabled_rabbitmq_and_rpc: None,
     client: httpx.AsyncClient,
     faker: Faker,
     auth_headers: dict[str, str],

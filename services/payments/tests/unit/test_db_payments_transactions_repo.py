@@ -31,7 +31,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     postgres_env_vars_dict: EnvVarsDict,
-    mock_patch_setup_rabbitmq_and_rpc: None,
+    with_disabled_rabbitmq_and_rpc: None,
     wait_for_postgres_ready_and_db_migrated: None,
 ):
     # set environs

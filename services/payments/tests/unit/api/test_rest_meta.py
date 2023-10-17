@@ -12,8 +12,8 @@ from simcore_service_payments.models.schemas.meta import Meta
 
 
 async def test_healthcheck(
-    mock_patch_setup_rabbitmq_and_rpc: None,
-    mock_patch_setup_postgres: None,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
     client: httpx.AsyncClient,
 ):
     response = await client.get("/")
@@ -24,8 +24,8 @@ async def test_healthcheck(
 
 
 async def test_meta(
-    mock_patch_setup_rabbitmq_and_rpc: None,
-    mock_patch_setup_postgres: None,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
     client: httpx.AsyncClient,
     auth_headers: dict[str, str],
 ):

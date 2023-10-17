@@ -9,8 +9,8 @@ from fastapi import FastAPI
 
 
 def test_openapi_json_is_in_sync_with_app_oas(
-    mock_patch_setup_rabbitmq_and_rpc: None,
-    mock_patch_setup_postgres: None,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
     app: FastAPI,
     project_slug_dir: Path,
 ):

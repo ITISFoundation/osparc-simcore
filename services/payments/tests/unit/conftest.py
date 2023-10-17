@@ -42,7 +42,7 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def mock_patch_setup_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
+def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
     disable_rabbitmq_and_rpc_setup()
 
 
@@ -70,7 +70,7 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def mock_patch_setup_postgres(disable_postgres_setup: Callable):
+def with_disabled_postgres(disable_postgres_setup: Callable):
     disable_postgres_setup()
 
 

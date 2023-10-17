@@ -54,8 +54,8 @@ async def test_setup_rut_api(app_environment: EnvVarsDict):
 @pytest.fixture
 def app(
     app_environment: EnvVarsDict,
-    mock_patch_setup_rabbitmq_and_rpc: None,
-    mock_patch_setup_postgres: None,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
 ):
     # NOTE: overrides services/payments/tests/unit/conftest.py:app fixture
     return create_app()

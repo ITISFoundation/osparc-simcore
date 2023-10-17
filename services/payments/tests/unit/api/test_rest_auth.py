@@ -24,8 +24,8 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
 
 @pytest.mark.parametrize("valid_credentials", [True, False])
 async def test_login_to_create_access_token(
-    mock_patch_setup_rabbitmq_and_rpc: None,
-    mock_patch_setup_postgres: None,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
     client: httpx.AsyncClient,
     app: FastAPI,
     faker: Faker,
