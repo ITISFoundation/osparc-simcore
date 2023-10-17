@@ -89,6 +89,16 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return null;
     },
 
+    getMyWallets: function() {
+      const store = osparc.store.Store.getInstance();
+      const wallets = store.getWallets();
+      const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+      if (myWallets) {
+        return myWallets;
+      }
+      return [];
+    },
+
     getPreferredWallet: function() {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
@@ -110,8 +120,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           };
           promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
         } else {
-          const wallets = osparc.store.Store.getInstance().getWallets();
-          const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+          const myWallets = this.getMyWallets();
           myWallets.forEach(myWallet => {
             const params = {
               url: {

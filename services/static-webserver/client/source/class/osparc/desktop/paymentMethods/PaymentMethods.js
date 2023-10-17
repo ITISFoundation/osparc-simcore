@@ -73,12 +73,11 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __addNewPaymentMethod: function() {
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      const myWallet = wallets.find(wallet => wallet.getMyAccessRights()["write"]);
-      if (myWallet) {
+      const myWallets = osparc.store.Store.getInstance().getMyWallets();
+      if (myWallets) {
         const params = {
           url: {
-            walletId: myWallet.getWalletId()
+            walletId: myWallets[0].getWalletId()
           }
         };
         osparc.data.Resources.fetch("paymentMethods", "init", params)
@@ -98,16 +97,14 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       }));
 
       const promises = [];
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      wallets.forEach(wallet => {
-        if (wallet.getMyAccessRights() && wallet.getMyAccessRights()["write"]) {
-          const params = {
-            url: {
-              walletId: wallet.getWalletId()
-            }
-          };
-          promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
-        }
+      const myWallets = osparc.store.Store.getInstance().getMyWallets();
+      myWallets.forEach(wallet => {
+        const params = {
+          url: {
+            walletId: wallet.getWalletId()
+          }
+        };
+        promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
       });
       Promise.all(promises)
         .then(paymentMethods => {
