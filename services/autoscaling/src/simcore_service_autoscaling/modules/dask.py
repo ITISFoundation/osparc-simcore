@@ -178,6 +178,8 @@ async def get_worker_used_resources(
 async def compute_cluster_total_resources(
     url: AnyUrl, instances: list[AssociatedInstance]
 ) -> Resources:
+    if not instances:
+        return Resources.create_as_empty()
     async with _scheduler_client(url) as client:
         instance_hosts = (
             node_ip_from_ec2_private_dns(i.ec2_instance) for i in instances
