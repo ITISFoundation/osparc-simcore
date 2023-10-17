@@ -89,28 +89,33 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     },
 
+    respDataToTableRow: function(data) {
+      const cols = this.COLUMNS;
+      const newData = [];
+      newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["createdAt"]));
+      newData[cols["price"].pos] = data["priceDollars"] ? data["priceDollars"] : 0;
+      newData[cols["credits"].pos] = data["osparcCredits"] ? data["osparcCredits"] : 0;
+      let walletName = "Unknown";
+      const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
+      if (found) {
+        walletName = found.getName();
+      }
+      newData[cols["wallet"].pos] = walletName;
+      if (data["completedStatus"]) {
+        newData[cols["status"].pos] = this.addColorTag(data["completedStatus"]);
+      }
+      newData[cols["comment"].pos] = data["comment"];
+      const invoiceUrl = data["invoiceUrl"];
+      newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
+
+      return newData;
+    },
+
     respDataToTableData: function(datas) {
       const newDatas = [];
       if (datas) {
-        const cols = this.COLUMNS;
         datas.forEach(data => {
-          const newData = [];
-          newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["createdAt"]));
-          newData[cols["price"].pos] = data["priceDollars"] ? data["priceDollars"] : 0;
-          newData[cols["credits"].pos] = data["osparcCredits"] ? data["osparcCredits"] : 0;
-          let walletName = "Unknown";
-          const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
-          if (found) {
-            walletName = found.getName();
-          }
-          newData[cols["wallet"].pos] = walletName;
-          if (data["completedStatus"]) {
-            newData[cols["status"].pos] = this.addColorTag(data["completedStatus"]);
-          }
-          newData[cols["comment"].pos] = data["comment"];
-          const invoiceUrl = data["invoiceUrl"];
-          newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
-
+          const newData = this.respDataToTableRow(data);
           newDatas.push(newData);
         });
       }

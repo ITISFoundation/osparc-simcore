@@ -23,7 +23,9 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
     const cols = this.self().COLUMNS;
     const colNames = [];
     Object.entries(cols).forEach(([key, data]) => {
-      if (["wallet", "user"].includes(key) && !osparc.desktop.credits.Utils.areWalletsEnabled()
+      if (
+        ["wallet", "user"].includes(key) &&
+        !osparc.desktop.credits.Utils.areWalletsEnabled()
       ) {
         return;
       }
@@ -86,37 +88,42 @@ qx.Class.define("osparc.resourceUsage.OverviewTable", {
       }
     },
 
+    respDataToTableRow: async function(data) {
+      const cols = this.COLUMNS;
+      const newData = [];
+      newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
+      newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
+      if (data["service_key"]) {
+        const parts = data["service_key"].split("/");
+        const serviceName = parts.pop();
+        newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
+      }
+      if (data["started_at"]) {
+        const startTime = new Date(data["started_at"]);
+        newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
+        if (data["stopped_at"]) {
+          const stopTime = new Date(data["stopped_at"]);
+          const durationTime = stopTime - startTime;
+          newData[cols["duration"].pos] = osparc.utils.Utils.formatMilliSeconds(durationTime);
+        }
+      }
+      newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
+      }
+      newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
+        newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
+      }
+      return newData;
+    },
+
     respDataToTableData: async function(datas) {
       const newDatas = [];
       if (datas) {
-        const cols = this.COLUMNS;
         for (const data of datas) {
-          const newData = [];
-          newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
-          newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
-          if (data["service_key"]) {
-            const parts = data["service_key"].split("/");
-            const serviceName = parts.pop();
-            newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
-          }
-          if (data["started_at"]) {
-            const startTime = new Date(data["started_at"]);
-            newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
-            if (data["stopped_at"]) {
-              const stopTime = new Date(data["stopped_at"]);
-              const durationTime = stopTime - startTime;
-              newData[cols["duration"].pos] = osparc.utils.Utils.formatMilliSeconds(durationTime);
-            }
-          }
-          newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-            newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
-          }
-          newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
-          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-            const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
-            newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
-          }
+          const newData = await this.respDataToTableRow(data);
           newDatas.push(newData);
         }
       }
