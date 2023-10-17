@@ -100,8 +100,9 @@ async def test_list_processing_tasks(
 async def test_get_worker_still_has_results_in_memory_with_invalid_ec2_name(
     scheduler_url: AnyUrl,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    faker: Faker,
 ):
-    ec2_instance = fake_ec2_instance_data()
+    ec2_instance = fake_ec2_instance_data(aws_private_dns=faker.name())
     assert (
         await get_worker_still_has_results_in_memory(scheduler_url, ec2_instance) == 0
     )
@@ -133,7 +134,19 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
         )
 
 
-@pytest.mark.parametrize("fct_shall_err", [True, False])
+async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_raises(
+    dask_local_cluster_without_workers: distributed.SpecCluster,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    scheduler_url = parse_obj_as(
+        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    )
+    ec2_instance_data = fake_ec2_instance_data()
+    with pytest.raises(DaskWorkerNotFoundError):
+        await get_worker_still_has_results_in_memory(scheduler_url, ec2_instance_data)
+
+
+@pytest.mark.parametrize("fct_shall_err", [True, False], ids=str)
 async def test_get_worker_still_has_results_in_memory(
     scheduler_url: AnyUrl,
     dask_spec_cluster_client: distributed.Client,
