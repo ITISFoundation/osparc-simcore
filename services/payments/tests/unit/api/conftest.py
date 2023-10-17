@@ -5,27 +5,14 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 
 import httpx
 import pytest
 from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.schemas.auth import Token
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict,
-    disable_rabbitmq_and_rpc_setup: Callable,
-) -> EnvVarsDict:
-    # disables rabbit before creating app
-    disable_rabbitmq_and_rpc_setup()
-
-    #
-    return app_environment
 
 
 @pytest.fixture
