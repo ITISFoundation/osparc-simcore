@@ -3547,7 +3547,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileDeleteCheck'
+              $ref: '#/components/schemas/ProfileCredentialsCheck'
         required: true
       responses:
         '200':
@@ -7619,16 +7619,22 @@ components:
         default:
           title: Default
           type: boolean
-    ProfileDeleteCheck:
-      title: ProfileDeleteCheck
+    ProfileCredentialsCheck:
+      title: ProfileCredentialsCheck
       required:
       - email
+      - password
       type: object
       properties:
         email:
           title: Email
           type: string
           format: email
+        password:
+          title: Password
+          type: string
+          format: password
+          writeOnly: true
     ProfileGet:
       title: ProfileGet
       required:
