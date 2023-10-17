@@ -30,7 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
@@ -198,6 +198,7 @@ async def create_computation(  # noqa: C901, PLR0912
         min_computation_nodes: list[NodeID] = [
             NodeID(n) for n in minimal_computational_dag.nodes()
         ]
+        resource_usage_api = ResourceUsageApi.get_from_state(request.app)
         inserted_comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
             project,
             catalog_client,
@@ -205,6 +206,8 @@ async def create_computation(  # noqa: C901, PLR0912
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,
+            rut_api=resource_usage_api,
+            is_wallet=bool(computation.wallet_info),
         )
 
         if computation.start_pipeline:
@@ -225,24 +228,25 @@ async def create_computation(  # noqa: C901, PLR0912
             # Billing info
             wallet_id = None
             wallet_name = None
-            pricing_plan_id = None
-            pricing_unit_id = None
+            pricing_plan_id = None  # NOT NEEDED HERE
+            pricing_unit_id = None  # NOT NEEDED HERE
             pricing_unit_cost_id = None
             if computation.wallet_info:
                 wallet_id = computation.wallet_info.wallet_id
                 wallet_name = computation.wallet_info.wallet_name
 
-                resource_usage_api = ResourceUsageApi.get_from_state(request.app)
+                # MATUS: THIS IS NOT NEEDED ANYMORE!!!
+                # resource_usage_api = ResourceUsageApi.get_from_state(request.app)
                 # NOTE: MD/SAN -> add real service version/key and store in DB, issue: https://github.com/ITISFoundation/osparc-issues/issues/1131
-                (
-                    pricing_plan_id,
-                    pricing_unit_id,
-                    pricing_unit_cost_id,
-                ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
-                    computation.product_name,
-                    ServiceKey("simcore/services/comp/itis/sleeper"),
-                    ServiceVersion("2.1.6"),
-                )
+                # (
+                #     pricing_plan_id,
+                #     pricing_unit_id,
+                #     pricing_unit_cost_id,
+                # ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
+                #     computation.product_name,
+                #     ServiceKey("simcore/services/comp/itis/sleeper"),
+                #     ServiceVersion("2.1.6"),
+                # )
 
             await scheduler.run_new_pipeline(
                 computation.user_id,

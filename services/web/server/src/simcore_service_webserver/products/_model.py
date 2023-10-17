@@ -209,7 +209,7 @@ class Product(BaseModel):
                         "LOGIN_2FA_REQUIRED": False,
                     },
                     "group_id": 12345,
-                    "is_payment_enabled": False,
+                    "is_payment_enabled": True,
                 },
             ]
         }

@@ -9,6 +9,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services import (
     SERVICE_KEY_RE,
     ServiceInputsDict,
@@ -138,6 +139,9 @@ class CompTaskAtDB(BaseModel):
     )
     created: datetime.datetime
     modified: datetime.datetime
+    # Additional information about price and hardware (ex. AWS EC2 instance type)
+    pricing_info: PricingInfo | None
+    hardware_info: HardwareInfo | None
 
     @validator("state", pre=True)
     @classmethod
@@ -214,6 +218,9 @@ class CompTaskAtDB(BaseModel):
                     "last_heartbeat": None,
                     "created": "2022-05-20 13:28:31.139+00",
                     "modified": "2023-06-23 15:58:32.833081+00",
+                    "pricing_plan_id": 1,
+                    "pricing_detail_id": 1,
+                    "aws_ec2_instace_type": "real-ec2-instance-type",
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]

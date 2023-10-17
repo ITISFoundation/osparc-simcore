@@ -8,16 +8,17 @@ from typing import cast
 
 import httpx
 from fastapi import FastAPI
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingUnitGet,
     ServicePricingPlanGet,
 )
 from models_library.products import ProductName
-from models_library.resource_tracker import (
-    PricingPlanId,
-    PricingUnitCostId,
-    PricingUnitId,
-)
+from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 
 from ..core.settings import AppSettings
@@ -84,26 +85,53 @@ class ResourceUsageApi:
         response.raise_for_status()
         return parse_obj_as(ServicePricingPlanGet, response.json())
 
-    async def get_default_service_pricing_plan_and_pricing_unit(
+    async def get_default_pricing_and_hardware_info(
         self,
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> tuple[PricingPlanId, PricingUnitId, PricingUnitCostId]:
-        pricing_plan = await self.get_default_service_pricing_plan(
-            product_name, service_key, service_version
+    ) -> tuple:
+        service_pricing_plan_get = await self.get_default_service_pricing_plan(
+            product_name=product_name,
+            service_key=service_key,
+            service_version=service_version,
         )
-        if pricing_plan:
-            default_pricing_plan = pricing_plan
-            default_pricing_unit = pricing_plan.pricing_units[0]
-            return (
-                default_pricing_plan.pricing_plan_id,
-                default_pricing_unit.pricing_unit_id,
-                default_pricing_unit.current_cost_per_unit_id,
-            )
-        raise ValueError(
-            f"No default pricing plan provided for requested service key: {service_key} version: {service_version} product: {product_name}"
+        for unit in service_pricing_plan_get.pricing_units:
+            if unit.default:
+                return (
+                    service_pricing_plan_get.pricing_plan_id,
+                    unit.pricing_unit_id,
+                    unit.current_cost_per_unit_id,
+                    unit.specific_info["aws_ec2_instances"],
+                )
+        raise ValueError("Default pricing plan and unit does not exists")
+
+    async def get_pricing_unit(
+        self,
+        product_name: ProductName,
+        pricing_plan_id: PricingPlanId,
+        pricing_unit_id: PricingUnitId,
+    ) -> PricingUnitGet:
+        response = await self.client.get(
+            f"/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
+            params={
+                "product_name": product_name,
+            },
         )
+        response.raise_for_status()
+        return parse_obj_as(PricingUnitGet, response.json())
+
+    async def get_wallet_credits(
+        self,
+        product_name: ProductName,
+        wallet_id: WalletID,
+    ) -> WalletTotalCredits:
+        response = await self.client.post(
+            "/credit-transactions/credits:sum",
+            params={"product_name": product_name, "wallet_id": wallet_id},
+        )
+        response.raise_for_status()
+        return parse_obj_as(WalletTotalCredits, response.json())
 
     #
     # app
