@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import HttpUrl
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -58,6 +59,9 @@ def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction
 
     if transaction.state_message:
         data["state_message"] = transaction.state_message
+
+    if transaction.invoice_url:
+        data["invoice_url"] = transaction.invoice_url
 
     return PaymentTransaction.parse_obj(data)
 
@@ -154,6 +158,7 @@ async def complete_payment(
     payment_id: PaymentID,
     completion_state: PaymentTransactionState,
     message: str | None = None,
+    invoice_url: HttpUrl | None = None,
 ) -> PaymentTransaction:
     # NOTE: implements endpoint in payment service hit by the gateway
     transaction = await _db.complete_payment_transaction(
@@ -161,6 +166,7 @@ async def complete_payment(
         payment_id=payment_id,
         completion_state=completion_state,
         state_message=message,
+        invoice_url=invoice_url,
     )
     assert transaction.payment_id == payment_id  # nosec
     assert transaction.completed_at is not None  # nosec
