@@ -190,7 +190,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           column: 0
         });
         const t1v = new qx.ui.basic.Label().set({
-          value: "On",
+          value: "Off",
           font: "text-14"
         });
         layout.add(t1v, {
@@ -206,13 +206,45 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           column: 0
         });
         const t2v = new qx.ui.basic.Label().set({
-          value: "1000$",
           font: "text-14"
         });
         layout.add(t2v, {
           row: 1,
           column: 1
         });
+
+        const t3t = new qx.ui.basic.Label(this.tr("Payment Method")).set({
+          font: "text-14"
+        });
+        layout.add(t3t, {
+          row: 1,
+          column: 0
+        });
+        const t3v = new qx.ui.basic.Label().set({
+          font: "text-14"
+        });
+        layout.add(t3v, {
+          row: 1,
+          column: 1
+        });
+
+        const params = {
+          url: {
+            walletId: this.__getWallet().getWalletId()
+          }
+        };
+        osparc.data.Resources.fetch("auto-recharge", "get", params)
+          .then(arData => {
+            if (arData["enabled"]) {
+              t1v.setValue(this.tr("On"));
+              t2v.setValue(arData["topUpAmountInUsd"]*arData["topUpCountdown"]);
+              t3v.setValue(arData["paymentMethodId"]);
+            } else {
+              t1v.setValue(this.tr("Off"));
+              t2v.resetValue();
+              t3v.resetValue();
+            }
+          });
 
         return layout;
       }
