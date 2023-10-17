@@ -64,6 +64,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
 
     __buildLayout: function() {
       this.getChildControl("wallets-card");
+      this.getChildControl("settings-card");
       this.getChildControl("activity-card");
     },
 
