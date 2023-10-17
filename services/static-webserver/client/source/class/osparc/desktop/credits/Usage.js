@@ -25,11 +25,8 @@ qx.Class.define("osparc.desktop.credits.Usage", {
 
     this.getChildControl("wallet-selector-title");
     const walletSelector = this.getChildControl("wallet-selector");
-    this.getChildControl("wallet-selector-layout").exclude();
     const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-    if (walletsEnabled) {
-      this.getChildControl("wallet-selector-layout").show();
-    }
+    this.getChildControl("wallet-selector-layout").setVisibility(walletsEnabled ? "visible" : "excluded");
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();
@@ -68,11 +65,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
           break;
         }
         case "wallet-selector": {
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", false, true).set({
+          control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
             allowGrowX: false
           });
-          // select "All Credit Accounts" by default
-          control.getSelectables()[0].setLabel("All Credit Accounts");
           const layout = this.getChildControl("wallet-selector-layout");
           layout.add(control);
           break;
@@ -197,7 +192,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
       }
-      return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
+      return null;
     },
 
     __setData: function(data) {
