@@ -23,7 +23,7 @@ from ..redis import get_redis_user_notifications_client
 from ..security.api import check_password, forget
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api, _db, _tokens, api
+from . import _api, _tokens, api
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -95,7 +95,7 @@ async def mark_account_for_deletion(request: web.Request):
     body = await parse_request_body_as(ProfileCredentialsCheck, request)
 
     # checks before deleting
-    credentials = await _db.get_email_and_password_hash(
+    credentials = await _api.get_email_and_password_hash(
         request.app, user_id=req_ctx.user_id
     )
     if body.email != credentials.email.lower() or not check_password(

@@ -17,17 +17,22 @@ from ..db.models import user_to_groups
 from ..db.plugin import get_database_engine
 from .schemas import Permission
 
+_ALL = None
+
 
 async def get_user_or_raise(
-    engine: Engine, *, user_id: UserID, return_cols: list[str] | None = None
+    engine: Engine, *, user_id: UserID, return_column_names: list[str] | None = _ALL
 ) -> RowProxy:
-    return_cols = return_cols or list(users.columns.keys())
-    assert set(return_cols).issubset(users.columns.keys())  # nosec
+    if return_column_names == _ALL:
+        return_column_names = list(users.columns.keys())
+
+    assert return_column_names is not None  # nosec
+    assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
     async with engine.acquire() as conn:
         row: RowProxy | None = await (
             await conn.execute(
-                sa.select(*(users.columns[name] for name in return_cols)).where(
+                sa.select(*(users.columns[name] for name in return_column_names)).where(
                     users.c.id == user_id
                 )
             )
@@ -89,5 +94,5 @@ async def update_user_status(
 ):
     async with engine.acquire() as conn:
         await conn.execute(
-            users.update().values(status=new_status).where(users.c.user_id == user_id)
+            users.update().values(status=new_status).where(users.c.id == user_id)
         )

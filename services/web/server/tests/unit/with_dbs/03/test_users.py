@@ -803,18 +803,33 @@ async def test_mark_account_for_deletion(
 
     # failed check to delete account
     response = await client.post(
-        "/v0/me:mark-deleted", json={"email": "WrongEmail@email.com"}
+        "/v0/me:mark-deleted",
+        json={
+            "email": "WrongEmail@email.com",
+            "password": "foo",
+        },
     )
     await assert_status(response, web.HTTPConflict)
 
     #  success to request deletion of account
     response = await client.post(
-        "/v0/me:mark-deleted", json={"email": logged_user["email"]}
+        "/v0/me:mark-deleted",
+        json={
+            "email": logged_user["email"],
+            "password": logged_user["raw_password"],
+        },
     )
     await assert_status(response, web.HTTPOk)
 
-    # is logged-out
+    # should be logged-out
     response = await client.get("/v0/me")
+    await assert_status(response, web.HTTPUnauthorized)
+
+    # try to login again and get rejected
+    response = await client.post(
+        "/v0/auth/login",
+        json={"email": logged_user["email"], "password": logged_user["raw_password"]},
+    )
     _, error = await assert_status(response, web.HTTPUnauthorized)
 
     prefix_msg = MSG_USER_DELETED.format(support_email="").strip()

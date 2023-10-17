@@ -34,7 +34,7 @@ async def get_email_and_password_hash(
     row = await get_user_or_raise(
         get_database_engine(app),
         user_id=user_id,
-        return_cols=["email", "password_hash"],
+        return_column_names=["email", "password_hash"],
     )
 
     return UserEmailAndPassHashTuple(email=row.email, password_hash=row.password_hash)

@@ -65,7 +65,7 @@ async def get_user_profile(
             )
             .where(users.c.id == user_id)
             .order_by(sa.asc(groups.c.name))
-            .apply_labels()
+            .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
         ):
             user_profile.update(convert_user_db_to_schema(row, prefix="users_"))
             if row["groups_type"] == GroupType.EVERYONE:
@@ -177,7 +177,7 @@ async def get_user_name_and_email(
     row = await _db.get_user_or_raise(
         get_database_engine(app),
         user_id=_parse_as_user(user_id),
-        return_cols=["name", "email"],
+        return_column_names=["name", "email"],
     )
     return UserNameAndEmailTuple(name=row.name, email=row.email)
 
