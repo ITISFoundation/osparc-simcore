@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import dataclasses
 import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
@@ -40,6 +41,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
+from simcore_service_autoscaling.models import Cluster
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry
@@ -665,3 +667,21 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
 async def mocked_redis_server(mocker: MockerFixture) -> None:
     mock_redis = FakeRedis()
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
+def cluster() -> Callable[..., Cluster]:
+    def _creator(**cluter_overrides) -> Cluster:
+        return dataclasses.replace(
+            Cluster(
+                active_nodes=[],
+                drained_nodes=[],
+                reserve_drained_nodes=[],
+                pending_ec2s=[],
+                disconnected_nodes=[],
+                terminated_instances=[],
+            ),
+            **cluter_overrides,
+        )
+
+    return _creator
