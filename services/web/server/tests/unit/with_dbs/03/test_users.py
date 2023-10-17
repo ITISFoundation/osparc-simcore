@@ -672,7 +672,7 @@ async def test_update_user_notification_at_correct_index(
     "user_role,expected_response",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
