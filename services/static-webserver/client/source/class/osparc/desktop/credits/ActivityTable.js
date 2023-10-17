@@ -64,9 +64,9 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
         pos: 2,
         title: qx.locale.Manager.tr("Title")
       },
-      amount: {
+      credits: {
         pos: 3,
-        title: qx.locale.Manager.tr("Amount")
+        title: qx.locale.Manager.tr("Credits")
       },
       wallet: {
         pos: 4,
@@ -89,8 +89,8 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
           date: usage["started_at"],
           type: "Usage",
           title: usage["project_name"],
-          amount: usage["credit_cost"],
-          wallet: usage["wallet_id"],
+          credits: usage["credit_cost"],
+          walletId: usage["wallet_id"],
           invoice: ""
         };
         activities.push(activity);
@@ -105,8 +105,8 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
           date: transaction["createdAt"],
           type: "Transaction",
           title: transaction["comment"] ? transaction["comment"] : "",
-          amount: transaction["osparcCredits"],
-          wallet: transaction["walletId"],
+          credits: transaction["osparcCredits"],
+          walletId: transaction["walletId"],
           invoice: transaction["invoice"]
         };
         activities.push(activity);
@@ -114,25 +114,26 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
       return activities;
     },
 
-    respDataToTableRow: async function(data) {
+    respDataToTableRow: function(data) {
       const cols = this.COLUMNS;
       const newData = [];
       newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["date"]));
       newData[cols["type"].pos] = data["type"];
-      newData[cols["amount"].pos] = data["amount"] ? data["amount"] : "-";
+      newData[cols["credits"].pos] = data["credits"] ? data["credits"] : "-";
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        newData[cols["wallet"].pos] = data["wallet"] ? data["wallet"] : "-";
+        const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
+        newData[cols["wallet"].pos] = found ? found.getName() : data["walletId"];
         const invoiceUrl = data["invoice"];
         newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
       }
       return newData;
     },
 
-    respDataToTableData: async function(datas) {
+    respDataToTableData: function(datas) {
       const newDatas = [];
       if (datas) {
         for (const data of datas) {
-          const newData = await this.respDataToTableRow(data);
+          const newData = this.respDataToTableRow(data);
           newDatas.push(newData);
         }
       }
@@ -141,8 +142,8 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
   },
 
   members: {
-    addData: async function(datas) {
-      const newDatas = await this.self().respDataToTableData(datas);
+    addData: function(datas) {
+      const newDatas = this.self().respDataToTableData(datas);
       this.setData(newDatas);
     }
   }

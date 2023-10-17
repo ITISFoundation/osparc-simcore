@@ -142,14 +142,14 @@ qx.Class.define("osparc.desktop.credits.Activity", {
         request,
         osparc.data.Resources.fetch("payments", "get")
       ])
-        .then(async responses => {
+        .then(responses => {
           const usagesResp = responses[0];
           const usages = usagesResp["data"];
           const transactions = responses[1]["data"];
           const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
-          // Remove Failed transactions and filter by wallet
+          // Filter out some transactions
           const walletId = this.__getSelectedWalletId();
-          const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["wallet_id"] === walletId);
+          const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["walletId"] === walletId);
           const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
           const activities = activities1.concat(activities2);
           activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
@@ -218,6 +218,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
     },
 
     __evaluatePageButtons:function(resp) {
+      // this is not correct because we are populating the table with two different resources
       this.getChildControl("prev-page-button").setEnabled(Boolean(this.__prevUsageRequestParams));
       this.getChildControl("current-page-label").setValue(((resp["_meta"]["offset"]/this.self().ITEMS_PER_PAGE)+1).toString());
       this.getChildControl("next-page-button").setEnabled(Boolean(this.__nextUsageRequestParams));
