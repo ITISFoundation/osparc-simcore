@@ -15,10 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..models.db import PaymentsTransactionsDB
 from ..models.payments_gateway import PaymentID
 
-#
-# Errors
-#
-
 
 class PaymentsValueError(PydanticErrorMixin, ValueError):
     msg_template = "Error in payment transaction '{payment_id}'"
@@ -36,11 +32,6 @@ class PaymentAlreadyExistsError(PaymentsValueError):
     msg_template = "Payment transaction '{payment_id}' was already initialized."
 
 
-#
-# base
-#
-
-
 class BaseRepository:
     """
     Repositories are pulled at every request
@@ -49,11 +40,6 @@ class BaseRepository:
     def __init__(self, db_engine: AsyncEngine):
         assert db_engine is not None  # nosec
         self.db_engine = db_engine
-
-
-#
-# repo
-#
 
 
 class PaymentsTransactionsRepo(BaseRepository):
@@ -94,7 +80,7 @@ class PaymentsTransactionsRepo(BaseRepository):
         invoice_url: HttpUrl,
     ) -> PaymentsTransactionsDB:
         """
-        - ACKs payment by updating state with SUCCESS, ...
+        - ACKs payment by updating state with SUCCESS, CANCEL, etc
 
         Raises:
             ValueError
