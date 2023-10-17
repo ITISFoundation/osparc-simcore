@@ -50,5 +50,5 @@ async def dsm_exception_handler(
             reason=f"Unexpected error while accessing S3 backend: {err}"
         ) from err
     except DatcoreAdapterTimeoutError as err:
-        _logger.exception("Unexpected error while access Datcore-Adapter:")
+        _logger.exception("Unexpected error while accessing Datcore-Adapter:")
         raise web.HTTPGatewayTimeout(reason=f"{err}") from err
