@@ -240,7 +240,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const usageOverview = new osparc.resourceUsage.Overview();
+      const usageOverview = new osparc.desktop.credits.Usage();
       usageOverview.set({
         margin: 10
       });

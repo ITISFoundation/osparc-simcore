@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.resourceUsage.OverviewTable", {
+qx.Class.define("osparc.desktop.credits.UsageTable", {
   extend: osparc.ui.table.Table,
 
   construct: function() {

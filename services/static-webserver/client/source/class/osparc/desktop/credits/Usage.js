@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.resourceUsage.Overview", {
+qx.Class.define("osparc.desktop.credits.Usage", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -49,7 +49,7 @@ qx.Class.define("osparc.resourceUsage.Overview", {
 
     popUpInWindow: function() {
       const title = qx.locale.Manager.tr("Usage");
-      const noteEditor = new osparc.resourceUsage.Overview();
+      const noteEditor = new osparc.desktop.credits.Overview();
       const viewWidth = 900;
       const viewHeight = 450;
       const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, viewWidth, viewHeight);
@@ -98,7 +98,7 @@ qx.Class.define("osparc.resourceUsage.Overview", {
           this._add(control);
           break;
         case "usage-table":
-          control = new osparc.resourceUsage.OverviewTable().set({
+          control = new osparc.desktop.credits.OverviewTable().set({
             height: (this.self().ITEMS_PER_PAGE*20 + 40)
           });
           this._add(control);
@@ -171,8 +171,8 @@ qx.Class.define("osparc.resourceUsage.Overview", {
     __getPrevRequest: function() {
       const params = {
         url: {
-          offset: osparc.resourceUsage.Overview.ITEMS_PER_PAGE,
-          limit: osparc.resourceUsage.Overview.ITEMS_PER_PAGE
+          offset: this.self().ITEMS_PER_PAGE,
+          limit: this.self().ITEMS_PER_PAGE
         }
       };
       if (this.__prevRequestParams) {
@@ -186,7 +186,7 @@ qx.Class.define("osparc.resourceUsage.Overview", {
       const params = {
         url: {
           offset: 0,
-          limit: osparc.resourceUsage.Overview.ITEMS_PER_PAGE
+          limit: this.self().ITEMS_PER_PAGE
         }
       };
       if (this.__nextRequestParams) {
