@@ -147,7 +147,10 @@ qx.Class.define("osparc.desktop.credits.Activity", {
           const usages = usagesResp["data"];
           const transactions = responses[1]["data"];
           const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
-          const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(transactions);
+          // Remove Failed transactions and filter by wallet
+          const walletId = this.__getSelectedWalletId();
+          const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["wallet_id"] === walletId);
+          const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
           const activities = activities1.concat(activities2);
           activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
           this.__setData(activities);
@@ -190,14 +193,18 @@ qx.Class.define("osparc.desktop.credits.Activity", {
       return this.__getUsageCommonRequest(params);
     },
 
+    __getSelectedWalletId: function() {
+      const walletSelector = this.getChildControl("wallet-selector");
+      const walletSelection = walletSelector.getSelection();
+      return walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
+    },
+
     __getUsageCommonRequest: function(params) {
       const options = {
         resolveWResponse: true
       };
 
-      const walletSelector = this.getChildControl("wallet-selector");
-      const walletSelection = walletSelector.getSelection();
-      const walletId = walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
+      const walletId = this.__getSelectedWalletId();
       if (walletId) {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
