@@ -89,11 +89,6 @@ def wait_for_postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> No
     assert postgres_db
 
 
-#
-# app
-#
-
-
 @pytest.fixture
 async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     test_app = create_app()

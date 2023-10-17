@@ -67,7 +67,3 @@ async def test_payments_api_authentication(
 
     # NOTE: for the moment this entry is not implemented
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
-
-    # TODO: test using schemathesis
-    # TODO: test ack w/o init
-    # TODO: test ack fail with saved?

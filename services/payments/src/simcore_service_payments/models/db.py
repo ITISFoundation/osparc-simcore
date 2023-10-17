@@ -26,9 +26,7 @@ _EXAMPLE_AFTER_INIT = {
     "state": PaymentTransactionState.PENDING,
 }
 
-#
-# NOTE: this will be moved to the payments service
-# NOTE: with https://sqlmodel.tiangolo.com/ we would only define this once!
+
 class PaymentsTransactionsDB(BaseModel):
     payment_id: PaymentID
     price_dollars: Decimal  # accepts negatives
