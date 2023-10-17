@@ -40,15 +40,15 @@ async def dsm_exception_handler(
     except ValidationError as err:
         raise web.HTTPUnprocessableEntity(reason=f"{err}") from err
     except DBAPIError as err:
-        _logger.exception("unexpected error")
+        _logger.exception("Unexpected error while accessing DB:")
         raise web.HTTPServiceUnavailable(
             reason=f"Unexpected error while accessing the database: {err}"
         ) from err
     except S3AccessError as err:
-        _logger.exception("unexpected error")
+        _logger.exception("Unexpected error while accessing S3:")
         raise web.HTTPServiceUnavailable(
             reason=f"Unexpected error while accessing S3 backend: {err}"
         ) from err
     except DatcoreAdapterTimeoutError as err:
-        _logger.exception("unexpected error")
+        _logger.exception("Unexpected error while access Datcore-Adapter:")
         raise web.HTTPGatewayTimeout(reason=f"{err}") from err
