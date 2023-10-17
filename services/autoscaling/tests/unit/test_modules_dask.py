@@ -4,8 +4,8 @@
 
 
 import asyncio
-import contextlib
-from typing import Callable, Final
+from collections.abc import Callable
+from typing import Final
 
 import distributed
 import pytest
@@ -135,7 +135,8 @@ async def test_get_worker_still_has_results_in_memory(
     # now run something quickly
     def _add_fct(x: int, y: int) -> int:
         if fct_shall_err:
-            raise RuntimeError("BAM")
+            msg = "BAM"
+            raise RuntimeError(msg)
         return x + y
 
     # this will run right away and remain in memory until we fetch it
@@ -150,7 +151,12 @@ async def test_get_worker_still_has_results_in_memory(
     )
 
     # get the result will NOT bring the data back
-    with contextlib.suppress(RuntimeError):
+    if fct_shall_err:
+        exc = await future_queued_task.exception(  # type: ignore
+            timeout=_DASK_SCHEDULER_REACTION_TIME_S
+        )
+        assert isinstance(exc, RuntimeError)
+    else:
         result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
         assert result == 7
 
@@ -165,6 +171,7 @@ async def test_get_worker_still_has_results_in_memory(
     # this should remove the memory
     del future_queued_task
     await _wait_for_dask_scheduler_to_change_state()
+    # await asyncio.sleep(10000)
     assert (
         await get_worker_still_has_results_in_memory(
             scheduler_url, fake_localhost_ec2_instance_data
