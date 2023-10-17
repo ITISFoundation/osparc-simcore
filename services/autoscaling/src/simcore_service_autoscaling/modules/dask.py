@@ -112,7 +112,7 @@ def _dask_worker_from_ec2_instance(
         dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
     ) -> bool:
         _, details = dask_worker
-        return details["host"] == node_ip
+        return bool(details["host"] == node_ip)
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
     if not filtered_workers:
