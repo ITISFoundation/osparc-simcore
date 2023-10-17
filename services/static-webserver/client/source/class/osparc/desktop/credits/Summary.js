@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.Overview", {
+qx.Class.define("osparc.desktop.credits.Summary", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

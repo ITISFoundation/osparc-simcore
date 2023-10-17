@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
   extend: osparc.ui.table.Table,
 
   construct: function() {
-    const model = this.__model = new qx.ui.table.model.Simple();
+    const model = new qx.ui.table.model.Simple();
     const cols = this.self().COLUMNS;
     const colNames = [];
     Object.entries(cols).forEach(([key, data]) => {
@@ -132,8 +132,6 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
   },
 
   members: {
-    __model: null,
-
     addData: async function(datas) {
       const newDatas = await this.self().respDataToTableData(datas);
       this.setData(newDatas);

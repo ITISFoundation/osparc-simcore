@@ -45,18 +45,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
   },
 
   statics: {
-    ITEMS_PER_PAGE: 15,
-
-    popUpInWindow: function() {
-      const title = qx.locale.Manager.tr("Usage");
-      const noteEditor = new osparc.desktop.credits.Overview();
-      const viewWidth = 900;
-      const viewHeight = 450;
-      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, viewWidth, viewHeight);
-      win.center();
-      win.open();
-      return win;
-    }
+    ITEMS_PER_PAGE: 15
   },
 
   members: {
