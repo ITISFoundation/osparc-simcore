@@ -21,6 +21,16 @@ def node_host_name_from_ec2_private_dns(
     raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
 
 
+def node_ip_from_ec2_private_dns(
+    ec2_instance_data: EC2InstanceData,
+) -> str:
+    return (
+        node_host_name_from_ec2_private_dns(ec2_instance_data)
+        .removeprefix("ip-")
+        .replace("-", ".")
+    )
+
+
 async def associate_ec2_instances_with_nodes(
     nodes: list[Node], ec2_instances: list[EC2InstanceData]
 ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:

@@ -32,6 +32,19 @@ def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> dict[str, str]:
     }
 
 
+def get_ec2_tags_computational(app_settings: ApplicationSettings) -> dict[str, str]:
+    assert app_settings.AUTOSCALING_DASK  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    return {
+        "io.simcore.autoscaling.version": f"{VERSION}",
+        "io.simcore.autoscaling.dask-scheduler_url": json.dumps(
+            app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL
+        ),
+        # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
+        "Name": f"autoscaling-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}",
+    }
+
+
 def compose_user_data(docker_join_bash_command: str) -> str:
     return dedent(
         f"""\

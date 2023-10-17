@@ -8,6 +8,7 @@ from servicelib.redis_utils import exclusive
 
 from ..core.settings import ApplicationSettings
 from .auto_scaling_core import auto_scale_cluster
+from .auto_scaling_mode_computational import ComputationalAutoscaling
 from .auto_scaling_mode_dynamic import DynamicAutoscaling
 from .redis import get_redis_client
 
@@ -28,6 +29,13 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                     "node_labels": app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
                 }
             )
+        elif app_settings.AUTOSCALING_DASK:
+            lock_key += (
+                f"computational:{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
+            )
+            lock_value = json.dumps(
+                {"scheduler_url": app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}
+            )
         assert lock_value  # nosec
         app.state.autoscaler_task = start_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
@@ -36,7 +44,9 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
-            auto_scaling_mode=DynamicAutoscaling(),
+            auto_scaling_mode=DynamicAutoscaling()
+            if app_settings.AUTOSCALING_NODES_MONITORING is not None
+            else ComputationalAutoscaling(),
         )
 
     return _startup
@@ -54,9 +64,14 @@ def setup(app: FastAPI):
     if any(
         s is None
         for s in [
-            app_settings.AUTOSCALING_NODES_MONITORING,
             app_settings.AUTOSCALING_EC2_ACCESS,
             app_settings.AUTOSCALING_EC2_INSTANCES,
+        ]
+    ) or all(
+        s is None
+        for s in [
+            app_settings.AUTOSCALING_NODES_MONITORING,
+            app_settings.AUTOSCALING_DASK,
         ]
     ):
         logger.warning(

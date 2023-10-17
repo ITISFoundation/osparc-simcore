@@ -75,7 +75,8 @@ async def create_autoscaling_status_message(
     origin = "unknown"
     if app_settings.AUTOSCALING_NODES_MONITORING:
         origin = f"dynamic:node_labels={app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}"
-
+    elif app_settings.AUTOSCALING_DASK:
+        origin = f"computational:scheduler_url={app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
     return RabbitAutoscalingStatusMessage.construct(
         origin=origin,
         nodes_total=len(cluster.active_nodes)
