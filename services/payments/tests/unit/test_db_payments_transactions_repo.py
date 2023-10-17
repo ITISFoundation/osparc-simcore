@@ -48,7 +48,7 @@ def app_environment(
 
 
 async def test_one_time_payment_annotations_workflow(app: FastAPI):
-    # TODO: add hypothesis here!
+
     fake = PaymentsTransactionsDB(
         **PaymentsTransactionsDB.Config.schema_extra["examples"][1]
     )
@@ -84,10 +84,3 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
     assert total_number_of_items == 1
     assert len(user_payments) == total_number_of_items
     assert user_payments[0] == transaction_acked
-
-
-# errors:
-# -  annotate ack -> error
-#
-# annotate cancel
-#
