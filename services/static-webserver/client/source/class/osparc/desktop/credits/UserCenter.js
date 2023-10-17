@@ -138,6 +138,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __walletsPage: null,
     __buyCreditsPage: null,
     __paymentMethodsPage: null,
+    __activityPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
     __buyCredits: null,
@@ -164,6 +165,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
         }
       });
       overview.addListener("toWallets", () => this.openWallets());
+      overview.addListener("toActivity", () => this.__openActivity());
       overview.addListener("toTransactions", () => this.__openTransactions());
       overview.addListener("toUsageOverview", () => this.__openUsageOverview());
       page.add(overview);
@@ -299,6 +301,10 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
 
     __openBuyCredits: function() {
       this.__openPage(this.__buyCreditsPage);
+    },
+
+    __openActivity: function() {
+      this.__openPage(this.__activityPage);
     },
 
     __openTransactions: function(fetchTransactions = false) {

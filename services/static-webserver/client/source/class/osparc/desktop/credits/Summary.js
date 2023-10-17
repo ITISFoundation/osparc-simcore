@@ -29,8 +29,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
   events: {
     "buyCredits": "qx.event.type.Data",
     "toWallets": "qx.event.type.Event",
-    "toTransactions": "qx.event.type.Event",
-    "toUsageOverview": "qx.event.type.Event"
+    "toActivity": "qx.event.type.Event"
   },
 
   members: {
@@ -44,6 +43,12 @@ qx.Class.define("osparc.desktop.credits.Summary", {
             control = this.__createOverviewCard(this.tr("Credits Balance"), content, `All Credit Accounts (${wallets.length})`, "toWallets");
             this._add(control);
           }
+          break;
+        }
+        case "activity-card": {
+          const content = this.__createUsageView();
+          control = this.__createOverviewCard("Last Activity", content, "All Activity", "toActivity");
+          this._add(control);
           break;
         }
         case "transactions-card": {
