@@ -98,7 +98,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
           this._add(control);
           break;
         case "usage-table":
-          control = new osparc.desktop.credits.OverviewTable().set({
+          control = new osparc.desktop.credits.UsageTable().set({
             height: (this.self().ITEMS_PER_PAGE*20 + 40)
           });
           this._add(control);
