@@ -46,20 +46,8 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           break;
         }
         case "activity-card": {
-          const content = this.__createUsageView();
+          const content = this.__createActivityView();
           control = this.__createOverviewCard("Last Activity", content, "All Activity", "toActivity");
-          this._add(control);
-          break;
-        }
-        case "transactions-card": {
-          const content = this.__createTransactionsView();
-          control = this.__createOverviewCard("Transactions", content, "All Transactions", "toTransactions");
-          this._add(control);
-          break;
-        }
-        case "usage-card": {
-          const content = this.__createUsageView();
-          control = this.__createOverviewCard("Settings", content, "Usage", "toUsageOverview");
           this._add(control);
           break;
         }
@@ -69,8 +57,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
 
     __buildLayout: function() {
       this.getChildControl("wallets-card");
-      this.getChildControl("transactions-card");
-      this.getChildControl("usage-card");
+      this.getChildControl("activity-card");
     },
 
     __createOverviewCard: function(cardLabel, content, buttonLabel, signalName) {
@@ -109,10 +96,15 @@ qx.Class.define("osparc.desktop.credits.Summary", {
       return layout;
     },
 
-    __createWalletsView: function() {
+    __getWallet: function() {
       const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
       const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       const wallet = activeWallet ? activeWallet : preferredWallet;
+      return wallet;
+    },
+
+    __createWalletsView: function() {
+      const wallet = this.__getWallet();
       if (wallet) {
         // show one wallet
         const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -176,75 +168,15 @@ qx.Class.define("osparc.desktop.credits.Summary", {
       return null;
     },
 
-    __createTransactionsView: function() {
+    __createActivityView: function() {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
-      const headers = [
-        "Date",
-        "Price",
-        "Credits",
-        "Credit Account",
-        "Comment"
-      ];
-      headers.forEach((header, column) => {
-        const text = new qx.ui.basic.Label(header).set({
-          font: "text-14"
-        });
-        layout.add(text, {
-          row: 0,
-          column
-        });
-      });
-
-      osparc.data.Resources.fetch("payments", "get")
-        .then(transactions => {
-          if ("data" in transactions) {
-            const maxTransactions = 4;
-            transactions["data"].forEach((transaction, row) => {
-              if (row < maxTransactions) {
-                let walletName = null;
-                if (transaction["walletId"]) {
-                  const found = osparc.desktop.credits.Utils.getWallet(transaction["walletId"]);
-                  if (found) {
-                    walletName = found.getName();
-                  }
-                }
-                const entry = [
-                  osparc.utils.Utils.formatDateAndTime(new Date(transaction["createdAt"])),
-                  transaction["priceDollars"].toFixed(2).toString(),
-                  transaction["osparcCredits"].toFixed(2).toString(),
-                  walletName,
-                  transaction["comment"]
-                ];
-                entry.forEach((data, column) => {
-                  const text = new qx.ui.basic.Label(data).set({
-                    font: "text-13"
-                  });
-                  layout.add(text, {
-                    row: row+1,
-                    column
-                  });
-                });
-                row++;
-              }
-            });
-          }
-        })
-        .catch(err => console.error(err));
-
-      return layout;
-    },
-
-    __createUsageView: function() {
-      const grid = new qx.ui.layout.Grid(12, 8);
-      const layout = new qx.ui.container.Composite(grid);
-
-      const cols = osparc.desktop.credits.UsageTable.COLUMNS;
+      const cols = osparc.desktop.credits.ActivityTable.COLUMNS;
       const colNames = Object.values(cols).map(col => col.title);
       colNames.forEach((colName, column) => {
         const text = new qx.ui.basic.Label(colName).set({
-          font: "text-14"
+          font: "text-13"
         });
         layout.add(text, {
           row: 0,
@@ -252,19 +184,36 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         });
       });
 
+      const walletId = this.__getWallet().getWalletId();
       const params = {
         url: {
+          walletId: walletId,
           offset: 0,
-          limit: 4 // show only the last 4 usage
+          limit: 10
         }
       };
-      osparc.data.Resources.fetch("resourceUsage", "getPage", params)
-        .then(async datas => {
-          const entries = await osparc.desktop.credits.UsageTable.respDataToTableData(datas);
+      Promise.all([
+        osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params),
+        osparc.data.Resources.fetch("payments", "get")
+      ])
+        .then(responses => {
+          const usages = responses[0];
+          const transactions = responses[1]["data"];
+          const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
+          // Filter out some transactions
+          const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["walletId"] === walletId);
+          const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
+          const activities = activities1.concat(activities2);
+          activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
+
+          const entries = osparc.desktop.credits.ActivityTable.respDataToTableData(activities);
           entries.forEach((entry, row) => {
+            if (row > 6) {
+              return;
+            }
             entry.forEach((data, column) => {
               const text = new qx.ui.basic.Label(data.toString()).set({
-                font: "text-13"
+                font: "text-14"
               });
               layout.add(text, {
                 row: row+1,

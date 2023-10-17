@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
           date: transaction["createdAt"],
           type: "Transaction",
           title: transaction["comment"] ? transaction["comment"] : "",
-          credits: transaction["osparcCredits"],
+          credits: transaction["osparcCredits"].toFixed(2),
           walletId: transaction["walletId"],
           invoice: transaction["invoice"]
         };
