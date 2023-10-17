@@ -31,7 +31,11 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
-from models_library.resource_tracker import HardwareInfo, PricingInfo
+from models_library.resource_tracker import (
+    HardwareInfo,
+    PricingAndHardwareInfoTuple,
+    PricingInfo,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
@@ -221,9 +225,9 @@ def get_delete_project_task(
 #
 
 
-async def _fetch_default_pricing_and_hardware_info(
+async def _get_default_pricing_and_hardware_info(
     app, product_name, service_key, service_version, project_uuid, node_uuid
-) -> tuple:
+) -> PricingAndHardwareInfoTuple:
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
         product_name=product_name,
@@ -232,7 +236,7 @@ async def _fetch_default_pricing_and_hardware_info(
     )
     for unit in service_pricing_plan_get.pricing_units:
         if unit.default:
-            return (
+            return PricingAndHardwareInfoTuple(
                 service_pricing_plan_get.pricing_plan_id,
                 unit.pricing_unit_id,
                 unit.current_cost_per_unit_id,
@@ -259,7 +263,7 @@ async def _start_dynamic_service(
 
     # this is a dynamic node, let's gather its resources and start it
 
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
@@ -357,7 +361,7 @@ async def _start_dynamic_service(
                     pricing_unit_id,
                     pricing_unit_cost_id,
                     aws_ec2_instances,
-                ) = await _fetch_default_pricing_and_hardware_info(
+                ) = await _get_default_pricing_and_hardware_info(
                     request.app,
                     product_name,
                     service_key,

@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, ClassVar, NamedTuple, TypeAlias
 
 from pydantic import BaseModel, PositiveInt
 
@@ -40,9 +40,9 @@ class PricingPlanClassification(StrAutoEnum):
 
 
 class PricingInfo(BaseModel):
-    pricing_plan_id: PricingPlanId | None
-    pricing_unit_id: PricingUnitId | None
-    pricing_unit_cost_id: PricingUnitCostId | None
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
+    pricing_unit_cost_id: PricingUnitCostId
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -59,3 +59,15 @@ class HardwareInfo(BaseModel):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [{"aws_ec2_instances": ["c6a.4xlarge"]}]
         }
+
+
+class PricingAndHardwareInfoTuple(NamedTuple):
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
+    current_cost_per_unit_id: PricingUnitCostId
+    aws_ec2_instances: list[str]
+
+
+class PricingPlanAndUnitIdsTuple(NamedTuple):
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
