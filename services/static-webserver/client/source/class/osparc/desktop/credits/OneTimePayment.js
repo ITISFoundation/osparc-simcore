@@ -26,10 +26,8 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     this.__buildLayout();
 
     this.initTotalPrice();
-    const creditPrice = osparc.store.Store.getInstance().getCreditPrice();
-    if (creditPrice) {
-      this.setCreditPrice(creditPrice);
-    }
+    const store = osparc.store.Store.getInstance();
+    store.bind("creditPrice", this, "creditPrice");
   },
 
   properties: {
@@ -133,19 +131,19 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
-        value: this.tr("Payment amount ($):"),
+        value: this.tr("Payment amount (US$):"),
         font: "text-14"
       });
       vLayout.add(label);
 
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
+      const hLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
 
       const lessBtn = new qx.ui.form.Button().set({
         label: this.tr("-"),
         width: 25
       });
       lessBtn.addListener("execute", () => this.setTotalPrice(this.getTotalPrice()-1));
-      layout.add(lessBtn);
+      hLayout.add(lessBtn);
 
       const paymentAmountField = new qx.ui.form.TextField().set({
         width: 100,
@@ -156,16 +154,16 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         converter: val => val.toString()
       });
       paymentAmountField.addListener("changeValue", e => this.setTotalPrice(Number(e.getData())));
-      layout.add(paymentAmountField);
+      hLayout.add(paymentAmountField);
 
       const moreBtn = new qx.ui.form.Button().set({
         label: this.tr("+"),
         width: 25
       });
       moreBtn.addListener("execute", () => this.setTotalPrice(this.getTotalPrice()+1));
-      layout.add(moreBtn);
+      hLayout.add(moreBtn);
 
-      vLayout.add(layout);
+      vLayout.add(hLayout);
 
       return vLayout;
     },
@@ -188,7 +186,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         font: "text-16"
       });
       this.bind("totalPrice", totalPriceLabel, "value", {
-        converter: totalPrice => (totalPrice ? totalPrice.toFixed(2) : 0).toString() + " $"
+        converter: totalPrice => (totalPrice ? totalPrice.toFixed(2) : 0).toString() + " US$"
       });
       layout.add(totalPriceLabel, {
         row,
@@ -228,7 +226,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         font: "text-14"
       });
       this.bind("creditPrice", creditPriceLabel, "value", {
-        converter: nCredits => nCredits + " $"
+        converter: nCredits => nCredits + " US$"
       });
       layout.add(creditPriceLabel, {
         row,
