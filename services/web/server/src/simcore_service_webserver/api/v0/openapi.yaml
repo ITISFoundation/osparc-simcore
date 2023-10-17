@@ -6291,9 +6291,10 @@ components:
           minimum: 0
         extraCreditsInUsd:
           title: Extracreditsinusd
-          exclusiveMinimum: true
-          type: integer
+          exclusiveMaximum: true
           minimum: 0
+          type: integer
+          maximum: 200
     GetCreditPrice:
       title: GetCreditPrice
       required:
