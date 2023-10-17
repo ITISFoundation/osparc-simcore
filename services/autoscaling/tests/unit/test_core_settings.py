@@ -14,7 +14,18 @@ def test_settings(app_environment: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_ACCESS
     assert settings.AUTOSCALING_EC2_INSTANCES
+    assert settings.AUTOSCALING_NODES_MONITORING is None
+    assert settings.AUTOSCALING_DASK is None
+    assert settings.AUTOSCALING_RABBITMQ
+    assert settings.AUTOSCALING_REDIS
+
+
+def test_settings_dynamic_mode(enabled_dynamic_mode: EnvVarsDict):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_ACCESS
+    assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_NODES_MONITORING
+    assert settings.AUTOSCALING_DASK is None
     assert settings.AUTOSCALING_RABBITMQ
     assert settings.AUTOSCALING_REDIS
 
