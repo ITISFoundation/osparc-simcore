@@ -59,6 +59,11 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       tabViews.add(paymentMethodsPage);
     }
 
+    if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+      const activityPage = this.__activityPage = this.__getActivityPage();
+      tabViews.add(activityPage);
+    }
+
     if (this.__walletsEnabled) {
       const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
       tabViews.add(transactionsPage);
@@ -219,6 +224,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
         margin: 10
       });
       page.add(paymentMethods);
+      return page;
+    },
+
+    __getActivityPage: function() {
+      const title = this.tr("Activity");
+      const iconSrc = "@FontAwesome5Solid/list/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
+      const activity = new osparc.desktop.credits.Activity();
+      activity.set({
+        margin: 10
+      });
+      page.add(activity);
       return page;
     },
 
