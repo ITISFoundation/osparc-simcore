@@ -5,6 +5,7 @@ from contextlib import suppress
 from typing import Final
 
 import pkg_resources
+from models_library.basic_types import VersionTag
 from packaging.version import Version
 
 _current_distribution = pkg_resources.get_distribution("simcore-service-autoscaling")
@@ -15,7 +16,7 @@ __version__: str = _current_distribution.version
 APP_NAME: Final[str] = _current_distribution.project_name
 API_VERSION: Final[str] = __version__
 VERSION: Final[Version] = Version(__version__)
-API_VTAG: Final[str] = f"v{VERSION.major}"
+API_VTAG: Final[VersionTag] = VersionTag(f"v{VERSION.major}")
 
 
 def get_summary() -> str:
@@ -46,6 +47,26 @@ APP_STARTED_BANNER_MSG = r"""
     f"v{__version__}"
 )
 
+
+APP_STARTED_DYNAMIC_BANNER_MSG = r"""
+      _                                  _
+     | |                                (_)
+   __| | _   _  _ __    __ _  _ __ ___   _   ___
+  / _` || | | || '_ \  / _` || '_ ` _ \ | | / __|
+ | (_| || |_| || | | || (_| || | | | | || || (__
+  \__,_| \__, ||_| |_| \__,_||_| |_| |_||_| \___|
+          __/ |
+         |___/
+"""
+
+APP_STARTED_DISABLED_BANNER_MSG = r"""
+      _  _              _      _            _
+     | |(_)            | |    | |          | |
+   __| | _  ___   __ _ | |__  | |  ___   __| |
+  / _` || |/ __| / _` || '_ \ | | / _ \ / _` |
+ | (_| || |\__ \| (_| || |_) || ||  __/| (_| |
+  \__,_||_||___/ \__,_||_.__/ |_| \___| \__,_|
+"""
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format(
     f"🎉 App {APP_NAME}=={__version__} shutdown completed 🎉"
