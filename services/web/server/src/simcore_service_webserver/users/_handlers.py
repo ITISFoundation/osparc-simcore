@@ -5,6 +5,7 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -13,6 +14,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.utils import fire_and_forget_task
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
@@ -95,9 +97,7 @@ async def mark_account_for_deletion(request: web.Request):
     body = await parse_request_body_as(ProfileCredentialsCheck, request)
 
     # checks before deleting
-    credentials = await _api.get_email_and_password_hash(
-        request.app, user_id=req_ctx.user_id
-    )
+    credentials = await _api.get_user_credentials(request.app, user_id=req_ctx.user_id)
     if body.email != credentials.email.lower() or not check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
@@ -108,21 +108,32 @@ async def mark_account_for_deletion(request: web.Request):
     with log_context(
         _logger,
         logging.INFO,
-        "Mark account for deletion",
+        "Mark account for deletion to %s",
+        credentials.email,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # mark in the database
+        # update user table
         await _api.set_user_as_deleted(request.app, user_id=req_ctx.user_id)
 
-        # notify logout so all services start closing
+        # logout
         await notify_user_logout(
             request.app, user_id=req_ctx.user_id, client_session_id=None
         )
         response = flash_response(MSG_LOGGED_OUT, "INFO")
         await forget(request, response)
 
-        # background email
-        _logger.debug("Sending now a good-bye email to user and support? (background)")
+        # send email in the background
+        fire_and_forget_task(
+            _api.send_close_account_email(
+                request,
+                user_email=credentials.email,
+                user_name=credentials.full_name.first_name,
+                retention_days=30,
+            ),
+            task_suffix_name=f"{__name__}.mark_account_for_deletion.send_close_account_email",
+            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
         return response
 
 
