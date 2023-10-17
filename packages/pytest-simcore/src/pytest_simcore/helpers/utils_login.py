@@ -126,7 +126,7 @@ class NewInvitation(NewUser):
         guest_email: str | None = None,
         host: dict | None = None,
         trial_days: int | None = None,
-        extra_credits: int | None = None,
+        extra_credits_in_usd: int | None = None,
     ):
         assert client.app
         super().__init__(params=host, app=client.app)
@@ -134,7 +134,7 @@ class NewInvitation(NewUser):
         self.tag = f"Created by {guest_email or FAKE.email()}"
         self.confirmation = None
         self.trial_days = trial_days
-        self.extra_credits = extra_credits
+        self.extra_credits_in_usd = extra_credits_in_usd
 
     async def __aenter__(self) -> "NewInvitation":
         # creates host user
@@ -148,7 +148,7 @@ class NewInvitation(NewUser):
             user_email=self.user["email"],
             tag=self.tag,
             trial_days=self.trial_days,
-            extra_credits=self.extra_credits,
+            extra_credits_in_usd=self.extra_credits_in_usd,
         )
         return self
 

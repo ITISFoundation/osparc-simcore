@@ -9,7 +9,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, PositiveInt, parse_obj_as
+from pydantic import BaseModel, HttpUrl, PositiveInt, parse_obj_as
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
@@ -45,6 +45,7 @@ class PaymentsTransactionsDB(BaseModel):
     user_email: LowerCaseEmailStr
     wallet_id: WalletID
     comment: str | None
+    invoice_url: HttpUrl | None
     initiated_at: datetime.datetime
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
@@ -54,7 +55,7 @@ class PaymentsTransactionsDB(BaseModel):
         orm_mode = True
 
 
-async def create_payment_transaction(  # noqa: PLR0913
+async def create_payment_transaction(
     app: web.Application,
     *,
     payment_id: str,
@@ -124,6 +125,7 @@ async def complete_payment_transaction(
     payment_id: PaymentID,
     completion_state: PaymentTransactionState,
     state_message: str | None,
+    invoice_url: HttpUrl | None = None,
 ) -> PaymentsTransactionsDB:
     """
 
@@ -131,12 +133,17 @@ async def complete_payment_transaction(
         PaymentNotFoundError
         PaymentCompletedError
     """
+    optional_kwargs = {}
+    if invoice_url:
+        optional_kwargs["invoice_url"] = invoice_url
+
     async with get_database_engine(app).acquire() as conn:
         row = await update_payment_transaction_state(
             conn,
             payment_id=payment_id,
             completion_state=completion_state,
             state_message=state_message,
+            **optional_kwargs,
         )
 
         if isinstance(row, PaymentNotFound):
