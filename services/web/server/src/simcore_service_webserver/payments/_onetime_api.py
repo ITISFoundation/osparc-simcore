@@ -20,7 +20,7 @@ from ..resource_usage.api import add_credits_to_wallet
 from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
-from . import _db, _rpc
+from . import _onetime_db, _rpc
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +41,9 @@ async def check_wallet_permissions(
         )
 
 
-def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
+def _to_api_model(
+    transaction: _onetime_db.PaymentsTransactionsDB,
+) -> PaymentTransaction:
     data: dict[str, Any] = {
         "payment_id": transaction.payment_id,
         "price_dollars": transaction.price_dollars,
@@ -124,7 +126,7 @@ async def ack_creation_of_wallet_payment(
     invoice_url: HttpUrl | None = None,
 ) -> PaymentTransaction:
     # NOTE: implements endpoint in payment service hit by the gateway
-    transaction = await _db.complete_payment_transaction(
+    transaction = await _onetime_db.complete_payment_transaction(
         app,
         payment_id=payment_id,
         completion_state=completion_state,
@@ -194,7 +196,10 @@ async def list_user_payments_page(
     assert offset >= 0  # nosec
     assert product_name  # nosec
 
-    total_number_of_items, transactions = await _db.list_user_payment_transactions(
+    (
+        total_number_of_items,
+        transactions,
+    ) = await _onetime_db.list_user_payment_transactions(
         app, user_id=user_id, offset=offset, limit=limit
     )
 

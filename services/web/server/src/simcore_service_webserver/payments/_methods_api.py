@@ -19,7 +19,6 @@ from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
-from ._api import check_wallet_permissions
 from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
     PaymentsMethodsDB,
@@ -29,6 +28,7 @@ from ._methods_db import (
     list_successful_payment_methods,
     udpate_payment_method,
 )
+from ._onetime_api import check_wallet_permissions
 from ._socketio import notify_payment_method_acked
 from .settings import PaymentsSettings, get_plugin_settings
 

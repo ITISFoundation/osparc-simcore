@@ -16,12 +16,12 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ._api import ack_creation_of_wallet_payment
-from ._db import get_pending_payment_transactions_ids
 from ._methods_api import (
     _ack_creation_of_wallet_payment_method,  # pylint: disable=protected-access
 )
 from ._methods_db import get_pending_payment_methods_ids
+from ._onetime_api import ack_creation_of_wallet_payment
+from ._onetime_db import get_pending_payment_transactions_ids
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)

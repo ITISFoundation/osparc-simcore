@@ -1,8 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
-
 
 from decimal import Decimal
 from typing import Any, TypeAlias
@@ -24,7 +24,9 @@ from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_webserver.payments._api import ack_creation_of_wallet_payment
+from simcore_service_webserver.payments._onetime_api import (
+    ack_creation_of_wallet_payment,
+)
 from simcore_service_webserver.payments.errors import PaymentCompletedError
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
