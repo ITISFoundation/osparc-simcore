@@ -20,7 +20,7 @@ from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
 _logger = logging.getLogger(__name__)
 
 
-_APP_RPC_CLIENT_KEY = f"{__name__}.RabbitMQRPCClient"
+_APP_PAYMENTS_RPC_CLIENT_KEY = f"{__name__}.RabbitMQRPCClient"
 
 
 async def rabbitmq_rpc_client_lifespan(app: web.Application):
@@ -34,7 +34,7 @@ async def rabbitmq_rpc_client_lifespan(app: web.Application):
     assert rpc_client.client_name == "webserver-payments"  # nosec
     assert rpc_client.settings == settings  # nosec
 
-    app[_APP_RPC_CLIENT_KEY] = rpc_client
+    app[_APP_PAYMENTS_RPC_CLIENT_KEY] = rpc_client
 
     yield
 
@@ -55,7 +55,7 @@ async def init_payment(
     user_email: str,
     comment: str | None = None,
 ) -> WalletPaymentCreated:
-    rpc_client = app[_APP_RPC_CLIENT_KEY]
+    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
