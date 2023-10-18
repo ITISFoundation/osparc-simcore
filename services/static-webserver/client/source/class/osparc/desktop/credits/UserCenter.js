@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       tabViews.add(buyCreditsPage);
     }
 
-    if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+    if (this.__walletsEnabled) {
       const activityPage = this.__activityPage = this.__getActivityPage();
       tabViews.add(activityPage);
     }

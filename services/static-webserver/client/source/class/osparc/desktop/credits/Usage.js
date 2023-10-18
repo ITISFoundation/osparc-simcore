@@ -175,7 +175,8 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
       }
-      return null;
+      // Usage supports the non wallet enabled products
+      return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
     },
 
     __setData: function(data) {
