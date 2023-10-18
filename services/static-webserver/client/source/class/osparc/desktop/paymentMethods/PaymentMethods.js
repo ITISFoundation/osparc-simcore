@@ -24,8 +24,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     this._setLayout(new qx.ui.layout.VBox(20));
 
     this.getChildControl("intro-text");
-    this.getChildControl("add-payment-methods-button");
     this.getChildControl("payment-methods-list-layout");
+    this.getChildControl("add-payment-methods-button");
 
     this.__fetchPaymentMethods();
   },
@@ -47,12 +47,18 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       switch (id) {
         case "intro-text":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Intro text about payment methods"),
+            value: this.tr("Credit cards used for payments in your personal Credit Account"),
             font: "text-14",
             rich: true,
             wrap: true
           });
           this._add(control);
+          break;
+        case "payment-methods-list-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "add-payment-methods-button":
           control = new qx.ui.form.Button().set({
@@ -62,10 +68,6 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
             allowGrowX: false
           });
           control.addListener("execute", () => this.__addNewPaymentMethod(), this);
-          this._add(control);
-          break;
-        case "payment-methods-list-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
           this._add(control);
           break;
       }
