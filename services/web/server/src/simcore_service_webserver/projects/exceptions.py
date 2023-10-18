@@ -106,3 +106,14 @@ class ProjectNodeResourcesInvalidError(BaseProjectError):
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
     ...
+
+
+class DefaultPricingUnitNotFoundError(BaseProjectError):
+    """Node was not found in project"""
+
+    def __init__(self, project_uuid: str, node_uuid: str):
+        super().__init__(
+            f"Default pricing unit not found for node {node_uuid} in project {project_uuid}"
+        )
+        self.node_uuid = node_uuid
+        self.project_uuid = project_uuid

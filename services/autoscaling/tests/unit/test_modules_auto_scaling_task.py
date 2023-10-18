@@ -39,8 +39,20 @@ def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     return mocked_task
 
 
-async def test_auto_scaling_task_created_and_deleted(
+async def test_auto_scaling_task_not_created_if_no_mode_defined(
     app_environment: EnvVarsDict,
+    mock_background_task: mock.Mock,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_POLL_INTERVAL.total_seconds() == _FAST_POLL_INTERVAL
+    assert not hasattr(initialized_app.state, "autoscaler_task")
+    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+    mock_background_task.assert_not_called()
+
+
+async def test_auto_scaling_task_created_and_deleted_with_dynamic_mode(
+    enabled_dynamic_mode: EnvVarsDict,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,

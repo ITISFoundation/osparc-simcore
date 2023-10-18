@@ -5,8 +5,8 @@
 import json
 import logging
 from collections import OrderedDict
+from collections.abc import Callable
 from textwrap import dedent
-from typing import Callable
 
 from .._meta import VERSION
 from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
@@ -16,7 +16,7 @@ from ..models import EC2InstanceType, Resources
 logger = logging.getLogger(__name__)
 
 
-def get_ec2_tags(app_settings: ApplicationSettings) -> dict[str, str]:
+def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> dict[str, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
