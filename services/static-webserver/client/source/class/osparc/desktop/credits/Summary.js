@@ -228,23 +228,15 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           column: 1
         });
 
-        const params = {
-          url: {
-            walletId: this.__getWallet().getWalletId()
-          }
-        };
-        osparc.data.Resources.fetch("auto-recharge", "get", params)
-          .then(arData => {
-            if (arData["enabled"]) {
-              t1v.setValue(this.tr("On"));
-              t2v.setValue(arData["topUpAmountInUsd"]*arData["topUpCountdown"]);
-              t3v.setValue(arData["paymentMethodId"]);
-            } else {
-              t1v.setValue(this.tr("Off"));
-              t2v.resetValue();
-              t3v.resetValue();
-            }
-          });
+        wallet.bind("autoRecharge", t1v, "value", {
+          converter: arData => arData["enabled"] ? this.tr("On") : this.tr("Off")
+        });
+        wallet.bind("autoRecharge", t2v, "value", {
+          converter: arData => arData["enabled"] ? arData["topUpAmountInUsd"]*arData["topUpCountdown"] : null
+        });
+        wallet.bind("autoRecharge", t3v, "value", {
+          converter: arData => arData["enabled"] ? arData["paymentMethodId"] : null
+        });
 
         return layout;
       }
