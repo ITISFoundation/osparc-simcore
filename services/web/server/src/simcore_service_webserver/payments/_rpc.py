@@ -26,12 +26,12 @@ _APP_PAYMENTS_RPC_CLIENT_KEY = f"{__name__}.RabbitMQRPCClient"
 async def rabbitmq_rpc_client_lifespan(app: web.Application):
     settings: RabbitSettings = get_rabbitmq_settings(app)
     rpc_client = await RabbitMQRPCClient.create(
-        client_name="webserver-payments",
+        client_name="webserver_payments_client",
         settings=settings,
     )
 
     assert rpc_client  # nosec
-    assert rpc_client.client_name == "webserver-payments"  # nosec
+    assert rpc_client.client_name == "webserver_payments_client"  # nosec
     assert rpc_client.settings == settings  # nosec
 
     app[_APP_PAYMENTS_RPC_CLIENT_KEY] = rpc_client
@@ -39,6 +39,11 @@ async def rabbitmq_rpc_client_lifespan(app: web.Application):
     yield
 
     await rpc_client.close()
+
+
+#
+# rpc client functions
+#
 
 
 @log_decorator(_logger, level=logging.DEBUG)
