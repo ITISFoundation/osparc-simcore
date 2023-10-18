@@ -15,7 +15,6 @@ from tenacity.wait import wait_fixed
 
 from .....core.settings import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import SchedulerData
-from .....modules.resource_usage_client import ResourceUsageApi
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
@@ -132,14 +131,9 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     if scheduler_data.wallet_info:
         wallet_id = scheduler_data.wallet_info.wallet_id
         wallet_name = scheduler_data.wallet_info.wallet_name
-        resource_usage_api = ResourceUsageApi.get_from_state(app)
-        (
-            pricing_plan_id,
-            pricing_unit_id,
-            pricing_unit_cost_id,
-        ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
-            scheduler_data.product_name, scheduler_data.key, scheduler_data.version
-        )
+        pricing_plan_id = scheduler_data.pricing_info.pricing_plan_id
+        pricing_unit_id = scheduler_data.pricing_info.pricing_unit_id
+        pricing_unit_cost_id = scheduler_data.pricing_info.pricing_unit_cost_id
 
     metrics_params = CreateServiceMetricsAdditionalParams(
         wallet_id=wallet_id,

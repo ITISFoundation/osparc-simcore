@@ -21,7 +21,9 @@ class Resources(BaseModel):
         return Resources.construct(
             **{
                 key: a + b
-                for (key, a), b in zip(self.dict().items(), other.dict().values())
+                for (key, a), b in zip(
+                    self.dict().items(), other.dict().values(), strict=True
+                )
             }
         )
 
@@ -29,7 +31,9 @@ class Resources(BaseModel):
         return Resources.construct(
             **{
                 key: a - b
-                for (key, a), b in zip(self.dict().items(), other.dict().values())
+                for (key, a), b in zip(
+                    self.dict().items(), other.dict().values(), strict=True
+                )
             }
         )
 

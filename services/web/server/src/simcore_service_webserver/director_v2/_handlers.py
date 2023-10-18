@@ -21,6 +21,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -114,9 +115,7 @@ async def start_computation(request: web.Request) -> web.Response:
                 preference_class=user_preferences_api.PreferredWalletIdFrontendUserPreference,
             )
             if user_default_wallet_preference is None:
-                raise ValueError(
-                    "User does not have default wallet - this should not happen"
-                )
+                raise UserDefaultWalletNotFoundError(uid=req_ctx.user_id)
             project_wallet_id = parse_obj_as(
                 WalletID, user_default_wallet_preference.value
             )
@@ -198,6 +197,8 @@ async def start_computation(request: web.Request) -> web.Response:
             reason=exc.reason,
             http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
         )
+    except UserDefaultWalletNotFoundError as exc:
+        return create_error_response(exc, http_error_cls=web.HTTPNotFound)
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")

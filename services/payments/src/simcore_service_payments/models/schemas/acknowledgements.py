@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 from ..payments_gateway import PaymentID, PaymentMethodID
 
@@ -17,6 +17,7 @@ class SavedPaymentMethod(AckPaymentMethod):
 
 
 class AckPayment(_BaseAck):
+    invoice_url: HttpUrl
     saved: SavedPaymentMethod | None = Field(
         default=None,
         description="If the user decided to save the payment method"

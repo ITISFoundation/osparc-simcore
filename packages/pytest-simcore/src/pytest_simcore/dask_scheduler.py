@@ -3,8 +3,8 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterable, Callable
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Callable
+from typing import Any
 
 import distributed
 import pytest
