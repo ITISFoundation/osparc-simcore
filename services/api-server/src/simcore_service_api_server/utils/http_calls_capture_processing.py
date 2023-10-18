@@ -96,7 +96,7 @@ class CapturedParameterSchema(BaseModel):
                 pattern = r"[+-]?\d+(?:\.\d+)?"
             elif self.type_ == "str":
                 if self.format_ == "uuid":
-                    pattern = r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
+                    pattern = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
                 else:
                     pattern = r".*"  # should match any string
         if pattern is None:
