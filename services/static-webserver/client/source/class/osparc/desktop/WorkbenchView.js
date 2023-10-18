@@ -621,18 +621,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __logsToLogger: function(nodeId, logs, logLevel) {
+      // the node logger is mainly used in App Mode
+      const nodeLogger = this.__getNodeLogger(nodeId);
       switch (logLevel) {
         case "DEBUG":
           this.__loggerView.debugs(nodeId, logs);
+          nodeLogger.debugs(nodeId, logs);
           break;
         case "WARNING":
           this.__loggerView.warns(nodeId, logs);
+          nodeLogger.warns(nodeId, logs);
           break;
         case "ERROR":
           this.__loggerView.errors(nodeId, logs);
+          nodeLogger.errors(nodeId, logs);
           break;
         default:
           this.__loggerView.infos(nodeId, logs);
+          nodeLogger.infos(nodeId, logs);
           break;
       }
     },
@@ -655,10 +661,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
           const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
           this.__logsToLogger(nodeId, messages, logLevel);
-          const nodeLogger = this.__getNodeLogger(nodeId);
-          if (nodeLogger) {
-            nodeLogger.infos(nodeId, messages);
-          }
         }, this);
       }
       socket.emit(slotName);
