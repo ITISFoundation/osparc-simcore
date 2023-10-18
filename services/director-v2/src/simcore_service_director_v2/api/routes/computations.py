@@ -47,6 +47,7 @@ from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
     ComputationalRunNotFoundError,
+    PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
 )
@@ -302,6 +303,8 @@ async def create_computation(  # noqa: C901, PLR0912
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"{e}"
         ) from e
+    except PricingPlanUnitNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
 @router.get(

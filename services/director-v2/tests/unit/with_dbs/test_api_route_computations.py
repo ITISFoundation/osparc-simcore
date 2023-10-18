@@ -337,7 +337,6 @@ async def test_start_computation_without_product_fails(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
 
 
-@pytest.mark.testit
 async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts,
