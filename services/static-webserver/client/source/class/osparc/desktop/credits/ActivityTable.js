@@ -35,11 +35,9 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
     this.makeItLoose();
 
     const columnModel = this.getTableColumnModel();
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.invoice.pos, 60);
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.setColumnVisible(this.self().COLUMNS.wallet.pos, false);
       columnModel.setColumnVisible(this.self().COLUMNS.invoice.pos, false);
     }
   },
@@ -62,12 +60,8 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
         pos: 3,
         title: qx.locale.Manager.tr("Credits")
       },
-      wallet: {
-        pos: 4,
-        title: qx.locale.Manager.tr("Credit Account")
-      },
       invoice: {
-        pos: 5,
+        pos: 4,
         title: qx.locale.Manager.tr("Invoice")
       }
     },
@@ -114,10 +108,6 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
       newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["date"]));
       newData[cols["type"].pos] = data["type"];
       newData[cols["credits"].pos] = data["credits"] ? data["credits"] : "-";
-      const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
-      if (found) {
-        newData[cols["wallet"].pos] = found ? found.getName() : data["walletId"];
-      }
       const invoiceUrl = data["invoice"];
       newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
       return newData;

@@ -33,11 +33,9 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     const columnModel = this.getTableColumnModel();
     columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 70);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.cost.pos, 60);
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.setColumnVisible(this.self().COLUMNS.wallet.pos, false);
       columnModel.setColumnVisible(this.self().COLUMNS.user.pos, false);
     }
   },
@@ -68,16 +66,12 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         pos: 5,
         title: qx.locale.Manager.tr("Status")
       },
-      wallet: {
-        pos: 6,
-        title: qx.locale.Manager.tr("Credit Account")
-      },
       cost: {
-        pos: 7,
+        pos: 6,
         title: qx.locale.Manager.tr("Cost")
       },
       user: {
-        pos: 8,
+        pos: 7,
         title: qx.locale.Manager.tr("User")
       }
     },
@@ -102,7 +96,6 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         }
       }
       newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-      newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
       newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
       const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
       if (user) {
