@@ -20,7 +20,7 @@ from ..resource_usage.api import add_credits_to_wallet
 from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
-from . import _client, _db
+from . import _db, _rpc
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -98,7 +98,7 @@ async def create_payment_to_wallet(
     )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
-    payment_inited: WalletPaymentCreated = await _client.init_payment(
+    payment_inited: WalletPaymentCreated = await _rpc.init_payment(
         app,
         amount_dollars=price_dollars,
         target_credits=osparc_credits,

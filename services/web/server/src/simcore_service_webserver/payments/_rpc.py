@@ -1,4 +1,4 @@
-""" client for the RPC API in the payments service
+""" PRC client-side for the RPC server at the payments service
 
 """
 

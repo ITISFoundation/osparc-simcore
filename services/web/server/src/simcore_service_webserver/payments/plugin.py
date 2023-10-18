@@ -10,7 +10,7 @@ from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
-from ._client import rabbitmq_rpc_client_lifespan
+from ._rpc import rabbitmq_rpc_client_lifespan
 from ._tasks import create_background_task_to_fake_payment_completion
 
 _logger = logging.getLogger(__name__)
