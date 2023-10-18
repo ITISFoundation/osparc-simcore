@@ -50,6 +50,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     this.bind("expirationYear", expirationDate, "value", {
       converter: year => this.getExpirationMonth() + "/" + year
     });
+
+    this.getChildControl("details-button");
+    this.getChildControl("delete-button");
   },
 
   properties: {
