@@ -199,7 +199,7 @@ class ProjectNodesRepo:
         await connection.execute(delete_stmt)
 
     async def get_project_node_pricing_unit_id(
-        self, connection: SAConnection, *, project_uuid: uuid.UUID, node_uuid: uuid.UUID
+        self, connection: SAConnection, *, node_uuid: uuid.UUID
     ) -> tuple | None:
         """get a pricing unit that is connected to the project node or None if there is non connected
 
@@ -218,7 +218,7 @@ class ProjectNodesRepo:
                 )
             )
             .where(
-                (projects_nodes.c.project_uuid == f"{project_uuid}")
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
                 & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
@@ -231,14 +231,13 @@ class ProjectNodesRepo:
         self,
         connection: SAConnection,
         *,
-        project_uuid: uuid.UUID,
         node_uuid: uuid.UUID,
         pricing_plan_id: int,
         pricing_unit_id: int,
     ) -> None:
         result = await connection.scalar(
             sqlalchemy.select(projects_nodes.c.project_node_id).where(
-                (projects_nodes.c.project_uuid == f"{project_uuid}")
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
                 & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )

@@ -218,9 +218,8 @@ class CompTaskAtDB(BaseModel):
                     "last_heartbeat": None,
                     "created": "2022-05-20 13:28:31.139+00",
                     "modified": "2023-06-23 15:58:32.833081+00",
-                    "pricing_plan_id": 1,
-                    "pricing_detail_id": 1,
-                    "aws_ec2_instace_type": "real-ec2-instance-type",
+                    "pricing_info": None,
+                    "hardware_info": None,
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]

@@ -235,7 +235,7 @@ async def _generate_tasks_list_from_project(
         hardware_info = None
         if is_wallet:
             output = await project_nodes_repo.get_project_node_pricing_unit_id(
-                connection, project_uuid=project.uuid, node_uuid=NodeID(node_id)
+                connection, node_uuid=NodeID(node_id)
             )
             if output:
                 pricing_plan_id, pricing_unit_id = output
@@ -257,7 +257,6 @@ async def _generate_tasks_list_from_project(
                 )
                 await project_nodes_repo.connect_pricing_unit_to_project_node(
                     connection,
-                    project_uuid=project.uuid,
                     node_uuid=NodeID(node_id),
                     pricing_plan_id=pricing_plan_id,
                     pricing_unit_id=pricing_unit_id,

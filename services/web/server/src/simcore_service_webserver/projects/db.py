@@ -807,7 +807,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
         async with self.engine.acquire() as conn:
             output = await project_nodes_repo.get_project_node_pricing_unit_id(
-                conn, project_uuid=project_uuid, node_uuid=node_uuid
+                conn, node_uuid=node_uuid
             )
             if output:
                 pricing_plan_id, pricing_unit_id = output
@@ -825,7 +825,6 @@ class ProjectDBAPI(BaseProjectDB):
             project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
             await project_nodes_repo.connect_pricing_unit_to_project_node(
                 conn,
-                project_uuid=project_uuid,
                 node_uuid=node_uuid,
                 pricing_plan_id=pricing_plan_id,
                 pricing_unit_id=pricing_unit_id,
