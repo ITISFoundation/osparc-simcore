@@ -66,7 +66,7 @@ async def test_payment_on_invalid_wallet(
 
 @pytest.fixture
 def mock_rpc_payments_service_api(
-    mocker: MockerFixture, faker: Faker
+    mocker: MockerFixture, faker: Faker, payments_transactions_clean_db: None
 ) -> dict[str, Mock]:
     async def _fake_rpc_init_payment(
         app: web.Application,
@@ -205,6 +205,7 @@ async def test_multiple_payments(
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
     faker: Faker,
+    mock_rpc_payments_service_api: dict[str, Mock],
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -292,6 +293,7 @@ async def test_complete_payment_errors(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    mock_rpc_payments_service_api: dict[str, Mock],
 ):
     assert client.app
     send_message = mocker.patch(
@@ -305,6 +307,9 @@ async def test_complete_payment_errors(
         f"/v0/wallets/{wallet.wallet_id}/payments",
         json={"priceDollars": 25},
     )
+
+    assert mock_rpc_payments_service_api["init_payment"].called
+
     data, _ = await assert_status(response, web.HTTPCreated)
     payment = WalletPaymentCreated.parse_obj(data)
 
