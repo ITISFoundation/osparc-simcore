@@ -129,6 +129,11 @@ qx.Class.define("osparc.store.Store", {
       nullable: true,
       event: "changeCreditPrice"
     },
+    productMetadata: {
+      check: "Object",
+      init: {},
+      nullable: true
+    },
     permissions: {
       check: "Array",
       init: []

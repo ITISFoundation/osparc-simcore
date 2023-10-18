@@ -100,10 +100,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "po-center":
           control = new qx.ui.menu.Button(this.tr("PO Center"));
-          control.addListener("execute", () => {
-            const poCenterWindow = osparc.po.POCenterWindow.openWindow();
-            poCenterWindow.openInvitations();
-          }, this);
+          control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
           this.getMenu().add(control);
           break;
         case "preferences":

@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
   construct: function(walletsEnabled = false) {
     this.base(arguments, "credits", this.tr("User Center"));
 
-    const viewWidth = walletsEnabled ? 1050 : 800;
+    const viewWidth = walletsEnabled ? 1000 : 800;
     const viewHeight = walletsEnabled ? 700 : 600;
 
     this.set({
