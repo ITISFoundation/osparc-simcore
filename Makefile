@@ -395,9 +395,11 @@ down: ## Stops and removes stack
 	# Removing client containers (if any)
 	-@$(MAKE_C) services/static-webserver/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
+ifneq ($(wildcard .stack-*), )
 	-@rm $(wildcard .stack-*)
+endif
 	# Removing local registry if any
-	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
+	-@docker ps -aq --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs -r docker rm
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
