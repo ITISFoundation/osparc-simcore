@@ -30,7 +30,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
-from simcore_service_director_v2.modules.resource_usage_client import (
+from simcore_service_director_v2.modules.resource_usage_tracker_client import (
     ResourceUsageTrackerClient,
 )
 from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES

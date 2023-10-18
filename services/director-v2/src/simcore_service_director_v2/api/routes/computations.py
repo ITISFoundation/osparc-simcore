@@ -63,7 +63,7 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.resource_usage_client import ResourceUsageTrackerClient
+from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils.computations import (
     find_deprecated_tasks,
     get_pipeline_state_from_task_states,
