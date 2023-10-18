@@ -93,7 +93,7 @@ class ProjectNotFoundError(DirectorException):
 
 
 class PricingPlanUnitNotFoundError(DirectorException):
-    """Project not found error"""
+    """Pricing plan unit not found error"""
 
     def __init__(self, msg: str):
         super().__init__(msg)
