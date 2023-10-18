@@ -2,7 +2,6 @@
 
 """
 from pprint import pformat
-from typing import Optional
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
@@ -12,10 +11,10 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 async def assert_status(
     response: ClientResponse,
     expected_cls: type[HTTPException],
-    expected_msg: Optional[str] = None,
-    expected_error_code: Optional[str] = None,
-    include_meta: Optional[bool] = False,
-    include_links: Optional[bool] = False,
+    expected_msg: str | None = None,
+    expected_error_code: str | None = None,
+    include_meta: bool | None = False,
+    include_links: bool | None = False,
 ) -> tuple[dict, ...]:
     """
     Asserts for enveloped responses
@@ -34,9 +33,8 @@ async def assert_status(
         assert not data, pformat(data)
         assert not error, pformat(error)
     else:
-        # with a 200, data may still be empty see
-        # https://medium.com/@santhoshkumarkrishna/http-get-rest-api-no-content-404-vs-204-vs-200-6dd869e3af1d
-        # assert data is not None, pformat(data)
+        # with a 200, data may still be empty so we cannot 'assert data is not None'
+        # SEE https://medium.com/@santhoshkumarkrishna/http-get-rest-api-no-content-404-vs-204-vs-200-6dd869e3af1d
         assert not error, pformat(error)
 
         if expected_msg:
@@ -56,7 +54,7 @@ async def assert_status(
 async def assert_error(
     response: ClientResponse,
     expected_cls: type[HTTPException],
-    expected_msg: Optional[str] = None,
+    expected_msg: str | None = None,
 ):
     data, error = unwrap_envelope(await response.json())
     return do_assert_error(data, error, expected_cls, expected_msg)
@@ -66,8 +64,8 @@ def do_assert_error(
     data,
     error,
     expected_cls: type[HTTPException],
-    expected_msg: Optional[str] = None,
-    expected_error_code: Optional[str] = None,
+    expected_msg: str | None = None,
+    expected_error_code: str | None = None,
 ):
     assert not data, pformat(data)
     assert error, pformat(error)

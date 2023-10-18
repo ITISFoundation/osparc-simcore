@@ -8,6 +8,8 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_STARTED_DISABLED_BANNER_MSG,
+    APP_STARTED_DYNAMIC_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
 from ..modules.auto_scaling_task import setup as setup_background_task
@@ -49,10 +51,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # EVENTS
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        if settings.AUTOSCALING_NODES_MONITORING:
+            print(APP_STARTED_DYNAMIC_BANNER_MSG, flush=True)  # noqa: T201
+        else:
+            print(APP_STARTED_DISABLED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

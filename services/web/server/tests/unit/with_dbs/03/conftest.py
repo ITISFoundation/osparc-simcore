@@ -12,6 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa import create_engine
 from aiopg.sa.connection import SAConnection
+from faker import Faker
 from models_library.products import ProductName
 from pytest_simcore.helpers.rawdata_fakers import random_product
 from simcore_postgres_database.models.products import products
@@ -90,42 +91,56 @@ async def all_products_names(
 
 @pytest.fixture
 async def all_product_prices(
-    all_products_names: list[ProductName],
     _pre_connection: SAConnection,
-) -> dict[ProductName, Decimal]:
-    credits_price = {
-        "osparc": Decimal(0),
+    all_products_names: list[ProductName],
+    faker: Faker,
+) -> dict[ProductName, Decimal | None]:
+    """Initial list of prices for all products"""
+
+    # initial list of prices
+    product_price = {
+        "osparc": Decimal(0),  # free of charge
         "tis": Decimal(5),
         "s4l": Decimal(9),
-        "s4llite": Decimal(0),
+        "s4llite": Decimal(0),  # free of charge
         "s4lacad": Decimal(1.1),
     }
 
-    # initial prices
-    for name in all_products_names:
-        await _pre_connection.execute(
-            products_prices.insert().values(
-                product_name=name,
-                usd_per_credit=credits_price[name],
-                comment="MrK",
+    result = {}
+    for product_name in all_products_names:
+        usd_or_none = product_price.get(product_name, None)
+        if usd_or_none is not None:
+            await _pre_connection.execute(
+                products_prices.insert().values(
+                    product_name=product_name,
+                    usd_per_credit=usd_or_none,
+                    comment=faker.sentence(),
+                )
             )
-        )
-    return credits_price
+
+        result[product_name] = usd_or_none
+
+    return result
 
 
 @pytest.fixture
-async def new_osparc_price(
+async def latest_osparc_price(
     all_product_prices: dict[ProductName, Decimal],
     _pre_connection: SAConnection,
 ) -> Decimal:
+    """This inserts a new price for osparc in the history
+    (i.e. the old price of osparc is still in the database)
+    """
+
     usd = await _pre_connection.scalar(
         products_prices.insert()
         .values(
             product_name="osparc",
-            usd_per_credit=Decimal(1.0),
-            comment="MrK",
+            usd_per_credit=all_product_prices["osparc"] + 5,
+            comment="New price for osparc",
         )
         .returning(products_prices.c.usd_per_credit)
     )
     assert usd is not None
+    assert usd != all_product_prices["osparc"]
     return Decimal(usd)

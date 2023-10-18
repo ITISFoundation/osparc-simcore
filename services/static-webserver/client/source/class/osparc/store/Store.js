@@ -126,7 +126,8 @@ qx.Class.define("osparc.store.Store", {
     creditPrice: {
       check: "Number",
       init: null,
-      nullable: true
+      nullable: true,
+      event: "changeCreditPrice"
     },
     permissions: {
       check: "Array",

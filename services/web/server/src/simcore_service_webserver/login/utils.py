@@ -70,7 +70,7 @@ async def notify_user_confirmation(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-    extra_credits: PositiveInt | None,
+    extra_credits_in_usd: PositiveInt | None,
 ):
     """Broadcast that user with 'user_id' has login for the first-time in 'product_name'"""
     # NOTE: Follow up in https://github.com/ITISFoundation/osparc-simcore/issues/4822
@@ -79,7 +79,7 @@ async def notify_user_confirmation(
         "SIGNAL_ON_USER_CONFIRMATION",
         user_id=user_id,
         product_name=product_name,
-        extra_credits=extra_credits,
+        extra_credits_in_usd=extra_credits_in_usd,
     )
 
 
