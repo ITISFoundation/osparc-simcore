@@ -80,9 +80,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
           break;
         }
         case "wallet-selector": {
-          control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
-            allowGrowX: false
-          });
+          control = osparc.desktop.credits.Utils.createWalletSelector("read");
           const layout = this.getChildControl("wallet-selector-layout");
           layout.add(control);
           break;
