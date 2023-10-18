@@ -39,7 +39,7 @@ services_vendor_secrets = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        # NOTE: since this is part of ta primary key this is required
+        # NOTE: since this is part of the primary key this is required
         # NOTE: an alternative would be to not use this as a primary key
         server_default="osparc",
         doc="Product Identifier",
