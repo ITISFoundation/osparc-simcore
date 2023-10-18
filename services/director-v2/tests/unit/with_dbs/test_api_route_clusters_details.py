@@ -143,6 +143,7 @@ async def test_get_cluster_details(
     cluster: Callable[..., Cluster],
     dask_gateway_cluster: GatewayCluster,
     dask_gateway_cluster_client: DaskClient,
+    gateway_username: str,
 ):
     user_1 = registered_user()
     # define the cluster in the DB
@@ -150,7 +151,7 @@ async def test_get_cluster_details(
         user_1,
         endpoint=local_dask_gateway_server.address,
         authentication=SimpleAuthentication(
-            username="pytest_user",
+            username=gateway_username,
             password=SecretStr(local_dask_gateway_server.password),
         ).dict(by_alias=True),
     )
@@ -173,7 +174,7 @@ async def test_get_cluster_details(
             assert cluster_out.scheduler.workers, "the cluster has no workers!"
             assert (
                 len(cluster_out.scheduler.workers) == _NUM_WORKERS
-            ), f"the cluster is missing {_NUM_WORKERS}, currently has {len(cluster_out.scheduler.workers)}"
+            ), f"the cluster is expected to have {_NUM_WORKERS} worker(s), currently has {len(cluster_out.scheduler.workers)} worker(s)"
             print(
                 f"cluster now has its {_NUM_WORKERS}, after {json.dumps(attempt.retry_state.retry_object.statistics)}"
             )

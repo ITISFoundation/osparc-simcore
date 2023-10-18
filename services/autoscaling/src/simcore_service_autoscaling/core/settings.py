@@ -119,17 +119,17 @@ class EC2InstancesSettings(BaseCustomSettings):
 
 class NodesMonitoringSettings(BaseCustomSettings):
     NODES_MONITORING_NODE_LABELS: list[DockerLabelKey] = Field(
-        default_factory=list,
+        ...,
         description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored), these labels will be added to the new created nodes by default",
     )
 
     NODES_MONITORING_SERVICE_LABELS: list[DockerLabelKey] = Field(
-        default_factory=list,
+        ...,
         description="autoscaling will only monitor services with the given labels (if empty all services will be monitored)",
     )
 
     NODES_MONITORING_NEW_NODES_LABELS: list[DockerLabelKey] = Field(
-        default=["io.simcore.autoscaled-node"],
+        ...,
         description="autoscaling will add these labels to any new node it creates (additional to the ones in NODES_MONITORING_NODE_LABELS",
     )
 

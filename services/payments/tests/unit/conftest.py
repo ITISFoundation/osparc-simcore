@@ -6,10 +6,12 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
+from unittest.mock import Mock
 
 import httpx
 import pytest
 import respx
+import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -24,15 +26,67 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentInitiated,
 )
 
+#
+# rabbit-MQ
+#
+
 
 @pytest.fixture
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
-    def _doit():
-        # The following moduls are affected if rabbitmq is not in place
+    def _do():
+        # The following services are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
 
-    return _doit
+    return _do
+
+
+@pytest.fixture
+def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
+    disable_rabbitmq_and_rpc_setup()
+
+
+#
+# postgres
+#
+
+
+@pytest.fixture
+def disable_postgres_setup(mocker: MockerFixture) -> Callable:
+    def _setup(app: FastAPI):
+        app.state.engine = (
+            Mock()
+        )  # NOTE: avoids error in api._dependencies::get_db_engine
+
+    def _do():
+        # The following services are affected if postgres is not in place
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_postgres",
+            spec=True,
+            side_effect=_setup,
+        )
+
+    return _do
+
+
+@pytest.fixture
+def with_disabled_postgres(disable_postgres_setup: Callable):
+    disable_postgres_setup()
+
+
+@pytest.fixture
+def wait_for_postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
+    """
+    Typical use-case is to include it in
+
+    @pytest.fixture
+    def app_environment(
+        ...
+        postgres_env_vars_dict: EnvVarsDict,
+        wait_for_postgres_ready_and_db_migrated: None,
+    )
+    """
+    assert postgres_db
 
 
 @pytest.fixture
@@ -44,6 +98,11 @@ async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
         shutdown_timeout=10,
     ):
         yield test_app
+
+
+#
+# mock payments-gateway-service API
+#
 
 
 @pytest.fixture

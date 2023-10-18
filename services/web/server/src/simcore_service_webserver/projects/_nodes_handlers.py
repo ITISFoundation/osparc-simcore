@@ -59,6 +59,7 @@ from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .db import ProjectDBAPI
 from .exceptions import (
+    DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
@@ -79,6 +80,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             ProjectNotFoundError,
             NodeNotFoundError,
             UserDefaultWalletNotFoundError,
+            DefaultPricingUnitNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
@@ -173,9 +175,9 @@ async def get_node(request: web.Request) -> web.Response:
 
         if "data" not in service_data:
             # dynamic-service NODE STATE
-            assert (
+            assert (  # nosec
                 parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None
-            )  # nosec
+            )
             return envelope_json_response(service_data)
 
         # LEGACY-service NODE STATE

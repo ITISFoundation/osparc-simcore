@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -153,6 +154,8 @@ def expected_dynamic_sidecar_spec(
                     "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
                     "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
+                    "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
+                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
                     "service_resources": {
@@ -228,6 +231,9 @@ def expected_dynamic_sidecar_spec(
                     "REGISTRY_SSL": "False",
                     "REGISTRY_URL": "foo.bar.com",
                     "REGISTRY_USER": "test",
+                    "R_CLONE_OPTION_BUFFER_SIZE": "0M",
+                    "R_CLONE_OPTION_RETRIES": "3",
+                    "R_CLONE_OPTION_TRANSFERS": "5",
                     "R_CLONE_PROVIDER": "MINIO",
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",

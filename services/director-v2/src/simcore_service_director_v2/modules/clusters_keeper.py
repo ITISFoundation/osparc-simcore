@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from models_library.clusters import BaseCluster, ClusterTypeInModel
@@ -14,6 +13,7 @@ from servicelib.rabbitmq import (
     RPCNamespace,
     RPCServerError,
 )
+from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.errors import (
     ComputationalBackendOnDemandClustersKeeperNotReadyError,
@@ -21,12 +21,6 @@ from ..core.errors import (
 )
 
 _logger = logging.getLogger(__name__)
-
-_TIME_FORMAT = "{:02d}:{:02d}"  # format for minutes:seconds
-
-
-def _format_delta(delta: datetime.timedelta) -> str:
-    return _TIME_FORMAT.format(delta.seconds // 60, delta.seconds % 60)
 
 
 async def get_or_create_on_demand_cluster(
@@ -43,11 +37,11 @@ async def get_or_create_on_demand_cluster(
         _logger.info("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
             raise ComputationalBackendOnDemandNotReadyError(
-                eta=_format_delta(returned_cluster.eta)
+                eta=timedelta_as_minute_second(returned_cluster.eta)
             )
         if not returned_cluster.dask_scheduler_ready:
             raise ComputationalBackendOnDemandNotReadyError(
-                eta=_format_delta(returned_cluster.eta)
+                eta=timedelta_as_minute_second(returned_cluster.eta)
             )
 
         return BaseCluster(
