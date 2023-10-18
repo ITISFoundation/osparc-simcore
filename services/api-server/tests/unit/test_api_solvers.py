@@ -33,6 +33,7 @@ async def test_get_solver_pricing_plan(
     respx_mock = respx_mock_from_capture(
         mocked_webserver_service_api_base, project_tests_dir / "mocks" / capture, None
     )
+    assert respx_mock
 
     _my_solver: str = "simcore/services/comp/my_solver"
     _version: str = "2.4.3"
