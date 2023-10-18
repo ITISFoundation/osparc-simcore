@@ -3,6 +3,7 @@ services:
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -21,6 +22,7 @@ services:
   redis:
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     ports:
       - "6379:6379"
     healthcheck:
@@ -34,6 +36,7 @@ services:
   redis-commander:
     image: rediscommander/redis-commander:latest
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     ports:
       - "18081:8081"
     environment:
@@ -43,6 +46,7 @@ services:
   autoscaling:
     image: local/autoscaling:development
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     ports:
       - "8006:8000"
       - "3012:3000"
