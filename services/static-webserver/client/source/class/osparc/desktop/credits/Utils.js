@@ -64,6 +64,24 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return walletSelector;
     },
 
+    createWalletSelectorLayout: function(accessRight = "read") {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Select Credit Account"));
+      layout.add(label);
+
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector(accessRight);
+      layout.add(walletSelector);
+
+      if (osparc.desktop.credits.Utils.areWalletsEnabled() && walletSelector.getSelectables().length > 1) {
+        layout.show();
+      } else {
+        layout.exclude();
+      }
+
+      return layout;
+    },
+
     autoSelectActiveWallet: function(walletSelector) {
       // If there is only one active wallet, select it
       const store = osparc.store.Store.getInstance();
