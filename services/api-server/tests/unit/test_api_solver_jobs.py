@@ -6,6 +6,8 @@ import httpx
 import pytest
 import respx
 from httpx import AsyncClient
+from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
+from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -137,8 +139,7 @@ async def test_get_solver_job_pricing_unit(
     )
     if capture_file == "get_job_pricing_unit_success.json":
         assert response.status_code == 200
-        body = response.json()
-        assert isinstance(body, dict)
+        _ = parse_obj_as(PricingUnitGet, response.json())
     elif capture_file == "get_job_pricing_unit_invalid_job.json":
         assert response.status_code == 404
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
