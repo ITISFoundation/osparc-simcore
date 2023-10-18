@@ -175,14 +175,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     AUTOSCALING_DEBUG: bool = Field(
-        False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
+        default=False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
     )
 
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -214,7 +214,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
 
     @cached_property
-    def LOG_LEVEL(self):
+    def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
 
     @validator("AUTOSCALING_LOGLEVEL")
@@ -230,9 +230,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             values.get("AUTOSCALING_DASK") is not None
             and values.get("AUTOSCALING_NODES_MONITORING") is not None
         ):
-            raise ValueError(
-                "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
-            )
+            msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
+            raise ValueError(msg)
         return values
 
 
