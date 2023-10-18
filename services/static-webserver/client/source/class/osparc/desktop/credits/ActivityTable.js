@@ -25,16 +25,7 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
   construct: function() {
     const model = new qx.ui.table.model.Simple();
     const cols = this.self().COLUMNS;
-    const colNames = [];
-    Object.entries(cols).forEach(([key, data]) => {
-      if (
-        ["wallet", "invoice"].includes(key) &&
-        !osparc.desktop.credits.Utils.areWalletsEnabled()
-      ) {
-        return;
-      }
-      colNames.push(data.title);
-    });
+    const colNames = Object.values(cols).map(col => col.title);
     model.setColumns(colNames);
 
     this.base(arguments, model, {
@@ -44,9 +35,12 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
     this.makeItLoose();
 
     const columnModel = this.getTableColumnModel();
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
-      columnModel.getBehavior().setWidth(this.self().COLUMNS.invoice.pos, 60);
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.invoice.pos, 60);
+
+    if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      columnModel.setColumnVisible(this.self().COLUMNS.wallet.pos, false);
+      columnModel.setColumnVisible(this.self().COLUMNS.invoice.pos, false);
     }
   },
 
@@ -120,12 +114,12 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
       newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["date"]));
       newData[cols["type"].pos] = data["type"];
       newData[cols["credits"].pos] = data["credits"] ? data["credits"] : "-";
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
+      const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
+      if (found) {
         newData[cols["wallet"].pos] = found ? found.getName() : data["walletId"];
-        const invoiceUrl = data["invoice"];
-        newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
       }
+      const invoiceUrl = data["invoice"];
+      newData[cols["invoice"].pos] = invoiceUrl? this.createPdfIconWithLink(invoiceUrl) : "";
       return newData;
     },
 

@@ -21,16 +21,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
   construct: function() {
     const model = new qx.ui.table.model.Simple();
     const cols = this.self().COLUMNS;
-    const colNames = [];
-    Object.entries(cols).forEach(([key, data]) => {
-      if (
-        ["wallet", "user"].includes(key) &&
-        !osparc.desktop.credits.Utils.areWalletsEnabled()
-      ) {
-        return;
-      }
-      colNames.push(data.title);
-    });
+    const colNames = Object.values(cols).map(col => col.title);
     model.setColumns(colNames);
 
     this.base(arguments, model, {
@@ -42,10 +33,13 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     const columnModel = this.getTableColumnModel();
     columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 70);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
-    }
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 100);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.cost.pos, 60);
+
+    if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      columnModel.setColumnVisible(this.self().COLUMNS.wallet.pos, false);
+      columnModel.setColumnVisible(this.self().COLUMNS.user.pos, false);
+    }
   },
 
   statics: {
@@ -108,12 +102,10 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         }
       }
       newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
-      }
+      newData[cols["wallet"].pos] = data["wallet_name"] ? data["wallet_name"] : "-";
       newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"] : "-";
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
+      const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
+      if (user) {
         newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
       }
       return newData;
