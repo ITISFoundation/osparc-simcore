@@ -28,7 +28,7 @@ from ..modules import (
     osparc_variables_substitutions,
     rabbitmq,
     remote_debug,
-    resource_usage_client,
+    resource_usage_tracker_client,
     storage,
 )
 from .errors import (
@@ -176,7 +176,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         comp_scheduler.setup(app)
 
     if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
-        resource_usage_client.setup(app)
+        resource_usage_tracker_client.setup(app)
 
     node_rights.setup(app)
 

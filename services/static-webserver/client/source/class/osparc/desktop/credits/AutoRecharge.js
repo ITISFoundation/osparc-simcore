@@ -126,7 +126,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           walletId: wallet.getWalletId()
         }
       };
-      osparc.data.Resources.fetch("auto-recharge", "get", params)
+      osparc.data.Resources.fetch("autoRecharge", "get", params)
         .then(arData => this.__populateForm(arData))
         .catch(err => console.error(err.message));
     },
@@ -223,6 +223,25 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       };
     },
 
+    __updateAutoRecharge: function(enabled, fetchButton, successfulMsg) {
+      const wallet = this.getWallet();
+      fetchButton.setFetching(true);
+      const params = {
+        url: {
+          walletId: wallet.getWalletId()
+        },
+        data: this.__getFieldsData()
+      };
+      params.data["enabled"] = enabled;
+      osparc.data.Resources.fetch("autoRecharge", "put", params)
+        .then(arData => {
+          this.__populateForm(arData);
+          wallet.setAutoRecharge(arData);
+          osparc.FlashMessenger.getInstance().logAs(successfulMsg, "INFO");
+        })
+        .finally(() => fetchButton.setFetching(false));
+    },
+
     __getEnableAutoRechargeButton: function() {
       const enableAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Enable"),
@@ -231,23 +250,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      enableAutoRechargeBtn.addListener("execute", () => {
-        enableAutoRechargeBtn.setFetching(true);
-        const params = {
-          url: {
-            walletId: this.getWallet().getWalletId()
-          },
-          data: this.__getFieldsData()
-        };
-        params.data["enabled"] = true;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(arData => {
-            this.__populateForm(arData);
-            const msg = this.tr("Auto recharge was successfully enabled");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          })
-          .finally(() => enableAutoRechargeBtn.setFetching(false));
-      });
+      const successfulMsg = this.tr("Auto recharge was successfully enabled");
+      enableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, enableAutoRechargeBtn, successfulMsg));
       return enableAutoRechargeBtn;
     },
 
@@ -259,23 +263,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      saveAutoRechargeBtn.addListener("execute", () => {
-        saveAutoRechargeBtn.setFetching(true);
-        const params = {
-          url: {
-            walletId: this.getWallet().getWalletId()
-          },
-          data: this.__getFieldsData()
-        };
-        params.data["enabled"] = true;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(arData => {
-            this.__populateForm(arData);
-            const msg = this.tr("Changes on the Auto recharge were successfully saved");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          })
-          .finally(() => saveAutoRechargeBtn.setFetching(false));
-      });
+      const successfulMsg = this.tr("Changes on the Auto recharge were successfully saved");
+      saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, saveAutoRechargeBtn, successfulMsg));
       return saveAutoRechargeBtn;
     },
 
@@ -287,23 +276,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      disableAutoRechargeBtn.addListener("execute", () => {
-        disableAutoRechargeBtn.setFetching(true);
-        const params = {
-          url: {
-            walletId: this.getWallet().getWalletId()
-          },
-          data: this.__getFieldsData()
-        };
-        params.data["enabled"] = false;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(arData => {
-            this.__populateForm(arData);
-            const msg = this.tr("Auto recharge was successfully disabled");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          })
-          .finally(() => disableAutoRechargeBtn.setFetching(false));
-      });
+      const successfulMsg = this.tr("Auto recharge was successfully disabled");
+      disableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(false, disableAutoRechargeBtn, successfulMsg));
       return disableAutoRechargeBtn;
     }
   }
