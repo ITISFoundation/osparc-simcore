@@ -104,27 +104,25 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __servicesUpdatePage: null,
 
     __addToolbar: function() {
-      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(40));
+      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const resourceData = this.__resourceData;
 
       const title = new qx.ui.basic.Label(resourceData.name).set({
         font: "text-16",
         alignY: "middle",
-        maxWidth: this.self().WIDTH-100,
+        allowGrowX: true,
         rich: true,
         wrap: true
       });
-      toolbar.add(title);
+      toolbar.add(title, {
+        flex: 1
+      });
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
         toolbar.add(serviceVersionSelector);
       }
-
-      toolbar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
 
       const openButton = new qx.ui.form.Button(this.tr("Open")).set({
         appearance: "strong-button",
