@@ -35,9 +35,9 @@ To achieve this, the platform will comprise both state-of-the art and highly det
 
 ## Getting Started
 
-A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at [oSPARC.io](https://osparc.io). 
+A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at [oSPARC.io](https://osparc.io).
 
-If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended). 
+If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended).
 Make sure you first install all the [requirements](#Requirements) mentioned in the section below.
 
 ```bash
@@ -59,7 +59,7 @@ Make sure you first install all the [requirements](#Requirements) mentioned in t
   #
   xdg-open http://127.0.0.1.nip.io:9081/
 
-  # stops
+  # to stop the swarm
   make down
 ```
 
@@ -139,9 +139,42 @@ To upgrade a single requirement named `fastapi`run:
 - [Staging instructions](docs/releasing-workflow-instructions.md#staging-example)
 - [User Manual](https://itisfoundation.github.io/osparc-manual/)
 
+## Development build
+
+For developers wanting to add/test code changes, a version can be built that will on-the-fly incorporate changes made in the source directory into the running containers.
+To enable this, the following commands should be used to build, instead of the ones provided in the [Getting Started](#Getting Started) section:
+
+```bash
+  # clone code repository
+  git clone https://github.com/ITISFoundation/osparc-simcore.git
+  cd osparc-simcore
+
+  # show setup info and build core services
+  make info build build-devel
+
+  # starts swarm and deploys services
+  make up-devel
+
+  # The above command will keep in running with "[RUN] Running command..."
+  # Open another terminal session, to continue
+
+  # display swarm configuration
+  make info-swarm
+
+  # open front-end in the browser
+  #  127.0.0.1.nip.io:9081 - simcore front-end site
+  #
+  xdg-open http://127.0.0.1.nip.io:9081/
+
+  # to stop the swarm
+  make down
+```
+
 ## Contributing
 
 Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
+
+
 
 ## License
 
