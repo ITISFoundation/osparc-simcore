@@ -199,7 +199,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           column: 1
         });
 
-        const t2t = new qx.ui.basic.Label(this.tr("Monthly Spending Limit (US$)")).set({
+        const t2t = new qx.ui.basic.Label(this.tr("Monthly Spending Limit")).set({
           font: "text-14"
         });
         layout.add(t2t, {
@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           converter: arData => arData["enabled"] ? this.tr("On") : this.tr("Off")
         });
         wallet.bind("autoRecharge", t2v, "value", {
-          converter: arData => arData["enabled"] ? arData["topUpAmountInUsd"]*arData["topUpCountdown"] : null
+          converter: arData => arData["enabled"] ? (arData["topUpAmountInUsd"]*arData["topUpCountdown"]) + " US$" : null
         });
         wallet.bind("autoRecharge", t3v, "value", {
           converter: arData => arData["enabled"] ? arData["paymentMethodId"] : null

@@ -224,10 +224,11 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __updateAutoRecharge: function(enabled, fetchButton, successfulMsg) {
+      const wallet = this.getWallet();
       fetchButton.setFetching(true);
       const params = {
         url: {
-          walletId: this.getWallet().getWalletId()
+          walletId: wallet.getWalletId()
         },
         data: this.__getFieldsData()
       };
@@ -235,6 +236,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       osparc.data.Resources.fetch("autoRecharge", "put", params)
         .then(arData => {
           this.__populateForm(arData);
+          wallet.setAutoRecharge(arData);
           osparc.FlashMessenger.getInstance().logAs(successfulMsg, "INFO");
         })
         .finally(() => fetchButton.setFetching(false));
