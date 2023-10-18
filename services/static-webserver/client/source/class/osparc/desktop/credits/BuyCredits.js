@@ -82,28 +82,44 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           this._add(control);
           break;
         case "wallet-billing-settings":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30));
           this._add(control);
           break;
+        case "payment-mode-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this.getChildControl("wallet-billing-settings").add(control);
+          break;
+        case "payment-mode-title":
+          control = new qx.ui.basic.Label(this.tr("Payment mode")).set({
+            font: "text-14"
+          });
+          this.getChildControl("payment-mode-layout").add(control);
+          break;
         case "payment-mode": {
+          this.getChildControl("payment-mode-title");
           control = new qx.ui.form.SelectBox().set({
-            allowGrowX: false
+            allowGrowX: false,
+            allowGrowY: false
           });
           const autoItem = new qx.ui.form.ListItem(this.tr("Automatic"), null, "automatic");
           control.add(autoItem);
           const manualItem = new qx.ui.form.ListItem(this.tr("Manual"), null, "manual");
           control.add(manualItem);
-          this.getChildControl("wallet-billing-settings").add(control);
+          this.getChildControl("payment-mode-layout").add(control);
           break;
         }
         case "one-time-payment":
-          control = new osparc.desktop.credits.OneTimePayment();
+          control = new osparc.desktop.credits.OneTimePayment().set({
+            maxWidth: 300
+          });
           this.bind("wallet", control, "wallet");
           control.addListener("transactionCompleted", () => this.fireEvent("transactionCompleted"));
           this.getChildControl("wallet-billing-settings").add(control);
           break;
         case "auto-recharge":
-          control = new osparc.desktop.credits.AutoRecharge();
+          control = new osparc.desktop.credits.AutoRecharge().set({
+            maxWidth: 300
+          });
           this.bind("wallet", control, "wallet");
           this.getChildControl("wallet-billing-settings").add(control);
           break;
@@ -112,25 +128,22 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __populateLayout: function() {
-      const billingLayout = this.getChildControl("wallet-billing-settings");
-      billingLayout.removeAll();
-
       const wallet = this.getWallet();
       console.log("wallet", wallet);
       if (wallet) {
         const paymentMode = this.getChildControl("payment-mode");
-        const oneTime = this.getChildControl("one-time-payment");
         const autoRecharge = this.getChildControl("auto-recharge");
+        const oneTime = this.getChildControl("one-time-payment");
+        autoRecharge.show();
         oneTime.exclude();
-        autoRecharge.exclude();
         paymentMode.addListener("changeSelection", e => {
           const model = e.getData()[0].getModel();
           if (model === "manual") {
-            oneTime.show();
             autoRecharge.exclude();
+            oneTime.show();
           } else {
-            oneTime.exclude();
             autoRecharge.show();
+            oneTime.exclude();
           }
         });
       }
@@ -149,9 +162,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getCreditsLeftView: function() {
-      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator().set({
+        maxWidth: 200
+      });
       creditsIndicator.getChildControl("credits-label").set({
-        maxWidth: 200,
         alignX: "left"
       });
       this.bind("wallet", creditsIndicator, "wallet");
@@ -161,21 +175,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __getCreditsExplanation: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
 
-      const label1 = new qx.ui.basic.Label().set({
+      const label = new qx.ui.basic.Label().set({
         value: "Explain here what a Credit is and what one can run/do with them.",
-        font: "text-16",
+        font: "text-14",
         rich: true,
         wrap: true
       });
-      layout.add(label1);
-
-      const label2 = new qx.ui.basic.Label().set({
-        value: "<i>If something goes wrong you won't be charged</i>",
-        font: "text-16",
-        rich: true,
-        wrap: true
-      });
-      layout.add(label2);
+      layout.add(label);
 
       return layout;
     }
