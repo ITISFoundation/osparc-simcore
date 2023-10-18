@@ -126,7 +126,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           walletId: wallet.getWalletId()
         }
       };
-      osparc.data.Resources.fetch("auto-recharge", "get", params)
+      osparc.data.Resources.fetch("autoRecharge", "get", params)
         .then(arData => this.__populateForm(arData))
         .catch(err => console.error(err.message));
     },
@@ -240,7 +240,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           data: this.__getFieldsData()
         };
         params.data["enabled"] = true;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
+        osparc.data.Resources.fetch("autoRecharge", "put", params)
           .then(arData => {
             this.__populateForm(arData);
             const msg = this.tr("Auto recharge was successfully enabled");
@@ -268,7 +268,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           data: this.__getFieldsData()
         };
         params.data["enabled"] = true;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
+        osparc.data.Resources.fetch("autoRecharge", "put", params)
           .then(arData => {
             this.__populateForm(arData);
             const msg = this.tr("Changes on the Auto recharge were successfully saved");
@@ -296,7 +296,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           data: this.__getFieldsData()
         };
         params.data["enabled"] = false;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
+        osparc.data.Resources.fetch("autoRecharge", "put", params)
           .then(arData => {
             this.__populateForm(arData);
             const msg = this.tr("Auto recharge was successfully disabled");

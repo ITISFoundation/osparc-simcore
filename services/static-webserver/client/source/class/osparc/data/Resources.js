@@ -747,7 +747,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * AUTO RECHARGE
        */
-      "auto-recharge": {
+      "autoRecharge": {
         useCache: false,
         endpoints: {
           get: {
