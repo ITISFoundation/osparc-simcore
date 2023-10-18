@@ -107,7 +107,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
             obj.__dict__[key] = replace_osparc_variable_identifier(
                 value, osparc_variables
             )
-    if isinstance(obj, list):
+    elif isinstance(obj, list):
         for i, item in enumerate(obj):
             obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
     elif isinstance(obj, tuple):
@@ -141,9 +141,6 @@ def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
     elif isinstance(obj, BaseModel):
         for value in obj.__dict__.values():
             raise_if_unresolved_osparc_variable_identifier_found(value)
-    if isinstance(obj, list):
-        for item in enumerate(obj):
-            raise_if_unresolved_osparc_variable_identifier_found(item)
-    elif isinstance(obj, tuple | set):
+    elif isinstance(obj, list | tuple | set):
         for item in obj:
             raise_if_unresolved_osparc_variable_identifier_found(item)
