@@ -693,6 +693,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "productMetadata": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/products/{productName}"
+          }
+        }
+      },
       "invitations": {
         endpoints: {
           post: {
