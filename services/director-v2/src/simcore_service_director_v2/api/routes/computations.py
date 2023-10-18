@@ -228,25 +228,9 @@ async def create_computation(  # noqa: C901, PLR0912
             # Billing info
             wallet_id = None
             wallet_name = None
-            pricing_plan_id = None  # NOT NEEDED HERE
-            pricing_unit_id = None  # NOT NEEDED HERE
-            pricing_unit_cost_id = None
             if computation.wallet_info:
                 wallet_id = computation.wallet_info.wallet_id
                 wallet_name = computation.wallet_info.wallet_name
-
-                # MATUS: THIS IS NOT NEEDED ANYMORE!!!
-                # resource_usage_api = ResourceUsageApi.get_from_state(request.app)
-                # NOTE: MD/SAN -> add real service version/key and store in DB, issue: https://github.com/ITISFoundation/osparc-issues/issues/1131
-                # (
-                #     pricing_plan_id,
-                #     pricing_unit_id,
-                #     pricing_unit_cost_id,
-                # ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
-                #     computation.product_name,
-                #     ServiceKey("simcore/services/comp/itis/sleeper"),
-                #     ServiceVersion("2.1.6"),
-                # )
 
             await scheduler.run_new_pipeline(
                 computation.user_id,
@@ -263,9 +247,6 @@ async def create_computation(  # noqa: C901, PLR0912
                     user_email=await users_repo.get_user_email(computation.user_id),
                     wallet_id=wallet_id,
                     wallet_name=wallet_name,
-                    pricing_plan_id=pricing_plan_id,
-                    pricing_unit_id=pricing_unit_id,
-                    pricing_unit_cost_id=pricing_unit_cost_id,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )

@@ -91,13 +91,13 @@ comp_tasks = sa.Table(
         "pricing_info",
         postgresql.JSONB,
         nullable=True,
-        doc="",
+        doc="Billing information of this task",
     ),
     sa.Column(
         "hardware_info",
         postgresql.JSONB,
         nullable=True,
-        doc="",
+        doc="Harware information of this task",
     ),
     # ------
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
