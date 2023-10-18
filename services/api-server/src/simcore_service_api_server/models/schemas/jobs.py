@@ -7,8 +7,10 @@ from models_library.projects_state import RunningState
 from pydantic import (
     BaseModel,
     ConstrainedInt,
+    Extra,
     Field,
     HttpUrl,
+    PositiveInt,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -276,3 +278,11 @@ class JobStatus(BaseModel):
                 "stopped_at": None,
             }
         }
+
+
+class JobPricingSpecification(BaseModel):
+    pricing_plan: PositiveInt
+    pricing_unit: PositiveInt
+
+    class Config:
+        extra = Extra.ignore

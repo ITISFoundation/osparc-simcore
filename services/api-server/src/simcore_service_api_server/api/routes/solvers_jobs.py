@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Annotated, Final
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
+from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 
@@ -31,6 +32,7 @@ from ...models.schemas.jobs import (
     JobMetadata,
     JobMetadataUpdate,
     JobOutputs,
+    JobPricingSpecification,
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
@@ -76,6 +78,13 @@ def _raise_if_job_not_associated_with_solver(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"job {project.uuid} is not associated with solver {solver_key} and version {version}",
         )
+
+
+def _get_pricing_plan_and_unit(request: Request) -> JobPricingSpecification | None:
+    try:
+        return parse_obj_as(JobPricingSpecification, request.headers)
+    except ValidationError:
+        return None
 
 
 # JOBS ---------------
@@ -283,11 +292,13 @@ async def delete_job(
     response_model=JobStatus,
 )
 async def start_job(
+    request: Request,
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     product_name: Annotated[str, Depends(get_product_name)],
     groups_extra_properties_repository: Annotated[
         GroupsExtraPropertiesRepository,
@@ -303,15 +314,28 @@ async def start_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
-    task = await director2_api.start_computation(
-        project_id=job_id,
-        user_id=user_id,
-        product_name=product_name,
-        cluster_id=cluster_id,
-        groups_extra_properties_repository=groups_extra_properties_repository,
-    )
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    return job_status
+    if pricing_spec := _get_pricing_plan_and_unit(request):
+        with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
+            project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+            node_ids = list(project.workbench.keys())
+            assert len(node_ids) == 1  # nosec
+            await webserver_api.put_project_node_pricing_plan_and_unit(
+                project_id=job_id,
+                node_id=UUID(node_ids[0]),
+                pricing_plan=pricing_spec.pricing_plan,
+                pricing_unit=pricing_spec.pricing_unit,
+            )
+
+    with log_context(_logger, logging.DEBUG, "Starting job"):
+        task = await director2_api.start_computation(
+            project_id=job_id,
+            user_id=user_id,
+            product_name=product_name,
+            cluster_id=cluster_id,
+            groups_extra_properties_repository=groups_extra_properties_repository,
+        )
+        job_status: JobStatus = create_jobstatus_from_task(task)
+        return job_status
 
 
 @router.post(

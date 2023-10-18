@@ -24,7 +24,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ValidationError
+from pydantic import PositiveInt, ValidationError
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.error_codes import create_error_code
@@ -391,6 +391,20 @@ class AuthSession:
             response.raise_for_status()
             data = Envelope[PricingUnitGet].parse_raw(response.text).data
             return data
+
+    async def put_project_node_pricing_plan_and_unit(
+        self,
+        project_id: UUID,
+        node_id: UUID,
+        pricing_plan: PositiveInt,
+        pricing_unit: PositiveInt,
+    ) -> None:
+        with _handle_webserver_api_errors():
+            response = await self.client.put(
+                f"/projects/{project_id}/nodes/{node_id}/pricing-plans/{pricing_plan}/pricing-units/{pricing_unit}",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
 
     # WALLETS -------------------------------------------------
 
