@@ -270,4 +270,6 @@ async def get_solver_pricing_plan(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    pass
+    assert user_id
+    assert product_name
+    return await webserver_api.get_service_pricing_plan(solver_key, version)

@@ -15,16 +15,21 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
-from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
+from models_library.api_schemas_webserver.resource_usage import (
+    PricingUnitGet,
+    ServicePricingPlanGet,
+)
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
+from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.error_codes import create_error_code
+from simcore_service_api_server.models.schemas.solvers import SolverKeyId
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -33,6 +38,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
+from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
 from ..models.types import AnyJson
@@ -408,6 +414,24 @@ class AuthSession:
             )
             response.raise_for_status()
             data = Envelope[WalletGet].parse_raw(response.text).data
+            return data
+
+    # SERVICES -------------------------------------------------
+
+    async def get_service_pricing_plan(
+        self, solver_key: SolverKeyId, version: VersionStr
+    ) -> ServicePricingPlanGet | None:
+        service_key: ServiceKey = parse_obj_as(
+            ServiceKey, urllib.parse.quote_plus(solver_key)
+        )
+
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/catalog/services/{service_key}/{version}/pricing-plan",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[ServicePricingPlanGet].parse_raw(response.text).data
             return data
 
 
