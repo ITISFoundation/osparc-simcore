@@ -89,7 +89,8 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       const nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
       const icon = this.getChildControl("icon");
       icon.set({
-        source: nUnreadNotifications > 0 ? "@FontAwesome5Solid/bell/22" : "@FontAwesome5Regular/bell/22"
+        source: nUnreadNotifications > 0 ? "@FontAwesome5Solid/bell/22" : "@FontAwesome5Regular/bell/22",
+        textColor: nUnreadNotifications > 0 ? "strong-main" : "text"
       });
       const number = this.getChildControl("number");
       number.set({

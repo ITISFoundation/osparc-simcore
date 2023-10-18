@@ -108,7 +108,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       mainHBox.add(rightVBox);
       vBox.add(mainHBox);
 
-      if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
+      if (osparc.product.Utils.showStudyPreview(this.getStudy().serialize()) && !this.getStudy().isPipelineEmpty()) {
         leftVBox.add(new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize()));
         leftVBox.add(new qx.ui.core.Spacer(15, 15));
       }

@@ -19,7 +19,7 @@ class PricingUnitCostsDB(BaseModel):
     valid_from: datetime
     valid_to: datetime | None
     created: datetime
-    comment: str
+    comment: str | None
     modified: datetime
 
     class Config:

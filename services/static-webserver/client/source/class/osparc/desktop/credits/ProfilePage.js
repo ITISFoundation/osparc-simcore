@@ -76,7 +76,10 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         paddingLeft: 16,
         visibility: "excluded"
       });
-      expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
+      const expirationDateLabel = new qx.ui.basic.Label(this.tr("Expiration date:")).set({
+        textColor: "danger-red"
+      });
+      expirationLayout.add(expirationDateLabel);
       const expirationDate = new qx.ui.basic.Label();
       expirationLayout.add(expirationDate);
       const infoLabel = this.tr("Please contact us by email:<br>");
@@ -86,21 +89,8 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       expirationLayout.add(infoExtension);
       box.add(expirationLayout);
 
-      /*
-      const img = new qx.ui.basic.Image().set({
-        maxWidth: 100,
-        maxHeight: 100,
-        scale: true,
-        decorator: new qx.ui.decoration.Decorator().set({
-          radius: 30
-        }),
-        alignX: "center"
-      });
-      box.add(img);
-      */
-
       // binding to a model
-      let raw = {
+      const raw = {
         "firstName": null,
         "lastName": null,
         "email": null,

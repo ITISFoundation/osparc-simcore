@@ -52,12 +52,14 @@ from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_role
+from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .db import ProjectDBAPI
 from .exceptions import (
+    DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
@@ -74,7 +76,12 @@ def _handle_project_nodes_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except (ProjectNotFoundError, NodeNotFoundError) as exc:
+        except (
+            ProjectNotFoundError,
+            NodeNotFoundError,
+            UserDefaultWalletNotFoundError,
+            DefaultPricingUnitNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     return wrapper
@@ -168,9 +175,9 @@ async def get_node(request: web.Request) -> web.Response:
 
         if "data" not in service_data:
             # dynamic-service NODE STATE
-            assert (
+            assert (  # nosec
                 parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None
-            )  # nosec
+            )
             return envelope_json_response(service_data)
 
         # LEGACY-service NODE STATE

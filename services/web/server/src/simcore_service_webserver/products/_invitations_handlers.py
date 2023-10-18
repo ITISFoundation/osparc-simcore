@@ -48,7 +48,7 @@ async def generate_invitation(request: web.Request):
             issuer=user_email,
             trial_account_days=body.trial_account_days,
             guest=body.guest,
-            extra_credits=body.extra_credits,
+            extra_credits_in_usd=body.extra_credits_in_usd,
         ),
     )
     assert request.url.host  # nosec
@@ -61,7 +61,7 @@ async def generate_invitation(request: web.Request):
         issuer=generated.issuer,
         guest=generated.guest,
         trial_account_days=generated.trial_account_days,
-        extra_credits=generated.extra_credits,
+        extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,
         invitation_link=f"{invitation_link}",
     )

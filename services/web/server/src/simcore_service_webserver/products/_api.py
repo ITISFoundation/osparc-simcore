@@ -17,10 +17,15 @@ def get_product_name(request: web.Request) -> str:
     return product_name
 
 
+def get_product(app: web.Application, product_name: ProductName) -> Product:
+    product: Product = app[APP_PRODUCTS_KEY][product_name]
+    return product
+
+
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
     product_name: ProductName = get_product_name(request)
-    current_product: Product = request.app[APP_PRODUCTS_KEY][product_name]
+    current_product: Product = get_product(request.app, product_name=product_name)
     return current_product
 
 

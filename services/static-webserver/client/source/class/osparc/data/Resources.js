@@ -670,13 +670,22 @@ qx.Class.define("osparc.data.Resources", {
           deleteAccessRights: {
             method: "DELETE",
             url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          },
+          getAutoRecharge: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
+          },
+          putAutoRecharge: {
+            method: "PUT",
+            url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }
       },
       /*
        * PRODUCTS
        */
-      "credits-price": {
+      "creditPrice": {
+        useCache: false,
         endpoints: {
           get: {
             method: "GET",
@@ -712,9 +721,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * PAYMENTS METHODS
+       * PAYMENT METHODS
        */
-      "payments-methods": {
+      "paymentMethods": {
         useCache: false,
         endpoints: {
           init: {
@@ -745,12 +754,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           },
-          start: {
-            method: "POST",
-            url: statics.API + "/wallets/{walletId}/auto-recharge"
-          },
-          stop: {
-            method: "DELETE",
+          put: {
+            method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
           }
         }

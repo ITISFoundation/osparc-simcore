@@ -121,7 +121,8 @@ qx.Class.define("osparc.data.Permissions", {
           "study.classifier",
           "study.tag",
           "study.slides.edit",
-          "study.slides.stop"
+          "study.slides.stop",
+          "usage.all.read"
         ],
         "tester": [
           "studies.template.create.all",
@@ -136,8 +137,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
           "study.logger.debug.read",
-          "statics.read",
-          "usage.all.read"
+          "statics.read"
         ],
         "product_owner": [
           "user.invitation.generate"
