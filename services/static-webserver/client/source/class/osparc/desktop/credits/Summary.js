@@ -29,7 +29,6 @@ qx.Class.define("osparc.desktop.credits.Summary", {
   events: {
     "buyCredits": "qx.event.type.Data",
     "toWallets": "qx.event.type.Event",
-    "toSettings": "qx.event.type.Event",
     "toActivity": "qx.event.type.Event"
   },
 
@@ -48,13 +47,13 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         }
         case "settings-card": {
           const content = this.__createSettingsView();
-          control = this.__createOverviewCard("Settings", content, "All Settings", "toSettings");
+          control = this.__createOverviewCard(this.tr("Settings"), content, this.tr("Buy credits"), "buyCredits");
           this._add(control);
           break;
         }
         case "activity-card": {
           const content = this.__createActivityView();
-          control = this.__createOverviewCard("Last Activity", content, "All Activity", "toActivity");
+          control = this.__createOverviewCard(this.tr("Last Activity"), content, this.tr("All Activity"), "toActivity");
           this._add(control);
           break;
         }

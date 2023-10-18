@@ -50,13 +50,13 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     }
 
     if (this.__walletsEnabled) {
-      const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
-      tabViews.add(buyCreditsPage);
+      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
+      tabViews.add(paymentMethodsPage);
     }
 
     if (this.__walletsEnabled) {
-      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
-      tabViews.add(paymentMethodsPage);
+      const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
+      tabViews.add(buyCreditsPage);
     }
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
@@ -202,6 +202,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return page;
     },
 
+    __getPaymentMethodsPage: function() {
+      const title = this.tr("Payment Methods");
+      const iconSrc = "@FontAwesome5Solid/credit-card/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
+      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
+      paymentMethods.set({
+        margin: 10
+      });
+      page.add(paymentMethods);
+      return page;
+    },
+
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
@@ -213,19 +226,6 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       });
       buyCredits.addListener("transactionCompleted", () => this.__openTransactions(true), this);
       page.add(buyCredits);
-      return page;
-    },
-
-    __getPaymentMethodsPage: function() {
-      const title = this.tr("Payment Methods");
-      const iconSrc = "@FontAwesome5Solid/credit-card/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
-      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
-      paymentMethods.set({
-        margin: 10
-      });
-      page.add(paymentMethods);
       return page;
     },
 
