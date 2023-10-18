@@ -22,7 +22,7 @@ from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _db
-from ._client import create_fake_payment, get_payments_service_api
+from ._client import create_fake_payment
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -141,9 +141,6 @@ async def get_user_payments_page(
     assert limit > 1  # nosec
     assert offset >= 0  # nosec
     assert product_name  # nosec
-
-    payments_service = get_payments_service_api(app)
-    assert payments_service  # nosec
 
     total_number_of_items, transactions = await _db.list_user_payment_transactions(
         app, user_id=user_id, offset=offset, limit=limit
