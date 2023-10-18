@@ -142,7 +142,7 @@ To upgrade a single requirement named `fastapi`run:
 ## Development build
 
 For developers wanting to add/test code changes, a version can be built that will on-the-fly incorporate changes made in the source directory into the running containers.
-To enable this, the following commands should be used to build, instead of the ones provided in the [Getting Started](#Getting Started) section:
+To enable this, the following commands should be used to build, instead of the ones provided in the [Getting Started](#getting-started) section:
 
 ```bash
   # clone code repository
