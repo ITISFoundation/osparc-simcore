@@ -1,7 +1,7 @@
 """adding pricing and harware info to comp_tasks
 
 Revision ID: 3810966d1534
-Revises: 5c62b190e124
+Revises: 7777d181dc1f
 Create Date: 2023-10-17 14:35:21.032940+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "3810966d1534"
-down_revision = "5c62b190e124"
+down_revision = "7777d181dc1f"
 branch_labels = None
 depends_on = None
 
