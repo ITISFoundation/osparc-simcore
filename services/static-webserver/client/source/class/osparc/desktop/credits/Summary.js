@@ -282,9 +282,10 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           const activities = activities1.concat(activities2);
           activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
 
+          const maxRows = 6;
           const entries = osparc.desktop.credits.ActivityTable.respDataToTableData(activities);
           entries.forEach((entry, row) => {
-            if (row > 6) {
+            if (row >= maxRows) {
               return;
             }
             entry.forEach((data, column) => {
