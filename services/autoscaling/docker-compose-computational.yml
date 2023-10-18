@@ -2,7 +2,7 @@ version: "3.8"
 services:
   autoscaling:
     environment:
-      - DASK_MONITORING_URL=${DASK_MONITORING_URL}
+      - DASK_MONITORING_URL=tcp://dask-scheduler:8786
   dask-sidecar:
     image: local/dask-sidecar:development
     init: true
