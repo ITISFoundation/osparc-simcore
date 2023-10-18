@@ -12,10 +12,10 @@ from unit.conftest import SideEffectCallback
 
 
 @pytest.mark.parametrize(
-    "capture",
+    "capture,expected_status_code",
     [
-        "get_solver_pricing_plan_invalid_solver.json",
-        "get_solver_pricing_plan_success.json",
+        ("get_solver_pricing_plan_invalid_solver.json", 503),
+        ("get_solver_pricing_plan_success.json", 200),
     ],
 )
 async def test_get_solver_pricing_plan(
@@ -27,6 +27,7 @@ async def test_get_solver_pricing_plan(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     capture: str,
+    expected_status_code: int,
 ):
 
     respx_mock = respx_mock_from_capture(
@@ -39,10 +40,6 @@ async def test_get_solver_pricing_plan(
         f"{API_VTAG}/solvers/{_my_solver}/releases/{_version}/pricing_plan",
         auth=auth,
     )
-    if capture == "get_solver_pricing_plan_success.json":
-        assert response.status_code == 200
+    assert expected_status_code == response.status_code
+    if response.status_code == 200:
         _ = parse_obj_as(ServicePricingPlanGet, response.json())
-    elif capture == "get_solver_pricing_plan_invalid_solver.json":
-        assert response.status_code == 503
-    else:
-        pytest.fail()
