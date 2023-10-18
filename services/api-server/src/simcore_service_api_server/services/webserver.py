@@ -23,9 +23,8 @@ from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
-from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ValidationError, parse_obj_as
+from pydantic import ValidationError
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.error_codes import create_error_code
@@ -421,9 +420,7 @@ class AuthSession:
     async def get_service_pricing_plan(
         self, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
-        service_key: ServiceKey = parse_obj_as(
-            ServiceKey, urllib.parse.quote_plus(solver_key)
-        )
+        service_key = urllib.parse.quote_plus(solver_key)
 
         with _handle_webserver_api_errors():
             response = await self.client.get(

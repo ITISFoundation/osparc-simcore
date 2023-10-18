@@ -1,0 +1,69 @@
+[
+  {
+    "name": "GET /catalog/services/simcore%2Fservices%2Fcomp%2Fisolve/2.1.24/pricing-plan",
+    "description": "<Request('GET', 'http://webserver:8080/v0/catalog/services/simcore%2Fservices%2Fcomp%2Fisolve/2.1.24/pricing-plan')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/catalog/services/{service_key}/{service_version}/pricing-plan",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "service_key",
+          "required": true,
+          "schema_": {
+            "title": "Service Key",
+            "type_": "str",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "format_": null,
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "services"
+        },
+        {
+          "in_": "path",
+          "name": "service_version",
+          "required": true,
+          "schema_": {
+            "title": "Service Version",
+            "type_": "str",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "format_": null,
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "simcore/services/comp/isolve"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "pricingPlanId": 1,
+        "displayName": "osparc_pricing_plan",
+        "description": "",
+        "classification": "TIER",
+        "createdAt": "2023-10-12T07:16:31.155807+00:00",
+        "pricingPlanKey": "osparc_pricing_plan",
+        "pricingUnits": [
+          {
+            "pricingUnitId": 1,
+            "unitName": "small",
+            "unitExtraInfo": {},
+            "currentCostPerUnit": 50,
+            "default": true
+          }
+        ]
+      }
+    },
+    "status_code": 200
+  }
+]

@@ -262,6 +262,7 @@ async def list_solver_ports(
 @router.get(
     "/{solver_key:path}/releases/{version}/pricing_plan",
     response_model=ServicePricingPlanGet,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_solver_pricing_plan(
     solver_key: SolverKeyId,
