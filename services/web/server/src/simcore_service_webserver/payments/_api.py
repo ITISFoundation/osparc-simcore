@@ -66,10 +66,12 @@ def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction
 
 #
 # One-time Payments
+#  - Resource is called `wallet_payment``
+# - create workflow: init_ -> ack_
 #
 
 
-async def create_payment_to_wallet(
+async def init_creation_of_wallet_payment(
     app: web.Application,
     *,
     price_dollars: Decimal,
@@ -113,26 +115,7 @@ async def create_payment_to_wallet(
     return payment_inited
 
 
-async def get_user_payments_page(
-    app: web.Application,
-    product_name: str,
-    user_id: UserID,
-    *,
-    limit: int,
-    offset: int,
-) -> tuple[list[PaymentTransaction], int]:
-    assert limit > 1  # nosec
-    assert offset >= 0  # nosec
-    assert product_name  # nosec
-
-    total_number_of_items, transactions = await _db.list_user_payment_transactions(
-        app, user_id=user_id, offset=offset, limit=limit
-    )
-
-    return [_to_api_model(t) for t in transactions], total_number_of_items
-
-
-async def complete_payment(
+async def ack_creation_of_wallet_payment(
     app: web.Application,
     *,
     payment_id: PaymentID,
@@ -191,9 +174,28 @@ async def cancel_payment_to_wallet(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    return await complete_payment(
+    return await ack_creation_of_wallet_payment(
         app,
         payment_id=payment_id,
         completion_state=PaymentTransactionState.CANCELED,
         message="Payment aborted by user",
     )
+
+
+async def list_user_payments_page(
+    app: web.Application,
+    product_name: str,
+    user_id: UserID,
+    *,
+    limit: int,
+    offset: int,
+) -> tuple[list[PaymentTransaction], int]:
+    assert limit > 1  # nosec
+    assert offset >= 0  # nosec
+    assert product_name  # nosec
+
+    total_number_of_items, transactions = await _db.list_user_payment_transactions(
+        app, user_id=user_id, offset=offset, limit=limit
+    )
+
+    return [_to_api_model(t) for t in transactions], total_number_of_items

@@ -16,10 +16,10 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ._api import complete_payment
+from ._api import ack_creation_of_wallet_payment
 from ._db import get_pending_payment_transactions_ids
 from ._methods_api import (
-    _complete_create_of_wallet_payment_method,  # pylint: disable=protected-access
+    _ack_creation_of_wallet_payment_method,  # pylint: disable=protected-access
 )
 from ._methods_db import get_pending_payment_methods_ids
 from .settings import get_plugin_settings
@@ -62,7 +62,7 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     )
 
     _logger.info("Faking payment completion as %s", kwargs)
-    await complete_payment(app, payment_id=payment_id, **kwargs)
+    await ack_creation_of_wallet_payment(app, payment_id=payment_id, **kwargs)
 
 
 _POSSIBLE_PAYMENTS_METHODS_OUTCOMES = _create_possible_outcomes(
@@ -89,7 +89,7 @@ async def _fake_payment_method_completion(
     )
 
     _logger.info("Faking payment-method completion as %s", kwargs)
-    await _complete_create_of_wallet_payment_method(
+    await _ack_creation_of_wallet_payment_method(
         app, payment_method_id=payment_method_id, **kwargs
     )
 

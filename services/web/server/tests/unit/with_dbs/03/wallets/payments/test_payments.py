@@ -24,7 +24,7 @@ from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_webserver.payments._api import complete_payment
+from simcore_service_webserver.payments._api import ack_creation_of_wallet_payment
 from simcore_service_webserver.payments.errors import PaymentCompletedError
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
@@ -96,7 +96,7 @@ async def test_payments_worfklow(
     assert payment.payment_form_url.query.endswith(payment.payment_id)
 
     # Complete
-    await complete_payment(
+    await ack_creation_of_wallet_payment(
         client.app,
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
@@ -171,7 +171,7 @@ async def test_multiple_payments(
         payment = WalletPaymentCreated.parse_obj(data)
 
         if n % 2:
-            transaction = await complete_payment(
+            transaction = await ack_creation_of_wallet_payment(
                 client.app,
                 payment_id=payment.payment_id,
                 completion_state=PaymentTransactionState.SUCCESS,
@@ -240,7 +240,7 @@ async def test_complete_payment_errors(
 
     # Cannot complete as PENDING
     with pytest.raises(ValueError):
-        await complete_payment(
+        await ack_creation_of_wallet_payment(
             client.app,
             payment_id=payment.payment_id,
             completion_state=PaymentTransactionState.PENDING,
@@ -248,7 +248,7 @@ async def test_complete_payment_errors(
     send_message.assert_not_called()
 
     # Complete w/ failures
-    await complete_payment(
+    await ack_creation_of_wallet_payment(
         client.app,
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.FAILED,
@@ -257,7 +257,7 @@ async def test_complete_payment_errors(
 
     # Cannot complete twice
     with pytest.raises(PaymentCompletedError):
-        await complete_payment(
+        await ack_creation_of_wallet_payment(
             client.app,
             payment_id=payment.payment_id,
             completion_state=PaymentTransactionState.SUCCESS,

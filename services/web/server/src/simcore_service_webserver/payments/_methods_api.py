@@ -65,7 +65,9 @@ def _to_api_model(
 
 
 #
-# Payment-methods
+# Payment Methods:
+# - Resources is called `wallet_payment_method`
+# - create workflow: init_ -> ack_
 #
 
 
@@ -119,7 +121,7 @@ async def init_creation_of_wallet_payment_method(
     )
 
 
-async def _complete_create_of_wallet_payment_method(
+async def _ack_creation_of_wallet_payment_method(
     app: web.Application,
     *,
     payment_method_id: PaymentMethodID,
@@ -164,7 +166,7 @@ async def cancel_creation_of_wallet_payment_method(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    await _complete_create_of_wallet_payment_method(
+    await _ack_creation_of_wallet_payment_method(
         app,
         payment_method_id=payment_method_id,
         completion_state=InitPromptAckFlowState.CANCELED,
