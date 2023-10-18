@@ -23,16 +23,8 @@ qx.Class.define("osparc.desktop.credits.Usage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.getChildControl("wallet-selector-title");
-    const walletSelector = this.getChildControl("wallet-selector");
     const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
-    if (walletSelector.getSelectables() === 1) {
-      // do not show it if there is only noe wallet available
-      walletSelectorLayout.exclude();
-    } else {
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      walletSelectorLayout.setVisibility(walletsEnabled ? "visible" : "excluded");
-    }
+    const walletSelector = walletSelectorLayout.getChildren()[1];
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();
@@ -59,23 +51,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       let control;
       switch (id) {
         case "wallet-selector-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          control = osparc.desktop.credits.Utils.createWalletSelectorLayout("read");
           this._add(control);
           break;
-        case "wallet-selector-title": {
-          control = new qx.ui.basic.Label(this.tr("Select Credit Account")).set({
-            alignY: "middle"
-          });
-          const layout = this.getChildControl("wallet-selector-layout");
-          layout.add(control);
-          break;
-        }
-        case "wallet-selector": {
-          control = osparc.desktop.credits.Utils.createWalletSelector("read");
-          const layout = this.getChildControl("wallet-selector-layout");
-          layout.add(control);
-          break;
-        }
         case "loading-image":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/64",
@@ -189,7 +167,8 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         resolveWResponse: true
       };
 
-      const walletSelector = this.getChildControl("wallet-selector");
+      const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
+      const walletSelector = walletSelectorLayout.getChildren()[1];
       const walletSelection = walletSelector.getSelection();
       const walletId = walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
       if (walletId) {
