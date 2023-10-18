@@ -1,16 +1,16 @@
 """add product_name to services_vendor_secrets
 
-Revision ID: db225d9dc7dd
-Revises: 7777d181dc1f
-Create Date: 2023-10-18 07:10:00.659127+00:00
+Revision ID: ec845b05fa59
+Revises: 5c62b190e124
+Create Date: 2023-10-18 09:11:24.187006+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "db225d9dc7dd"
-down_revision = "7777d181dc1f"
+revision = "ec845b05fa59"
+down_revision = "5c62b190e124"
 branch_labels = None
 depends_on = None
 
