@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         case "settings-card": {
           const content = this.__createSettingsView();
           const wallet = this.__getWallet();
-          control = this.__createOverviewCard(this.tr("Settings"), content, this.tr("Buy credits"), "buyCredits", {
+          control = this.__createOverviewCard(this.tr("Settings"), content, this.tr("Credit Options"), "buyCredits", {
             walletId: wallet ? wallet.getWalletId() : null
           });
           this._add(control);
