@@ -1,10 +1,16 @@
+""" client for the RPC API in the payments service
+
+"""
+
 import asyncio
 import logging
 from decimal import Decimal
 from uuid import uuid4
 
 from aiohttp import web
+from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from yarl import URL
 
 from .settings import PaymentsSettings, get_plugin_settings
@@ -12,12 +18,6 @@ from .settings import PaymentsSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-#
-# CLIENT
-#
-
-
-# NOTE: Functions below FAKE behaviour of payments service
 async def create_fake_payment(
     app: web.Application,
     *,
@@ -52,3 +52,26 @@ async def create_fake_payment(
     base_url = URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
     submission_link = base_url.with_path("/pay").with_query(id=transaction_id)
     return submission_link, transaction_id
+
+
+async def init_payment(
+    app: web.Application,
+    *,
+    amount_dollars: Decimal,
+    target_credits: Decimal,
+    product_name: str,
+    wallet_id: WalletID,
+    wallet_name: str,
+    user_id: UserID,
+    user_name: str,
+    user_email: str,
+    comment: str | None = None,
+) -> WalletPaymentCreated:
+    raise NotImplementedError
+    # result = await rpc_client.request(
+    #         PAYMENTS_RPC_NAMESPACE,
+    #         parse_obj_as(RPCMethodName, "init_payment"),
+    #         **init_payment_kwargs,
+    #     )
+
+    # assert isinstance(result, WalletPaymentCreated)

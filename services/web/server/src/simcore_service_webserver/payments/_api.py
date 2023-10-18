@@ -2,7 +2,6 @@ import logging
 from decimal import Decimal
 from typing import Any
 
-import arrow
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
@@ -21,8 +20,7 @@ from ..resource_usage.api import add_credits_to_wallet
 from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
-from . import _db
-from ._client import create_fake_payment
+from . import _client, _db
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -95,39 +93,24 @@ async def create_payment_to_wallet(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    # hold timestamp
-    initiated_at = arrow.utcnow().datetime
-
-    # payment service
-    # FAKE ------------
-    submission_link, payment_id = await create_fake_payment(
-        app,
-        price_dollars=price_dollars,
-        product_name=product_name,
-        user_id=user_id,
-        name=user.name,
-        email=user.email,
-        osparc_credits=osparc_credits,
+    user_wallet = await get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
-    # -----
-    # gateway responded, we store the transaction
-    await _db.create_payment_transaction(
+    assert user_wallet.wallet_id == wallet_id  # nosec
+
+    payment_inited: WalletPaymentCreated = await _client.init_payment(
         app,
-        payment_id=payment_id,
-        price_dollars=price_dollars,
-        osparc_credits=osparc_credits,
+        amount_dollars=price_dollars,
+        target_credits=osparc_credits,
         product_name=product_name,
-        user_id=user_id,
-        user_email=user.email,
         wallet_id=wallet_id,
+        wallet_name=user_wallet.name,
+        user_id=user_id,
+        user_name=user.name,
+        user_email=user.email,
         comment=comment,
-        initiated_at=initiated_at,
     )
-
-    return WalletPaymentCreated(
-        payment_id=payment_id,
-        payment_form_url=f"{submission_link}",
-    )
+    return payment_inited
 
 
 async def get_user_payments_page(
