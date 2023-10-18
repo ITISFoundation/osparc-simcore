@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
+from servicelib.logging_utils import log_context
 
 from ...db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ...models.basic_types import VersionStr
@@ -588,13 +589,13 @@ async def get_job_pricing_unit(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Getting pricing unit for job '%s'", job_name)
-
-    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-    _raise_if_job_not_associated_with_solver(solver_key, version, project)
-    node_ids = list(project.workbench.keys())
-    assert len(node_ids) == 1  # nosec
-    node_id: UUID = UUID(node_ids[0])
-    return await webserver_api.get_project_node_pricing_unit(
-        project_id=job_id, node_id=node_id
-    )
+    with log_context(_logger, logging.DEBUG, "Get pricing unit"):
+        _logger.debug(f"job: {job_name}")
+        project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+        node_ids = list(project.workbench.keys())
+        assert len(node_ids) == 1  # nosec
+        node_id: UUID = UUID(node_ids[0])
+        return await webserver_api.get_project_node_pricing_unit(
+            project_id=job_id, node_id=node_id
+        )
