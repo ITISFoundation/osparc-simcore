@@ -1,4 +1,4 @@
-""" PRC client-side for the RPC server at the payments service
+""" RPC client-side for the RPC server at the payments service
 
 """
 
