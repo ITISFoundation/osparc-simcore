@@ -4,8 +4,6 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
-export DASK_MONITORING_URL := tcp://dask-scheduler:8786
 .PHONY: up-devel up-computational-devel down
 
 
@@ -28,8 +26,12 @@ up-computational-devel: .init-swarm .stack-computational-devel.yml ## starts loc
 	@docker stack deploy --with-registry-auth --compose-file=.stack-computational-devel.yml comp-autoscaling
 
 down: .env ## stops local test app dependencies (running bare metal against AWS)
-	-@docker stack rm comp-autoscaling-manual-testing
-	-@docker stack rm autoscaling-manual-testing
+	# remove stacks
+	-@docker stack rm comp-autoscaling
+	-@docker stack rm autoscaling
+	# remove stack files
+	-rm -rf .stack-devel.yml
+	-rm -rf .stack-computational-devel.yml
 
 
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
