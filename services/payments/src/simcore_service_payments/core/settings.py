@@ -12,6 +12,7 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -103,6 +104,10 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
+
+    PAYMENTS_POSTGRES: PostgresSettings = Field(
+        auto_default_from_env=True, description="settings for postgres service"
     )
 
     PAYMENTS_SWAGGER_API_DOC_ENABLED: bool = Field(

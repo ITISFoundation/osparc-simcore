@@ -54,13 +54,12 @@ _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
-    nodes = parse_obj_as(
+    return parse_obj_as(
         list[Node],
         await docker_client.nodes.list(
             filters={"node.label": [f"{label}=true" for label in node_labels]}
         ),
     )
-    return nodes
 
 
 async def remove_nodes(
@@ -172,7 +171,7 @@ async def pending_service_tasks_with_insufficient_resources(
 
     sorted_tasks = sorted(tasks, key=_by_created_dt)
 
-    pending_tasks = [
+    return [
         task
         for task in sorted_tasks
         if (
@@ -182,8 +181,6 @@ async def pending_service_tasks_with_insufficient_resources(
             )
         )
     ]
-
-    return pending_tasks
 
 
 def get_node_total_resources(node: Node) -> Resources:
@@ -294,7 +291,7 @@ async def compute_cluster_used_resources(
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in Resources.__fields__.keys()})
+    counter = collections.Counter({k: 0 for k in Resources.__fields__})
     for result in list_of_used_resources:
         counter.update(result.dict())
 
@@ -318,16 +315,14 @@ async def get_docker_swarm_join_bash_command() -> str:
     await asyncio.wait_for(process.wait(), timeout=_COMMAND_TIMEOUT_S)
     assert process.returncode is not None  # nosec
     if process.returncode > 0:
-        raise RuntimeError(
-            f"unexpected error running '{' '.join(command)}': {stderr.decode()}"
-        )
+        msg = f"unexpected error running '{' '.join(command)}': {stderr.decode()}"
+        raise RuntimeError(msg)
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         capture = match.groupdict()
         return f"{capture['command']} --availability=drain {capture['token']} {capture['address']}"
-    raise RuntimeError(
-        f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
-    )
+    msg = f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
+    raise RuntimeError(msg)
 
 
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
