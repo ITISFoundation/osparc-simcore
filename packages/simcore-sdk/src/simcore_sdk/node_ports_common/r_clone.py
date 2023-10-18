@@ -24,9 +24,6 @@ from .r_clone_utils import (
     SyncProgressLogParser,
 )
 
-S3_RETRIES: Final[int] = 3
-S3_PARALLELISM: Final[int] = 5
-
 _S3_CONFIG_KEY_DESTINATION: Final[str] = "s3-destination"
 _S3_CONFIG_KEY_SOURCE: Final[str] = "s3-source"
 
@@ -146,8 +143,6 @@ async def _sync_sources(
     local_dir: Path,
     s3_config_key: str,
     exclude_patterns: set[str] | None,
-    s3_retries: int = S3_RETRIES,
-    s3_parallelism: int = S3_PARALLELISM,
     debug_logs: bool,
 ) -> None:
     r_clone_config_file_content = get_r_clone_config(
@@ -159,14 +154,14 @@ async def _sync_sources(
             "--config",
             config_file_name,
             "--retries",
-            f"{s3_retries}",
+            f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
             "--transfers",
-            f"{s3_parallelism}",
+            f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
             # below two options reduce to a minimum the memory footprint
             # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
             "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
-            "0M",
+            r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
             # make sure stats can be noticed
             "--stats-log-level",
             "NOTICE",
