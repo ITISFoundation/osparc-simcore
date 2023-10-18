@@ -149,6 +149,10 @@ To enable this, the following commands should be used to build, instead of the o
   git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
 
+  # setup python environment and activate
+  make devenv
+  source .venv/bin/activate
+
   # show setup info and build core services
   make info build build-devel
 
