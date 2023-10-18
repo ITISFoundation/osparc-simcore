@@ -107,6 +107,12 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
+    EC2_INSTANCES_NAME_PREFIX: str = Field(
+        default="autoscaling",
+        min_length=1,
+        description="prefix used to name the EC2 instances created by this instance of autoscaling",
+    )
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
     def ensure_time_is_in_range(cls, value):
