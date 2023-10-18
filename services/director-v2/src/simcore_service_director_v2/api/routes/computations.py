@@ -63,7 +63,7 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.resource_usage_client import ResourceUsageApi
+from ...modules.resource_usage_client import ResourceUsageTrackerClient
 from ...utils.computations import (
     find_deprecated_tasks,
     get_pipeline_state_from_task_states,
@@ -83,6 +83,7 @@ from ...utils.dags import (
 from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
+from ..dependencies.rut_client import get_rut_client
 from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
 
@@ -123,6 +124,7 @@ async def create_computation(  # noqa: C901, PLR0912
     scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
+    rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -199,7 +201,6 @@ async def create_computation(  # noqa: C901, PLR0912
         min_computation_nodes: list[NodeID] = [
             NodeID(n) for n in minimal_computational_dag.nodes()
         ]
-        resource_usage_api = ResourceUsageApi.get_from_state(request.app)
         inserted_comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
             project,
             catalog_client,
@@ -207,7 +208,7 @@ async def create_computation(  # noqa: C901, PLR0912
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,
-            rut_api=resource_usage_api,
+            rut_client=rut_client,
             is_wallet=bool(computation.wallet_info),
         )
 

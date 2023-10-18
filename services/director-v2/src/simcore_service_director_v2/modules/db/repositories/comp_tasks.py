@@ -30,7 +30,9 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
-from simcore_service_director_v2.modules.resource_usage_client import ResourceUsageApi
+from simcore_service_director_v2.modules.resource_usage_client import (
+    ResourceUsageTrackerClient,
+)
 from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -172,7 +174,7 @@ async def _generate_tasks_list_from_project(
     user_id: UserID,
     product_name: str,
     connection: aiopg.sa.connection.SAConnection,
-    rut_api: ResourceUsageApi,
+    rut_client: ResourceUsageTrackerClient,
     is_wallet: bool,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
@@ -239,7 +241,7 @@ async def _generate_tasks_list_from_project(
             )
             if output:
                 pricing_plan_id, pricing_unit_id = output
-                pricing_unit_get = await rut_api.get_pricing_unit(
+                pricing_unit_get = await rut_client.get_pricing_unit(
                     product_name, pricing_plan_id, pricing_unit_id
                 )
                 pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
@@ -250,7 +252,7 @@ async def _generate_tasks_list_from_project(
                     pricing_unit_id,
                     pricing_unit_cost_id,
                     aws_ec2_instances,
-                ) = await rut_api.get_default_pricing_and_hardware_info(
+                ) = await rut_client.get_default_pricing_and_hardware_info(
                     product_name,
                     node.key,
                     node.version,
@@ -358,7 +360,7 @@ class CompTasksRepository(BaseRepository):
         published_nodes: list[NodeID],
         user_id: UserID,
         product_name: str,
-        rut_api: ResourceUsageApi,
+        rut_client: ResourceUsageTrackerClient,
         is_wallet: bool,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
@@ -373,7 +375,7 @@ class CompTasksRepository(BaseRepository):
                 user_id,
                 product_name,
                 conn,
-                rut_api,
+                rut_client,
                 is_wallet,
             )
             # get current tasks

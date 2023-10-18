@@ -32,12 +32,12 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ResourceUsageApi:
+class ResourceUsageTrackerClient:
     client: httpx.AsyncClient
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    def create(cls, settings: AppSettings) -> "ResourceUsageApi":
+    def create(cls, settings: AppSettings) -> "ResourceUsageTrackerClient":
         client = httpx.AsyncClient(
             base_url=settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         )
@@ -145,8 +145,8 @@ class ResourceUsageApi:
     #
 
     @classmethod
-    def get_from_state(cls, app: FastAPI) -> "ResourceUsageApi":
-        return cast("ResourceUsageApi", app.state.resource_usage_api)
+    def get_from_state(cls, app: FastAPI) -> "ResourceUsageTrackerClient":
+        return cast("ResourceUsageTrackerClient", app.state.resource_usage_api)
 
     @classmethod
     def setup(cls, app: FastAPI):
@@ -174,4 +174,4 @@ class ResourceUsageApi:
 
 def setup(app: FastAPI):
     assert app.state  # nosec
-    ResourceUsageApi.setup(app)
+    ResourceUsageTrackerClient.setup(app)
