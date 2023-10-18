@@ -2,58 +2,46 @@
 
 """
 
-import asyncio
 import logging
 from decimal import Decimal
-from uuid import uuid4
 
 from aiohttp import web
+from models_library.api_schemas_payments import PAYMENTS_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from yarl import URL
+from pydantic import parse_obj_as
+from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
 
-from .settings import PaymentsSettings, get_plugin_settings
+from ..rabbitmq_settings import RabbitSettings
+from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
 
 _logger = logging.getLogger(__name__)
 
 
-async def create_fake_payment(
-    app: web.Application,
-    *,
-    price_dollars: Decimal,
-    osparc_credits: Decimal,
-    product_name: str,
-    user_id: UserID,
-    name: str,
-    email: str,
-):
-    assert osparc_credits > 0  # nosec
-    assert name  # nosec
-    assert email  # nosec
-    assert product_name  # nosec
-    assert price_dollars > 0  # nosec
-
-    body = {
-        "price_dollars": price_dollars,
-        "osparc_credits": osparc_credits,
-        "user_id": user_id,
-        "name": name,
-        "email": email,
-    }
-
-    # Fake response of payment service --------
-    _logger.info("Sending -> payments-service %s", body)
-    await asyncio.sleep(1)
-    transaction_id = f"{uuid4()}"
-    # -------------
-
-    settings: PaymentsSettings = get_plugin_settings(app)
-    base_url = URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
-    submission_link = base_url.with_path("/pay").with_query(id=transaction_id)
-    return submission_link, transaction_id
+_APP_RPC_CLIENT_KEY = f"{__name__}.RabbitMQRPCClient"
 
 
+async def rabbitmq_rpc_client_lifespan(app: web.Application):
+    settings: RabbitSettings = get_rabbitmq_settings(app)
+    rpc_client = await RabbitMQRPCClient.create(
+        client_name="webserver-payments",
+        settings=settings,
+    )
+
+    assert rpc_client  # nosec
+    assert rpc_client.client_name == "webserver-payments"  # nosec
+    assert rpc_client.settings == settings  # nosec
+
+    app[_APP_RPC_CLIENT_KEY] = rpc_client
+
+    yield
+
+    await rpc_client.close()
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def init_payment(
     app: web.Application,
     *,
@@ -67,11 +55,20 @@ async def init_payment(
     user_email: str,
     comment: str | None = None,
 ) -> WalletPaymentCreated:
-    raise NotImplementedError
-    # result = await rpc_client.request(
-    #         PAYMENTS_RPC_NAMESPACE,
-    #         parse_obj_as(RPCMethodName, "init_payment"),
-    #         **init_payment_kwargs,
-    #     )
+    rpc_client = app[_APP_RPC_CLIENT_KEY]
 
-    # assert isinstance(result, WalletPaymentCreated)
+    result = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "init_payment"),
+        amount_dollars=amount_dollars,
+        target_credits=target_credits,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
+        comment=comment,
+    )
+    assert isinstance(result, WalletPaymentCreated)  # nosec
+    return result

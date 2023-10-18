@@ -1,16 +1,12 @@
 import logging
-from typing import Final
 
 from fastapi import FastAPI
-from pydantic import parse_obj_as
-from servicelib.rabbitmq import RPCNamespace
+from models_library.api_schemas_payments import PAYMENTS_RPC_NAMESPACE
 
 from ...services.rabbitmq import get_rabbitmq_rpc_client, is_rabbitmq_enabled
 from . import _payments
 
 _logger = logging.getLogger(__name__)
-
-PAYMENTS_RPC_NAMESPACE: Final[RPCNamespace] = parse_obj_as(RPCNamespace, "payments")
 
 
 def setup_rpc_api_routes(app: FastAPI) -> None:
