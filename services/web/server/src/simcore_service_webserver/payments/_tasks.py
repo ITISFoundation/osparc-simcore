@@ -20,7 +20,9 @@ from ._methods_api import (
     _ack_creation_of_wallet_payment_method,  # pylint: disable=protected-access
 )
 from ._methods_db import get_pending_payment_methods_ids
-from ._onetime_api import ack_creation_of_wallet_payment
+from ._onetime_api import (
+    _ack_creation_of_wallet_payment,  # pylint: disable=protected-access
+)
 from ._onetime_db import get_pending_payment_transactions_ids
 from .settings import get_plugin_settings
 
@@ -62,7 +64,7 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     )
 
     _logger.info("Faking payment completion as %s", kwargs)
-    await ack_creation_of_wallet_payment(app, payment_id=payment_id, **kwargs)
+    await _ack_creation_of_wallet_payment(app, payment_id=payment_id, **kwargs)
 
 
 _POSSIBLE_PAYMENTS_METHODS_OUTCOMES = _create_possible_outcomes(

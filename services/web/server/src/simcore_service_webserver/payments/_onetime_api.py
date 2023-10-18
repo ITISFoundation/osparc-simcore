@@ -89,19 +89,20 @@ async def init_creation_of_wallet_payment(
         UserNotFoundError
         WalletAccessForbiddenError
     """
-    # get user info
-    user = await get_user_name_and_email(app, user_id=user_id)
 
-    # check permissions
+    # wallet: check permissions
     await check_wallet_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
-
     user_wallet = await get_wallet_by_user(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
+    # user info
+    user = await get_user_name_and_email(app, user_id=user_id)
+
+    # call to payment-service
     payment_inited: WalletPaymentCreated = await _rpc.init_payment(
         app,
         amount_dollars=price_dollars,
@@ -117,7 +118,7 @@ async def init_creation_of_wallet_payment(
     return payment_inited
 
 
-async def ack_creation_of_wallet_payment(
+async def _ack_creation_of_wallet_payment(
     app: web.Application,
     *,
     payment_id: PaymentID,
@@ -125,7 +126,9 @@ async def ack_creation_of_wallet_payment(
     message: str | None = None,
     invoice_url: HttpUrl | None = None,
 ) -> PaymentTransaction:
-    # NOTE: implements endpoint in payment service hit by the gateway
+    #
+    # NOTE: implements endpoint in payment service hit by the gateway (ONLY for testing or fake completion!)
+    #
     transaction = await _onetime_db.complete_payment_transaction(
         app,
         payment_id=payment_id,
@@ -176,7 +179,7 @@ async def cancel_payment_to_wallet(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    return await ack_creation_of_wallet_payment(
+    return await _ack_creation_of_wallet_payment(
         app,
         payment_id=payment_id,
         completion_state=PaymentTransactionState.CANCELED,

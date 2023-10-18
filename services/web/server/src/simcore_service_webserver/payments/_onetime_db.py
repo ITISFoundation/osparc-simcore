@@ -16,19 +16,13 @@ from simcore_postgres_database.models.payments_transactions import (
 )
 from simcore_postgres_database.utils_payments import (
     PaymentAlreadyAcked,
-    PaymentAlreadyExists,
     PaymentNotFound,
     get_user_payments_transactions,
-    insert_init_payment_transaction,
     update_payment_transaction_state,
 )
 
 from ..db.plugin import get_database_engine
-from .errors import (
-    PaymentCompletedError,
-    PaymentNotFoundError,
-    PaymentUniqueViolationError,
-)
+from .errors import PaymentCompletedError, PaymentNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -53,40 +47,6 @@ class PaymentsTransactionsDB(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-async def create_payment_transaction(
-    app: web.Application,
-    *,
-    payment_id: str,
-    price_dollars: Decimal,
-    osparc_credits: Decimal,
-    product_name: str,
-    user_id: UserID,
-    user_email: str,
-    wallet_id: WalletID,
-    comment: str | None,
-    initiated_at: datetime.datetime,
-) -> None:
-    async with get_database_engine(app).acquire() as conn:
-        ok = await insert_init_payment_transaction(
-            conn,
-            payment_id=payment_id,
-            price_dollars=price_dollars,
-            osparc_credits=osparc_credits,
-            product_name=product_name,
-            user_id=user_id,
-            user_email=user_email,
-            wallet_id=wallet_id,
-            comment=comment,
-            initiated_at=initiated_at,
-        )
-        if isinstance(ok, PaymentAlreadyExists):
-            assert not ok  # nosec
-            assert ok.payment_id == payment_id  # nosec
-            raise PaymentUniqueViolationError(payment_id=payment_id)
-
-        assert ok == payment_id  # nosec
 
 
 async def list_user_payment_transactions(
