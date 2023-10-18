@@ -47,7 +47,10 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         }
         case "settings-card": {
           const content = this.__createSettingsView();
-          control = this.__createOverviewCard(this.tr("Settings"), content, this.tr("Buy credits"), "buyCredits");
+          const wallet = this.__getWallet();
+          control = this.__createOverviewCard(this.tr("Settings"), content, this.tr("Buy credits"), "buyCredits", {
+            walletId: wallet ? wallet.getWalletId() : null
+          });
           this._add(control);
           break;
         }
@@ -67,7 +70,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
       this.getChildControl("activity-card");
     },
 
-    __createOverviewCard: function(cardLabel, content, buttonLabel, signalName) {
+    __createOverviewCard: function(cardLabel, content, buttonLabel, signalName, signalData) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         padding: 15,
         backgroundColor: "background-main-1"
@@ -91,7 +94,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         allowGrowX: false,
         alignX: "right"
       });
-      goToButton.addListener("execute", () => this.fireEvent(signalName), this);
+      goToButton.addListener("execute", () => signalData ? this.fireDataEvent(signalName, signalData) : this.fireEvent(signalName), this);
       topLayout.add(goToButton);
       layout.add(topLayout);
 
