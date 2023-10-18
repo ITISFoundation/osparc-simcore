@@ -64,7 +64,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
     )
 
 
-def _assert_project_associated_with_solver(
+def _raise_if_job_not_associated_with_solver(
     solver_key: SolverKeyId, version: VersionStr, project: ProjectGet
 ) -> None:
     expected_job_name: str = _compose_job_resource_name(
@@ -591,7 +591,7 @@ async def get_job_pricing_unit(
     _logger.debug("Getting pricing unit for job '%s'", job_name)
 
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-    _assert_project_associated_with_solver(solver_key, version, project)
+    _raise_if_job_not_associated_with_solver(solver_key, version, project)
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
     node_id: UUID = UUID(node_ids[0])
