@@ -1064,11 +1064,16 @@ qx.Class.define("osparc.data.Resources", {
           let message = null;
           let status = null;
           if (e.getData().error) {
-            const logs = e.getData().error.logs || null;
+            const errorData = e.getData().error;
+            const logs = errorData.logs || null;
             if (logs && logs.length) {
               message = logs[0].message;
             }
-            status = e.getData().error.status;
+            const errors = errorData.errors || [];
+            if (message === null && errors && errors.length) {
+              message = errors[0].message;
+            }
+            status = errorData.status;
           } else {
             const req = e.getRequest();
             message = req.getResponse();
