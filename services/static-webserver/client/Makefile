@@ -63,7 +63,7 @@ upgrade: ## upgrade to official version of the tool
 
 .PHONY: down
 down: ## tear down docker-compose
-	@${docker_compose} down
+	@${docker_compose} down --remove-orphans
 
 # qx serve --------------------------
 
