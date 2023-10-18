@@ -1,5 +1,5 @@
 import json
-from typing import Any, TypeAlias, cast
+from typing import Any, NamedTuple, TypeAlias, cast
 
 from pydantic import StrictBool, StrictFloat, StrictInt
 from pydantic.errors import PydanticErrorMixin
@@ -28,6 +28,12 @@ class IdentifierSubstitutionError(PydanticErrorMixin, KeyError):
         "Was not able to substitute identifier "
         "'{name}'. It was not found in: {substitutions}"
     )
+
+
+class _EnvVarData(NamedTuple):
+    substitution_identifier: str
+    identifier_name: str
+    default_value: Any | None
 
 
 class SpecsSubstitutionsResolver:
@@ -81,19 +87,29 @@ class SpecsSubstitutionsResolver:
 
         required_identifiers = self.get_identifiers()
 
-        required_identifiers_with_defaults: dict[str, str | None] = {}
+        required_identifiers_with_defaults: list[_EnvVarData] = []
         for identifier in required_identifiers:
             parts = identifier.split(":-")
-            required_identifiers_with_defaults[identifier] = (
-                parts[1] if ":-" in identifier else None
+            required_identifiers_with_defaults.append(
+                _EnvVarData(
+                    substitution_identifier=identifier,
+                    identifier_name=parts[0],
+                    default_value=parts[1] if ":-" in identifier else None,
+                )
             )
 
         resolved_identifiers: dict[str, str] = {}
-        for identifier, default_value in required_identifiers_with_defaults.items():
-            if identifier in mappings:
-                resolved_identifiers[identifier] = cast(str, mappings[identifier])
-            elif default_value is not None:
-                resolved_identifiers[identifier] = default_value
+        for env_var_data in required_identifiers_with_defaults:
+            if env_var_data.identifier_name in mappings:
+                resolved_identifiers[env_var_data.substitution_identifier] = cast(
+                    str, mappings[env_var_data.identifier_name]
+                )
+            # NOTE: default is used only if not found in the provided substitutions
+            elif env_var_data.default_value is not None:
+                resolved_identifiers[
+                    env_var_data.substitution_identifier
+                ] = env_var_data.default_value
+
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)
         return self._substitutions
