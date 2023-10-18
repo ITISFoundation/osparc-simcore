@@ -590,7 +590,7 @@ async def get_job_pricing_unit(
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(_logger, logging.DEBUG, "Get pricing unit"):
-        _logger.debug(f"job: {job_name}")
+        _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
         node_ids = list(project.workbench.keys())
