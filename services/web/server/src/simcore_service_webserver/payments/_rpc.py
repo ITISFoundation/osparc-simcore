@@ -57,6 +57,7 @@ async def init_payment(
 ) -> WalletPaymentCreated:
     rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
+    # NOTE: remote errors are aio_pika.MessageProcessError
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_payment"),

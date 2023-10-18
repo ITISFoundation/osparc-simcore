@@ -20,7 +20,7 @@ from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -75,8 +75,9 @@ async def test_payments_worfklow(
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
-    mock_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.payments._api.add_credits_to_wallet", autospec=True
+    mock_rut_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        autospec=True,
     )
 
     wallet = logged_user_wallet
@@ -106,8 +107,8 @@ async def test_payments_worfklow(
     )
 
     # check notification to RUT
-    assert mock_add_credits_to_wallet.called
-    mock_add_credits_to_wallet.assert_called_once()
+    assert mock_rut_add_credits_to_wallet.called
+    mock_rut_add_credits_to_wallet.assert_called_once()
 
     # check notification
     assert send_message.called
@@ -147,8 +148,9 @@ async def test_multiple_payments(
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
-    mock_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.payments._api.add_credits_to_wallet", autospec=True
+    mocker.patch(
+        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        autospec=True,
     )
 
     wallet = logged_user_wallet
@@ -288,22 +290,24 @@ async def test_payment_not_found(
     assert ":cancel" not in error_msg
 
 
-def test_models_state_in_sync():
-    state_type = PaymentTransaction.__fields__["state"].type_
+def test_payment_transaction_state_and_literals_are_in_sync():
+    state_literals = PaymentTransaction.__fields__["state"].type_
     assert (
-        parse_obj_as(list[state_type], [f"{s}" for s in PaymentTransactionState])
+        parse_obj_as(list[state_literals], [f"{s}" for s in PaymentTransactionState])
         is not None
     )
 
 
 async def test_payment_on_wallet_without_access(
     latest_osparc_price: Decimal,
+    logged_user: UserInfoDict,
     logged_user_wallet: WalletGet,
     client: TestClient,
 ):
     other_wallet = logged_user_wallet
 
     async with LoggedUser(client) as new_logged_user:
+        assert new_logged_user["email"] != logged_user["email"]
         response = await client.post(
             f"/v0/wallets/{other_wallet.wallet_id}/payments",
             json={
