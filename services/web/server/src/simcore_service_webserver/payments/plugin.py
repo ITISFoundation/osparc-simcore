@@ -30,7 +30,6 @@ def setup_payments(app: web.Application):
 
     app.cleanup_ctx.append(rabbitmq_rpc_client_lifespan)
 
-    # TODO: Remove partially fake payments?
     if settings.PAYMENTS_FAKE_COMPLETION:
         _logger.warning(
             "Added faker payment completion. ONLY FOR front-end TESTING PURPOSES"
