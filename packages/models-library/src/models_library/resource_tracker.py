@@ -1,7 +1,7 @@
 from enum import auto
-from typing import TypeAlias
+from typing import Any, ClassVar, NamedTuple, TypeAlias
 
-from pydantic import PositiveInt
+from pydantic import BaseModel, PositiveInt
 
 from .utils.enums import StrAutoEnum
 
@@ -37,3 +37,37 @@ class CreditClassification(StrAutoEnum):
 
 class PricingPlanClassification(StrAutoEnum):
     TIER = auto()
+
+
+class PricingInfo(BaseModel):
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
+    pricing_unit_cost_id: PricingUnitCostId
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {"pricing_plan_id": 1, "pricing_unit_id": 1, "pricing_unit_cost_id": 1}
+            ]
+        }
+
+
+class HardwareInfo(BaseModel):
+    aws_ec2_instances: list[str]
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [{"aws_ec2_instances": ["c6a.4xlarge"]}]
+        }
+
+
+class PricingAndHardwareInfoTuple(NamedTuple):
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
+    current_cost_per_unit_id: PricingUnitCostId
+    aws_ec2_instances: list[str]
+
+
+class PricingPlanAndUnitIdsTuple(NamedTuple):
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId

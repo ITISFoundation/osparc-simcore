@@ -18,7 +18,11 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
-from models_library.resource_tracker import PricingPlanId, PricingUnitId
+from models_library.resource_tracker import (
+    PricingPlanAndUnitIdsTuple,
+    PricingPlanId,
+    PricingUnitId,
+)
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
@@ -802,7 +806,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         project_uuid: ProjectID,
         node_uuid: NodeID,
-    ) -> tuple | None:
+    ) -> PricingPlanAndUnitIdsTuple | None:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
@@ -823,9 +827,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
             row = await result.fetchone()
             if row:
-                return parse_obj_as(
-                    tuple[PricingPlanId, PricingUnitId], (row[0], row[1])
-                )
+                return PricingPlanAndUnitIdsTuple(row[0], row[1])
             return None
 
     async def connect_pricing_unit_to_project_node(

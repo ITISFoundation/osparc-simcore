@@ -16,6 +16,7 @@ from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
@@ -427,6 +428,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         default=None,
         description="contains information about the wallet used to bill the running service",
     )
+    pricing_info: PricingInfo | None = Field(
+        default=None,
+        description="contains pricing information so we know what is the cost of running of the service",
+    )
+    hardware_info: HardwareInfo | None = Field(
+        default=None,
+        description="contains harware information so we know on which hardware to run the service",
+    )
 
     @property
     def get_proxy_endpoint(self) -> AnyHttpUrl:
@@ -485,6 +494,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
             "wallet_info": service.wallet_info,
+            "pricing_info": service.pricing_info,
+            "hardware_info": service.hardware_info,
         }
         if run_id:
             obj_dict["run_id"] = run_id
