@@ -179,7 +179,8 @@ qx.Class.define("osparc.desktop.credits.Summary", {
     __createSettingsView: function() {
       const wallet = this.__getWallet();
       if (wallet) {
-        const grid = new qx.ui.layout.Grid(15, 10);
+        const grid = new qx.ui.layout.Grid(20, 10);
+        grid.setColumnAlign(0, "right", "middle");
         const layout = new qx.ui.container.Composite(grid);
 
         const t1t = new qx.ui.basic.Label(this.tr("Automatic Payment")).set({
@@ -198,7 +199,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           column: 1
         });
 
-        const t2t = new qx.ui.basic.Label(this.tr("Monthly Spending Limit")).set({
+        const t2t = new qx.ui.basic.Label(this.tr("Monthly Spending Limit (US$)")).set({
           font: "text-14"
         });
         layout.add(t2t, {
@@ -217,14 +218,14 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           font: "text-14"
         });
         layout.add(t3t, {
-          row: 1,
+          row: 2,
           column: 0
         });
         const t3v = new qx.ui.basic.Label().set({
           font: "text-14"
         });
         layout.add(t3v, {
-          row: 1,
+          row: 2,
           column: 1
         });
 
