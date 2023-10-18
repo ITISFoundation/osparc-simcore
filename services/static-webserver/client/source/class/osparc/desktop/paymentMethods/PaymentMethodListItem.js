@@ -16,19 +16,21 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
-  extend: osparc.ui.list.ListItemWithMenu,
+  extend: osparc.ui.list.ListItem,
 
   construct: function() {
     this.base(arguments);
 
     const layout = this._getLayout();
     layout.setSpacingX(15);
-    layout.setColumnFlex(1, 0);
-    layout.setColumnFlex(2, 0);
-    layout.setColumnFlex(3, 0);
-    layout.setColumnFlex(4, 0);
-    layout.setColumnFlex(5, 1);
-    layout.setColumnFlex(6, 0);
+    layout.setColumnFlex(this.self().GRID_POS.ICON, 0);
+    layout.setColumnFlex(this.self().GRID_POS.NAME, 0);
+    layout.setColumnFlex(this.self().GRID_POS.TYPE, 0);
+    layout.setColumnFlex(this.self().GRID_POS.MASKED_NUMBER, 0);
+    layout.setColumnFlex(this.self().GRID_POS.EXPIRATION_DATE, 1);
+    // buttons to the right
+    layout.setColumnFlex(this.self().GRID_POS.INFO_BUTTON, 0);
+    layout.setColumnFlex(this.self().GRID_POS.DELETE_BUTTON, 0);
 
     this.getChildControl("thumbnail").setSource("@FontAwesome5Solid/credit-card/18");
 
@@ -49,16 +51,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
       converter: year => this.getExpirationMonth() + "/" + year
     });
 
-    const store = osparc.store.Store.getInstance();
-    const walletName = this.getChildControl("wallet-name");
-    this.bind("walletId", walletName, "value", {
-      converter: walletId => {
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
-        return found ? found.getName() : this.tr("Unknown Credit Account");
-      }
-    });
-
-    this.__getOptionsMenu();
+    this.getChildControl("details-button");
+    this.getChildControl("delete-button");
   },
 
   properties: {
@@ -110,6 +104,18 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     "deletePaymentMethod": "qx.event.type.Data"
   },
 
+  statics: {
+    GRID_POS: {
+      ICON: 0,
+      NAME: 1,
+      TYPE: 2,
+      MASKED_NUMBER: 3,
+      EXPIRATION_DATE: 4,
+      INFO_BUTTON: 5,
+      DELETE_BUTTON: 6
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -120,8 +126,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           this._add(control, {
             row: 0,
-            column: 1,
-            rowSpan: 2
+            column: this.self().GRID_POS.NAME
           });
           break;
         case "card-type":
@@ -130,8 +135,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           this._add(control, {
             row: 0,
-            column: 2,
-            rowSpan: 2
+            column: this.self().GRID_POS.TYPE
           });
           break;
         case "card-number-masked":
@@ -140,8 +144,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           this._add(control, {
             row: 0,
-            column: 3,
-            rowSpan: 2
+            column: this.self().GRID_POS.MASKED_NUMBER
           });
           break;
         case "expiration-date":
@@ -150,75 +153,47 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           });
           this._add(control, {
             row: 0,
-            column: 4,
-            rowSpan: 2
+            column: this.self().GRID_POS.EXPIRATION_DATE
           });
           break;
-        case "wallet-name":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14"
+        case "details-button":
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/info/14"
           });
+          control.addListener("execute", () => this.fireDataEvent("openPaymentMethodDetails", this.getKey()));
           this._add(control, {
             row: 0,
-            column: 5,
-            rowSpan: 2
+            column: this.self().GRID_POS.INFO_BUTTON
           });
           break;
-        case "options-menu": {
-          const iconSize = 26;
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: iconSize,
-            maxHeight: iconSize,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
-            focusable: false
+        case "delete-button":
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/trash/14"
           });
+          control.addListener("execute", () => this.__deletePressed());
           this._add(control, {
             row: 0,
-            column: 6,
-            rowSpan: 2
+            column: this.self().GRID_POS.DELETE_BUTTON
           });
           break;
-        }
       }
 
       return control || this.base(arguments, id);
     },
 
-    // overridden
-    __getOptionsMenu: function() {
-      const optionsMenu = this.getChildControl("options-menu");
-      optionsMenu.show();
-
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
+    __deletePressed: function() {
+      const msg = this.tr("Are you sure you want to delete the Payment Method?");
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete"
       });
-
-      const viewDetailsButton = new qx.ui.menu.Button(this.tr("View details..."));
-      viewDetailsButton.addListener("execute", () => this.fireDataEvent("openPaymentMethodDetails", this.getKey()));
-      menu.add(viewDetailsButton);
-
-      const detelePMButton = new qx.ui.menu.Button(this.tr("Delete Payment Method"));
-      detelePMButton.addListener("execute", () => {
-        const msg = this.tr("Are you sure you want to delete the Payment Method?");
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          confirmText: this.tr("Delete"),
-          confirmAction: "delete"
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.fireDataEvent("deletePaymentMethod", this.getKey());
-          }
-        });
-      }, this);
-      menu.add(detelePMButton);
-
-      optionsMenu.setMenu(menu);
-
-      return menu;
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.fireDataEvent("deletePaymentMethod", this.getKey());
+        }
+      });
     }
   }
 });
