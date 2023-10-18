@@ -17,6 +17,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -29,6 +30,9 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
+from simcore_service_director_v2.modules.resource_usage_tracker_client import (
+    ResourceUsageTrackerClient,
+)
 from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -134,18 +138,17 @@ async def _generate_task_image(
     catalog_client: CatalogClient,
     connection: aiopg.sa.connection.SAConnection,
     user_id: UserID,
-    project_uuid: ProjectID,
     node_id: NodeID,
     node: Node,
     node_extras: ServiceExtras | None,
     node_labels: SimcoreServiceLabels | None,
+    project_nodes_repo: ProjectNodesRepo,
 ) -> Image:
     # aggregates node_details and node_extras into Image
     data: dict[str, Any] = {
         "name": node.key,
         "tag": node.version,
     }
-    project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
     node_resources = parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     if not node_resources:
@@ -171,6 +174,8 @@ async def _generate_tasks_list_from_project(
     user_id: UserID,
     product_name: str,
     connection: aiopg.sa.connection.SAConnection,
+    rut_client: ResourceUsageTrackerClient,
+    is_wallet: bool,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
 
@@ -205,15 +210,16 @@ async def _generate_tasks_list_from_project(
         if not node_details:
             continue
 
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
         image = await _generate_task_image(
             catalog_client=catalog_client,
             connection=connection,
             user_id=user_id,
-            project_uuid=project.uuid,
             node_id=NodeID(node_id),
             node=node,
             node_extras=node_extras,
             node_labels=node_labels,
+            project_nodes_repo=project_nodes_repo,
         )
 
         assert node.state is not None  # nosec
@@ -226,6 +232,44 @@ async def _generate_tasks_list_from_project(
             and to_node_class(node.key) == NodeClass.COMPUTATIONAL
         ):
             task_state = RunningState.PUBLISHED
+
+        pricing_info = None
+        hardware_info = None
+        if is_wallet:
+            output = await project_nodes_repo.get_project_node_pricing_unit_id(
+                connection, node_uuid=NodeID(node_id)
+            )
+            if output:
+                pricing_plan_id, pricing_unit_id = output
+                pricing_unit_get = await rut_client.get_pricing_unit(
+                    product_name, pricing_plan_id, pricing_unit_id
+                )
+                pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+                aws_ec2_instances = pricing_unit_get.specific_info["aws_ec2_instances"]
+            else:
+                (
+                    pricing_plan_id,
+                    pricing_unit_id,
+                    pricing_unit_cost_id,
+                    aws_ec2_instances,
+                ) = await rut_client.get_default_pricing_and_hardware_info(
+                    product_name,
+                    node.key,
+                    node.version,
+                )
+                await project_nodes_repo.connect_pricing_unit_to_project_node(
+                    connection,
+                    node_uuid=NodeID(node_id),
+                    pricing_plan_id=pricing_plan_id,
+                    pricing_unit_id=pricing_unit_id,
+                )
+
+            pricing_info = PricingInfo(
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+                pricing_unit_cost_id=pricing_unit_cost_id,
+            )
+            hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
@@ -246,6 +290,8 @@ async def _generate_tasks_list_from_project(
             last_heartbeat=None,
             created=arrow.utcnow().datetime,
             modified=arrow.utcnow().datetime,
+            pricing_info=pricing_info.dict() if pricing_info else None,
+            hardware_info=hardware_info.dict() if hardware_info else None,
         )
 
         list_comp_tasks.append(task_db)
@@ -314,6 +360,8 @@ class CompTasksRepository(BaseRepository):
         published_nodes: list[NodeID],
         user_id: UserID,
         product_name: str,
+        rut_client: ResourceUsageTrackerClient,
+        is_wallet: bool,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.acquire() as conn:
@@ -327,6 +375,8 @@ class CompTasksRepository(BaseRepository):
                 user_id,
                 product_name,
                 conn,
+                rut_client,
+                is_wallet,
             )
             # get current tasks
             result = await conn.execute(
