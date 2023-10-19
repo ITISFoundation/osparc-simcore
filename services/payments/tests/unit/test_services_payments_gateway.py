@@ -71,16 +71,32 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
+@pytest.fixture
+def mock_payments_gateway_service_or_none(
+    mock_payments_gateway_service_api_base: MockRouter,
+    mock_payments_routes: Callable,
+    external_secret_envs: EnvVarsDict,
+) -> MockRouter | None:
+
+    # tests against external payments-gateway
+    if payments_gateway_url := external_secret_envs.get("PAYMENTS_GATEWAY_URL"):
+        print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
+        mock_payments_gateway_service_api_base.stop()
+        return None
+
+    # tests against mock payments-gateway
+    mock_payments_routes(mock_payments_gateway_service_api_base)
+    return mock_payments_gateway_service_api_base
+
+
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
-    mock_payments_gateway_service_api_base: MockRouter,
-    mock_payments_routes: Callable,
+    mock_payments_gateway_service_or_none: MockRouter | None,
 ):
-    mock_payments_routes(mock_payments_gateway_service_api_base)
 
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
     assert payment_gateway_api
@@ -110,5 +126,6 @@ async def test_one_time_payment_workflow(
     await payment_gateway_api.cancel_payment(payment_initiated)
 
     # check mock
-    assert mock_payments_gateway_service_api_base.routes["init_payment"].called
-    assert mock_payments_gateway_service_api_base.routes["cancel_payment"].called
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes["init_payment"].called
+        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called

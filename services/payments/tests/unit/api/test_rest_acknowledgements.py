@@ -50,10 +50,14 @@ def app_environment(
 async def client(
     client: httpx.AsyncClient, external_secret_envs: EnvVarsDict
 ) -> AsyncIterator[httpx.AsyncClient]:
+
+    # tests against external payments API
     if external_base_url := external_secret_envs.get("PAYMENTS_SERVICE_API_BASE_URL"):
-        # If there are external secrets, build a new
-        # client and point to `external_base_url`
-        print("IMPORTANT: these tests are running against", external_base_url)
+        # If there are external secrets, build a new client and point to `external_base_url`
+        print(
+            "🚨 EXTERNAL: tests running against external payment API at",
+            external_base_url,
+        )
         async with httpx.AsyncClient(
             app=None,
             base_url=external_base_url,
@@ -61,6 +65,7 @@ async def client(
         ) as new_client:
             yield new_client
 
+    # tests against app
     yield client
 
 

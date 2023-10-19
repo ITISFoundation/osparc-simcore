@@ -167,6 +167,7 @@ def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
     env_files = list(project_tests_dir.glob(".env-secret*"))
     if env_files:
         assert len(env_files) == 1
+        print("🚨 EXTERNAL: external envs detected ", env_files[0])
         envs = load_dotenv(env_files[0])
         assert "PAYMENTS_GATEWAY_API_SECRET" in envs
         assert "PAYMENTS_GATEWAY_URL" in envs
