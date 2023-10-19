@@ -201,3 +201,18 @@ def test_safe_unsafe_substitution():
         IdentifierSubstitutionError, match="Was not able to substitute identifier"
     ):
         text_template.run(safe=False)
+
+
+def test_substitution_with_defaults_and_same_var_name():
+    input_dict = {"k1": "${VAR:-v1}", "k2": "${VAR:-v2}"}
+    text_template = SpecsSubstitutionsResolver(input_dict, upgrade=True)
+
+    # with a provided value
+    text_template.set_substitutions({"VAR": "a_value"})
+    replaced_dict = text_template.run()
+    assert replaced_dict == {"k1": "a_value", "k2": "a_value"}
+
+    # using defaults
+    text_template.set_substitutions({})
+    replaced_dict = text_template.run()
+    assert replaced_dict == {"k1": "v1", "k2": "v2"}
