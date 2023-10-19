@@ -475,18 +475,14 @@ def patch_webserver_long_running_project_tasks(
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def respx_mock_from_capture() -> (
-    Callable[[respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter]
+    Callable[[respx.MockRouter, Path, list[SideEffectCallback]], list[respx.MockRouter]]
 ):
     def _generate_mock(
-        respx_mock: respx.MockRouter,
+        respx_mock: respx.MockRouter | list[respx.MockRouter],
         capture_path: Path,
         side_effects_callbacks: list[SideEffectCallback] | None = None,
-    ) -> respx.MockRouter:
+    ) -> list[respx.MockRouter]:
         assert capture_path.is_file() and capture_path.suffix == ".json"
-        assert (
-            respx_mock._bases
-        ), "the base_url must be set before the fixture is extended"
-
         side_effects_callbacks = (
             [] if side_effects_callbacks is None else side_effects_callbacks
         )
@@ -494,10 +490,15 @@ def respx_mock_from_capture() -> (
             list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
         )
 
-        capture_iter = iter(captures)
-        side_effect_callback_iter = iter(side_effects_callbacks)
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
+        if isinstance(respx_mock, respx.MockRouter):
+            assert (
+                respx_mock._bases
+            ), "the base_url must be set before the fixture is extended"
+            respx_mock = [respx_mock] * len(captures)
+        else:
+            assert len(respx_mock) == len(captures)
 
         class CaptureSideEffect:
             def __init__(
@@ -537,7 +538,7 @@ def respx_mock_from_capture() -> (
                 path_regex = path_regex.replace(
                     "{" + param.name + "}", param.respx_lookup
                 )
-            respx_mock.request(
+            respx_mock[ii].request(
                 capture.method.upper(), url=None, path__regex="^" + path_regex + "$"
             ).mock(side_effect=side_effects[-1]._side_effect)
 

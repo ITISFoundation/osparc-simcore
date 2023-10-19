@@ -31,7 +31,6 @@ async def test_get_solver_job_wallet(
     project_tests_dir: Path,
     capture: str,
 ):
-
     _wallet_id: int = 1826
 
     def _get_job_wallet_side_effect(
@@ -93,7 +92,6 @@ async def test_get_solver_job_pricing_unit(
     project_tests_dir: Path,
     capture_file: str,
 ):
-
     solver_key: str = "simcore/services/comp/my_super_hpc_solver"
     solver_version: str = "3.14.0"
     job_id: UUID = UUID("87643648-3a38-44e2-9cfe-d86ab3d50629")
@@ -146,3 +144,70 @@ async def test_get_solver_job_pricing_unit(
         assert response.status_code == 422
     else:
         pytest.fail()
+
+
+async def test_get_solver_job_pricing_unit_with_payment(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_directorv2_service_api_base,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    _solver_key: str = "simcore/services/comp/isolve"
+    _version: str = "2.1.24"
+    _job_id: str = "6e52228c-6edd-4505-9131-e901fdad5b17"
+    _pricing_plan_id: int = 38
+    _pricing_unit_id: int = 26
+
+    def _get_job_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        response: dict[str, str] = capture.response_body
+        response["data"]["name"] = Job.compose_resource_name(
+            parent_name=Solver.compose_resource_name(_solver_key, _version),  # type: ignore
+            job_id=_job_id,
+        )
+        response["data"]["uuid"] = _job_id
+        return response
+
+    def _put_pricing_plan_and_unit_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        assert int(path_params["pricing_plan_id"]) == _pricing_plan_id
+        assert int(path_params["pricing_unit_id"]) == _pricing_unit_id
+        return capture.response_body
+
+    def _start_job_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_webserver_service_api_base] * 2 + [mocked_directorv2_service_api_base],
+        project_tests_dir / "mocks" / "start_job_with_payment.json",
+        [
+            _get_job_side_effect,
+            _put_pricing_plan_and_unit_side_effect,
+            _start_job_side_effect,
+        ],
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+        headers={
+            "x-pricing-plan": f"{_pricing_plan_id}",
+            "x-pricing-unit": f"{_pricing_unit_id}",
+        },
+    )
+    assert response.status_code == 200
