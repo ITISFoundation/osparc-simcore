@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from pydantic import BaseModel, Field, HttpUrl
 
 from ..payments_gateway import PaymentID, PaymentMethodID
@@ -16,6 +18,37 @@ class SavedPaymentMethod(AckPaymentMethod):
     payment_method_id: PaymentMethodID
 
 
+_ONE_TIME_SUCCESS = {
+    "success": True,
+    "invoice_url": "https://invoices.com/id=12345",
+}
+_EXAMPLES = [
+    # 0. one-time-payment successful
+    _ONE_TIME_SUCCESS,
+    # 1. one-time-payment and payment-method-saved successful
+    {
+        **_ONE_TIME_SUCCESS,
+        "saved": {
+            "success": True,
+            "payment_method_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        },
+    },
+    # 2. one-time-payment successful but payment-method-saved failed
+    {
+        **_ONE_TIME_SUCCESS,
+        "saved": {
+            "success": False,
+            "message": "Not allowed",
+        },
+    },
+    # 3. one-time-payment failure
+    {
+        "success": False,
+        "message": "No more credit",
+    },
+]
+
+
 class AckPayment(_BaseAck):
     invoice_url: HttpUrl
     saved: SavedPaymentMethod | None = Field(
@@ -24,6 +57,12 @@ class AckPayment(_BaseAck):
         "after payment it returns the payment-method acknoledgement response."
         "Otherwise it defaults to None.",
     )
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": _EXAMPLES[1],  # shown in openapi.json
+            "examples": _EXAMPLES,
+        }
 
 
 assert PaymentID  # nosec

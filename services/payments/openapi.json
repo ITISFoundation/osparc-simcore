@@ -240,7 +240,15 @@
           "success",
           "invoice_url"
         ],
-        "title": "AckPayment"
+        "title": "AckPayment",
+        "example": {
+          "success": true,
+          "invoice_url": "https://invoices.com/id=12345",
+          "saved": {
+            "success": true,
+            "payment_method_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          }
+        }
       },
       "AckPaymentMethod": {
         "properties": {
