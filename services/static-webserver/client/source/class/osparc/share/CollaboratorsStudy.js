@@ -19,9 +19,9 @@
  * Widget for modifying Study permissions. This is the way for sharing studies
  * - Creates a copy of study data
  * - It allows changing study's access right, so that the study owners can:
- *   - Share it with Organizations and/or Organization Members (Collaborators)
- *   - Make other Collaborators Owner
- *   - Remove collaborators
+ *   - Share it with Organizations and/or Organization Members (Users)
+ *   - Make other Users Owner
+ *   - Remove users
  */
 
 qx.Class.define("osparc.share.CollaboratorsStudy", {
@@ -151,14 +151,14 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
-          const text = this.tr("Collaborator(s) successfully added.");
+          const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
 
           this.__checkShareePermissions(gids);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
           console.error(err);
         })
         .finally(() => cb());
@@ -274,8 +274,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr("Viewer successfully made Collaborator"),
-        this.tr("Something went wrong making Viewer Collaborator"),
+        this.tr("Viewer successfully changed User"),
+        this.tr("Something went wrong changing Viewer to User"),
         item
       );
     },
@@ -284,8 +284,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr("Collaborator successfully made Owner"),
-        this.tr("Something went wrong making Collaborator Owner"),
+        this.tr("User successfully changed to Owner"),
+        this.tr("Something went wrong changing User to Owner"),
         item
       );
     },
@@ -296,8 +296,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         this.__make(
           gid,
           this.self().getViewerAccessRight(),
-          this.tr("Collaborator successfully made Viewer"),
-          this.tr("Something went wrong making Collaborator Viewer"),
+          this.tr("User successfully changed to Viewer"),
+          this.tr("Something went wrong changing User to Viewer"),
           itm
         );
       };
@@ -326,8 +326,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr("Owner successfully made Collaborator"),
-        this.tr("Something went wrong making Owner Collaborator"),
+        this.tr("Owner successfully changed to User"),
+        this.tr("Something went wrong changing Owner to User"),
         item
       );
     }

@@ -92,7 +92,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         if (ar[myGID]["delete"]) {
           permissions = qx.locale.Manager.tr("Owner");
         } else if (ar[myGID]["write"]) {
-          permissions = qx.locale.Manager.tr("Collaborator");
+          permissions = qx.locale.Manager.tr("Editor");
         } else if (ar[myGID]["read"]) {
           permissions = qx.locale.Manager.tr("Viewer");
         }
@@ -346,7 +346,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       */
     openAccessRights: function(studyData) {
       const permissionsView = new osparc.share.CollaboratorsStudy(studyData);
-      const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
+      const title = qx.locale.Manager.tr("Share with Editors and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       return permissionsView;
     },
