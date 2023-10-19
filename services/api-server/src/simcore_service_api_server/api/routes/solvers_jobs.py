@@ -317,6 +317,7 @@ async def start_job(
     if pricing_spec := _get_pricing_plan_and_unit(request):
         with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
             project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+            _raise_if_job_not_associated_with_solver(solver_key, version, project)
             node_ids = list(project.workbench.keys())
             assert len(node_ids) == 1  # nosec
             await webserver_api.put_project_node_pricing_plan_and_unit(
