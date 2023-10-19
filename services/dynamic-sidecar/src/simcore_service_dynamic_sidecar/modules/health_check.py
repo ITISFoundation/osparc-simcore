@@ -23,17 +23,22 @@ _logger = logging.getLogger(__name__)
 _HEALTH_CHECK_INFO_KEY: Final[str] = "_health_check_info"
 
 AppType: TypeAlias = "FastAPI | Application"
-HealthCheckHandler: TypeAlias = Callable[[AppType], Awaitable[None]]
+HealthCheckHandler: TypeAlias = Callable[..., Awaitable[None]]
 
 
 class HealthCheckError(PydanticErrorMixin, RuntimeError):
     msg_template = "Registered handler '{handler_name}' failed!"
 
 
+class _SupportedAppTypes(str, Enum):
+    FASTAPI = "fastapi.applications.FastAPI"
+    AIOHTTP = "aiohttp.web_app.Application"
+
+
 class UnsupportedApplicationTypeError(PydanticErrorMixin, TypeError):
     msg_template = (
         "Provided application_class '{app_class}' is unsupported! "
-        "Expected an instance of fastapi.applications.FastAPI or aiohttp.web_app.Application"
+        f"Expected an instance of { {x.value for x in _SupportedAppTypes} }"
     )
 
 
@@ -46,11 +51,6 @@ class HealthReport(BaseModel):
     is_healthy: bool
     ok_checks: list[str]
     failing_checks: list[str]
-
-
-class _SupportedAppTypes(str, Enum):
-    FASTAPI = "fastapi.applications.FastAPI"
-    AIOHTTP = "aiohttp.web_app.Application"
 
 
 def _get_app_class_path(app: AppType) -> str:
