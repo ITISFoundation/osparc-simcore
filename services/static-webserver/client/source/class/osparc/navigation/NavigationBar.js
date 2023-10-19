@@ -228,7 +228,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "current-usage-indicator": {
           const currentUsage = new osparc.desktop.credits.CurrentUsage();
-          control = new osparc.desktop.credits.CurrentUsageIndicator(currentUsage);
+          control = new osparc.desktop.credits.CurrentUsageIndicator(currentUsage).set({
+            allowGrowY: false,
+            alignY: "middle"
+          });
           this.getChildControl("right-items").add(control);
           break;
         }
