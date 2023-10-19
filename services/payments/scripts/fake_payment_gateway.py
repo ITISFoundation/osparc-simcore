@@ -2,9 +2,20 @@ import argparse
 import json
 import types
 from typing import Annotated, Any
+from uuid import UUID, uuid4
 
+import httpx
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, Header, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    status,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
@@ -19,6 +30,39 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
+from simcore_service_payments.models.schemas.auth import Token
+from urllib3 import HTTPResponse
+
+PAYMENT_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credit Card Payment</title>
+</head>
+<body>
+    <h1>Enter Credit Card Information</h1>
+    <form action="/pay?{id=}" method="POST">
+        <label for="cardNumber">Credit Card Number:</label>
+        <input type="text" id="cardNumber" name="cardNumber" required>
+        <br><br>
+
+        <label for="cardHolder">Name of Cardholder:</label>
+        <input type="text" id="cardHolder" name="cardHolder" required>
+        <br><br>
+
+        <label for="cvs">CVS (Card Verification Value):</label>
+        <input type="text" id="cvs" name="cvs" required>
+        <br><br>
+
+        <label for="expirationDate">Expiration Date:</label>
+        <input type="text" id="expirationDate" name="expirationDate" placeholder="MM/YY" required>
+        <br><br>
+
+        <input type="submit" value="Submit Payment">
+    </form>
+</body>
+</html>
+"""
 
 
 def set_operation_id_as_handler_function_name(router: APIRouter):
@@ -32,6 +76,49 @@ ERROR_RESPONSES: dict[str, Any] = {"4XX": {"model": ErrorModel}}
 ERROR_HTML_RESPONSES: dict[str, Any] = {
     "4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}
 }
+
+
+class PaymentsAuth(httpx.Auth):
+    def __init__(self, username, password):
+        self.form_data = {"username": username, "password": password}
+        self.token = Token(access_token="Undefined", token_type="bearer")
+
+    def build_request_access_token(self):
+        return httpx.Request(
+            "POST",
+            "/v1/token",
+            data=self.form_data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+    def update_tokens(self, response):
+        assert response.status_code == status.HTTP_200_OK  # nosec
+        token = Token(**response.json())
+        assert token.token_type == "bearer"  # nosec
+        self.token = token
+
+    def auth_flow(self, request):
+        response = yield request
+        if response.status_code == status.HTTP_401_UNAUTHORIZED:
+            tokens_response = yield self.build_request_access_token()
+            self.update_tokens(tokens_response)
+
+            request.headers["Authorization"] = f"Bearer {self.token.access_token}"
+            yield request
+
+
+#
+# Dependencies
+#
+
+
+def get_payments(request: Request) -> dict[str, Any]:
+    return request.app.state.payments
+
+
+#
+# Router factories
+#
 
 
 def create_payment_router():
@@ -50,19 +137,57 @@ def create_payment_router():
     def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert payment  # nosec
         assert auth  # nosec
+
+        payment_id = uuid4()
+        all_payments[payment_id] = "INITIATED"
+        return PaymentInitiated(payment_id=payment_id)
 
     @router.get(
         "/pay",
         response_class=HTMLResponse,
         responses=ERROR_HTML_RESPONSES,
     )
-    def get_form_payment(
+    def get_payment_form(
         id: PaymentID,
     ):
         assert id  # nosec
+        return HTTPResponse(PAYMENT_HTML.format(id=f"{id}"))
+
+    @router.post(
+        "/pay",
+        response_class=HTMLResponse,
+        responses=ERROR_HTML_RESPONSES,
+        include_in_schema=False,
+    )
+    def pay(
+        id: PaymentID,
+        payment_form: Annotated[str, Form()],
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
+    ):
+        assert id  # nosec
+
+        if all_payments[id] == "INITIATED":
+            all_payments[id] = payment_form
+
+        # request ACK
+        httpx.post(
+            f"http://127.0.0.1:123/v1/payments/{id}:ack",
+            json={
+                "success": True,
+                "message": "string",
+                "invoice_url": "string",
+                "saved": {
+                    "success": True,
+                    "message": "string",
+                    "payment_method_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                },
+            },
+            auth=PaymentsAuth(username="admin", password="adminadminadmin"),
+        )
 
     @router.post(
         "/cancel",
@@ -71,8 +196,15 @@ def create_payment_router():
     def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert payment  # nosec
+        assert auth  # nosec
+
+        try:
+            all_payments[payment.payment_id] = "CANCELLED"
+        except KeyError as exc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND) from exc
 
     return router
 
@@ -182,6 +314,8 @@ def create_app():
             }
         ],
     )
+
+    app.state.payments = {}
 
     for factory in (
         create_payment_router,
