@@ -401,7 +401,7 @@ class AuthSession:
     ) -> None:
         with _handle_webserver_api_errors():
             response = await self.client.put(
-                f"/projects/{project_id}/nodes/{node_id}/pricing-plans/{pricing_plan}/pricing-units/{pricing_unit}",
+                f"/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan}/pricing-unit/{pricing_unit}",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()

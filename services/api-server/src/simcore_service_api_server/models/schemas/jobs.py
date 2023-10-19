@@ -281,8 +281,8 @@ class JobStatus(BaseModel):
 
 
 class JobPricingSpecification(BaseModel):
-    pricing_plan: PositiveInt
-    pricing_unit: PositiveInt
+    pricing_plan: PositiveInt = Field(..., alias="x-pricing-plan")
+    pricing_unit: PositiveInt = Field(..., alias="x-pricing-unit")
 
     class Config:
         extra = Extra.ignore
