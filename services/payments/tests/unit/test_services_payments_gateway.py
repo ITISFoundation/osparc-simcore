@@ -5,16 +5,11 @@
 
 
 from collections.abc import Callable
-from pathlib import Path
 
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pytest_simcore.helpers.utils_envs import (
-    EnvVarsDict,
-    load_dotenv,
-    setenvs_from_dict,
-)
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
@@ -34,25 +29,6 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(new_app)
 
     assert payment_gateway_api is not None
-
-
-@pytest.fixture
-def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
-    """
-    If a file under test prefixed `.env-secret` is present,
-    then some mocks are disabled and real external services are used.
-
-    This technique allows reusing the same tests to check against
-    external development/production servers
-    """
-    envs = {}
-    env_files = list(project_tests_dir.glob(".env-secret*"))
-    if env_files:
-        assert len(env_files) == 1
-        envs = load_dotenv(env_files[0])
-        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
-        assert "PAYMENTS_GATEWAY_URL" in envs
-    return envs
 
 
 @pytest.fixture
@@ -112,8 +88,10 @@ async def test_one_time_payment_workflow(
     # init
     payment_initiated = await payment_gateway_api.init_payment(
         payment=InitPayment(
-            amount_dollars=100,
-            credits=100,
+            amount_dollars=faker.pydecimal(
+                positive=True, right_digits=2, left_digits=4
+            ),
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
             user_name=faker.user_name(),
             user_email=faker.email(),
             wallet_name=faker.word(),
