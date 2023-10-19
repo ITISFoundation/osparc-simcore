@@ -71,9 +71,9 @@ def _get_health_check_info(app: AppType) -> HealthCheckInfo:
 def setup_health_check(app: AppType) -> None:
     match _get_app_class_path(app):
         case _SupportedAppTypes.FASTAPI:
-            setattr(app.state, _HEALTH_CHECK_INFO_KEY, HealthCheckInfo())  # type: ignore
+            setattr(app.state, _HEALTH_CHECK_INFO_KEY, HealthCheckInfo())
         case _SupportedAppTypes.AIOHTTP:
-            app[_HEALTH_CHECK_INFO_KEY] = HealthCheckInfo()  # type: ignore
+            app[_HEALTH_CHECK_INFO_KEY] = HealthCheckInfo()
         case _:
             raise UnsupportedApplicationTypeError(app_class=app.__class__)
 
