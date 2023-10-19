@@ -29,8 +29,8 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
   properties: {
     currentUsage: {
       check: "Number",
-      init: 0,
-      nullable: false,
+      init: null,
+      nullable: true,
       event: "changeCurrentUsage"
     }
   },
@@ -60,6 +60,8 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     },
 
     __stopRequesting: function() {
+      this.setCurrentUsage(null);
+
       if (this.__interval) {
         clearInterval(this.__interval);
       }
