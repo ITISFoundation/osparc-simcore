@@ -19,7 +19,10 @@ from ..models import (
     EC2InstanceData,
     Resources,
 )
-from ..utils.auto_scaling_core import node_ip_from_ec2_private_dns
+from ..utils.auto_scaling_core import (
+    node_host_name_from_ec2_private_dns,
+    node_ip_from_ec2_private_dns,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -105,6 +108,7 @@ def _dask_worker_from_ec2_instance(
         DaskNoWorkersError
         DaskWorkerNotFoundError
     """
+    node_hostname = node_host_name_from_ec2_private_dns(ec2_instance)
     node_ip = node_ip_from_ec2_private_dns(ec2_instance)
     scheduler_info = client.scheduler_info()
     assert client.scheduler  # nosec
@@ -119,7 +123,9 @@ def _dask_worker_from_ec2_instance(
         dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
     ) -> bool:
         _, details = dask_worker
-        return bool(details["host"] == node_ip)
+        return bool(details["host"] == node_ip) or bool(
+            node_hostname in details["name"]
+        )
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
     if not filtered_workers:
