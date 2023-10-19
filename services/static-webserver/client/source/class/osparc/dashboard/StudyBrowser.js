@@ -1106,6 +1106,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
+        // Fixme - Study collaborators should be users.
         // remove collaborator
         osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         const params = {
