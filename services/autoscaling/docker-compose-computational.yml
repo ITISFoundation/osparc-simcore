@@ -5,15 +5,13 @@ services:
       - DASK_MONITORING_URL=tcp://dask-scheduler:8786
   dask-sidecar:
     dns: 8.8.8.8 # needed to access internet
-    image: local/dask-sidecar:production
+    image: itisfoundation/dask-sidecar:master-github-latest
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     volumes:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
-      #   - ../../services/dask-sidecar:/devel/services/dask-sidecar
-      #   - ../../packages:/devel/packages
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
 
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
@@ -33,13 +31,9 @@ services:
 
   dask-scheduler:
     dns: 8.8.8.8 # needed to access internet
-    image: local/dask-sidecar:production
+    image: itisfoundation/dask-sidecar:master-github-latest
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
-    # volumes:
-    #   - ../../services/dask-sidecar:/devel/services/dask-sidecar
-    #   - ../../packages:/devel/packages
-    #   # - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
       DASK_START_AS_SCHEDULER: 1
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
