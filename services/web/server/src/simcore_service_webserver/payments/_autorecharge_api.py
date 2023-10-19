@@ -9,13 +9,13 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
-from ._api import check_wallet_permissions
 from ._autorecharge_db import (
     PaymentsAutorechargeDB,
     get_wallet_autorecharge,
     replace_wallet_autorecharge,
 )
 from ._methods_db import list_successful_payment_methods
+from ._onetime_api import check_wallet_permissions
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
