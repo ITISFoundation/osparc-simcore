@@ -92,6 +92,13 @@ class ProjectNotFoundError(DirectorException):
         super().__init__(f"project {project_id} not found")
 
 
+class PricingPlanUnitNotFoundError(DirectorException):
+    """Pricing plan unit not found error"""
+
+    def __init__(self, msg: str):
+        super().__init__(msg)
+
+
 class PipelineNotFoundError(DirectorException):
     """Pipeline not found error"""
 

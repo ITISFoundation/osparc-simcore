@@ -96,7 +96,8 @@ qx.Class.define("osparc.data.model.Wallet", {
     autoRecharge: {
       check: "Object",
       init: null,
-      nullable: true
+      nullable: true,
+      event: "changeAutoRecharge"
     },
 
     preferredWallet: {
