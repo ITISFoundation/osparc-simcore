@@ -19,7 +19,6 @@ from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
-from ._api import check_wallet_permissions
 from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
     PaymentsMethodsDB,
@@ -29,6 +28,7 @@ from ._methods_db import (
     list_successful_payment_methods,
     udpate_payment_method,
 )
+from ._onetime_api import check_wallet_permissions
 from ._socketio import notify_payment_method_acked
 from .settings import PaymentsSettings, get_plugin_settings
 
@@ -62,11 +62,6 @@ def _to_api_model(
             "created": entry.completed_at,
         }
     )
-
-
-#
-# Payment-methods
-#
 
 
 async def init_creation_of_wallet_payment_method(
@@ -119,7 +114,7 @@ async def init_creation_of_wallet_payment_method(
     )
 
 
-async def _complete_create_of_wallet_payment_method(
+async def _ack_creation_of_wallet_payment_method(
     app: web.Application,
     *,
     payment_method_id: PaymentMethodID,
@@ -164,7 +159,7 @@ async def cancel_creation_of_wallet_payment_method(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    await _complete_create_of_wallet_payment_method(
+    await _ack_creation_of_wallet_payment_method(
         app,
         payment_method_id=payment_method_id,
         completion_state=InitPromptAckFlowState.CANCELED,
