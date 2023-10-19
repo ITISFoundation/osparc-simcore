@@ -1,15 +1,15 @@
 """add product_name to services_vendor_secrets
 
-Revision ID: ec845b05fa59
+Revision ID: 9dfb8c889469
 Revises: 5c62b190e124
-Create Date: 2023-10-18 09:11:24.187006+00:00
+Create Date: 2023-10-18 15:31:36.949489+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "ec845b05fa59"
+revision = "9dfb8c889469"
 down_revision = "5c62b190e124"
 branch_labels = None
 depends_on = None
@@ -22,7 +22,7 @@ def upgrade():
         sa.Column("product_name", sa.String(), server_default="osparc", nullable=False),
     )
     op.create_foreign_key(
-        "fk_services_name_products",
+        "fk_services_name_products2",
         "services_vendor_secrets",
         "products",
         ["product_name"],
@@ -31,6 +31,14 @@ def upgrade():
         ondelete="CASCADE",
     )
     # ### end Alembic commands ###
+    op.drop_constraint(
+        "services_vendor_secrets_pk", "services_vendor_secrets", type_="primary"
+    )
+    op.create_primary_key(
+        "services_vendor_secrets_pk",
+        "services_vendor_secrets",
+        ["service_key", "service_base_version", "product_name"],
+    )
 
 
 def downgrade():
@@ -40,3 +48,12 @@ def downgrade():
     )
     op.drop_column("services_vendor_secrets", "product_name")
     # ### end Alembic commands ###
+
+    op.drop_constraint(
+        "services_vendor_secrets_pk", "services_vendor_secrets", type_="primary"
+    )
+    op.create_primary_key(
+        "services_vendor_secrets_pk",
+        "services_vendor_secrets",
+        ["service_key", "service_base_version"],
+    )
