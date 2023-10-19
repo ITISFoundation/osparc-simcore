@@ -2,7 +2,6 @@ import logging
 from decimal import Decimal
 from typing import Any
 
-import arrow
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
@@ -21,8 +20,7 @@ from ..resource_usage.api import add_credits_to_wallet
 from ..users.api import get_user_name_and_email
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
-from . import _db
-from ._client import create_fake_payment, get_payments_service_api
+from . import _onetime_db, _rpc
 from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
@@ -43,7 +41,9 @@ async def check_wallet_permissions(
         )
 
 
-def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
+def _to_api_model(
+    transaction: _onetime_db.PaymentsTransactionsDB,
+) -> PaymentTransaction:
     data: dict[str, Any] = {
         "payment_id": transaction.payment_id,
         "price_dollars": transaction.price_dollars,
@@ -66,12 +66,7 @@ def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction
     return PaymentTransaction.parse_obj(data)
 
 
-#
-# One-time Payments
-#
-
-
-async def create_payment_to_wallet(
+async def init_creation_of_wallet_payment(
     app: web.Application,
     *,
     price_dollars: Decimal,
@@ -87,72 +82,36 @@ async def create_payment_to_wallet(
         UserNotFoundError
         WalletAccessForbiddenError
     """
-    # get user info
-    user = await get_user_name_and_email(app, user_id=user_id)
 
-    # check permissions
+    # wallet: check permissions
     await check_wallet_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
-
-    # hold timestamp
-    initiated_at = arrow.utcnow().datetime
-
-    # payment service
-    # FAKE ------------
-    submission_link, payment_id = await create_fake_payment(
-        app,
-        price_dollars=price_dollars,
-        product_name=product_name,
-        user_id=user_id,
-        name=user.name,
-        email=user.email,
-        osparc_credits=osparc_credits,
+    user_wallet = await get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
-    # -----
-    # gateway responded, we store the transaction
-    await _db.create_payment_transaction(
+    assert user_wallet.wallet_id == wallet_id  # nosec
+
+    # user info
+    user = await get_user_name_and_email(app, user_id=user_id)
+
+    # call to payment-service
+    payment_inited: WalletPaymentCreated = await _rpc.init_payment(
         app,
-        payment_id=payment_id,
-        price_dollars=price_dollars,
-        osparc_credits=osparc_credits,
+        amount_dollars=price_dollars,
+        target_credits=osparc_credits,
         product_name=product_name,
-        user_id=user_id,
-        user_email=user.email,
         wallet_id=wallet_id,
+        wallet_name=user_wallet.name,
+        user_id=user_id,
+        user_name=user.name,
+        user_email=user.email,
         comment=comment,
-        initiated_at=initiated_at,
     )
-
-    return WalletPaymentCreated(
-        payment_id=payment_id,
-        payment_form_url=f"{submission_link}",
-    )
+    return payment_inited
 
 
-async def get_user_payments_page(
-    app: web.Application,
-    product_name: str,
-    user_id: UserID,
-    *,
-    limit: int,
-    offset: int,
-) -> tuple[list[PaymentTransaction], int]:
-    assert limit > 1  # nosec
-    assert offset >= 0  # nosec
-    assert product_name  # nosec
-
-    payments_service = get_payments_service_api(app)
-    assert payments_service  # nosec
-
-    total_number_of_items, transactions = await _db.list_user_payment_transactions(
-        app, user_id=user_id, offset=offset, limit=limit
-    )
-
-    return [_to_api_model(t) for t in transactions], total_number_of_items
-
-
-async def complete_payment(
+async def _ack_creation_of_wallet_payment(
     app: web.Application,
     *,
     payment_id: PaymentID,
@@ -160,8 +119,10 @@ async def complete_payment(
     message: str | None = None,
     invoice_url: HttpUrl | None = None,
 ) -> PaymentTransaction:
-    # NOTE: implements endpoint in payment service hit by the gateway
-    transaction = await _db.complete_payment_transaction(
+    #
+    # NOTE: implements endpoint in payment service hit by the gateway (ONLY for testing or fake completion!)
+    #
+    transaction = await _onetime_db.complete_payment_transaction(
         app,
         payment_id=payment_id,
         completion_state=completion_state,
@@ -211,9 +172,31 @@ async def cancel_payment_to_wallet(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    return await complete_payment(
+    return await _ack_creation_of_wallet_payment(
         app,
         payment_id=payment_id,
         completion_state=PaymentTransactionState.CANCELED,
         message="Payment aborted by user",
     )
+
+
+async def list_user_payments_page(
+    app: web.Application,
+    product_name: str,
+    user_id: UserID,
+    *,
+    limit: int,
+    offset: int,
+) -> tuple[list[PaymentTransaction], int]:
+    assert limit > 1  # nosec
+    assert offset >= 0  # nosec
+    assert product_name  # nosec
+
+    (
+        total_number_of_items,
+        transactions,
+    ) = await _onetime_db.list_user_payment_transactions(
+        app, user_id=user_id, offset=offset, limit=limit
+    )
+
+    return [_to_api_model(t) for t in transactions], total_number_of_items
