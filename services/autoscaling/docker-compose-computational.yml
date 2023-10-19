@@ -8,12 +8,13 @@ services:
     image: local/dask-sidecar:production
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
-    # volumes:
-    #   - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
-    #   - /var/run/docker.sock:/var/run/docker.sock:ro
-    #   - ../../services/dask-sidecar:/devel/services/dask-sidecar
-    #   - ../../packages:/devel/packages
-    # - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+    volumes:
+      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+      #   - ../../services/dask-sidecar:/devel/services/dask-sidecar
+      #   - ../../packages:/devel/packages
+
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: 1
