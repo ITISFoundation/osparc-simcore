@@ -22,16 +22,18 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
   construct: function() {
     this.base(arguments);
 
+    this.initUsedCredits();
+
     const store = osparc.store.Store.getInstance();
     store.addListener("changeCurrentStudy", e => this.__currentStudyChanged(e.getData()));
   },
 
   properties: {
-    currentUsage: {
+    usedCredits: {
       check: "Number",
       init: null,
       nullable: true,
-      event: "changeCurrentUsage"
+      event: "changeUsedCredits"
     }
   },
 
@@ -53,14 +55,14 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     },
 
     __startRequesting: function() {
-      this.setCurrentUsage(0);
+      this.setUsedCredits(0);
 
       this.__interval = setInterval(() => this.__fetchUsedCredits(), this.self().POLLING_INTERVAL);
       this.__fetchUsedCredits();
     },
 
     __stopRequesting: function() {
-      this.setCurrentUsage(null);
+      this.setUsedCredits(null);
 
       if (this.__interval) {
         clearInterval(this.__interval);
@@ -84,7 +86,7 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
               cost += currentTask["credit_cost"];
             }
           });
-          this.setCurrentUsage(cost);
+          this.setUsedCredits(cost);
         });
     }
   }
