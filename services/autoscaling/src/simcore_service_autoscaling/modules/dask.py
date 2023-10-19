@@ -6,7 +6,11 @@ from typing import Any, Final
 import distributed
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 
-from ..core.errors import DaskSchedulerNotFoundError, DaskWorkerNotFoundError
+from ..core.errors import (
+    DaskNoWorkersError,
+    DaskSchedulerNotFoundError,
+    DaskWorkerNotFoundError,
+)
 from ..models import (
     AssociatedInstance,
     DaskTask,
@@ -98,13 +102,14 @@ def _dask_worker_from_ec2_instance(
     """
     Raises:
         Ec2InvalidDnsNameError
+        DaskNoWorkersError
         DaskWorkerNotFoundError
     """
     node_ip = node_ip_from_ec2_private_dns(ec2_instance)
     scheduler_info = client.scheduler_info()
     assert client.scheduler  # nosec
     if "workers" not in scheduler_info or not scheduler_info["workers"]:
-        raise DaskWorkerNotFoundError(url=client.scheduler.address)
+        raise DaskNoWorkersError(url=client.scheduler.address)
     workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_info["workers"]
 
     _logger.info("looking for %s in %s", f"{ec2_instance=}", f"{workers=}")
@@ -118,7 +123,9 @@ def _dask_worker_from_ec2_instance(
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
     if not filtered_workers:
-        raise DaskWorkerNotFoundError(url=client.scheduler.address)
+        raise DaskWorkerNotFoundError(
+            worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
+        )
     assert len(filtered_workers) == 1  # nosec
     return next(iter(filtered_workers.items()))
 
@@ -130,7 +137,8 @@ async def get_worker_still_has_results_in_memory(
     Raises:
         DaskSchedulerNotFoundError
         Ec2InvalidDnsNameError
-        DaskWorkerNotFoundError: if there are no workers or no worker corresponding to ec2_instance
+        DaskWorkerNotFoundError
+        DaskNoWorkersError
     """
     async with _scheduler_client(url) as client:
         _, worker_details = _dask_worker_from_ec2_instance(client, ec2_instance)
@@ -148,7 +156,8 @@ async def get_worker_used_resources(
     Raises:
         DaskSchedulerNotFoundError
         Ec2InvalidDnsNameError
-        DaskWorkerNotFoundError: if there are no workers or no worker corresponding to ec2_instance
+        DaskWorkerNotFoundError
+        DaskNoWorkersError
     """
 
     def _get_worker_used_resources(
@@ -169,7 +178,7 @@ async def get_worker_used_resources(
             client.run_on_scheduler(_get_worker_used_resources)
         )
         if worker_url not in used_resources_per_worker:
-            raise DaskWorkerNotFoundError(url=url)
+            raise DaskWorkerNotFoundError(worker_host=worker_url, url=url)
         worker_used_resources = used_resources_per_worker[worker_url]
         return Resources(
             cpus=worker_used_resources.get("CPU", 0),
@@ -188,7 +197,7 @@ async def compute_cluster_total_resources(
         )
         scheduler_info = client.scheduler_info()
         if "workers" not in scheduler_info or not scheduler_info["workers"]:
-            raise DaskWorkerNotFoundError(url=url)
+            raise DaskNoWorkersError(url=url)
         workers: dict[str, Any] = scheduler_info["workers"]
         for worker_details in workers.values():
             if worker_details["host"] not in instance_hosts:
