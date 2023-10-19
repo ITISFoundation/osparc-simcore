@@ -17,12 +17,14 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.CurrentUsageIndicator", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.form.Button,
 
   construct: function(currentUsage) {
     this.base(arguments);
 
-    this._createChildControlImpl("usage-label");
+    this.set({
+      font: "text-16"
+    });
 
     if (currentUsage) {
       this.set({
@@ -41,25 +43,39 @@ qx.Class.define("osparc.desktop.credits.CurrentUsageIndicator", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "usage-label":
-          control = new qx.ui.basic.Label().set({
-            font: "text-16"
-          });
-          this._add(control);
-          break;
-      }
-      return control || this.base(arguments, id);
+    __animate: function() {
+      const desc = {
+        duration: 500,
+        timing: "ease-out",
+        keyFrames: {
+          0: {
+            // "opacity": 1,
+            "translate": [null, "0px"]
+          },
+          30: {
+            // "opacity": 1,
+            "translate": [null, "10px"]
+          },
+          100: {
+            // "opacity": 0,
+            "translate": [null, "-50px"]
+          }
+        }
+      };
+      qx.bom.element.Animation.animate(this.getContentElement().getDomElement(), desc);
     },
 
     __applyCurrentUsage: function(currentUsage) {
-      currentUsage.bind("currentUsage", this, "value", {
-        converter: currentUsageValue => currentUsageValue + this.tr(" used")
+      currentUsage.bind("usedCredits", this, "visibility", {
+        converter: usedCredits => usedCredits === null ? "excluded" : "visible"
       });
-      currentUsage.bind("currentUsage", this, "visibility", {
-        converter: currentUsageValue => currentUsageValue === null ? "excluded" : "visible"
+      currentUsage.bind("usedCredits", this, "label", {
+        converter: usedCredits => usedCredits + this.tr(" used")
+      });
+      currentUsage.addListener("changeUsedCredits", e => {
+        if (e.getData() !== null) {
+          setTimeout(() => this.__animate(), 100);
+        }
       });
     }
   }
