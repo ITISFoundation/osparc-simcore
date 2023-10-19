@@ -107,6 +107,8 @@ def _dask_worker_from_ec2_instance(
         raise DaskWorkerNotFoundError(url=client.scheduler.address)
     workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_info["workers"]
 
+    _logger.debug("looking for %s in %s", f"{ec2_instance=}", f"{workers=}")
+
     # dict is of type dask_worker_address: worker_details
     def _find_by_worker_host(
         dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
