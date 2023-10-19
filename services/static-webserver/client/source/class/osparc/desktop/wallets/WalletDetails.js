@@ -94,8 +94,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
     __openEditWallet: function() {
       const wallet = this.__walletModel;
 
-      const newWallet = false;
-      const walletEditor = new osparc.desktop.wallets.WalletEditor(newWallet);
+      const walletEditor = new osparc.desktop.wallets.WalletEditor();
       wallet.bind("walletId", walletEditor, "walletId");
       wallet.bind("name", walletEditor, "name");
       wallet.bind("description", walletEditor, "description");
@@ -127,14 +126,8 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          osparc.store.Store.getInstance().invalidate("wallets");
-          const store = osparc.store.Store.getInstance();
-          store.reloadWallets();
-          this.__walletModel.set({
-            name: name,
-            description: description,
-            thumbnail: thumbnail || null
-          });
+          const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
+          wallet.set(params.data);
         })
         .catch(err => {
           console.error(err);

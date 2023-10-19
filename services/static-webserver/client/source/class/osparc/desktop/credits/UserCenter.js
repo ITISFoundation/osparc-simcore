@@ -50,13 +50,18 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     }
 
     if (this.__walletsEnabled) {
+      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
+      tabViews.add(paymentMethodsPage);
+    }
+
+    if (this.__walletsEnabled) {
       const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
       tabViews.add(buyCreditsPage);
     }
 
     if (this.__walletsEnabled) {
-      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
-      tabViews.add(paymentMethodsPage);
+      const activityPage = this.__activityPage = this.__getActivityPage();
+      tabViews.add(activityPage);
     }
 
     if (this.__walletsEnabled) {
@@ -133,17 +138,18 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __walletsPage: null,
     __buyCreditsPage: null,
     __paymentMethodsPage: null,
+    __activityPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
     __buyCredits: null,
     __transactionsTable: null,
 
     __getOverviewPage: function() {
-      const title = this.tr("Overview");
+      const title = this.tr("Summary");
       const iconSrc = "@FontAwesome5Solid/table/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const overview = new osparc.desktop.credits.Overview();
+      const overview = new osparc.desktop.credits.Summary();
       overview.set({
         margin: 10
       });
@@ -159,6 +165,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
         }
       });
       overview.addListener("toWallets", () => this.openWallets());
+      overview.addListener("toActivity", () => this.__openActivity());
       overview.addListener("toTransactions", () => this.__openTransactions());
       overview.addListener("toUsageOverview", () => this.__openUsageOverview());
       page.add(overview);
@@ -195,6 +202,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return page;
     },
 
+    __getPaymentMethodsPage: function() {
+      const title = this.tr("Payment Methods");
+      const iconSrc = "@FontAwesome5Solid/credit-card/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
+      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
+      paymentMethods.set({
+        margin: 10
+      });
+      page.add(paymentMethods);
+      return page;
+    },
+
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
@@ -209,16 +229,16 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return page;
     },
 
-    __getPaymentMethodsPage: function() {
-      const title = this.tr("Payment Methods");
-      const iconSrc = "@FontAwesome5Solid/credit-card/22";
+    __getActivityPage: function() {
+      const title = this.tr("Activity");
+      const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
-      paymentMethods.set({
+      const activity = new osparc.desktop.credits.Activity();
+      activity.set({
         margin: 10
       });
-      page.add(paymentMethods);
+      page.add(activity);
       return page;
     },
 
@@ -240,7 +260,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const usageOverview = new osparc.resourceUsage.Overview();
+      const usageOverview = new osparc.desktop.credits.Usage();
       usageOverview.set({
         margin: 10
       });
@@ -281,6 +301,10 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
 
     __openBuyCredits: function() {
       this.__openPage(this.__buyCreditsPage);
+    },
+
+    __openActivity: function() {
+      this.__openPage(this.__activityPage);
     },
 
     __openTransactions: function(fetchTransactions = false) {

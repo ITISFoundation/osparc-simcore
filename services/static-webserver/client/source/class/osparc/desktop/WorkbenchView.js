@@ -607,20 +607,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = data.nodeId;
         const msg = data.msg;
         const logLevel = ("level" in data) ? data["level"] : "INFO";
-        switch (logLevel) {
-          case "DEBUG":
-            this.__loggerView.debug(nodeId, msg);
-            break;
-          case "WARNING":
-            this.__loggerView.warn(nodeId, msg);
-            break;
-          case "ERROR":
-            this.__loggerView.error(nodeId, msg);
-            break;
-          default:
-            this.__loggerView.info(nodeId, msg);
-            break;
-        }
+        this.__logsToLogger(nodeId, [msg], logLevel);
       }, this);
 
       workbench.addListener("fileRequested", () => {
@@ -631,6 +618,29 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
 
       this.__workbenchUIConnected = true;
+    },
+
+    __logsToLogger: function(nodeId, logs, logLevel) {
+      // the node logger is mainly used in App Mode
+      const nodeLogger = this.__getNodeLogger(nodeId);
+      switch (logLevel) {
+        case "DEBUG":
+          this.__loggerView.debugs(nodeId, logs);
+          nodeLogger.debugs(nodeId, logs);
+          break;
+        case "WARNING":
+          this.__loggerView.warns(nodeId, logs);
+          nodeLogger.warns(nodeId, logs);
+          break;
+        case "ERROR":
+          this.__loggerView.errors(nodeId, logs);
+          nodeLogger.errors(nodeId, logs);
+          break;
+        default:
+          this.__loggerView.infos(nodeId, logs);
+          nodeLogger.infos(nodeId, logs);
+          break;
+      }
     },
 
     __attachSocketEventHandlers: function() {
@@ -650,24 +660,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const messages = data["messages"];
           const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
           const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
-          switch (logLevel) {
-            case "DEBUG":
-              this.__loggerView.debugs(nodeId, messages);
-              break;
-            case "WARNING":
-              this.__loggerView.warns(nodeId, messages);
-              break;
-            case "ERROR":
-              this.__loggerView.errors(nodeId, messages);
-              break;
-            default:
-              this.__loggerView.infos(nodeId, messages);
-              break;
-          }
-          const nodeLogger = this.__getNodeLogger(nodeId);
-          if (nodeLogger) {
-            nodeLogger.infos(nodeId, messages);
-          }
+          this.__logsToLogger(nodeId, messages, logLevel);
         }, this);
       }
       socket.emit(slotName);
