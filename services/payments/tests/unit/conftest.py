@@ -6,6 +6,7 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
+from pathlib import Path
 from unittest.mock import Mock
 
 import httpx
@@ -18,6 +19,7 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, load_dotenv
 from respx import MockRouter
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
@@ -150,3 +152,23 @@ def mock_payments_routes(faker: Faker) -> Callable:
         ).mock(side_effect=_cancel_200)
 
     return _mock
+
+
+@pytest.fixture
+def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
+    """
+    If a file under test folder prefixed with `.env-secret` is present,
+    then this fixture captures it.
+
+    This technique allows reusing the same tests to check against
+    external development/production servers
+    """
+    envs = {}
+    env_files = list(project_tests_dir.glob(".env-secret*"))
+    if env_files:
+        assert len(env_files) == 1
+        envs = load_dotenv(env_files[0])
+        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
+        assert "PAYMENTS_GATEWAY_URL" in envs
+
+    return envs

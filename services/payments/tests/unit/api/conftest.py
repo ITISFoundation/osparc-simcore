@@ -18,7 +18,7 @@ from simcore_service_payments.models.schemas.auth import Token
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     # - Needed for app to trigger start/stop event handlers
-    # -Prefer this client instead of fastapi.testclient.TestClient
+    # - Prefer this client instead of fastapi.testclient.TestClient
     async with httpx.AsyncClient(
         app=app,
         base_url="http://payments.testserver.io",
@@ -44,8 +44,9 @@ async def auth_headers(client: httpx.AsyncClient, app: FastAPI) -> dict[str, str
         data=form_data,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
+    assert response.status_code == status.HTTP_200_OK, response.text
+
     token = Token(**response.json())
-    assert response.status_code == status.HTTP_200_OK
     assert token.token_type == "bearer"
 
     return {"Authorization": f"Bearer {token.access_token}"}
