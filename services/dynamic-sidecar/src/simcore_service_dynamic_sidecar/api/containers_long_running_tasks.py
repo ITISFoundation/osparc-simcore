@@ -12,7 +12,6 @@ from servicelib.fastapi.long_running_tasks.server import (
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.settings import ApplicationSettings
-from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules.inputs import InputsState
@@ -30,7 +29,6 @@ from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager
 from ._dependencies import (
     get_application,
-    get_application_health,
     get_inputs_state,
     get_mounted_volumes,
     get_outputs_manager,
@@ -65,7 +63,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     app: Annotated[FastAPI, Depends(get_application)],
-    application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
     mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
 ) -> TaskId:
     assert request  # nosec
@@ -80,7 +77,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             shared_store=shared_store,
             mounted_volumes=mounted_volumes,
             app=app,
-            application_health=application_health,
         )
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member

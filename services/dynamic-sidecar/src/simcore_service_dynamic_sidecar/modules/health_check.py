@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Final, TypeAlias
 
+from pydantic import BaseModel
 from pydantic.errors import PydanticErrorMixin
 from servicelib.utils import logged_gather
 
@@ -39,6 +40,12 @@ class UnsupportedApplicationTypeError(PydanticErrorMixin, TypeError):
 @dataclass
 class HealthCheckInfo:
     handlers: list[Callable] = field(default_factory=list)
+
+
+class HealthReport(BaseModel):
+    is_healthy: bool
+    ok_checks: list[str]
+    failing_checks: list[str]
 
 
 class _SupportedAppTypes(str, Enum):
@@ -85,7 +92,7 @@ def register(app: AppType, handler: HealthCheckHandler) -> None:
     health_check_info.handlers.append(handler)
 
 
-async def is_healthy(app: AppType, timeout: float = 1) -> bool:
+async def is_healthy(app: AppType, timeout: float = 1) -> HealthReport:
     """Runs health checks for all registered handlers
 
     Keyword Arguments:
@@ -96,23 +103,36 @@ async def is_healthy(app: AppType, timeout: float = 1) -> bool:
     """
     health_check_info = _get_health_check_info(app)
 
-    async def _wrapper(handler: Awaitable, handler_name: str) -> None:
+    async def _wrapper(handler: Awaitable, handler_name: str) -> str:
         try:
             await asyncio.wait_for(handler, timeout=timeout)
         except Exception as e:
             raise HealthCheckError(handler_name=handler_name) from e
 
+        return handler_name
+
     _logger.debug(
         "Checking services: %s", [h.__name__ for h in health_check_info.handlers]
     )
 
-    try:
-        await logged_gather(
-            *(
-                _wrapper(handler(app), handler.__name__)
-                for handler in health_check_info.handlers
-            )
-        )
-    except HealthCheckError:
-        return False
-    return True
+    results = await logged_gather(
+        *(
+            _wrapper(handler(app), handler.__name__)
+            for handler in health_check_info.handlers
+        ),
+        reraise=False,
+    )
+
+    ok_checks: list[str] = []
+    failing_checks: list[str] = []
+    for result in results:
+        if isinstance(result, HealthCheckError):
+            failing_checks.append(result.handler_name)  # type: ignore
+        else:
+            ok_checks.append(result)
+
+    return HealthReport(
+        is_healthy=len(failing_checks) == 0,
+        ok_checks=ok_checks,
+        failing_checks=failing_checks,
+    )

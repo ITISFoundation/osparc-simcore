@@ -46,7 +46,6 @@ from ..core.validation import (
     parse_compose_spec,
     validate_compose_spec,
 )
-from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
@@ -148,7 +147,6 @@ async def task_create_service_containers(
     shared_store: SharedStore,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-    application_health: ApplicationHealth,
 ) -> list[str]:
     progress.update(message="validating service spec", percent=0)
 
@@ -214,8 +212,6 @@ async def task_create_service_containers(
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
-        application_health.is_healthy = False
-        application_health.error_message = message
         _logger.error(
             "Marked sidecar as unhealthy, see below for details\n:%s", message
         )

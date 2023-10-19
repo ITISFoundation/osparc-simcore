@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 
 from ..models.schemas.application_health import ApplicationHealth
-from ._dependencies import get_application_health
+from ..modules.health_check import is_healthy
+from ._dependencies import get_application
 
 router = APIRouter()
 
@@ -14,11 +17,19 @@ router = APIRouter()
     },
 )
 async def health_endpoint(
-    application_health: ApplicationHealth = Depends(get_application_health),
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> ApplicationHealth:
-    if not application_health.is_healthy:
+    health_report = await is_healthy(app)
+    if not health_report.is_healthy:
+        application_health = ApplicationHealth(
+            is_healthy=False,
+            error_message=(
+                "Registered health checks status: "
+                f"ok_checks={health_report.ok_checks} "
+                f"failing_checks={health_report.failing_checks}"
+            ),
+        )
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.dict()
         )
-
-    return application_health
+    return ApplicationHealth()

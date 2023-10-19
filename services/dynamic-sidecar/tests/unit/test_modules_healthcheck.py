@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.modules.health_check import (
     AppType,
     HealthCheckHandler,
+    HealthReport,
     UnsupportedApplicationTypeError,
     is_healthy,
     register,
@@ -34,28 +35,38 @@ async def health_raises_error(_: AppType) -> None:
 
 
 @pytest.mark.parametrize(
-    "handlers, expected_health",
+    "handlers, expected_health_report",
     [
-        ([], True),
+        ([], HealthReport(is_healthy=True, ok_checks=[], failing_checks=[])),
         (
             [
                 health_ok,
             ],
-            True,
+            HealthReport(
+                is_healthy=True, ok_checks=[health_ok.__name__], failing_checks=[]
+            ),
         ),
         (
             [
                 health_ok,
                 health_takes_too_long,
             ],
-            False,
+            HealthReport(
+                is_healthy=False,
+                ok_checks=[health_ok.__name__],
+                failing_checks=[health_takes_too_long.__name__],
+            ),
         ),
         (
             [
                 health_ok,
                 health_raises_error,
             ],
-            False,
+            HealthReport(
+                is_healthy=False,
+                ok_checks=[health_ok.__name__],
+                failing_checks=[health_raises_error.__name__],
+            ),
         ),
         (
             [
@@ -63,19 +74,29 @@ async def health_raises_error(_: AppType) -> None:
                 health_takes_too_long,
                 health_raises_error,
             ],
-            False,
+            HealthReport(
+                is_healthy=False,
+                ok_checks=[health_ok.__name__],
+                failing_checks=[
+                    health_takes_too_long.__name__,
+                    health_raises_error.__name__,
+                ],
+            ),
         ),
     ],
 )
 async def test_health_check_workflow(
-    app: FastAPI, handlers: list[HealthCheckHandler], expected_health: bool
+    app: FastAPI,
+    handlers: list[HealthCheckHandler],
+    expected_health_report: HealthReport,
 ):
     setup_health_check(app)
 
     for handler in handlers:
         register(app, handler)
 
-    assert await is_healthy(app) is expected_health
+    health_report = await is_healthy(app)
+    assert health_report == expected_health_report
 
 
 async def test_health_check_wrong_app_type():

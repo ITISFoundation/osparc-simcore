@@ -8,7 +8,6 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
 
 from ..core.settings import ApplicationSettings
-from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
@@ -22,12 +21,6 @@ def get_application(request: Request) -> FastAPI:
 
 def get_app_state(request: Request) -> State:
     return request.app.state
-
-
-def get_application_health(
-    app_state: Annotated[State, Depends(get_app_state)]
-) -> ApplicationHealth:
-    return app_state.application_health  # type: ignore
 
 
 def get_settings(

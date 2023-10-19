@@ -15,9 +15,9 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import get_main_router
-from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
+from ..modules.health_check import setup_health_check
 from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
@@ -145,7 +145,6 @@ def create_app():
     # MODULES SETUP --------------
 
     setup_shared_store(app)
-    app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
 
     if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
@@ -167,6 +166,8 @@ def create_app():
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
+
+    setup_health_check(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
