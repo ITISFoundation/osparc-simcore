@@ -66,13 +66,6 @@ def _to_api_model(
     return PaymentTransaction.parse_obj(data)
 
 
-#
-# One-time Payments
-#  - Resource is called `wallet_payment``
-# - create workflow: init_ -> ack_
-#
-
-
 async def init_creation_of_wallet_payment(
     app: web.Application,
     *,

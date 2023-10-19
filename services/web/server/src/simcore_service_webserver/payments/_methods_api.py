@@ -64,13 +64,6 @@ def _to_api_model(
     )
 
 
-#
-# Payment Methods:
-# - Resources is called `wallet_payment_method`
-# - create workflow: init_ -> ack_
-#
-
-
 async def init_creation_of_wallet_payment_method(
     app: web.Application,
     *,

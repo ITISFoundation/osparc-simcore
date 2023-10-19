@@ -31,8 +31,6 @@ async def rabbitmq_rpc_client_lifespan(app: web.Application):
     )
 
     assert rpc_client  # nosec
-    assert rpc_client.client_name == "webserver_payments_client"  # nosec
-    assert rpc_client.settings == settings  # nosec
 
     app[_APP_PAYMENTS_RPC_CLIENT_KEY] = rpc_client
 
