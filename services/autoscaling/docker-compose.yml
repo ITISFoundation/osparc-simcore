@@ -45,6 +45,7 @@ services:
 
   autoscaling:
     image: local/autoscaling:development
+    dns: 8.8.8.8 # needed to access internet
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     ports:

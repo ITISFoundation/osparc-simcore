@@ -4,6 +4,7 @@ services:
     environment:
       - DASK_MONITORING_URL=tcp://dask-scheduler:8786
   dask-sidecar:
+    dns: 8.8.8.8 # needed to access internet
     image: local/dask-sidecar:development
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
@@ -30,6 +31,7 @@ services:
           - "node.role==worker"
 
   dask-scheduler:
+    dns: 8.8.8.8 # needed to access internet
     image: local/dask-sidecar:development
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
