@@ -1,0 +1,232 @@
+[
+ {
+  "name": "GET /projects/6e52228c-6edd-4505-9131-e901fdad5b17",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/6e52228c-6edd-4505-9131-e901fdad5b17')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": {
+    "uuid": "6e52228c-6edd-4505-9131-e901fdad5b17",
+    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/6e52228c-6edd-4505-9131-e901fdad5b17",
+    "description": "Study associated to solver job:\n{\n  \"id\": \"6e52228c-6edd-4505-9131-e901fdad5b17\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/6e52228c-6edd-4505-9131-e901fdad5b17\",\n  \"inputs_checksum\": \"4b0d1a8e693c1edeafe258709732f75104f36c9a9f5efcf2d8136a4ac64dd5f5\",\n  \"created_at\": \"2023-10-19T12:46:18.158245+00:00\"\n}",
+    "thumbnail": "https://via.placeholder.com/170x120.png",
+    "creationDate": "2023-10-19T12:46:18.189Z",
+    "lastChangeDate": "2023-10-19T13:37:32.548Z",
+    "workbench": {
+     "97792753-cbda-56a7-b8c0-576f990b21c0": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "2.0.2",
+      "label": "sleeper",
+      "progress": 100.0,
+      "inputs": {
+       "input_1": {
+        "store": 0,
+        "path": "api/3fa85f64-5717-4562-b3fc-2c963f66afa6/file_with_number.txt",
+        "label": "file_with_number.txt"
+       },
+       "input_2": 3.0,
+       "input_3": 0
+      },
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {},
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "FAILED",
+       "progress": 1.0
+      }
+     }
+    },
+    "prjOwner": "bisgaard@itis.swiss",
+    "accessRights": {
+     "3": {
+      "read": true,
+      "write": true,
+      "delete": true
+     }
+    },
+    "tags": [],
+    "classifiers": [],
+    "state": {
+     "locked": {
+      "value": false,
+      "status": "CLOSED"
+     },
+     "state": {
+      "value": "FAILED"
+     }
+    },
+    "ui": {
+     "workbench": {
+      "97792753-cbda-56a7-b8c0-576f990b21c0": {
+       "position": {
+        "x": 633,
+        "y": 229
+       }
+      }
+     },
+     "slideshow": {},
+     "currentNodeId": "97792753-cbda-56a7-b8c0-576f990b21c0",
+     "annotations": {}
+    },
+    "quality": {},
+    "dev": {}
+   }
+  },
+  "status_code": 200
+ },
+ {
+  "name": "PUT /projects/6e52228c-6edd-4505-9131-e901fdad5b17/nodes/97792753-cbda-56a7-b8c0-576f990b21c0/pricing-plan/1/pricing-unit/1",
+  "description": "<Request('PUT', 'http://webserver:8080/v0/projects/6e52228c-6edd-4505-9131-e901fdad5b17/nodes/97792753-cbda-56a7-b8c0-576f990b21c0/pricing-plan/1/pricing-unit/1')>",
+  "method": "PUT",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "pricing_unit_id",
+     "required": true,
+     "schema": {
+      "title": "Pricing Unit Id",
+      "type": "int",
+      "pattern": null,
+      "format": null,
+      "exclusiveMinimum": true,
+      "minimum": 0,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "pricing-unit"
+    },
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "projects"
+    },
+    {
+     "in": "path",
+     "name": "node_id",
+     "required": true,
+     "schema": {
+      "title": "Node Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "nodes"
+    },
+    {
+     "in": "path",
+     "name": "pricing_plan_id",
+     "required": true,
+     "schema": {
+      "title": "Pricing Plan Id",
+      "type": "int",
+      "pattern": null,
+      "format": null,
+      "exclusiveMinimum": true,
+      "minimum": 0,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "pricing-plan"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+  },
+  "status_code": 204
+ },
+ {
+  "name": "POST /v2/computations",
+  "description": "<Request('POST', 'http://director-v2:8000/v2/computations')>",
+  "method": "POST",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations",
+   "path_parameters": []
+  },
+  "query": null,
+  "request_payload": {
+   "user_id": 1,
+   "project_id": "6e52228c-6edd-4505-9131-e901fdad5b17",
+   "start_pipeline": true,
+   "product_name": "osparc",
+   "use_on_demand_clusters": false
+  },
+  "response_body": {
+   "id": "6e52228c-6edd-4505-9131-e901fdad5b17",
+   "state": "PUBLISHED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "97792753-cbda-56a7-b8c0-576f990b21c0": []
+    },
+    "progress": 0.0,
+    "node_states": {
+     "97792753-cbda-56a7-b8c0-576f990b21c0": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "PUBLISHED",
+      "progress": null
+     }
+    }
+   },
+   "iteration": 9,
+   "cluster_id": 0,
+   "started": null,
+   "stopped": "2023-10-19T12:59:28.719336+00:00",
+   "submitted": "2023-10-19T12:59:50.999473+00:00",
+   "url": "http://director-v2:8000/v2/computations/6e52228c-6edd-4505-9131-e901fdad5b17?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/6e52228c-6edd-4505-9131-e901fdad5b17:stop?user_id=1"
+  },
+  "status_code": 201
+ }
+]

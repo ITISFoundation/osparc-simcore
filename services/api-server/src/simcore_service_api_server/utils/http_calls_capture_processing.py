@@ -7,11 +7,12 @@ import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
 from simcore_service_api_server.core.settings import (
     CatalogSettings,
+    DirectorV2Settings,
     StorageSettings,
     WebServerSettings,
 )
 
-service_hosts = Literal["storage", "catalog", "webserver"]
+service_hosts = Literal["storage", "catalog", "webserver", "director-v2"]
 
 
 class CapturedParameterSchema(BaseModel):
@@ -170,6 +171,9 @@ def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     elif host == "webserver":
         settings = WebServerSettings()
         url = settings.base_url + "/dev/doc/swagger.json"
+    elif host == "director-v2":
+        settings = DirectorV2Settings()
+        url = settings.base_url + "/api/v2/openapi.json"
     else:
         raise OpenApiSpecIssue(
             f"{host=} has not been added yet to the testing system. Please do so yourself"

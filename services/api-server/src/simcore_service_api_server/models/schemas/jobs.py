@@ -14,8 +14,11 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
+    ValidationError,
+    parse_obj_as,
     validator,
 )
+from starlette.datastructures import Headers
 
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
@@ -286,3 +289,10 @@ class JobPricingSpecification(BaseModel):
 
     class Config:
         extra = Extra.ignore
+
+    @classmethod
+    def create_from_headers(cls, headers: Headers) -> "JobPricingSpecification | None":
+        try:
+            return parse_obj_as(JobPricingSpecification, headers)
+        except ValidationError:
+            return None

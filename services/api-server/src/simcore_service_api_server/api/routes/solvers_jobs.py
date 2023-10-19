@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
-from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 
@@ -78,13 +77,6 @@ def _raise_if_job_not_associated_with_solver(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"job {project.uuid} is not associated with solver {solver_key} and version {version}",
         )
-
-
-def _get_pricing_plan_and_unit(request: Request) -> JobPricingSpecification | None:
-    try:
-        return parse_obj_as(JobPricingSpecification, request.headers)
-    except ValidationError:
-        return None
 
 
 # JOBS ---------------
@@ -314,7 +306,7 @@ async def start_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
-    if pricing_spec := _get_pricing_plan_and_unit(request):
+    if pricing_spec := JobPricingSpecification.create_from_headers(request.headers):
         with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
             project: ProjectGet = await webserver_api.get_project(project_id=job_id)
             _raise_if_job_not_associated_with_solver(solver_key, version, project)
