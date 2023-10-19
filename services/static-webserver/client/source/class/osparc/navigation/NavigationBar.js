@@ -129,6 +129,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
+      this.getChildControl("current-usage-indicator");
       const walletsViewer = this.getChildControl("wallets-viewer");
       walletsViewer.exclude();
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
@@ -223,6 +224,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           control.addListenerOnce("appear", () => hint.attachShowHideHandlers());
           this.getChildControl("center-items").add(control);
+          break;
+        }
+        case "current-usage-indicator": {
+          const currentUsage = new osparc.desktop.credits.CurrentUsage();
+          control = new osparc.desktop.credits.CurrentUsageIndicator(currentUsage);
+          this.getChildControl("right-items").add(control);
           break;
         }
         case "wallets-viewer":
