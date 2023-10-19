@@ -36,6 +36,3 @@ class RPCNamespacedMethodName(ConstrainedStr):
     ) -> "RPCNamespacedMethodName":
         namespaced_method_name = f"{namespace}.{method_name}"
         return parse_obj_as(cls, namespaced_method_name)
-
-
-__all__: tuple[str, ...] = ("RPCNamespace",)
