@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     this.base(arguments);
 
     const store = osparc.store.Store.getInstance();
-    store.addListener("changeCurrentStudy", e => this.__studyChanged(e.getData()));
+    store.addListener("changeCurrentStudy", e => this.__currentStudyChanged(e.getData()));
   },
 
   properties: {
@@ -35,10 +35,14 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     }
   },
 
+  statics: {
+    POLLING_INTERVAL: 10000
+  },
+
   members: {
     __interval: null,
 
-    __studyChanged: function(currentStudy) {
+    __currentStudyChanged: function(currentStudy) {
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         if (currentStudy) {
           this.__startRequesting();
@@ -49,7 +53,9 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     },
 
     __startRequesting: function() {
-      this.__interval = setInterval(() => this.__fetchUsedCredits(), 20000);
+      this.setCurrentUsage(0);
+
+      this.__interval = setInterval(() => this.__fetchUsedCredits(), this.self().POLLING_INTERVAL);
       this.__fetchUsedCredits();
     },
 
