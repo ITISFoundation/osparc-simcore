@@ -4,6 +4,7 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING, Final, TypeAlias
 
 from pydantic.errors import PydanticErrorMixin
@@ -28,28 +29,46 @@ class HealthCheckError(PydanticErrorMixin, RuntimeError):
     msg_template = "Registered handler '{handler_name}' failed!"
 
 
+class UnsupportedApplicationTypeError(PydanticErrorMixin, TypeError):
+    msg_template = (
+        "Provided application_class '{app_class}' is unsupported! "
+        "Expected an instance of fastapi.applications.FastAPI or aiohttp.web_app.Application"
+    )
+
+
 @dataclass
 class HealthCheckInfo:
     handlers: list[Callable] = field(default_factory=list)
 
 
+class _SupportedAppTypes(str, Enum):
+    FASTAPI = "fastapi.applications.FastAPI"
+    AIOHTTP = "aiohttp.web_app.Application"
+
+
+def _get_app_class_path(app: AppType) -> str:
+    app_type = type(app)
+    return f"{app_type.__module__}.{app_type.__name__}"
+
+
 def _get_health_check_info(app: AppType) -> HealthCheckInfo:
-    if hasattr(app, "state"):
-        # fastapi.FastAPI
-        return getattr(app.state, _HEALTH_CHECK_INFO_KEY)  # type: ignore
+    match _get_app_class_path(app):
+        case _SupportedAppTypes.FASTAPI:
+            return getattr(app.state, _HEALTH_CHECK_INFO_KEY)  # type: ignore
+        case _SupportedAppTypes.AIOHTTP:
+            return app[_HEALTH_CHECK_INFO_KEY]  # type: ignore
+        case _:
+            raise UnsupportedApplicationTypeError(app_class=app.__class__)
 
-    # aiohttp.web.Application
-    return app[_HEALTH_CHECK_INFO_KEY]  # type: ignore
 
-
-def setup(app: AppType) -> None:
-    if hasattr(app, "state"):
-        # fastapi.FastAPI
-        setattr(app.state, _HEALTH_CHECK_INFO_KEY, HealthCheckInfo())  # type: ignore
-        return
-
-    # aiohttp.web.Application
-    app[_HEALTH_CHECK_INFO_KEY] = HealthCheckInfo()  # type: ignore
+def setup_health_check(app: AppType) -> None:
+    match _get_app_class_path(app):
+        case _SupportedAppTypes.FASTAPI:
+            setattr(app.state, _HEALTH_CHECK_INFO_KEY, HealthCheckInfo())  # type: ignore
+        case _SupportedAppTypes.AIOHTTP:
+            app[_HEALTH_CHECK_INFO_KEY] = HealthCheckInfo()  # type: ignore
+        case _:
+            raise UnsupportedApplicationTypeError(app_class=app.__class__)
 
 
 def register(app: AppType, handler: HealthCheckHandler) -> None:
