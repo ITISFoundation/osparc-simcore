@@ -97,11 +97,8 @@ def replace_osparc_variable_identifier(  # noqa: C901
         if obj.default_value is not None:
             return deepcopy(obj.default_value)  # type: ignore
     elif isinstance(obj, dict):
-        for key, value in list(obj.items()):
-            del obj[key]
-            obj[
-                replace_osparc_variable_identifier(key, osparc_variables)
-            ] = replace_osparc_variable_identifier(value, osparc_variables)
+        for key, value in obj.items():
+            obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
     elif isinstance(obj, BaseModel):
         for key, value in obj.__dict__.items():
             obj.__dict__[key] = replace_osparc_variable_identifier(

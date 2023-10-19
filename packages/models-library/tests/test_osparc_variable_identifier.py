@@ -81,7 +81,6 @@ class Example(BaseModel):
         (parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"),),
         {parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")},
         {"test": parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")},
-        {parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"): "test"},
         Example(
             nested_objects=parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")
         ),
