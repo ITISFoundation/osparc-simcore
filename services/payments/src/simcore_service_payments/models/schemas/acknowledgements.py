@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, validator
 
 from ..payments_gateway import PaymentID, PaymentMethodID
 
@@ -50,7 +50,9 @@ _EXAMPLES = [
 
 
 class AckPayment(_BaseAck):
-    invoice_url: HttpUrl
+    invoice_url: HttpUrl | None = Field(
+        default=None, description="Link to invoice is required when success=true"
+    )
     saved: SavedPaymentMethod | None = Field(
         default=None,
         description="If the user decided to save the payment method"
@@ -63,6 +65,15 @@ class AckPayment(_BaseAck):
             "example": _EXAMPLES[1],  # shown in openapi.json
             "examples": _EXAMPLES,
         }
+
+    @validator("invoice_url")
+    @classmethod
+    def success_requires_invoice(cls, v, values):
+        success = values.get("success")
+        invoice_url = v
+        if success and not invoice_url:
+            msg = "Invoice required on successful payments"
+            raise ValueError(msg)
 
 
 assert PaymentID  # nosec

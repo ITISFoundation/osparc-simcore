@@ -223,7 +223,8 @@
             "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
-            "title": "Invoice Url"
+            "title": "Invoice Url",
+            "description": "Link to invoice is required when success=true"
           },
           "saved": {
             "allOf": [
@@ -237,8 +238,7 @@
         },
         "type": "object",
         "required": [
-          "success",
-          "invoice_url"
+          "success"
         ],
         "title": "AckPayment",
         "example": {
