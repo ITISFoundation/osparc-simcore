@@ -181,6 +181,7 @@ async def test_get_solver_job_pricing_unit_with_payment(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
+        _put_pricing_plan_and_unit_side_effect.was_called = True
         assert int(path_params["pricing_plan_id"]) == _pricing_plan_id
         assert int(path_params["pricing_unit_id"]) == _pricing_unit_id
         return capture.response_body
@@ -190,8 +191,11 @@ async def test_get_solver_job_pricing_unit_with_payment(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
-        return capture.response_body
+        response = capture.response_body
+        response["id"] = _job_id
+        return response
 
+    _put_pricing_plan_and_unit_side_effect.was_called = False
     respx_mock = respx_mock_from_capture(
         [mocked_webserver_service_api_base] * 2 + [mocked_directorv2_service_api_base],
         project_tests_dir / "mocks" / "start_job_with_payment.json",
@@ -211,3 +215,4 @@ async def test_get_solver_job_pricing_unit_with_payment(
         },
     )
     assert response.status_code == 200
+    assert _put_pricing_plan_and_unit_side_effect.was_called

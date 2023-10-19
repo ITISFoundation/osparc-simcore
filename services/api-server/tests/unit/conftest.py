@@ -143,6 +143,13 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         return_value="osparc",
     )
 
+    # patches simcore_postgres_database.utils_groups_extra_properties.GroupExtraPropertiesRepo.get_aggregated_properties_for_user
+    mocker.patch(
+        "simcore_service_api_server.db.repositories.groups_extra_properties.GroupsExtraPropertiesRepository.use_on_demand_clusters",
+        autospec=True,
+        return_value=False,
+    )
+
     return HTTPBasicAuth(faker.word(), faker.password())
 
 
