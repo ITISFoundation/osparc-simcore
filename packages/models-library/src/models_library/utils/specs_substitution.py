@@ -89,12 +89,14 @@ class SpecsSubstitutionsResolver:
 
         required_identifiers_with_defaults: list[_EnvVarData] = []
         for identifier in required_identifiers:
-            parts = identifier.split(":-")
+            parts = identifier.split(":-", maxsplit=1)
             required_identifiers_with_defaults.append(
                 _EnvVarData(
                     substitution_identifier=identifier,
                     identifier_name=parts[0],
-                    default_value=parts[1] if ":-" in identifier else None,
+                    default_value=(
+                        parts[1] if len(parts) == 2 else None  # noqa: PLR2004
+                    ),
                 )
             )
 
