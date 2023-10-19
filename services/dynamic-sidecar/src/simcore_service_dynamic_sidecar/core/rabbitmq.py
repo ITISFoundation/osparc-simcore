@@ -17,6 +17,7 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 
 from ..core.settings import ApplicationSettings
+from ..modules.health_check import register_health_check
 
 _logger = logging.getLogger(__file__)
 
@@ -78,11 +79,21 @@ async def post_event_reload_iframe(app: FastAPI) -> None:
     await _post_rabbit_message(app, message)
 
 
+async def health_rabbit_responsive(app: FastAPI) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.RABBIT_SETTINGS  # nosec
+    settings = app_settings.RABBIT_SETTINGS
+    await wait_till_rabbitmq_responsive(settings.dsn)
+
+
 def setup_rabbitmq(app: FastAPI) -> None:
     async def on_startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
         assert app_settings.RABBIT_SETTINGS  # nosec
         settings = app_settings.RABBIT_SETTINGS
+
+        register_health_check(app, health_rabbit_responsive)
+
         await wait_till_rabbitmq_responsive(settings.dsn)
         with log_context(_logger, logging.INFO, msg="Create RabbitMQClient"):
             app.state.rabbitmq_client = RabbitMQClient(

@@ -78,7 +78,7 @@ def setup_health_check(app: AppType) -> None:
             raise UnsupportedApplicationTypeError(app_class=app.__class__)
 
 
-def register(app: AppType, handler: HealthCheckHandler) -> None:
+def register_health_check(app: AppType, handler: HealthCheckHandler) -> None:
     """Register a handler that will handle the user defined health check.
 
     If the handler raises an error it means that the health check failed.

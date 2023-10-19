@@ -20,6 +20,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
 )
+from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -133,6 +134,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     POSTGRES_SETTINGS: PostgresSettings | None = Field(auto_default_from_env=True)
+
+    STORAGE_SETTINGS: StorageSettings | None = Field(auto_default_from_env=True)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 

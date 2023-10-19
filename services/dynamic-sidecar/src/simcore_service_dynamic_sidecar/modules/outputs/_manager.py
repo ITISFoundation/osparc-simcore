@@ -6,7 +6,9 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
-from fastapi import FastAPI
+import aiopg
+from fastapi import FastAPI, status
+from httpx import AsyncClient
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
@@ -17,6 +19,7 @@ from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
+from ..health_check import register_health_check
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
 
@@ -247,12 +250,39 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             raise UploadPortsFailed(failures=self._last_upload_error_tracker)
 
 
+async def health_postgres(app: FastAPI) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.POSTGRES_SETTINGS  # nosec
+    async with aiopg.create_pool(
+        app_settings.POSTGRES_SETTINGS.dsn_with_async_sqlalchemy
+    ) as pool, pool.acquire() as conn, conn.cursor() as cur:
+        await cur.execute("SELECT 1")
+
+
+async def health_storage(app: FastAPI) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.STORAGE_SETTINGS  # nosec
+    async with AsyncClient() as client:
+        resp = await client.get(app_settings.STORAGE_SETTINGS.api_base_url)
+
+        if resp.status_code != status.HTTP_200_OK:
+            msg = f"Unexpected status {resp.status_code}"
+            raise RuntimeError(msg)
+        json_response = resp.json()
+        if json_response.get("data", None) is None:
+            msg = f"Unexpected response: {json_response}"
+            raise RuntimeError(msg)
+
+
 def setup_outputs_manager(app: FastAPI) -> None:
     async def on_startup() -> None:
         assert isinstance(app.state.outputs_context, OutputsContext)  # nosec
         outputs_context: OutputsContext = app.state.outputs_context
         assert isinstance(app.state.settings, ApplicationSettings)  # nosec
         settings: ApplicationSettings = app.state.settings
+
+        register_health_check(app, health_postgres)
+        register_health_check(app, health_storage)
 
         io_log_redirect_cb: LogRedirectCB | None = None
         if settings.RABBIT_SETTINGS:

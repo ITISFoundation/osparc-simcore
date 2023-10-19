@@ -11,7 +11,7 @@ from simcore_service_dynamic_sidecar.modules.health_check import (
     HealthReport,
     UnsupportedApplicationTypeError,
     is_healthy,
-    register,
+    register_health_check,
     setup_health_check,
 )
 
@@ -93,7 +93,7 @@ async def test_health_check_workflow(
     setup_health_check(app)
 
     for handler in handlers:
-        register(app, handler)
+        register_health_check(app, handler)
 
     health_report = await is_healthy(app)
     assert health_report == expected_health_report
@@ -104,7 +104,7 @@ async def test_health_check_wrong_app_type():
         setup_health_check(object())  # type: ignore
 
     with pytest.raises(UnsupportedApplicationTypeError):
-        register(object(), health_ok)  # type: ignore
+        register_health_check(object(), health_ok)  # type: ignore
 
     with pytest.raises(UnsupportedApplicationTypeError):
         await is_healthy(object())  # type: ignore

@@ -171,6 +171,9 @@ def setup_prometheus_metrics(app: FastAPI) -> None:
         )
         assert callbacks_mapping.metrics  # nosec
 
+        # NOTE: no need to depend on prometheus since it is actually it's
+        # responsability to scrape this service
+
         with log_context(
             _logger, logging.INFO, "enabling user services metrics scraping"
         ):

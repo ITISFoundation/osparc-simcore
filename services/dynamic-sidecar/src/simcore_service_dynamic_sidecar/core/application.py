@@ -179,7 +179,7 @@ def create_app():
         app.state.container_restart_lock = Lock()
 
         app_state = AppState(app)
-        await login_registry(app_state.settings.REGISTRY_SETTINGS)
+        await login_registry(app)
         await volumes_fix_permissions(app_state.mounted_volumes)
         # STARTED
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

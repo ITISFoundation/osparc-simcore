@@ -16,6 +16,7 @@ import aiofiles
 import httpx
 import psutil
 from aiofiles import os as aiofiles_os
+from fastapi import FastAPI
 from servicelib.error_codes import create_error_code
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
@@ -24,6 +25,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ..modules.health_check import register_health_check
 from ..modules.mounted_fs import MountedVolumes
 
 HIDDEN_FILE_NAME = ".hidden_do_not_remove"
@@ -72,10 +74,13 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
             raise _RegistryNotReachableError(error_message)
 
 
-async def login_registry(registry_settings: RegistrySettings) -> None:
+async def login_registry(app: FastAPI) -> None:
     """
     Creates ~/.docker/config.json and adds docker registry credentials
     """
+    registry_settings: RegistrySettings = app.state.settings.REGISTRY_SETTINGS
+
+    register_health_check(app, _is_registry_reachable)
     await _is_registry_reachable(registry_settings)
 
     def create_docker_config_file(registry_settings: RegistrySettings) -> None:
