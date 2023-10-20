@@ -73,6 +73,7 @@ qx.Class.define("osparc.study.BillingSettings", {
             const walletId = selection[0].walletId;
             const paramsPut = {
               url: {
+                studyId: this.__studyData["uuid"],
                 walletId
               }
             };
