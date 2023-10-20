@@ -26,7 +26,27 @@ from ._socketio import notify_payment_completed
 _logger = logging.getLogger(__name__)
 
 
-async def check_wallet_permissions(
+MSG_WALLET_NO_ACCESS_ERROR = "User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
+
+
+async def raise_for_wallet_read_permissions(
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
+):
+    permissions = await get_wallet_with_permissions_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    if not permissions.read:
+        raise WalletAccessForbiddenError(
+            reason=MSG_WALLET_NO_ACCESS_ERROR.format(
+                user_id=user_id, wallet_id=wallet_id
+            )
+        )
+
+
+async def raise_for_wallet_read_n_write_permissions(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
@@ -37,7 +57,9 @@ async def check_wallet_permissions(
     )
     if not permissions.read or not permissions.write:
         raise WalletAccessForbiddenError(
-            reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
+            reason=MSG_WALLET_NO_ACCESS_ERROR.format(
+                user_id=user_id, wallet_id=wallet_id
+            )
         )
 
 
@@ -84,7 +106,7 @@ async def init_creation_of_wallet_payment(
     """
 
     # wallet: check permissions
-    await check_wallet_permissions(
+    await raise_for_wallet_read_n_write_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     user_wallet = await get_wallet_by_user(
@@ -168,7 +190,7 @@ async def cancel_payment_to_wallet(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> PaymentTransaction:
-    await check_wallet_permissions(
+    await raise_for_wallet_read_n_write_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 

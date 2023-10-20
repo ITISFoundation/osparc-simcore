@@ -15,7 +15,10 @@ from ._autorecharge_db import (
     replace_wallet_autorecharge,
 )
 from ._methods_db import list_successful_payment_methods
-from ._onetime_api import check_wallet_permissions
+from ._onetime_api import (
+    raise_for_wallet_read_n_write_permissions,
+    raise_for_wallet_read_permissions,
+)
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -58,7 +61,7 @@ async def get_wallet_payment_autorecharge(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge:
-    await check_wallet_permissions(
+    await raise_for_wallet_read_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
@@ -95,7 +98,7 @@ async def replace_wallet_payment_autorecharge(
     wallet_id: WalletID,
     new: ReplaceWalletAutoRecharge,
 ) -> GetWalletAutoRecharge:
-    await check_wallet_permissions(
+    await raise_for_wallet_read_n_write_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
