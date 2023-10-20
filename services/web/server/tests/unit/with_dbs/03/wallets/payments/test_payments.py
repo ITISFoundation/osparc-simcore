@@ -393,8 +393,10 @@ async def test_payment_on_wallet_without_access(
         assert f"{wallet.wallet_id}" in error_msg
 
 
-@pytest.mark.testit
-async def test_get_payment_autorecharge_in_shared_wallet(
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/4897"
+)
+async def test_cannot_get_payment_info_in_shared_wallet(
     latest_osparc_price: Decimal,
     logged_user: UserInfoDict,
     logged_user_wallet: WalletGet,
@@ -402,7 +404,7 @@ async def test_get_payment_autorecharge_in_shared_wallet(
 ):
     assert client.app
 
-    async with NewUser(client) as new_user:
+    async with NewUser(app=client.app) as new_user:
         assert new_user["email"] != logged_user["email"]
 
         # logged client adds new user to this wallet add read-only
@@ -429,4 +431,4 @@ async def test_get_payment_autorecharge_in_shared_wallet(
         response = await client.get(
             f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
         )
-        await assert_status(response, web.HTTPOk)
+        await assert_status(response, web.HTTPForbidden)
