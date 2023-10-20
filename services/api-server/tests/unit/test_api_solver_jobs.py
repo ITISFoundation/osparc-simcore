@@ -5,6 +5,7 @@ from uuid import UUID
 import httpx
 import pytest
 import respx
+from api_solvers.test_api_routers_solvers_jobs import mocked_groups_extra_properties
 from faker import Faker
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
@@ -167,6 +168,7 @@ async def test_get_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
+    mocked_groups_extra_properties,
     respx_mock_from_capture: Callable[
         [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
         list[respx.MockRouter],
@@ -175,6 +177,7 @@ async def test_get_solver_job_pricing_unit_with_payment(
     project_tests_dir: Path,
     faker: Faker,
 ):
+    assert mocked_groups_extra_properties
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
     _job_id: str = "6e52228c-6edd-4505-9131-e901fdad5b17"
