@@ -50,7 +50,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         });
 
         const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read").set({
-          allowGrowX: true
+          minWidth: 180
         });
         hBox.add(walletSelector);
 
