@@ -44,28 +44,39 @@ qx.Class.define("osparc.study.BillingSettings", {
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const label = new qx.ui.basic.Label(this.tr("Select Credit Account"));
-      hBox.add(label);
-
       const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read");
       hBox.add(walletSelector);
 
       pricingUnitsLayout.add(hBox);
 
-      const params = {
+      const paramsGet = {
         url: {
           studyId: this.__studyData["uuid"]
         }
       };
-      osparc.data.Resources.fetch("studies", "getWallet", params)
+      osparc.data.Resources.fetch("studies", "getWallet", paramsGet)
         .then(wallet => {
           const walletFound = walletSelector.getSelectables().find(selectables => selectables.walletId === wallet["walletId"]);
           if (walletFound) {
             walletSelector.setSelection([walletFound]);
           } else {
-            const label2 = new qx.ui.basic.Label(this.tr("You don't have access to the last used Credit Account"));
-            hBox.add(label2);
+            const label = new qx.ui.basic.Label(this.tr("You don't have access to the last used Credit Account"));
+            hBox.add(label);
           }
+        })
+        .finally(() => {
+          walletSelector.addListener("changeSelection", e => {
+            hBox.setEnabled(false);
+            const selection = e.getData();
+            const walletId = selection[0].walletId;
+            const paramsPut = {
+              url: {
+                walletId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "getWallet", paramsPut)
+              .finally(() => hBox.setEnabled(true));
+          });
         });
 
       this._add(pricingUnitsLayout);
