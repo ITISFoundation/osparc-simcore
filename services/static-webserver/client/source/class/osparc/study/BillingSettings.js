@@ -76,7 +76,7 @@ qx.Class.define("osparc.study.BillingSettings", {
                 walletId
               }
             };
-            osparc.data.Resources.fetch("studies", "getWallet", paramsPut)
+            osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
               .finally(() => hBox.setEnabled(true));
           });
         });
