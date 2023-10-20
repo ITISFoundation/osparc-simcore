@@ -270,6 +270,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
+        this.__getBillingSettings,
         this.__getCommentsPage,
         this.__getDataPage,
         this.__getPermissionsPage,
@@ -330,6 +331,25 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = this.self().createPage(title, infoCard, icon, id);
+      return page;
+    },
+
+    __getBillingSettings: function() {
+      const resourceData = this.__resourceData;
+      if (
+        !osparc.utils.Resources.isStudy(resourceData) ||
+        !osparc.desktop.credits.Utils.areWalletsEnabled()
+      ) {
+        return null;
+      }
+
+      const id = "Billing";
+      const title = this.tr("Billing");
+      const icon = "@FontAwesome5Solid/dollar-sign";
+
+      const billingSettings = new osparc.study.BillingSettings(resourceData);
+
+      const page = this.self().createPage(title, billingSettings, icon, id);
       return page;
     },
 
