@@ -1,5 +1,6 @@
 from typing import Literal
 
+from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import EmailStr, parse_obj_as
@@ -22,11 +23,13 @@ class ServicesEnvironmentsRepository(BaseRepository):
         self,
         service_key: ServiceKey,
         service_version: ServiceVersion | Literal["latest"],
+        product_name: ProductName,
     ) -> dict[str, VendorSecret]:
         """Fetches vendor secrets for a service using normalized names"""
         async with self.db_engine.acquire() as conn:
             vendor_secrets: dict[str, VendorSecret] = await get_vendor_secrets(
                 conn,
+                product_name=product_name,
                 vendor_service_key=service_key,
                 vendor_service_version=service_version,
                 normalize_names=True,
