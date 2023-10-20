@@ -26,6 +26,12 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
+from ...modules.osparc_variables_substitutions import (
+    resolve_and_substitute_session_variables_in_model,
+    resolve_and_substitute_session_variables_in_specs,
+    substitute_vendor_secrets_in_model,
+    substitute_vendor_secrets_in_specs,
+)
 from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
@@ -33,7 +39,7 @@ EnvVarsMap = dict[str, str | None]
 
 _COMPOSE_MAJOR_VERSION: Final[int] = 3
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _update_networking_configuration(
@@ -138,7 +144,7 @@ def _update_resource_limits_and_reservations(
             continue
 
         resources: ResourcesDict = service_resources[spec_service_key].resources
-        logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
+        _logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
         cpu: ResourceValue = resources["CPU"]
         memory: ResourceValue = resources["RAM"]
@@ -247,7 +253,7 @@ def _update_container_labels(
                 labels.append(docker_label)
 
 
-def assemble_spec(
+async def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
@@ -320,8 +326,26 @@ def assemble_spec(
         _strip_service_quotas(service_spec)
 
     if not allow_internet_access:
-        # NOTE: when service has no access to the internet,
-        # there could be some components that still require access
+        simcore_service_labels = await substitute_vendor_secrets_in_model(
+            app=app,
+            model=simcore_service_labels,
+            safe=True,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+        simcore_service_labels = await resolve_and_substitute_session_variables_in_model(
+            app=app,
+            model=simcore_service_labels,
+            # NOTE: at this point all OsparcIdentifiers have to be replaced
+            # an error will be raised otherwise
+            safe=False,
+            user_id=user_id,
+            product_name=product_name,
+            project_id=project_id,
+            node_id=node_id,
+        )
+
         add_egress_configuration(
             service_spec=service_spec,
             simcore_service_labels=simcore_service_labels,
@@ -337,6 +361,26 @@ def assemble_spec(
         simcore_user_agent=simcore_user_agent,
         swarm_stack_name=swarm_stack_name,
         assigned_limits=assigned_limits,
+    )
+
+    service_spec = await substitute_vendor_secrets_in_specs(
+        app=app,
+        specs=service_spec,
+        safe=True,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=product_name,
+    )
+    service_spec = await resolve_and_substitute_session_variables_in_specs(
+        app=app,
+        specs=service_spec,
+        user_id=user_id,
+        # NOTE: at this point all OsparcIdentifiers have to be replaced
+        # an error will be raised otherwise
+        safe=False,
+        product_name=product_name,
+        project_id=project_id,
+        node_id=node_id,
     )
 
     stringified_service_spec: str = replace_env_vars_in_compose_spec(
