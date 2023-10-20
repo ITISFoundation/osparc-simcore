@@ -24,6 +24,27 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
+    getContextWallet: function() {
+      const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
+      if (activeWallet) {
+        return activeWallet;
+      }
+      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
+      if (preferredWallet) {
+        return preferredWallet;
+      }
+      // It should never reach here
+      return null;
+    },
+
+    getNoWriteAccessLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this information"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
     creditsToFixed: function(credits) {
       if (credits < 100) {
         return (credits).toFixed(1);
