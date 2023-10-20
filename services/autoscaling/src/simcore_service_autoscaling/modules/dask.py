@@ -1,7 +1,7 @@
 import contextlib
 import logging
 from collections.abc import AsyncIterator, Coroutine
-from typing import Any, Final
+from typing import Any, Final, TypeAlias
 
 import distributed
 from pydantic import AnyUrl, ByteSize, parse_obj_as
@@ -95,8 +95,8 @@ async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
         return list(processing_tasks)
 
 
-DaskWorkerUrl = str
-DaskWorkerDetails = dict[str, Any]
+DaskWorkerUrl: TypeAlias = str
+DaskWorkerDetails: TypeAlias = dict[str, Any]
 
 
 def _dask_worker_from_ec2_instance(
