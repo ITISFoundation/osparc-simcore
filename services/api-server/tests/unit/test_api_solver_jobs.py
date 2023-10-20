@@ -19,6 +19,20 @@ from unit.conftest import SideEffectCallback
 # pylint: disable=unused-variable
 
 
+def get_start_job_side_effect(job_id: str) -> SideEffectCallback:
+    def _start_job_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        response = capture.response_body
+        assert isinstance(response, dict)
+        response["id"] = job_id
+        return response
+
+    return _start_job_side_effect
+
+
 @pytest.mark.parametrize(
     "capture", ["get_job_wallet_found.json", "get_job_wallet_not_found.json"]
 )
@@ -193,16 +207,6 @@ async def test_get_solver_job_pricing_unit_with_payment(
         assert int(path_params["pricing_unit_id"]) == _pricing_unit_id
         return capture.response_body
 
-    def _start_job_side_effect(
-        request: httpx.Request,
-        path_params: dict[str, Any],
-        capture: HttpApiCallCaptureModel,
-    ) -> Any:
-        response = capture.response_body
-        assert isinstance(response, dict)
-        response["id"] = _job_id
-        return response
-
     _put_pricing_plan_and_unit_side_effect.was_called = False
     respx_mock = respx_mock_from_capture(
         [mocked_webserver_service_api_base] * 2 + [mocked_directorv2_service_api_base],
@@ -210,7 +214,7 @@ async def test_get_solver_job_pricing_unit_with_payment(
         [
             _get_job_side_effect,
             _put_pricing_plan_and_unit_side_effect,
-            _start_job_side_effect,
+            get_start_job_side_effect(job_id=_job_id),
         ],
     )
 
@@ -224,3 +228,34 @@ async def test_get_solver_job_pricing_unit_with_payment(
     )
     assert response.status_code == 200
     assert _put_pricing_plan_and_unit_side_effect.was_called
+    assert response.json()["job_id"] == _job_id
+
+
+async def test_get_solver_job_pricing_unit_no_payment(
+    client: AsyncClient,
+    mocked_directorv2_service_api_base,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+
+    _solver_key: str = "simcore/services/comp/isolve"
+    _version: str = "2.1.24"
+    _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_directorv2_service_api_base],
+        project_tests_dir / "mocks" / "start_job_no_payment.json",
+        [get_start_job_side_effect(job_id=_job_id)],
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["job_id"] == _job_id
