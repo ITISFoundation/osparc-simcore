@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
 
     this.__studyData = studyData;
 
-    this.__buildLayout();
+    this.showPricingUnits();
   },
 
   events: {
@@ -38,10 +38,11 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
   members: {
     __studyData: null,
 
-    __buildLayout: function(nodeIds) {
+    showPricingUnits: function(nodeIds) {
       const unitsLoading = () => this.fireEvent("loadingUnits");
       const unitsAdded = () => this.fireEvent("unitsReady");
       unitsLoading();
+      this._removeAll();
       if ("workbench" in this.__studyData) {
         const promises = [];
         const nodes = Object.values(this.__studyData["workbench"]);

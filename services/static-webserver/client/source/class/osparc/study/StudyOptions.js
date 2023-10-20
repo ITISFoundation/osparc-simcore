@@ -25,7 +25,6 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this.__studyId = studyId;
 
-    this.getChildControl("loading-spinner");
     const params = {
       url: {
         "studyId": studyId
@@ -109,16 +108,6 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
-        case "loading-spinner":
-          control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/circle-notch/48",
-            alignX: "center",
-            alignY: "middle",
-            marginTop: 20
-          });
-          control.getContentElement().addClass("rotate");
-          this.getChildControl("options-layout").add(control);
-          break;
         case "wallet-selector-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("top-summary-layout").add(control);
@@ -168,6 +157,16 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           this.getChildControl("buttons-layout").add(control);
           break;
+        case "loading-units-spinner":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/circle-notch/48",
+            alignX: "center",
+            alignY: "middle",
+            marginTop: 20
+          });
+          control.getContentElement().addClass("rotate");
+          this.getChildControl("options-layout").add(control);
+          break;
         case "services-resources-layout":
           control = this.self().createGroupBox(this.tr("Select Resources"));
           this.getChildControl("options-layout").add(control);
@@ -200,20 +199,21 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __buildPricingPlans: function() {
-      const loadingImage = this.getChildControl("loading-spinner");
-      const servicesBox = this.getChildControl("services-resources-layout");
+      const loadingImage = this.getChildControl("loading-units-spinner");
+      const unitsBoxesLayout = this.getChildControl("services-resources-layout");
       const unitsLoading = () => {
         loadingImage.show();
-        servicesBox.exclude();
+        unitsBoxesLayout.exclude();
       };
       const unitsReady = () => {
         loadingImage.exclude();
-        servicesBox.show();
+        unitsBoxesLayout.show();
       };
+      unitsLoading();
       const studyPricingUnits = new osparc.study.StudyPricingUnits(this.__studyData);
       studyPricingUnits.addListener("loadingUnits", () => unitsLoading());
       studyPricingUnits.addListener("unitsReady", () => unitsReady());
-      this.getChildControl("services-resources-layout").add(studyPricingUnits);
+      unitsBoxesLayout.add(studyPricingUnits);
     },
 
     __buildTopSummaryLayout: function() {
