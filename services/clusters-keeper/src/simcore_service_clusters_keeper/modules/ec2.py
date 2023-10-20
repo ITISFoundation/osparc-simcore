@@ -23,7 +23,11 @@ from ..core.errors import (
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
-from ..core.settings import EC2InstancesSettings, EC2Settings, get_application_settings
+from ..core.settings import (
+    EC2Settings,
+    PrimaryEC2InstancesSettings,
+    get_application_settings,
+)
 from ..models import EC2InstanceData, EC2InstanceType, EC2Tags
 from ..utils.ec2 import compose_user_data
 
@@ -87,7 +91,7 @@ class ClustersKeeperEC2:
 
     async def start_aws_instance(
         self,
-        instance_settings: EC2InstancesSettings,
+        instance_settings: PrimaryEC2InstancesSettings,
         instance_type: InstanceTypeType,
         tags: EC2Tags,
         startup_script: str,
@@ -170,7 +174,7 @@ class ClustersKeeperEC2:
 
     async def get_instances(
         self,
-        instance_settings: EC2InstancesSettings,
+        instance_settings: PrimaryEC2InstancesSettings,
         *,
         tags: EC2Tags,
         state_names: list[InstanceStateNameType] | None = None,

@@ -29,11 +29,29 @@ def docker_compose_yml_base64_encoded() -> str:
 
 
 def create_startup_script(app_settings: ApplicationSettings) -> str:
+    assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
+    assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
+    environment_variables = [
+        f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
+        f"LOG_LEVEL={app_settings.LOG_LEVEL}",
+        f"EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID}",
+        f"EC2_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.CLUSTERS_KEEPER_EC2_ENDPOINT}",
+        f"EC2_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.CLUSTERS_KEEPER_EC2_REGION_NAME}",
+        f"EC2_SECRET_ACCESS_KEY={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY}",
+        f"EC2_INSTANCES_ALLOWED_TYPES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_ALLOWED_TYPES}",
+        f"EC2_INSTANCES_AMI_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_AMI_ID}",
+        f"EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
+        f"EC2_INSTANCES_SECURITY_GROUP_IDS={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}",
+        f"EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_SUBNET_ID}",
+        f"EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_KEY_NAME}",
+        f"EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS}",
+    ]
+
     return "\n".join(
         [
             f"echo '{docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
             "docker swarm init",
-            f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
+            f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
         ]
     )
 
