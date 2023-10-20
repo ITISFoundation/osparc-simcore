@@ -70,7 +70,7 @@ async def dask_spec_local_cluster(
         workers=dask_workers_config,
         scheduler=dask_scheduler_config,
         asynchronous=True,
-        name="pytest_cluster",
+        name="pytest_dask_spec_local_cluster",
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv(
@@ -90,7 +90,7 @@ async def dask_local_cluster_without_workers(
     async with distributed.SpecCluster(
         scheduler=dask_scheduler_config,
         asynchronous=True,
-        name="pytest_cluster_no_workers",
+        name="pytest_dask_local_cluster_without_workers",
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv(
