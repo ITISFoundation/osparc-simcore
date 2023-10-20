@@ -237,6 +237,7 @@ async def test_get_solver_job_pricing_unit_with_payment(
 async def test_get_solver_job_pricing_unit_no_payment(
     client: AsyncClient,
     mocked_directorv2_service_api_base,
+    mocked_groups_extra_properties,
     respx_mock_from_capture: Callable[
         [list[respx.MockRouter], Path, list[SideEffectCallback]],
         list[respx.MockRouter],
@@ -244,7 +245,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-
+    assert mocked_groups_extra_properties
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
     _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
