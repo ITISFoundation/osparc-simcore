@@ -12,16 +12,16 @@ from models_library.api_schemas_dynamic_sidecar.containers import InactivityResp
 from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
+from ..core.container_utils import run_command_in_container
 from ..core.docker_utils import docker_client
-from ..core.settings import ApplicationSettings
-from ..core.validation import parse_compose_spec
-from ..models.shared_store import SharedStore
-from ..modules.container_utils import (
+from ..core.errors import (
     ContainerExecCommandFailedError,
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
-    run_command_in_container,
 )
+from ..core.settings import ApplicationSettings
+from ..core.validation import parse_compose_spec
+from ..models.shared_store import SharedStore
 from ._dependencies import get_container_restart_lock, get_settings, get_shared_store
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,6 @@ async def get_containers_inactivity(
     container_name = inactivity_command.service
 
     try:
-
         inactivity_response = await run_command_in_container(
             shared_store.original_to_container_names[inactivity_command.service],
             command=inactivity_command.command,
