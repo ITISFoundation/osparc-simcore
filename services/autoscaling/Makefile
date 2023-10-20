@@ -9,13 +9,13 @@ include ../../scripts/common-service.Makefile
 
 .stack-devel.yml: .env
 	../../scripts/docker/docker-compose-config.bash -e .env \
-		docker-compose.yml \
+		test/manual/docker-compose.yml \
 		> $@
 
 .stack-computational-devel.yml: .env
 	../../scripts/docker/docker-compose-config.bash -e .env \
-		docker-compose.yml \
-		docker-compose-computational.yml \
+		test/manual/docker-compose.yml \
+		test/manual/docker-compose-computational.yml \
 		> $@
 
 up-devel: .init-swarm .stack-devel.yml ## starts local test application
