@@ -8,9 +8,9 @@ from .._meta import VERSION
 from ..core.settings import ApplicationSettings
 from ..models import EC2Tags
 
-_APPLICATION_TAG_KEY_NAME: Final[str] = "io.simcore.clusters-keeper.version"
-_DEFAULT_CLUSTERS_KEEPER_TAGS: Final[dict[str, str]] = {
-    _APPLICATION_TAG_KEY_NAME: f"{VERSION}"
+_APPLICATION_TAG_KEY: Final[str] = "io.simcore.clusters-keeper"
+_APPLICATION_VERSION_TAG: Final[EC2Tags] = {
+    f"{_APPLICATION_TAG_KEY}.version": f"{VERSION}"
 }
 
 HEARTBEAT_TAG_KEY: Final[str] = "last_heartbeat"
@@ -26,29 +26,37 @@ def get_cluster_name(
     return f"osparc-computational-cluster-{'manager' if manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
 
 
+def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
+    return {".".join([_APPLICATION_TAG_KEY, "deploy"]): app_settings.SWARM_STACK_NAME}
+
+
 def creation_ec2_tags(
     app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2Tags:
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
-    return _DEFAULT_CLUSTERS_KEEPER_TAGS | {
-        # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        "Name": get_cluster_name(
-            app_settings, user_id=user_id, wallet_id=wallet_id, manager=True
-        ),
-        "user_id": f"{user_id}",
-        "wallet_id": f"{wallet_id}",
-    }
+    return (
+        _minimal_identification_tag(app_settings)
+        | _APPLICATION_VERSION_TAG
+        | {
+            # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
+            "Name": get_cluster_name(
+                app_settings, user_id=user_id, wallet_id=wallet_id, manager=True
+            ),
+            "user_id": f"{user_id}",
+            "wallet_id": f"{wallet_id}",
+        }
+    )
 
 
-def all_created_ec2_instances_filter() -> EC2Tags:
-    return _DEFAULT_CLUSTERS_KEEPER_TAGS
+def all_created_ec2_instances_filter(app_settings: ApplicationSettings) -> EC2Tags:
+    return _minimal_identification_tag(app_settings)
 
 
 def ec2_instances_for_user_wallet_filter(
-    user_id: UserID, wallet_id: WalletID | None
+    app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2Tags:
     return (
-        _DEFAULT_CLUSTERS_KEEPER_TAGS
+        _minimal_identification_tag(app_settings)
         | {"user_id": f"{user_id}"}
         | {"wallet_id": f"{wallet_id}"}
     )
