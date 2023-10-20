@@ -78,13 +78,13 @@ def mock_payments_gateway_service_or_none(
     external_secret_envs: EnvVarsDict,
 ) -> MockRouter | None:
 
-    # tests against external payments-gateway
+    # EITHER tests against external payments-gateway
     if payments_gateway_url := external_secret_envs.get("PAYMENTS_GATEWAY_URL"):
         print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
         mock_payments_gateway_service_api_base.stop()
         return None
 
-    # tests against mock payments-gateway
+    # OR tests against mock payments-gateway
     mock_payments_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base
 

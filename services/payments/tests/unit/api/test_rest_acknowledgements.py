@@ -51,7 +51,7 @@ async def client(
     client: httpx.AsyncClient, external_secret_envs: EnvVarsDict
 ) -> AsyncIterator[httpx.AsyncClient]:
 
-    # tests against external payments API
+    # EITHER tests against external payments API
     if external_base_url := external_secret_envs.get("PAYMENTS_SERVICE_API_BASE_URL"):
         # If there are external secrets, build a new client and point to `external_base_url`
         print(
@@ -64,9 +64,9 @@ async def client(
             headers={"Content-Type": "application/json"},
         ) as new_client:
             yield new_client
-
-    # tests against app
-    yield client
+    # OR tests against app
+    else:
+        yield client
 
 
 async def test_payments_api_authentication(
