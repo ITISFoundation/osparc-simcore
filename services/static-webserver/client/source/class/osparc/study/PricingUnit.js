@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.study.TierButton", {
+qx.Class.define("osparc.study.PricingUnit", {
   extend: qx.ui.form.ToggleButton,
 
   construct: function(pricingUnit) {

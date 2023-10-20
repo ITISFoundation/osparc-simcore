@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.study.TierButtons", {
+qx.Class.define("osparc.study.PricingUnits", {
   extend: qx.ui.container.Composite,
 
   construct: function(pricingUnits) {
