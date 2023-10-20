@@ -31,6 +31,7 @@ MSG_WALLET_NO_ACCESS_ERROR = "User {user_id} does not have necessary permissions
 
 async def raise_for_wallet_read_permissions(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     product_name: ProductName,
@@ -48,6 +49,7 @@ async def raise_for_wallet_read_permissions(
 
 async def raise_for_wallet_read_n_write_permissions(
     app: web.Application,
+    *,
     user_id: UserID,
     wallet_id: WalletID,
     product_name: ProductName,
