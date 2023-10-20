@@ -70,10 +70,10 @@ class AckPayment(_BaseAck):
     @classmethod
     def success_requires_invoice(cls, v, values):
         success = values.get("success")
-        invoice_url = v
-        if success and not invoice_url:
+        if success and not v:
             msg = "Invoice required on successful payments"
             raise ValueError(msg)
+        return v
 
 
 assert PaymentID  # nosec
