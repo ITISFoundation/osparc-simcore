@@ -24,6 +24,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
 from pydantic import HttpUrl, SecretStr, parse_file_as
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
@@ -238,11 +239,8 @@ def create_payment_router():
     return router
 
 
-def auth_session(X_Init_Api_Secret: Annotated[str | None, Header()] = None):
-    # NOTE: keep `X_Init_Api_Secret` with capital letters (even if headers are case-insensitive) to
-    # to agree with the specs provided by our partners
-
-    return 1
+def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None) -> int:
+    return 1 if x_init_api_secret is not None else 0
 
 
 def create_payment_method_router():
@@ -356,6 +354,7 @@ def create_app():
         lifespan=_app_lifespan,
         debug=True,
     )
+    override_fastapi_openapi_method(app)
 
     app.state.payments = {}
     app.state.settings = Settings.create_from_envs()
