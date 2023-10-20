@@ -23,9 +23,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.getChildControl("credits-intro");
-    this.getChildControl("credits-left-view");
-
     const wallet = osparc.desktop.credits.Utils.getContextWallet();
     this.setContextWallet(wallet);
   },
@@ -35,6 +32,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: false,
+      event: "changeContextWallet",
       apply: "__buildLayout"
     }
   },
@@ -102,6 +100,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("credits-intro");
+      this.getChildControl("credits-left-view");
       const wallet = this.getContextWallet();
       if (wallet.getAccessRights()["write"]) {
         this.__populateLayout();
