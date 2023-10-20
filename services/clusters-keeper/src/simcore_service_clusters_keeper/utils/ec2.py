@@ -16,13 +16,25 @@ _DEFAULT_CLUSTERS_KEEPER_TAGS: Final[dict[str, str]] = {
 HEARTBEAT_TAG_KEY: Final[str] = "last_heartbeat"
 
 
+def get_cluster_name(
+    app_settings: ApplicationSettings,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    manager: bool,
+) -> str:
+    return f"osparc-computational-cluster-{'manager' if manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+
+
 def creation_ec2_tags(
     app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2Tags:
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
     return _DEFAULT_CLUSTERS_KEEPER_TAGS | {
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        "Name": f"osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
+        "Name": get_cluster_name(
+            app_settings, user_id=user_id, wallet_id=wallet_id, manager=True
+        ),
         "user_id": f"{user_id}",
         "wallet_id": f"{wallet_id}",
     }

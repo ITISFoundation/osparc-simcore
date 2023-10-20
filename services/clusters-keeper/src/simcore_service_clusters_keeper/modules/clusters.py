@@ -17,6 +17,7 @@ from ..utils.ec2 import (
     all_created_ec2_instances_filter,
     creation_ec2_tags,
     ec2_instances_for_user_wallet_filter,
+    get_cluster_name,
 )
 from .ec2 import get_ec2_client
 
@@ -40,7 +41,12 @@ async def create_cluster(
             ),
         ),
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
-        startup_script=create_startup_script(app_settings),
+        startup_script=create_startup_script(
+            app_settings,
+            get_cluster_name(
+                app_settings, user_id=user_id, wallet_id=wallet_id, manager=False
+            ),
+        ),
         number_of_instances=1,
     )
 
