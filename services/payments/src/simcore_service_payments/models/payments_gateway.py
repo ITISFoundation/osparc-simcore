@@ -9,10 +9,10 @@ from pydantic import BaseModel, EmailStr, Extra
 
 class ErrorModel(BaseModel):
     message: str
-    exception: str
-    file: Path | str
-    line: int
-    trace: list
+    exception: str | None = None
+    file: Path | str | None = None
+    line: int | None = None
+    trace: list | None = None
 
 
 class InitPayment(BaseModel):
