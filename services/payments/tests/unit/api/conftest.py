@@ -47,6 +47,6 @@ async def auth_headers(client: httpx.AsyncClient, app: FastAPI) -> dict[str, str
     assert response.status_code == status.HTTP_200_OK, response.text
 
     token = Token(**response.json())
-    assert token.token_type == "bearer"
+    assert token.token_type == "bearer"  # noqa: S105
 
     return {"Authorization": f"Bearer {token.access_token}"}
