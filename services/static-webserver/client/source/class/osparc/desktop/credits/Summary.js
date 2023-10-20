@@ -286,7 +286,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
             const transactions = responses.length === 2 ? responses[1]["data"] : [];
             const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
             // Filter out some transactions
-            const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["walletId"] === walletId);
+            const filteredTransactions = transactions.filter(transaction => transaction["walletId"] === walletId && transaction["completedStatus"] !== "FAILED");
             const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
             const activities = activities1.concat(activities2);
             activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
