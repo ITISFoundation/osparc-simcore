@@ -129,11 +129,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      const walletsViewer = this.getChildControl("wallets-viewer");
-      walletsViewer.exclude();
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      if (walletsEnabled) {
-        walletsViewer.show();
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        this.getChildControl("current-usage-indicator");
+        this.getChildControl("wallets-viewer");
       }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
@@ -223,6 +221,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           control.addListenerOnce("appear", () => hint.attachShowHideHandlers());
           this.getChildControl("center-items").add(control);
+          break;
+        }
+        case "current-usage-indicator": {
+          const currentUsage = new osparc.desktop.credits.CurrentUsage();
+          control = new osparc.desktop.credits.CurrentUsageIndicator(currentUsage).set({
+            allowGrowY: false,
+            alignY: "middle"
+          });
+          this.getChildControl("right-items").add(control);
           break;
         }
         case "wallets-viewer":

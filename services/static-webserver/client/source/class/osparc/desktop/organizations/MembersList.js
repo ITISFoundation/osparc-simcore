@@ -179,7 +179,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           });
           item.addListener("promoteToAdministrator", e => {
             const orgMember = e.getData();
-            this.__promoteToAdministator(orgMember);
+            this.__promoteToAdministrator(orgMember);
           });
           item.addListener("demoteToUser", e => {
             const clusterMember = e.getData();
@@ -428,7 +428,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         });
     },
 
-    __promoteToAdministator: function(orgMember) {
+    __promoteToAdministrator: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
       }
