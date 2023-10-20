@@ -12,6 +12,7 @@ import pytest
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from simcore_service_autoscaling.core.errors import (
+    DaskNoWorkersError,
     DaskSchedulerNotFoundError,
     DaskWorkerNotFoundError,
     Ec2InvalidDnsNameError,
@@ -160,7 +161,7 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
     scheduler_url = parse_obj_as(
         AnyUrl, dask_local_cluster_without_workers.scheduler_address
     )
-    with pytest.raises(DaskWorkerNotFoundError):
+    with pytest.raises(DaskNoWorkersError):
         await get_worker_still_has_results_in_memory(
             scheduler_url, fake_localhost_ec2_instance_data
         )
@@ -254,7 +255,7 @@ async def test_worker_used_resources_with_no_workers_raises(
     scheduler_url = parse_obj_as(
         AnyUrl, dask_local_cluster_without_workers.scheduler_address
     )
-    with pytest.raises(DaskWorkerNotFoundError):
+    with pytest.raises(DaskNoWorkersError):
         await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
 
 
