@@ -85,11 +85,25 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
 
         const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
         advancedCB.bind("value", unitButtons, "advanced");
+        unitButtons.addListener("changeSelectedUnit", e => this.__pricingUnitSelected(e.getData()));
         machinesLayout.add(unitButtons);
 
         return machinesLayout;
       }
       return null;
+    },
+
+    __pricingUnitSelected: function(selectedUnit) {
+      console.log("putPricingUnit", selectedUnit);
+      /*
+      const params = {
+        url: {
+          studyId: this.__resourceId,
+
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "addTag", params);
+      */
     }
   }
 });

@@ -72,7 +72,6 @@ qx.Class.define("osparc.study.PricingUnits", {
         if (e.getData()) {
           const selectedUnit = button.getPricingUnit();
           this.setSelectedUnit(selectedUnit);
-          console.log("putPricingUnit", selectedUnit);
         }
       }));
 

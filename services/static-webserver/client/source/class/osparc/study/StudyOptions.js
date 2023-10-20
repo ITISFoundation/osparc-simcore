@@ -65,8 +65,11 @@ qx.Class.define("osparc.study.StudyOptions", {
         firstUpperCase: true
       }) + qx.locale.Manager.tr(" Options");
       const width = 550;
-      const height = 400;
-      const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
+      const minHeight = 400;
+      const maxHeight = 400;
+      const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
+        maxHeight
+      });
       win.center();
       win.open();
       return win;
@@ -165,11 +168,15 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 20
           });
           control.getContentElement().addClass("rotate");
-          this.getChildControl("options-layout").add(control);
+          this.getChildControl("options-layout").add(control, {
+            flex: 1
+          });
           break;
         case "services-resources-layout":
           control = this.self().createGroupBox(this.tr("Select Resources"));
-          this.getChildControl("options-layout").add(control);
+          this.getChildControl("options-layout").add(control, {
+            flex: 1
+          });
           break;
       }
       return control || this.base(arguments, id);
