@@ -150,9 +150,7 @@ async def get_worker_still_has_results_in_memory(
         _, worker_details = _dask_worker_from_ec2_instance(client, ec2_instance)
 
         worker_metrics: dict[str, Any] = worker_details["metrics"]
-        if worker_metrics.get("task_counts", {}) != {}:
-            return 1
-    return 0
+        return 1 if worker_metrics.get("task_counts") else 0
 
 
 async def get_worker_used_resources(
