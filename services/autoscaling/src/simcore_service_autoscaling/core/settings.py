@@ -10,7 +10,15 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.docker import DockerGenericTag, DockerLabelKey
-from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
+from pydantic import (
+    AnyUrl,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    parse_obj_as,
+    root_validator,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
@@ -99,6 +107,12 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
+    EC2_INSTANCES_NAME_PREFIX: str = Field(
+        default="autoscaling",
+        min_length=1,
+        description="prefix used to name the EC2 instances created by this instance of autoscaling",
+    )
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
     def ensure_time_is_in_range(cls, value):
@@ -134,6 +148,12 @@ class NodesMonitoringSettings(BaseCustomSettings):
     )
 
 
+class DaskMonitoringSettings(BaseCustomSettings):
+    DASK_MONITORING_URL: AnyUrl = Field(
+        ..., description="the url to the osparc-dask-scheduler"
+    )
+
+
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
@@ -161,14 +181,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     AUTOSCALING_DEBUG: bool = Field(
-        False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
+        default=False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
     )
 
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -197,8 +217,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_REGISTRY: RegistrySettings | None = Field(auto_default_from_env=True)
 
+    AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
+
     @cached_property
-    def LOG_LEVEL(self):
+    def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
 
     @validator("AUTOSCALING_LOGLEVEL")
@@ -206,6 +228,17 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         # NOTE: mypy is not happy without the cast
         return cast(str, cls.validate_log_level(value))
+
+    @root_validator()
+    @classmethod
+    def exclude_both_dynamic_computational_mode(cls, values):
+        if (
+            values.get("AUTOSCALING_DASK") is not None
+            and values.get("AUTOSCALING_NODES_MONITORING") is not None
+        ):
+            msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
+            raise ValueError(msg)
+        return values
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
