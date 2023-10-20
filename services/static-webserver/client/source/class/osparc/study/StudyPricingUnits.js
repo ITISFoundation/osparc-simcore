@@ -54,41 +54,50 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
           if (nodeIds && !nodeIds.includes(nodeId)) {
             return;
           }
-          const params = {
+          const plansParams = {
             url: osparc.data.Resources.getServiceUrl(
               node["key"],
               node["version"]
             )
           };
-          osparc.data.Resources.fetch("services", "pricingPlans", params)
+          osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
             .then(pricingPlans => {
               if (pricingPlans) {
-                const serviceGroup = this.__createPricingUnitsGroup(node["label"], pricingPlans, advancedCB);
-                if (serviceGroup) {
-                  this._addAt(advancedCB, 0);
-                  this._add(serviceGroup.layout);
+                const unitParams = {
+                  url: {
+                    studyId: this.__studyData["uuid"],
+                    nodeId
+                  }
+                };
+                osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
+                  .then(preselectedPricingUnit => {
+                    const serviceGroup = this.__createPricingUnitsGroup(node["label"], pricingPlans, preselectedPricingUnit, advancedCB);
+                    if (serviceGroup) {
+                      this._addAt(advancedCB, 0);
+                      this._add(serviceGroup.layout);
 
-                  const unitButtons = serviceGroup.unitButtons;
-                  unitButtons.addListener("changeSelectedUnit", e => {
-                    unitButtons.setEnabled(false);
-                    const selectedPricingUnit = e.getData();
-                    this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnit)
-                      .finally(() => unitButtons.setEnabled(true));
+                      const unitButtons = serviceGroup.unitButtons;
+                      unitButtons.addListener("changeSelectedUnit", e => {
+                        unitButtons.setEnabled(false);
+                        const selectedPricingUnit = e.getData();
+                        this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnit)
+                          .finally(() => unitButtons.setEnabled(true));
+                      });
+
+                      unitsAdded();
+                    }
                   });
-
-                  unitsAdded();
-                }
               }
             });
         });
       }
     },
 
-    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, advancedCB) {
+    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, preselectedPricingUnit, advancedCB) {
       if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
         const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
 
-        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
+        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
         advancedCB.bind("value", unitButtons, "advanced");
         pricingUnitsLayout.add(unitButtons);
 

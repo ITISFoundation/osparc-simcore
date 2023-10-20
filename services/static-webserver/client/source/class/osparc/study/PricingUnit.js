@@ -29,12 +29,19 @@ qx.Class.define("osparc.study.PricingUnit", {
       "border-radius": "4px"
     });
 
+    this.setPricingUnitId(pricingUnit["pricingUnitId"]);
     this.__pricingUnit = pricingUnit;
 
     this.__buildLayout();
   },
 
   properties: {
+    pricingUnitId: {
+      check: "Number",
+      nullable: false,
+      init: null
+    },
+
     advanced: {
       check: "Boolean",
       init: null,
