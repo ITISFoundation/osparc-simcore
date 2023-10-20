@@ -393,6 +393,7 @@ async def test_payment_on_wallet_without_access(
         assert f"{wallet.wallet_id}" in error_msg
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4897"
 )
@@ -408,27 +409,41 @@ async def test_cannot_get_payment_info_in_shared_wallet(
         assert new_user["email"] != logged_user["email"]
 
         # logged client adds new user to this wallet add read-only
-        response = await client.post(
-            f"/v0/wallets/{logged_user_wallet.wallet_id}/groups/{new_user['primary_gid']}",
-            json={"read": True, "write": False, "delete": False},
+        await assert_status(
+            await client.post(
+                client.app.router["create_wallet_group"]
+                .url_for(
+                    wallet_id=f"{logged_user_wallet.wallet_id}",
+                    group_id=f"{new_user['primary_gid']}",
+                )
+                .path,
+                json={"read": True, "write": False, "delete": False},
+            ),
+            web.HTTPCreated,
         )
-        await assert_status(response, web.HTTPOk)
 
         # let's logout one user
-        response = await client.post(client.app.router["auth_logout"].url_for().path)
-        await assert_status(response, web.HTTPOk)
+        await assert_status(
+            await client.post(client.app.router["auth_logout"].url_for().path),
+            web.HTTPOk,
+        )
 
         # logs in
-        response = await client.post(
-            client.app.router["auth_login"].url_for().path,
-            json={
-                "email": new_user["email"],
-                "password": new_user["raw_password"],
-            },
+        await assert_status(
+            await client.post(
+                client.app.router["auth_login"].url_for().path,
+                json={
+                    "email": new_user["email"],
+                    "password": new_user["raw_password"],
+                },
+            ),
+            web.HTTPOk,
         )
-        await assert_status(response, web.HTTPOk)
 
-        response = await client.get(
-            f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
+        # TEST auto-recharge must not be allowed!
+        await assert_status(
+            await client.get(
+                f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
+            ),
+            web.HTTPForbidden,
         )
-        await assert_status(response, web.HTTPForbidden)
