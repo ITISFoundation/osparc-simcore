@@ -114,17 +114,12 @@ qx.Class.define("osparc.desktop.credits.Activity", {
     __buildLayout: function() {
       this.getChildControl("activity-intro");
 
-      const wallet = this.getContextWallet();
-      if (wallet.getAccessRights()["write"]) {
-        const loadingImage = this.getChildControl("loading-image");
-        loadingImage.show();
-        const table = this.getChildControl("activity-table");
-        table.exclude();
+      const loadingImage = this.getChildControl("loading-image");
+      loadingImage.show();
+      const table = this.getChildControl("activity-table");
+      table.exclude();
 
-        this.__fetchData();
-      } else {
-        this._add(osparc.desktop.credits.Utils.getNoWriteAccessLabel());
-      }
+      this.__fetchData();
     },
 
     __fetchData: function(request) {
