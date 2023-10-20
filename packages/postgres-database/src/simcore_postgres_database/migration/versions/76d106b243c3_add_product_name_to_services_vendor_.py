@@ -50,9 +50,6 @@ def downgrade():
     op.drop_column("services_vendor_secrets", "product_name")
     # ### end Alembic commands ###
 
-    op.drop_constraint(
-        "services_vendor_secrets_pk", "services_vendor_secrets", type_="primary"
-    )
     op.create_primary_key(
         "services_vendor_secrets_pk",
         "services_vendor_secrets",
