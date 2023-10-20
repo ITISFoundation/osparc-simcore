@@ -15,27 +15,25 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.study.TierButtons", {
+qx.Class.define("osparc.study.PricingUnits", {
   extend: qx.ui.container.Composite,
 
-  construct: function(pricingUnits) {
+  construct: function(pricingUnits, preselectedPricingUnit) {
     this.base(arguments);
 
     this.set({
       layout: new qx.ui.layout.HBox(5)
     });
 
-    this.__pricingUnits = pricingUnits;
-
-    this.__buildLayout();
+    this.__buildLayout(pricingUnits, preselectedPricingUnit);
   },
 
   properties: {
-    selectedTier: {
+    selectedUnit: {
       check: "Object",
       init: null,
       nullable: false,
-      event: "changeSelectedTier"
+      event: "changeSelectedUnit"
     },
 
     advanced: {
@@ -47,14 +45,10 @@ qx.Class.define("osparc.study.TierButtons", {
   },
 
   members: {
-    __pricingUnit: null,
-
-    __buildLayout: function() {
-      const pricingUnits = this.__pricingUnits;
-
+    __buildLayout: function(pricingUnits, preselectedPricingUnit) {
       const buttons = [];
       pricingUnits.forEach(pricingUnit => {
-        const button = new osparc.study.TierButton(pricingUnit);
+        const button = new osparc.study.PricingUnit(pricingUnit);
         this.bind("advanced", button, "advanced");
         buttons.push(button);
         this._add(button);
@@ -68,18 +62,27 @@ qx.Class.define("osparc.study.TierButtons", {
         });
       };
       buttons.forEach(button => button.addListener("execute", () => buttonSelected(button)));
+
+      if (preselectedPricingUnit) {
+        const buttonFound = buttons.find(button => button.getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
+        if (buttonFound) {
+          buttonFound.execute();
+        }
+      } else {
+        // preselect default
+        buttons.forEach(button => {
+          if (button.getPricingUnit()["default"]) {
+            button.execute();
+          }
+        });
+      }
+
       buttons.forEach(button => button.addListener("changeValue", e => {
         if (e.getData()) {
-          this.setSelectedTier(button.getTierInfo());
+          const selectedUnit = button.getPricingUnit();
+          this.setSelectedUnit(selectedUnit);
         }
       }));
-
-      // preselect default
-      buttons.forEach(button => {
-        if (button.getTierInfo()["default"]) {
-          button.execute();
-        }
-      });
     }
   }
 });
