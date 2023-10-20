@@ -55,7 +55,7 @@ services:
       - .env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - ./:/devel/services/autoscaling
-      - ../../packages:/devel/packages
+      - ../../:/devel/services/autoscaling
+      - ../../../../packages:/devel/packages
 volumes:
   redis-data:
