@@ -129,7 +129,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     __populateLayout: function() {
       const wallet = this.getWallet();
-      console.log("wallet", wallet);
       if (wallet) {
         const paymentMode = this.getChildControl("payment-mode");
         const autoRecharge = this.getChildControl("auto-recharge");
