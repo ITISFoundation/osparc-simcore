@@ -20,7 +20,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_service_webserver.payments._methods_api import (
-    _complete_create_of_wallet_payment_method,
+    _ack_creation_of_wallet_payment_method,
 )
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
@@ -67,7 +67,7 @@ async def test_payment_method_worfklow(
     await assert_status(response, web.HTTPNotFound)
 
     # Ack
-    await _complete_create_of_wallet_payment_method(
+    await _ack_creation_of_wallet_payment_method(
         client.app,
         payment_method_id=inited.payment_method_id,
         completion_state=InitPromptAckFlowState.SUCCESS,
@@ -147,7 +147,7 @@ async def _add_payment_method(
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     inited = PaymentMethodInit.parse_obj(data)
-    await _complete_create_of_wallet_payment_method(
+    await _ack_creation_of_wallet_payment_method(
         client.app,
         payment_method_id=inited.payment_method_id,
         completion_state=InitPromptAckFlowState.SUCCESS,
