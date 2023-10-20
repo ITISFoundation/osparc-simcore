@@ -1,17 +1,17 @@
-include ../../../scripts/common.Makefile
-include ../../../scripts/common-service.Makefile
+include ../../../../scripts/common.Makefile
+include ../../../../scripts/common-service.Makefile
 
 
 .PHONY: up-devel up-computational-devel down
 
 
 .stack-devel.yml: .env
-	../../../scripts/docker/docker-compose-config.bash -e .env \
+	../../../../scripts/docker/docker-compose-config.bash -e .env \
 		docker-compose.yml \
 		> $@
 
 .stack-computational-devel.yml: .env
-	../../../scripts/docker/docker-compose-config.bash -e .env \
+	../../../../scripts/docker/docker-compose-config.bash -e .env \
 		docker-compose.yml \
 		docker-compose-computational.yml \
 		> $@
