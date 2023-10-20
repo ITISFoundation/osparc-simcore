@@ -41,6 +41,33 @@ qx.Class.define("osparc.study.BillingSettings", {
 
     __buildLastWalletGroup: function() {
       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      const label = new qx.ui.basic.Label(this.tr("Select Credit Account"));
+      hBox.add(label);
+
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read");
+      hBox.add(walletSelector);
+
+      pricingUnitsLayout.add(hBox);
+
+      const params = {
+        url: {
+          studyId: this.__studyData["uuid"]
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getWallet", params)
+        .then(wallet => {
+          const walletFound = walletSelector.getSelectables().find(selectables => selectables.walletId === wallet["walletId"]);
+          if (walletFound) {
+            walletSelector.setSelection([walletFound]);
+          } else {
+            const label2 = new qx.ui.basic.Label(this.tr("You don't have access to the last used Credit Account"));
+            hBox.add(label2);
+          }
+        });
+
       this._add(pricingUnitsLayout);
     },
 
