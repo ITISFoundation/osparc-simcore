@@ -275,13 +275,15 @@ qx.Class.define("osparc.desktop.credits.Summary", {
             limit: 10
           }
         };
-        Promise.all([
-          osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params),
-          osparc.data.Resources.fetch("payments", "get")
-        ])
+        const promises = [];
+        promises.push(osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params));
+        if (wallet.getAccessRights()["write"]) {
+          promises.push(osparc.data.Resources.fetch("payments", "get"));
+        }
+        Promise.all(promises)
           .then(responses => {
             const usages = responses[0];
-            const transactions = responses[1]["data"];
+            const transactions = responses.length === 2 ? responses[1]["data"] : [];
             const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
             // Filter out some transactions
             const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["walletId"] === walletId);
