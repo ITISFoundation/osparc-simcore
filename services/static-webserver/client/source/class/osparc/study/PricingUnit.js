@@ -81,7 +81,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       }
     },
 
-    getPricingUnitInfo: function() {
+    getPricingUnit: function() {
       return this.__pricingUnit;
     }
   }
