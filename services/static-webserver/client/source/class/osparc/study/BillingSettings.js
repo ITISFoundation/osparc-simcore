@@ -35,16 +35,18 @@ qx.Class.define("osparc.study.BillingSettings", {
     __studyData: null,
 
     __buildLayout: function() {
-      this.__buildLastWalletGroup();
+      this.__buildWalletGroup();
       this.__buildPricingUnitsGroup();
     },
 
-    __buildLastWalletGroup: function() {
+    __buildWalletGroup: function() {
       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read");
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read").set({
+        allowGrowX: true
+      });
       hBox.add(walletSelector);
 
       pricingUnitsLayout.add(hBox);
