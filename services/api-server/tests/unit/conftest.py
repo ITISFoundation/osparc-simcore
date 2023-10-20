@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, TypeAlias
+from unittest import mock
 
 import aiohttp.test_utils
 import httpx
@@ -34,6 +35,7 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
@@ -144,6 +146,20 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     )
 
     return HTTPBasicAuth(faker.word(), faker.password())
+
+
+@pytest.fixture
+def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
+    from simcore_service_api_server.db.repositories.groups_extra_properties import (
+        GroupsExtraPropertiesRepository,
+    )
+
+    return mocker.patch.object(
+        GroupsExtraPropertiesRepository,
+        "use_on_demand_clusters",
+        autospec=True,
+        return_value=True,
+    )
 
 
 ## MOCKED S3 service --------------------------------------------------

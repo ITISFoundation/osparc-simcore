@@ -5,7 +5,6 @@ from uuid import UUID
 import httpx
 import pytest
 import respx
-from api_solvers.test_api_routers_solvers_jobs import mocked_groups_extra_properties
 from faker import Faker
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
