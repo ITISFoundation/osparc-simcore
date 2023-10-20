@@ -5,6 +5,7 @@ from uuid import UUID
 import httpx
 import pytest
 import respx
+from faker import Faker
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from pydantic import parse_obj_as
@@ -156,24 +157,28 @@ async def test_get_solver_job_pricing_unit_with_payment(
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    faker: Faker,
 ):
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
     _job_id: str = "6e52228c-6edd-4505-9131-e901fdad5b17"
-    _pricing_plan_id: int = 38
-    _pricing_unit_id: int = 26
+    _pricing_plan_id: int = faker.pyint(min_value=1)
+    _pricing_unit_id: int = faker.pyint(min_value=1)
 
     def _get_job_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
-        response: dict[str, str] = capture.response_body
-        response["data"]["name"] = Job.compose_resource_name(
+        response: dict[str, str] = capture.response_body  # type: ignore
+        data = response.get("data")
+        assert isinstance(data, dict)
+        data["name"] = Job.compose_resource_name(
             parent_name=Solver.compose_resource_name(_solver_key, _version),  # type: ignore
-            job_id=_job_id,
+            job_id=UUID(_job_id),
         )
-        response["data"]["uuid"] = _job_id
+        data["uuid"] = _job_id
+        response["data"] = data
         return response
 
     def _put_pricing_plan_and_unit_side_effect(
@@ -192,6 +197,7 @@ async def test_get_solver_job_pricing_unit_with_payment(
         capture: HttpApiCallCaptureModel,
     ) -> Any:
         response = capture.response_body
+        assert isinstance(response, dict)
         response["id"] = _job_id
         return response
 
