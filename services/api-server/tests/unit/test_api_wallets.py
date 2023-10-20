@@ -22,7 +22,8 @@ async def test_get_wallet(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -42,7 +43,7 @@ async def test_get_wallet(
         return response
 
     respx_mock = respx_mock_from_capture(
-        mocked_webserver_service_api_base,
+        [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture,
         [_get_wallet_side_effect],
     )

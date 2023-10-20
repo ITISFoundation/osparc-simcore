@@ -22,7 +22,8 @@ async def test_get_solver_pricing_plan(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -31,7 +32,7 @@ async def test_get_solver_pricing_plan(
 ):
 
     respx_mock = respx_mock_from_capture(
-        mocked_webserver_service_api_base, project_tests_dir / "mocks" / capture, None
+        [mocked_webserver_service_api_base], project_tests_dir / "mocks" / capture, []
     )
     assert respx_mock
 

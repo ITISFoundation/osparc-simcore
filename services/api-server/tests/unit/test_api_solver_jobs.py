@@ -26,7 +26,8 @@ async def test_get_solver_job_wallet(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -48,7 +49,7 @@ async def test_get_solver_job_wallet(
         return response
 
     respx_mock = respx_mock_from_capture(
-        mocked_webserver_service_api_base,
+        [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture,
         [_get_job_wallet_side_effect],
     )
@@ -87,7 +88,8 @@ async def test_get_solver_job_pricing_unit(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -125,7 +127,7 @@ async def test_get_solver_job_pricing_unit(
         return capture.response_body
 
     respx_mock = respx_mock_from_capture(
-        mocked_webserver_service_api_base,
+        [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture_file,
         [_get_job_side_effect, _get_pricing_unit_side_effect]
         if capture_file == "get_job_pricing_unit_success.json"

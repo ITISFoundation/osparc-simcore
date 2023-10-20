@@ -498,6 +498,7 @@ def respx_mock_from_capture() -> (
 
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
+        assert isinstance(respx_mock, list)
         for router in respx_mock:
             assert (
                 router._bases
