@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     __buildLayout: function() {
       const wallet = this.getContextWallet();
-      if (wallet.getAccessRights()["write"]) {
+      if (wallet.getMyAccessRights()["write"]) {
         this.getChildControl("intro-text");
         this.getChildControl("payment-methods-list-layout");
         this.getChildControl("add-payment-methods-button");

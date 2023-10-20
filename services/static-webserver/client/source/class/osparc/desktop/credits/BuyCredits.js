@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("credits-intro");
       this.getChildControl("credits-left-view");
       const wallet = this.getContextWallet();
-      if (wallet.getAccessRights()["write"]) {
+      if (wallet.getMyAccessRights()["write"]) {
         this.__populateLayout();
       } else {
         this._add(osparc.desktop.credits.Utils.getNoWriteAccessLabel());

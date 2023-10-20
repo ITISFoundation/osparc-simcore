@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
     __buildLayout: function() {
       const wallet = this.getContextWallet();
-      if (wallet.getAccessRights()["write"]) {
+      if (wallet.getMyAccessRights()["write"]) {
         const transactionsTable = this.getChildControl("transactions-table");
         osparc.data.Resources.fetch("payments", "get")
           .then(transactions => {

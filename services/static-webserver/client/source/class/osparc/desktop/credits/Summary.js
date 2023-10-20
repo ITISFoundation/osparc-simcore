@@ -277,7 +277,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         };
         const promises = [];
         promises.push(osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params));
-        if (wallet.getAccessRights()["write"]) {
+        if (wallet.getMyAccessRights()["write"]) {
           promises.push(osparc.data.Resources.fetch("payments", "get"));
         }
         Promise.all(promises)
