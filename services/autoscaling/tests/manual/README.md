@@ -23,18 +23,20 @@ When ```DASK_MONITORING_URL``` is set the computational mode is enabled.
 git clone https://github.com/ITISFoundation/osparc-simcore.git
 cd osparc-simcore/services/autoscaling
 make build-devel # this will build the autoscaling devel image
-make .env # generate an initial .env file
 ```
 
-2. setup environmenet variables
+2. setup environment variables
 ```bash
 # run on EC2 instance
-nano .env
+cd osparc-simcore/services/autoscaling/tests/manual
+make .env # generate an initial .env file
+nano .env # edit .env and set the variables as needed
 ```
 
 3. start autoscaling/dask-scheduler stack
 ```bash
 # run on EC2 instance
+cd osparc-simcore/services/autoscaling/tests/manual
 make up-computational-devel # this will deploy the autoscaling/dask-scheduler/worker stack
 ```
 
