@@ -22,10 +22,11 @@ from aiofiles.os import mkdir
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
+from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
 from models_library.services import ServiceOutput
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -705,3 +706,75 @@ async def test_attach_detach_container_to_network(
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
                 assert network_id in networks
+
+
+@pytest.fixture
+def define_inactivity_command(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
+                {
+                    "inactivity": {
+                        "service": "mock_container_name",
+                        "command": "",
+                        "timeout": 4,
+                    }
+                }
+            )
+        },
+    )
+
+
+@pytest.fixture
+def mock_shared_store(app: FastAPI) -> None:
+    shared_store: SharedStore = app.state.shared_store
+    shared_store.original_to_container_names[
+        "mock_container_name"
+    ] = "mock_container_name"
+
+
+async def test_containers_inactivity_command_failed(
+    define_inactivity_command: None, test_client: TestClient, mock_shared_store: None
+):
+    response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
+    assert response.status_code == 200, response.text
+    assert response.json() == InactivityResponse(is_inactive=False)
+
+
+async def test_containers_inactivity_no_inactivity_defined(
+    test_client: TestClient, mock_shared_store: None
+):
+    response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
+    assert response.status_code == 200, response.text
+    assert response.json() == InactivityResponse(is_inactive=False)
+
+
+@pytest.fixture
+def inactivity_response() -> InactivityResponse:
+    return InactivityResponse(is_inactive=True, seconds_inactive=10)
+
+
+@pytest.fixture
+def mock_inactive_since_command_response(
+    mocker: MockerFixture,
+    inactivity_response: InactivityResponse,
+) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers.run_command_in_container",
+        return_value=inactivity_response.json(),
+    )
+
+
+async def test_containers_inactivity_inactive_since(
+    define_inactivity_command: None,
+    mock_inactive_since_command_response: None,
+    test_client: TestClient,
+    mock_shared_store: None,
+    inactivity_response: InactivityResponse,
+):
+    response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
+    assert response.status_code == 200, response.text
+    assert response.json() == inactivity_response

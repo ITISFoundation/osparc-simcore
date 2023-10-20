@@ -3,17 +3,26 @@
 import json
 import logging
 from asyncio import Lock
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
+from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_utils import docker_client
+from ..core.settings import ApplicationSettings
 from ..core.validation import parse_compose_spec
 from ..models.shared_store import SharedStore
-from ._dependencies import get_container_restart_lock, get_shared_store
+from ..modules.container_utils import (
+    ContainerExecCommandFailedError,
+    ContainerExecContainerNotFoundError,
+    ContainerExecTimeoutError,
+    run_command_in_container,
+)
+from ._dependencies import get_container_restart_lock, get_settings, get_shared_store
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +83,45 @@ async def containers_docker_inspect(
             results[container] = _format_result(container_inspect)
 
         return results
+
+
+@router.get(
+    "/containers/inactivity",
+)
+@cancel_on_disconnect
+async def get_containers_inactivity(
+    request: Request,
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+) -> InactivityResponse:
+    _ = request
+    inactivity_command = settings.DY_SIDECAR_CALLBACKS_MAPPING.inactivity
+    if inactivity_command is None:
+        return InactivityResponse(is_inactive=False)
+
+    container_name = inactivity_command.service
+
+    try:
+
+        inactivity_response = await run_command_in_container(
+            shared_store.original_to_container_names[inactivity_command.service],
+            command=inactivity_command.command,
+            timeout=inactivity_command.timeout,
+        )
+        return parse_raw_as(InactivityResponse, inactivity_response)
+    except (
+        ContainerExecContainerNotFoundError,
+        ContainerExecCommandFailedError,
+        ContainerExecTimeoutError,
+    ):
+        logger.warning(
+            "Could not run inactivity command '%s' in container '%s'",
+            inactivity_command.command,
+            container_name,
+            exc_info=True,
+        )
+
+    return InactivityResponse(is_inactive=False)
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.
