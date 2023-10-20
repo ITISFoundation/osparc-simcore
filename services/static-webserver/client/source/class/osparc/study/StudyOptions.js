@@ -199,12 +199,12 @@ qx.Class.define("osparc.study.StudyOptions", {
       if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
         const machinesLayout = this.self().createGroupBox(serviceLabel);
 
-        const tierButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
-        advancedCB.bind("value", tierButtons, "advanced");
+        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
+        advancedCB.bind("value", unitButtons, "advanced");
         advancedCB.addListener("selectedTier", selectedTier => {
           console.log("selectedTier", selectedTier);
         });
-        machinesLayout.add(tierButtons);
+        machinesLayout.add(unitButtons);
 
         return machinesLayout;
       }
@@ -218,15 +218,15 @@ qx.Class.define("osparc.study.StudyOptions", {
     __buildNodeResources: function() {
       const loadingImage = this.getChildControl("loading-options");
       const servicesBox = this.getChildControl("services-resources-layout");
-      const tiersLoading = () => {
+      const unitsLoading = () => {
         loadingImage.show();
         servicesBox.exclude();
       };
-      const tiersAdded = () => {
+      const unitsAdded = () => {
         loadingImage.exclude();
         servicesBox.show();
       };
-      tiersLoading();
+      unitsLoading();
       if ("workbench" in this.__studyData) {
         const promises = [];
         const nodes = Object.values(this.__studyData["workbench"]);
@@ -254,7 +254,7 @@ qx.Class.define("osparc.study.StudyOptions", {
                 const serviceGroup = this.__createPricingUnitsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
                 if (serviceGroup) {
                   servicesBox.add(serviceGroup);
-                  tiersAdded();
+                  unitsAdded();
                 }
               });
             }

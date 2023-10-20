@@ -63,7 +63,7 @@ qx.Class.define("osparc.study.PricingUnit", {
           value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
           font: "text-14"
         }));
-        // add tier extra info
+        // add pricing unit extra info
         if ("unitExtraInfo" in pricingUnit) {
           Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {
             this._add(new qx.ui.basic.Label().set({
@@ -81,7 +81,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       }
     },
 
-    getTierInfo: function() {
+    getPricingUnitInfo: function() {
       return this.__pricingUnit;
     }
   }
