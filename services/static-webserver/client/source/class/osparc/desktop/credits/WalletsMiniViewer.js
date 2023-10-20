@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       walletsButton.addListener("tap", () => {
         const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
         if (walletsEnabled) {
-          const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
           userCenterWindow.openWallets();
         }
       }, this);
@@ -134,7 +134,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       creditsIndicator.addListener("tap", () => {
         const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
         if (walletsEnabled) {
-          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
           creditsWindow.openOverview();
         }
       }, this);
