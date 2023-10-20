@@ -31,11 +31,11 @@ qx.Class.define("osparc.study.PricingUnits", {
   },
 
   properties: {
-    selectedTier: {
+    selectedUnit: {
       check: "Object",
       init: null,
       nullable: false,
-      event: "changeSelectedTier"
+      event: "changeSelectedUnit"
     },
 
     advanced: {
@@ -70,7 +70,7 @@ qx.Class.define("osparc.study.PricingUnits", {
       buttons.forEach(button => button.addListener("execute", () => buttonSelected(button)));
       buttons.forEach(button => button.addListener("changeValue", e => {
         if (e.getData()) {
-          this.setSelectedTier(button.getPricingUnitInfo());
+          this.setSelectedUnit(button.getPricingUnitInfo());
         }
       }));
 
