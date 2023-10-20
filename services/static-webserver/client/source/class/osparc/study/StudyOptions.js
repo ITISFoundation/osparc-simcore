@@ -195,71 +195,25 @@ qx.Class.define("osparc.study.StudyOptions", {
       this.__buildOptionsLayout();
     },
 
-    __createPricingUnitsGroup: function(serviceLabel, pricingPlans, advancedCB) {
-      if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-        const machinesLayout = this.self().createGroupBox(serviceLabel);
-
-        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
-        advancedCB.bind("value", unitButtons, "advanced");
-        advancedCB.addListener("selectedUnit", selectedUnit => {
-          console.log("putPricingUnit", selectedUnit);
-        });
-        machinesLayout.add(unitButtons);
-
-        return machinesLayout;
-      }
-      return null;
-    },
-
     __buildOptionsLayout: function() {
-      this.__buildNodeResources();
+      this.__buildPricingPlans();
     },
 
-    __buildNodeResources: function() {
+    __buildPricingPlans: function() {
       const loadingImage = this.getChildControl("loading-options");
       const servicesBox = this.getChildControl("services-resources-layout");
       const unitsLoading = () => {
         loadingImage.show();
         servicesBox.exclude();
       };
-      const unitsAdded = () => {
+      const unitsReady = () => {
         loadingImage.exclude();
         servicesBox.show();
       };
-      unitsLoading();
-      if ("workbench" in this.__studyData) {
-        const promises = [];
-        const nodes = Object.values(this.__studyData["workbench"]);
-        nodes.forEach(node => {
-          const params = {
-            url: osparc.data.Resources.getServiceUrl(
-              node["key"],
-              node["version"]
-            )
-          };
-          promises.push(osparc.data.Resources.fetch("services", "pricingPlans", params));
-        });
-        Promise.all(promises)
-          .then(values => {
-            if (values) {
-              // eslint-disable-next-line no-underscore-dangle
-              this.getChildControl("options-layout")._removeAll();
-              this.getChildControl("options-layout").add(servicesBox);
-              const advancedCB = new qx.ui.form.CheckBox().set({
-                label: this.tr("Advanced"),
-                value: true
-              });
-              servicesBox.add(advancedCB);
-              values.forEach((pricingPlans, idx) => {
-                const serviceGroup = this.__createPricingUnitsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
-                if (serviceGroup) {
-                  servicesBox.add(serviceGroup);
-                  unitsAdded();
-                }
-              });
-            }
-          });
-      }
+      const studyPricingUnits = new osparc.study.StudyPricingUnits(this.__studyData);
+      studyPricingUnits.addListener("loadingUnits", () => unitsLoading());
+      studyPricingUnits.addListener("unitsReady", () => unitsReady());
+      this.getChildControl("services-resources-layout").add(studyPricingUnits);
     },
 
     __buildTopSummaryLayout: function() {
