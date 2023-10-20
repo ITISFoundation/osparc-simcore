@@ -25,7 +25,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this.__studyId = studyId;
 
-    this.getChildControl("loading-options");
+    this.getChildControl("loading-spinner");
     const params = {
       url: {
         "studyId": studyId
@@ -109,7 +109,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
-        case "loading-options":
+        case "loading-spinner":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/48",
             alignX: "center",
@@ -200,7 +200,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __buildPricingPlans: function() {
-      const loadingImage = this.getChildControl("loading-options");
+      const loadingImage = this.getChildControl("loading-spinner");
       const servicesBox = this.getChildControl("services-resources-layout");
       const unitsLoading = () => {
         loadingImage.show();
