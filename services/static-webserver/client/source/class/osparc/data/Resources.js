@@ -205,9 +205,14 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/errors"
           },
+          getPricingUnit: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/pricing-unit"
+          },
           putPricingUnit: {
             method: "PUT",
-            url: statics.API + "projects/{studyId}/nodes/{nodeId}/pricing-plan/{pricingPlanId}/pricing-unit/{pricingUnitId}"
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/pricing-plan/{pricingPlanId}/pricing-unit/{pricingUnitId}"
           },
           checkShareePermissions: {
             useCache: false,

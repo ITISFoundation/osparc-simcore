@@ -38,16 +38,20 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
   members: {
     __studyData: null,
 
-    showPricingUnits: function(nodeIds) {
+    showPricingUnits: async function(nodeIds) {
       const unitsLoading = () => this.fireEvent("loadingUnits");
       const unitsAdded = () => this.fireEvent("unitsReady");
       unitsLoading();
       this._removeAll();
+      const advancedCB = new qx.ui.form.CheckBox().set({
+        label: this.tr("Advanced"),
+        value: true
+      });
       if ("workbench" in this.__studyData) {
-        const promises = [];
-        const nodes = Object.values(this.__studyData["workbench"]);
-        nodes.forEach(node => {
-          if (nodeIds && !nodeIds.includes(node["id"])) {
+        const workbench = this.__studyData["workbench"];
+        Object.keys(workbench).forEach(nodeId => {
+          const node = workbench[nodeId];
+          if (nodeIds && !nodeIds.includes(nodeId)) {
             return;
           }
           const params = {
@@ -56,54 +60,56 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
               node["version"]
             )
           };
-          promises.push(osparc.data.Resources.fetch("services", "pricingPlans", params));
-        });
-        Promise.all(promises)
-          .then(values => {
-            if (values) {
-              this._removeAll();
-              const advancedCB = new qx.ui.form.CheckBox().set({
-                label: this.tr("Advanced"),
-                value: true
-              });
-              this._add(advancedCB);
-              values.forEach((pricingPlans, idx) => {
-                const serviceGroup = this.__createPricingUnitsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
+          osparc.data.Resources.fetch("services", "pricingPlans", params)
+            .then(pricingPlans => {
+              if (pricingPlans) {
+                const serviceGroup = this.__createPricingUnitsGroup(node["label"], pricingPlans, advancedCB);
                 if (serviceGroup) {
-                  this._add(serviceGroup);
+                  this._addAt(advancedCB, 0);
+                  this._add(serviceGroup.layout);
+
+                  const unitButtons = serviceGroup.unitButtons;
+                  unitButtons.addListener("changeSelectedUnit", e => {
+                    unitButtons.setEnabled(false);
+                    const selectedPricingUnit = e.getData();
+                    this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnit)
+                      .finally(() => unitButtons.setEnabled(true));
+                  });
+
                   unitsAdded();
                 }
-              });
-            }
-          });
+              }
+            });
+        });
       }
     },
 
-    __createPricingUnitsGroup: function(serviceLabel, pricingPlans, advancedCB) {
+    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, advancedCB) {
       if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-        const machinesLayout = osparc.study.StudyOptions.createGroupBox(serviceLabel);
+        const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
 
         const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
         advancedCB.bind("value", unitButtons, "advanced");
-        unitButtons.addListener("changeSelectedUnit", e => this.__pricingUnitSelected(e.getData()));
-        machinesLayout.add(unitButtons);
+        pricingUnitsLayout.add(unitButtons);
 
-        return machinesLayout;
+        return {
+          layout: pricingUnitsLayout,
+          unitButtons
+        };
       }
       return null;
     },
 
-    __pricingUnitSelected: function(selectedUnit) {
-      console.log("putPricingUnit", selectedUnit);
-      /*
+    __pricingUnitSelected: function(nodeId, pricingPlanId, selectedPricingUnit) {
       const params = {
         url: {
-          studyId: this.__resourceId,
-
+          studyId: this.__studyData["uuid"],
+          nodeId,
+          pricingPlanId,
+          pricingUnitId: selectedPricingUnit["pricingUnitId"]
         }
       };
-      return osparc.data.Resources.fetch("studies", "addTag", params);
-      */
+      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
     }
   }
 });
