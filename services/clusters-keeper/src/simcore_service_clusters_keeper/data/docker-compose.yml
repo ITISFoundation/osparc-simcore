@@ -1,12 +1,30 @@
 version: "3.8"
 services:
+  dask-scheduler:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
+    dns: 8.8.8.8 # needed to access internet from AWS
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      DASK_START_AS_SCHEDULER: 1
+      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+    ports:
+      - 8786:8786 # dask-scheduler tcp access
+      - 8787:8787 # dashboard
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
+
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
+    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     volumes:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: 1
@@ -16,28 +34,57 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-WARNING}
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
-    networks:
-      - default
     deploy:
       mode: global
+      placement:
+        constraints:
+          - "node.role==worker"
 
-  dask-scheduler:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
+  autoscaling:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG}
+    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      DASK_START_AS_SCHEDULER: 1
+      DASK_MONITORING_URL: tcp://dask-scheduler:8786
+      EC2_ACCESS_KEY_ID: ${EC2_ACCESS_KEY_ID}
+      EC2_INSTANCES_ALLOWED_TYPES: ${EC2_INSTANCES_ALLOWED_TYPES}
+      EC2_INSTANCES_AMI_ID: ${EC2_INSTANCES_AMI_ID}
+      EC2_INSTANCES_KEY_NAME: ${EC2_INSTANCES_KEY_NAME}
+      EC2_INSTANCES_SECURITY_GROUP_IDS: ${EC2_INSTANCES_SECURITY_GROUP_IDS}
+      EC2_INSTANCES_SUBNET_ID: ${EC2_INSTANCES_SUBNET_ID}
+      EC2_SECRET_ACCESS_KEY: ${EC2_SECRET_ACCESS_KEY}
+      EC2_INSTANCES_NAME_PREFIX: ${EC2_INSTANCES_NAME_PREFIX}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       LOG_LEVEL: ${LOG_LEVEL:-WARNING}
-    ports:
-      - 8786:8786
-      - 8787:8787
-    networks:
-      - default
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
+
+  redis:
+    # NOTE: currently autoscaling requires redis to run
+    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
+    dns: 8.8.8.8 # needed to access internet from AWS
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    volumes:
+      - redis-data:/data
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
 
 volumes:
   computational_shared_data:
     name: computational_shared_data
-
-networks:
-  default:
-    attachable: true
+  redis-data:
