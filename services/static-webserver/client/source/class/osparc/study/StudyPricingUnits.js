@@ -65,6 +65,7 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
                 label: this.tr("Advanced"),
                 value: true
               });
+              this._add(advancedCB);
               values.forEach((pricingPlans, idx) => {
                 const serviceGroup = this.__createPricingUnitsGroup(nodes[idx]["label"], pricingPlans, advancedCB);
                 if (serviceGroup) {
