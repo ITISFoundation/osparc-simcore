@@ -28,7 +28,7 @@ from ._methods_db import (
     list_successful_payment_methods,
     udpate_payment_method,
 )
-from ._onetime_api import check_wallet_permissions
+from ._onetime_api import raise_for_wallet_payments_permissions
 from ._socketio import notify_payment_method_acked
 from .settings import PaymentsSettings, get_plugin_settings
 
@@ -79,7 +79,7 @@ async def init_creation_of_wallet_payment_method(
     """
 
     # check permissions
-    await check_wallet_permissions(
+    await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
@@ -155,7 +155,7 @@ async def cancel_creation_of_wallet_payment_method(
     product_name: ProductName,
 ):
     """Acks as CANCELED"""
-    await check_wallet_permissions(
+    await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
@@ -189,7 +189,7 @@ async def list_wallet_payment_methods(
     product_name: ProductName,
 ) -> list[PaymentMethodGet]:
     # check permissions
-    await check_wallet_permissions(
+    await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
@@ -237,7 +237,7 @@ async def get_wallet_payment_method(
     product_name: ProductName,
 ) -> PaymentMethodGet:
     # check permissions
-    await check_wallet_permissions(
+    await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
@@ -268,7 +268,7 @@ async def delete_wallet_payment_method(
     product_name: ProductName,
 ):
     # check permissions
-    await check_wallet_permissions(
+    await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     assert payment_method_id  # nosec
