@@ -1,7 +1,10 @@
 from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Final
 
-from pydantic import BaseModel, Extra, Field, NonNegativeFloat
+from pydantic import BaseModel, Extra, Field, NonNegativeFloat, validator
+
+INACTIVITY_TIMEOUT_CAP: Final[NonNegativeFloat] = 5
+TIMEOUT_MIN: Final[NonNegativeFloat] = 1
 
 
 class UserServiceCommand(BaseModel):
@@ -36,6 +39,26 @@ class CallbacksMapping(BaseModel):
             "user services are allowed"
         ),
     )
+    inactivity: UserServiceCommand | None = Field(
+        None,
+        description=(
+            "command used to figure out for how much time the "
+            "user service(s) were inactive for"
+        ),
+    )
+
+    @validator("inactivity")
+    @classmethod
+    def ensure_inactivity_timeout_is_capped(
+        cls, v: UserServiceCommand
+    ) -> UserServiceCommand:
+        if v.timeout < TIMEOUT_MIN or v.timeout > INACTIVITY_TIMEOUT_CAP:
+            msg = (
+                f"Constraint not respected for inactivity timeout={v.timeout}: "
+                f"interval=({TIMEOUT_MIN}, {INACTIVITY_TIMEOUT_CAP})"
+            )
+            raise ValueError(msg)
+        return v
 
     class Config:
         extra = Extra.forbid
@@ -55,6 +78,14 @@ class CallbacksMapping(BaseModel):
                         UserServiceCommand.Config.schema_extra["examples"][0],
                         UserServiceCommand.Config.schema_extra["examples"][1],
                     ],
+                },
+                {
+                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
+                    "before_shutdown": [
+                        UserServiceCommand.Config.schema_extra["examples"][0],
+                        UserServiceCommand.Config.schema_extra["examples"][1],
+                    ],
+                    "inactivity": UserServiceCommand.Config.schema_extra["examples"][0],
                 },
             ]
         }
