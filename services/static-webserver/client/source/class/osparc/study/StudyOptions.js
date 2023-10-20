@@ -202,8 +202,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"]);
         advancedCB.bind("value", unitButtons, "advanced");
         advancedCB.addListener("selectedUnit", selectedUnit => {
-          console.log("selectedUnit", selectedUnit);
-          console.log("putPricingUnit");
+          console.log("putPricingUnit", selectedUnit);
         });
         machinesLayout.add(unitButtons);
 
