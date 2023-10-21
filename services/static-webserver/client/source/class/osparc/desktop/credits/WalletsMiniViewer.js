@@ -43,8 +43,6 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       "border-radius": "4px"
     });
 
-    this.__walletListeners = [];
-
     this.__buildLayout();
   },
 
