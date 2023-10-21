@@ -73,6 +73,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       tabViews.add(usageOverviewPage);
     }
 
+    if (walletsEnabled) {
+      const store = osparc.store.Store.getInstance();
+      const evaluateTabButtons = () => {
+        const contextWallet = store.getContextWallet();
+        const enabled = contextWallet && contextWallet.getMyAccessRights()["write"];
+        this.__paymentMethodsPage.setEnabled(enabled);
+        this.__buyCreditsPage.setEnabled(enabled);
+        this.__transactionsPage.setEnabled(enabled);
+      };
+      store.addListener("changeContextWallet", () => evaluateTabButtons());
+      evaluateTabButtons();
+    }
+
     this._add(tabViews);
   },
 
