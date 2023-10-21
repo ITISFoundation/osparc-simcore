@@ -58,6 +58,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
   members: {
     __buildLayout: function() {
       const store = osparc.store.Store.getInstance();
+      // there is a bug with the binding the second time a user logs in
       store.bind("contextWallet", this, "contextWallet");
     },
 
