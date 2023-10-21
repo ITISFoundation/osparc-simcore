@@ -66,7 +66,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       }) + qx.locale.Manager.tr(" Options");
       const width = 550;
       const minHeight = 400;
-      const maxHeight = 400;
+      const maxHeight = 600;
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
         maxHeight
       });
@@ -123,7 +123,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true).set({
+          control = osparc.desktop.credits.Utils.createWalletSelector("read", true).set({
             width: 150
           });
           this.getChildControl("wallet-selector-layout").add(control);
