@@ -78,7 +78,7 @@ qx.Class.define("osparc.navigation.LogoOnOff", {
           control = new osparc.ui.basic.LogoWPlatform();
           control.setSize({
             width: 100,
-            height: 50
+            height: osparc.navigation.NavigationBar.HEIGHT
           });
           control.setFont("text-9");
           this.add(control);

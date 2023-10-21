@@ -116,7 +116,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
       logo.getChildControl("on-logo").setSize({
         width: 100,
-        height: 50
+        height: osparc.navigation.NavigationBar.HEIGHT
       });
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("logo-powered");
