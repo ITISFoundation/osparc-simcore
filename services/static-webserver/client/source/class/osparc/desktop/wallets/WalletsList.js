@@ -38,8 +38,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       flex: 1
     });
 
-    const preferencesSettings = osparc.Preferences.getInstance();
-    preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
     this.loadWallets();
   },
 
