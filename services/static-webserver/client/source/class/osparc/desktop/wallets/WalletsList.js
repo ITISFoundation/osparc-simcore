@@ -137,8 +137,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement().setStyles({
+          const thumbnail = item.getChildControl("thumbnail");
+          thumbnail.getContentElement().setStyles({
             "border-radius": "16px"
           });
 
