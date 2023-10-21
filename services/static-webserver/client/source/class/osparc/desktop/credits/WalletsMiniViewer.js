@@ -68,10 +68,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     __reloadLayout: function() {
       const contextWallet = this.getContextWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
-      const oneWallet = contextWallet ? contextWallet : preferredWallet;
-      if (oneWallet) {
-        this.__showOneWallet(oneWallet);
+      if (contextWallet) {
+        this.__showOneWallet(contextWallet);
       } else {
         this.__showSelectWallet();
       }
