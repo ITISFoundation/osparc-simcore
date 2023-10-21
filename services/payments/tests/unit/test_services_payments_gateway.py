@@ -4,8 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
-
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -71,25 +69,13 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
-@pytest.fixture
-def mock_payments_gateway_service_or_none(
-    mock_payments_gateway_service_api_base: MockRouter,
-    mock_payments_routes: Callable,
-    external_secret_envs: EnvVarsDict,
-) -> MockRouter | None:
-
-    # EITHER tests against external payments-gateway
-    if payments_gateway_url := external_secret_envs.get("PAYMENTS_GATEWAY_URL"):
-        print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
-        mock_payments_gateway_service_api_base.stop()
-        return None
-
-    # OR tests against mock payments-gateway
-    mock_payments_routes(mock_payments_gateway_service_api_base)
-    return mock_payments_gateway_service_api_base
-
-
-@pytest.mark.testit
+@pytest.mark.parametrize(
+    "amount_dollars",
+    [
+        10,
+        999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
+    ],
+)
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
@@ -97,6 +83,7 @@ async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_or_none: MockRouter | None,
+    amount_dollars: float,
 ):
 
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
@@ -105,9 +92,7 @@ async def test_one_time_payment_workflow(
     # init
     payment_initiated = await payment_gateway_api.init_payment(
         payment=InitPayment(
-            amount_dollars=faker.pydecimal(
-                positive=True, right_digits=2, left_digits=4
-            ),
+            amount_dollars=amount_dollars,
             credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),

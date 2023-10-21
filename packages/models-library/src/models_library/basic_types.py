@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Final, TypeAlias
+from typing import TypeAlias
 
 from pydantic import (
     ConstrainedDecimal,
@@ -12,26 +12,21 @@ from pydantic import (
 
 from .basic_regex import UUID_RE, VERSION_RE
 
-# NOTE: this is sync with DECIMAL_PLACES@ packages/postgres-database/src/simcore_postgres_database/constants.py using using test_postgres_and_models_library_same_decimal_places_constant
-DECIMAL_PLACES: Final = 2
-
 
 class NonNegativeDecimal(ConstrainedDecimal):
     ge = 0
-    decimal_places = DECIMAL_PLACES
 
 
 class PositiveDecimal(ConstrainedDecimal):
     gt = 0
-    decimal_places = DECIMAL_PLACES
 
 
-class AmountDecimal(ConstrainedDecimal):
-    """Use for any amount in credits or currency"""
-
+class BoundedPositiveDecimal(ConstrainedDecimal):
+    # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
+    # NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
+    # before passing the value
     gt = 0
     lt = 1e6
-    decimal_places = DECIMAL_PLACES
 
 
 # port number range

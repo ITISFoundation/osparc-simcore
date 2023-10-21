@@ -9,10 +9,8 @@ from typing import Any
 
 import pytest
 import simcore_service_payments.models
-from models_library.basic_types import DECIMAL_PLACES
 from pydantic import BaseModel, ValidationError
 from pytest_simcore.pydantic_models import walk_model_examples_in_package
-from simcore_postgres_database.constants import DECIMAL_PLACES as DECIMAL_PLACES_FROM_PG
 
 
 @pytest.mark.parametrize(
@@ -28,7 +26,3 @@ def test_api_server_model_examples(
         pytest.fail(
             f"\n{example_name}: {json.dumps(example_data, indent=1)}\nError: {err}"
         )
-
-
-def test_postgres_and_models_library_same_decimal_places_constant():
-    assert DECIMAL_PLACES == DECIMAL_PLACES_FROM_PG

@@ -174,3 +174,21 @@ def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
         assert "PAYMENTS_GATEWAY_URL" in envs
 
     return envs
+
+
+@pytest.fixture
+def mock_payments_gateway_service_or_none(
+    mock_payments_gateway_service_api_base: MockRouter,
+    mock_payments_routes: Callable,
+    external_secret_envs: EnvVarsDict,
+) -> MockRouter | None:
+
+    # EITHER tests against external payments-gateway
+    if payments_gateway_url := external_secret_envs.get("PAYMENTS_GATEWAY_URL"):
+        print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
+        mock_payments_gateway_service_api_base.stop()
+        return None
+
+    # OR tests against mock payments-gateway
+    mock_payments_routes(mock_payments_gateway_service_api_base)
+    return mock_payments_gateway_service_api_base

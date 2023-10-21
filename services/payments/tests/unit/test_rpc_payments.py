@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Awaitable, Callable
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -17,6 +18,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
+from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 
 pytest_simcore_core_services_selection = [
@@ -54,7 +56,7 @@ def app_environment(
 @pytest.fixture
 def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
     return {
-        "amount_dollars": 100,
+        "amount_dollars": Decimal(999999.93000).quantize(QUANTIZE_EXP_ARG),
         "target_credits": 100,
         "product_name": "osparc",
         "wallet_id": 1,
@@ -86,15 +88,14 @@ async def test_rpc_init_payment_fail(
     assert exc.msg
 
 
+@pytest.mark.testit
 async def test_webserver_one_time_payment_workflow(
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    mock_payments_gateway_service_api_base: MockRouter,
-    mock_payments_routes: Callable,
+    mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
 ):
     assert app
-    mock_payments_routes(mock_payments_gateway_service_api_base)
 
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 
@@ -105,3 +106,6 @@ async def test_webserver_one_time_payment_workflow(
     )
 
     assert isinstance(result, WalletPaymentCreated)
+
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes["init_payment"].called
