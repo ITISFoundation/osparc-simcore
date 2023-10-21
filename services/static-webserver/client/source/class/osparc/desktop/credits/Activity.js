@@ -23,8 +23,8 @@ qx.Class.define("osparc.desktop.credits.Activity", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    const wallet = osparc.desktop.credits.Utils.getContextWallet();
-    this.setContextWallet(wallet);
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
   },
 
   properties: {
