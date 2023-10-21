@@ -44,8 +44,8 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       unitsLoading();
       this._removeAll();
       const advancedCB = new qx.ui.form.CheckBox().set({
-        label: this.tr("Advanced"),
-        value: true
+        label: this.tr("More information"),
+        value: false
       });
       if ("workbench" in this.__studyData) {
         const workbench = this.__studyData["workbench"];

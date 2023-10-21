@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
-    this.__sidePanels = this.getChildControl("side-panels");
+    this.getChildControl("side-panels");
     this.getChildControl("main-panel-tabs");
     this.__workbenchPanel = new osparc.desktop.WorkbenchPanel();
     this.__workbenchUI = this.__workbenchPanel.getMainView();
@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
+    PRIMARY_COL_BG_COLOR: "background-main-2",
     TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
@@ -93,11 +94,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   members: {
-    __sidePanels: null,
     __nodesPage: null,
     __studyTreeItem: null,
     __nodesTree: null,
-    __filesTree: null,
     __storagePage: null,
     __studyOptionsPage: null,
     __infoPage: null,
@@ -135,6 +134,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             minWidth: osparc.widget.CollapsibleViewLight.CARET_WIDTH,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
+          control.getChildControl("expand-button").setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
+          control.getChildControl("collapse-button").setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
           caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
@@ -195,13 +196,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control = new qx.ui.tabview.TabView().set({
             contentPadding: osparc.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
             contentPaddingRight: 2,
+            backgroundColor: this.self().PRIMARY_COL_BG_COLOR,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
           collapsibleViewLeft.setContent(control);
-          control.setBackgroundColor("background-main-2");
-          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-2");
-          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-2");
           break;
         }
         case "side-panel-right-tabs": {
@@ -303,16 +302,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
-      const primaryColumnBGColor = "background-main-2";
       const study = this.getStudy();
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
       this.__removePages(tabViewPrimary);
-      tabViewPrimary.setBackgroundColor(primaryColumnBGColor);
-      const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
-      collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor(primaryColumnBGColor);
-      collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor(primaryColumnBGColor);
-
+      tabViewPrimary.setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
@@ -323,20 +317,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-        backgroundColor: primaryColumnBGColor
+        backgroundColor: "transparent"
       });
 
       const studyTreeItem = this.__studyTreeItem = new osparc.widget.StudyTitleOnlyTree().set({
         alignY: "middle",
         minHeight: 32,
         maxHeight: 32,
-        backgroundColor: primaryColumnBGColor
+        backgroundColor: "transparent"
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
 
       const nodesTree = this.__nodesTree = new osparc.widget.NodesTree().set({
-        backgroundColor: primaryColumnBGColor,
+        backgroundColor: "transparent",
         allowGrowY: true,
         minHeight: 5
       });
@@ -362,16 +356,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       homeAndNodesTree.add(addNewNodeBtn);
 
-      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(nodesPage);
 
-      const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
-        backgroundColor: primaryColumnBGColor,
+      const filesTree = new osparc.file.FilesTree().set({
+        backgroundColor: "transparent",
         dragMechanism: true,
         hideRoot: true
       });
       filesTree.populateTree();
-      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, primaryColumnBGColor);
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(storagePage);
 
       this.__addTopBarSpacer(topBar);
