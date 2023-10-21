@@ -1,14 +1,9 @@
 from decimal import Decimal
-from typing import Final
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from simcore_postgres_database.models.products_prices import (
-    NUMERIC_KWARGS,
-    products_prices,
-)
-
-QUANTIZE_EXP_ARG: Final = Decimal(f"1e-{NUMERIC_KWARGS['scale']}")
+from simcore_postgres_database.models.payments_transactions import QUANTIZE_EXP_ARG
+from simcore_postgres_database.models.products_prices import products_prices
 
 
 async def get_product_latest_credit_price_or_none(

@@ -1,4 +1,6 @@
 import enum
+from decimal import Decimal
+from typing import Final
 
 import sqlalchemy as sa
 
@@ -17,6 +19,10 @@ class PaymentTransactionState(str, enum.Enum):
     SUCCESS = "SUCCESS"  # payment completed with success
     FAILED = "FAILED"  # payment failed
     CANCELED = "CANCELED"  # payment explicitly aborted by user
+
+
+DECIMAL_PLACES: Final = NUMERIC_KWARGS["scale"]
+QUANTIZE_EXP_ARG: Final = Decimal(f"1e-{NUMERIC_KWARGS['scale']}")
 
 
 #

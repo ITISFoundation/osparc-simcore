@@ -3,8 +3,10 @@ from pathlib import Path
 from typing import Literal, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import NonEmptyStr, PositiveDecimal
+from models_library.basic_types import NonEmptyStr
 from pydantic import BaseModel, EmailStr, Extra
+
+from ._base import AmountDecimal
 
 
 class ErrorModel(BaseModel):
@@ -16,9 +18,9 @@ class ErrorModel(BaseModel):
 
 
 class InitPayment(BaseModel):
-    amount_dollars: PositiveDecimal
+    amount_dollars: AmountDecimal
     # metadata to store for billing or reference
-    credits: PositiveDecimal
+    credits: AmountDecimal
     user_name: NonEmptyStr
     user_email: EmailStr
     wallet_name: NonEmptyStr
