@@ -30,15 +30,14 @@ qx.Class.define("osparc.ui.basic.Logo", {
       padding: 3
     });
 
-    this.__resetSourcePath();
+    this.resetSourcePath();
 
     const themeManager = qx.theme.manager.Meta.getInstance();
-    themeManager.addListener("changeTheme", () => this.__resetSourcePath(), this);
+    themeManager.addListener("changeTheme", () => this.resetSourcePath(), this);
   },
 
   members: {
-    __resetSourcePath: function() {
-      const long = true;
+    resetSourcePath: function(long = true) {
       const sourcePath = osparc.product.Utils.getLogoPath(long);
       this.set({
         source: sourcePath

@@ -397,17 +397,28 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       if (this.__tabButtons) {
         tabButtons = this.__tabButtons.getChildControl("content").getChildren();
       }
+      const logoWPlatform = this.getChildControl("logo").getChildControl("on-logo");
+      const logo = logoWPlatform.getChildControl("logo");
       if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
         // left-items
+        logoWPlatform.setSize({
+          width: 100,
+          height: osparc.navigation.NavigationBar.HEIGHT
+        });
+        const longLogo = false;
+        logo.resetSourcePath(longLogo);
+
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").exclude();
         }
+
         // center-items
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("icon").show();
           tabButton.getChildControl("label").exclude();
           tabButton.setToolTipText(tabButton.ttt);
         });
+
         // right-items
         this.getChildControl("user-menu").exclude();
         this.getChildControl("manual").exclude();
@@ -416,6 +427,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         this.getChildControl("user-menu-compact").show();
       } else {
         // left-items
+        logoWPlatform.setSize({
+          width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
+          height: osparc.navigation.NavigationBar.HEIGHT
+        });
+        const longLogo = true;
+        logo.resetSourcePath(longLogo);
+
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").show();
         }
