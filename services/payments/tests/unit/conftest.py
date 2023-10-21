@@ -139,6 +139,7 @@ def mock_payments_routes(faker: Faker) -> Callable:
             assert PaymentInitiated.parse_raw(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
+            # responds with an empty authough it can also contain a message
             return httpx.Response(status.HTTP_200_OK, json={})
 
         mock_router.post(

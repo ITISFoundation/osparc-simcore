@@ -34,6 +34,10 @@ class PaymentInitiated(BaseModel):
     payment_id: PaymentID
 
 
+class PaymentCancelled(BaseModel):
+    message: str | None = None
+
+
 PaymentMethodID: TypeAlias = UUID
 
 

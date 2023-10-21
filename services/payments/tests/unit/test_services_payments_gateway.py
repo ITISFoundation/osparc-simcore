@@ -89,6 +89,7 @@ def mock_payments_gateway_service_or_none(
     return mock_payments_gateway_service_api_base
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
@@ -107,7 +108,7 @@ async def test_one_time_payment_workflow(
             amount_dollars=faker.pydecimal(
                 positive=True, right_digits=2, left_digits=4
             ),
-            credits_=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
             wallet_name=faker.word(),
@@ -123,7 +124,8 @@ async def test_one_time_payment_workflow(
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # cancel
-    await payment_gateway_api.cancel_payment(payment_initiated)
+    payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
+    assert payment_canceled is not None
 
     # check mock
     if mock_payments_gateway_service_or_none:

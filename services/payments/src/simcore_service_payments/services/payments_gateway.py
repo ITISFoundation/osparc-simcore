@@ -18,6 +18,7 @@ from ..models.payments_gateway import (
     GetPaymentMethod,
     InitPayment,
     InitPaymentMethod,
+    PaymentCancelled,
     PaymentID,
     PaymentInitiated,
     PaymentMethodID,
@@ -55,12 +56,15 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     def get_form_payment_url(self, id_: PaymentID) -> URL:
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
 
-    async def cancel_payment(self, payment_initiated: PaymentInitiated):
+    async def cancel_payment(
+        self, payment_initiated: PaymentInitiated
+    ) -> PaymentCancelled:
         response = await self.client.post(
             "/cancel",
             json=jsonable_encoder(payment_initiated),
         )
         response.raise_for_status()
+        return PaymentCancelled.parse_obj(response.json())
 
     #
     # api: payment method workflows

@@ -31,6 +31,7 @@ from simcore_service_payments.models.payments_gateway import (
     ErrorModel,
     InitPayment,
     InitPaymentMethod,
+    PaymentCancelled,
     PaymentID,
     PaymentInitiated,
     PaymentMethodID,
@@ -221,6 +222,7 @@ def create_payment_router():
 
     @router.post(
         "/cancel",
+        response_model=PaymentCancelled,
         responses=ERROR_RESPONSES,
     )
     def cancel_payment(
@@ -233,6 +235,7 @@ def create_payment_router():
 
         try:
             all_payments[payment.payment_id] = "CANCELLED"
+            return PaymentCancelled(message="CANCELLED")
         except KeyError as exc:
             raise HTTPException(status.HTTP_404_NOT_FOUND) from exc
 
