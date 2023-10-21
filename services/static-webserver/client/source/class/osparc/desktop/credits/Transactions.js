@@ -23,8 +23,8 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    const wallet = osparc.desktop.credits.Utils.getContextWallet();
-    this.setContextWallet(wallet);
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
   },
 
   properties: {
@@ -49,9 +49,10 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
     },
 
     __buildLayout: function() {
+      this._removeAll();
       const wallet = this.getContextWallet();
-      if (wallet.getMyAccessRights()["write"]) {
-        const transactionsTable = this.getChildControl("transactions-table");
+      if (wallet && wallet.getMyAccessRights()["write"]) {
+        const transactionsTable = this._createChildControlImpl("transactions-table");
         osparc.data.Resources.fetch("payments", "get")
           .then(transactions => {
             if ("data" in transactions) {

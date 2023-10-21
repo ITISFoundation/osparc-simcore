@@ -24,15 +24,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
-    getContextWallet: function() {
-      const contextWallet = osparc.store.Store.getInstance().getContextWallet();
-      if (contextWallet) {
-        return contextWallet;
-      }
-      // It should never reach here
-      return null;
-    },
-
     getNoWriteAccessLabel: function() {
       return new qx.ui.basic.Label().set({
         value: qx.locale.Manager.tr("You can't access this information"),
