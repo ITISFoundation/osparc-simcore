@@ -87,7 +87,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         this._createChildControlImpl("add-payment-methods-button");
         this.__fetchPaymentMethods();
       } else {
-        this._add(osparc.desktop.credits.Utils.getNoWriteAccessLabel());
+        this._add(osparc.desktop.credits.Utils.getNoWriteAccessOperationsLabel());
       }
     },
 

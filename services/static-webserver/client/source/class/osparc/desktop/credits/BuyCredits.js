@@ -122,7 +122,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           }
         });
       } else {
-        this._add(osparc.desktop.credits.Utils.getNoWriteAccessLabel());
+        this._add(osparc.desktop.credits.Utils.getNoWriteAccessOperationsLabel());
       }
     },
 

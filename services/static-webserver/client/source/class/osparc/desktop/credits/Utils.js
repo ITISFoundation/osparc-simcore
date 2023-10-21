@@ -24,7 +24,15 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
-    getNoWriteAccessLabel: function() {
+    getNoWriteAccessInformationLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this information"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
+    getNoWriteAccessOperationsLabel: function() {
       return new qx.ui.basic.Label().set({
         value: qx.locale.Manager.tr("You can't access this information"),
         font: "text-14",
