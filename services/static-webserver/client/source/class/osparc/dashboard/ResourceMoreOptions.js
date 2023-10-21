@@ -271,15 +271,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       [
         this.__getInfoPage,
         this.__getBillingSettings,
-        this.__getCommentsPage,
-        this.__getDataPage,
-        this.__getPermissionsPage,
-        this.__getTagsPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
+        this.__getDataPage,
+        this.__getCommentsPage,
+        this.__getPermissionsPage,
+        this.__getSaveAsTemplatePage,
+        this.__getTagsPage,
         this.__getQualityPage,
-        this.__getClassifiersPage,
-        this.__getSaveAsTemplatePage
+        this.__getClassifiersPage
       ].forEach(pageCallee => {
         if (pageCallee) {
           const page = pageCallee.call(this);
@@ -344,8 +344,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       const id = "Billing";
-      const title = this.tr("Billing");
-      const icon = "@FontAwesome5Solid/dollar-sign";
+      const title = this.tr("Billing Settings");
+      const icon = "@FontAwesome5Solid/cogs";
 
       const billingSettings = new osparc.study.BillingSettings(resourceData);
 
