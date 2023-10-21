@@ -107,7 +107,7 @@ async def test_one_time_payment_workflow(
             amount_dollars=faker.pydecimal(
                 positive=True, right_digits=2, left_digits=4
             ),
-            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
+            credits_=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
             user_name=faker.user_name(),
             user_email=faker.email(),
             wallet_name=faker.word(),

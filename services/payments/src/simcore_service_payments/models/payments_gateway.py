@@ -4,7 +4,7 @@ from typing import Literal, TypeAlias
 from uuid import UUID
 
 from models_library.basic_types import NonEmptyStr
-from pydantic import BaseModel, EmailStr, Extra
+from pydantic import BaseModel, EmailStr, Extra, Field
 
 from ._base import AmountDecimal
 
@@ -20,7 +20,7 @@ class ErrorModel(BaseModel):
 class InitPayment(BaseModel):
     amount_dollars: AmountDecimal
     # metadata to store for billing or reference
-    credits: AmountDecimal
+    credits_: AmountDecimal = Field(..., alias="credits")
     user_name: NonEmptyStr
     user_email: EmailStr
     wallet_name: NonEmptyStr

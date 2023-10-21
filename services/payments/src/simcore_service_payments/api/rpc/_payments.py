@@ -50,7 +50,7 @@ async def init_payment(
         init = await payments_gateway_api.init_payment(
             payment=InitPayment(
                 amount_dollars=amount_dollars,
-                credits=target_credits,
+                credits_=target_credits,
                 user_name=user_name,
                 user_email=user_email,  # type: ignore
                 wallet_name=wallet_name,
