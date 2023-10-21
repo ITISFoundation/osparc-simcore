@@ -168,7 +168,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboardBtn.setFetching(false);
 
       const store = osparc.store.Store.getInstance();
-      store.setActiveWallet(null);
+      store.setContextWallet(null);
     },
 
     closeEditor: function() {

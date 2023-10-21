@@ -25,9 +25,9 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     },
 
     getContextWallet: function() {
-      const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
-      if (activeWallet) {
-        return activeWallet;
+      const contextWallet = osparc.store.Store.getInstance().getContextWallet();
+      if (contextWallet) {
+        return contextWallet;
       }
       const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
       if (preferredWallet) {

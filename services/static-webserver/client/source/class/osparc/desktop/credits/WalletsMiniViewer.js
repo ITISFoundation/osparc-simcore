@@ -49,7 +49,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
   },
 
   properties: {
-    activeWallet: {
+    contextWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: true,
@@ -62,14 +62,14 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     __buildLayout: function() {
       const store = osparc.store.Store.getInstance();
-      store.bind("activeWallet", this, "activeWallet");
+      store.bind("contextWallet", this, "contextWallet");
       store.addListener("changeWallets", () => this.__reloadLayout());
     },
 
     __reloadLayout: function() {
-      const activeWallet = this.getActiveWallet();
+      const contextWallet = this.getContextWallet();
       const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
-      const oneWallet = activeWallet ? activeWallet : preferredWallet;
+      const oneWallet = contextWallet ? contextWallet : preferredWallet;
       if (oneWallet) {
         this.__showOneWallet(oneWallet);
       } else {

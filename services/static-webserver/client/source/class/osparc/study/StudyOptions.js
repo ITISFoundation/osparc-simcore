@@ -266,7 +266,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           };
           osparc.data.Resources.fetch("studies", "selectWallet", params)
             .then(() => {
-              store.setActiveWallet(this.getWallet());
+              store.setContextWallet(this.getWallet());
               this.fireEvent("startStudy");
             })
             .catch(err => {
@@ -275,7 +275,7 @@ qx.Class.define("osparc.study.StudyOptions", {
               osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
             });
         } else {
-          store.setActiveWallet(this.getWallet());
+          store.setContextWallet(this.getWallet());
           this.fireEvent("startStudy");
         }
       });
