@@ -118,6 +118,7 @@ qx.Class.define("osparc.store.Store", {
       event: "changeWallets",
       apply: "__applyWallets"
     },
+    // If a study with a wallet is open, this wallet will be the active one
     activeWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
@@ -125,6 +126,7 @@ qx.Class.define("osparc.store.Store", {
       event: "changeActiveWallet",
       apply: "__applyActiveWallet"
     },
+    // User's default or primary wallet
     preferredWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
@@ -132,6 +134,7 @@ qx.Class.define("osparc.store.Store", {
       event: "changePreferredWallet",
       apply: "__applyPreferredWallet"
     },
+    // Active wallet, default wallet or null (in a product with wallets enabled there shouldn't be a null context wallet)
     contextWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
