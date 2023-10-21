@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Awaitable, Callable
-from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -18,7 +17,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
-from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 
 pytest_simcore_core_services_selection = [
@@ -37,6 +35,7 @@ def app_environment(
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
     postgres_env_vars_dict: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
+    external_secret_envs: EnvVarsDict,
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
@@ -48,6 +47,7 @@ def app_environment(
             **app_environment,
             **rabbit_env_vars_dict,
             **postgres_env_vars_dict,
+            **external_secret_envs,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )
@@ -56,7 +56,7 @@ def app_environment(
 @pytest.fixture
 def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
     return {
-        "amount_dollars": Decimal(999999.93000).quantize(QUANTIZE_EXP_ARG),
+        "amount_dollars": 999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
         "target_credits": 100,
         "product_name": "osparc",
         "wallet_id": 1,
@@ -88,7 +88,6 @@ async def test_rpc_init_payment_fail(
     assert exc.msg
 
 
-@pytest.mark.testit
 async def test_webserver_one_time_payment_workflow(
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
