@@ -121,12 +121,13 @@ qx.Class.define("osparc.store.Store", {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: true,
-      event: "changeActiveWallet"
+      event: "changeActiveWallet",
+      apply: "__applyActiveWallet"
     },
     contextWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
-      nullable: false,
+      nullable: true,
       event: "changeContextWallet"
     },
     creditPrice: {
@@ -304,6 +305,15 @@ qx.Class.define("osparc.store.Store", {
           const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
           qx.util.PropertyUtil.getUserValue(this, propName, initVal);
         });
+      }
+    },
+
+    __applyActiveWallet: function(activeWallet) {
+      if (activeWallet) {
+        this.setContextWallet(activeWallet);
+      } else {
+        const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
+        this.setContextWallet(preferredWallet);
       }
     },
 

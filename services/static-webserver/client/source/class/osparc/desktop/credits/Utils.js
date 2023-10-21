@@ -139,8 +139,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     },
 
     getPreferredWallet: function() {
-      const store = osparc.store.Store.getInstance();
-      const wallets = store.getWallets();
+      const wallets = osparc.store.Store.getInstance().getWallets();
       const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
       if (favouriteWallet) {
         return favouriteWallet;
