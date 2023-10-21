@@ -3,10 +3,8 @@ from pathlib import Path
 from typing import Literal, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import NonEmptyStr
+from models_library.basic_types import AmountDecimal, NonEmptyStr
 from pydantic import BaseModel, EmailStr, Extra, Field
-
-from ._base import AmountDecimal
 
 
 class ErrorModel(BaseModel):

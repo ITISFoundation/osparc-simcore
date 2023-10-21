@@ -2,8 +2,9 @@ from decimal import Decimal
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from simcore_postgres_database.models.payments_transactions import QUANTIZE_EXP_ARG
-from simcore_postgres_database.models.products_prices import products_prices
+
+from .constants import QUANTIZE_EXP_ARG
+from .models.products_prices import products_prices
 
 
 async def get_product_latest_credit_price_or_none(
