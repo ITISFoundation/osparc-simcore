@@ -271,7 +271,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             })
             .catch(err => {
               console.error(err);
-              const msg = err.message || this.tr("Error selecting Wallet");
+              const msg = err.message || this.tr("Error selecting Credit Account");
               osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
             });
         } else {
