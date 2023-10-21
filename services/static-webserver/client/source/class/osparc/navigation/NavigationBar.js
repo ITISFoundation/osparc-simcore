@@ -398,15 +398,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         tabButtons = this.__tabButtons.getChildControl("content").getChildren();
       }
       const logoWPlatform = this.getChildControl("logo").getChildControl("on-logo");
-      const logo = logoWPlatform.getChildControl("logo");
       if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
         // left-items
         logoWPlatform.setSize({
           width: 100,
           height: osparc.navigation.NavigationBar.HEIGHT
         });
-        const longLogo = false;
-        logo.resetSourcePath(longLogo);
 
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").exclude();
@@ -431,8 +428,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
           height: osparc.navigation.NavigationBar.HEIGHT
         });
-        const longLogo = true;
-        logo.resetSourcePath(longLogo);
 
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").show();

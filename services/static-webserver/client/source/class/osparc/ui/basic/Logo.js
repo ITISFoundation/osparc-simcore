@@ -30,14 +30,17 @@ qx.Class.define("osparc.ui.basic.Logo", {
       padding: 3
     });
 
-    this.resetSourcePath();
+    this.__resetSourcePath();
 
     const themeManager = qx.theme.manager.Meta.getInstance();
-    themeManager.addListener("changeTheme", () => this.resetSourcePath(), this);
+    themeManager.addListener("changeTheme", () => this.__resetSourcePath(), this);
+
+    osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__resetSourcePath(), this);
   },
 
   members: {
-    resetSourcePath: function(long = true) {
+    __resetSourcePath: function() {
+      const long = !osparc.WindowSizeTracker.getInstance().isCompactVersion();
       const sourcePath = osparc.product.Utils.getLogoPath(long);
       this.set({
         source: sourcePath
