@@ -23,8 +23,8 @@ qx.Class.define("osparc.desktop.credits.Summary", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const wallet = osparc.desktop.credits.Utils.getContextWallet();
-    this.setContextWallet(wallet);
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
   },
 
   properties: {
@@ -75,9 +75,13 @@ qx.Class.define("osparc.desktop.credits.Summary", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("wallets-card");
-      this.getChildControl("settings-card");
-      this.getChildControl("activity-card");
+      this._removeAll();
+      this._createChildControlImpl("wallets-card");
+      const wallet = this.getContextWallet();
+      if (wallet && wallet.getMyAccessRights()["write"]) {
+        this._createChildControlImpl("settings-card");
+      }
+      this._createChildControlImpl("activity-card");
     },
 
     __createOverviewCard: function(cardLabel, content, buttonLabel, signalName, signalData) {
@@ -246,7 +250,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
 
         return layout;
       }
-      return osparc.desktop.credits.Utils.getNoWriteAccessLabel();
+      return null;
     },
 
     __createActivityView: function() {
