@@ -697,6 +697,30 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    sortWallets: function(a, b) {
+      const aAccessRights = a.getAccessRights();
+      const bAccessRights = b.getAccessRights();
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (
+        aAccessRights &&
+        bAccessRights &&
+        aAccessRights.find(ar => ar["gid"] === myGid) &&
+        bAccessRights.find(ar => ar["gid"] === myGid)
+      ) {
+        const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
+        const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
+        const sorted = osparc.share.Collaborators.sortByAccessRights(aAr, bAr);
+        if (sorted !== 0) {
+          return sorted;
+        }
+        if (("getName" in a) && ("getName" in b)) {
+          return a.getName().localeCompare(b.getName());
+        }
+        return 0;
+      }
+      return 0;
+    },
+
     reloadWallets: function() {
       const store = osparc.store.Store.getInstance();
 
@@ -730,6 +754,7 @@ qx.Class.define("osparc.store.Store", {
 
             Promise.all(accessRightPromises)
               .then(() => {
+                wallets.sort(this.sortWallets);
                 // 2) depending on the access rights, fetch the auto recharge
                 const autoRechargePromises = [];
                 store.getWallets().forEach(wallet => {

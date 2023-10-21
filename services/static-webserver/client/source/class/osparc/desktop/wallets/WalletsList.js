@@ -38,6 +38,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       flex: 1
     });
 
+    const preferencesSettings = osparc.Preferences.getInstance();
+    preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
     this.loadWallets();
   },
 
@@ -52,32 +54,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       init: false,
       nullable: false,
       event: "changeWalletsLoaded"
-    }
-  },
-
-  statics: {
-    sortWallets: function(a, b) {
-      const aAccessRights = a.getAccessRights();
-      const bAccessRights = b.getAccessRights();
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (
-        aAccessRights &&
-        bAccessRights &&
-        aAccessRights.find(ar => ar["gid"] === myGid) &&
-        bAccessRights.find(ar => ar["gid"] === myGid)
-      ) {
-        const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
-        const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
-        const sorted = osparc.share.Collaborators.sortByAccessRights(aAr, bAr);
-        if (sorted !== 0) {
-          return sorted;
-        }
-        if (("getName" in a) && ("getName" in b)) {
-          return a.getName().localeCompare(b.getName());
-        }
-        return 0;
-      }
-      return 0;
     }
   },
 
@@ -142,7 +118,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
               walletId
             } = e.getData();
             const preferencesSettings = osparc.Preferences.getInstance();
-            preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
             preferencesSettings.requestChangePreferredWalletId(parseInt(walletId));
           });
         }
@@ -167,7 +142,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       walletsModel.removeAll();
 
       const store = osparc.store.Store.getInstance();
-      store.getWallets().sort(this.self().sortWallets);
       store.getWallets().forEach(wallet => walletsModel.append(wallet));
       this.setWalletsLoaded(true);
     },
