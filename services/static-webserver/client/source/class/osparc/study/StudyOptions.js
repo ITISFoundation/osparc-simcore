@@ -244,11 +244,11 @@ qx.Class.define("osparc.study.StudyOptions", {
         const selection = e.getData();
         selectWallet(selection[0].walletId);
       });
-      const favWallet = osparc.desktop.credits.Utils.getPreferredWallet();
+      const preferredWallet = store.getPreferredWallet();
       if (this.__projectWalletId) {
         selectWallet(this.__projectWalletId);
-      } else if (favWallet) {
-        selectWallet(favWallet.getWalletId());
+      } else if (preferredWallet) {
+        selectWallet(preferredWallet.getWalletId());
       } else if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
         walletSelector.setSelection([]);
       }

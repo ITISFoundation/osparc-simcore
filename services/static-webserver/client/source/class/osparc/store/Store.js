@@ -115,7 +115,8 @@ qx.Class.define("osparc.store.Store", {
     wallets: {
       check: "Array",
       init: [],
-      event: "changeWallets"
+      event: "changeWallets",
+      apply: "__applyWallets"
     },
     activeWallet: {
       check: "osparc.data.model.Wallet",
@@ -123,6 +124,13 @@ qx.Class.define("osparc.store.Store", {
       nullable: true,
       event: "changeActiveWallet",
       apply: "__applyActiveWallet"
+    },
+    preferredWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: true,
+      event: "changePreferredWallet",
+      apply: "__applyPreferredWallet"
     },
     contextWallet: {
       check: "osparc.data.model.Wallet",
@@ -308,13 +316,46 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    __applyWallets: function(wallets) {
+      const preferenceSettings = osparc.Preferences.getInstance();
+      const preferenceWalletId = preferenceSettings.getPreferredWalletId();
+      if (
+        (preferenceWalletId === null || osparc.desktop.credits.Utils.getWallet(preferenceWalletId) === null) &&
+        wallets.length === 1
+      ) {
+        // If there is only one wallet available, make it default
+        preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+      } else if (preferenceWalletId) {
+        const walletFound = wallets.find(wallet => wallet.getWalletId() === preferenceWalletId);
+        if (walletFound) {
+          this.setPreferredWallet(walletFound);
+        }
+      }
+    },
+
     __applyActiveWallet: function(activeWallet) {
       if (activeWallet) {
         this.setContextWallet(activeWallet);
       } else {
-        const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
+        const preferredWallet = this.getPreferredWallet();
         this.setContextWallet(preferredWallet);
       }
+    },
+
+    __applyPreferredWallet: function(preferredWallet) {
+      const activeWallet = this.getActiveWallet();
+      if (activeWallet === null) {
+        this.setContextWallet(preferredWallet);
+      }
+    },
+
+    getPreferredWallet: function() {
+      const wallets = this.getWallets();
+      const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
+      if (favouriteWallet) {
+        return favouriteWallet;
+      }
+      return null;
     },
 
     getStudyState: function(studyId) {

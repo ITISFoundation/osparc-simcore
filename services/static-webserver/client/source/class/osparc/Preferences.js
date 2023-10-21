@@ -118,8 +118,16 @@ qx.Class.define("osparc.Preferences", {
       this.self().patchPreference("preferredWalletId", walletId)
         .then(() => {
           this.setPreferredWalletId(walletId);
-          const wallets = osparc.store.Store.getInstance().getWallets();
-          wallets.forEach(wallet => wallet.setPreferredWallet(wallet.getWalletId() === walletId));
+          const store = osparc.store.Store.getInstance();
+          const wallets = store.getWallets();
+          wallets.forEach(wallet => {
+            if (wallet.getWalletId() === walletId) {
+              wallet.setPreferredWallet(true);
+              store.setPreferredWallet(wallet);
+            } else {
+              wallet.setPreferredWallet(false);
+            }
+          });
         })
         .catch(err => {
           console.error(err);

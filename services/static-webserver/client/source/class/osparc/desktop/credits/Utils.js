@@ -29,10 +29,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       if (contextWallet) {
         return contextWallet;
       }
-      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
-      if (preferredWallet) {
-        return preferredWallet;
-      }
       // It should never reach here
       return null;
     },
@@ -136,15 +132,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         return myWallets;
       }
       return [];
-    },
-
-    getPreferredWallet: function() {
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
-      if (favouriteWallet) {
-        return favouriteWallet;
-      }
-      return null;
     },
 
     getPaymentMethods: function(walletId) {
