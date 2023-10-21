@@ -18,11 +18,11 @@ class SavedPaymentMethod(AckPaymentMethod):
     payment_method_id: PaymentMethodID
 
 
-_ONE_TIME_SUCCESS = {
+_ONE_TIME_SUCCESS: dict[str, Any] = {
     "success": True,
     "invoice_url": "https://invoices.com/id=12345",
 }
-_EXAMPLES = [
+_EXAMPLES: list[dict[str, Any]] = [
     # 0. one-time-payment successful
     _ONE_TIME_SUCCESS,
     # 1. one-time-payment and payment-method-saved successful
@@ -62,7 +62,7 @@ class AckPayment(_BaseAck):
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
-            "example": _EXAMPLES[1],  # shown in openapi.json
+            "example": _EXAMPLES[1].copy(),  # shown in openapi.json
             "examples": _EXAMPLES,
         }
 
