@@ -23,8 +23,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    const wallet = osparc.desktop.credits.Utils.getContextWallet();
-    this.setContextWallet(wallet);
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
   },
 
   properties: {
@@ -79,11 +79,12 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __buildLayout: function() {
+      this._removeAll();
       const wallet = this.getContextWallet();
       if (wallet.getMyAccessRights()["write"]) {
-        this.getChildControl("intro-text");
-        this.getChildControl("payment-methods-list-layout");
-        this.getChildControl("add-payment-methods-button");
+        this._createChildControlImpl("intro-text");
+        this._createChildControlImpl("payment-methods-list-layout");
+        this._createChildControlImpl("add-payment-methods-button");
         this.__fetchPaymentMethods();
       } else {
         this._add(osparc.desktop.credits.Utils.getNoWriteAccessLabel());
