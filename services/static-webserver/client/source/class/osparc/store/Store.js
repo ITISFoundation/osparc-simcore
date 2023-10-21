@@ -699,34 +699,52 @@ qx.Class.define("osparc.store.Store", {
 
     reloadWallets: function() {
       const store = osparc.store.Store.getInstance();
-      store.setWallets([]);
 
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "walletOsparcCreditsUpdated";
+      socket.removeSlot(slotName);
+      socket.on(slotName, jsonString => {
+        const data = JSON.parse(jsonString);
+        const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+        if (walletFound) {
+          walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+        }
+      }, this);
+
+      store.setWallets([]);
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("wallets", "get")
           .then(walletsData => {
             const wallets = [];
-            const promises = [];
             walletsData.forEach(walletReducedData => {
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
-              promises.push(this.reloadWalletAccessRights(wallet));
-              promises.push(this.reloadWalletAutoRecharge(wallet));
             });
             store.setWallets(wallets);
 
-            const socket = osparc.wrapper.WebSocket.getInstance();
-            const slotName = "walletOsparcCreditsUpdated";
-            socket.removeSlot(slotName);
-            socket.on(slotName, jsonString => {
-              const data = JSON.parse(jsonString);
-              const walletFound = wallets.find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
-              if (walletFound) {
-                walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
-              }
-            }, this);
+            // 1) fetch the access rights
+            const accessRightPromises = [];
+            store.getWallets().forEach(wallet => {
+              accessRightPromises.push(this.reloadWalletAccessRights(wallet));
+            });
 
-            Promise.all(promises)
-              .then(() => resolve())
+            Promise.all(accessRightPromises)
+              .then(() => {
+                // 2) depending on the access rights, fetch the auto recharge
+                const autoRechargePromises = [];
+                store.getWallets().forEach(wallet => {
+                  if (wallet.getMyAccessRights() && wallet.getMyAccessRights()["write"]) {
+                    autoRechargePromises.push(this.reloadWalletAutoRecharge(wallet));
+                  }
+                });
+
+                Promise.all(autoRechargePromises)
+                  .then(() => resolve())
+                  .catch(err => {
+                    console.error(err);
+                    reject();
+                  });
+              })
               .catch(err => {
                 console.error(err);
                 reject();
