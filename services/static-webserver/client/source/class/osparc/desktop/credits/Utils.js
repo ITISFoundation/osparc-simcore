@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
     getNoWriteAccessOperationsLabel: function() {
       return new qx.ui.basic.Label().set({
-        value: qx.locale.Manager.tr("You can't access this information"),
+        value: qx.locale.Manager.tr("You can't access this operations"),
         font: "text-14",
         allowGrowX: true
       });
