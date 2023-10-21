@@ -57,13 +57,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
   statics: {
     sortWallets: function(a, b) {
-      const aPreferredWallet = a.isPreferredWallet();
-      const bPreferredWallet = b.isPreferredWallet();
-      if (aPreferredWallet) {
-        return -1;
-      } else if (bPreferredWallet) {
-        return 1;
-      }
       const aAccessRights = a.getAccessRights();
       const bAccessRights = b.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
@@ -169,7 +162,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     },
 
     loadWallets: function() {
-      this.__walletsUIList.resetSelection();
+      // this.__walletsUIList.resetSelection();
       const walletsModel = this.__walletsModel;
       walletsModel.removeAll();
 
