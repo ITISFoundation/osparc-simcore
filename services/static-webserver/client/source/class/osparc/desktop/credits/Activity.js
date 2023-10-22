@@ -23,8 +23,8 @@ qx.Class.define("osparc.desktop.credits.Activity", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    const wallet = osparc.desktop.credits.Utils.getContextWallet();
-    this.setContextWallet(wallet);
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
   },
 
   properties: {
@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
           });
           this._add(control);
           break;
-        case "page-buttons":
+        case "page-buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
             allowGrowX: true,
             alignX: "center",
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
             allowGrowX: false
           });
           control.addListener("execute", () => this.__fetchData(this.__getPrevRequest()));
-          const pageButtons = this.getChildControl("page-buttons");
+          const pageButtons = this.getChildControl("page-buttons-layout");
           pageButtons.add(control);
           break;
         }
@@ -93,7 +93,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
             textAlign: "center",
             alignY: "middle"
           });
-          const pageButtons = this.getChildControl("page-buttons");
+          const pageButtons = this.getChildControl("page-buttons-layout");
           pageButtons.add(control);
           break;
         }
@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
             allowGrowX: false
           });
           control.addListener("execute", () => this.__fetchData(this.__getNextUsageRequest()));
-          const pageButtons = this.getChildControl("page-buttons");
+          const pageButtons = this.getChildControl("page-buttons-layout");
           pageButtons.add(control);
           break;
         }

@@ -55,39 +55,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     }
   },
 
-  statics: {
-    sortWallets: function(a, b) {
-      const aPreferredWallet = a.isPreferredWallet();
-      const bPreferredWallet = b.isPreferredWallet();
-      if (aPreferredWallet) {
-        return -1;
-      } else if (bPreferredWallet) {
-        return 1;
-      }
-      const aAccessRights = a.getAccessRights();
-      const bAccessRights = b.getAccessRights();
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (
-        aAccessRights &&
-        bAccessRights &&
-        aAccessRights.find(ar => ar["gid"] === myGid) &&
-        bAccessRights.find(ar => ar["gid"] === myGid)
-      ) {
-        const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
-        const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
-        const sorted = osparc.share.Collaborators.sortByAccessRights(aAr, bAr);
-        if (sorted !== 0) {
-          return sorted;
-        }
-        if (("getName" in a) && ("getName" in b)) {
-          return a.getName().localeCompare(b.getName());
-        }
-        return 0;
-      }
-      return 0;
-    }
-  },
-
   members: {
     __walletsUIList: null,
     __walletsModel: null,
@@ -137,8 +104,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement().setStyles({
+          const thumbnail = item.getChildControl("thumbnail");
+          thumbnail.getContentElement().setStyles({
             "border-radius": "16px"
           });
 
@@ -149,7 +116,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
               walletId
             } = e.getData();
             const preferencesSettings = osparc.Preferences.getInstance();
-            preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
             preferencesSettings.requestChangePreferredWalletId(parseInt(walletId));
           });
         }
@@ -169,12 +135,11 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     },
 
     loadWallets: function() {
-      this.__walletsUIList.resetSelection();
+      // this.__walletsUIList.resetSelection();
       const walletsModel = this.__walletsModel;
       walletsModel.removeAll();
 
       const store = osparc.store.Store.getInstance();
-      store.getWallets().sort(this.self().sortWallets);
       store.getWallets().forEach(wallet => walletsModel.append(wallet));
       this.setWalletsLoaded(true);
     },
@@ -227,7 +192,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           })
           .catch(err => {
             console.error(err);
-            const msg = err.message || this.tr("Something went wrong updating the Wallet");
+            const msg = err.message || this.tr("Something went wrong updating the Credit Account");
             osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           })
           .finally(() => {
