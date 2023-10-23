@@ -107,6 +107,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
+  /v0/auth:unregister:
+    post:
+      tags:
+      - auth
+      summary: Unregister Account
+      operationId: unregister_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnregisterCheck'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Log_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/verify-phone-number:
     post:
       tags:
@@ -3537,31 +3562,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/me:mark-deleted:
-    post:
-      tags:
-      - user
-      summary: Mark Account For Deletion
-      operationId: mark_account_for_deletion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfileCredentialsCheck'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Log_'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Error_'
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
@@ -7619,22 +7619,6 @@ components:
         default:
           title: Default
           type: boolean
-    ProfileCredentialsCheck:
-      title: ProfileCredentialsCheck
-      required:
-      - email
-      - password
-      type: object
-      properties:
-        email:
-          title: Email
-          type: string
-          format: email
-        password:
-          title: Password
-          type: string
-          format: password
-          writeOnly: true
     ProfileGet:
       title: ProfileGet
       required:
@@ -9559,6 +9543,22 @@ components:
       example:
         service: github-api-v1
         token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+    UnregisterCheck:
+      title: UnregisterCheck
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          format: email
+        password:
+          title: Password
+          type: string
+          format: password
+          writeOnly: true
     UploadedPart:
       title: UploadedPart
       required:

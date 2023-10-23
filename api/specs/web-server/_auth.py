@@ -54,7 +54,7 @@ async def check_registration_invitation(check: InvitationCheck):
     response_model=Envelope[Log],
     operation_id="auth_register",
 )
-async def register(registration: RegisterBody):
+async def register(_body: RegisterBody):
     """User registration"""
 
 
@@ -73,7 +73,7 @@ async def unregister_account(_body: UnregisterCheck):
     response_model=Envelope[RegisterPhoneNextPage],
     operation_id="auth_register_phone",
 )
-async def register_phone(registration: RegisterPhoneBody):
+async def register_phone(_body: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
 
 
@@ -82,7 +82,7 @@ async def register_phone(registration: RegisterPhoneBody):
     response_model=Envelope[Log],
     operation_id="auth_phone_confirmation",
 )
-async def phone_confirmation(confirmation: PhoneConfirmationBody):
+async def phone_confirmation(_body: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""
 
 
@@ -99,7 +99,7 @@ async def phone_confirmation(confirmation: PhoneConfirmationBody):
         }
     },
 )
-async def login(authentication: LoginBody):
+async def login(_body: LoginBody):
     """user logs in"""
 
 
@@ -114,7 +114,7 @@ async def login(authentication: LoginBody):
         }
     },
 )
-async def login_2fa(authentication: LoginTwoFactorAuthBody):
+async def login_2fa(_body: LoginTwoFactorAuthBody):
     """user enters 2 Factor Authentication code when login in"""
 
 
@@ -138,7 +138,7 @@ async def resend_2fa_code(resend: Resend2faBody):
     response_model=Envelope[Log],
     operation_id="auth_logout",
 )
-async def logout(data: LogoutBody):
+async def logout(_body: LogoutBody):
     """user logout"""
 
 
@@ -148,7 +148,7 @@ async def logout(data: LogoutBody):
     operation_id="auth_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Envelope[Error]}},
 )
-async def reset_password(data: ResetPasswordBody):
+async def reset_password(_body: ResetPasswordBody):
     """a non logged-in user requests a password reset"""
 
 
@@ -163,7 +163,7 @@ async def reset_password(data: ResetPasswordBody):
         }
     },
 )
-async def reset_password_allowed(code: str, data: ResetPasswordConfirmation):
+async def reset_password_allowed(code: str, _body: ResetPasswordConfirmation):
     """changes password using a token code without being logged in"""
 
 
@@ -182,7 +182,7 @@ async def reset_password_allowed(code: str, data: ResetPasswordConfirmation):
         },
     },
 )
-async def change_email(data: ChangeEmailBody):
+async def change_email(_body: ChangeEmailBody):
     """logged in user changes email"""
 
 
@@ -216,7 +216,7 @@ class PasswordCheckSchema(BaseModel):
         },
     },
 )
-async def change_password(data: ChangePasswordBody):
+async def change_password(_body: ChangePasswordBody):
     """logged in user changes password"""
 
 
@@ -276,7 +276,7 @@ async def list_api_keys(code: str):
         },
     },
 )
-async def create_api_key(data: ApiKeyCreate):
+async def create_api_key(_body: ApiKeyCreate):
     """creates API keys to access public API"""
 
 
@@ -296,5 +296,5 @@ async def create_api_key(data: ApiKeyCreate):
         },
     },
 )
-async def delete_api_key(data: ApiKeyCreate):
+async def delete_api_key(_body: ApiKeyCreate):
     """deletes API key by name"""
