@@ -29,7 +29,7 @@ async def list_user_permissions(
     return permissions
 
 
-class UserCredintialsTuple(NamedTuple):
+class UserCredentialsTuple(NamedTuple):
     email: LowerCaseEmailStr
     password_hash: str
     full_name: FullNameTuple
@@ -37,14 +37,14 @@ class UserCredintialsTuple(NamedTuple):
 
 async def get_user_credentials(
     app: web.Application, *, user_id: UserID
-) -> UserCredintialsTuple:
+) -> UserCredentialsTuple:
     row = await get_user_or_raise(
         get_database_engine(app),
         user_id=user_id,
         return_column_names=["name", "email", "password_hash"],
     )
 
-    return UserCredintialsTuple(
+    return UserCredentialsTuple(
         email=parse_obj_as(LowerCaseEmailStr, row.email),
         password_hash=row.password_hash,
         full_name=UserNameConverter.get_full_name(row.name),
