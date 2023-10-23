@@ -124,16 +124,6 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
-    PRIMARY_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
-    )
-
-    PRIMARY_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
-    )
-
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_intance_names(cls, value):
