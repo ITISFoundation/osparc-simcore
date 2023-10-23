@@ -52,7 +52,8 @@ ENV LANG=C.UTF-8 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # for ARM architecture this helps a lot VS building packages
-ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
+# NOTE: remove as this might create bad caching behaviour
+# ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
 
 
 EXPOSE 8080
@@ -94,7 +95,7 @@ WORKDIR /build
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 RUN \
   --mount=type=bind,source=services/dask-sidecar/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement _base.txt
 

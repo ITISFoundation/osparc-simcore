@@ -35,7 +35,7 @@ qx.Class.define("osparc.po.POCenterWindow", {
       appearance: "service-window"
     });
 
-    const poCenter = this.__poCenter = new osparc.po.POCenter();
+    const poCenter = new osparc.po.POCenter();
     this.add(poCenter);
   },
 
@@ -45,14 +45,6 @@ qx.Class.define("osparc.po.POCenterWindow", {
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
-    }
-  },
-
-  members: {
-    __poCenter: null,
-
-    openInvitations: function() {
-      this.__poCenter.openInvitations();
     }
   }
 });

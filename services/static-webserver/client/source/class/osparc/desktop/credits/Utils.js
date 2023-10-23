@@ -24,6 +24,22 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
+    getNoWriteAccessInformationLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this information"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
+    getNoWriteAccessOperationsLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this operations"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
     creditsToFixed: function(credits) {
       if (credits < 100) {
         return (credits).toFixed(1);
@@ -31,7 +47,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return parseInt(credits);
     },
 
-    createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
+    createWalletSelector: function(accessRight = "read", emptySelection = false) {
       const store = osparc.store.Store.getInstance();
 
       const walletSelector = new qx.ui.form.SelectBox();
@@ -46,9 +62,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           selectBox.add(sbItem);
         }
         wallets.forEach(wallet => {
-          if (onlyActive && wallet.getStatus() !== "ACTIVE") {
-            return;
-          }
           const found = wallet.getMyAccessRights();
           if (found && found[accessRight]) {
             const sbItem = new qx.ui.form.ListItem(wallet.getName());
@@ -62,6 +75,24 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       store.addListener("changeWallets", () => populateSelectBox(walletSelector));
 
       return walletSelector;
+    },
+
+    createWalletSelectorLayout: function(accessRight = "read") {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Select Credit Account"));
+      layout.add(label);
+
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector(accessRight);
+      layout.add(walletSelector);
+
+      if (osparc.desktop.credits.Utils.areWalletsEnabled() && walletSelector.getSelectables().length > 1) {
+        layout.show();
+      } else {
+        layout.exclude();
+      }
+
+      return layout;
     },
 
     autoSelectActiveWallet: function(walletSelector) {
@@ -89,14 +120,14 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return null;
     },
 
-    getPreferredWallet: function() {
+    getMyWallets: function() {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
-      const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
-      if (favouriteWallet) {
-        return favouriteWallet;
+      const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+      if (myWallets) {
+        return myWallets;
       }
-      return null;
+      return [];
     },
 
     getPaymentMethods: function(walletId) {
@@ -110,8 +141,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           };
           promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
         } else {
-          const wallets = osparc.store.Store.getInstance().getWallets();
-          const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+          const myWallets = this.getMyWallets();
           myWallets.forEach(myWallet => {
             const params = {
               url: {
