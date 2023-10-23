@@ -46,7 +46,7 @@ def setup(app: FastAPI):
         s is None
         for s in [
             app_settings.CLUSTERS_KEEPER_EC2_ACCESS,
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         ]
     ):
         logger.warning(

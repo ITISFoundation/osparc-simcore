@@ -188,7 +188,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
-    CLUSTERS_KEEPER_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
+    CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
         auto_default_from_env=True
     )
 

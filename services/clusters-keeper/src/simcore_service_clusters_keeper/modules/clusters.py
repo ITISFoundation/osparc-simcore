@@ -29,14 +29,14 @@ async def create_cluster(
 ) -> list[EC2InstanceData]:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return await ec2_client.start_aws_instance(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         instance_type=cast(
             InstanceTypeType,
             next(
                 iter(
-                    app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
+                    app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
                 )
             ),
         ),
@@ -53,9 +53,9 @@ async def create_cluster(
 
 async def get_all_clusters(app: FastAPI) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return await get_ec2_client(app).get_instances(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         tags=all_created_ec2_instances_filter(app_settings),
         state_names=["running"],
     )
@@ -65,9 +65,9 @@ async def get_cluster(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2InstanceData:
     app_settings = get_application_settings(app)
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     if instances := await get_ec2_client(app).get_instances(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         tags=ec2_instances_for_user_wallet_filter(
             app_settings, user_id=user_id, wallet_id=wallet_id
         ),
@@ -81,7 +81,7 @@ async def cluster_heartbeat(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None
 ) -> None:
     app_settings = get_application_settings(app)
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     instance = await get_cluster(app, user_id=user_id, wallet_id=wallet_id)
     await set_instance_heartbeat(app, instance=instance)
 

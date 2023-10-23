@@ -34,7 +34,7 @@ def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
 def creation_ec2_tags(
     app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2Tags:
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return (
         _minimal_identification_tag(app_settings)
         | _APPLICATION_VERSION_TAG
