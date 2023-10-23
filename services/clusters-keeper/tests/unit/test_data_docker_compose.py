@@ -2,21 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import importlib.resources
+
 from typing import Any
-
-import pytest
-import simcore_service_clusters_keeper.data
-import yaml
-
-
-@pytest.fixture
-def clusters_keeper_docker_compose() -> dict[str, Any]:
-    data = importlib.resources.read_text(
-        simcore_service_clusters_keeper.data, "docker-compose.yml"
-    )
-    assert data
-    return yaml.safe_load(data)
 
 
 def _get_service_from_compose(

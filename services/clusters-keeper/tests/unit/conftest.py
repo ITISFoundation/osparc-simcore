@@ -2,17 +2,21 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import importlib.resources
 import json
 import random
 from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import timezone
 from pathlib import Path
+from typing import Any
 
 import aiodocker
 import httpx
 import pytest
 import requests
 import simcore_service_clusters_keeper
+import simcore_service_clusters_keeper.data
+import yaml
 from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
 from faker import Faker
@@ -381,3 +385,12 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+def clusters_keeper_docker_compose() -> dict[str, Any]:
+    data = importlib.resources.read_text(
+        simcore_service_clusters_keeper.data, "docker-compose.yml"
+    )
+    assert data
+    return yaml.safe_load(data)
