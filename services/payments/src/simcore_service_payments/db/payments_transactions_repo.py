@@ -65,8 +65,8 @@ class PaymentsTransactionsRepo(BaseRepository):
                     )
                 )
                 return payment_id
-        except pg_errors.UniqueViolation:
-            raise PaymentAlreadyExistsError(payment_id=f"{payment_id}")
+        except pg_errors.UniqueViolation as exc:
+            raise PaymentAlreadyExistsError(payment_id=f"{payment_id}") from exc
 
     async def update_ack_payment_transaction(
         self,
