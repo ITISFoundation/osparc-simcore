@@ -83,8 +83,10 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
+            "CLUSTERS_KEEPER_EC2_ACCESS": "{}",
             "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": faker.pystr(),
             "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": faker.pystr(),
+            "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
@@ -92,6 +94,7 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
             "WORKERS_EC2_INSTANCES_AMI_ID": faker.pystr(),
             "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
