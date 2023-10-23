@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 from simcore_postgres_database.models.payments_transactions import (
@@ -38,7 +39,7 @@ async def init_payment(
     wallet_name: str,
     user_id: UserID,
     user_name: str,
-    user_email: str,
+    user_email: EmailStr,
     comment: str | None = None,
 ) -> WalletPaymentCreated:
     initiated_at = arrow.utcnow().datetime
