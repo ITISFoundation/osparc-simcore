@@ -44,7 +44,7 @@ async def create_cluster(
         startup_script=create_startup_script(
             app_settings,
             get_cluster_name(
-                app_settings, user_id=user_id, wallet_id=wallet_id, manager=False
+                app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
             ),
         ),
         number_of_instances=1,

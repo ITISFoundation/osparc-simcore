@@ -22,9 +22,9 @@ def get_cluster_name(
     *,
     user_id: UserID,
     wallet_id: WalletID | None,
-    manager: bool,
+    is_manager: bool,
 ) -> str:
-    return f"{CLUSTER_NAME_PREFIX}{'manager' if manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+    return f"{CLUSTER_NAME_PREFIX}{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
 
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
@@ -41,7 +41,7 @@ def creation_ec2_tags(
         | {
             # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
             "Name": get_cluster_name(
-                app_settings, user_id=user_id, wallet_id=wallet_id, manager=True
+                app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True
             ),
             "user_id": f"{user_id}",
             "wallet_id": f"{wallet_id}",

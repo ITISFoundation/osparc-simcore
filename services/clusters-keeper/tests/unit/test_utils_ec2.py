@@ -38,14 +38,14 @@ def test_get_cluster_name(
     # manager
     assert (
         get_cluster_name(
-            app_settings, user_id=user_id, wallet_id=wallet_id, manager=True
+            app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True
         )
         == f"osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
     )
     # worker
     assert (
         get_cluster_name(
-            app_settings, user_id=user_id, wallet_id=wallet_id, manager=False
+            app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
         )
         == f"osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
     )
