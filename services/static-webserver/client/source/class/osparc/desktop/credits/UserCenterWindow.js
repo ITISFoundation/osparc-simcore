@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
     const caption = this.tr("User Center");
     this.base(arguments, "credits", caption);
 
-    const viewWidth = 1000;
+    const viewWidth = 900;
     const viewHeight = 600;
 
     this.set({
