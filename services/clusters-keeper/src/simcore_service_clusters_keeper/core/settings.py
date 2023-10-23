@@ -195,7 +195,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
-        default=datetime.timedelta(seconds=60),
+        default=datetime.timedelta(seconds=30),
         description="interval between each clusters clean check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
