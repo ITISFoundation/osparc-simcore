@@ -108,7 +108,7 @@ async def start_computation(request: web.Request) -> web.Response:
             request.app, project_id=project_id
         )
         if project_wallet is None:
-            user_default_wallet_preference = await user_preferences_api.get_user_preference(
+            user_default_wallet_preference = await user_preferences_api.get_frontend_user_preference(
                 request.app,
                 user_id=req_ctx.user_id,
                 product_name=req_ctx.product_name,

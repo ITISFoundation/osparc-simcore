@@ -12,6 +12,9 @@ This OAS are the source of truth
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.api_schemas_directorv2.dynamic_services import (
+    GetProjectInactivityResponse,
+)
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
@@ -106,6 +109,17 @@ async def delete_project(project_id: ProjectID):
     status_code=status.HTTP_201_CREATED,
 )
 async def clone_project(
+    _params: Annotated[ProjectPathParams, Depends()],
+):
+    ...
+
+
+@router.post(
+    "/projects/{project_id}/inactivity",
+    response_model=Envelope[GetProjectInactivityResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_project_inactivity(
     _params: Annotated[ProjectPathParams, Depends()],
 ):
     ...

@@ -57,7 +57,7 @@ async def _get_frontend_user_preferences(
     ]
 
 
-async def get_user_preference(
+async def get_frontend_user_preference(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,

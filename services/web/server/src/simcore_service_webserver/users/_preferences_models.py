@@ -61,6 +61,11 @@ class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
     value: int | None = None
 
 
+class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
+    preference_identifier = "userInactivityThreshold"
+    value: int | None = 45 * 3600  # in seconds
+
+
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -73,6 +78,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ThemeNameFrontendUserPreference,
     LastVcsRefUIFrontendUserPreference,
     PreferredWalletIdFrontendUserPreference,
+    UserInactivityThresholdFrontendUserPreference,
 ]
 
 

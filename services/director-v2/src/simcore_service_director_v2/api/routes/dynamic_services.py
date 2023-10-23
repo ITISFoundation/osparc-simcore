@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
     DynamicServiceGet,
+    GetProjectInactivityResponse,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
@@ -18,7 +19,7 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from pydantic import BaseModel, NonNegativeFloat
+from pydantic import NonNegativeFloat
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
@@ -336,10 +337,6 @@ async def update_projects_networks(
         rabbitmq_client=rabbitmq_client,
         project_id=project_id,
     )
-
-
-class GetProjectInactivityResponse(BaseModel):
-    is_inactive: bool
 
 
 @router.get(

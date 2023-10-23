@@ -19,7 +19,11 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.dynamic_services import (
+    GetProjectInactivityResponse,
+)
 from models_library.errors import ErrorDict
+from models_library.generics import Envelope
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -83,7 +87,8 @@ from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
-    get_user_preference,
+    UserInactivityThresholdFrontendUserPreference,
+    get_frontend_user_preference,
 )
 from ..wallets import api as wallets_api
 from . import _crud_api_delete, _nodes_api
@@ -316,7 +321,7 @@ async def _start_dynamic_service(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
-                user_default_wallet_preference = await get_user_preference(
+                user_default_wallet_preference = await get_frontend_user_preference(
                     request.app,
                     user_id=user_id,
                     product_name=product_name,
@@ -1377,3 +1382,26 @@ async def lock_with_notification(
     finally:
         if notify_users:
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+
+
+async def get_project_inactivity(
+    app: web.Application, project_id: ProjectID, user_id: UserID, product_name: str
+) -> Envelope[GetProjectInactivityResponse]:
+    preference = await get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=UserInactivityThresholdFrontendUserPreference,
+    )
+
+    # preference not present in the DB, use the default value
+    if preference is None:
+        preference = UserInactivityThresholdFrontendUserPreference()
+
+    assert preference.value is not None  # nosec
+    max_inactivity_seconds: int = preference.value
+
+    project_inactivity = await director_v2_api.get_project_inactivity(
+        app, project_id, max_inactivity_seconds
+    )
+    return parse_obj_as(Envelope[GetProjectInactivityResponse], project_inactivity)

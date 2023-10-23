@@ -2243,6 +2243,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/projects/{project_id}/inactivity:
+    post:
+      tags:
+      - projects
+      summary: Get Project Inactivity
+      operationId: get_project_inactivity
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -5293,6 +5314,14 @@ components:
           $ref: '#/components/schemas/GetProduct'
         error:
           title: Error
+    Envelope_GetProjectInactivityResponse_:
+      title: Envelope[GetProjectInactivityResponse]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetProjectInactivityResponse'
+        error:
+          title: Error
     Envelope_GetWalletAutoRecharge_:
       title: Envelope[GetWalletAutoRecharge]
       type: object
@@ -6367,6 +6396,15 @@ components:
           title: Creditsperusd
           minimum: 0.0
           type: number
+    GetProjectInactivityResponse:
+      title: GetProjectInactivityResponse
+      required:
+      - is_inactive
+      type: object
+      properties:
+        is_inactive:
+          title: Is Inactive
+          type: boolean
     GetWalletAutoRecharge:
       title: GetWalletAutoRecharge
       required:

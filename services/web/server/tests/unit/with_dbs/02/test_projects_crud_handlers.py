@@ -4,8 +4,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import random
+import re
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -717,3 +717,55 @@ async def test_replace_project_adding_or_removing_nodes_raises_conflict(
         random.choice(list(project_update["workbench"].keys()))  # noqa: S311
     )
     await _replace_project(client, project_update, expected)
+
+
+@pytest.fixture
+def mock_director_v2_inactivity(
+    aioresponses_mocker: aioresponses, is_inactive: bool
+) -> None:
+    get_services_pattern = re.compile(
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/.*/inactivity.*$"
+    )
+    aioresponses_mocker.get(
+        get_services_pattern,
+        status=web.HTTPOk.status_code,
+        repeat=True,
+        payload={"data": {"is_inactive": is_inactive}},
+    )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+@pytest.mark.parametrize("is_inactive", [True, False])
+async def test_get_project_inactivity(
+    mock_director_v2_inactivity: None,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+    user_role: UserRole,
+    expected: type[web.HTTPException],
+    is_inactive: bool,
+):
+    mock_project_id = faker.uuid4()
+
+    assert client.app
+    url = client.app.router["get_project_inactivity"].url_for(
+        project_id=mock_project_id
+    )
+    assert f"/v0/projects/{mock_project_id}/inactivity" == url.path
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, expected)
+    if user_role == UserRole.ANONYMOUS:
+        return
+
+    assert data
+    assert error is None
+
+    assert data["data"]["is_inactive"] is is_inactive
