@@ -37,7 +37,13 @@ def test_creation_ec2_tags(
         app_settings, user_id=user_id, wallet_id=wallet_id
     )
     assert received_tags
-    EXPECTED_TAG_KEY_NAMES = [_APPLICATION_TAG_KEY, "Name", "user_id", "wallet_id"]
+    EXPECTED_TAG_KEY_NAMES = [
+        f"{_APPLICATION_TAG_KEY}.deploy",
+        f"{_APPLICATION_TAG_KEY}.version",
+        "Name",
+        "user_id",
+        "wallet_id",
+    ]
     assert all(
         tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES
     ), f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
