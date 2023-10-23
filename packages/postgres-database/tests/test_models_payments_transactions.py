@@ -133,6 +133,7 @@ async def test_complete_transaction(
     assert payment_row.state_message == expected_message
     assert payment_row.state == expected_state
     assert payment_row.initiated_at < payment_row.completed_at
+    assert payment_row.state.is_completed()
 
 
 async def test_update_transaction_failures_and_exceptions(
