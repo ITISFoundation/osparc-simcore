@@ -53,8 +53,8 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     tabViews.add(transactionsPage);
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-      const usageOverviewPage = this.__usageOverviewPage = this.__getUsageOverviewPage();
-      tabViews.add(usageOverviewPage);
+      const usagePage = this.__usagePage = this.__getUsagePage();
+      tabViews.add(usagePage);
     }
 
     this._add(tabViews);
@@ -68,44 +68,10 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
         maxWidth: 150
       });
 
-      const authData = osparc.auth.Data.getInstance();
-      const email = authData.getEmail();
-      const img = new qx.ui.basic.Image().set({
-        source: osparc.utils.Avatar.getUrl(email, 100),
-        maxWidth: 80,
-        maxHeight: 80,
-        scale: true,
-        decorator: new qx.ui.decoration.Decorator().set({
-          radius: 30
-        }),
-        alignX: "center"
-      });
-      layout.add(img);
-
-      const name = new qx.ui.basic.Label().set({
-        font: "text-14",
-        alignX: "center"
-      });
-      layout.add(name);
-      authData.bind("firstName", name, "value", {
-        converter: firstName => firstName + " " + authData.getLastName()
-      });
-      authData.bind("lastName", name, "value", {
-        converter: lastName => authData.getFirstName() + " " + lastName
-      });
-
-      const role = authData.getFriendlyRole();
-      const roleLabel = new qx.ui.basic.Label(role).set({
-        font: "text-13",
-        alignX: "center"
-      });
-      layout.add(roleLabel);
-
-      const emailLabel = new qx.ui.basic.Label(email).set({
-        font: "text-13",
-        alignX: "center"
-      });
-      layout.add(emailLabel);
+      const store = osparc.store.Store.getInstance();
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
+      store.bind("contextWallet", creditsIndicator, "wallet");
+      layout.add(creditsIndicator);
 
       layout.add(new qx.ui.core.Spacer(15, 15));
 
@@ -121,7 +87,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     __paymentMethodsPage: null,
     __activityPage: null,
     __transactionsPage: null,
-    __usageOverviewPage: null,
+    __usagePage: null,
     __buyCredits: null,
     __transactionsTable: null,
 
@@ -148,7 +114,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       overview.addListener("toWallets", () => this.openWallets());
       overview.addListener("toActivity", () => this.__openActivity());
       overview.addListener("toTransactions", () => this.__openTransactions());
-      overview.addListener("toUsageOverview", () => this.__openUsageOverview());
       page.add(overview);
       return page;
     },
@@ -236,16 +201,16 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       return page;
     },
 
-    __getUsageOverviewPage: function() {
+    __getUsagePage: function() {
       const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const usageOverview = new osparc.desktop.credits.Usage();
-      usageOverview.set({
+      const usage = new osparc.desktop.credits.Usage();
+      usage.set({
         margin: 10
       });
-      page.add(usageOverview);
+      page.add(usage);
       return page;
     },
 
@@ -286,10 +251,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       } else {
         this.__openPage(this.__transactionsPage);
       }
-    },
-
-    __openUsageOverview: function() {
-      this.__openPage(this.__usageOverviewPage);
     }
   }
 });
