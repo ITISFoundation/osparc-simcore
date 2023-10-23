@@ -79,11 +79,22 @@ def test_creation_ec2_tags(
 
 
 def test_all_created_ec2_instances_filter(
+    mocked_aws_server_envs: None,
+    disabled_rabbitmq: None,
+    mocked_redis_server: None,
     app_settings: ApplicationSettings,
 ):
-    received_filter = all_created_ec2_instances_filter(app_settings)
-    assert len(received_filter) == 1
-    assert _APPLICATION_TAG_KEY in received_filter
+    received_tags = all_created_ec2_instances_filter(app_settings)
+    assert len(received_tags) == 1
+    EXPECTED_TAG_KEY_NAMES = [
+        f"{_APPLICATION_TAG_KEY}.deploy",
+    ]
+    assert all(
+        tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES
+    ), f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    assert all(
+        tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags
+    ), f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
 
 
 @pytest.fixture
