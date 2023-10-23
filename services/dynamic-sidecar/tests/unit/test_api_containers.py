@@ -741,7 +741,7 @@ async def test_containers_inactivity_command_failed(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
     assert response.status_code == 200, response.text
-    assert response.json() == InactivityResponse(is_inactive=False)
+    assert response.json() == InactivityResponse(supports_inactivity=False)
 
 
 async def test_containers_inactivity_no_inactivity_defined(
@@ -749,12 +749,12 @@ async def test_containers_inactivity_no_inactivity_defined(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
     assert response.status_code == 200, response.text
-    assert response.json() == InactivityResponse(is_inactive=False)
+    assert response.json() == InactivityResponse(supports_inactivity=False)
 
 
 @pytest.fixture
 def inactivity_response() -> InactivityResponse:
-    return InactivityResponse(is_inactive=True, seconds_inactive=10)
+    return InactivityResponse(supports_inactivity=True, seconds_inactive=10)
 
 
 @pytest.fixture
