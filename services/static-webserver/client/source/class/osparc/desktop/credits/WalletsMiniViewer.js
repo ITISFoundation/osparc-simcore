@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(3));
+    this._setLayout(new qx.ui.layout.VBox(2));
 
     osparc.utils.Utils.setIdToWidget(this, "walletsMiniViewer");
 
@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       alignX: "center",
       padding: 4,
       margin: 6,
-      marginRight: 20
+      marginRight: 16
     });
 
     // make it look like a button
