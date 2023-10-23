@@ -211,7 +211,6 @@ def mocked_aws_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs = {
-        "CLUSTERS_KEEPER_EC2_ACCESS": "{}",
         "EC2_CLUSTERS_KEEPER_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
         "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": "xxx",
         "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": "xxx",
