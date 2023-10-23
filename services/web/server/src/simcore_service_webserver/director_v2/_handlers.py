@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.wallets import WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
@@ -22,6 +22,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
+from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -130,9 +131,13 @@ async def start_computation(request: web.Request) -> web.Response:
             project_wallet_id = project_wallet.wallet_id
 
         # Check whether user has access to the wallet
-        wallet = await wallets_api.get_wallet_by_user(
+        wallet = await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
             request.app, req_ctx.user_id, project_wallet_id, req_ctx.product_name
         )
+        if wallet.available_credits <= ZERO_CREDITS:
+            raise WalletNotEnoughCreditsError(
+                reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+            )
         wallet_info = WalletInfo(wallet_id=project_wallet_id, wallet_name=wallet.name)
 
     options = {
@@ -199,6 +204,8 @@ async def start_computation(request: web.Request) -> web.Response:
         )
     except UserDefaultWalletNotFoundError as exc:
         return create_error_response(exc, http_error_cls=web.HTTPNotFound)
+    except WalletNotEnoughCreditsError as exc:
+        return create_error_response(exc, http_error_cls=web.HTTPPaymentRequired)
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")

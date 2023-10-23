@@ -44,6 +44,7 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
@@ -83,6 +84,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
             DefaultPricingUnitNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except (WalletNotEnoughCreditsError) as exc:
+            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return wrapper
 

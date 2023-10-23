@@ -40,7 +40,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -57,6 +57,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFound,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 from ..application_settings import get_settings
 from ..catalog import client as catalog_client
@@ -337,9 +338,15 @@ async def _start_dynamic_service(
             else:
                 project_wallet_id = project_wallet.wallet_id
             # Check whether user has access to the wallet
-            wallet = await wallets_api.get_wallet_by_user(
-                request.app, user_id, project_wallet_id, product_name
+            wallet = (
+                await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
+                    request.app, user_id, project_wallet_id, product_name
+                )
             )
+            if wallet.available_credits <= ZERO_CREDITS:
+                raise WalletNotEnoughCreditsError(
+                    reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+                )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id, wallet_name=wallet.name
             )
