@@ -23,33 +23,43 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     const authData = osparc.auth.Data.getInstance();
 
-    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const menu = new qx.ui.menu.Menu().set({
       font: "text-14"
     });
     osparc.utils.Utils.setIdToWidget(menu, "userMenuMenu");
     this.set({
+      width: 40,
+      height: 40,
       font: "text-14",
-      icon: osparc.utils.Avatar.getUrl(userEmail, 32),
-      label: "bizzy",
+      allowShrinkX: false,
+      allowShrinkY: false,
+      allowGrowX: false,
+      allowGrowY: false,
       menu
     });
-    authData.bind("firstName", this, "label");
-    authData.bind("role", this, "label", {
-      converter: role => {
-        if (role === "anonymous") {
-          return "Anonymous";
-        }
-        if (role === "guest") {
-          return "Guest";
-        }
-        return authData.getFirstName();
-      }
+    this.getContentElement().setStyles({
+      "border-radius": "20px"
+    });
+    this.getChildControl("icon").getContentElement().setStyles({
+      "border-radius": "16px"
     });
     osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
 
-    this.getChildControl("icon").getContentElement().setStyles({
-      "border-radius": "16px"
+    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
+    const icon = this.getChildControl("icon");
+    authData.bind("role", this, "icon", {
+      converter: role => {
+        if (["anonymous", "guest"].includes(role)) {
+          icon.getContentElement().setStyles({
+            "margin-left": "0px"
+          });
+          return "@FontAwesome5Solid/user-secret/28";
+        }
+        icon.getContentElement().setStyles({
+          "margin-left": "-4px"
+        });
+        return osparc.utils.Avatar.getUrl(userEmail, 32);
+      }
     });
   },
 
