@@ -58,6 +58,14 @@ APP_STARTED_BANNER_MSG = r"""
     f"v{__version__}"
 )
 
+APP_STARTED_DISABLED_BANNER_MSG = r"""
+      _  _              _      _            _
+     | |(_)            | |    | |          | |
+   __| | _  ___   __ _ | |__  | |  ___   __| |
+  / _` || |/ __| / _` || '_ \ | | / _ \ / _` |
+ | (_| || |\__ \| (_| || |_) || ||  __/| (_| |
+  \__,_||_||___/ \__,_||_.__/ |_| \___| \__,_|
+"""
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format(
     f"🎉 App {APP_NAME}=={__version__} shutdown completed 🎉"

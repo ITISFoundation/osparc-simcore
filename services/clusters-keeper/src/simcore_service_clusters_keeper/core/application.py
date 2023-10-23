@@ -9,6 +9,7 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_STARTED_DISABLED_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
 from ..modules.clusters_management_task import setup as setup_clusters_management
@@ -53,6 +54,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # EVENTS
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+        if any(
+            s is None
+            for s in [
+                settings.CLUSTERS_KEEPER_EC2_ACCESS,
+                settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
+            ]
+        ):
+            print(APP_STARTED_DISABLED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
