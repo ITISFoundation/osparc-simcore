@@ -88,6 +88,15 @@ def app_environment(
             "CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                ec2_instances
+            ),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
         },
     )
     return mock_env_devel_environment | envs
