@@ -9,22 +9,22 @@ from pydantic import ValidationError, parse_obj_as
     "data, will_raise",
     [
         pytest.param(
-            {"is_inactivity": True, "seconds_inactive": None},
+            {"is_inactive": True, "seconds_inactive": None},
             True,
             id="mark_as_inactive_when_inactivity_was_not_defined",
         ),
         pytest.param(
-            {"is_inactivity": False, "seconds_inactive": None},
+            {"is_inactive": False, "seconds_inactive": None},
             False,
-            id="seconds_inactive_none_when_is_inactivity_false",
+            id="seconds_inactive_none_when_is_inactive_false",
         ),
         pytest.param(
-            {"is_inactivity": True, "seconds_inactive": 1},
+            {"is_inactive": True, "seconds_inactive": 1},
             False,
             id="accepted_values",
         ),
         pytest.param(
-            {"is_inactivity": True, "seconds_inactive": -1},
+            {"is_inactive": True, "seconds_inactive": -1},
             True,
             id="negative_seconds_inactive_provided",
         ),
