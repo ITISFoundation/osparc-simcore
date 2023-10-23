@@ -109,15 +109,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("right-items");
 
       // left-items
-      const logo = this.getChildControl("logo");
-      logo.getChildControl("off-logo").set({
-        width: 100,
-        height: 35
-      });
-      logo.getChildControl("on-logo").setSize({
-        width: 100,
-        height: 50
-      });
+      this.getChildControl("logo");
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("logo-powered");
       }
@@ -172,6 +164,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "logo":
           control = osparc.navigation.LogoOnOff.getInstance().set({
             alignY: "middle"
+          });
+          control.getChildControl("off-logo").set({
+            width: 100,
+            height: 35
+          });
+          control.getChildControl("on-logo").setSize({
+            width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
+            height: osparc.navigation.NavigationBar.HEIGHT
           });
           this.getChildControl("left-items").add(control);
           break;
@@ -399,15 +399,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }
       if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
         // left-items
+        this.getChildControl("logo").getChildControl("on-logo").setSize({
+          width: 100,
+          height: osparc.navigation.NavigationBar.HEIGHT
+        });
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").exclude();
         }
+
         // center-items
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("icon").show();
           tabButton.getChildControl("label").exclude();
           tabButton.setToolTipText(tabButton.ttt);
         });
+
         // right-items
         this.getChildControl("user-menu").exclude();
         this.getChildControl("manual").exclude();
@@ -416,15 +422,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         this.getChildControl("user-menu-compact").show();
       } else {
         // left-items
+        this.getChildControl("logo").getChildControl("on-logo").setSize({
+          width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
+          height: osparc.navigation.NavigationBar.HEIGHT
+        });
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").show();
         }
+
         // center-items
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("label").show();
           tabButton.getChildControl("icon").exclude();
           tabButton.resetToolTipText();
         });
+
         // right-items
         this.getChildControl("user-menu-compact").exclude();
         this.getChildControl("manual").show();

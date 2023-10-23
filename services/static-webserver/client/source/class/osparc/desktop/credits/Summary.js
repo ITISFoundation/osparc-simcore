@@ -23,7 +23,17 @@ qx.Class.define("osparc.desktop.credits.Summary", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.__buildLayout();
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
+  },
+
+  properties: {
+    contextWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: false,
+      apply: "__buildLayout"
+    }
   },
 
   events: {
@@ -47,7 +57,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         }
         case "settings-card": {
           const content = this.__createSettingsView();
-          const wallet = this.__getWallet();
+          const wallet = this.getContextWallet();
           control = this.__createOverviewCard(this.tr("Settings"), content, this.tr("Credit Options"), "buyCredits", {
             walletId: wallet ? wallet.getWalletId() : null
           });
@@ -65,9 +75,13 @@ qx.Class.define("osparc.desktop.credits.Summary", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("wallets-card");
-      this.getChildControl("settings-card");
-      this.getChildControl("activity-card");
+      this._removeAll();
+      this._createChildControlImpl("wallets-card");
+      const wallet = this.getContextWallet();
+      if (wallet && wallet.getMyAccessRights()["write"]) {
+        this._createChildControlImpl("settings-card");
+      }
+      this._createChildControlImpl("activity-card");
     },
 
     __createOverviewCard: function(cardLabel, content, buttonLabel, signalName, signalData) {
@@ -106,15 +120,8 @@ qx.Class.define("osparc.desktop.credits.Summary", {
       return layout;
     },
 
-    __getWallet: function() {
-      const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
-      const wallet = activeWallet ? activeWallet : preferredWallet;
-      return wallet;
-    },
-
     __createWalletsView: function() {
-      const wallet = this.__getWallet();
+      const wallet = this.getContextWallet();
       if (wallet) {
         // show one wallet
         const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -179,8 +186,8 @@ qx.Class.define("osparc.desktop.credits.Summary", {
     },
 
     __createSettingsView: function() {
-      const wallet = this.__getWallet();
-      if (wallet) {
+      const wallet = this.getContextWallet();
+      if (wallet && wallet.getMyAccessRights()["write"]) {
         const grid = new qx.ui.layout.Grid(20, 10);
         grid.setColumnAlign(0, "right", "middle");
         const layout = new qx.ui.container.Composite(grid);
@@ -262,45 +269,51 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         });
       });
 
-      const walletId = this.__getWallet().getWalletId();
-      const params = {
-        url: {
-          walletId: walletId,
-          offset: 0,
-          limit: 10
+      const wallet = this.getContextWallet();
+      if (wallet) {
+        const walletId = wallet.getWalletId();
+        const params = {
+          url: {
+            walletId: walletId,
+            offset: 0,
+            limit: 10
+          }
+        };
+        const promises = [];
+        promises.push(osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params));
+        if (wallet.getMyAccessRights()["write"]) {
+          promises.push(osparc.data.Resources.fetch("payments", "get"));
         }
-      };
-      Promise.all([
-        osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params),
-        osparc.data.Resources.fetch("payments", "get")
-      ])
-        .then(responses => {
-          const usages = responses[0];
-          const transactions = responses[1]["data"];
-          const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
-          // Filter out some transactions
-          const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["walletId"] === walletId);
-          const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
-          const activities = activities1.concat(activities2);
-          activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
+        Promise.all(promises)
+          .then(responses => {
+            const usages = responses[0];
+            const transactions = responses.length === 2 ? responses[1]["data"] : [];
+            const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
+            // Filter out some transactions
+            const filteredTransactions = transactions.filter(transaction => transaction["walletId"] === walletId && transaction["completedStatus"] !== "FAILED");
+            const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
+            const activities = activities1.concat(activities2);
+            activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
 
-          const maxRows = 6;
-          const entries = osparc.desktop.credits.ActivityTable.respDataToTableData(activities);
-          entries.forEach((entry, row) => {
-            if (row >= maxRows) {
-              return;
-            }
-            entry.forEach((data, column) => {
-              const text = new qx.ui.basic.Label(data.toString()).set({
-                font: "text-14"
-              });
-              layout.add(text, {
-                row: row+1,
-                column
+            const maxRows = 6;
+            const entries = osparc.desktop.credits.ActivityTable.respDataToTableData(activities);
+            entries.forEach((entry, row) => {
+              if (row >= maxRows) {
+                return;
+              }
+              entry.forEach((data, column) => {
+                const text = new qx.ui.basic.Label(data.toString()).set({
+                  font: "text-14"
+                });
+                layout.add(text, {
+                  row: row+1,
+                  column
+                });
               });
             });
           });
-        });
+      }
+
       return layout;
     }
   }

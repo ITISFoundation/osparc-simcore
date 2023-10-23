@@ -61,3 +61,15 @@ async def test_auto_scaling_task_created_and_deleted_with_dynamic_mode(
     assert hasattr(initialized_app.state, "autoscaler_task")
     await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
     mock_background_task.assert_called()
+
+
+async def test_auto_scaling_task_created_and_deleted_with_computational_mode(
+    enabled_computational_mode: EnvVarsDict,
+    mock_background_task: mock.Mock,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_POLL_INTERVAL.total_seconds() == _FAST_POLL_INTERVAL
+    assert hasattr(initialized_app.state, "autoscaler_task")
+    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+    mock_background_task.assert_called()

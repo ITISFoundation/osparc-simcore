@@ -101,8 +101,8 @@ qx.Class.define("osparc.po.Invitations", {
 
       const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
-        maximum: 1000,
-        value: 0
+        maximum: 199,
+        value: 100
       });
       form.add(extraCreditsInUsd, this.tr("Welcome Credits (US$)"));
 

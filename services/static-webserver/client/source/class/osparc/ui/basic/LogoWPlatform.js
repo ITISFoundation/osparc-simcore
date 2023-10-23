@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * App/Theme dependant logo with platofrm name
+ * App/Theme dependant logo with platform name
  */
 qx.Class.define("osparc.ui.basic.LogoWPlatform", {
   extend: qx.ui.core.Widget,
