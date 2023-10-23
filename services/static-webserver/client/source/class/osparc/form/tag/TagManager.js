@@ -21,7 +21,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
     this.__renderLayout();
     this.__attachEventHandlers();
 
-    this.setStudydata(studyData);
+    this.setStudyData(studyData);
   },
 
   events: {
@@ -109,7 +109,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
       this._add(buttons);
     },
 
-    setStudydata: function(studyData) {
+    setStudyData: function(studyData) {
       this.__studyData = studyData;
       this.__resourceId = studyData["uuid"];
       this.__selectedTags.removeAll();

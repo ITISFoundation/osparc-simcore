@@ -23,14 +23,17 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    const transactionsTable = this.getChildControl("transactions-table");
-    osparc.data.Resources.fetch("payments", "get")
-      .then(transactions => {
-        if ("data" in transactions) {
-          transactionsTable.addData(transactions["data"]);
-        }
-      })
-      .catch(err => console.error(err));
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
+  },
+
+  properties: {
+    contextWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: false,
+      apply: "__buildLayout"
+    }
   },
 
   members: {
@@ -43,6 +46,23 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      this._removeAll();
+      const wallet = this.getContextWallet();
+      if (wallet && wallet.getMyAccessRights()["write"]) {
+        const transactionsTable = this._createChildControlImpl("transactions-table");
+        osparc.data.Resources.fetch("payments", "get")
+          .then(transactions => {
+            if ("data" in transactions) {
+              transactionsTable.addData(transactions["data"]);
+            }
+          })
+          .catch(err => console.error(err));
+      } else {
+        this._add(osparc.desktop.credits.Utils.getNoWriteAccessInformationLabel());
+      }
     },
 
     __fetchData: function() {

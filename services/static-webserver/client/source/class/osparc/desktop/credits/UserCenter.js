@@ -18,10 +18,8 @@
 qx.Class.define("osparc.desktop.credits.UserCenter", {
   extend: qx.ui.core.Widget,
 
-  construct: function(walletsEnabled = false) {
+  construct: function() {
     this.base(arguments);
-
-    this.__walletsEnabled = walletsEnabled;
 
     this._setLayout(new qx.ui.layout.VBox());
 
@@ -36,7 +34,8 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     });
     tabViews.getChildControl("bar").add(this.self().createMiniProfileView());
 
-    if (this.__walletsEnabled) {
+    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+    if (walletsEnabled) {
       const overviewPage = this.__overviewPage = this.__getOverviewPage();
       tabViews.add(overviewPage);
     }
@@ -44,27 +43,27 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     const profilePage = this.__profilePage = this.__getProfilePage();
     tabViews.add(profilePage);
 
-    if (this.__walletsEnabled) {
+    if (walletsEnabled) {
       const walletsPage = this.__walletsPage = this.__getWalletsPage();
       tabViews.add(walletsPage);
     }
 
-    if (this.__walletsEnabled) {
+    if (walletsEnabled) {
       const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
       tabViews.add(paymentMethodsPage);
     }
 
-    if (this.__walletsEnabled) {
+    if (walletsEnabled) {
       const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
       tabViews.add(buyCreditsPage);
     }
 
-    if (this.__walletsEnabled) {
+    if (walletsEnabled) {
       const activityPage = this.__activityPage = this.__getActivityPage();
       tabViews.add(activityPage);
     }
 
-    if (this.__walletsEnabled) {
+    if (walletsEnabled) {
       const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
       tabViews.add(transactionsPage);
     }
@@ -131,7 +130,6 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
   },
 
   members: {
-    __walletsEnabled: null,
     __tabsView: null,
     __overviewPage: null,
     __profilePage: null,
