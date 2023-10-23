@@ -342,7 +342,9 @@ class GetProjectInactivityResponse(BaseModel):
     is_inactive: bool
 
 
-@router.get("/projects/inactivity", summary="returns if the project is inactive")
+@router.get(
+    "/projects/{project_id}/inactivity", summary="returns if the project is inactive"
+)
 @log_decorator(logger=logger)
 async def get_project_inactivity(
     project_id: ProjectID,

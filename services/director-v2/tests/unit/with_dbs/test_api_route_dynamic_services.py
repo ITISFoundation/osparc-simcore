@@ -665,13 +665,10 @@ def test_get_project_inactivity(
     max_inactivity_seconds: float,
     faker: Faker,
 ):
-    url = URL("/v2/dynamic_services/projects/inactivity")
+    url = URL(f"/v2/dynamic_services/projects/{faker.uuid4()}/inactivity")
     response = client.get(
         f"{url}",
-        params={
-            "max_inactivity_seconds": max_inactivity_seconds,
-            "project_id": faker.uuid4(),
-        },
+        params={"max_inactivity_seconds": max_inactivity_seconds},
         follow_redirects=False,
     )
     assert response.status_code == status.HTTP_200_OK

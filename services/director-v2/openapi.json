@@ -714,13 +714,13 @@
         }
       }
     },
-    "/v2/dynamic_services/projects/inactivity": {
+    "/v2/dynamic_services/projects/{project_id}/inactivity": {
       "get": {
         "tags": [
           "dynamic services"
         ],
         "summary": "returns if the project is inactive",
-        "operationId": "get_project_inactivity_v2_dynamic_services_projects_inactivity_get",
+        "operationId": "get_project_inactivity_v2_dynamic_services_projects__project_id__inactivity_get",
         "parameters": [
           {
             "required": true,
@@ -730,7 +730,7 @@
               "title": "Project Id"
             },
             "name": "project_id",
-            "in": "query"
+            "in": "path"
           },
           {
             "required": true,
