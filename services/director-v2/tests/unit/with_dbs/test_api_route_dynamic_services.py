@@ -9,10 +9,12 @@ import urllib.parse
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from typing import Any, NamedTuple
+from unittest.mock import Mock
 from uuid import UUID
 
 import pytest
 import respx
+from faker import Faker
 from fastapi import FastAPI
 from httpx import URL, QueryParams
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -22,6 +24,8 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
+from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
@@ -558,3 +562,117 @@ def test_retrieve(
     assert (
         response.json() == RetrieveDataOutEnveloped.Config.schema_extra["examples"][0]
     )
+
+
+@pytest.fixture
+def mock_internals_inactivity(
+    mocker: MockerFixture, faker: Faker, services_inactivity: list[InactivityResponse]
+):
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
+    mocker.patch(
+        f"{module_base}._core._scheduler_utils.get_dynamic_sidecars_to_observe",
+        return_value=[],
+    )
+
+    service_inactivity_map: dict[str, InactivityResponse] = {
+        faker.uuid4(): s for s in services_inactivity
+    }
+
+    mock_project = Mock()
+    mock_project.workbench = list(service_inactivity_map.keys())
+
+    class MockProjectRepo:
+        async def get_project(self, project_id: ProjectID) -> ProjectAtDB:
+            return mock_project
+
+    # patch get_project
+    mocker.patch(
+        "simcore_service_director_v2.api.dependencies.database.get_base_repository",
+        return_value=MockProjectRepo(),
+    )
+
+    async def get_service_inactivity(node_uuid: NodeID) -> list[InactivityResponse]:
+        return service_inactivity_map[f"{node_uuid}"]
+
+    mocker.patch(
+        f"{module_base}.DynamicSidecarsScheduler.get_service_inactivity",
+        side_effect=get_service_inactivity,
+    )
+    mocker.patch(
+        f"{module_base}.DynamicSidecarsScheduler.is_service_tracked", return_value=True
+    )
+
+
+@pytest.mark.parametrize(
+    "services_inactivity, max_inactivity_seconds, is_project_inactive",
+    [
+        pytest.param(
+            [
+                InactivityResponse(supports_inactivity=True, seconds_inactive=6),
+            ],
+            5,
+            True,
+            id="single_new_style_is_inactive",
+        ),
+        pytest.param(
+            [
+                InactivityResponse(supports_inactivity=True, seconds_inactive=6),
+                InactivityResponse(supports_inactivity=True, seconds_inactive=1),
+            ],
+            5,
+            False,
+            id="one_inactive_one_still_not_overt_threshold",
+        ),
+        pytest.param(
+            [
+                InactivityResponse(supports_inactivity=True, seconds_inactive=6),
+                InactivityResponse(supports_inactivity=True, seconds_inactive=6),
+            ],
+            5,
+            True,
+            id="all_services_inactive",
+        ),
+        pytest.param(
+            [],
+            5,
+            True,
+            id="no_services_in_project_it_results_inactive",
+        ),
+        pytest.param(
+            [InactivityResponse(supports_inactivity=False, seconds_inactive=None)],
+            5,
+            True,
+            id="without_inactivity_support_considered_as_inactive",
+        ),
+        pytest.param(
+            [
+                InactivityResponse(supports_inactivity=False, seconds_inactive=None),
+                InactivityResponse(supports_inactivity=True, seconds_inactive=6),
+                InactivityResponse(supports_inactivity=False, seconds_inactive=None),
+                InactivityResponse(supports_inactivity=True, seconds_inactive=6),
+            ],
+            5,
+            True,
+            id="mixed_supporting_inactivity_are_inactive",
+        ),
+    ],
+)
+def test_get_project_inactivity(
+    mock_internals_inactivity: None,
+    mocker: MockerFixture,
+    client: TestClient,
+    is_project_inactive: bool,
+    max_inactivity_seconds: float,
+    faker: Faker,
+):
+    url = URL("/v2/dynamic_services/projects/inactivity")
+    response = client.get(
+        f"{url}",
+        params={
+            "max_inactivity_seconds": max_inactivity_seconds,
+            "project_id": faker.uuid4(),
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"is_inactive": is_project_inactive}
