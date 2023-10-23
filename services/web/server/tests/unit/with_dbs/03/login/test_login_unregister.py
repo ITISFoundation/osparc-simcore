@@ -15,8 +15,28 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login._constants import MSG_USER_DELETED
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_mark_account_for_deletion(
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role < UserRole.USER]
+)
+async def test_unregister_account_access_rights(
+    client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
+):
+    response = await client.post(
+        "/v0/auth:unregister",
+        json={
+            "email": logged_user["email"],
+            "password": logged_user["raw_password"],
+        },
+    )
+
+    with pytest.raises((web.HTTPUnauthorized, web.HTTPForbidden)):
+        response.raise_for_status()
+
+
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role >= UserRole.USER]
+)
+async def test_unregister_account(
     client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
 ):
     mock = mocker.patch(
@@ -30,7 +50,7 @@ async def test_mark_account_for_deletion(
 
     # failed check to delete account
     response = await client.post(
-        "/v0/me:mark-deleted",
+        "/v0/auth:unregister",
         json={
             "email": "WrongEmail@email.com",
             "password": "foo",
@@ -40,7 +60,7 @@ async def test_mark_account_for_deletion(
 
     # success to request deletion of account
     response = await client.post(
-        "/v0/me:mark-deleted",
+        "/v0/auth:unregister",
         json={
             "email": logged_user["email"],
             "password": logged_user["raw_password"],
