@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -582,7 +583,7 @@ def mock_internals_inactivity(
     mock_project.workbench = list(service_inactivity_map.keys())
 
     class MockProjectRepo:
-        async def get_project(self, project_id: ProjectID) -> ProjectAtDB:
+        async def get_project(self, _: ProjectID) -> ProjectAtDB:
             return mock_project
 
     # patch get_project
