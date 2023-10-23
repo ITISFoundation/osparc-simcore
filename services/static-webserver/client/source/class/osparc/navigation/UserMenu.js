@@ -40,8 +40,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "user-center":
-          control = new qx.ui.menu.Button(this.tr("User Center"));
-          control.addListener("execute", () => osparc.desktop.credits.UserCenterWindow.openWindow(), this);
+          control = new qx.ui.menu.Button(this.tr("My Account"));
+          control.addListener("execute", () => osparc.desktop.credits.MyAccountWindow.openWindow(), this);
           this.add(control);
           break;
         case "po-center":
@@ -53,9 +53,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
           control.addListener("execute", () => {
             const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-            const userCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
+            const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
             if (walletsEnabled) {
-              userCenterWindow.openOverview();
+              myAccountWindow.openOverview();
             }
           }, this);
           this.add(control);

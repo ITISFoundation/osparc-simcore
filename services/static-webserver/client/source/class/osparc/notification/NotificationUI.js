@@ -246,8 +246,8 @@ qx.Class.define("osparc.notification.NotificationUI", {
     __openWalletDetails: function(walletId) {
       const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
       if (wallet) {
-        const userCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
-        if (userCenterWindow.openWallets()) {
+        const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
+        if (myAccountWindow.openWallets()) {
           const msg = this.tr("Do you want to make it the default Credit Account?");
           const win = new osparc.ui.window.Confirmation(msg).set({
             confirmAction: "create"

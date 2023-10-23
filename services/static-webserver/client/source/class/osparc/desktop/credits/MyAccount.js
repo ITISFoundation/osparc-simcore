@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.UserCenter", {
+qx.Class.define("osparc.desktop.credits.MyAccount", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

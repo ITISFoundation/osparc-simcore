@@ -15,11 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
+qx.Class.define("osparc.desktop.credits.MyAccountWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    const caption = this.tr("User Center");
+    const caption = this.tr("My Account");
     this.base(arguments, "credits", caption);
 
     const viewWidth = 900;
@@ -36,13 +36,13 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
       appearance: "service-window"
     });
 
-    const userCenter = this.__userCenter = new osparc.desktop.credits.UserCenter();
-    this.add(userCenter);
+    const myAccount = this.__myAccount = new osparc.desktop.credits.MyAccount();
+    this.add(myAccount);
   },
 
   statics: {
     openWindow: function() {
-      const accountWindow = new osparc.desktop.credits.UserCenterWindow();
+      const accountWindow = new osparc.desktop.credits.MyAccountWindow();
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
@@ -50,10 +50,10 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
   },
 
   members: {
-    __userCenter: null,
+    __myAccount: null,
 
     openProfile: function() {
-      return this.__userCenter.openProfile();
+      return this.__myAccount.openProfile();
     }
   }
 });
