@@ -51,11 +51,6 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         maxWidth: 500
       });
 
-      const email = new qx.ui.form.TextField().set({
-        tabIndex: 1,
-        placeholder: this.tr("Email")
-      });
-
       const firstName = new qx.ui.form.TextField().set({
         tabIndex: 2,
         placeholder: this.tr("First Name")
@@ -66,10 +61,15 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         placeholder: this.tr("Last Name")
       });
 
+      const email = new qx.ui.form.TextField().set({
+        tabIndex: 1,
+        placeholder: this.tr("Email")
+      });
+
       const form = new qx.ui.form.Form();
-      form.add(email, "Email", null, "email");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
+      form.add(email, "Email", null, "email");
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
