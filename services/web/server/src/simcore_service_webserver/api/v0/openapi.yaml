@@ -2244,7 +2244,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/projects/{project_id}/inactivity:
-    post:
+    get:
       tags:
       - projects
       summary: Get Project Inactivity

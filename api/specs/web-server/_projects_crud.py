@@ -114,7 +114,7 @@ async def clone_project(
     ...
 
 
-@router.post(
+@router.get(
     "/projects/{project_id}/inactivity",
     response_model=Envelope[GetProjectInactivityResponse],
     status_code=status.HTTP_200_OK,
