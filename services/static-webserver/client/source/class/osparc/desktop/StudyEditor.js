@@ -357,8 +357,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.__requestStartPipeline(studyId, partialPipeline, true);
             }
           }, this);
-        }
-        else if (e.getTarget().getStatus() == "402") {
+        } else if (e.getTarget().getStatus() == "402") {
           const msg = await e.getTarget().getResponse().error.errors[0].message;
           osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
         } else {
