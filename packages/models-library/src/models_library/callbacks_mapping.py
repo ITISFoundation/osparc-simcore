@@ -52,7 +52,9 @@ class CallbacksMapping(BaseModel):
     def ensure_inactivity_timeout_is_capped(
         cls, v: UserServiceCommand
     ) -> UserServiceCommand:
-        if v.timeout < TIMEOUT_MIN or v.timeout > INACTIVITY_TIMEOUT_CAP:
+        if v is not None and (
+            v.timeout < TIMEOUT_MIN or v.timeout > INACTIVITY_TIMEOUT_CAP
+        ):
             msg = (
                 f"Constraint not respected for inactivity timeout={v.timeout}: "
                 f"interval=({TIMEOUT_MIN}, {INACTIVITY_TIMEOUT_CAP})"
