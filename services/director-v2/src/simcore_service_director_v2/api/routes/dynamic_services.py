@@ -367,7 +367,7 @@ async def get_project_inactivity(
     # - it does not provide information about it's inactivity state
     # - the service is actually used
     inactive_services: list[InactivityResponse] = [
-        r for r in inactivity_responses if r.supports_inactivity
+        r for r in inactivity_responses if r.is_inactive
     ]
 
     # a project is considered inactive when all it's inactive services are inactive for
