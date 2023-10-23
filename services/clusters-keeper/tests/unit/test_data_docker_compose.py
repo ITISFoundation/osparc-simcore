@@ -2,20 +2,21 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from pathlib import Path
+import importlib.resources
 from typing import Any
 
 import pytest
-
-
-@pytest.fixture
-def clusters_keeper_docker_compose_file() -> Path:
-    ...
+import simcore_service_clusters_keeper.data
+import yaml
 
 
 @pytest.fixture
 def clusters_keeper_docker_compose() -> dict[str, Any]:
-    return {}
+    data = importlib.resources.read_text(
+        simcore_service_clusters_keeper.data, "docker-compose.yml"
+    )
+    assert data
+    return yaml.safe_load(data)
 
 
 def _get_service_from_compose(
@@ -51,7 +52,7 @@ def test_all_services_run_on_manager_but_dask_sidecar(
         assert "placement" in service_config["deploy"]
         assert "constraints" in service_config["deploy"]["placement"]
         assert service_config["deploy"]["placement"]["constraints"] == [
-            "node_role==worker"
+            "node.role==worker"
             if service_name == "dask-sidecar"
-            else "node_role==manager"
+            else "node.role==manager"
         ]
