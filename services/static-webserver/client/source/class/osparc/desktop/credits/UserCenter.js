@@ -55,13 +55,14 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
 
       const authData = osparc.auth.Data.getInstance();
       const email = authData.getEmail();
+      const avatarSize = 80;
       const img = new qx.ui.basic.Image().set({
-        source: osparc.utils.Avatar.getUrl(email, 100),
-        maxWidth: 80,
-        maxHeight: 80,
+        source: osparc.utils.Avatar.getUrl(email, avatarSize),
+        maxWidth: avatarSize,
+        maxHeight: avatarSize,
         scale: true,
         decorator: new qx.ui.decoration.Decorator().set({
-          radius: 30
+          radius: avatarSize/2
         }),
         alignX: "center"
       });
