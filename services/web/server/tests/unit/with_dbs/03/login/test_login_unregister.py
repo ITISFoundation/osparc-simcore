@@ -37,7 +37,7 @@ async def test_unregister_account_access_rights(
     error = err_info.value
     assert error.status in (
         web.HTTPUnauthorized.status_code,
-        web.HTTPConflict.status_code,
+        web.HTTPForbidden.status_code,
     ), f"{error}"
 
 
