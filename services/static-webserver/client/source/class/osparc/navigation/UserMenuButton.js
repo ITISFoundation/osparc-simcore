@@ -174,6 +174,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("clusters");
       }
       this.getMenu().addSeparator();
+
+      this.getChildControl("theme-switcher");
+      this.getMenu().addSeparator();
+
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
         this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
@@ -184,6 +188,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       }
       this.getChildControl("license");
       this.getMenu().addSeparator();
+
       this.getChildControl("log-out");
     },
 

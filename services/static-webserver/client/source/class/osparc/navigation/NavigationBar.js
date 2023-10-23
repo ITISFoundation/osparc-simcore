@@ -121,15 +121,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        this.getChildControl("current-usage-indicator");
-        this.getChildControl("wallets-viewer");
-      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
       this.getChildControl("help");
-      this.getChildControl("theme-switch");
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        this.getChildControl("current-usage-indicator");
+        this.getChildControl("wallets-viewer");
+      }
       this.getChildControl("log-in-button");
       this.getChildControl("user-menu");
     },
@@ -276,13 +275,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
-        case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
-            toolTipText: this.tr("Switch theme")
-          });
-          control.set(this.self().BUTTON_OPTIONS);
-          this.getChildControl("right-items").add(control);
-          break;
         case "log-in-button": {
           control = this.__createLoginBtn().set({
             visibility: "excluded"
@@ -401,7 +393,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         // right-items
         this.getChildControl("user-menu").exclude();
         this.getChildControl("help").exclude();
-        this.getChildControl("theme-switch").exclude();
         this.getChildControl("user-menu-compact").show();
       } else {
         // left-items
@@ -423,7 +414,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         // right-items
         this.getChildControl("user-menu-compact").exclude();
         this.getChildControl("help").show();
-        this.getChildControl("theme-switch").show();
         this.getChildControl("user-menu").show();
       }
     }
