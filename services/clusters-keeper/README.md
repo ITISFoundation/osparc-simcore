@@ -1,16 +1,39 @@
 # clusters-keeper
 
-[![image-size]](https://microbadger.com/images/itisfoundation/clusters-keeper. "More on itisfoundation/clusters-keeper.:staging-latest image")
 
-[![image-badge]](https://microbadger.com/images/itisfoundation/clusters-keeper "More on Auto scaling service image in registry")
-[![image-version]](https://microbadger.com/images/itisfoundation/clusters-keeper "More on Auto scaling service image in registry")
-[![image-commit]](https://microbadger.com/images/itisfoundation/clusters-keeper "More on Auto scaling service image in registry")
+Service to automatically create computational clusters
 
-Service to auto-scale swarm
 
-<!-- Add badges urls here-->
-[image-size]:https://img.shields.io/microbadger/image-size/itisfoundation/clusters-keeper./staging-latest.svg?label=clusters-keeper.&style=flat
-[image-badge]:https://images.microbadger.com/badges/image/itisfoundation/clusters-keeper.svg
-[image-version]https://images.microbadger.com/badges/version/itisfoundation/clusters-keeper.svg
-[image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/clusters-keeper.svg
-<!------------------------->
+```mermaid
+
+sequenceDiagram
+    box simcore
+    participant director-v2
+    participant clusters-keeper
+    end
+    box external-cluster
+    participant primary
+    participant worker
+    end
+    Note over primary: dask-scheduler<br/>autoscaling<br/>redis
+    Note over worker: dask-sidecar
+    director-v2->>+clusters-keeper: get or create on demand cluster
+    clusters-keeper-->>+primary: create or get primary EC2 for user_id/wallet_id
+    Note over clusters-keeper,primary: EC2
+    clusters-keeper-->>-director-v2: scheduler url
+
+    director-v2->>+primary: send computational job
+    primary->>worker: autoscaling: create workers if needed
+    Note over primary,worker: EC2
+    worker->worker: execute job
+    worker-->>director-v2: return job results
+    primary->>worker: autoscaling: remove unused workers
+    Note over primary,worker: EC2
+
+    clusters-keeper-->>primary: terminate unused clusters
+    Note over clusters-keeper,primary: EC2
+
+
+
+
+```
