@@ -340,7 +340,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   cancelCB();
                 }
               });
-              win.getChildControl("close-button").addListener("execute", () => {
+              // listen to "tap" instead of "execute": the "execute" is not propagated
+              win.getChildControl("close-button").addListener("tap", () => {
                 cancelCB();
               });
             } else {
