@@ -22,7 +22,7 @@ async def test_unregister_account_access_rights(
     client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
 ):
     response = await client.post(
-        "/v0/auth:unregister",
+        "/v0/auth/unregister",
         json={
             "email": logged_user["email"],
             "password": logged_user["raw_password"],
@@ -48,19 +48,20 @@ async def test_unregister_account(
     response = await client.get("/v0/me")
     await assert_status(response, web.HTTPOk)
 
-    # failed check to delete account
+    # failed check to delete another account
+    # FIXME: add here another valid user
     response = await client.post(
-        "/v0/auth:unregister",
+        "/v0/auth/unregister",
         json={
-            "email": "WrongEmail@email.com",
-            "password": "foo",
+            "email": "other_user@email.com",
+            "password": logged_user["raw_password"],
         },
     )
     await assert_status(response, web.HTTPConflict)
 
     # success to request deletion of account
     response = await client.post(
-        "/v0/auth:unregister",
+        "/v0/auth/unregister",
         json={
             "email": logged_user["email"],
             "password": logged_user["raw_password"],

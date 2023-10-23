@@ -59,7 +59,7 @@ async def register(_body: RegisterBody):
 
 
 @router.post(
-    "/auth:unregister",
+    "/auth/unregister",
     response_model=Envelope[Log],
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_409_CONFLICT: {"model": Envelope[Error]}},

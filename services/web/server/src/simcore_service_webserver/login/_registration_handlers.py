@@ -31,7 +31,7 @@ class _RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
-@routes.post(f"/{API_VTAG}/auth:unregister", name="unregister_account")
+@routes.post(f"/{API_VTAG}/auth/unregister", name="unregister_account")
 @login_required
 @permission_required("user.profile.delete")
 async def unregister_account(request: web.Request):

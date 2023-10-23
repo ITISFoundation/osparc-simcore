@@ -107,7 +107,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
-  /v0/auth:unregister:
+  /v0/auth/unregister:
     post:
       tags:
       - auth
