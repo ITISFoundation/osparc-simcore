@@ -5,31 +5,20 @@ import sqlalchemy as sa
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import HttpUrl, PositiveInt, parse_obj_as
-from pydantic.errors import PydanticErrorMixin
+from simcore_postgres_database import errors as pg_errors
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..core.errors import (
+    PaymentAlreadyAckedError,
+    PaymentAlreadyExistsError,
+    PaymentNotFoundError,
+)
 from ..models.db import PaymentsTransactionsDB
 from ..models.payments_gateway import PaymentID
-
-
-class PaymentsValueError(PydanticErrorMixin, ValueError):
-    msg_template = "Error in payment transaction '{payment_id}'"
-
-
-class PaymentNotFoundError(PaymentsValueError):
-    msg_template = "Payment transaction '{payment_id}' was not initialized."
-
-
-class PaymentAlreadyAckedError(PaymentsValueError):
-    ...
-
-
-class PaymentAlreadyExistsError(PaymentsValueError):
-    msg_template = "Payment transaction '{payment_id}' was already initialized."
 
 
 class BaseRepository:
@@ -55,29 +44,36 @@ class PaymentsTransactionsRepo(BaseRepository):
         comment: str | None,
         initiated_at: datetime.datetime,
     ) -> PaymentID:
-        """Annotates init-payment transaction"""
-        async with self.db_engine.begin() as conn:
-            await conn.execute(
-                payments_transactions.insert().values(
-                    payment_id=f"{payment_id}",
-                    price_dollars=price_dollars,
-                    osparc_credits=osparc_credits,
-                    product_name=product_name,
-                    user_id=user_id,
-                    user_email=user_email,
-                    wallet_id=wallet_id,
-                    comment=comment,
-                    initiated_at=initiated_at,
+        """Annotates init-payment transaction
+        Raises:
+            PaymentAlreadyExistsError
+        """
+
+        try:
+            async with self.db_engine.begin() as conn:
+                await conn.execute(
+                    payments_transactions.insert().values(
+                        payment_id=f"{payment_id}",
+                        price_dollars=price_dollars,
+                        osparc_credits=osparc_credits,
+                        product_name=product_name,
+                        user_id=user_id,
+                        user_email=user_email,
+                        wallet_id=wallet_id,
+                        comment=comment,
+                        initiated_at=initiated_at,
+                    )
                 )
-            )
-            return payment_id
+                return payment_id
+        except pg_errors.UniqueViolation:
+            raise PaymentAlreadyExistsError(payment_id=f"{payment_id}")
 
     async def update_ack_payment_transaction(
         self,
         payment_id: PaymentID,
         completion_state: PaymentTransactionState,
         state_message: str | None,
-        invoice_url: HttpUrl,
+        invoice_url: HttpUrl | None,
     ) -> PaymentsTransactionsDB:
         """
         - ACKs payment by updating state with SUCCESS, CANCEL, etc
@@ -174,3 +170,19 @@ class PaymentsTransactionsRepo(BaseRepository):
             return total_number_of_items, parse_obj_as(
                 list[PaymentsTransactionsDB], rows
             )
+
+    async def get_payment_transaction(
+        self, payment_id: PaymentID, user_id: UserID, wallet_id: WalletID
+    ) -> PaymentsTransactionsDB | None:
+        # NOTE: user access and rights are expected to be checked at this point
+        # nonetheless, `user_id` and `wallet_id` are added here for caution
+        async with self.db_engine.begin() as connection:
+            result = await connection.execute(
+                payments_transactions.select().where(
+                    (payments_transactions.c.payment_id == f"{payment_id}")
+                    & (payments_transactions.c.user_id == user_id)
+                    & (payments_transactions.c.wallet_id == wallet_id)
+                )
+            )
+            row = result.fetchone()
+            return PaymentsTransactionsDB.from_orm(row) if row else None
