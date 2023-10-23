@@ -60,7 +60,7 @@ async def _publish_to_rabbitmq_wallet_credits_limit_reached(
     project_id: ProjectID,
     node_id: NodeID,
     wallet_id: WalletID,
-    credits: Decimal,
+    credits_: Decimal,
     credits_limit: CreditsLimit,
 ):
     publish_message = WalletCreditsLimitReachedMessage(
@@ -69,7 +69,7 @@ async def _publish_to_rabbitmq_wallet_credits_limit_reached(
         project_id=project_id,
         node_id=node_id,
         wallet_id=wallet_id,
-        credits=credits,
+        credits=credits_,
         credits_limit=credits_limit,
     )
     await rabbitmq_client.publish(publish_message.channel_name, publish_message)
@@ -80,7 +80,7 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
     rabbitmq_client: RabbitMQClient,
     product_name: ProductName,
     wallet_id: WalletID,
-    credits: Decimal,
+    credits_: Decimal,
     credits_limit: CreditsLimit,
 ):
     # Get all current running services for that wallet
@@ -112,7 +112,7 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
                     project_id=service.project_id,
                     node_id=service.node_id,
                     wallet_id=wallet_id,
-                    credits=credits,
+                    credits_=credits_,
                     credits_limit=credits_limit,
                 )
                 for service in batch_services

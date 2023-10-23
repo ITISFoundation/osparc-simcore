@@ -174,7 +174,7 @@ async def _process_heartbeat_event(
                 rabbitmq_client,
                 product_name=running_service.product_name,
                 wallet_id=running_service.wallet_id,
-                credits=wallet_total_credits.available_osparc_credits,
+                credits_=wallet_total_credits.available_osparc_credits,
                 credits_limit=CreditsLimit.MIN_CREDITS,
             )
 
