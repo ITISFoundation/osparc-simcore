@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -119,6 +119,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
     populateMenu: function() {
       this.removeAll();
+
       if (osparc.auth.Data.getInstance().isGuest()) {
         this.getChildControl("log-in");
       } else {
