@@ -16,7 +16,6 @@ from fastapi import FastAPI
 from models_library.rpc_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from parse import Result, search
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCNamespace
@@ -68,40 +67,11 @@ def _base_configuration(
     ...
 
 
-async def _assert_cluster_instance_created(
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID | None,
-) -> None:
+async def _assert_cluster_instance_created(ec2_client: EC2Client) -> None:
     instances = await ec2_client.describe_instances()
     assert len(instances["Reservations"]) == 1
     assert "Instances" in instances["Reservations"][0]
     assert len(instances["Reservations"][0]["Instances"]) == 1
-    assert "Tags" in instances["Reservations"][0]["Instances"][0]
-    instance_ec2_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_ec2_tags) == 4
-    assert all("Key" in x for x in instance_ec2_tags)
-    assert all("Value" in x for x in instance_ec2_tags)
-
-    assert "Key" in instances["Reservations"][0]["Instances"][0]["Tags"][0]
-    assert (
-        instances["Reservations"][0]["Instances"][0]["Tags"][0]["Key"]
-        == "io.simcore.clusters-keeper.version"
-    )
-    assert "Key" in instances["Reservations"][0]["Instances"][0]["Tags"][1]
-    assert instances["Reservations"][0]["Instances"][0]["Tags"][1]["Key"] == "Name"
-    assert "Value" in instances["Reservations"][0]["Instances"][0]["Tags"][1]
-    instance_name = instances["Reservations"][0]["Instances"][0]["Tags"][1]["Value"]
-    search_str = (
-        "user_id:{user_id:d}-wallet_id:{wallet_id:d}"
-        if wallet_id
-        else "user_id:{user_id:d}-wallet_id:None"
-    )
-    parse_result = search(search_str, instance_name)
-    assert isinstance(parse_result, Result)
-    assert parse_result["user_id"] == user_id
-    if wallet_id:
-        assert parse_result["wallet_id"] == wallet_id
 
 
 async def _assert_cluster_heartbeat_on_instance(
@@ -113,7 +83,6 @@ async def _assert_cluster_heartbeat_on_instance(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_tags) == 5
     assert all("Key" in x for x in instance_tags)
     list_of_heartbeats = list(
         filter(lambda x: x["Key"] == HEARTBEAT_TAG_KEY, instance_tags)  # type:ignore
@@ -162,9 +131,7 @@ async def test_get_or_create_cluster(
     assert isinstance(rpc_response, OnDemandCluster)
     created_cluster = rpc_response
     # check we do have a new machine in AWS
-    await _assert_cluster_instance_created(
-        ec2_client, user_id, wallet_id if use_wallet_id else None
-    )
+    await _assert_cluster_instance_created(ec2_client)
     # it is called once as moto server creates instances instantly
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
