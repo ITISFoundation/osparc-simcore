@@ -173,11 +173,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("organizations");
         this.getChildControl("clusters");
       }
-      if (osparc.product.quickStart.Utils.getQuickStart()) {
-        this.getMenu().addSeparator();
-        osparc.store.Support.addQuickStartToMenu(this.getMenu());
-      }
-      osparc.store.Support.addGuidedToursToMenu(this.getMenu());
       this.getMenu().addSeparator();
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
@@ -209,14 +204,23 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getMenu().addSeparator();
 
       // this part gets injected
-      this.__addQuickStartToMenu();
-      this.__addManualsToMenu();
-      this.getMenu().addSeparator();
-      this.__addFeedbacksToMenu();
-      this.getMenu().addSeparator();
-      this.getChildControl("theme-switcher");
+      const menu = this.getMenu();
 
+      // quick starts
+      osparc.store.Support.addQuickStartToMenu(menu);
+      osparc.store.Support.addGuidedToursToMenu(menu);
+
+      // manuals
+      osparc.store.Support.addManualButtonsToMenu(menu);
       this.getMenu().addSeparator();
+
+      // feedbacks
+      osparc.store.Support.addSupportButtonsToMenu(menu);
+      this.getMenu().addSeparator();
+
+      this.getChildControl("theme-switcher");
+      this.getMenu().addSeparator();
+
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
         this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
@@ -228,22 +232,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getChildControl("license");
       this.getMenu().addSeparator();
       this.getChildControl("log-out");
-    },
-
-    __addQuickStartToMenu: function() {
-      const menu = this.getMenu();
-      osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addGuidedToursToMenu(menu);
-    },
-
-    __addManualsToMenu: function() {
-      const menu = this.getMenu();
-      osparc.store.Support.addManualButtonsToMenu(menu);
-    },
-
-    __addFeedbacksToMenu: function() {
-      const menu = this.getMenu();
-      osparc.store.Support.addSupportButtonsToMenu(menu);
     }
   }
 });
