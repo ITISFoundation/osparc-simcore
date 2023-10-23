@@ -14,6 +14,7 @@ _APPLICATION_VERSION_TAG: Final[EC2Tags] = {
 }
 
 HEARTBEAT_TAG_KEY: Final[str] = "last_heartbeat"
+CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
 
 
 def get_cluster_name(
@@ -23,7 +24,7 @@ def get_cluster_name(
     wallet_id: WalletID | None,
     manager: bool,
 ) -> str:
-    return f"osparc-computational-cluster-{'manager' if manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+    return f"{CLUSTER_NAME_PREFIX}{'manager' if manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
 
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:

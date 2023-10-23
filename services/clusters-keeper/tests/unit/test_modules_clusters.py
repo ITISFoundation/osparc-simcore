@@ -13,14 +13,23 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
+from simcore_service_clusters_keeper._meta import VERSION as APP_VERSION
 from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
+from simcore_service_clusters_keeper.core.settings import (
+    ApplicationSettings,
+    get_application_settings,
+)
 from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,
     delete_clusters,
 )
-from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
+from simcore_service_clusters_keeper.utils.ec2 import (
+    _APPLICATION_TAG_KEY,
+    CLUSTER_NAME_PREFIX,
+    HEARTBEAT_TAG_KEY,
+)
 from types_aiobotocore_ec2 import EC2Client
 
 
@@ -48,6 +57,7 @@ def _base_configuration(
 
 
 async def _assert_cluster_instance_created(
+    app_settings: ApplicationSettings,
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
@@ -58,19 +68,27 @@ async def _assert_cluster_instance_created(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_ec2_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_ec2_tags) == 4
+    assert len(instance_ec2_tags) == 5
     assert all("Key" in x for x in instance_ec2_tags)
     assert all("Value" in x for x in instance_ec2_tags)
 
-    assert "Key" in instances["Reservations"][0]["Instances"][0]["Tags"][0]
-    assert (
-        instances["Reservations"][0]["Instances"][0]["Tags"][0]["Key"]
-        == "io.simcore.clusters-keeper.version"
-    )
-    assert "Key" in instances["Reservations"][0]["Instances"][0]["Tags"][1]
-    assert instances["Reservations"][0]["Instances"][0]["Tags"][1]["Key"] == "Name"
-    assert "Value" in instances["Reservations"][0]["Instances"][0]["Tags"][1]
-    instance_name = instances["Reservations"][0]["Instances"][0]["Tags"][1]["Value"]
+    _EXPECTED_TAGS: dict[str, str] = {
+        f"{_APPLICATION_TAG_KEY}.deploy": app_settings.SWARM_STACK_NAME,
+        f"{_APPLICATION_TAG_KEY}.version": f"{APP_VERSION}",
+        "Name": f"{CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
+        "user_id": f"{user_id}",
+        "wallet_id": f"{wallet_id}",
+    }
+    for tag in instances["Reservations"][0]["Instances"][0]["Tags"]:
+        assert "Key" in tag
+        assert "Value" in tag
+        assert tag["Key"] in _EXPECTED_TAGS
+        assert tag["Value"] == _EXPECTED_TAGS[tag["Key"]]
+
+    assert "Key" in instances["Reservations"][0]["Instances"][0]["Tags"][2]
+    assert instances["Reservations"][0]["Instances"][0]["Tags"][2]["Key"] == "Name"
+    assert "Value" in instances["Reservations"][0]["Instances"][0]["Tags"][2]
+    instance_name = instances["Reservations"][0]["Instances"][0]["Tags"][2]["Value"]
 
     parse_result = search("user_id:{user_id:d}-wallet_id:{wallet_id:d}", instance_name)
     assert isinstance(parse_result, Result)
@@ -87,7 +105,10 @@ async def _create_cluster(
     created_clusters = await create_cluster(app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
     # check we do have a new machine in AWS
-    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+
+    await _assert_cluster_instance_created(
+        get_application_settings(app), ec2_client, user_id, wallet_id
+    )
     return created_clusters
 
 
