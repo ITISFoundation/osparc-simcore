@@ -13,3 +13,4 @@ def test_settings(app_environment: EnvVarsDict):
     assert settings.CLUSTERS_KEEPER_EC2_INSTANCES
     assert settings.CLUSTERS_KEEPER_RABBITMQ
     assert settings.CLUSTERS_KEEPER_REDIS
+    assert settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES
