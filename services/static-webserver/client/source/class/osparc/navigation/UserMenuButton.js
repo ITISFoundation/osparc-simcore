@@ -89,18 +89,23 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "user-center":
           control = new qx.ui.menu.Button(this.tr("User Center"));
-          control.addListener("execute", () => {
-            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-            const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
-            if (walletsEnabled) {
-              userCenterWindow.openOverview();
-            }
-          }, this);
+          control.addListener("execute", () => osparc.desktop.credits.UserCenterWindow.openWindow(), this);
           this.getMenu().add(control);
           break;
         case "po-center":
           control = new qx.ui.menu.Button(this.tr("PO Center"));
           control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
+          this.getMenu().add(control);
+          break;
+        case "billing-center":
+          control = new qx.ui.menu.Button(this.tr("Billing Center"));
+          control.addListener("execute", () => {
+            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+            const userCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
+            if (walletsEnabled) {
+              userCenterWindow.openOverview();
+            }
+          }, this);
           this.getMenu().add(control);
           break;
         case "preferences":
@@ -169,6 +174,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }
+        if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+          this.getChildControl("billing-center");
+        }
         this.getChildControl("preferences");
         this.getChildControl("organizations");
         this.getChildControl("clusters");
@@ -201,6 +209,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("user-center");
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
+        }
+        if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+          this.getChildControl("billing-center");
         }
         this.getChildControl("preferences");
         this.getChildControl("organizations");

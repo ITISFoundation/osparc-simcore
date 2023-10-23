@@ -15,15 +15,21 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
+qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    const caption = this.tr("User Center");
+    const caption = this.tr("Billing Center");
     this.base(arguments, "credits", caption);
 
     const viewWidth = 1000;
-    const viewHeight = 600;
+    const viewHeight = 700;
+
+    const store = osparc.store.Store.getInstance();
+    // Concatenate context wallet's name
+    store.bind("contextWallet", this, "caption", {
+      converter: contextWallet => caption + (contextWallet ? (" - " + contextWallet.getName()) : "")
+    });
 
     this.set({
       layout: new qx.ui.layout.Grow(),
@@ -36,13 +42,13 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
       appearance: "service-window"
     });
 
-    const userCenter = this.__userCenter = new osparc.desktop.credits.UserCenter();
-    this.add(userCenter);
+    const billingCenter = this.__billingCenter = new osparc.desktop.credits.BillingCenter();
+    this.add(billingCenter);
   },
 
   statics: {
     openWindow: function() {
-      const accountWindow = new osparc.desktop.credits.UserCenterWindow();
+      const accountWindow = new osparc.desktop.credits.BillingCenterWindow();
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
@@ -50,10 +56,14 @@ qx.Class.define("osparc.desktop.credits.UserCenterWindow", {
   },
 
   members: {
-    __userCenter: null,
+    __billingCenter: null,
 
-    openProfile: function() {
-      return this.__userCenter.openProfile();
+    openOverview: function() {
+      return this.__billingCenter.openOverview();
+    },
+
+    openWallets: function() {
+      return this.__billingCenter.openWallets();
     }
   }
 });

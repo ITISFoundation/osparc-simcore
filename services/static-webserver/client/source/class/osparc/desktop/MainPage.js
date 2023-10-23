@@ -66,8 +66,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     Promise.all(preloadPromises)
       .then(() => {
         if (openView && openView === "wallets" && walletsEnabled) {
-          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
-          creditsWindow.openOverview();
+          const billingCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
+          billingCenterWindow.openOverview();
         }
 
         const mainStack = this.__createMainStack();
