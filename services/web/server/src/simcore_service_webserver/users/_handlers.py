@@ -5,24 +5,18 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
-from servicelib.utils import fire_and_forget_task
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
-from ..login._constants import MSG_LOGGED_OUT
 from ..login.decorators import login_required
-from ..login.utils import flash_response, notify_user_logout
 from ..redis import get_redis_user_notifications_client
-from ..security.api import check_password, forget
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, _tokens, api
@@ -35,14 +29,7 @@ from ._notifications import (
     get_notification_key,
 )
 from .exceptions import TokenNotFoundError, UserNotFoundError
-from .schemas import (
-    Permission,
-    PermissionGet,
-    ProfileCredentialsCheck,
-    ProfileGet,
-    ProfileUpdate,
-    TokenCreate,
-)
+from .schemas import Permission, PermissionGet, ProfileGet, ProfileUpdate, TokenCreate
 
 _logger = logging.getLogger(__name__)
 
@@ -87,54 +74,6 @@ async def update_my_profile(request: web.Request) -> web.Response:
     profile_update = await parse_request_body_as(ProfileUpdate, request)
     await api.update_user_profile(request.app, req_ctx.user_id, profile_update)
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-
-
-@routes.post(f"/{API_VTAG}/me:mark-deleted", name="mark_account_for_deletion")
-@login_required
-@permission_required("user.profile.delete")
-async def mark_account_for_deletion(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    body = await parse_request_body_as(ProfileCredentialsCheck, request)
-
-    # checks before deleting
-    credentials = await _api.get_user_credentials(request.app, user_id=req_ctx.user_id)
-    if body.email != credentials.email.lower() or not check_password(
-        body.password.get_secret_value(), credentials.password_hash
-    ):
-        raise web.HTTPConflict(
-            reason="Wrong email or password. Please try again to delete this account"
-        )
-
-    with log_context(
-        _logger,
-        logging.INFO,
-        "Mark account for deletion to %s",
-        credentials.email,
-        extra=get_log_record_extra(user_id=req_ctx.user_id),
-    ):
-        # update user table
-        await _api.set_user_as_deleted(request.app, user_id=req_ctx.user_id)
-
-        # logout
-        await notify_user_logout(
-            request.app, user_id=req_ctx.user_id, client_session_id=None
-        )
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await forget(request, response)
-
-        # send email in the background
-        fire_and_forget_task(
-            _api.send_close_account_email(
-                request,
-                user_email=credentials.email,
-                user_name=credentials.full_name.first_name,
-                retention_days=30,
-            ),
-            task_suffix_name=f"{__name__}.mark_account_for_deletion.send_close_account_email",
-            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-        )
-
-        return response
 
 
 # me/tokens/ ------------------------------------------------------

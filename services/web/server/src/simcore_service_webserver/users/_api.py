@@ -4,7 +4,7 @@ from typing import NamedTuple
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
-from pydantic import EmailStr, PositiveInt, parse_obj_as
+from pydantic import parse_obj_as
 from simcore_postgres_database.models.users import (
     FullNameTuple,
     UserNameConverter,
@@ -12,8 +12,6 @@ from simcore_postgres_database.models.users import (
 )
 
 from ..db.plugin import get_database_engine
-from ..email.utils import send_email_from_template
-from ..products.api import get_current_product, get_product_template_path
 from ._db import get_user_or_raise
 from ._db import list_user_permissions as db_list_of_permissions
 from ._db import update_user_status
@@ -57,34 +55,3 @@ async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
     await update_user_status(
         get_database_engine(app), user_id=user_id, new_status=UserStatus.DELETED
     )
-
-
-async def send_close_account_email(
-    request: web.Request,
-    user_email: EmailStr,
-    user_name: str,
-    retention_days: PositiveInt = 30,
-):
-    template_name = "close_account.jinja2"
-    email_template_path = await get_product_template_path(request, template_name)
-    product = get_current_product(request)
-
-    try:
-        await send_email_from_template(
-            request,
-            from_=product.support_email,
-            to=user_email,
-            template=email_template_path,
-            context={
-                "host": request.host,
-                "name": user_name.capitalize(),
-                "support_email": product.support_email,
-                "retention_days": retention_days,
-            },
-        )
-    except Exception:  # pylint: disable=broad-except
-        _logger.exception(
-            "Failed while sending '%s' email to %s",
-            template_name,
-            f"{user_email=}",
-        )

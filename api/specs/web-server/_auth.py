@@ -8,6 +8,7 @@ from typing import Any
 
 from _common import Error, Log
 from fastapi import APIRouter, status
+from models_library.api_schemas_webserver.auth import UnregisterCheck
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
@@ -55,6 +56,16 @@ async def check_registration_invitation(check: InvitationCheck):
 )
 async def register(registration: RegisterBody):
     """User registration"""
+
+
+@router.post(
+    "/auth:unregister",
+    response_model=Envelope[Log],
+    status_code=status.HTTP_200_OK,
+    responses={status.HTTP_409_CONFLICT: {"model": Envelope[Error]}},
+)
+async def unregister_account(_body: UnregisterCheck):
+    ...
 
 
 @router.post(
