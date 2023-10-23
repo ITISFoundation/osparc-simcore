@@ -6,12 +6,12 @@ class PaymentsValueError(PydanticErrorMixin, ValueError):
 
 
 class PaymentNotFoundError(PaymentsValueError):
-    msg_template = "Payment transaction '{payment_id=}' was not found"
+    msg_template = "Payment transaction '{payment_id}' was not found"
 
 
 class PaymentAlreadyExistsError(PaymentsValueError):
     msg_template = "Payment transaction '{payment_id}' was already initialized"
 
 
-class PaymentAlreadyClosedError(PaymentsValueError):
+class PaymentAlreadyAckedError(PaymentsValueError):
     msg_template = "Payment transaction '{payment_id}' cannot be changes since it was already closed."

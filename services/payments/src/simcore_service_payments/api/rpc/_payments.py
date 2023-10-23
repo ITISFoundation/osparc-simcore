@@ -12,7 +12,7 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 from simcore_service_payments.core.errors import (
-    PaymentAlreadyClosedError,
+    PaymentAlreadyAckedError,
     PaymentNotFoundError,
 )
 
@@ -117,7 +117,7 @@ async def cancel_payment(
         if payment.state == PaymentTransactionState.CANCELED:
             # Avoids error if multiple cancel calls
             return
-        raise PaymentAlreadyClosedError(payment_id=payment_id)
+        raise PaymentAlreadyAckedError(payment_id=payment_id)
 
     # execution
     with log_context(

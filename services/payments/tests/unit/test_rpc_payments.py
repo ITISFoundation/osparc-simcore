@@ -134,7 +134,7 @@ async def test_cancel_invalid_payment_id(
 
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 
-    with pytest.raises(PaymentNotFoundError):
+    with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(
             PAYMENTS_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "cancel_payment"),
@@ -142,3 +142,11 @@ async def test_cancel_invalid_payment_id(
             user_id=init_payment_kwargs["user_id"],
             wallet_id=init_payment_kwargs["wallet_id"],
         )
+    error = exc_info.value
+
+    assert isinstance(error, RPCServerError)
+    assert error.exc_type == f"{PaymentNotFoundError}"
+    assert error.method_name == "cancel_payment"
+    assert error.msg == PaymentNotFoundError.msg_template.format(
+        payment_id=invalid_payment_id
+    )

@@ -18,12 +18,13 @@ openapi.json: .env-ignore ## produces openapi.json
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 
+# NOTE: Create using `ln -s path/to/osparc-config/repo.config .env-secret`
 external ?= .env-secret
 
 test-dev-unit-external: ## runs test-dev against external service defined in $(external) envfile
-	$(MAKE) test-dev-unit \
-					pytest-parameters="--external-envfile=$(external)"
+	# Running tests using external environ '$(external)'
+	$(MAKE) test-dev-unit pytest-parameters="--external-envfile=$(external)"
 
-test-ci-unit-external: ## runs test-dev against external service defined in $(external) envfile
-	$(MAKE) test-ci-unit \
-					pytest-parameters="--external-envfile=$(external)"
+test-ci-unit-external: ## runs test-ci against external service defined in $(external) envfile
+	# Running tests using external environ '$(external)'
+	$(MAKE) test-ci-unit pytest-parameters="--external-envfile=$(external)"
