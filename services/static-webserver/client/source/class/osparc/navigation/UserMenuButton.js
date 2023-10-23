@@ -64,20 +64,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   statics: {
-    openActivityManager: function() {
-      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", qx.locale.Manager.tr("Activity manager")).set({
-        height: 600,
-        width: 800,
-        layout: new qx.ui.layout.Grow(),
-        appearance: "service-window",
-        showMinimize: false,
-        contentPadding: 0
-      });
-      activityWindow.add(new osparc.activityManager.ActivityManager());
-      activityWindow.center();
-      activityWindow.open();
-    },
-
     openPreferences: function() {
       const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
       return preferencesWindow;
