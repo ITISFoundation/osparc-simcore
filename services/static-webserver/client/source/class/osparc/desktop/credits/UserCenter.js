@@ -46,8 +46,8 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
   },
 
   statics: {
-    createMiniProfileView: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
+    createMiniProfileView: function(withSpacer = true) {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
         maxWidth: 150
@@ -93,7 +93,9 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       });
       layout.add(emailLabel);
 
-      layout.add(new qx.ui.core.Spacer(15, 15));
+      if (withSpacer) {
+        layout.add(new qx.ui.core.Spacer(15, 15));
+      }
 
       return layout;
     }
