@@ -344,3 +344,20 @@ async def test_post_containers_tasks(
     thin_client_handler = getattr(thin_client, handler_name)
     response = await thin_client_handler(dynamic_sidecar_endpoint, **extra_kwargs)
     assert_responses(mock_response, response)
+
+
+async def test_get_containers_inactivity(
+    thin_client: ThinSidecarsClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+) -> None:
+    mock_response = Response(status.HTTP_200_OK, json={})
+    mock_request(
+        "GET",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/inactivity",
+        mock_response,
+        None,
+    )
+
+    response = await thin_client.get_containers_inactivity(dynamic_sidecar_endpoint)
+    assert_responses(mock_response, response)

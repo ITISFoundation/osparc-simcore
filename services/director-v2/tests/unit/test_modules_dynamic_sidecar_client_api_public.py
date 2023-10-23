@@ -346,3 +346,24 @@ async def test_update_volume_state(
             )
             is None
         )
+
+
+@pytest.mark.parametrize(
+    "mock_json",
+    [
+        {"is_inactive": True, "seconds_inactive": 1},
+        {"is_inactive": False, "seconds_inactive": None},
+    ],
+)
+async def test_get_service_inactivity(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_json: dict[str, Any],
+) -> None:
+    with get_patched_client(
+        "get_containers_inactivity",
+        return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
+    ) as client:
+        assert (
+            await client.get_service_inactivity(dynamic_sidecar_endpoint) == mock_json
+        )
