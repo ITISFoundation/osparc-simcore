@@ -79,8 +79,8 @@ PAYMENT_HTML = """
         <input type="text" id="cardHolder" name="cardHolder" required>
         <br><br>
 
-        <label for="cvs">CVS:</label>
-        <input type="text" id="cvs" name="cvs" required>
+        <label for="cvc">CVC:</label>
+        <input type="text" id="cvc" name="cvc" required>
         <br><br>
 
         <label for="expirationDate">Expiration Date:</label>
@@ -98,7 +98,7 @@ PAYMENT_HTML = """
 class PaymentForm:
     card_number: Annotated[str, Form(alias="cardNumber")]
     card_holder: Annotated[str, Form(alias="cardHolder")]
-    cvs: Annotated[str, Form()]
+    cvc: Annotated[str, Form()]
     expiration_date: Annotated[str, Form(alias="expirationDate")]
 
 
