@@ -358,7 +358,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
               };
               osparc.data.Resources.fetch("payments", "cancelPayment", params2);
             };
-            // Listen to close window event
+            // Listen to close window event (Bug: it doesn't work)
             pgWindow.onbeforeunload = () => {
               const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
               osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
