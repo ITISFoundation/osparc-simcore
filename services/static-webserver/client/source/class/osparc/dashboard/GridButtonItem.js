@@ -218,13 +218,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     // overridden
-    _applyMenu: function(value, old) {
+    _applyMenu: function(menu, old) {
       const menuButton = this.getChildControl("menu-button");
-      if (value) {
-        menuButton.setMenu(value);
-        osparc.utils.Utils.setIdToWidget(value, "studyItemMenuMenu");
+      if (menu) {
+        menuButton.setMenu(menu);
+        menu.setPosition("top-left");
+        osparc.utils.Utils.prettifyMenu(menu);
+        osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
       }
-      menuButton.setVisibility(value ? "visible" : "excluded");
+      menuButton.setVisibility(menu ? "visible" : "excluded");
     }
   }
 });
