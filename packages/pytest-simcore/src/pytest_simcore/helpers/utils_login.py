@@ -28,7 +28,6 @@ class _UserInfoDictRequired(TypedDict, total=True):
 
 class UserInfoDict(_UserInfoDictRequired, total=False):
     created_at: datetime
-    created_ip: int
     password_hash: str
 
 
@@ -107,7 +106,7 @@ class NewUser:
 
 
 class LoggedUser(NewUser):
-    def __init__(self, client, params=None, *, check_if_succeeds=True):
+    def __init__(self, client: TestClient, params=None, *, check_if_succeeds=True):
         super().__init__(params, client.app)
         self.client = client
         self.enable_check = check_if_succeeds
