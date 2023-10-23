@@ -57,7 +57,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFound,
 )
 from simcore_postgres_database.webserver_models import ProjectType
-from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 from ..application_settings import get_settings
 from ..catalog import client as catalog_client
@@ -87,6 +86,7 @@ from ..users.preferences_api import (
     get_user_preference,
 )
 from ..wallets import api as wallets_api
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._wallets_api import connect_wallet_to_project, get_project_wallet

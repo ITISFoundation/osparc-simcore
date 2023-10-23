@@ -44,7 +44,6 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
@@ -55,6 +54,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots

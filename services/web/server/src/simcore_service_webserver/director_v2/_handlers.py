@@ -20,21 +20,21 @@ from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
-from simcore_service_webserver.db.plugin import get_database_engine
-from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
-from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
+from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..products import api as products_api
 from ..projects import api as projects_api
 from ..security.decorators import permission_required
 from ..users import preferences_api as user_preferences_api
+from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..version_control.models import CommitID
 from ..wallets import api as wallets_api
+from ..wallets.errors import WalletNotEnoughCreditsError
 from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
@@ -218,9 +218,7 @@ async def start_computation(request: web.Request) -> web.Response:
     except UserDefaultWalletNotFoundError as exc:
         return create_error_response(exc, http_error_cls=web.HTTPNotFound)
     except WalletNotEnoughCreditsError as exc:
-        return create_error_response(
-            exc, reason="Test", http_error_cls=web.HTTPPaymentRequired
-        )
+        return create_error_response(exc, http_error_cls=web.HTTPPaymentRequired)
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")
