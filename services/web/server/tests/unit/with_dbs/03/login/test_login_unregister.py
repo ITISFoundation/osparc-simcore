@@ -62,17 +62,6 @@ async def test_unregister_account(
     response = await client.get("/v0/me")
     await assert_status(response, web.HTTPOk)
 
-    # failed check to delete another account
-    async with NewUser(app=client.app) as other_user:
-        response = await client.post(
-            "/v0/auth/unregister",
-            json={
-                "email": other_user["email"],
-                "password": other_user["raw_password"],
-            },
-        )
-        await assert_status(response, web.HTTPConflict)
-
     # success to request deletion of account
     response = await client.post(
         "/v0/auth/unregister",
@@ -101,3 +90,57 @@ async def test_unregister_account(
 
     prefix_msg = MSG_USER_DELETED.format(support_email="").strip()
     assert prefix_msg in error["errors"][0]["message"]
+
+
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role >= UserRole.USER]
+)
+async def test_cannot_unregister_other_account(
+    client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock
+):
+    assert client.app
+
+    # is logged in
+    response = await client.get("/v0/me")
+    await assert_status(response, web.HTTPOk)
+
+    # cannot delete another account
+    async with NewUser(app=client.app) as other_user:
+        response = await client.post(
+            "/v0/auth/unregister",
+            json={
+                "email": other_user["email"],
+                "password": other_user["raw_password"],
+            },
+        )
+        await assert_status(response, web.HTTPConflict)
+
+
+@pytest.mark.parametrize("invalidate", ["email", "raw_password"])
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role >= UserRole.USER]
+)
+async def test_cannot_unregister_invalid_credentials(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_send_email: MagicMock,
+    invalidate: str,
+):
+    assert client.app
+
+    # check is logged in
+    response = await client.get("/v0/me")
+    await assert_status(response, web.HTTPOk)
+
+    # check cannot invalid credentials
+    credentials = {k: logged_user[k] for k in ("email", "raw_password")}
+    credentials[invalidate] += "error"
+
+    response = await client.post(
+        "/v0/auth/unregister",
+        json={
+            "email": credentials["email"],
+            "password": credentials["raw_password"],
+        },
+    )
+    await assert_status(response, web.HTTPConflict)
