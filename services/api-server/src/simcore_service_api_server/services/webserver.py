@@ -392,7 +392,7 @@ class AuthSession:
             data = Envelope[PricingUnitGet].parse_raw(response.text).data
             return data
 
-    async def put_project_node_pricing_plan_and_unit(
+    async def connect_pricing_unit_to_project_node(
         self,
         project_id: UUID,
         node_id: UUID,

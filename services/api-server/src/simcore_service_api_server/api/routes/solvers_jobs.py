@@ -193,7 +193,7 @@ async def start_job(
             _raise_if_job_not_associated_with_solver(solver_key, version, project)
             node_ids = list(project.workbench.keys())
             assert len(node_ids) == 1  # nosec
-            await webserver_api.put_project_node_pricing_plan_and_unit(
+            await webserver_api.connect_pricing_unit_to_project_node(
                 project_id=job_id,
                 node_id=UUID(node_ids[0]),
                 pricing_plan=pricing_spec.pricing_plan,
