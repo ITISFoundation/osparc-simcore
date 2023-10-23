@@ -967,7 +967,8 @@ qx.Class.define("osparc.data.model.Node", {
       osparc.data.Resources.fetch("studies", "startNode", params)
         .then(() => this.startDynamicService())
         .catch(err => {
-          if ("status" in err && err.status === 409) {
+          console.log(err);
+          if ("status" in err && (err.status === 409 || err.status === 402)) {
             osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
           } else {
             console.error(err);

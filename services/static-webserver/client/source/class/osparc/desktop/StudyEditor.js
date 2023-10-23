@@ -340,7 +340,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getStudyLogger().error(null, "Error submitting pipeline");
         this.getStudy().setPipelineRunning(false);
       }, this);
-      req.addListener("fail", e => {
+      req.addListener("fail", async e => {
         if (e.getTarget().getStatus() == "403") {
           this.getStudyLogger().error(null, "Pipeline is already running");
         } else if (e.getTarget().getStatus() == "422") {
@@ -357,6 +357,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.__requestStartPipeline(studyId, partialPipeline, true);
             }
           }, this);
+        }
+        else if (e.getTarget().getStatus() == "402") {
+          const msg = await e.getTarget().getResponse().error.errors[0].message;
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
         } else {
           this.getStudyLogger().error(null, "Failed submitting pipeline");
         }
