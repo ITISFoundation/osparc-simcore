@@ -81,6 +81,8 @@ def _get_non_default_value(model_class: type[BaseModel]) -> Any:
         return {**value, "non_default_key": "non_default_value"}
     if isinstance(value, list):
         return [*value, "non_default_value"]
+    if isinstance(value, int):
+        return value
     if value is None:
         if value_type == int:
             return 0
