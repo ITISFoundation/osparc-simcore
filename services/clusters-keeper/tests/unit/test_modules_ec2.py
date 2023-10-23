@@ -119,32 +119,30 @@ async def test_get_ec2_instance_capabilities(
 ):
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
     assert (
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
     )
     instance_types = await clusters_keeper_ec2.get_ec2_instance_capabilities(
         cast(
             set[InstanceTypeType],
             set(
-                app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+                app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
             ),
         )
     )
     assert instance_types
     assert len(instance_types) == len(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
     )
 
     # all the instance names are found and valid
     assert all(
         i.name
-        in app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        in app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
         for i in instance_types
     )
     for (
         instance_type_name
-    ) in (
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
-    ):
+    ) in app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES:
         assert any(i.name == instance_type_name for i in instance_types)
 
 
@@ -214,7 +212,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     for _ in range(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES
+        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_INSTANCES
     ):
         await clusters_keeper_ec2.start_aws_instance(
             app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,

@@ -87,36 +87,36 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):
-    CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
         ...,
         min_items=1,
         unique_items=True,
         description="Defines which EC2 instances are considered as candidates for new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID: str = Field(
+    PRIMARY_EC2_INSTANCES_AMI_ID: str = Field(
         ...,
         min_length=1,
         description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES: int = Field(
+    PRIMARY_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
         description="Defines the maximum number of instances the clusters_keeper app may create",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
+    PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
         description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
         " this is required to start a new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID: str = Field(
+    PRIMARY_EC2_INSTANCES_SUBNET_ID: str = Field(
         ...,
         min_length=1,
         description="A subnet is a range of IP addresses in your VPC "
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME: str = Field(
+    PRIMARY_EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
         description="SSH key filename (without ext) to access the instance through SSH"
@@ -124,17 +124,17 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
-    CLUSTERS_KEEPER_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+    PRIMARY_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
     )
 
-    CLUSTERS_KEEPER_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
+    PRIMARY_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
-    @validator("CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES")
+    @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_intance_names(cls, value):
         # NOTE: needed because of a flaw in BaseCustomSettings

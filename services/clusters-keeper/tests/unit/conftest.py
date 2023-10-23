@@ -81,13 +81,13 @@ def app_environment(
         {
             "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": faker.pystr(),
             "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
             "WORKERS_EC2_INSTANCES_AMI_ID": faker.pystr(),
             "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
@@ -217,7 +217,7 @@ def aws_allowed_ec2_instance_type_names(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs = {
-        "CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+        "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
             [
                 "t2.xlarge",
                 "t2.2xlarge",
@@ -274,7 +274,7 @@ async def aws_subnet_id(
     subnet_id = subnet["Subnet"]["SubnetId"]
     print(f"--> Created Subnet in AWS with {subnet_id=}")
 
-    monkeypatch.setenv("CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID", subnet_id)
+    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_SUBNET_ID", subnet_id)
     yield subnet_id
 
     # all the instances in the subnet must be terminated before that works
@@ -310,7 +310,7 @@ async def aws_security_group_id(
     security_group_id = security_group["GroupId"]
     print(f"--> Created Security Group in AWS with {security_group_id=}")
     monkeypatch.setenv(
-        "CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS",
+        "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS",
         json.dumps([security_group_id]),
     )
     yield security_group_id
@@ -328,7 +328,7 @@ async def aws_ami_id(
     images = await ec2_client.describe_images()
     image = random.choice(images["Images"])  # noqa S311
     ami_id = image["ImageId"]  # type: ignore
-    monkeypatch.setenv("CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID", ami_id)
+    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_AMI_ID", ami_id)
     return ami_id
 
 
