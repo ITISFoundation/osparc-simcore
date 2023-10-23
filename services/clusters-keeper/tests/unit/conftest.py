@@ -26,7 +26,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
-    EC2Settings,
+    EC2ClustersKeeperSettings,
 )
 from simcore_service_clusters_keeper.modules.ec2 import (
     ClustersKeeperEC2,
@@ -79,8 +79,8 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": faker.pystr(),
+            "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
@@ -132,7 +132,7 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID")
+    monkeypatch.delenv("EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID")
 
 
 @pytest.fixture
@@ -206,9 +206,9 @@ def mocked_aws_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs = {
-        "CLUSTERS_KEEPER_EC2_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
-        "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": "xxx",
-        "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": "xxx",
+        "EC2_CLUSTERS_KEEPER_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
+        "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": "xxx",
+        "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": "xxx",
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -338,7 +338,7 @@ async def aws_ami_id(
 async def clusters_keeper_ec2(
     app_environment: EnvVarsDict,
 ) -> AsyncIterator[ClustersKeeperEC2]:
-    settings = EC2Settings.create_from_envs()
+    settings = EC2ClustersKeeperSettings.create_from_envs()
     ec2 = await ClustersKeeperEC2.create(settings)
     assert ec2
     yield ec2

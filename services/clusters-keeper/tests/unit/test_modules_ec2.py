@@ -19,7 +19,7 @@ from simcore_service_clusters_keeper.core.errors import (
 )
 from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
-    EC2Settings,
+    EC2ClustersKeeperSettings,
 )
 from simcore_service_clusters_keeper.modules.ec2 import (
     ClustersKeeperEC2,
@@ -33,8 +33,8 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 @pytest.fixture
 def ec2_settings(
     app_environment: EnvVarsDict,
-) -> EC2Settings:
-    return EC2Settings.create_from_envs()
+) -> EC2ClustersKeeperSettings:
+    return EC2ClustersKeeperSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def app_settings(
     return ApplicationSettings.create_from_envs()
 
 
-async def test_ec2_client_lifespan(ec2_settings: EC2Settings):
+async def test_ec2_client_lifespan(ec2_settings: EC2ClustersKeeperSettings):
     ec2 = await ClustersKeeperEC2.create(settings=ec2_settings)
     assert ec2
     assert ec2.client

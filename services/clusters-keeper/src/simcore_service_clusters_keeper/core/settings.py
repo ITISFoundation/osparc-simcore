@@ -20,13 +20,13 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
-class EC2Settings(BaseCustomSettings):
-    CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID: str
-    CLUSTERS_KEEPER_EC2_ENDPOINT: str | None = Field(
+class EC2ClustersKeeperSettings(BaseCustomSettings):
+    EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID: str
+    EC2_CLUSTERS_KEEPER_ENDPOINT: str | None = Field(
         default=None, description="do not define if using standard AWS"
     )
-    CLUSTERS_KEEPER_EC2_REGION_NAME: str = "us-east-1"
-    CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: str
+    EC2_CLUSTERS_KEEPER_REGION_NAME: str = "us-east-1"
+    EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY: str
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
@@ -184,7 +184,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    CLUSTERS_KEEPER_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
+    CLUSTERS_KEEPER_EC2_ACCESS: EC2ClustersKeeperSettings | None = Field(
+        auto_default_from_env=True
+    )
 
     CLUSTERS_KEEPER_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
         auto_default_from_env=True

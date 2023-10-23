@@ -24,7 +24,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import (
-    EC2Settings,
+    EC2ClustersKeeperSettings,
     PrimaryEC2InstancesSettings,
     get_application_settings,
 )
@@ -41,14 +41,14 @@ class ClustersKeeperEC2:
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    async def create(cls, settings: EC2Settings) -> "ClustersKeeperEC2":
+    async def create(cls, settings: EC2ClustersKeeperSettings) -> "ClustersKeeperEC2":
         session = aioboto3.Session()
         session_client = session.client(
             "ec2",
-            endpoint_url=settings.CLUSTERS_KEEPER_EC2_ENDPOINT,
-            aws_access_key_id=settings.CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY,
-            region_name=settings.CLUSTERS_KEEPER_EC2_REGION_NAME,
+            endpoint_url=settings.EC2_CLUSTERS_KEEPER_ENDPOINT,
+            aws_access_key_id=settings.EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY,
+            region_name=settings.EC2_CLUSTERS_KEEPER_REGION_NAME,
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
@@ -268,7 +268,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
 
-        settings: EC2Settings | None = get_application_settings(
+        settings: EC2ClustersKeeperSettings | None = get_application_settings(
             app
         ).CLUSTERS_KEEPER_EC2_ACCESS
 
