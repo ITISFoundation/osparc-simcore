@@ -24,7 +24,7 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import utcnow
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -375,12 +375,12 @@ async def test_payment_on_wallet_without_access(
     logged_user_wallet: WalletGet,
     client: TestClient,
 ):
-    other_wallet = logged_user_wallet
+    wallet = logged_user_wallet
 
-    async with LoggedUser(client) as new_logged_user:
-        assert new_logged_user["email"] != logged_user["email"]
+    async with LoggedUser(client) as other_user:
+        assert other_user["email"] != logged_user["email"]
         response = await client.post(
-            f"/v0/wallets/{other_wallet.wallet_id}/payments",
+            f"/v0/wallets/{wallet.wallet_id}/payments",
             json={
                 "priceDollars": 25,
             },
@@ -390,4 +390,60 @@ async def test_payment_on_wallet_without_access(
         assert error
 
         error_msg = error["errors"][0]["message"]
-        assert f"{other_wallet.wallet_id}" in error_msg
+        assert f"{wallet.wallet_id}" in error_msg
+
+
+@pytest.mark.testit
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/4897"
+)
+async def test_cannot_get_payment_info_in_shared_wallet(
+    latest_osparc_price: Decimal,
+    logged_user: UserInfoDict,
+    logged_user_wallet: WalletGet,
+    client: TestClient,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as new_user:
+        assert new_user["email"] != logged_user["email"]
+
+        # logged client adds new user to this wallet add read-only
+        await assert_status(
+            await client.post(
+                client.app.router["create_wallet_group"]
+                .url_for(
+                    wallet_id=f"{logged_user_wallet.wallet_id}",
+                    group_id=f"{new_user['primary_gid']}",
+                )
+                .path,
+                json={"read": True, "write": False, "delete": False},
+            ),
+            web.HTTPCreated,
+        )
+
+        # let's logout one user
+        await assert_status(
+            await client.post(client.app.router["auth_logout"].url_for().path),
+            web.HTTPOk,
+        )
+
+        # logs in
+        await assert_status(
+            await client.post(
+                client.app.router["auth_login"].url_for().path,
+                json={
+                    "email": new_user["email"],
+                    "password": new_user["raw_password"],
+                },
+            ),
+            web.HTTPOk,
+        )
+
+        # TEST auto-recharge must not be allowed!
+        await assert_status(
+            await client.get(
+                f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
+            ),
+            web.HTTPForbidden,
+        )

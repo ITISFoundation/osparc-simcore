@@ -23,41 +23,17 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.getChildControl("credits-intro");
-
-    const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
-    const walletSelector = walletSelectorLayout.getChildren()[1];
-    const walletSelection = walletSelector.getSelection();
-    const selectedWalletId = walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
-    const walletFound = osparc.desktop.credits.Utils.getWallet(selectedWalletId);
-    if (walletFound) {
-      this.setWallet(walletFound);
-    }
-
-    this.getChildControl("credits-left-view");
-
-    this.__populateLayout();
-
-    const wallets = osparc.store.Store.getInstance().getWallets();
-    walletSelector.addListener("changeSelection", e => {
-      const selection = e.getData();
-      const walletId = selection[0].walletId;
-      const found = wallets.find(wallet => wallet.getWalletId() === parseInt(walletId));
-      if (found) {
-        this.setWallet(found);
-      } else {
-        this.setWallet(null);
-      }
-    });
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
   },
 
   properties: {
-    wallet: {
+    contextWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: false,
-      event: "changeWallet",
-      apply: "__applyWallet"
+      event: "changeContextWallet",
+      apply: "__buildLayout"
     }
   },
 
@@ -71,10 +47,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       switch (id) {
         case "credits-intro":
           control = this.__getCreditsExplanation();
-          this._add(control);
-          break;
-        case "wallet-selector-layout":
-          control = osparc.desktop.credits.Utils.createWalletSelectorLayout("read");
           this._add(control);
           break;
         case "credits-left-view":
@@ -112,7 +84,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           control = new osparc.desktop.credits.OneTimePayment().set({
             maxWidth: 300
           });
-          this.bind("wallet", control, "wallet");
+          this.bind("contextWallet", control, "wallet");
           control.addListener("transactionCompleted", () => this.fireEvent("transactionCompleted"));
           this.getChildControl("wallet-billing-settings").add(control);
           break;
@@ -120,20 +92,23 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           control = new osparc.desktop.credits.AutoRecharge().set({
             maxWidth: 300
           });
-          this.bind("wallet", control, "wallet");
+          this.bind("contextWallet", control, "wallet");
           this.getChildControl("wallet-billing-settings").add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    __populateLayout: function() {
-      const wallet = this.getWallet();
-      console.log("wallet", wallet);
-      if (wallet) {
-        const paymentMode = this.getChildControl("payment-mode");
-        const autoRecharge = this.getChildControl("auto-recharge");
-        const oneTime = this.getChildControl("one-time-payment");
+    __buildLayout: function() {
+      this._removeAll();
+      this._createChildControlImpl("credits-intro");
+      this._createChildControlImpl("credits-left-view");
+      const wallet = this.getContextWallet();
+      if (wallet.getMyAccessRights()["write"]) {
+        this._createChildControlImpl("wallet-billing-settings");
+        const paymentMode = this._createChildControlImpl("payment-mode");
+        const autoRecharge = this._createChildControlImpl("auto-recharge");
+        const oneTime = this._createChildControlImpl("one-time-payment");
         autoRecharge.show();
         oneTime.exclude();
         paymentMode.addListener("changeSelection", e => {
@@ -146,18 +121,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             oneTime.exclude();
           }
         });
-      }
-    },
-
-    __applyWallet: function(wallet) {
-      if (wallet) {
-        const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
-        const walletSelector = walletSelectorLayout.getChildren()[1];
-        walletSelector.getSelectables().forEach(selectable => {
-          if (selectable.walletId === wallet.getWalletId()) {
-            walletSelector.setSelection([selectable]);
-          }
-        });
+      } else {
+        this._add(osparc.desktop.credits.Utils.getNoWriteAccessOperationsLabel());
       }
     },
 
@@ -168,7 +133,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       creditsIndicator.getChildControl("credits-label").set({
         alignX: "left"
       });
-      this.bind("wallet", creditsIndicator, "wallet");
+      this.bind("contextWallet", creditsIndicator, "wallet");
       return creditsIndicator;
     },
 

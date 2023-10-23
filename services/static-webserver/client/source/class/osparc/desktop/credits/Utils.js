@@ -24,6 +24,22 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
+    getNoWriteAccessInformationLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this information"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
+    getNoWriteAccessOperationsLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this operations"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
     creditsToFixed: function(credits) {
       if (credits < 100) {
         return (credits).toFixed(1);
@@ -31,7 +47,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return parseInt(credits);
     },
 
-    createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
+    createWalletSelector: function(accessRight = "read", emptySelection = false) {
       const store = osparc.store.Store.getInstance();
 
       const walletSelector = new qx.ui.form.SelectBox();
@@ -46,9 +62,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           selectBox.add(sbItem);
         }
         wallets.forEach(wallet => {
-          if (onlyActive && wallet.getStatus() !== "ACTIVE") {
-            return;
-          }
           const found = wallet.getMyAccessRights();
           if (found && found[accessRight]) {
             const sbItem = new qx.ui.form.ListItem(wallet.getName());
@@ -115,16 +128,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         return myWallets;
       }
       return [];
-    },
-
-    getPreferredWallet: function() {
-      const store = osparc.store.Store.getInstance();
-      const wallets = store.getWallets();
-      const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
-      if (favouriteWallet) {
-        return favouriteWallet;
-      }
-      return null;
     },
 
     getPaymentMethods: function(walletId) {

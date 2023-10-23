@@ -23,22 +23,17 @@ qx.Class.define("osparc.desktop.credits.Activity", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.getChildControl("activity-intro");
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
+  },
 
-    const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
-    const walletSelector = walletSelectorLayout.getChildren()[1];
-
-    const loadingImage = this.getChildControl("loading-image");
-    loadingImage.show();
-    const table = this.getChildControl("activity-table");
-    table.exclude();
-
-    this.__fetchData();
-    walletSelector.addListener("changeSelection", () => {
-      this.__prevUsageRequestParams = null;
-      this.__nextUsageRequestParams = null;
-      this.__fetchData();
-    });
+  properties: {
+    contextWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: false,
+      apply: "__buildLayout"
+    }
   },
 
   statics: {
@@ -59,10 +54,6 @@ qx.Class.define("osparc.desktop.credits.Activity", {
           });
           this._add(control);
           break;
-        case "wallet-selector-layout":
-          control = osparc.desktop.credits.Utils.createWalletSelectorLayout("read");
-          this._add(control);
-          break;
         case "loading-image":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/64",
@@ -78,7 +69,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
           });
           this._add(control);
           break;
-        case "page-buttons":
+        case "page-buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
             allowGrowX: true,
             alignX: "center",
@@ -92,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
             allowGrowX: false
           });
           control.addListener("execute", () => this.__fetchData(this.__getPrevRequest()));
-          const pageButtons = this.getChildControl("page-buttons");
+          const pageButtons = this.getChildControl("page-buttons-layout");
           pageButtons.add(control);
           break;
         }
@@ -102,7 +93,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
             textAlign: "center",
             alignY: "middle"
           });
-          const pageButtons = this.getChildControl("page-buttons");
+          const pageButtons = this.getChildControl("page-buttons-layout");
           pageButtons.add(control);
           break;
         }
@@ -112,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.Activity", {
             allowGrowX: false
           });
           control.addListener("execute", () => this.__fetchData(this.__getNextUsageRequest()));
-          const pageButtons = this.getChildControl("page-buttons");
+          const pageButtons = this.getChildControl("page-buttons-layout");
           pageButtons.add(control);
           break;
         }
@@ -120,40 +111,56 @@ qx.Class.define("osparc.desktop.credits.Activity", {
       return control || this.base(arguments, id);
     },
 
-    __fetchData: function(request) {
+    __buildLayout: function() {
+      this.getChildControl("activity-intro");
+
       const loadingImage = this.getChildControl("loading-image");
       loadingImage.show();
       const table = this.getChildControl("activity-table");
       table.exclude();
 
-      if (request === undefined) {
-        request = this.__getNextUsageRequest();
-      }
-      Promise.all([
-        request,
-        osparc.data.Resources.fetch("payments", "get")
-      ])
-        .then(responses => {
-          const usagesResp = responses[0];
-          const usages = usagesResp["data"];
-          const transactions = responses[1]["data"];
-          const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
-          // Filter out some transactions
-          const walletId = this.__getSelectedWalletId();
-          const filteredTransactions = transactions.filter(transaction => transaction["completedStatus"] !== "FAILED" && transaction["walletId"] === walletId);
-          const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
-          const activities = activities1.concat(activities2);
-          activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
-          this.__setData(activities);
+      this.__fetchData();
+    },
 
-          this.__prevUsageRequestParams = usagesResp["_links"]["prev"];
-          this.__nextUsageRequestParams = usagesResp["_links"]["next"];
-          this.__evaluatePageButtons(usagesResp);
-        })
-        .finally(() => {
-          loadingImage.exclude();
-          table.show();
-        });
+    __fetchData: function(request) {
+      const wallet = this.getContextWallet();
+      if (wallet) {
+        const loadingImage = this.getChildControl("loading-image");
+        loadingImage.show();
+        const table = this.getChildControl("activity-table");
+        table.exclude();
+
+        if (request === undefined) {
+          request = this.__getNextUsageRequest();
+        }
+        const promises = [];
+        promises.push(request);
+        if (wallet.getMyAccessRights()["write"]) {
+          promises.push(osparc.data.Resources.fetch("payments", "get"));
+        }
+        Promise.all(promises)
+          .then(responses => {
+            const usagesResp = responses[0];
+            const usages = usagesResp["data"];
+            const transactions = responses.length === 2 ? responses[1]["data"] : [];
+            const activities1 = osparc.desktop.credits.ActivityTable.usagesToActivities(usages);
+            // Filter out some transactions
+            const walletId = wallet.getWalletId();
+            const filteredTransactions = transactions.filter(transaction => transaction["walletId"] === walletId);
+            const activities2 = osparc.desktop.credits.ActivityTable.transactionsToActivities(filteredTransactions);
+            const activities = activities1.concat(activities2);
+            activities.sort((a, b) => new Date(b["date"]).getTime() - new Date(a["date"]).getTime());
+            this.__setData(activities);
+
+            this.__prevUsageRequestParams = usagesResp["_links"]["prev"];
+            this.__nextUsageRequestParams = usagesResp["_links"]["next"];
+            this.__evaluatePageButtons(usagesResp);
+          })
+          .finally(() => {
+            loadingImage.exclude();
+            table.show();
+          });
+      }
     },
 
     __getPrevRequest: function() {
@@ -184,18 +191,12 @@ qx.Class.define("osparc.desktop.credits.Activity", {
       return this.__getUsageCommonRequest(params);
     },
 
-    __getSelectedWalletId: function() {
-      const walletSelector = this.getChildControl("wallet-selector-layout").getChildren()[1];
-      const walletSelection = walletSelector.getSelection();
-      return walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
-    },
-
     __getUsageCommonRequest: function(params) {
       const options = {
         resolveWResponse: true
       };
 
-      const walletId = this.__getSelectedWalletId();
+      const walletId = this.getContextWallet().getWalletId();
       if (walletId) {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);

@@ -66,15 +66,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     Promise.all(preloadPromises)
       .then(() => {
         if (openView && openView === "wallets" && walletsEnabled) {
-          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
           creditsWindow.openOverview();
-        }
-        const preferenceSettings = osparc.Preferences.getInstance();
-        const preferenceWalletId = preferenceSettings.getPreferredWalletId();
-        const wallets = store.getWallets();
-        if (wallets.length === 1 && (preferenceWalletId === null || osparc.desktop.credits.Utils.getWallet(preferenceWalletId) === null)) {
-          // If there is only one wallet available, make it default
-          preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
         }
 
         const mainStack = this.__createMainStack();

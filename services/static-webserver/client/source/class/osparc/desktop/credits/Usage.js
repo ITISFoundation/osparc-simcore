@@ -23,20 +23,17 @@ qx.Class.define("osparc.desktop.credits.Usage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
-    const walletSelector = walletSelectorLayout.getChildren()[1];
+    const store = osparc.store.Store.getInstance();
+    store.bind("contextWallet", this, "contextWallet");
+  },
 
-    const loadingImage = this.getChildControl("loading-image");
-    loadingImage.show();
-    const table = this.getChildControl("usage-table");
-    table.exclude();
-
-    this.__fetchData();
-    walletSelector.addListener("changeSelection", () => {
-      this.__prevRequestParams = null;
-      this.__nextRequestParams = null;
-      this.__fetchData();
-    });
+  properties: {
+    contextWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: false,
+      apply: "__buildLayout"
+    }
   },
 
   statics: {
@@ -50,10 +47,6 @@ qx.Class.define("osparc.desktop.credits.Usage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "wallet-selector-layout":
-          control = osparc.desktop.credits.Utils.createWalletSelectorLayout("read");
-          this._add(control);
-          break;
         case "loading-image":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/64",
@@ -109,6 +102,15 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      const loadingImage = this.getChildControl("loading-image");
+      loadingImage.show();
+      const table = this.getChildControl("usage-table");
+      table.exclude();
+
+      this.__fetchData();
     },
 
     __fetchData: function(request) {
@@ -167,10 +169,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         resolveWResponse: true
       };
 
-      const walletSelectorLayout = this.getChildControl("wallet-selector-layout");
-      const walletSelector = walletSelectorLayout.getChildren()[1];
-      const walletSelection = walletSelector.getSelection();
-      const walletId = walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
+      const walletId = this.getContextWallet().getWalletId();
       if (walletId) {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
