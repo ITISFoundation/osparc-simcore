@@ -17,10 +17,15 @@ def get_product_name(request: web.Request) -> str:
     return product_name
 
 
+def get_product(app: web.Application, product_name: ProductName) -> Product:
+    product: Product = app[APP_PRODUCTS_KEY][product_name]
+    return product
+
+
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
     product_name: ProductName = get_product_name(request)
-    current_product: Product = request.app[APP_PRODUCTS_KEY][product_name]
+    current_product: Product = get_product(request.app, product_name=product_name)
     return current_product
 
 
@@ -32,8 +37,15 @@ def list_products(app: web.Application) -> list[Product]:
 async def get_current_product_credit_price(
     request: web.Request,
 ) -> NonNegativeDecimal | None:
+    """Gets latest credit price for this product.
+
+    NOTE: Contrary to other product api functions (e.g. get_current_product) this function
+    gets the latest update from the database. Otherwise, products are loaded
+    on startup and cached therefore in those cases would require a restart
+    of the service for the latest changes to take effect.
+    """
     current_product_name = get_product_name(request)
-    repo = ProductRepository(request)
+    repo = ProductRepository.create_from_request(request)
     return await repo.get_product_latest_credit_price_or_none(current_product_name)
 
 
@@ -48,7 +60,7 @@ def _themed(dirname: str, template: str) -> Path:
 
 
 async def _get_content(request: web.Request, template_name: str):
-    repo = ProductRepository(request)
+    repo = ProductRepository.create_from_request(request)
     content = await repo.get_template_content(template_name)
     if not content:
         msg = f"Missing template {template_name} for product"

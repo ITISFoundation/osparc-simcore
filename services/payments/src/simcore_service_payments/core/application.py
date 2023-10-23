@@ -9,29 +9,36 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.rest.routes import setup_rest_api_routes
+from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.payments_gateway import setup_payments_gateway
+from ..services.postgres import setup_postgres
 from ..services.rabbitmq import setup_rabbitmq
+from ..services.resource_usage_tracker import setup_resource_usage_tracker
 from .settings import ApplicationSettings
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+
+    app_settings = settings or ApplicationSettings.create_from_envs()
+
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/doc",  # NOTE: token auth would not work otherwise
+        docs_url="/doc" if app_settings.PAYMENTS_SWAGGER_API_DOC_ENABLED else None,
         redoc_url=None,  # default disabled, see below
     )
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = settings or ApplicationSettings.create_from_envs()
+    app.state.settings = app_settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
+    # API w/ postgres db
+    setup_postgres(app)
 
     # APIs w/ webserver
     setup_rabbitmq(app)
@@ -39,7 +46,10 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # APIs w/ payments-gateway
     setup_payments_gateway(app)
-    setup_rest_api_routes(app)
+    setup_rest_api(app)
+
+    # APIs w/ RUT
+    setup_resource_usage_tracker(app)
 
     # ERROR HANDLERS
     # ... add here ...

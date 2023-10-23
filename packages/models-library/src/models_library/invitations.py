@@ -23,6 +23,10 @@ class InvitationInputs(BaseModel):
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
     )
+    extra_credits_in_usd: PositiveInt | None = Field(
+        None,
+        description="If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
+    )
 
 
 class InvitationContent(InvitationInputs):

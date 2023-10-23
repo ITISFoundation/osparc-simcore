@@ -22,6 +22,7 @@ from servicelib.common_headers import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
@@ -54,7 +55,7 @@ def _handle_project_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ProjectNotFoundError as exc:
+        except (ProjectNotFoundError, UserDefaultWalletNotFoundError) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except ProjectInvalidRightsError as exc:

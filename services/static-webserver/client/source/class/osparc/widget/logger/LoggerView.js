@@ -254,7 +254,6 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         selectable: true,
         statusBarVisible: false,
         showCellFocusIndicator: false,
-        rowHeight: 15,
         forceLineHeight: false
       });
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");

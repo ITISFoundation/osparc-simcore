@@ -30,7 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
@@ -47,6 +47,7 @@ from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
     ComputationalRunNotFoundError,
+    PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
 )
@@ -62,7 +63,7 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.resource_usage_client import ResourceUsageApi
+from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils.computations import (
     find_deprecated_tasks,
     get_pipeline_state_from_task_states,
@@ -82,6 +83,7 @@ from ...utils.dags import (
 from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
+from ..dependencies.rut_client import get_rut_client
 from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
 
@@ -122,6 +124,7 @@ async def create_computation(  # noqa: C901, PLR0912
     scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
+    rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -205,6 +208,8 @@ async def create_computation(  # noqa: C901, PLR0912
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,
+            rut_client=rut_client,
+            is_wallet=bool(computation.wallet_info),
         )
 
         if computation.start_pipeline:
@@ -225,24 +230,9 @@ async def create_computation(  # noqa: C901, PLR0912
             # Billing info
             wallet_id = None
             wallet_name = None
-            pricing_plan_id = None
-            pricing_unit_id = None
-            pricing_unit_cost_id = None
             if computation.wallet_info:
                 wallet_id = computation.wallet_info.wallet_id
                 wallet_name = computation.wallet_info.wallet_name
-
-                resource_usage_api = ResourceUsageApi.get_from_state(request.app)
-                # NOTE: MD/SAN -> add real service version/key and store in DB, issue: https://github.com/ITISFoundation/osparc-issues/issues/1131
-                (
-                    pricing_plan_id,
-                    pricing_unit_id,
-                    pricing_unit_cost_id,
-                ) = await resource_usage_api.get_default_service_pricing_plan_and_pricing_unit(
-                    computation.product_name,
-                    ServiceKey("simcore/services/comp/itis/sleeper"),
-                    ServiceVersion("2.1.6"),
-                )
 
             await scheduler.run_new_pipeline(
                 computation.user_id,
@@ -259,9 +249,6 @@ async def create_computation(  # noqa: C901, PLR0912
                     user_email=await users_repo.get_user_email(computation.user_id),
                     wallet_id=wallet_id,
                     wallet_name=wallet_name,
-                    pricing_plan_id=pricing_plan_id,
-                    pricing_unit_id=pricing_unit_id,
-                    pricing_unit_cost_id=pricing_unit_cost_id,
                 ),
                 use_on_demand_clusters=computation.use_on_demand_clusters,
             )
@@ -317,6 +304,8 @@ async def create_computation(  # noqa: C901, PLR0912
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"{e}"
         ) from e
+    except PricingPlanUnitNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
 @router.get(

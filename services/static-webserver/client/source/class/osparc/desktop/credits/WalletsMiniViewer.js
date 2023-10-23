@@ -27,8 +27,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this.set({
       alignX: "center",
-      padding: 5,
-      margin: 10,
+      padding: 4,
+      margin: 6,
       marginRight: 20
     });
 
@@ -43,13 +43,11 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       "border-radius": "4px"
     });
 
-    this.__walletListeners = [];
-
     this.__buildLayout();
   },
 
   properties: {
-    activeWallet: {
+    contextWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: true,
@@ -58,89 +56,50 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
   },
 
   members: {
-    __walletListeners: null,
-
     __buildLayout: function() {
       const store = osparc.store.Store.getInstance();
-      store.bind("activeWallet", this, "activeWallet");
-      store.addListener("changeWallets", () => this.__reloadLayout());
+      // there is a bug with the binding the second time a user logs in
+      store.bind("contextWallet", this, "contextWallet");
     },
 
     __reloadLayout: function() {
-      const activeWallet = this.getActiveWallet();
-      const preferredWallet = osparc.desktop.credits.Utils.getPreferredWallet();
-      const oneWallet = activeWallet ? activeWallet : preferredWallet;
-      if (oneWallet) {
-        this.__showOneWallet(oneWallet);
+      this._removeAll();
+      const contextWallet = this.getContextWallet();
+      if (contextWallet) {
+        this.__showOneWallet(contextWallet);
       } else {
         this.__showSelectWallet();
       }
-
-      const store = osparc.store.Store.getInstance();
-      store.getWallets().forEach(wallet => {
-        const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
-        this.__walletListeners.push({
-          walletId: wallet.getWalletId(),
-          listenerId: preferredWalletId
-        });
-      });
     },
 
-    __removeWallets: function() {
-      const store = osparc.store.Store.getInstance();
-      this.__walletListeners.forEach(walletListener => {
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === walletListener.walletId);
-        if (found) {
-          found.removeListenerById(walletListener.listenerId);
+    __showOneWallet: function(wallet) {
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator(wallet);
+      creditsIndicator.addListener("tap", () => {
+        const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+        if (walletsEnabled) {
+          const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
+          creditsWindow.openOverview();
         }
-      });
-      this.__walletListeners = [];
-      this._removeAll();
-    },
-
-    __showSelectWallet: function() {
-      this.__removeWallets();
-
-      const iconSrc = "@MaterialIcons/account_balance_wallet/26";
-      const walletsButton = new qx.ui.basic.Image(iconSrc).set({
-        toolTipText: this.tr("Select Wallet"),
-        textColor: "danger-red"
-      });
-      walletsButton.addListener("tap", () => {
-        osparc.desktop.credits.Utils.areWalletsEnabled()
-          .then(walletsEnabled => {
-            const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            userCenterWindow.openWallets();
-          });
       }, this);
-      this._add(walletsButton, {
+      this._add(creditsIndicator, {
         flex: 1
       });
     },
 
-    __showOneWallet: function(wallet) {
-      this.__removeWallets();
-
-      this.__addWallet(wallet);
-      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: changeStatusId
+    __showSelectWallet: function() {
+      const iconSrc = "@MaterialIcons/account_balance_wallet/26";
+      const walletsButton = new qx.ui.basic.Image(iconSrc).set({
+        toolTipText: this.tr("Select Credit Account"),
+        textColor: "danger-red"
       });
-    },
-
-    __addWallet: function(wallet) {
-      const creditsLabel = new osparc.desktop.credits.CreditsLabel(wallet, true).set({
-        alignX: "right"
-      });
-      creditsLabel.addListener("tap", () => {
-        osparc.desktop.credits.Utils.areWalletsEnabled()
-          .then(walletsEnabled => {
-            const creditsWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            creditsWindow.openOverview();
-          });
+      walletsButton.addListener("tap", () => {
+        const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+        if (walletsEnabled) {
+          const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
+          userCenterWindow.openWallets();
+        }
       }, this);
-      this._add(creditsLabel, {
+      this._add(walletsButton, {
         flex: 1
       });
     }

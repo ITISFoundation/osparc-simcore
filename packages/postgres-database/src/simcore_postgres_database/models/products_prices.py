@@ -49,3 +49,6 @@ products_prices = sa.Table(
         "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
     ),
 )
+
+
+__all__: tuple[str, ...] = ("NUMERIC_KWARGS",)

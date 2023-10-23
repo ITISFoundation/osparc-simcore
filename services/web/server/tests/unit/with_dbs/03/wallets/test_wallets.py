@@ -16,21 +16,29 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
+from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.wallets._events import (
+    _WALLET_DESCRIPTION_TEMPLATE,
+    _WALLET_NAME_TEMPLATE,
+)
 
 
 @pytest.fixture
 def mock_rut_sum_total_available_credits_in_the_wallet(
     mocker: MockerFixture,
 ) -> mock.Mock:
+    # NOTE: PC->MD should rather use aioresponse to mock RUT responses
     return mocker.patch(
         "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
+        autospec=True,
         return_value=WalletTotalCredits(
             wallet_id=1, available_osparc_credits=Decimal(10.2)
         ),
@@ -75,6 +83,14 @@ async def test_wallets_full_workflow(
         mock_rut_sum_total_available_credits_in_the_wallet.return_value.available_osparc_credits
     )
     store_modified_field = arrow.get(data[0]["modified"])
+
+    # get concrete user wallet
+    url = client.app.router["get_wallet"].url_for(
+        wallet_id=f"{added_wallet['walletId']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data["walletId"] == added_wallet["walletId"]
 
     # update user wallet
     url = client.app.router["update_wallet"].url_for(
@@ -152,15 +168,25 @@ async def test_wallets_full_workflow(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
-async def test_auto_wallet_on_user_registration_confirmation(
+async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: type[web.HTTPException],
     wallets_clean_db: AsyncIterator[None],
     osparc_product_name: ProductName,
     mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+    mocker: MockerFixture,
 ):
     assert client.app
+
+    product = get_product(client.app, osparc_product_name)
+    assert product.name == osparc_product_name
+
+    mock_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.wallets._events.add_credits_to_wallet",
+        spec=True,
+        return_value=None,
+    )
 
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(f"{url}")
@@ -168,11 +194,18 @@ async def test_auto_wallet_on_user_registration_confirmation(
     assert len(data) == 0
 
     await notify_user_confirmation(
-        client.app, user_id=logged_user["id"], product_name=osparc_product_name
+        client.app,
+        user_id=logged_user["id"],
+        product_name=product.name,
+        extra_credits_in_usd=10,
     )
 
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
-
+    wallet = WalletGet(**data[0])
+    user_name = logged_user["name"].capitalize()
+    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user_name)
+    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
+    assert mock_add_credits_to_wallet.called == product.is_payment_enabled

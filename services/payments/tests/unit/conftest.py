@@ -6,10 +6,12 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
+from unittest.mock import Mock
 
 import httpx
 import pytest
 import respx
+import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -24,15 +26,67 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentInitiated,
 )
 
+#
+# rabbit-MQ
+#
+
 
 @pytest.fixture
-def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
-    def _doit():
-        # The following moduls are affected if rabbitmq is not in place
+def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
+    def _do():
+        # The following services are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
 
-    return _doit
+    return _do
+
+
+@pytest.fixture
+def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
+    disable_rabbitmq_and_rpc_setup()
+
+
+#
+# postgres
+#
+
+
+@pytest.fixture
+def disable_postgres_setup(mocker: MockerFixture) -> Callable:
+    def _setup(app: FastAPI):
+        app.state.engine = (
+            Mock()
+        )  # NOTE: avoids error in api._dependencies::get_db_engine
+
+    def _do():
+        # The following services are affected if postgres is not in place
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_postgres",
+            spec=True,
+            side_effect=_setup,
+        )
+
+    return _do
+
+
+@pytest.fixture
+def with_disabled_postgres(disable_postgres_setup: Callable):
+    disable_postgres_setup()
+
+
+@pytest.fixture
+def wait_for_postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
+    """
+    Typical use-case is to include it in
+
+    @pytest.fixture
+    def app_environment(
+        ...
+        postgres_env_vars_dict: EnvVarsDict,
+        wait_for_postgres_ready_and_db_migrated: None,
+    )
+    """
+    assert postgres_db
 
 
 @pytest.fixture
@@ -46,11 +100,19 @@ async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
         yield test_app
 
 
+#
+# mock payments-gateway-service API
+#
+
+
 @pytest.fixture
-def mock_payments_gateway_service_api_base(
-    app: FastAPI,
-) -> Iterator[MockRouter]:
+def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
+    """
+    If external_secret_envs is present, then this mock is not really used
+    and instead the test runs against some real services
+    """
     settings: ApplicationSettings = app.state.settings
+
     with respx.mock(
         base_url=settings.PAYMENTS_GATEWAY_URL,
         assert_all_called=False,
@@ -60,18 +122,31 @@ def mock_payments_gateway_service_api_base(
 
 
 @pytest.fixture
-def mock_init_payment_route(faker: Faker) -> Callable:
+def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
-        def _init_payment(request: httpx.Request):
+        def _init_200(request: httpx.Request):
             assert InitPayment.parse_raw(request.content) is not None
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+
             return httpx.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
             )
 
+        def _cancel_200(request: httpx.Request):
+            assert PaymentInitiated.parse_raw(request.content) is not None
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+
+            return httpx.Response(status.HTTP_200_OK, json={})
+
         mock_router.post(
             path="/init",
             name="init_payment",
-        ).mock(side_effect=_init_payment)
+        ).mock(side_effect=_init_200)
+
+        mock_router.post(
+            path="/cancel",
+            name="cancel_payment",
+        ).mock(side_effect=_cancel_200)
 
     return _mock

@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaz)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -179,7 +179,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     },
 
     __getMembersList: function() {
-      const memebersUIList = new qx.ui.form.List().set({
+      const membersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         width: 150,
@@ -187,7 +187,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       });
 
       const membersArrayModel = this.__membersArrayModel = new qx.data.Array();
-      const membersCtrl = new qx.data.controller.List(membersArrayModel, memebersUIList, "name");
+      const membersCtrl = new qx.data.controller.List(membersArrayModel, membersUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.ui.list.MemberListItem(),
         bindItem: (ctrl, item, id) => {
@@ -215,7 +215,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         }
       });
 
-      return memebersUIList;
+      return membersUIList;
     },
 
     __clusterSelected: function(data) {
@@ -237,25 +237,23 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clustersModel = this.__clustersModel;
       clustersModel.removeAll();
 
-      osparc.utils.DisabledPlugins.isClustersDisabled()
-        .then(isDisabled => {
-          if (isDisabled === false) {
-            osparc.data.Resources.get("clusters")
-              .then(clusters => {
-                clusters.forEach(cluster => clustersModel.append(qx.data.marshal.Json.createModel(cluster)));
-                if (reloadClusterKey) {
-                  const selectables = this.__clustersList.getSelectables();
-                  selectables.forEach(selectable => {
-                    if (selectable.getKey() === reloadClusterKey) {
-                      this.__currentCluster = selectable;
-                      this.__reloadClusterMembers();
-                    }
-                  });
+      const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
+      if (isDisabled === false) {
+        osparc.data.Resources.get("clusters")
+          .then(clusters => {
+            clusters.forEach(cluster => clustersModel.append(qx.data.marshal.Json.createModel(cluster)));
+            if (reloadClusterKey) {
+              const selectables = this.__clustersList.getSelectables();
+              selectables.forEach(selectable => {
+                if (selectable.getKey() === reloadClusterKey) {
+                  this.__currentCluster = selectable;
+                  this.__reloadClusterMembers();
                 }
-              })
-              .catch(err => console.error(err));
-          }
-        });
+              });
+            }
+          })
+          .catch(err => console.error(err));
+      }
     },
 
     __reloadClusterMembers: function() {

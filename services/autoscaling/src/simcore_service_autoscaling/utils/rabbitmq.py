@@ -1,5 +1,4 @@
 import asyncio
-import itertools
 import logging
 
 from fastapi import FastAPI
@@ -13,11 +12,9 @@ from models_library.rabbitmq_messages import (
 )
 from servicelib.logging_utils import log_catch
 
-from ..core.settings import ApplicationSettings
-from ..models import Cluster
-from ..modules.docker import AutoscalingDocker, get_docker_client
+from ..core.settings import ApplicationSettings, get_application_settings
+from ..models import Cluster, Resources
 from ..modules.rabbitmq import post_message
-from . import utils_docker
 
 logger = logging.getLogger(__name__)
 
@@ -68,33 +65,27 @@ async def post_task_log_message(app: FastAPI, task: Task, log: str, level: int) 
 
 
 async def create_autoscaling_status_message(
-    docker_client: AutoscalingDocker,
     app_settings: ApplicationSettings,
     cluster: Cluster,
+    cluster_total_resources: Resources,
+    cluster_used_resources: Resources,
 ) -> RabbitAutoscalingStatusMessage:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    monitored_nodes = [
-        i.node
-        for i in itertools.chain(
-            cluster.active_nodes, cluster.drained_nodes, cluster.reserve_drained_nodes
-        )
-    ]
-    (total_resources, used_resources) = await asyncio.gather(
-        *(
-            utils_docker.compute_cluster_total_resources(monitored_nodes),
-            utils_docker.compute_cluster_used_resources(docker_client, monitored_nodes),
-        )
-    )
+
+    origin = "unknown"
+    if app_settings.AUTOSCALING_NODES_MONITORING:
+        origin = f"dynamic:node_labels={app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}"
+    elif app_settings.AUTOSCALING_DASK:
+        origin = f"computational:scheduler_url={app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
     return RabbitAutoscalingStatusMessage.construct(
-        origin=f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}",
+        origin=origin,
         nodes_total=len(cluster.active_nodes)
         + len(cluster.drained_nodes)
         + len(cluster.reserve_drained_nodes),
         nodes_active=len(cluster.active_nodes),
         nodes_drained=len(cluster.drained_nodes) + len(cluster.reserve_drained_nodes),
-        cluster_total_resources=total_resources.dict(),
-        cluster_used_resources=used_resources.dict(),
+        cluster_total_resources=cluster_total_resources.dict(),
+        cluster_used_resources=cluster_used_resources.dict(),
         instances_pending=len(cluster.pending_ec2s),
         instances_running=len(cluster.active_nodes)
         + len(cluster.drained_nodes)
@@ -102,10 +93,18 @@ async def create_autoscaling_status_message(
     )
 
 
-async def post_autoscaling_status_message(app: FastAPI, cluster: Cluster) -> None:
+async def post_autoscaling_status_message(
+    app: FastAPI,
+    cluster: Cluster,
+    cluster_total_resources: Resources,
+    cluster_used_resources: Resources,
+) -> None:
     await post_message(
         app,
         await create_autoscaling_status_message(
-            get_docker_client(app), app.state.settings, cluster
+            get_application_settings(app),
+            cluster,
+            cluster_total_resources,
+            cluster_used_resources,
         ),
     )

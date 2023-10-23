@@ -121,16 +121,27 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
-    getLogoPath: function() {
+    getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
       const lightLogo = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
-      const product = qx.core.Environment.get("product.name");
+      const product = osparc.product.Utils.getProductName();
       switch (product) {
-        case "s4l":
-          logosPath = lightLogo ? "osparc/s4l_logo_short_white.svg" : "osparc/s4l_logo_short_black.svg";
+        case "s4l": {
+          if (lightLogo) {
+            if (longLogo) {
+              logosPath = "osparc/s4l_logo_white.svg";
+            } else {
+              logosPath = "osparc/s4l_logo_white_short.svg";
+            }
+          } else if (longLogo) {
+            logosPath = "osparc/s4l_logo_black.svg";
+          } else {
+            logosPath = "osparc/s4l_logo_black_short.svg";
+          }
           break;
+        }
         case "s4llite":
           logosPath = lightLogo ? "osparc/s4llite-white.png" : "osparc/s4llite-black.png";
           break;
@@ -155,24 +166,25 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad") || this.isProduct("tis")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
-    showStudyPreview: function() {
-      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+    showStudyPreview: function(studyData) {
+      const uiMode = osparc.data.model.Study.getUiMode(studyData);
+      if (uiMode && uiMode === "app") {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
-        return true;
+      if (this.isProduct("osparc")) {
+        return false;
       }
-      return false;
+      return true;
     },
 
     showPreferencesTokens: function() {

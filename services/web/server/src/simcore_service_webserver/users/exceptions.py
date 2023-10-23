@@ -25,3 +25,9 @@ class TokenNotFoundError(UsersException):
     def __init__(self, service_id: str):
         super().__init__(f"Token for service {service_id} not found")
         self.service_id = service_id
+
+
+class UserDefaultWalletNotFoundError(UsersException):
+    def __init__(self, uid: int | None = None):
+        super().__init__(f"Default wallet for user {uid} not found")
+        self.uid = uid

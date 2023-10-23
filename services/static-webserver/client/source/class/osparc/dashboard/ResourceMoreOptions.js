@@ -68,7 +68,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // Page title
       if (title) {
         tabPage.add(new qx.ui.basic.Label(title).set({
-          font: "text-15"
+          font: "text-14"
         }));
       }
 
@@ -104,27 +104,25 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __servicesUpdatePage: null,
 
     __addToolbar: function() {
-      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(40));
+      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const resourceData = this.__resourceData;
 
       const title = new qx.ui.basic.Label(resourceData.name).set({
         font: "text-16",
         alignY: "middle",
-        maxWidth: this.self().WIDTH-100,
+        allowGrowX: true,
         rich: true,
         wrap: true
       });
-      toolbar.add(title);
+      toolbar.add(title, {
+        flex: 1
+      });
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
         toolbar.add(serviceVersionSelector);
       }
-
-      toolbar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
 
       const openButton = new qx.ui.form.Button(this.tr("Open")).set({
         appearance: "strong-button",
@@ -272,15 +270,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
-        this.__getCommentsPage,
-        this.__getDataPage,
-        this.__getPermissionsPage,
-        this.__getTagsPage,
+        this.__getBillingSettings,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
+        this.__getDataPage,
+        this.__getCommentsPage,
+        this.__getPermissionsPage,
+        this.__getSaveAsTemplatePage,
+        this.__getTagsPage,
         this.__getQualityPage,
-        this.__getClassifiersPage,
-        this.__getSaveAsTemplatePage
+        this.__getClassifiersPage
       ].forEach(pageCallee => {
         if (pageCallee) {
           const page = pageCallee.call(this);
@@ -332,6 +331,25 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = this.self().createPage(title, infoCard, icon, id);
+      return page;
+    },
+
+    __getBillingSettings: function() {
+      const resourceData = this.__resourceData;
+      if (
+        !osparc.utils.Resources.isStudy(resourceData) ||
+        !osparc.desktop.credits.Utils.areWalletsEnabled()
+      ) {
+        return null;
+      }
+
+      const id = "Billing";
+      const title = this.tr("Billing Settings");
+      const icon = "@FontAwesome5Solid/cogs";
+
+      const billingSettings = new osparc.study.BillingSettings(resourceData);
+
+      const page = this.self().createPage(title, billingSettings, icon, id);
       return page;
     },
 
@@ -500,7 +518,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const tagManager = new osparc.form.tag.TagManager(resourceData);
       tagManager.addListener("updateTags", e => {
         const updatedData = e.getData();
-        tagManager.setStudydata(updatedData);
+        tagManager.setStudyData(updatedData);
         this.fireDataEvent("updateStudy", updatedData);
       }, this);
       const page = this.__tagsPage = this.self().createPage(title, tagManager, icon, id);

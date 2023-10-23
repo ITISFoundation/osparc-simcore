@@ -68,9 +68,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           });
           break;
         case "credits-indicator":
-          control = new osparc.desktop.credits.CreditsLabel().set({
-            alignX: "right",
-            alignY: "middle"
+          control = new osparc.desktop.credits.CreditsIndicator();
+          control.getChildControl("credits-label").set({
+            alignX: "right"
           });
           this._add(control, {
             row: 0,
@@ -127,6 +127,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             alignY: "middle",
             visibility: "hidden"
           });
+          this.bind("accessRights", control, "enabled", {
+            converter: accessRights => {
+              const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
+              return Boolean(myAr && myAr["write"]);
+            }
+          });
           control.addListener("execute", () => this.fireDataEvent("buyCredits", {
             walletId: this.getKey()
           }), this);
@@ -138,9 +144,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           break;
         case "favourite-button":
           control = new qx.ui.form.Button().set({
-            backgroundColor: "transparent",
+            iconPosition: "right",
+            width: 110, // make Primary and Secondary buttons same width
             maxHeight: 30,
             alignY: "middle"
+          });
+          control.getChildControl("label").set({
+            allowGrowX: true,
+            textAlign: "right"
           });
           control.addListener("execute", () => this.fireDataEvent("toggleFavourite", {
             walletId: this.getKey()
@@ -190,9 +201,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (found) {
         const subtitle = this.getChildControl("contact");
         if (found["write"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
+          subtitle.setValue(osparc.data.Roles.WALLET[2].label);
         } else if (found["read"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
+          subtitle.setValue(osparc.data.Roles.WALLET[1].label);
         }
       }
     },
@@ -247,22 +258,30 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
           label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
           toolTipText: status === "ACTIVE" ? this.tr("Credit Account enabled") : this.tr("Credit Account blocked"),
-          enabled: this.__canIWrite()
+          enabled: this.__canIWrite(),
+          visibility: "excluded" // excluded until the backed implements it
         });
       }
     },
 
     __applyPreferredWallet: function(isPreferredWallet) {
       const favouriteButton = this.getChildControl("favourite-button");
+      favouriteButton.setBackgroundColor("transparent");
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
-        this.setToolTipText(this.tr("Default Wallet"));
-        favouriteButton.setIcon("@FontAwesome5Solid/star/24");
+        favouriteButton.set({
+          label: this.tr("Primary"),
+          toolTipText: this.tr("Default Credit Account"),
+          icon: "@FontAwesome5Solid/toggle-on/20"
+        });
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
-        this.setToolTipText(this.tr("Make it Default Wallet"));
-        favouriteButton.setIcon("@FontAwesome5Regular/star/24");
-        favouriteButtonIcon.resetTextColor();
+        favouriteButton.set({
+          label: this.tr("Secondary"),
+          toolTipText: this.tr("Make it Default Credit Account"),
+          icon: "@FontAwesome5Solid/toggle-off/20"
+        });
+        favouriteButtonIcon.setTextColor("text");
       }
     }
   }

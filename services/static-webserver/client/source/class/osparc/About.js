@@ -28,7 +28,6 @@ qx.Class.define("osparc.About", {
       contentPadding: this.self().PADDING,
       showMaximize: false,
       showMinimize: false,
-      resizable: false,
       centerOnAppear: true,
       clickAwayClose: true,
       modal: true
@@ -56,11 +55,9 @@ qx.Class.define("osparc.About", {
         wrap: true
       });
       this.add(poweredByLabel);
-      osparc.store.StaticInfo.getInstance().getDisplayName()
-        .then(displayName => {
-          const aboutText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
-          poweredByLabel.setValue(displayName + aboutText);
-        });
+      const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const poweredText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
+      poweredByLabel.setValue(displayName + poweredText);
 
       const text = this.tr("\
          is an online-accessible, cloud-based, and collaborative computational modeling platform \
@@ -148,24 +145,22 @@ qx.Class.define("osparc.About", {
     },
 
     __populateBackendEntries: function(page) {
-      osparc.utils.LibVersions.getBackendLibs()
-        .then(libs => {
-          for (let i=0; i<libs.length; i++) {
-            const entry = this.__createEntry(libs[i]);
-            if (entry.length) {
-              page.add(entry[0], {
-                row: i,
-                column: 0
-              });
-            }
-            if (entry.length>1) {
-              page.add(entry[1], {
-                row: i,
-                column: 1
-              });
-            }
-          }
-        });
+      const libs = osparc.utils.LibVersions.getBackendLibs();
+      for (let i=0; i<libs.length; i++) {
+        const entry = this.__createEntry(libs[i]);
+        if (entry.length) {
+          page.add(entry[0], {
+            row: i,
+            column: 0
+          });
+        }
+        if (entry.length>1) {
+          page.add(entry[1], {
+            row: i,
+            column: 1
+          });
+        }
+      }
     },
 
     __createFrontendEntries: function(libs) {

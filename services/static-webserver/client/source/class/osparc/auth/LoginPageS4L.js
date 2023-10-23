@@ -21,98 +21,50 @@
  */
 
 qx.Class.define("osparc.auth.LoginPageS4L", {
-  extend: osparc.auth.LoginPage,
-
-  /*
-  *****************************************************************************
-     CONSTRUCTOR
-  *****************************************************************************
-  */
-  construct: function() {
-    this.base(arguments);
-  },
-
-  events: {
-    "done": "qx.event.type.Data"
-  },
+  extend: osparc.auth.LoginPageFlex,
 
   members: {
     // overridden
-    _buildLayout: function() {
+    _reloadLayout: function() {
       const layout = new qx.ui.layout.HBox();
       this._setLayout(layout);
 
       this.setBackgroundColor("#025887");
+
+      this._removeAll();
+
+      const loginLayout = this._getMainLayout();
+      if (this.isCompactVersion()) {
+        this._resetBackgroundImage();
+        this._add(loginLayout, {
+          flex: 1
+        });
+      } else {
+        this.__setBackgroundImage();
+        this._add(new qx.ui.core.Spacer(), {
+          width: "50%"
+        });
+        this._add(loginLayout, {
+          width: "50%"
+        });
+      }
+    },
+
+    __setBackgroundImage: function() {
       let backgroundImage = "";
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
           backgroundImage = "url(resource/osparc/s4llite_splitimage.png)";
           break;
         case "s4lacad":
+        case "s4lacaddesktop":
           backgroundImage = "url(resource/osparc/s4lacad_splitimage.png)";
           break;
         default:
-          backgroundImage = "url(resource/osparc/s4l_splitimage.jpeg)";
+          backgroundImage = "url(resource/osparc/s4l_splitimage.png)";
           break;
       }
-      this.getContentElement().setStyles({
-        "background-image": backgroundImage,
-        "background-repeat": "no-repeat",
-        "background-size": "auto 100%"
-      });
-
-      this._add(new qx.ui.core.Spacer(), {
-        width: "50%"
-      });
-
-      const loginLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        alignX: "center",
-        alignY: "middle"
-      });
-      this._add(loginLayout, {
-        width: "50%"
-      });
-
-      loginLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const image = this._getLogoWPlatform();
-      loginLayout.add(image);
-
-      const pages = this._getLoginStack();
-      loginLayout.add(pages);
-
-      const versionLink = this._getVersionLink();
-      loginLayout.add(versionLink);
-
-      loginLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      // styling
-      pages.getChildren().forEach(page => {
-        page.getChildren().forEach(child => {
-          if ("getChildren" in child) {
-            child.getChildren().forEach(chil => {
-              // "Create account" and "Forgot password"
-              chil.set({
-                textColor: "#ddd"
-              });
-            });
-          }
-        });
-      });
-      // the double semicolon
-      versionLink.set({
-        textColor: "#bbb"
-      });
-      // the two texts
-      versionLink.getChildren().forEach(page => {
-        if (page.setTextColor) {
-          page.setTextColor("#bbb");
-        }
-      });
+      this._setBackgroundImage(backgroundImage);
     }
   }
 });

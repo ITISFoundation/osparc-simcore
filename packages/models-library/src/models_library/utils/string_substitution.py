@@ -52,8 +52,13 @@ class TextTemplate(Template):
     - `${identifier}` is equivalent to `$identifier`. It is required when valid identifier characters follow the
         placeholder but are not part of the placeholder, such as `"${noun}ification"`.
 
+    EXTENSION:
+    - `${identifier:-a_default_value}` is now also supported.
+
     SEE https://docs.python.org/3/library/string.html#template-strings
     """
+
+    idpattern = r"(?a:[_a-z][_a-z0-9]*)(?::-(.*?))?"
 
     if sys.version_info < (3, 11):
         # Backports methods added in py 3.11

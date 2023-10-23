@@ -20,7 +20,7 @@
  *
  * It is the entry point to start editing or creating a new study.
  *
- * Also takes care of retrieveing the list of services and pushing the changes in the metadata.
+ * Also takes care of retrieving the list of services and pushing the changes in the metadata.
  *
  * *Example*
  *
@@ -68,12 +68,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
-        newStudyLabel: "New Sim4Life project",
+        newStudyLabel: "New S4L project",
         idToWidget: "startS4LButton"
       },
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
-        description: "Jupyter powered by Sim4Life",
+        description: "Jupyter powered by S4L",
         newStudyLabel: "New Sim4Life lab project",
         idToWidget: "startJSmashButton"
       }
@@ -202,10 +202,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 msg += "</br>";
                 msg += this.tr("Please contact us:");
                 msg += "</br>";
-                osparc.store.VendorInfo.getInstance().getSupportEmail()
-                  .then(supportEmail => {
-                    noAccessText.setValue(msg + supportEmail);
-                  });
+                const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+                noAccessText.setValue(msg + supportEmail);
                 this._addAt(noAccessText, 2);
               }
             });
@@ -546,12 +544,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       const importStudyButton = this.__createImportButton();
+      const isDisabled = osparc.utils.DisabledPlugins.isImportDisabled();
+      importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
       this._toolbar.add(importStudyButton);
-      importStudyButton.exclude();
-      osparc.utils.DisabledPlugins.isImportDisabled()
-        .then(isDisabled => {
-          importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
-        });
 
       const selectStudiesButton = this.__createSelectButton();
       this._toolbar.add(selectStudiesButton);
@@ -924,14 +919,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"));
-      exportButton.exclude();
-      osparc.utils.DisabledPlugins.isExportDisabled()
-        .then(isDisabled => {
-          exportButton.setVisibility(isDisabled ? "excluded" : "visible");
-        });
-      exportButton.addListener("execute", () => {
-        this.__exportStudy(studyData);
-      }, this);
+      const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
+      exportButton.setVisibility(isDisabled ? "excluded" : "visible");
+      exportButton.addListener("execute", () => this.__exportStudy(studyData), this);
       return exportButton;
     },
 
@@ -1050,9 +1040,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const percentComplete = ep.loaded / ep.total * 100;
           importingStudyCard.getChildControl("progress-bar").setValue(percentComplete);
           if (percentComplete === 100) {
-            const processinglabel = this.tr("Processing study");
-            importingStudyCard.getChildControl("state-label").setValue(processinglabel);
-            importTask.setSubtitle(processinglabel);
+            const processingLabel = this.tr("Processing study");
+            importingStudyCard.getChildControl("state-label").setValue(processingLabel);
+            importTask.setSubtitle(processingLabel);
             importingStudyCard.getChildControl("progress-bar").exclude();
           }
         } else {
@@ -1062,9 +1052,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.addEventListener("load", e => {
         // transferComplete
         if (req.status == 200) {
-          const processinglabel = this.tr("Processing study");
-          importingStudyCard.getChildControl("state-label").setValue(processinglabel);
-          importTask.setSubtitle(processinglabel);
+          const processingLabel = this.tr("Processing study");
+          importingStudyCard.getChildControl("state-label").setValue(processingLabel);
+          importTask.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
           const params = {

@@ -23,8 +23,8 @@ class PermissionDict(TypedDict, total=False):
 #
 # NOTE:
 #   - keep UI equivalents in the same line
-#   - DO NOT over-granulate permissions. Add permission label ONLY to discrimitate access among roles
-#     If only needed to discrimiate a resource use `resource.sub_resource.*`
+#   - DO NOT over-granulate permissions. Add permission label ONLY to discriminate access among roles
+#     If only needed to discriminate a resource use `resource.sub_resource.*`
 #   - All services* are not necessary since it only requires login and there is no distinction among logged in users.
 #
 
@@ -36,6 +36,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "storage.locations.*",
             "storage.files.*",
             "user.notifications.read",
+            "user.permissions.read",
             "groups.read",
             "project.open",
             "project.read",
@@ -71,7 +72,6 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "user.apikey.*",
             "user.notifications.update",
             "user.notifications.write",
-            "user.permissions.read",
             "user.profile.update",
             "user.tokens.*",
             "wallets.*",
@@ -89,7 +89,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
     ),
     UserRole.PRODUCT_OWNER: PermissionDict(
         can=[
-            "product.details.*",
+            "product.details.read",
             "product.invitations",
         ],
         inherits=[UserRole.TESTER],

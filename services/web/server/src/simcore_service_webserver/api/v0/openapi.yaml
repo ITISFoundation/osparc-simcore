@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.31.0
+  version: 0.34.0
 servers:
 - url: ''
   description: webserver
@@ -1802,7 +1802,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_CreditPriceGet_'
+                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
+  /v0/products/{product_name}:
+    get:
+      tags:
+      - products
+      summary: Get Product
+      operationId: get_product
+      parameters:
+      - required: true
+        schema:
+          title: Product Name
+          anyOf:
+          - minLength: 1
+            type: string
+          - enum:
+            - current
+            type: string
+        name: product_name
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetProduct_'
   /v0/invitation:generate:
     post:
       tags:
@@ -2593,6 +2618,75 @@ paths:
                 $ref: '#/components/schemas/Envelope__ProjectNodePreview_'
         '404':
           description: Node has no preview
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
+    get:
+      tags:
+      - projects
+      summary: Get currently connected pricing unit to the project node.
+      operationId: get_project_node_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
+    put:
+      tags:
+      - projects
+      summary: Connect pricing unit to the project node (Project node can have only
+        one pricing unit)
+      operationId: connect_pricing_unit_to_project_node
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/inputs:
     get:
       tags:
@@ -3847,6 +3941,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
   /v0/wallets/{wallet_id}:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet
+      operationId: get_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
     put:
       tags:
       - wallets
@@ -4085,6 +4200,55 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+  /v0/wallets/{wallet_id}/auto-recharge:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet Autorecharge
+      operationId: get_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
+    put:
+      tags:
+      - wallets
+      summary: Replace Wallet Autorecharge
+      operationId: replace_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceWalletAutoRecharge'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4924,22 +5088,6 @@ components:
           title: Comment
           maxLength: 100
           type: string
-    CreditPriceGet:
-      title: CreditPriceGet
-      required:
-      - productName
-      - usdPerCredit
-      type: object
-      properties:
-        productName:
-          title: Productname
-          type: string
-        usdPerCredit:
-          title: Usdpercredit
-          minimum: 0.0
-          type: number
-          description: Price of a credit in USD. If None, then this product's price
-            is UNDEFINED
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -5081,14 +5229,6 @@ components:
           $ref: '#/components/schemas/ComputationTaskGet'
         error:
           title: Error
-    Envelope_CreditPriceGet_:
-      title: Envelope[CreditPriceGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/CreditPriceGet'
-        error:
-          title: Error
     Envelope_Error_:
       title: Envelope[Error]
       type: object
@@ -5135,6 +5275,30 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FileUploadSchema'
+        error:
+          title: Error
+    Envelope_GetCreditPrice_:
+      title: Envelope[GetCreditPrice]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetCreditPrice'
+        error:
+          title: Error
+    Envelope_GetProduct_:
+      title: Envelope[GetProduct]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetProduct'
+        error:
+          title: Error
+    Envelope_GetWalletAutoRecharge_:
+      title: Envelope[GetWalletAutoRecharge]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetWalletAutoRecharge'
         error:
           title: Error
     Envelope_GroupUserGet_:
@@ -5372,6 +5536,14 @@ components:
           - $ref: '#/components/schemas/NodeGetIdle'
         error:
           title: Error
+    Envelope_Union_PricingUnitGet__NoneType__:
+      title: Envelope[Union[PricingUnitGet, NoneType]]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingUnitGet'
+        error:
+          title: Error
     Envelope_Union_TestFailed__TestPassed__:
       title: Envelope[Union[TestFailed, TestPassed]]
       type: object
@@ -5397,6 +5569,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UsersGroup'
+        error:
+          title: Error
+    Envelope_WalletGetWithAvailableCredits_:
+      title: Envelope[WalletGetWithAvailableCredits]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
     Envelope_WalletGet_:
@@ -6109,6 +6289,119 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        extraCreditsInUsd:
+          title: Extracreditsinusd
+          exclusiveMaximum: true
+          minimum: 0
+          type: integer
+          maximum: 200
+    GetCreditPrice:
+      title: GetCreditPrice
+      required:
+      - productName
+      - usdPerCredit
+      type: object
+      properties:
+        productName:
+          title: Productname
+          type: string
+        usdPerCredit:
+          title: Usdpercredit
+          minimum: 0.0
+          type: number
+          description: Price of a credit in USD. If None, then this product's price
+            is UNDEFINED
+    GetProduct:
+      title: GetProduct
+      required:
+      - name
+      - displayName
+      - loginSettings
+      - isPaymentEnabled
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        displayName:
+          title: Displayname
+          type: string
+        shortName:
+          title: Shortname
+          type: string
+          description: Short display name for SMS
+        vendor:
+          title: Vendor
+          type: object
+          description: vendor attributes
+        issues:
+          title: Issues
+          type: array
+          items:
+            type: object
+          description: Reference to issues tracker
+        manuals:
+          title: Manuals
+          type: array
+          items:
+            type: object
+          description: List of manuals
+        support:
+          title: Support
+          type: array
+          items:
+            type: object
+          description: List of support resources
+        loginSettings:
+          title: Loginsettings
+          type: object
+        maxOpenStudiesPerUser:
+          title: Maxopenstudiesperuser
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        isPaymentEnabled:
+          title: Ispaymentenabled
+          type: boolean
+        creditsPerUsd:
+          title: Creditsperusd
+          minimum: 0.0
+          type: number
+    GetWalletAutoRecharge:
+      title: GetWalletAutoRecharge
+      required:
+      - paymentMethodId
+      - minBalanceInUsd
+      - topUpAmountInUsd
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+          description: Enables/disables auto-recharge trigger in this wallet
+          default: false
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+          description: Payment method in the wallet used to perform the auto-recharge
+            payments or None if still undefined
+        minBalanceInUsd:
+          title: Minbalanceinusd
+          minimum: 0.0
+          type: number
+          description: Minimum balance in USD that triggers an auto-recharge
+        topUpAmountInUsd:
+          title: Topupamountinusd
+          minimum: 0.0
+          type: number
+          description: Amount in USD payed when auto-recharge condition is satisfied
+        topUpCountdown:
+          title: Topupcountdown
+          exclusiveMinimum: true
+          type: integer
+          description: Maximum number of top-ups left or None to denote unlimited
+          minimum: 0
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -6267,6 +6560,11 @@ components:
           format: email
         trialAccountDays:
           title: Trialaccountdays
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        extraCreditsInUsd:
+          title: Extracreditsinusd
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -6794,6 +7092,7 @@ components:
       - STUDY_SHARED
       - TEMPLATE_SHARED
       - ANNOTATION_NOTE
+      - WALLET_SHARED
       type: string
       description: An enumeration.
     OrderDirection:
@@ -7079,6 +7378,11 @@ components:
           title: Created
           type: string
           format: date-time
+        autoRecharge:
+          title: Autorecharge
+          type: boolean
+          description: If true, this payment-method is used for auto-recharge
+          default: false
     PaymentMethodInit:
       title: PaymentMethodInit
       required:
@@ -7268,6 +7572,7 @@ components:
       required:
       - pricingUnitId
       - unitName
+      - unitExtraInfo
       - currentCostPerUnit
       - default
       type: object
@@ -7280,6 +7585,9 @@ components:
         unitName:
           title: Unitname
           type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
         currentCostPerUnit:
           title: Currentcostperunit
           type: number
@@ -8121,6 +8429,35 @@ components:
         but
 
         using a path+query in the fragment of the URL'
+    ReplaceWalletAutoRecharge:
+      title: ReplaceWalletAutoRecharge
+      required:
+      - enabled
+      - paymentMethodId
+      - minBalanceInUsd
+      - topUpAmountInUsd
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+        minBalanceInUsd:
+          title: Minbalanceinusd
+          minimum: 0.0
+          type: number
+        topUpAmountInUsd:
+          title: Topupamountinusd
+          minimum: 0.0
+          type: number
+        topUpCountdown:
+          title: Topupcountdown
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     RepoApiModel:
       title: RepoApiModel
       required:
@@ -9791,6 +10128,10 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
           description: integration version number
+        progress_regexp:
+          title: Progress Regexp
+          type: string
+          description: regexp pattern for detecting computational service's progress
         type:
           allOf:
           - $ref: '#/components/schemas/ServiceType'

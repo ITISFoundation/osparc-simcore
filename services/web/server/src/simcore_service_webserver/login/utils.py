@@ -8,6 +8,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from passlib import pwd
+from pydantic import PositiveInt
 from servicelib.aiohttp import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
@@ -69,6 +70,7 @@ async def notify_user_confirmation(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
+    extra_credits_in_usd: PositiveInt | None,
 ):
     """Broadcast that user with 'user_id' has login for the first-time in 'product_name'"""
     # NOTE: Follow up in https://github.com/ITISFoundation/osparc-simcore/issues/4822
@@ -77,6 +79,7 @@ async def notify_user_confirmation(
         "SIGNAL_ON_USER_CONFIRMATION",
         user_id=user_id,
         product_name=product_name,
+        extra_credits_in_usd=extra_credits_in_usd,
     )
 
 

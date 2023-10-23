@@ -11,9 +11,12 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
+from servicelib.logging_utils import log_context
 
 from ...db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ...models.basic_types import VersionStr
@@ -60,6 +63,19 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
         parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
         job_id=job_id,
     )
+
+
+def _raise_if_job_not_associated_with_solver(
+    solver_key: SolverKeyId, version: VersionStr, project: ProjectGet
+) -> None:
+    expected_job_name: str = _compose_job_resource_name(
+        solver_key, version, project.uuid
+    )
+    if expected_job_name != project.name:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"job {project.uuid} is not associated with solver {solver_key} and version {version}",
+        )
 
 
 # JOBS ---------------
@@ -533,3 +549,53 @@ async def replace_job_custom_metadata(
                 f"Cannot find job={job_name} ",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
+    response_model=WalletGet | None,
+    responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_job_wallet(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Getting wallet for job '%s'", job_name)
+
+    try:
+        return await webserver_api.get_project_wallet(project_id=job_id)
+
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find job={job_name}",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
+    response_model=PricingUnitGet | None,
+    responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_job_pricing_unit(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    with log_context(_logger, logging.DEBUG, "Get pricing unit"):
+        _logger.debug("job: %s", job_name)
+        project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+        node_ids = list(project.workbench.keys())
+        assert len(node_ids) == 1  # nosec
+        node_id: UUID = UUID(node_ids[0])
+        return await webserver_api.get_project_node_pricing_unit(
+            project_id=job_id, node_id=node_id
+        )

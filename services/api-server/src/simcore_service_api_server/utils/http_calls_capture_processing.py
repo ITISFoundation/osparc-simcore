@@ -5,9 +5,13 @@ from urllib.parse import unquote
 import httpx
 import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
-from simcore_service_api_server.core.settings import CatalogSettings, StorageSettings
+from simcore_service_api_server.core.settings import (
+    CatalogSettings,
+    StorageSettings,
+    WebServerSettings,
+)
 
-service_hosts = Literal["storage", "catalog"]
+service_hosts = Literal["storage", "catalog", "webserver"]
 
 
 class CapturedParameterSchema(BaseModel):
@@ -92,7 +96,7 @@ class CapturedParameterSchema(BaseModel):
                 pattern = r"[+-]?\d+(?:\.\d+)?"
             elif self.type_ == "str":
                 if self.format_ == "uuid":
-                    pattern = r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
+                    pattern = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
                 else:
                     pattern = r".*"  # should match any string
         if pattern is None:
@@ -146,7 +150,9 @@ class PathDescription(BaseModel):
 
 
 def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
-    assert response.url.host in get_args(service_hosts)
+    assert response.url.host in get_args(
+        service_hosts
+    ), f"{response.url.host} is not in {service_hosts} - please add it yourself"
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
@@ -161,6 +167,9 @@ def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     elif host == "catalog":
         settings = CatalogSettings()
         url = settings.base_url + "/api/v0/openapi.json"
+    elif host == "webserver":
+        settings = WebServerSettings()
+        url = settings.base_url + "/dev/doc/swagger.json"
     else:
         raise OpenApiSpecIssue(
             f"{host=} has not been added yet to the testing system. Please do so yourself"
@@ -178,29 +187,29 @@ def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
 def _determine_path(
     openapi_spec: dict[str, Any], response_path: Path
 ) -> PathDescription:
+    def parts(p: str) -> tuple[str, ...]:
+        all_parts: list[str] = sum((elm.split("/") for elm in p.split(":")), start=[])
+        return tuple(part for part in all_parts if len(part) > 0)
 
     for p in openapi_spec["paths"]:
-        openapi_path = Path(p)
-        if len(openapi_path.parts) != len(response_path.parts):
+        openapi_parts: tuple[str, ...] = tuple(parts(p))
+        response_parts: tuple[str, ...] = tuple(parts(f"{response_path}"))
+        if len(openapi_parts) != len(response_parts):
             continue
         path_params = {
             param.name: param for param in _get_params(openapi_spec, p) if param.is_path
         }
-        if (len(path_params) == 0) and (openapi_path.parts == response_path.parts):
+        if (len(path_params) == 0) and (openapi_parts == response_parts):
             return PathDescription(
                 path=str(response_path), path_parameters=list(path_params.values())
             )
         path_param_indices: tuple[int, ...] = tuple(
-            openapi_path.parts.index("{" + name + "}") for name in path_params
+            openapi_parts.index("{" + name + "}") for name in path_params
         )
         if tuple(
-            elm
-            for ii, elm in enumerate(openapi_path.parts)
-            if ii not in path_param_indices
+            elm for ii, elm in enumerate(openapi_parts) if ii not in path_param_indices
         ) != tuple(
-            elm
-            for ii, elm in enumerate(response_path.parts)
-            if ii not in path_param_indices
+            elm for ii, elm in enumerate(response_parts) if ii not in path_param_indices
         ):
             continue
         path_param_indices_iter = iter(path_param_indices)
@@ -208,7 +217,7 @@ def _determine_path(
             ii = next(path_param_indices_iter)
             path_params[key].response_value = unquote(response_path.parts[ii])
         return PathDescription(
-            path=str(openapi_path),
+            path=p,
             path_parameters=list(path_params.values()),
         )
     raise PathNotInOpenApiSpecification(

@@ -1,7 +1,7 @@
 import argparse
 import json
 import types
-from typing import Annotated
+from typing import Annotated, Any
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, status
@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
+    ErrorModel,
     InitPayment,
     InitPaymentMethod,
     PaymentID,
@@ -27,6 +28,12 @@ def set_operation_id_as_handler_function_name(router: APIRouter):
             route.operation_id = route.endpoint.__name__
 
 
+ERROR_RESPONSES: dict[str, Any] = {"4XX": {"model": ErrorModel}}
+ERROR_HTML_RESPONSES: dict[str, Any] = {
+    "4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}
+}
+
+
 def create_payment_router():
     router = APIRouter(
         tags=[
@@ -35,7 +42,11 @@ def create_payment_router():
     )
 
     # payment
-    @router.post("/init", response_model=PaymentInitiated)
+    @router.post(
+        "/init",
+        response_model=PaymentInitiated,
+        responses=ERROR_RESPONSES,
+    )
     def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
@@ -43,14 +54,20 @@ def create_payment_router():
         assert payment  # nosec
         assert auth  # nosec
 
-    @router.get("/pay", response_class=HTMLResponse)
+    @router.get(
+        "/pay",
+        response_class=HTMLResponse,
+        responses=ERROR_HTML_RESPONSES,
+    )
     def get_form_payment(
         id: PaymentID,
-        auth: Annotated[int, Depends(auth_session)],
     ):
         assert id  # nosec
 
-    @router.post("/cancel")
+    @router.post(
+        "/cancel",
+        responses=ERROR_RESPONSES,
+    )
     def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
@@ -60,7 +77,10 @@ def create_payment_router():
     return router
 
 
-def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None):
+def auth_session(X_Init_Api_Secret: Annotated[str | None, Header()] = None):
+    # NOTE: keep `X_Init_Api_Secret` with capital letters (even if headers are case-insensitive) to
+    # to agree with the specs provided by our partners
+
     return 1
 
 
@@ -73,7 +93,11 @@ def create_payment_method_router():
     )
 
     # payment-methods
-    @router.post(":init", response_model=PaymentMethodInitiated)
+    @router.post(
+        ":init",
+        response_model=PaymentMethodInitiated,
+        responses=ERROR_RESPONSES,
+    )
     def init_payment_method(
         payment_method: InitPaymentMethod,
         auth: Annotated[int, Depends(auth_session)],
@@ -81,12 +105,20 @@ def create_payment_method_router():
         assert payment_method  # nosec
         assert auth  # nosec
 
-    @router.get("/form", response_class=HTMLResponse)
+    @router.get(
+        "/form",
+        response_class=HTMLResponse,
+        responses=ERROR_HTML_RESPONSES,
+    )
     def get_form_payment_method(id: PaymentMethodID):
         assert id  # nosec
 
     # CRUD payment-methods
-    @router.post(":batchGet", response_model=PaymentMethodsBatch)
+    @router.post(
+        ":batchGet",
+        response_model=PaymentMethodsBatch,
+        responses=ERROR_RESPONSES,
+    )
     def batch_get_payment_methods(
         batch: BatchGetPaymentMethods,
         auth: Annotated[int, Depends(auth_session)],
@@ -94,7 +126,11 @@ def create_payment_method_router():
         assert auth  # nosec
         assert batch  # nosec
 
-    @router.get("/{id}", response_class=HTMLResponse)
+    @router.get(
+        "/{id}",
+        response_class=HTMLResponse,
+        responses=ERROR_RESPONSES,
+    )
     def get_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
@@ -102,7 +138,11 @@ def create_payment_method_router():
         assert id  # nosec
         assert auth  # nosec
 
-    @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+    @router.delete(
+        "/{id}",
+        status_code=status.HTTP_204_NO_CONTENT,
+        responses=ERROR_RESPONSES,
+    )
     def delete_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
@@ -110,7 +150,11 @@ def create_payment_method_router():
         assert id  # nosec
         assert auth  # nosec
 
-    @router.post("/{id}:pay", response_model=PaymentInitiated)
+    @router.post(
+        "/{id}:pay",
+        response_model=PaymentInitiated,
+        responses=ERROR_RESPONSES,
+    )
     def pay_with_payment_method(
         id: PaymentMethodID,
         payment: InitPayment,
@@ -123,8 +167,21 @@ def create_payment_method_router():
 
 
 def create_app():
-    app = FastAPI(title="fake-payment-gateway")
-    # TODO: create header with auth
+    app = FastAPI(
+        title="fake-payment-gateway",
+        version="0.2.0",
+        servers=[
+            {
+                "url": "{scheme}://{host}:{port}",
+                "description": "development server",
+                "variables": {
+                    "scheme": {"default": "http"},
+                    "host": {"default": "localhost"},
+                    "port": {"default": "8080"},
+                },
+            }
+        ],
+    )
 
     for factory in (
         create_payment_router,
@@ -139,7 +196,7 @@ def create_app():
 
 def run_command(args):
     app = create_app()
-    uvicorn.run(app)
+    uvicorn.run(app, port=8080)
 
 
 def openapi_command(args):

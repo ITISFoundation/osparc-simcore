@@ -29,19 +29,19 @@
 <!------------------------------------------------------------------------------------------>
 
 
-
-
-
 The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline **S**imulations for **S**timulating **P**eripheral **A**ctivity to **R**elieve **C**onditions – is one of the three integrative cores of the SPARC program’s Data Resource Center (DRC).
 The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
 To achieve this, the platform will comprise both state-of-the art and highly detailed animal and human anatomical models with realistic tissue property distributions that make it possible to perform simulations ranging from the molecular scale up to the complexity of the human body.
 
 ## Getting Started
 
-This is the common workflow to build and deploy locally:
+A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at [oSPARC.io](https://osparc.io).
+
+If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended).
+Make sure you first install all the [requirements](#Requirements) mentioned in the section below.
 
 ```bash
-  # clone repo
+  # clone code repository
   git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
 
@@ -59,7 +59,7 @@ This is the common workflow to build and deploy locally:
   #
   xdg-open http://127.0.0.1.nip.io:9081/
 
-  # stops
+  # to stop the swarm
   make down
 ```
 
@@ -69,12 +69,9 @@ Services are deployed in two stacks:``simcore-stack`` comprises all core-service
 
 ### Requirements
 
-To verify current base OS, Docker and Python build versions have a look at:
-
-- GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
-
 To build and run:
 
+- git
 - docker
 - make >=4.2
 - awk, jq (optional tools within makefiles)
@@ -86,17 +83,26 @@ To develop, in addition:
 - swagger-cli (make sure to have a recent version of nodejs)
 - [vscode] (highly recommended)
 
-This project works and is developed under **linux (Ubuntu recommended)**.
+To verify current base OS, Docker and Python build versions have a look at:
 
-#### Setting up Other Operating Systems
+- GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
+
+If you want to verify if your system has all the necessary requirements:
+
+```bash
+    make info
+```
+
+
+#### Setting up other Operating Systems
 
 When developing on these platforms you are on your own.
 
-In **windows**, it works under [WSL2] (windows subsystem for linux **version2**). Some details on the setup:
+On **Windows**, it works under [WSL2] (Windows Subsystem for Linux **version2**). Some details on the setup:
 
 - Follow **all details** on [how to setup WSL2 with docker and ZSH](https://nickymeuleman.netlify.app/blog/linux-on-windows-wsl2-zsh-docker) docker for windows and [WSL2]
 
-In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
+**MacOS** is currently not supported.
 
 #### Upgrading services requirements
 
@@ -133,9 +139,46 @@ To upgrade a single requirement named `fastapi`run:
 - [Staging instructions](docs/releasing-workflow-instructions.md#staging-example)
 - [User Manual](https://itisfoundation.github.io/osparc-manual/)
 
+## Development build
+
+For developers wanting to add/test code changes, a version can be built that will on-the-fly incorporate changes made in the source directory into the running containers.
+To enable this, the following commands should be used to build, instead of the ones provided in the [Getting Started](#getting-started) section:
+
+```bash
+  # clone code repository
+  git clone https://github.com/ITISFoundation/osparc-simcore.git
+  cd osparc-simcore
+
+  # setup python environment and activate
+  make devenv
+  source .venv/bin/activate
+
+  # show setup info and build core services
+  make info build build-devel
+
+  # starts swarm and deploys services
+  make up-devel
+
+  # The above command will keep in running with "[RUN] Running command..."
+  # Open another terminal session, to continue
+
+  # display swarm configuration
+  make info-swarm
+
+  # open front-end in the browser
+  #  127.0.0.1.nip.io:9081 - simcore front-end site
+  #
+  xdg-open http://127.0.0.1.nip.io:9081/
+
+  # to stop the swarm
+  make down
+```
+
 ## Contributing
 
 Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
+
+
 
 ## License
 

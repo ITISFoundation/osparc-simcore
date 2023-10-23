@@ -85,7 +85,6 @@ class TutorialBase {
       throw (err);
     }
     const domain = utils.getDomain(this.__url);
-    await this.takeScreenshot("landingPage_" + domain);
 
     await auto.acceptCookies(this.__page);
     await auto.ignoreNewRelease(this.__page);

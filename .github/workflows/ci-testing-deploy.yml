@@ -1071,7 +1071,7 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - uses: actions/setup-node@v3.8.0
+      - uses: actions/setup-node@v3.8.1
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1993,7 +1993,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v3.8.0
+      - uses: actions/setup-node@v3.8.1
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"

@@ -18,6 +18,11 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.resource_tracker import (
+    PricingPlanAndUnitIdsTuple,
+    PricingPlanId,
+    PricingUnitId,
+)
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
@@ -789,6 +794,41 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             list_of_nodes = await repo.list(conn)
         return {f"{node.node_id}" for node in list_of_nodes}
+
+    #
+    # Project NODES to Pricing Units
+    #
+
+    async def get_project_node_pricing_unit_id(
+        self,
+        project_uuid: ProjectID,
+        node_uuid: NodeID,
+    ) -> PricingPlanAndUnitIdsTuple | None:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+        async with self.engine.acquire() as conn:
+            output = await project_nodes_repo.get_project_node_pricing_unit_id(
+                conn, node_uuid=node_uuid
+            )
+            if output:
+                pricing_plan_id, pricing_unit_id = output
+                return PricingPlanAndUnitIdsTuple(pricing_plan_id, pricing_unit_id)
+            return None
+
+    async def connect_pricing_unit_to_project_node(
+        self,
+        project_uuid: ProjectID,
+        node_uuid: NodeID,
+        pricing_plan_id: PricingPlanId,
+        pricing_unit_id: PricingUnitId,
+    ) -> None:
+        async with self.engine.acquire() as conn:
+            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+            await project_nodes_repo.connect_pricing_unit_to_project_node(
+                conn,
+                node_uuid=node_uuid,
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+            )
 
     #
     # Project ACCESS RIGHTS/PERMISSIONS

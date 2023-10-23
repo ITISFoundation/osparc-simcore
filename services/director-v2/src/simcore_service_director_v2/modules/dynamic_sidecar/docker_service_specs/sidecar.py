@@ -75,6 +75,9 @@ def _get_environment_variables(
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
+        "R_CLONE_OPTION_TRANSFERS": f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
+        "R_CLONE_OPTION_RETRIES": f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
+        "R_CLONE_OPTION_BUFFER_SIZE": r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
@@ -98,6 +101,10 @@ def _get_environment_variables(
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
         "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
+        "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
+        "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
+        "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
+        "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
     }
 
 
@@ -232,6 +239,19 @@ def get_dynamic_sidecar_spec(
                 "Target": "/devel/packages",
                 "Type": "bind",
             }
+        )
+
+    if scheduler_data.user_preferences_path:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_user_preferences(
+                user_preferences_path=scheduler_data.user_preferences_path,
+                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                node_uuid=scheduler_data.node_uuid,
+                run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
+                has_quota_support=has_quota_support,
+            )
         )
 
     # PORTS -----------

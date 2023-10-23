@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
     osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
-    this.__sidePanels = this.getChildControl("side-panels");
+    this.getChildControl("side-panels");
     this.getChildControl("main-panel-tabs");
     this.__workbenchPanel = new osparc.desktop.WorkbenchPanel();
     this.__workbenchUI = this.__workbenchPanel.getMainView();
@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
+    PRIMARY_COL_BG_COLOR: "background-main-2",
     TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
@@ -81,15 +82,21 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       check: "osparc.data.model.Study",
       apply: "_applyStudy",
       nullable: false
+    },
+
+    maximized: {
+      check: "Boolean",
+      init: null,
+      nullable: false,
+      apply: "__applyMaximized",
+      event: "changeMaximized"
     }
   },
 
   members: {
-    __sidePanels: null,
     __nodesPage: null,
     __studyTreeItem: null,
     __nodesTree: null,
-    __filesTree: null,
     __storagePage: null,
     __studyOptionsPage: null,
     __infoPage: null,
@@ -127,6 +134,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             minWidth: osparc.widget.CollapsibleViewLight.CARET_WIDTH,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
+          control.getChildControl("expand-button").setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
+          control.getChildControl("collapse-button").setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
           caretExpandedLayout.addAt(this.__createCollapsibleViewSpacer(), 0);
           const caretCollapsedLayout = control.getChildControl("caret-collapsed-layout");
@@ -187,13 +196,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control = new qx.ui.tabview.TabView().set({
             contentPadding: osparc.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
             contentPaddingRight: 2,
+            backgroundColor: this.self().PRIMARY_COL_BG_COLOR,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
           collapsibleViewLeft.setContent(control);
-          control.setBackgroundColor("background-main-2");
-          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-2");
-          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-2");
           break;
         }
         case "side-panel-right-tabs": {
@@ -295,16 +302,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
-      const primaryColumnBGColor = "background-main-2";
       const study = this.getStudy();
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
       this.__removePages(tabViewPrimary);
-      tabViewPrimary.setBackgroundColor(primaryColumnBGColor);
-      const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
-      collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor(primaryColumnBGColor);
-      collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor(primaryColumnBGColor);
-
+      tabViewPrimary.setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
@@ -315,20 +317,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-        backgroundColor: primaryColumnBGColor
+        backgroundColor: "transparent"
       });
 
       const studyTreeItem = this.__studyTreeItem = new osparc.widget.StudyTitleOnlyTree().set({
         alignY: "middle",
         minHeight: 32,
         maxHeight: 32,
-        backgroundColor: primaryColumnBGColor
+        backgroundColor: "transparent"
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
 
       const nodesTree = this.__nodesTree = new osparc.widget.NodesTree().set({
-        backgroundColor: primaryColumnBGColor,
+        backgroundColor: "transparent",
         allowGrowY: true,
         minHeight: 5
       });
@@ -354,16 +356,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       homeAndNodesTree.add(addNewNodeBtn);
 
-      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(nodesPage);
 
-      const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
-        backgroundColor: primaryColumnBGColor,
+      const filesTree = new osparc.file.FilesTree().set({
+        backgroundColor: "transparent",
         dragMechanism: true,
         hideRoot: true
       });
       filesTree.populateTree();
-      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, primaryColumnBGColor);
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTree, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(storagePage);
 
       this.__addTopBarSpacer(topBar);
@@ -599,20 +601,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = data.nodeId;
         const msg = data.msg;
         const logLevel = ("level" in data) ? data["level"] : "INFO";
-        switch (logLevel) {
-          case "DEBUG":
-            this.__loggerView.debug(nodeId, msg);
-            break;
-          case "WARNING":
-            this.__loggerView.warn(nodeId, msg);
-            break;
-          case "ERROR":
-            this.__loggerView.error(nodeId, msg);
-            break;
-          default:
-            this.__loggerView.info(nodeId, msg);
-            break;
-        }
+        this.__logsToLogger(nodeId, [msg], logLevel);
       }, this);
 
       workbench.addListener("fileRequested", () => {
@@ -623,6 +612,29 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
 
       this.__workbenchUIConnected = true;
+    },
+
+    __logsToLogger: function(nodeId, logs, logLevel) {
+      // the node logger is mainly used in App Mode
+      const nodeLogger = this.__getNodeLogger(nodeId);
+      switch (logLevel) {
+        case "DEBUG":
+          this.__loggerView.debugs(nodeId, logs);
+          nodeLogger.debugs(nodeId, logs);
+          break;
+        case "WARNING":
+          this.__loggerView.warns(nodeId, logs);
+          nodeLogger.warns(nodeId, logs);
+          break;
+        case "ERROR":
+          this.__loggerView.errors(nodeId, logs);
+          nodeLogger.errors(nodeId, logs);
+          break;
+        default:
+          this.__loggerView.infos(nodeId, logs);
+          nodeLogger.infos(nodeId, logs);
+          break;
+      }
     },
 
     __attachSocketEventHandlers: function() {
@@ -642,24 +654,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const messages = data["messages"];
           const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
           const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
-          switch (logLevel) {
-            case "DEBUG":
-              this.__loggerView.debugs(nodeId, messages);
-              break;
-            case "WARNING":
-              this.__loggerView.warns(nodeId, messages);
-              break;
-            case "ERROR":
-              this.__loggerView.errors(nodeId, messages);
-              break;
-            default:
-              this.__loggerView.infos(nodeId, messages);
-              break;
-          }
-          const nodeLogger = this.__getNodeLogger(nodeId);
-          if (nodeLogger) {
-            nodeLogger.infos(nodeId, messages);
-          }
+          this.__logsToLogger(nodeId, messages, logLevel);
         }, this);
       }
       socket.emit(slotName);
@@ -801,16 +796,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __maximizeIframe: function(maximize) {
+    __applyMaximized: function(maximized) {
       this.getBlocker().setStyles({
-        display: maximize ? "none" : "block"
+        display: maximized ? "none" : "block"
       });
 
-      this.getChildControl("side-panels").setVisibility(maximize ? "excluded" : "visible");
+      this.getChildControl("side-panels").setVisibility(maximized ? "excluded" : "visible");
 
       const tabViewMain = this.getChildControl("main-panel-tabs");
-      const mainViewtopBar = tabViewMain.getChildControl("bar");
-      mainViewtopBar.setVisibility(maximize ? "excluded" : "visible");
+      const mainViewTopBar = tabViewMain.getChildControl("bar");
+      mainViewTopBar.setVisibility(maximized ? "excluded" : "visible");
     },
 
     __addIframe: function(node) {
@@ -824,8 +819,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           iFrame
         ].forEach(widget => {
           if (widget) {
-            widget.addListener("maximize", () => this.__maximizeIframe(true), this);
-            widget.addListener("restore", () => this.__maximizeIframe(false), this);
+            widget.addListener("maximize", () => this.setMaximized(true), this);
+            widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
         this.__iFrameChanged(node);
@@ -891,23 +886,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();
+      const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
+      snaps.setVisibility(isVCDisabled ? "excluded" : "visible");
       this.__studyOptionsPage.add(snaps);
-      osparc.utils.DisabledPlugins.isVersionControlDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
-            snaps.show();
-          }
-        });
 
       const iters = this.__getIterationsSection();
-      iters.exclude();
+      const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
+      snaps.setVisibility(isMMDisabled ? "excluded" : "visible");
       this.__studyOptionsPage.add(iters);
-      osparc.utils.DisabledPlugins.isMetaModelingDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
-            iters.show();
-          }
-        });
     },
 
     __getSlideshowSection: function() {
@@ -1102,9 +1088,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        const scrollContariner = new qx.ui.container.Scroll();
-        scrollContariner.add(node.getPropsForm());
-        this.__settingsPage.add(scrollContariner, {
+        const scrollContainer = new qx.ui.container.Scroll();
+        scrollContainer.add(node.getPropsForm());
+        this.__settingsPage.add(scrollContainer, {
           flex: 1
         });
       }
@@ -1183,7 +1169,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         if (showStartStopButton) {
           // Only available to dynamic services
-          const instructions = new qx.ui.basic.Label(this.tr("To procceed with the following actions, the service needs to be Stopped.")).set({
+          const instructions = new qx.ui.basic.Label(this.tr("To proceed with the following actions, the service needs to be Stopped.")).set({
             font: "text-13",
             rich: true,
             wrap: true
@@ -1218,17 +1204,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __attachEventHandlers: function() {
-      const maximizeIframeCb = msg => {
-        this.__maximizeIframe(msg.getData());
-      };
-
-      this.addListener("appear", () => {
-        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
-      }, this);
-
-      this.addListener("disappear", () => {
-        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
-      }, this);
+      const maximizeIframeCb = msg => this.setMaximized(msg.getData());
+      this.addListener("appear", () => qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this), this);
+      this.addListener("disappear", () => qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this), this);
     },
 
     __removeNode: function(nodeId) {
@@ -1319,7 +1297,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this, 10);
         return;
       }
-      this.__maximizeIframe(false);
+      this.setMaximized(false);
       this.nodeSelected(this.getStudy().getUuid());
     }
   }

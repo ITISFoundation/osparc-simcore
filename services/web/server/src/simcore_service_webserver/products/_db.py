@@ -1,13 +1,17 @@
 import logging
 from collections.abc import AsyncIterator
+from decimal import Decimal
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import NonNegativeDecimal
+from models_library.products import ProductName
 from pydantic import parse_obj_as
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
+    QUANTIZE_EXP_ARG,
     get_product_latest_credit_price_or_none,
 )
 
@@ -23,13 +27,49 @@ _logger = logging.getLogger(__name__)
 #
 
 # NOTE: This also asserts that all model fields are in sync with sqlalchemy columns
-_COLUMNS_IN_MODEL = [products.columns[f] for f in Product.__fields__]
+_PRODUCTS_COLUMNS = [
+    products.c.name,
+    products.c.display_name,
+    products.c.short_name,
+    products.c.host_regex,
+    products.c.support_email,
+    products.c.twilio_messaging_sid,
+    products.c.vendor,
+    products.c.issues,
+    products.c.manuals,
+    products.c.support,
+    products.c.login_settings,
+    products.c.registration_email_template,
+    products.c.max_open_studies_per_user,
+    products.c.group_id,
+]
+
+
+class PaymentFieldsTuple(NamedTuple):
+    enabled: bool
+    credits_per_usd: Decimal | None
+
+
+async def get_product_payment_fields(
+    conn: SAConnection, product_name: ProductName
+) -> PaymentFieldsTuple:
+    usd_per_credit = await get_product_latest_credit_price_or_none(
+        conn, product_name=product_name
+    )
+    if usd_per_credit is None or usd_per_credit == 0:
+        enabled = False
+        credits_per_usd = None
+    else:
+        enabled = True
+        credits_per_usd = Decimal(1 / usd_per_credit).quantize(QUANTIZE_EXP_ARG)
+
+    return PaymentFieldsTuple(enabled=enabled, credits_per_usd=credits_per_usd)
 
 
 async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     """Iterates on products sorted by priority i.e. the first is considered the default"""
     async for row in conn.execute(
-        sa.select(*_COLUMNS_IN_MODEL).order_by(products.c.priority)
+        sa.select(*_PRODUCTS_COLUMNS).order_by(products.c.priority)
     ):
         assert row  # nosec
         yield row
@@ -39,10 +79,21 @@ class ProductRepository(BaseRepository):
     async def get_product(self, product_name: str) -> Product | None:
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
-                sa.select(_COLUMNS_IN_MODEL).where(products.c.name == product_name)
+                sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
             )
             row: RowProxy | None = await result.first()
-            return Product.from_orm(row) if row else None
+            if row:
+                # NOTE: MD Observation: Currently we are not defensive, we assume automatically
+                # that the product is not billable when there is no product in the products_prices table
+                # or it's price is 0. We should change it and always assume that the product is billable, unless
+                # explicitely stated that it is free
+                payments = await get_product_payment_fields(conn, product_name=row.name)
+                return Product(
+                    **dict(row.items()),
+                    is_payment_enabled=payments.enabled,
+                    credits_per_usd=payments.credits_per_usd,
+                )
+            return None
 
     async def get_product_latest_credit_price_or_none(
         self, product_name: str

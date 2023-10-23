@@ -4,6 +4,7 @@ import re
 from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 from typing import Any, TypeAlias
 from uuid import UUID
 
@@ -15,6 +16,7 @@ from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
@@ -23,7 +25,15 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -372,6 +382,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
+    user_preferences_path: Path | None = None
     callbacks_mapping: CallbacksMapping = Field(default_factory=dict)
 
     dynamic_sidecar_network_name: str = Field(
@@ -416,6 +427,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     wallet_info: WalletInfo | None = Field(
         default=None,
         description="contains information about the wallet used to bill the running service",
+    )
+    pricing_info: PricingInfo | None = Field(
+        default=None,
+        description="contains pricing information so we know what is the cost of running of the service",
+    )
+    hardware_info: HardwareInfo | None = Field(
+        default=None,
+        description="contains harware information so we know on which hardware to run the service",
     )
 
     @property
@@ -470,14 +489,24 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "simcore_traefik_zone": names_helper.simcore_traefik_zone,
             "request_dns": request_dns,
             "request_scheme": request_scheme,
+            "user_preferences_path": simcore_service_labels.user_preferences_path,
             "proxy_service_name": names_helper.proxy_service_name,
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
             "wallet_info": service.wallet_info,
+            "pricing_info": service.pricing_info,
+            "hardware_info": service.hardware_info,
         }
         if run_id:
             obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)  # type: ignore[no-any-return]
+
+    @validator("user_preferences_path", pre=True)
+    @classmethod
+    def strip_path_serialization_to_none(cls, v):
+        if v == "None":
+            return None
+        return v
 
     @classmethod
     def from_service_inspect(

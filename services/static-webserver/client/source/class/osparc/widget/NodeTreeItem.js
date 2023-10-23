@@ -317,7 +317,9 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
       osparc.utils.Utils.setIdToWidget(label, "nodeTreeItem");
       label.set({
         allowGrowX: true,
-        allowShrinkX: true
+        allowShrinkX: true,
+        // override the one set in osparc-theme
+        paddingTop: 0
       });
       label.setLayoutProperties({
         flex: 1

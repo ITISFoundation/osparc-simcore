@@ -22,6 +22,7 @@
 
 qx.Class.define("osparc.auth.LoginPage", {
   extend: qx.ui.core.Widget,
+  type: "abstract",
 
   /*
   *****************************************************************************
@@ -39,75 +40,170 @@ qx.Class.define("osparc.auth.LoginPage", {
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "main-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignX: "center",
+            alignY: "middle"
+          });
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(control);
+          break;
+        }
+        case "top-spacer":
+          control = new qx.ui.core.Spacer();
+          this.getChildControl("main-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "logo-w-platform":
+          control = new osparc.ui.basic.LogoWPlatform();
+          control.setSize({
+            width: 300,
+            height: 120
+          });
+          control.setFont("text-18");
+          this.getChildControl("main-layout").add(control);
+          break;
+        case "pages-stack":
+          control = new qx.ui.container.Stack().set({
+            allowGrowX: false,
+            allowGrowY: false,
+            alignX: "center"
+          });
+          this.getChildControl("main-layout").add(control);
+          break;
+        case "bottom-spacer":
+          control = new qx.ui.core.Spacer();
+          this.getChildControl("main-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "footer": {
+          control = this.__getVersionLink();
+          this.getChildControl("main-layout").add(control);
+          break;
+        }
+        case "login-view": {
+          control = new osparc.auth.ui.LoginView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "registration-view": {
+          control = new osparc.auth.ui.RegistrationView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "request-account": {
+          control = new osparc.auth.ui.RequestAccount();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "verify-phone-number-view": {
+          control = new osparc.auth.ui.VerifyPhoneNumberView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "reset-password-request-view": {
+          control = new osparc.auth.ui.ResetPassRequestView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "reset-password-view": {
+          control = new osparc.auth.ui.ResetPassView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+        case "login-2FA-validation-code-view": {
+          control = new osparc.auth.ui.Login2FAValidationCodeView();
+          this.getChildControl("pages-stack").add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     _buildLayout: function() {
-      // Layout guarantees it gets centered in parent's page
-      const layout = new qx.ui.layout.Grid(20, 20);
-      layout.setRowFlex(1, 1);
-      layout.setColumnFlex(0, 1);
-      this._setLayout(layout);
+      throw new Error("Abstract method called!");
+    },
 
-      const image = this._getLogoWPlatform();
-      this._add(image, {
-        row: 0,
-        column: 0
-      });
-
-      const pages = this._getLoginStack();
-      this._add(pages, {
-        row: 1,
-        column: 0
-      });
-
-      const versionLink = this._getVersionLink();
-      this._add(versionLink, {
-        row: 2,
-        column: 0
+    _setBackgroundImage: function(backgroundImage) {
+      this.getContentElement().setStyles({
+        "background-image": backgroundImage,
+        "background-repeat": "no-repeat",
+        "background-size": "auto 85%", // auto width, 85% height
+        "background-position": "0% 100%" // left bottom
       });
     },
 
-    _getLogoWPlatform: function() {
-      const image = new osparc.ui.basic.LogoWPlatform();
-      image.setSize({
-        width: 240,
-        height: 120
+    _resetBackgroundImage: function() {
+      this.getContentElement().setStyles({
+        "background-image": ""
       });
-      image.setFont("text-18");
-      return image;
     },
 
-    _getLoginStack: function() {
-      const pages = new qx.ui.container.Stack().set({
-        allowGrowX: false,
-        allowGrowY: false,
-        alignX: "center"
+    _getMainLayout: function() {
+      const mainLayout = this.getChildControl("main-layout");
+      this.getChildControl("top-spacer");
+      this.getChildControl("logo-w-platform");
+      this.__getLoginStack();
+      this.getChildControl("bottom-spacer");
+      this.getChildControl("footer");
+      return mainLayout;
+    },
+
+    __getLoginStack: function() {
+      const pages = this.getChildControl("pages-stack");
+
+      const login = this.getChildControl("login-view");
+      const registration = this.getChildControl("registration-view");
+      const config = osparc.store.Store.getInstance().get("config");
+      let requestAccount = null;
+      if (config["invitation_required"] &&
+        (
+          osparc.product.Utils.isProduct("s4l") ||
+          osparc.product.Utils.isProduct("s4lacad") ||
+          osparc.product.Utils.isProduct("s4ldesktop") ||
+          osparc.product.Utils.isProduct("s4ldektopacad")
+        )
+      ) {
+        requestAccount = this.getChildControl("request-account");
+      }
+      const verifyPhoneNumber = this.getChildControl("verify-phone-number-view");
+      const resetPasswordRequest = this.getChildControl("reset-password-request-view");
+      const resetPassword = this.getChildControl("reset-password-view");
+      const login2FAValidationCode = this.getChildControl("login-2FA-validation-code-view");
+
+      // styling
+      pages.getChildren().forEach(page => {
+        page.getChildren().forEach(child => {
+          if ("getChildren" in child) {
+            child.getChildren().forEach(c => {
+              // "Create account" and "Forgot password"
+              c.set({
+                textColor: "#ddd"
+              });
+            });
+          }
+        });
       });
-
-      const login = new osparc.auth.ui.LoginView();
-      const register = new osparc.auth.ui.RegistrationView();
-      const verifyPhoneNumber = new osparc.auth.ui.VerifyPhoneNumberView();
-      const resetRequest = new osparc.auth.ui.ResetPassRequestView();
-      const reset = new osparc.auth.ui.ResetPassView();
-      const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
-
-      pages.add(login);
-      pages.add(register);
-      pages.add(verifyPhoneNumber);
-      pages.add(resetRequest);
-      pages.add(reset);
-      pages.add(login2FAValidationCode);
 
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
       if (page === "reset-password" && code !== null) {
-        pages.setSelection([reset]);
+        pages.setSelection([resetPassword]);
       }
 
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
         if (urlFragment.nav[0] === "registration") {
-          pages.setSelection([register]);
+          pages.setSelection([registration]);
+        } else if (urlFragment.nav[0] === "request-account" && requestAccount) {
+          pages.setSelection([requestAccount]);
         } else if (urlFragment.nav[0] === "reset-password") {
-          pages.setSelection([reset]);
+          pages.setSelection([resetPassword]);
         }
       } else if (urlFragment.params && urlFragment.params.registered) {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
@@ -119,13 +215,20 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       }, this);
 
-      login.addListener("toReset", e => {
-        pages.setSelection([resetRequest]);
+      login.addListener("toRegister", () => {
+        pages.setSelection([registration]);
         login.resetValues();
       }, this);
 
-      login.addListener("toRegister", e => {
-        pages.setSelection([register]);
+      if (requestAccount) {
+        login.addListener("toRequestAccount", () => {
+          pages.setSelection([requestAccount]);
+          login.resetValues();
+        }, this);
+      }
+
+      login.addListener("toReset", () => {
+        pages.setSelection([resetPasswordRequest]);
         login.resetValues();
       }, this);
 
@@ -162,17 +265,24 @@ qx.Class.define("osparc.auth.LoginPage", {
         this.fireDataEvent("done", msg);
       }, this);
 
-      register.addListener("done", msg => {
+      registration.addListener("done", msg => {
         osparc.utils.Utils.cookie.deleteCookie("user");
         this.fireDataEvent("done", msg);
       });
+
+      if (requestAccount) {
+        requestAccount.addListener("done", msg => {
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          this.fireDataEvent("done", msg);
+        });
+      }
 
       verifyPhoneNumber.addListener("done", msg => {
         login.resetValues();
         this.fireDataEvent("done", msg);
       }, this);
 
-      [resetRequest, reset].forEach(srcPage => {
+      [resetPasswordRequest, resetPassword].forEach(srcPage => {
         srcPage.addListener("done", msg => {
           pages.setSelection([login]);
           srcPage.resetValues();
@@ -182,7 +292,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       return pages;
     },
 
-    _getVersionLink: function() {
+    __getVersionLink: function() {
       const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
@@ -197,47 +307,39 @@ qx.Class.define("osparc.auth.LoginPage", {
         textColor: "text-darker"
       });
       const staticInfo = osparc.store.StaticInfo.getInstance();
-      staticInfo.getReleaseData()
-        .then(rData => {
-          if (rData) {
-            const releaseDate = rData["date"];
-            const releaseTag = rData["tag"];
-            const releaseUrl = rData["url"];
-            if (releaseDate && releaseTag && releaseUrl) {
-              const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
-              versionLink.set({
-                value: date + " (" + releaseTag + ")&nbsp",
-                url: releaseUrl
-              });
-            }
-          } else {
-            // fallback to old style
-            const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-            versionLink.setUrl(platformVersion.url);
-            let text = platformVersion.name + " " + platformVersion.version;
-            staticInfo.getPlatformName()
-              .then(platformName => {
-                text += platformName.length ? ` (${platformName})` : " (production)";
-              })
-              .finally(() => {
-                versionLink.setValue(text);
-              });
-          }
-        });
+      const rData = staticInfo.getReleaseData();
+      if (rData) {
+        const releaseDate = rData["date"];
+        const releaseTag = rData["tag"];
+        const releaseUrl = rData["url"];
+        if (releaseDate && releaseTag && releaseUrl) {
+          const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
+          versionLink.set({
+            value: date + " (" + releaseTag + ")&nbsp",
+            url: releaseUrl
+          });
+        }
+      } else {
+        // fallback to old style
+        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+        versionLink.setUrl(platformVersion.url);
+        let text = platformVersion.name + " " + platformVersion.version;
+        const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+        text += platformName.length ? ` (${platformName})` : " (production)";
+        versionLink.setValue(text);
+      }
       versionLinkLayout.add(versionLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      osparc.store.VendorInfo.getInstance().getVendor()
-        .then(vendor => {
-          if (vendor) {
-            organizationLink.set({
-              value: vendor.copyright,
-              url: vendor.url
-            });
-          }
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor) {
+        organizationLink.set({
+          value: vendor.copyright,
+          url: vendor.url
         });
+      }
       versionLinkLayout.add(organizationLink);
 
       versionLinkLayout.add(new qx.ui.core.Spacer(), {

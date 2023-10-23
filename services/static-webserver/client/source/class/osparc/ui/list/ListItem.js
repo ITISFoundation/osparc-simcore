@@ -48,7 +48,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(8, 5);
+    const layout = new qx.ui.layout.Grid(8, 1);
     layout.setColumnWidth(0, 32);
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
@@ -182,11 +182,13 @@ qx.Class.define("osparc.ui.list.ListItem", {
           break;
         case "contact":
           control = new qx.ui.basic.Label().set({
-            font: "text-13"
+            font: "text-13",
+            alignY: "middle"
           });
           this._add(control, {
-            row: 1,
-            column: 2
+            row: 0,
+            column: 2,
+            rowSpan: 2
           });
           break;
       }

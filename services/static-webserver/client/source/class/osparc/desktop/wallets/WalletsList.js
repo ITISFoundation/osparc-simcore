@@ -33,13 +33,10 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     this._add(intro);
 
     this._add(this.__getWalletsFilter());
+    this._add(osparc.data.Roles.createRolesWalletInfo());
     this._add(this.__getWalletsList(), {
       flex: 1
     });
-
-    const newWalletButton = this.__getCreateWalletSection();
-    newWalletButton.setVisibility(osparc.data.Permissions.getInstance().canDo("user.wallets.create") ? "visible" : "excluded");
-    this._add(newWalletButton);
 
     this.loadWallets();
   },
@@ -58,39 +55,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     }
   },
 
-  statics: {
-    sortWallets: function(a, b) {
-      const aPreferredWallet = a.isPreferredWallet();
-      const bPreferredWallet = b.isPreferredWallet();
-      if (aPreferredWallet) {
-        return -1;
-      } else if (bPreferredWallet) {
-        return 1;
-      }
-      const aAccessRights = a.getAccessRights();
-      const bAccessRights = b.getAccessRights();
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (
-        aAccessRights &&
-        bAccessRights &&
-        aAccessRights.find(ar => ar["gid"] === myGid) &&
-        bAccessRights.find(ar => ar["gid"] === myGid)
-      ) {
-        const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
-        const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
-        const sorted = osparc.share.Collaborators.sortByAccessRights(aAr, bAr);
-        if (sorted !== 0) {
-          return sorted;
-        }
-        if (("getName" in a) && ("getName" in b)) {
-          return a.getName().localeCompare(b.getName());
-        }
-        return 0;
-      }
-      return 0;
-    }
-  },
-
   members: {
     __walletsUIList: null,
     __walletsModel: null,
@@ -103,25 +67,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
       return wallet;
-    },
-
-    __getCreateWalletSection: function() {
-      const createWalletBtn = new qx.ui.form.Button().set({
-        appearance: "strong-button",
-        label: this.tr("New Wallet"),
-        alignX: "center",
-        icon: "@FontAwesome5Solid/plus/14",
-        allowGrowX: false
-      });
-      createWalletBtn.addListener("execute", function() {
-        const newWallet = true;
-        const walletEditor = new osparc.desktop.wallets.WalletEditor(newWallet);
-        const title = this.tr("Credit Account Details Editor");
-        const win = osparc.ui.window.Window.popUpInWindow(walletEditor, title, 400, 250);
-        walletEditor.addListener("createWallet", () => this.__createWallet(win, walletEditor.getChildControl("create"), walletEditor));
-        walletEditor.addListener("cancel", () => win.close());
-      }, this);
-      return createWalletBtn;
     },
 
     __getWalletsFilter: function() {
@@ -159,8 +104,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
-          const thumbanil = item.getChildControl("thumbnail");
-          thumbanil.getContentElement().setStyles({
+          const thumbnail = item.getChildControl("thumbnail");
+          thumbnail.getContentElement().setStyles({
             "border-radius": "16px"
           });
 
@@ -171,7 +116,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
               walletId
             } = e.getData();
             const preferencesSettings = osparc.Preferences.getInstance();
-            preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
             preferencesSettings.requestChangePreferredWalletId(parseInt(walletId));
           });
         }
@@ -191,12 +135,11 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     },
 
     loadWallets: function() {
-      this.__walletsUIList.resetSelection();
+      // this.__walletsUIList.resetSelection();
       const walletsModel = this.__walletsModel;
       walletsModel.removeAll();
 
       const store = osparc.store.Store.getInstance();
-      store.getWallets().sort(this.self().sortWallets);
       store.getWallets().forEach(wallet => walletsModel.append(wallet));
       this.setWalletsLoaded(true);
     },
@@ -207,8 +150,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         return;
       }
 
-      const newWallet = false;
-      const walletEditor = new osparc.desktop.wallets.WalletEditor(newWallet);
+      const walletEditor = new osparc.desktop.wallets.WalletEditor();
       wallet.bind("walletId", walletEditor, "walletId");
       wallet.bind("name", walletEditor, "name");
       wallet.bind("description", walletEditor, "description");
@@ -219,38 +161,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       const win = osparc.ui.window.Window.popUpInWindow(walletEditor, title, 400, 250);
       walletEditor.addListener("updateWallet", () => this.__updateWallet(win, walletEditor.getChildControl("save"), walletEditor));
       walletEditor.addListener("cancel", () => win.close());
-    },
-
-    __createWallet: function(win, button, walletEditor) {
-      button.setFetching(true);
-
-      const name = walletEditor.getName();
-      const description = walletEditor.getDescription();
-      const thumbnail = walletEditor.getThumbnail();
-
-      const params = {
-        data: {
-          "name": name,
-          "description": description || null,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("wallets", "post", params)
-        .then(() => {
-          const store = osparc.store.Store.getInstance();
-          osparc.store.Store.getInstance().invalidate("wallets");
-          store.reloadWallets()
-            .then(() => this.loadWallets());
-        })
-        .catch(err => {
-          console.error(err);
-          const msg = err.message || this.tr("Something went wrong creating the Wallet");
-          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        })
-        .finally(() => {
-          button.setFetching(false);
-          win.close();
-        });
     },
 
     __updateWallet: function(win, button, walletEditor) {
@@ -276,13 +186,13 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         };
         osparc.data.Resources.fetch("wallets", "put", params)
           .then(() => {
-            osparc.store.Store.getInstance().invalidate("wallets");
-            store.reloadWallets()
-              .then(() => this.loadWallets());
+            osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+            const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
+            wallet.set(params.data);
           })
           .catch(err => {
             console.error(err);
-            const msg = err.message || this.tr("Something went wrong updating the Wallet");
+            const msg = err.message || this.tr("Something went wrong updating the Credit Account");
             osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           })
           .finally(() => {

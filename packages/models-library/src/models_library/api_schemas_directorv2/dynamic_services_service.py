@@ -4,11 +4,10 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
-from ..basic_regex import VERSION_RE
 from ..basic_types import PortInt
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
-from ..services import DynamicServiceKey
+from ..services import DynamicServiceKey, ServiceVersion
 from ..services_enums import ServiceBootType, ServiceState
 from ..users import UserID
 
@@ -22,10 +21,9 @@ class CommonServiceDetails(BaseModel):
         ],
         alias="service_key",
     )
-    version: str = Field(
+    version: ServiceVersion = Field(
         ...,
         description="semantic version number of the node",
-        regex=VERSION_RE,
         examples=["1.0.0", "0.0.1"],
         alias="service_version",
     )

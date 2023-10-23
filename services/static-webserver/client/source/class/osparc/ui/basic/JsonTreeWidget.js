@@ -39,7 +39,8 @@ qx.Class.define("osparc.ui.basic.JsonTreeWidget", {
     const prettyJson = JSON.stringify(data, null, "&emsp;").replace(/\n/ig, "<br>");
     this.base(arguments, prettyJson);
     this.set({
-      rich: true
+      rich: true,
+      selectable: true
     });
   }
 });

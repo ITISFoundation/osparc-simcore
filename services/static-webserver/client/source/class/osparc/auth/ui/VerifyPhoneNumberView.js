@@ -11,7 +11,7 @@
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaz)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
@@ -59,11 +59,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     _buildPage: function() {
       this.__buildVerificationLayout();
       const validationLayout = this.__createValidationLayout().set({
-        zIndex: 1 // the contries list that goes on top has a z-index of 2
+        zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       this.add(validationLayout);
       const sendViaEmailBtn = this.__createSendViaEmailButton().set({
-        zIndex: 1 // the contries list that goes on top has a z-index of 2
+        zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       this.add(sendViaEmailBtn);
       this.__attachHandlers();
@@ -98,7 +98,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
         appearance: "strong-button",
         center: true,
-        maxHeight: 23,
         minWidth: 80
       });
       phoneNumberVerifyLayout.add(verifyPhoneNumberBtn);
@@ -129,8 +128,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const txt = this.tr("Skip phone registration and send code via email");
       const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.LinkButton(txt).set({
         iconPosition: "left",
-        zIndex: 1, // the contries list that goes on top has a z-index of 2
-        appearance: "link-button"
+        zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       return sendViaEmail;
     },

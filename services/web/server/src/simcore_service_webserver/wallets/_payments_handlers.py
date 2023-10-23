@@ -3,10 +3,12 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
+    GetWalletAutoRecharge,
     PaymentID,
     PaymentMethodGet,
     PaymentMethodInit,
     PaymentTransaction,
+    ReplaceWalletAutoRecharge,
     WalletPaymentCreated,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -24,12 +26,14 @@ from ..login.decorators import login_required
 from ..payments import api
 from ..payments.api import (
     cancel_creation_of_wallet_payment_method,
-    create_payment_to_wallet,
     delete_wallet_payment_method,
-    get_user_payments_page,
+    get_wallet_payment_autorecharge,
     get_wallet_payment_method,
+    init_creation_of_wallet_payment,
     init_creation_of_wallet_payment_method,
+    list_user_payments_page,
     list_wallet_payment_methods,
+    replace_wallet_payment_autorecharge,
 )
 from ..products.api import get_current_product_credit_price
 from ..security.decorators import permission_required
@@ -72,7 +76,7 @@ async def create_payment(request: web.Request):
             # '0 or None' should raise
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-        payment: WalletPaymentCreated = await create_payment_to_wallet(
+        payment: WalletPaymentCreated = await init_creation_of_wallet_payment(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -100,7 +104,7 @@ async def list_all_payments(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
 
-    payments, total_number_of_items = await get_user_payments_page(
+    payments, total_number_of_items = await list_user_payments_page(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -280,3 +284,49 @@ async def delete_payment_method(request: web.Request):
         product_name=req_ctx.product_name,
     )
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+#
+# payment-autorecharge
+
+
+@routes.get(
+    f"/{VTAG}/wallets/{{wallet_id}}/auto-recharge",
+    name="get_wallet_autorecharge",
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def get_wallet_autorecharge(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(WalletsPathParams, request)
+
+    auto_recharge = await get_wallet_payment_autorecharge(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+    )
+    return envelope_json_response(GetWalletAutoRecharge.parse_obj(auto_recharge))
+
+
+@routes.put(
+    f"/{VTAG}/wallets/{{wallet_id}}/auto-recharge",
+    name="replace_wallet_autorecharge",
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def update_wallet_autorecharge(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(WalletsPathParams, request)
+    body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)
+
+    udpated = await replace_wallet_payment_autorecharge(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        new=body_params,
+    )
+    return envelope_json_response(GetWalletAutoRecharge.parse_obj(udpated))

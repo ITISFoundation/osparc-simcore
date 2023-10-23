@@ -34,6 +34,7 @@ openapi_modules = [
         "_projects_crud",
         "_projects_metadata",
         "_projects_nodes",
+        "_project_nodes_pricing_unit",
         "_projects_ports",
         "_projects_states",
         "_projects_tags",

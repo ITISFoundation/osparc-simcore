@@ -196,14 +196,13 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "ANNOTATION_NOTE":
           this.__openStudyDetails(resourceId, notification);
           break;
-        case "WALLET_SHARED":
-          osparc.desktop.credits.Utils.areWalletsEnabled()
-            .then(walletsEnabled => {
-              if (walletsEnabled) {
-                this.__openWalletDetails(parseInt(resourceId));
-              }
-            });
+        case "WALLET_SHARED": {
+          const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+          if (walletsEnabled) {
+            this.__openWalletDetails(parseInt(resourceId));
+          }
           break;
+        }
       }
     },
 
@@ -247,7 +246,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
     __openWalletDetails: function(walletId) {
       const wallet = osparc.desktop.credits.Utils.getWallet(walletId);
       if (wallet) {
-        const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(true);
+        const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow();
         if (userCenterWindow.openWallets()) {
           const msg = this.tr("Do you want to make it the default Credit Account?");
           const win = new osparc.ui.window.Confirmation(msg).set({

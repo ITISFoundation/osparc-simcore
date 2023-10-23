@@ -434,6 +434,8 @@ typing-extensions==4.7.1
     #   pydantic
     #   typer
     #   uvicorn
+u-msgpack-python==2.8.0
+    # via -r requirements/_base.in
 uvicorn==0.23.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in

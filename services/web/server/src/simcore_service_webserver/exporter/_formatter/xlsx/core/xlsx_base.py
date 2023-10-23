@@ -1,6 +1,7 @@
 import inspect
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, ClassVar
 
 from openpyxl import Workbook
 from openpyxl.cell import Cell
@@ -140,16 +141,17 @@ class BaseXLSXSheet:
     name: str | None = None
     # cell style contents, using a list of tuples instead of dict
     # to allow for "duplicate keys"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] | None = None
+    cell_styles: ClassVar[list[tuple[str, BaseXLSXCellData]] | None] = None
 
     # used to merge cells via ranges like A1:B2
-    cell_merge: set[str] = set()
+    cell_merge: ClassVar[set[str]] = set()
     # specify each column's length liek {"B": 10}
-    column_dimensions: dict[str, int] = {}
+    column_dimensions: ClassVar[dict[str, int]] = {}
 
     def _check_attribute(self, attribute_name: str):
         if getattr(self, attribute_name) is None:
-            raise ValueError(f"'{attribute_name}' attribute is None, please define it")
+            msg = f"'{attribute_name}' attribute is None, please define it"
+            raise ValueError(msg)
 
     def __init__(self):
         self._check_attribute("cell_styles")
@@ -158,14 +160,17 @@ class BaseXLSXSheet:
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name}, cell_styles={self.cell_styles}"
 
+    # pylint: disable=no-self-use
+    # pylint: disable=unused-argument
     def assemble_data_for_template(
         self, template_data: BaseModel
     ) -> list[tuple[str, BaseXLSXCellData]]:
         """
         Expected to be implemented by the user.
-        Used to polpulate the sheet before applying the
+        Used to populate the sheet before applying the
         static part of the template.
         """
+        return []
 
 
 def _update_cell(cell: Cell, data: BaseXLSXCellData) -> None:
@@ -207,9 +212,10 @@ def _parse_multiple_cell_ranges(
 class BaseXLSXDocument:
     def _check_attribute(self, attribute_name: str):
         if getattr(self, attribute_name) is None:
-            raise ValueError(f"'{attribute_name}' attribute is None, please define it")
+            msg = f"'{attribute_name}' attribute is None, please define it"
+            raise ValueError(msg)
 
-    def __init__(self, *args, file_name: str | Path = None):
+    def __init__(self, *args, file_name: str | Path | None = None):
         for k, entry in enumerate(args):
             self.__dict__[f"__sheet__entry__{k}"] = entry
         self.file_name = (

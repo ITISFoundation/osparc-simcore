@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 
 import aiopg.sa
 import aiopg.sa.exc
@@ -69,8 +69,7 @@ def make_engine(
     dsn = postgres_service
 
     def _make(is_async=True) -> Awaitable[Engine] | sa.engine.base.Engine:
-        engine = aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
-        return engine
+        return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
 
     return _make
 

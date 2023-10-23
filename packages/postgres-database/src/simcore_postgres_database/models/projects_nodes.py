@@ -19,6 +19,14 @@ projects_nodes = sa.Table(
     "projects_nodes",
     metadata,
     sa.Column(
+        "project_node_id",
+        sa.Integer,
+        nullable=False,
+        autoincrement=True,
+        primary_key=True,
+        doc="Project node index",
+    ),
+    sa.Column(
         "project_uuid",
         sa.String,
         sa.ForeignKey(
@@ -28,14 +36,14 @@ projects_nodes = sa.Table(
             name="fk_projects_to_projects_nodes_to_projects_uuid",
         ),
         nullable=False,
-        primary_key=False,
+        index=True,
         doc="The project unique identifier",
     ),
     sa.Column(
         "node_id",
         sa.String,
         nullable=False,
-        primary_key=False,
+        index=True,
         doc="The node unique identifier",
     ),
     sa.Column(
@@ -48,7 +56,7 @@ projects_nodes = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.PrimaryKeyConstraint("project_uuid", "node_id"),
+    sa.UniqueConstraint("project_uuid", "node_id"),
 )
 
 

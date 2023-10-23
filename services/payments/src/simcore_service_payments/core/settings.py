@@ -12,7 +12,9 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -79,7 +81,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         ..., description="Base url to the payment gateway"
     )
 
-    PAYMENTS_GATEWAY_API_KEY: SecretStr
+    PAYMENTS_GATEWAY_API_KEY: SecretStr | None = None
     PAYMENTS_GATEWAY_API_SECRET: SecretStr
 
     PAYMENTS_USERNAME: str = Field(
@@ -102,4 +104,16 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
+
+    PAYMENTS_POSTGRES: PostgresSettings = Field(
+        auto_default_from_env=True, description="settings for postgres service"
+    )
+
+    PAYMENTS_SWAGGER_API_DOC_ENABLED: bool = Field(
+        default=True, description="If true, it displays swagger doc at /doc"
+    )
+
+    PAYMENTS_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
+        auto_default_from_env=True, description="settings for RUT service"
     )

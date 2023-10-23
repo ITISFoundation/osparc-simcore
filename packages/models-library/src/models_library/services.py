@@ -494,6 +494,11 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         regex=VERSION_RE,
         examples=["1.0.0"],
     )
+    progress_regexp: str | None = Field(
+        None,
+        alias="progress_regexp",
+        description="regexp pattern for detecting computational service's progress",
+    )
     service_type: ServiceType = Field(
         ...,
         alias="type",
@@ -542,6 +547,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                     "key": "simcore/services/comp/osparc-python-runner",
                     "type": "computational",
                     "integration-version": "1.0.0",
+                    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
                     "version": "1.7.0",
                     "description": "oSparc Python Runner",
                     "contact": "smith@company.com",
@@ -581,6 +587,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                     "key": "simcore/services/comp/osparc-python-runner",
                     "type": "computational",
                     "integration-version": "1.0.0",
+                    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
                     "version": "1.7.0",
                     "description": "oSparc Python Runner with boot options",
                     "contact": "smith@company.com",
