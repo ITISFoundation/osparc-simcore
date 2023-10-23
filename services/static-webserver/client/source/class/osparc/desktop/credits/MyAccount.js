@@ -50,7 +50,8 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
-        maxWidth: 150
+        maxWidth: 150,
+        paddingRight: 10
       });
 
       const authData = osparc.auth.Data.getInstance();
