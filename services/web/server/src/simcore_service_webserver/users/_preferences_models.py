@@ -1,9 +1,13 @@
+from typing import Final
+
 from models_library.user_preferences import (
     FrontendUserPreference,
     PreferenceIdentifier,
     PreferenceName,
 )
-from pydantic import Field
+from pydantic import Field, NonNegativeInt
+
+_MINUTE: Final[NonNegativeInt] = 60
 
 
 class ConfirmationBackToDashboardFrontendUserPreference(FrontendUserPreference):
@@ -63,7 +67,7 @@ class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
 
 class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "userInactivityThreshold"
-    value: int | None = 45 * 3600  # in seconds
+    value: int | None = 30 * _MINUTE  # in seconds
 
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
