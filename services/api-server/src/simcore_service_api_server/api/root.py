@@ -16,7 +16,7 @@ from .routes import (
     wallets,
 )
 
-_solvers_prefix: Final[str] = "/solvers"
+_SOLVERS_PREFIX: Final[str] = "/solvers"
 
 
 def create_router(settings: ApplicationSettings):
@@ -30,10 +30,10 @@ def create_router(settings: ApplicationSettings):
     router.include_router(meta.router, tags=["meta"], prefix="/meta")
     router.include_router(users.router, tags=["users"], prefix="/me")
     router.include_router(files.router, tags=["files"], prefix="/files")
-    router.include_router(solvers.router, tags=["solvers"], prefix=_solvers_prefix)
-    router.include_router(solvers_jobs.router, tags=["solvers"], prefix=_solvers_prefix)
+    router.include_router(solvers.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
+    router.include_router(solvers_jobs.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(
-        solvers_jobs_getters.router, tags=["solvers"], prefix=_solvers_prefix
+        solvers_jobs_getters.router, tags=["solvers"], prefix=_SOLVERS_PREFIX
     )
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
