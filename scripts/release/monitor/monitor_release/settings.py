@@ -67,7 +67,7 @@ def get_settings(env_file, deployment):
             portainer_password=portainer_password,
             starts_with="production-simcore_production",
             swarm_stack_name="production-simcore",
-            portainer_endpoint_version=1,
+            portainer_endpoint_version=2,
         )
     if deployment == "aws-staging":
         portainer_url = os.getenv("AWS_STAGING_PORTAINER_URL")

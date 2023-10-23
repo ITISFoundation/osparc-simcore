@@ -2,7 +2,7 @@ import datetime
 import logging
 from abc import abstractmethod
 from decimal import Decimal
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
@@ -267,3 +267,29 @@ class WalletCreditsMessage(RabbitMessageBase):
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}"
+
+
+class CreditsLimit(IntEnum):
+    MIN_CREDITS = 0
+
+
+class WalletCreditsLimitReachedMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.wallets-credit-limit-reached"] = Field(
+        default="io.simcore.service.wallets-credit-limit-reached", const=True
+    )
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+    service_run_id: str = Field(
+        ..., description="uniquely identitifies the service run"
+    )
+    user_id: UserID
+    project_id: ProjectID
+    node_id: NodeID
+    wallet_id: WalletID
+    credits: Decimal
+    credits_limit: CreditsLimit
+
+    def routing_key(self) -> str | None:
+        return f"{self.wallet_id}.{self.credits_limit}"

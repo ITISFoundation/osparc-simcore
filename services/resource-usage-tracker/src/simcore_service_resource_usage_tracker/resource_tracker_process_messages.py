@@ -6,6 +6,7 @@ from decimal import Decimal
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.rabbitmq_messages import (
+    CreditsLimit,
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
     RabbitResourceTrackingMessageType,
@@ -36,6 +37,7 @@ from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
 from .resource_tracker_utils import (
     make_negative,
+    publish_to_rabbitmq_wallet_credits_limit_reached,
     sum_credit_transactions_and_publish_to_rabbitmq,
 )
 
@@ -87,7 +89,7 @@ async def _process_start_event(
         user_id=msg.user_id,
         user_email=msg.user_email,
         project_id=msg.project_id,
-        project_name=msg.product_name,
+        project_name=msg.project_name,
         node_id=msg.node_id,
         node_name=msg.node_name,
         service_key=msg.service_key,
@@ -160,12 +162,21 @@ async def _process_heartbeat_event(
             update_credit_transaction
         )
         # Publish wallet total credits to RabbitMQ
-        await sum_credit_transactions_and_publish_to_rabbitmq(
+        wallet_total_credits = await sum_credit_transactions_and_publish_to_rabbitmq(
             resource_tracker_repo,
             rabbitmq_client,
             running_service.product_name,
             running_service.wallet_id,
         )
+        if wallet_total_credits.available_osparc_credits < CreditsLimit.MIN_CREDITS:
+            await publish_to_rabbitmq_wallet_credits_limit_reached(
+                resource_tracker_repo,
+                rabbitmq_client,
+                product_name=running_service.product_name,
+                wallet_id=running_service.wallet_id,
+                credits_=wallet_total_credits.available_osparc_credits,
+                credits_limit=CreditsLimit.MIN_CREDITS,
+            )
 
 
 async def _process_stop_event(
