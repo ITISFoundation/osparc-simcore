@@ -21,6 +21,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
+from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (
@@ -89,6 +90,13 @@ def wait_for_postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> No
     )
     """
     assert postgres_db
+
+
+@pytest.fixture
+def payments_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    with postgres_db.connect() as con:
+        yield
+        con.execute(payments_transactions.delete())
 
 
 @pytest.fixture

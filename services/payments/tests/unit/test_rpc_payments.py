@@ -72,6 +72,7 @@ async def test_rpc_init_payment_fail(
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     init_payment_kwargs: dict[str, Any],
+    payments_clean_db: None,
 ):
     assert app
     rpc_client = await rabbitmq_rpc_client("web-server-client")
@@ -94,6 +95,7 @@ async def test_webserver_one_time_payment_workflow(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
+    payments_clean_db: None,
 ):
     assert app
 
@@ -116,6 +118,7 @@ async def test_webserver_one_time_payment_workflow(
         payment_id=result.payment_id,
         user_id=init_payment_kwargs["user_id"],
         wallet_id=init_payment_kwargs["wallet_id"],
+        timeout_s=20,  # for tests
     )
 
     assert result is None
@@ -129,6 +132,7 @@ async def test_cancel_invalid_payment_id(
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
     faker: Faker,
+    payments_clean_db: None,
 ):
     invalid_payment_id = faker.uuid4()
 
@@ -141,6 +145,7 @@ async def test_cancel_invalid_payment_id(
             payment_id=invalid_payment_id,
             user_id=init_payment_kwargs["user_id"],
             wallet_id=init_payment_kwargs["wallet_id"],
+            timeout_s=20,  # for tests
         )
     error = exc_info.value
 
