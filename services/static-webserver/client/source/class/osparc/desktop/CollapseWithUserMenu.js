@@ -70,9 +70,6 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control = new osparc.navigation.UserMenuButton().set({
             backgroundColor: "background-main-4"
           });
-          control.getContentElement().setStyles({
-            "border-radius": "0px"
-          });
           osparc.WatchDog.getInstance().bind("online", control, "backgroundColor", {
             converter: on => on ? "background-main-4" : "red"
           });
