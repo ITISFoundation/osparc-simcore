@@ -21,7 +21,7 @@ _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
 
 
 @functools.lru_cache
-def docker_compose_yml_base64_encoded() -> str:
+def _docker_compose_yml_base64_encoded() -> str:
     file_path = PACKAGE_DATA_FOLDER / _DOCKER_COMPOSE_FILE_NAME
     assert file_path.exists()  # nosec
     with file_path.open("rb") as f:
@@ -57,7 +57,7 @@ def create_startup_script(
 
     return "\n".join(
         [
-            f"echo '{docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
+            f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
             "docker swarm init",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
         ]
