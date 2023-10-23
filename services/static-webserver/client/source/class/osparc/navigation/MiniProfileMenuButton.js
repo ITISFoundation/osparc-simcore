@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.navigation.MiniProfile", {
+qx.Class.define("osparc.navigation.MiniProfileMenuButton", {
   extend: qx.ui.menu.Button,
 
   construct: function() {
@@ -23,12 +23,5 @@ qx.Class.define("osparc.navigation.MiniProfile", {
 
     this._setLayout(new qx.ui.layout.VBox());
     this._add(osparc.desktop.credits.MyAccount.createMiniProfileView());
-  },
-
-  members: {
-    // override
-    _onPointerOver: function() {
-      return;
-    }
   }
 });

@@ -154,7 +154,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
       osparc.utils.Utils.prettifyMenu(this);
 
-      this.addAt(new osparc.navigation.MiniProfile(), 0);
+      this.addAt(new osparc.navigation.MiniProfileMenuButton(), 0);
     },
 
     populateMenuCompact: function() {
