@@ -110,7 +110,7 @@ async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
 @pytest.fixture
 def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
     """
-    If external_secret_envs is present, then this mock is not really used
+    If external_environment is present, then this mock is not really used
     and instead the test runs against some real services
     """
     settings: ApplicationSettings = app.state.settings
@@ -155,8 +155,22 @@ def mock_payments_routes(faker: Faker) -> Callable:
     return _mock
 
 
+def pytest_addoption(parser: pytest.Parser):
+    group = parser.getgroup(
+        "external_environment",
+        description="Replaces mocked services with real ones by passing actual environs and connecting directly to external services",
+    )
+    group.addoption(
+        "--external-envfile",
+        action="store",
+        type=Path,
+        default=None,
+        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
+    )
+
+
 @pytest.fixture
-def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
+def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
     then this fixture captures it.
@@ -165,11 +179,10 @@ def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
     external development/production servers
     """
     envs = {}
-    env_files = list(project_tests_dir.glob(".env-secret*"))
-    if env_files:
-        assert len(env_files) == 1
-        print("🚨 EXTERNAL: external envs detected ", env_files[0])
-        envs = load_dotenv(env_files[0])
+    if envfile := request.config.getoption("--external-envfile"):
+        assert isinstance(envfile, Path)
+        print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
+        envs = load_dotenv(envfile)
         assert "PAYMENTS_GATEWAY_API_SECRET" in envs
         assert "PAYMENTS_GATEWAY_URL" in envs
 
@@ -180,11 +193,11 @@ def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
 def mock_payments_gateway_service_or_none(
     mock_payments_gateway_service_api_base: MockRouter,
     mock_payments_routes: Callable,
-    external_secret_envs: EnvVarsDict,
+    external_environment: EnvVarsDict,
 ) -> MockRouter | None:
 
     # EITHER tests against external payments-gateway
-    if payments_gateway_url := external_secret_envs.get("PAYMENTS_GATEWAY_URL"):
+    if payments_gateway_url := external_environment.get("PAYMENTS_GATEWAY_URL"):
         print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
         mock_payments_gateway_service_api_base.stop()
         return None

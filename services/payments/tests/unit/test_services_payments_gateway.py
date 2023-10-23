@@ -35,12 +35,12 @@ def app_environment(
     app_environment: EnvVarsDict,
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    external_secret_envs: EnvVarsDict,
+    external_environment: EnvVarsDict,
 ):
     # set environs
     return setenvs_from_dict(
         monkeypatch,
-        {**app_environment, **external_secret_envs},
+        {**app_environment, **external_environment},
     )
 
 
