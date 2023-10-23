@@ -131,7 +131,7 @@ async def _assert_cluster_heartbeat_on_instance(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_tags) == 5
+    assert len(instance_tags) == 6
     assert all("Key" in x for x in instance_tags)
     list_of_heartbeats = list(
         filter(lambda x: x["Key"] == HEARTBEAT_TAG_KEY, instance_tags)  # type:ignore
