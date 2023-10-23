@@ -714,6 +714,59 @@
         }
       }
     },
+    "/v2/dynamic_services/projects/inactivity": {
+      "get": {
+        "tags": [
+          "dynamic services"
+        ],
+        "summary": "returns if the project is inactive",
+        "operationId": "get_project_inactivity_v2_dynamic_services_projects_inactivity_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            },
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "number",
+              "minimum": 0.0,
+              "title": "Max Inactivity Seconds"
+            },
+            "name": "max_inactivity_seconds",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProjectInactivityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v2/clusters": {
       "get": {
         "tags": [
@@ -2011,6 +2064,24 @@
             ],
             "title": "Wallet Info",
             "description": "contains information about the wallet used to bill the running service"
+          },
+          "pricing_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PricingInfo"
+              }
+            ],
+            "title": "Pricing Info",
+            "description": "contains pricing information (ex. pricing plan and unit ids)"
+          },
+          "hardware_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HardwareInfo"
+              }
+            ],
+            "title": "Hardware Info",
+            "description": "contains harware information (ex. aws_ec2_instances)"
           }
         },
         "type": "object",
@@ -2055,8 +2126,31 @@
           "wallet_info": {
             "wallet_id": 1,
             "wallet_name": "My Wallet"
+          },
+          "pricing_info": {
+            "pricing_plan_id": 1,
+            "pricing_unit_id": 1,
+            "pricing_unit_cost_id": 1
+          },
+          "hardware_info": {
+            "aws_ec2_instances": [
+              "c6a.4xlarge"
+            ]
           }
         }
+      },
+      "GetProjectInactivityResponse": {
+        "properties": {
+          "is_inactive": {
+            "type": "boolean",
+            "title": "Is Inactive"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_inactive"
+        ],
+        "title": "GetProjectInactivityResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2070,6 +2164,22 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HardwareInfo": {
+        "properties": {
+          "aws_ec2_instances": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aws Ec2 Instances"
+          }
+        },
+        "type": "object",
+        "required": [
+          "aws_ec2_instances"
+        ],
+        "title": "HardwareInfo"
       },
       "HealthCheckGet": {
         "properties": {
@@ -2323,6 +2433,35 @@
           "node_states"
         ],
         "title": "PipelineDetails"
+      },
+      "PricingInfo": {
+        "properties": {
+          "pricing_plan_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Plan Id",
+            "minimum": 0
+          },
+          "pricing_unit_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Unit Id",
+            "minimum": 0
+          },
+          "pricing_unit_cost_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Unit Cost Id",
+            "minimum": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_plan_id",
+          "pricing_unit_id",
+          "pricing_unit_cost_id"
+        ],
+        "title": "PricingInfo"
       },
       "ResourceValue": {
         "properties": {
