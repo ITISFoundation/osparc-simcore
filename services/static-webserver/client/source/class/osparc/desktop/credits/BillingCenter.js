@@ -32,7 +32,10 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(this.self().createMiniWalletView());
+    const miniWallet = this.self().createMiniWalletView().set({
+      paddingRight: 10
+    });
+    tabViews.getChildControl("bar").add(miniWallet);
 
     const overviewPage = this.__overviewPage = this.__getOverviewPage();
     tabViews.add(overviewPage);
@@ -65,8 +68,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
         minWidth: 120,
-        maxWidth: 150,
-        paddingRight: 10
+        maxWidth: 150
       });
 
       const store = osparc.store.Store.getInstance();

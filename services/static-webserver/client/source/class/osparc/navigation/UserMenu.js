@@ -153,6 +153,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("log-out");
 
       osparc.utils.Utils.prettifyMenu(this);
+
+      this.addAt(new osparc.navigation.MiniProfile(), 0);
     },
 
     populateMenuCompact: function() {

@@ -31,7 +31,10 @@ qx.Class.define("osparc.po.POCenter", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(osparc.desktop.credits.MyAccount.createMiniProfileView());
+    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+      paddingRight: 10
+    });
+    tabViews.getChildControl("bar").add(miniProfile);
 
     const invitationsPage = this.__getInvitationsPage();
     tabViews.add(invitationsPage);

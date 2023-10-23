@@ -32,7 +32,10 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(this.self().createMiniProfileView());
+    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+      paddingRight: 10
+    });
+    tabViews.getChildControl("bar").add(miniProfile);
 
     const profilePage = this.__profilePage = this.__getProfilePage();
     tabViews.add(profilePage);
@@ -50,8 +53,7 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
-        maxWidth: 150,
-        paddingRight: 10
+        maxWidth: 150
       });
 
       const authData = osparc.auth.Data.getInstance();
