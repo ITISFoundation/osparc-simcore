@@ -174,10 +174,12 @@ class ResourceTrackerRepository(BaseRepository):
     async def list_service_runs_by_product_and_user_and_wallet(
         self,
         product_name: ProductName,
+        *,
         user_id: UserID | None,
         wallet_id: WalletID | None,
         offset: int,
         limit: int,
+        service_run_status: ServiceRunStatus | None = None,
     ) -> list[ServiceRunWithCreditsDB]:
         async with self.db_engine.begin() as conn:
             query = (
@@ -228,6 +230,11 @@ class ResourceTrackerRepository(BaseRepository):
                 query = query.where(
                     resource_tracker_service_runs.c.wallet_id == wallet_id
                 )
+            if service_run_status:
+                query = query.where(
+                    resource_tracker_service_runs.c.service_run_status
+                    == service_run_status
+                )
 
             result = await conn.execute(query)
 
@@ -236,8 +243,10 @@ class ResourceTrackerRepository(BaseRepository):
     async def total_service_runs_by_product_and_user_and_wallet(
         self,
         product_name: ProductName,
+        *,
         user_id: UserID | None,
         wallet_id: WalletID | None,
+        service_run_status: ServiceRunStatus | None = None,
     ) -> PositiveInt:
         async with self.db_engine.begin() as conn:
             query = (
@@ -251,6 +260,11 @@ class ResourceTrackerRepository(BaseRepository):
             if wallet_id:
                 query = query.where(
                     resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+            if service_run_status:
+                query = query.where(
+                    resource_tracker_service_runs.c.service_run_status
+                    == service_run_status
                 )
 
             result = await conn.execute(query)
