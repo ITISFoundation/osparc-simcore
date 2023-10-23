@@ -105,7 +105,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         padding: 4
       });
       menu.getChildren().forEach(menuItem => {
-        console.log("menuItem", menuItem);
         if (menuItem.classname !== "qx.ui.menu.Separator") {
           menuItem.setPadding(4);
         }
