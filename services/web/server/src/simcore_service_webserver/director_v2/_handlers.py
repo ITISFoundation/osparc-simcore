@@ -70,6 +70,7 @@ class _ComputationStarted(BaseModel):
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def start_computation(request: web.Request) -> web.Response:
+    # pylint: disable=too-many-statements
     try:
         req_ctx = RequestContext.parse_obj(request)
         computations = ComputationsApi(request.app)
