@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_payments import PAYMENTS_RPC_NAMESPACE
-from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
+from models_library.api_schemas_webserver.wallets import PaymentID, WalletPaymentCreated
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
@@ -76,3 +76,22 @@ async def init_payment(
     )
     assert isinstance(result, WalletPaymentCreated)  # nosec
     return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def cancel_payment(
+    app: web.Application,
+    *,
+    payment_id: PaymentID,
+    user_id: UserID,
+    wallet_id: WalletID,
+) -> None:
+    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+
+    await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "payment_id"),
+        payment_id=payment_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
