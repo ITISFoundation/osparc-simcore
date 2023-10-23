@@ -183,10 +183,8 @@ async def get_job_outputs(
     results: dict[str, ArgumentTypes] = {}
     for name, value in outputs.items():
         if isinstance(value, BaseFileLink):
-            # TODO: value.path exists??
             file_id: UUID = File.create_id(*value.path.split("/"))
 
-            # TODO: acquire_soft_link will halve calls
             found = await storage_client.search_files(
                 user_id=user_id,
                 file_id=file_id,
@@ -202,7 +200,6 @@ async def get_job_outputs(
                 )
                 results[name] = api_file
         else:
-            # TODO: cast against catalog's output port specs
             results[name] = value
 
     return JobOutputs(job_id=job_id, results=results)
