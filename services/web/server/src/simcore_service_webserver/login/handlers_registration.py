@@ -54,7 +54,6 @@ from .utils import (
     USER,
     envelope_response,
     flash_response,
-    get_client_ip,
     notify_user_confirmation,
 )
 from .utils_email import get_template_path, send_email_from_template
@@ -204,7 +203,6 @@ async def register(request: web.Request):
             ),
             "role": USER,
             "expires_at": expires_at,
-            "created_ip": get_client_ip(request),
         }
     )
 

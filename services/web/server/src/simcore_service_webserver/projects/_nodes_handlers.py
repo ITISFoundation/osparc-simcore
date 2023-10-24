@@ -54,6 +54,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
@@ -83,6 +84,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
             DefaultPricingUnitNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except (WalletNotEnoughCreditsError) as exc:
+            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return wrapper
 
