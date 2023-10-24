@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 from datetime import timedelta
@@ -8,6 +9,7 @@ from datetime import timedelta
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
@@ -15,25 +17,34 @@ from simcore_service_webserver.login._api_keys_api import prune_expired_api_keys
 from simcore_service_webserver.login._api_keys_db import ApiKeyRepo
 
 
-@pytest.fixture()
-async def fake_user_api_keys(client: TestClient, logged_user):
+@pytest.fixture
+async def fake_user_api_keys(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+):
     assert client.app
     names = ["foo", "bar", "beta", "alpha"]
     repo = ApiKeyRepo.create_from_app(app=client.app)
 
     for name in names:
         await repo.create(
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
             display_name=name,
             expiration=None,
             api_key=f"{name}-key",
             api_secret=f"{name}-secret",
-            user_id=logged_user["id"],
         )
 
     yield names
 
     for name in names:
-        await repo.delete_by_name(display_name=name, user_id=logged_user["id"])
+        await repo.delete_by_name(
+            display_name=name,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
 
 
 _USER_ACCESS_PARAMETERS = [
@@ -51,7 +62,7 @@ async def test_list_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.get("/v0/auth/api-keys")
@@ -66,7 +77,7 @@ async def test_create_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.post("/v0/auth/api-keys", json={"display_name": "foo"})
@@ -102,7 +113,7 @@ async def test_delete_api_keys(
     fake_user_api_keys,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
@@ -118,7 +129,7 @@ async def test_create_api_key_with_expiration(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     assert client.app
