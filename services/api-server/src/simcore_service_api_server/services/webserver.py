@@ -19,7 +19,10 @@ from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServicePricingPlanGet,
 )
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletGetWithAvailableCredits,
+)
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
@@ -408,14 +411,14 @@ class AuthSession:
 
     # WALLETS -------------------------------------------------
 
-    async def get_wallet(self, wallet_id: int) -> WalletGet:
+    async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         with _handle_webserver_api_errors():
             response = await self.client.get(
                 f"/wallets/{wallet_id}",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
-            data = Envelope[WalletGet].parse_raw(response.text).data
+            data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
             assert data  # nosec
             return data
 
