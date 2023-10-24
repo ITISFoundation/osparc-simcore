@@ -63,12 +63,14 @@ class UserStatus(Enum):
     active: user is confirmed and can use the platform
     expired: user is not authorized because it expired after a trial period
     banned: user is not authorized
+    deleted: this account is marked for deletion
     """
 
     CONFIRMATION_PENDING = "PENDING"
     ACTIVE = "ACTIVE"
     EXPIRED = "EXPIRED"
     BANNED = "BANNED"
+    DELETED = "DELETED"
 
 
 users = sa.Table(
@@ -145,12 +147,6 @@ users = sa.Table(
         nullable=True,
         doc="Sets the expiration date for trial accounts."
         "If set to NULL then the account does not expire.",
-    ),
-    sa.Column(
-        "created_ip",
-        sa.String(),
-        nullable=True,
-        doc="User IP from which use was created",
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),

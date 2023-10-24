@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.34.0
+  version: 0.35.0
 servers:
 - url: ''
   description: webserver
@@ -107,6 +107,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
+  /v0/auth/unregister:
+    post:
+      tags:
+      - auth
+      summary: Unregister Account
+      operationId: unregister_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnregisterCheck'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Log_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/verify-phone-number:
     post:
       tags:
@@ -9556,6 +9581,22 @@ components:
       example:
         service: github-api-v1
         token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+    UnregisterCheck:
+      title: UnregisterCheck
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          format: email
+        password:
+          title: Password
+          type: string
+          format: password
+          writeOnly: true
     UploadedPart:
       title: UploadedPart
       required:
