@@ -448,7 +448,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         });
         win.center();
         win.open();
-        win.addListenerOnce("close", () => {
+        win.addListener("close", () => {
           if (win.getConfirmed()) {
             this.__doRemoveNode(nodeId);
           }

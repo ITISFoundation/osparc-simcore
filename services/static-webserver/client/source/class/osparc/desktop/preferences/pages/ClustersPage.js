@@ -354,7 +354,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       });
       win.center();
       win.open();
-      win.addListenerOnce("close", () => {
+      win.addListener("close", () => {
         if (win.getConfirmed()) {
           const params = {
             url: {

@@ -1223,7 +1223,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           win.center();
           win.open();
-          win.addListenerOnce("close", () => {
+          win.addListener("close", () => {
             if (win.getConfirmed()) {
               this.__doRemoveNode(nodeId);
             }
@@ -1244,7 +1244,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
         win.center();
         win.open();
-        win.addListenerOnce("close", () => {
+        win.addListener("close", () => {
           if (win.getConfirmed()) {
             nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
           }

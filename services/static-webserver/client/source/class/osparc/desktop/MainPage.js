@@ -133,7 +133,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
           win.center();
           win.open();
-          win.addListenerOnce("close", () => {
+          win.addListener("close", () => {
             if (win.getConfirmed()) {
               this.__backToDashboard();
             }

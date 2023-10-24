@@ -662,7 +662,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const win = this.__createConfirmWindow(selection.map(button => button.getTitle()));
           win.center();
           win.open();
-          win.addListenerOnce("close", () => {
+          win.addListener("close", () => {
             if (win.getConfirmed()) {
               this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
             }
@@ -935,7 +935,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const win = this.__createConfirmWindow([studyData.name]);
         win.center();
         win.open();
-        win.addListenerOnce("close", () => {
+        win.addListener("close", () => {
           if (win.getConfirmed()) {
             this.__doDeleteStudy(studyData);
           }

@@ -312,7 +312,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         });
         win.center();
         win.open();
-        win.addListenerOnce("close", () => {
+        win.addListener("close", () => {
           if (win.getConfirmed()) {
             demoteToViewer(groupId, item);
           }
