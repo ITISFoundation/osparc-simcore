@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const creditsIndicator = new osparc.desktop.credits.CreditsIndicator().set({
         maxWidth: 200
       });
-      creditsIndicator.getChildControl("credits-label").set({
+      creditsIndicator.getChildControl("credits-text").set({
         alignX: "left"
       });
       this.bind("contextWallet", creditsIndicator, "wallet");

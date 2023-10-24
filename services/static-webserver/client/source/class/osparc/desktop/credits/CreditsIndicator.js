@@ -72,14 +72,14 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "credits-label":
+        case "credits-text":
           control = new qx.ui.basic.Label().set({
             alignX: "center",
             font: "text-16"
           });
           this._add(control);
           break;
-        case "credits-indicator":
+        case "credits-bar":
           control = new qx.ui.core.Widget().set({
             height: 5
           });
@@ -98,13 +98,13 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     __updateCredits: function() {
       const credits = this.getCreditsAvailable();
       if (credits !== null) {
-        const label = this.getChildControl("credits-label");
+        const label = this.getChildControl("credits-text");
         label.set({
           value: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
           textColor: this.self().creditsToColor(credits, "text")
         });
 
-        const indicator = this.getChildControl("credits-indicator");
+        const indicator = this.getChildControl("credits-bar");
         const progress = this.self().normalizeCredits(credits);
         const bgColor = this.self().creditsToColor(credits, "strong-main");
         indicator.setBackgroundColor(bgColor);
