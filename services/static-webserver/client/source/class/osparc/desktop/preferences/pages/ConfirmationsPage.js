@@ -167,7 +167,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       const box = this._createSectionBox(this.tr("Credits Indicator"));
 
       const label = this._createHelpLabel(this.tr(
-        "Choose how you want the Credits Indicator to look like and when it is shown"
+        "Choose how you want the Credits Indicator to look like and when it is shown:"
       ));
       box.add(label);
 
@@ -200,6 +200,31 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         osparc.Preferences.patchPreference("walletIndicatorMode", selectable.getModel());
       });
       box.add(walletIndicatorModeSB);
+
+      const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      [{
+        id: "always",
+        label: "Always"
+      }, {
+        id: "warning",
+        label: "Warning"
+      }].forEach(options => {
+        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        walletIndicatorVisibilitySB.add(lItem);
+      });
+      const value2 = preferencesSettings.getWalletIndicatorVisibility();
+      walletIndicatorVisibilitySB.getSelectables(selectable => {
+        if (selectable.getModel() === value2) {
+          walletIndicatorVisibilitySB.setSelected([selectable]);
+        }
+      });
+      walletIndicatorVisibilitySB.addListener("changeValue", e => {
+        const selectable = e.getData();
+        osparc.Preferences.patchPreference("walletIndicatorVisibility", selectable.getModel());
+      });
+      box.add(walletIndicatorVisibilitySB);
 
       return box;
     }

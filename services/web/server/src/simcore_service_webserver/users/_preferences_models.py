@@ -63,7 +63,12 @@ class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
 
 class WalletIndicatorModeFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "walletIndicatorMode"
-    value: str | None = None
+    value: str | None = "both"
+
+
+class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
+    preference_identifier = "walletIndicatorVisibility"
+    value: str | None = "always"
 
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
@@ -79,6 +84,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     LastVcsRefUIFrontendUserPreference,
     PreferredWalletIdFrontendUserPreference,
     WalletIndicatorModeFrontendUserPreference,
+    WalletIndicatorVisibilityFrontendUserPreference,
 ]
 
 
