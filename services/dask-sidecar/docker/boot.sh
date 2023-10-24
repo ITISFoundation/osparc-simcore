@@ -66,6 +66,7 @@ else
   # GPU: number GPUs available (= num of GPUs if a nvidia-smi can be run inside a docker container)
   # RAM: amount of RAM available (= CPU/nproc * total virtual memory given by python psutil - DASK_SIDECAR_NON_USABLE_RAM)
   # VRAM: amount of VRAM available (in bytes)
+  # DASK_SIDECAR_CUSTOM_RESOURCES: any amount of anything (in name=NUMBER,name2=NUMBER2,..., see https://distributed.dask.org/en/stable/resources.html#worker-resources)
 
   # CPUs
   num_cpus=$(($(nproc) - ${DASK_SIDECAR_NUM_NON_USABLE_CPUS:-2}))
@@ -90,6 +91,10 @@ else
     resources="$resources,GPU=$num_gpus,VRAM=$total_vram"
   fi
 
+  # add custom resources if any
+  if [ -n "${DASK_SIDECAR_CUSTOM_RESOURCES-}" ]; then
+    resources="$resources,${DASK_SIDECAR_CUSTOM_RESOURCES}"
+  fi
 
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
