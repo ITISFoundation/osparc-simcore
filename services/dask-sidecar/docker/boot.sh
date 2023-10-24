@@ -99,8 +99,9 @@ else
 
   # check whether we might have an EC2 instance and retrieve its type
   get_ec2_instance_type() {
+    # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
     print_info "Finding out if we are running on EC2 instance"
-    if ec2_instance_type=$(curl --max-time 2 --silent http://169.254.169.254/latest/meta-data/instance-type 2>/dev/null); then
+    if ec2_instance_type=$(curl --max-time 5 --silent http://169.254.169.254/latest/meta-data/instance-type 2>/dev/null); then
       print_info "Running on EC2 instance of type: $ec2_instance_type"
       resources="$resources,EC2-INSTANCE-TYPE:$ec2_instance_type=1"
     else
