@@ -86,7 +86,7 @@ qx.Class.define("osparc.Preferences", {
 
     walletIndicatorMode: {
       check: ["both", "text", "bar"],
-      nullable: false,
+      nullable: true,
       init: "both",
       event: "changeWalletIndicatorMode",
       apply: "__patchPreference"
