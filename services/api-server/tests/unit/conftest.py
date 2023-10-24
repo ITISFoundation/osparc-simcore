@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, TypeAlias
+from unittest import mock
 
 import aiohttp.test_utils
 import httpx
@@ -34,6 +35,7 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
@@ -144,6 +146,20 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     )
 
     return HTTPBasicAuth(faker.word(), faker.password())
+
+
+@pytest.fixture
+def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
+    from simcore_service_api_server.db.repositories.groups_extra_properties import (
+        GroupsExtraPropertiesRepository,
+    )
+
+    return mocker.patch.object(
+        GroupsExtraPropertiesRepository,
+        "use_on_demand_clusters",
+        autospec=True,
+        return_value=True,
+    )
 
 
 ## MOCKED S3 service --------------------------------------------------
@@ -475,29 +491,37 @@ def patch_webserver_long_running_project_tasks(
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def respx_mock_from_capture() -> (
-    Callable[[respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter]
+    Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]], list[respx.MockRouter]
+    ]
 ):
     def _generate_mock(
-        respx_mock: respx.MockRouter,
+        respx_mock: list[respx.MockRouter],
         capture_path: Path,
-        side_effects_callbacks: list[SideEffectCallback] | None = None,
-    ) -> respx.MockRouter:
+        side_effects_callbacks: list[SideEffectCallback],
+    ) -> list[respx.MockRouter]:
         assert capture_path.is_file() and capture_path.suffix == ".json"
-        assert (
-            respx_mock._bases
-        ), "the base_url must be set before the fixture is extended"
-
-        side_effects_callbacks = (
-            [] if side_effects_callbacks is None else side_effects_callbacks
-        )
         captures: list[HttpApiCallCaptureModel] = parse_obj_as(
             list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
         )
 
-        capture_iter = iter(captures)
-        side_effect_callback_iter = iter(side_effects_callbacks)
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
+        assert isinstance(respx_mock, list)
+        for router in respx_mock:
+            assert (
+                router._bases
+            ), "the base_url must be set before the fixture is extended"
+
+        def _get_correct_mock_router_for_capture(
+            respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
+        ) -> respx.MockRouter:
+            for router in respx_mock:
+                if capture.host == router._bases["host"].value:
+                    return router
+            raise RuntimeError(
+                f"Missing respx.MockRouter for capture with {capture.host}"
+            )
 
         class CaptureSideEffect:
             def __init__(
@@ -537,7 +561,8 @@ def respx_mock_from_capture() -> (
                 path_regex = path_regex.replace(
                     "{" + param.name + "}", param.respx_lookup
                 )
-            respx_mock.request(
+            router = _get_correct_mock_router_for_capture(respx_mock, capture)
+            router.request(
                 capture.method.upper(), url=None, path__regex="^" + path_regex + "$"
             ).mock(side_effect=side_effects[-1]._side_effect)
 
