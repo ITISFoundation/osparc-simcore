@@ -171,6 +171,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       ));
       box.add(label);
 
+      const form = new qx.ui.form.Form();
+
       const preferencesSettings = osparc.Preferences.getInstance();
 
       const walletIndicatorModeSB = new qx.ui.form.SelectBox().set({
@@ -199,7 +201,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         const selectable = e.getData();
         osparc.Preferences.patchPreference("walletIndicatorMode", selectable.getModel());
       });
-      box.add(walletIndicatorModeSB);
+      form.add(walletIndicatorModeSB, this.tr("Indicator mode"));
 
       const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
@@ -224,7 +226,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         const selectable = e.getData();
         osparc.Preferences.patchPreference("walletIndicatorVisibility", selectable.getModel());
       });
-      box.add(walletIndicatorVisibilitySB);
+      form.add(walletIndicatorVisibilitySB, this.tr("Show it"));
+
+      box.add(new qx.ui.form.renderer.Single(form));
 
       return box;
     }
