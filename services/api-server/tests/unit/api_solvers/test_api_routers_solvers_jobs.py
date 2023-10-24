@@ -19,7 +19,6 @@ from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
-from pytest_mock.plugin import MockerFixture
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
@@ -204,20 +203,6 @@ async def test_solver_logs(
 
     assert resp.url == presigned_download_link
     pprint(dict(resp.headers))  # noqa: T203
-
-
-@pytest.fixture
-def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
-    from simcore_service_api_server.db.repositories.groups_extra_properties import (
-        GroupsExtraPropertiesRepository,
-    )
-
-    return mocker.patch.object(
-        GroupsExtraPropertiesRepository,
-        "use_on_demand_clusters",
-        autospec=True,
-        return_value=True,
-    )
 
 
 @pytest.mark.acceptance_test(
