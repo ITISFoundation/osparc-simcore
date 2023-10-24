@@ -169,7 +169,8 @@ def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
 
 @pytest.fixture
 async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
-    async with app.state.db_engine.acquire() as conn:
+    assert app.state.engine
+    async with app.state.engine.acquire() as conn:
         yield conn
 
 
