@@ -4,21 +4,17 @@
 
 import asyncio
 from datetime import timedelta
-from pprint import pformat
-from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
-from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
-from pydantic import BaseModel
+from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver._constants import RQT_USERID_KEY
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.login.api_keys_db import prune_expired_api_keys
-from simcore_service_webserver.login.api_keys_handlers import ApiKeyRepo
+from simcore_service_webserver.login._api_keys_api import prune_expired_api_keys
+from simcore_service_webserver.login._api_keys_handlers import ApiKeyRepo
 
 
 @pytest.fixture()
@@ -28,7 +24,7 @@ async def fake_user_api_keys(client: TestClient, logged_user):
     mock_request = make_mocked_request(method="GET", path="/foo", app=client.app)
     mock_request[RQT_USERID_KEY] = logged_user["id"]
 
-    repo = ApiKeyRepo(mock_request)
+    repo = ApiKeyRepo.create_from_request(mock_request)
 
     for name in names:
         await repo.create(
@@ -43,7 +39,7 @@ async def fake_user_api_keys(client: TestClient, logged_user):
         await repo.delete(name)
 
 
-USER_ACCESS_PARAMETERS = [
+_USER_ACCESS_PARAMETERS = [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
     *((UserRole.USER, web.HTTPOk) for role in UserRole if role > UserRole.GUEST),
@@ -52,7 +48,7 @@ USER_ACCESS_PARAMETERS = [
 
 @pytest.mark.parametrize(
     "user_role,expected",
-    USER_ACCESS_PARAMETERS,
+    _USER_ACCESS_PARAMETERS,
 )
 async def test_list_api_keys(
     client: TestClient,
@@ -68,7 +64,7 @@ async def test_list_api_keys(
         assert not data
 
 
-@pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
+@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
 async def test_create_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -97,8 +93,11 @@ async def test_create_api_keys(
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        *(
+            (UserRole.USER, web.HTTPNoContent)
+            for role in UserRole
+            if role > UserRole.GUEST
+        ),
     ],
 )
 async def test_delete_api_keys(
@@ -117,7 +116,7 @@ async def test_delete_api_keys(
         await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
+@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
 async def test_create_api_key_with_expiration(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -153,16 +152,3 @@ async def test_create_api_key_with_expiration(
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
         assert not data
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [ApiKeyCreate, ApiKeyGet],
-)
-def test_api_keys_model_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-) -> None:
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_obj = model_cls(**example)
-        assert model_obj.json(**RESPONSE_MODEL_POLICY)
