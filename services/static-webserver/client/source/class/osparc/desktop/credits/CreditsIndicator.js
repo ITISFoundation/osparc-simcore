@@ -18,14 +18,15 @@
 qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   extend: qx.ui.core.Widget,
 
-  construct: function(wallet) {
+  construct: function(wallet = null, bindToPreferences = false) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    if (wallet) {
-      this.setWallet(wallet);
-    }
+    this.set({
+      wallet,
+      bindToPreferences
+    });
 
     this.__updateCredits();
   },
@@ -45,15 +46,25 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       nullable: false,
       event: "changeCreditsAvailable",
       apply: "__updateCredits"
+    },
+
+    bindToPreferences: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeBindToPreferences",
+      apply: "__applyBindToPreferences"
     }
   },
 
   statics: {
+    WARNING_THRESHOLD: 700,
+
     creditsToColor: function(credits, defaultColor = "text") {
       let color = defaultColor;
       if (credits <= 0) {
         color = "danger-red";
-      } else if (credits <= 20) {
+      } else if (credits <= this.WARNING_THRESHOLD) {
         color = "warning-yellow";
       }
       return color;
@@ -112,6 +123,25 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
           minWidth: parseInt(progress) + "%",
           maxWidth: parseInt(progress) + "%"
         });
+        this.__computeVisibility();
+      }
+    },
+
+    __applyBindToPreferences: function(bindToPreferences) {
+      if (bindToPreferences) {
+        const preferencesSettings = osparc.Preferences.getInstance();
+        preferencesSettings.addListener("changeWalletIndicatorVisibility", () => this.__computeVisibility());
+      }
+    },
+
+    __computeVisibility: function() {
+      if (this.getBindToPreferences()) {
+        const preferencesSettings = osparc.Preferences.getInstance();
+        if (preferencesSettings.getWalletIndicatorVisibility() === "warning") {
+          this.setVisibility(this.getCreditsAvailable() <= this.self().WARNING_THRESHOLD ? "visible" : "excluded");
+        } else if (preferencesSettings.getWalletIndicatorVisibility() === "always") {
+          this.setVisibility("visible");
+        }
       }
     }
   }

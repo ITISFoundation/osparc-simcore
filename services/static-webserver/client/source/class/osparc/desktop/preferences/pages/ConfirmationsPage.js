@@ -199,7 +199,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       });
       walletIndicatorModeSB.addListener("changeValue", e => {
         const selectable = e.getData();
-        osparc.Preferences.patchPreference("walletIndicatorMode", selectable.getModel());
+        this.self().patchPreference("walletIndicatorMode", walletIndicatorModeSB, selectable.getModel());
       });
       form.add(walletIndicatorModeSB, this.tr("Indicator mode"));
 
@@ -224,7 +224,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       });
       walletIndicatorVisibilitySB.addListener("changeValue", e => {
         const selectable = e.getData();
-        osparc.Preferences.patchPreference("walletIndicatorVisibility", selectable.getModel());
+        this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
       });
       form.add(walletIndicatorVisibilitySB, this.tr("Show it"));
 
