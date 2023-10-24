@@ -20,46 +20,46 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
-class EC2Settings(BaseCustomSettings):
-    CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID: str
-    CLUSTERS_KEEPER_EC2_ENDPOINT: str | None = Field(
+class EC2ClustersKeeperSettings(BaseCustomSettings):
+    EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID: str
+    EC2_CLUSTERS_KEEPER_ENDPOINT: str | None = Field(
         default=None, description="do not define if using standard AWS"
     )
-    CLUSTERS_KEEPER_EC2_REGION_NAME: str = "us-east-1"
-    CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: str
+    EC2_CLUSTERS_KEEPER_REGION_NAME: str = "us-east-1"
+    EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY: str
 
 
-class EC2InstancesSettings(BaseCustomSettings):
-    CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+class WorkersEC2InstancesSettings(BaseCustomSettings):
+    WORKERS_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
         ...,
         min_items=1,
         unique_items=True,
         description="Defines which EC2 instances are considered as candidates for new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID: str = Field(
+    WORKERS_EC2_INSTANCES_AMI_ID: str = Field(
         ...,
         min_length=1,
         description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES: int = Field(
+    WORKERS_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
         description="Defines the maximum number of instances the clusters_keeper app may create",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
+    WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
         description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
         " this is required to start a new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID: str = Field(
+    WORKERS_EC2_INSTANCES_SUBNET_ID: str = Field(
         ...,
         min_length=1,
         description="A subnet is a range of IP addresses in your VPC "
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
-    CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME: str = Field(
+    WORKERS_EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
         description="SSH key filename (without ext) to access the instance through SSH"
@@ -67,17 +67,64 @@ class EC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
-    CLUSTERS_KEEPER_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+    WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
     )
 
-    CLUSTERS_KEEPER_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
+    WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
-    @validator("CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES")
+    @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
+    @classmethod
+    def check_valid_intance_names(cls, value):
+        # NOTE: needed because of a flaw in BaseCustomSettings
+        # issubclass raises TypeError if used on Aliases
+        parse_obj_as(tuple[InstanceTypeType, ...], value)
+        return value
+
+
+class PrimaryEC2InstancesSettings(BaseCustomSettings):
+    PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+        ...,
+        min_items=1,
+        unique_items=True,
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
+    )
+    PRIMARY_EC2_INSTANCES_AMI_ID: str = Field(
+        ...,
+        min_length=1,
+        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
+    )
+    PRIMARY_EC2_INSTANCES_MAX_INSTANCES: int = Field(
+        default=10,
+        description="Defines the maximum number of instances the clusters_keeper app may create",
+    )
+    PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
+        ...,
+        min_items=1,
+        description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
+        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
+        " this is required to start a new EC2 instance",
+    )
+    PRIMARY_EC2_INSTANCES_SUBNET_ID: str = Field(
+        ...,
+        min_length=1,
+        description="A subnet is a range of IP addresses in your VPC "
+        " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
+        "this is required to start a new EC2 instance",
+    )
+    PRIMARY_EC2_INSTANCES_KEY_NAME: str = Field(
+        ...,
+        min_length=1,
+        description="SSH key filename (without ext) to access the instance through SSH"
+        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
+        "this is required to start a new EC2 instance",
+    )
+
+    @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_intance_names(cls, value):
         # NOTE: needed because of a flaw in BaseCustomSettings
@@ -127,9 +174,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    CLUSTERS_KEEPER_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
+    CLUSTERS_KEEPER_EC2_ACCESS: EC2ClustersKeeperSettings | None = Field(
+        auto_default_from_env=True
+    )
 
-    CLUSTERS_KEEPER_EC2_INSTANCES: EC2InstancesSettings | None = Field(
+    CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
+        auto_default_from_env=True
+    )
+
+    CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES: WorkersEC2InstancesSettings | None = Field(
         auto_default_from_env=True
     )
 
@@ -142,7 +195,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
-        default=datetime.timedelta(seconds=60),
+        default=datetime.timedelta(seconds=30),
         description="interval between each clusters clean check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
