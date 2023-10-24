@@ -61,6 +61,11 @@ class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
     value: int | None = None
 
 
+class WalletIndicatorModeFrontendUserPreference(FrontendUserPreference):
+    preference_identifier = "walletIndicatorMode"
+    value: str | None = None
+
+
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -73,6 +78,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ThemeNameFrontendUserPreference,
     LastVcsRefUIFrontendUserPreference,
     PreferredWalletIdFrontendUserPreference,
+    WalletIndicatorModeFrontendUserPreference,
 ]
 
 
