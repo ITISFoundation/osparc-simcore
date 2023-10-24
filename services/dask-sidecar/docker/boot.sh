@@ -4,24 +4,30 @@ set -o nounset
 
 IFS=$(printf '\n\t')
 
-INFO="INFO: [$(basename "$0")] "
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# Function to print an INFO message in green
+print_info() {
+  echo "${GREEN}INFO [$(basename "$0")]:${NC}$1"
+}
 
 # BOOTING application ---------------------------------------------
-echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."
-echo "  User    :$(id "$(whoami)")"
-echo "  Workdir :$(pwd)"
-echo "  env     :$(env)"
+print_info "Booting in ${SC_BOOT_MODE} mode ..."
+print_info "  User    :$(id "$(whoami)")"
+print_info "  Workdir :$(pwd)"
+print_info "  env     :$(env)"
 
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
-  echo "$INFO" "Environment :"
+  print_info "Environment :"
   printenv | sed 's/=/: /' | sed 's/^/    /' | sort
-  echo "$INFO" "Python :"
+  print_info "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   cd services/dask-sidecar || exit 1
   pip install --no-cache-dir -r requirements/dev.txt
   cd - || exit 1
-  echo "$INFO" "PIP :"
+  print_info "PIP :"
   pip list | sed 's/^/    /'
 fi
 
@@ -39,7 +45,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   dask_logging=$(printf "logging:\n  distributed: %s\n  distributed.scheduler: %s" "${LOG_LEVEL:-warning}" "${LOG_LEVEL:-warning}")
   echo "$dask_logging" >> /home/scu/.config/dask/distributed.yaml
 
-  echo "$INFO" "Starting as dask scheduler:${scheduler_version}..."
+  print_info "Starting as dask scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart \
         --recursive \
@@ -91,10 +97,17 @@ else
     resources="$resources,GPU=$num_gpus,VRAM=$total_vram"
   fi
 
-  # add custom resources if any
-  if [ -n "${DASK_SIDECAR_CUSTOM_RESOURCES-}" ]; then
-    resources="$resources,${DASK_SIDECAR_CUSTOM_RESOURCES}"
-  fi
+  # check whether we might have an EC2 instance and retrieve its type
+  get_ec2_instance_type() {
+    print_info "Finding out if we are running on EC2 instance"
+    if ec2_instance_type=$(curl --max-time 2 --silent http://169.254.169.254/latest/meta-data/instance-type 2>/dev/null); then
+      print_info "Running on EC2 instance of type: $ec2_instance_type"
+      resources="$resources,EC2-INSTANCE-TYPE:$ec2_instance_type=1"
+    else
+      print_info "Not running on an EC2 instance."
+    fi
+  }
+  get_ec2_instance_type
 
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
@@ -107,8 +120,8 @@ else
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
-  echo "$INFO" "Starting as a dask worker "${DASK_WORKER_VERSION}" -> "${DASK_SCHEDULER_URL}" ..."
-  echo "$INFO" "Worker resources set as: "$resources""
+  print_info "Starting as a dask worker "${DASK_WORKER_VERSION}" -> "${DASK_SCHEDULER_URL}" ..."
+  print_info "Worker resources set as: "$resources""
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
       dask worker "${DASK_SCHEDULER_URL}" \
