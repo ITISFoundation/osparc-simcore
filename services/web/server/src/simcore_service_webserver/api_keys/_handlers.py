@@ -12,9 +12,9 @@ from simcore_service_webserver.security.decorators import permission_required
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .._meta import API_VTAG
+from ..login.decorators import login_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api_keys_api as _api
-from .decorators import login_required
+from . import _api
 
 _logger = logging.getLogger(__name__)
 

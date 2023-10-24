@@ -12,9 +12,9 @@ from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from simcore_service_webserver.api_keys._api import prune_expired_api_keys
+from simcore_service_webserver.api_keys._db import ApiKeyRepo
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.login._api_keys_api import prune_expired_api_keys
-from simcore_service_webserver.login._api_keys_db import ApiKeyRepo
 
 
 @pytest.fixture

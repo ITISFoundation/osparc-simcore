@@ -6,8 +6,8 @@ from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.products import ProductName
 from models_library.users import UserID
 
-from ._api_keys_db import ApiKeyRepo
-from .utils import get_random_string
+from ..login.utils import get_random_string
+from ._db import ApiKeyRepo
 
 _logger = logging.getLogger(__name__)
 
