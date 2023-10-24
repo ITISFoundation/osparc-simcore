@@ -35,7 +35,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       this.add(experimentalSettings);
     }
 
-    const walletIndicatorSettings = this.__createWalletIndicatorSettings();
+    const walletIndicatorSettings = this.__createCreditsIndicatorSettings();
     this.add(walletIndicatorSettings);
   },
 
@@ -63,7 +63,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
   members: {
     __createConfirmationsSettings: function() {
       // layout
-      const label = this._createHelpLabel(this.tr("Show Confirmation/Warning Message Window for the following actions:"));
+      const label = this._createHelpLabel(this.tr("Ask for confirmation for the following actions:"));
       this.add(label);
 
       this.add(new qx.ui.core.Spacer(null, 10));
@@ -162,13 +162,20 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       return box;
     },
 
-    __createWalletIndicatorSettings: function() {
+    __createCreditsIndicatorSettings: function() {
       // layout
-      const box = this._createSectionBox(this.tr("Wallet Indicator"));
+      const box = this._createSectionBox(this.tr("Credits Indicator"));
+
+      const label = this._createHelpLabel(this.tr(
+        "Choose how you want the Credits Indicator to look like and when it is shown"
+      ));
+      box.add(label);
 
       const preferencesSettings = osparc.Preferences.getInstance();
 
-      const walletIndicatorModeSB = new qx.ui.form.SelectBox();
+      const walletIndicatorModeSB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
       [{
         id: "both",
         label: "Both"
