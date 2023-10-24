@@ -4,17 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
-from pathlib import Path
-
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pytest_simcore.helpers.utils_envs import (
-    EnvVarsDict,
-    load_dotenv,
-    setenvs_from_dict,
-)
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
@@ -37,36 +30,17 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 
 
 @pytest.fixture
-def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
-    """
-    If a file under test prefixed `.env-secret` is present,
-    then some mocks are disabled and real external services are used.
-
-    This technique allows reusing the same tests to check against
-    external development/production servers
-    """
-    envs = {}
-    env_files = list(project_tests_dir.glob(".env-secret*"))
-    if env_files:
-        assert len(env_files) == 1
-        envs = load_dotenv(env_files[0])
-        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
-        assert "PAYMENTS_GATEWAY_URL" in envs
-    return envs
-
-
-@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    external_secret_envs: EnvVarsDict,
+    external_environment: EnvVarsDict,
 ):
     # set environs
     return setenvs_from_dict(
         monkeypatch,
-        {**app_environment, **external_secret_envs},
+        {**app_environment, **external_environment},
     )
 
 
@@ -95,16 +69,22 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
+@pytest.mark.parametrize(
+    "amount_dollars",
+    [
+        10,
+        999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
+    ],
+)
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
-    mock_payments_gateway_service_api_base: MockRouter,
-    mock_payments_routes: Callable,
+    mock_payments_gateway_service_or_none: MockRouter | None,
+    amount_dollars: float,
 ):
-    mock_payments_routes(mock_payments_gateway_service_api_base)
 
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
     assert payment_gateway_api
@@ -112,8 +92,8 @@ async def test_one_time_payment_workflow(
     # init
     payment_initiated = await payment_gateway_api.init_payment(
         payment=InitPayment(
-            amount_dollars=100,
-            credits=100,
+            amount_dollars=amount_dollars,
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
             wallet_name=faker.word(),
@@ -129,8 +109,10 @@ async def test_one_time_payment_workflow(
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # cancel
-    await payment_gateway_api.cancel_payment(payment_initiated)
+    payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
+    assert payment_canceled is not None
 
     # check mock
-    assert mock_payments_gateway_service_api_base.routes["init_payment"].called
-    assert mock_payments_gateway_service_api_base.routes["cancel_payment"].called
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes["init_payment"].called
+        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called

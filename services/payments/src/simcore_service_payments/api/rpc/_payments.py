@@ -6,12 +6,20 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
+from simcore_service_payments.core.errors import (
+    PaymentAlreadyAckedError,
+    PaymentNotFoundError,
+)
 
 from ..._constants import PAG, PGDB
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
-from ...models.payments_gateway import InitPayment
+from ...models.payments_gateway import InitPayment, PaymentID, PaymentInitiated
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -31,7 +39,7 @@ async def init_payment(
     wallet_name: str,
     user_id: UserID,
     user_name: str,
-    user_email: str,
+    user_email: EmailStr,
     comment: str | None = None,
 ) -> WalletPaymentCreated:
     initiated_at = arrow.utcnow().datetime
@@ -52,7 +60,7 @@ async def init_payment(
                 amount_dollars=amount_dollars,
                 credits=target_credits,
                 user_name=user_name,
-                user_email=user_email,  # type: ignore
+                user_email=user_email,
                 wallet_name=wallet_name,
             )
         )
@@ -86,3 +94,57 @@ async def init_payment(
         payment_id=f"{payment_id}",
         payment_form_url=f"{submission_link}",
     )
+
+
+@router.expose()
+async def cancel_payment(
+    app: FastAPI,
+    *,
+    payment_id: PaymentID,
+    user_id: UserID,
+    wallet_id: WalletID,
+) -> None:
+
+    # validation
+    repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
+    payment = await repo.get_payment_transaction(
+        payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
+    )
+
+    if payment is None:
+        raise PaymentNotFoundError(payment_id=payment_id)
+
+    if payment.state.is_completed():
+        if payment.state == PaymentTransactionState.CANCELED:
+            # Avoids error if multiple cancel calls
+            return
+        raise PaymentAlreadyAckedError(payment_id=payment_id)
+
+    # execution
+    with log_context(
+        _logger,
+        logging.INFO,
+        "%s: Cancelling payment %s in payments-gateway",
+        PAG,
+        f"{wallet_id=}",
+        extra=get_log_record_extra(user_id=user_id),
+    ):
+        payments_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
+
+        init = PaymentInitiated(payment_id=payment_id)
+        payment_cancelled = await payments_gateway_api.cancel_payment(init)
+
+    with log_context(
+        _logger,
+        logging.INFO,
+        "%s: Annotate CANCEL transaction %s in db",
+        PGDB,
+        f"{payment_id=}",
+        extra=get_log_record_extra(user_id=user_id),
+    ):
+        await repo.update_ack_payment_transaction(
+            payment_id=payment_id,
+            completion_state=PaymentTransactionState.CANCELED,
+            state_message=payment_cancelled.message,
+            invoice_url=None,
+        )

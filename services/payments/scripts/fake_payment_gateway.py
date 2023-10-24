@@ -1,24 +1,53 @@
 import argparse
 import json
+import logging
 import types
-from typing import Annotated, Any
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Annotated, Any, cast
+from uuid import UUID, uuid4
 
+import httpx
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, Header, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    status,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
+from pydantic import HttpUrl, SecretStr, parse_file_as
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
     ErrorModel,
     InitPayment,
     InitPaymentMethod,
+    PaymentCancelled,
     PaymentID,
     PaymentInitiated,
     PaymentMethodID,
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
+from simcore_service_payments.models.schemas.acknowledgements import AckPayment
+from simcore_service_payments.models.schemas.auth import Token
+
+logging.basicConfig(level=logging.INFO)
+
+
+class Settings(BaseCustomSettings):
+    PAYMENTS_SERVICE_API_BASE_URL: HttpUrl
+    PAYMENTS_USERNAME: str
+    PAYMENTS_PASSWORD: SecretStr
 
 
 def set_operation_id_as_handler_function_name(router: APIRouter):
@@ -32,6 +61,92 @@ ERROR_RESPONSES: dict[str, Any] = {"4XX": {"model": ErrorModel}}
 ERROR_HTML_RESPONSES: dict[str, Any] = {
     "4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}
 }
+
+PAYMENT_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credit Card Payment</title>
+</head>
+<body>
+    <h1>Enter Credit Card Information</h1>
+    <form action="/pay?id={0}" method="POST">
+        <label for="cardNumber">Credit Card Number:</label>
+        <input type="text" id="cardNumber" name="cardNumber" required>
+        <br><br>
+
+        <label for="cardHolder">Name of Cardholder:</label>
+        <input type="text" id="cardHolder" name="cardHolder" required>
+        <br><br>
+
+        <label for="cvc">CVC:</label>
+        <input type="text" id="cvc" name="cvc" required>
+        <br><br>
+
+        <label for="expirationDate">Expiration Date:</label>
+        <input type="text" id="expirationDate" name="expirationDate" placeholder="MM/YY" required>
+        <br><br>
+
+        <input type="submit" value="Submit Payment">
+    </form>
+</body>
+</html>
+"""
+
+
+@dataclass
+class PaymentForm:
+    card_number: Annotated[str, Form(alias="cardNumber")]
+    card_holder: Annotated[str, Form(alias="cardHolder")]
+    cvc: Annotated[str, Form()]
+    expiration_date: Annotated[str, Form(alias="expirationDate")]
+
+
+class PaymentsAuth(httpx.Auth):
+    def __init__(self, username, password):
+        self.form_data = {"username": username, "password": password}
+        self.token = Token(access_token="Undefined", token_type="bearer")
+
+    def build_request_access_token(self):
+        return httpx.Request(
+            "POST",
+            "/v1/token",
+            data=self.form_data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+    def update_tokens(self, response):
+        assert response.status_code == status.HTTP_200_OK  # nosec
+        token = Token(**response.json())
+        assert token.token_type == "bearer"  # nosec
+        self.token = token
+
+    def auth_flow(self, request):
+        response = yield request
+        if response.status_code == status.HTTP_401_UNAUTHORIZED:
+            tokens_response = yield self.build_request_access_token()
+            self.update_tokens(tokens_response)
+
+            request.headers["Authorization"] = f"Bearer {self.token.access_token}"
+            yield request
+
+
+#
+# Dependencies
+#
+
+
+def get_payments(request: Request) -> dict[str, Any]:
+    return request.app.state.payments
+
+
+def get_settings(request: Request) -> Settings:
+    return cast(Settings, request.app.state.settings)
+
+
+#
+# Router factories
+#
 
 
 def create_payment_router():
@@ -50,38 +165,85 @@ def create_payment_router():
     def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert payment  # nosec
         assert auth  # nosec
+
+        payment_id = uuid4()
+        all_payments[payment_id] = {"init": InitPayment}
+
+        return PaymentInitiated(payment_id=payment_id)
 
     @router.get(
         "/pay",
         response_class=HTMLResponse,
         responses=ERROR_HTML_RESPONSES,
     )
-    def get_form_payment(
+    def get_payment_form(
         id: PaymentID,
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert id  # nosec
 
+        if id not in all_payments:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        return PAYMENT_HTML.format(f"{id}")
+
+    @router.post(
+        "/pay",
+        response_class=HTMLResponse,
+        responses=ERROR_RESPONSES,
+        include_in_schema=False,
+    )
+    def pay(
+        id: PaymentID,
+        payment_form: Annotated[PaymentForm, Depends()],
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        assert id  # nosec
+
+        if id not in all_payments:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        all_payments[id]["form"] = payment_form
+
+        # request ACK
+        httpx.post(
+            f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments/{id}:ack",
+            json=AckPayment.Config.schema_extra["example"],  # one-time success
+            auth=PaymentsAuth(
+                username=settings.PAYMENTS_USERNAME,
+                password=settings.PAYMENTS_PASSWORD.get_secret_value(),
+            ),
+        )
+
     @router.post(
         "/cancel",
+        response_model=PaymentCancelled,
         responses=ERROR_RESPONSES,
     )
     def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
+        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert payment  # nosec
+        assert auth  # nosec
+
+        try:
+            all_payments[payment.payment_id] = "CANCELLED"
+            return PaymentCancelled(message="CANCELLED")
+        except KeyError as exc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND) from exc
 
     return router
 
 
-def auth_session(X_Init_Api_Secret: Annotated[str | None, Header()] = None):
-    # NOTE: keep `X_Init_Api_Secret` with capital letters (even if headers are case-insensitive) to
-    # to agree with the specs provided by our partners
-
-    return 1
+def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None) -> int:
+    return 1 if x_init_api_secret is not None else 0
 
 
 def create_payment_method_router():
@@ -166,22 +328,29 @@ def create_payment_method_router():
     return router
 
 
+@asynccontextmanager
+async def _app_lifespan(app: FastAPI):
+    state_path = Path("app.state.payments.ignore.json")
+    if state_path.exists():
+        app.state.payments = parse_file_as(dict[str, Any], state_path)
+
+    yield
+
+    state_path.write_text(json.dumps(jsonable_encoder(app.state.payments), indent=1))
+
+
 def create_app():
     app = FastAPI(
         title="fake-payment-gateway",
         version="0.2.0",
-        servers=[
-            {
-                "url": "{scheme}://{host}:{port}",
-                "description": "development server",
-                "variables": {
-                    "scheme": {"default": "http"},
-                    "host": {"default": "localhost"},
-                    "port": {"default": "8080"},
-                },
-            }
-        ],
+        lifespan=_app_lifespan,
+        debug=True,
     )
+    override_fastapi_openapi_method(app)
+
+    app.state.payments = {}
+    app.state.settings = Settings.create_from_envs()
+    logging.info(app.state.settings.json(indent=2))
 
     for factory in (
         create_payment_router,
@@ -194,14 +363,19 @@ def create_app():
     return app
 
 
+#
+# CLI
+#
+
+the_app = create_app()
+
+
 def run_command(args):
-    app = create_app()
-    uvicorn.run(app, port=8080)
+    uvicorn.run(the_app, port=8080)
 
 
 def openapi_command(args):
-    app = create_app()
-    print(json.dumps(jsonable_encoder(app.openapi()), indent=1))
+    print(json.dumps(jsonable_encoder(the_app.openapi()), indent=1))
 
 
 if __name__ == "__main__":

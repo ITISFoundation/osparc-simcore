@@ -8,10 +8,8 @@ from simcore_postgres_database.models.payments_transactions import (
 )
 
 from ..._constants import ACKED, PGDB, RUT
-from ...db.payments_transactions_repo import (
-    PaymentNotFoundError,
-    PaymentsTransactionsRepo,
-)
+from ...core.errors import PaymentNotFoundError
+from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
 from ...models.db import PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
