@@ -370,8 +370,10 @@ async def get_project_inactivity(
         r for r in inactivity_responses if r.is_inactive
     ]
 
-    # a project is considered inactive when all it's inactive services are inactive for
-    # more than `max_inactivity_seconds`
+    # A project is considered inactive when all it's services are inactive for
+    # more than `max_inactivity_seconds`.
+    # A `service` which does not support the inactivity callback is considered
+    # inactive.
     all_inactive_services_over_threshold = all(
         r.seconds_inactive > max_inactivity_seconds for r in inactive_services
     )
