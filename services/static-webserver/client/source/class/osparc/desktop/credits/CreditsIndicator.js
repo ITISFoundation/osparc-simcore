@@ -98,7 +98,10 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
           break;
         case "credits-bar":
           control = new qx.ui.core.Widget().set({
-            height: 5
+            height: 4
+          });
+          control.getContentElement().setStyles({
+            "border-radius": "2px"
           });
           this._add(control);
           break;
@@ -125,9 +128,13 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
         const progress = this.self().normalizeCredits(credits);
         const bgColor = this.self().creditsToColor(credits, "strong-main");
         indicator.setBackgroundColor(bgColor);
+        const ourBlue = qx.theme.manager.Color.getInstance().resolve("strong-main");
+        const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+        const arr = qx.util.ColorUtil.stringToRgb(textColor);
+        arr[3] = 0.5;
+        const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
         indicator.getContentElement().setStyles({
-          minWidth: parseInt(progress) + "%",
-          maxWidth: parseInt(progress) + "%"
+          background: `linear-gradient(90deg, ${ourBlue} ${progress}%, ${color2} ${progress}%)`
         });
         this.__computeVisibility();
       }
