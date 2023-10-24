@@ -137,7 +137,7 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID")
+    monkeypatch.setenv("CLUSTERS_KEEPER_EC2_ACCESS", "null")
 
 
 @pytest.fixture
