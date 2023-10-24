@@ -97,7 +97,7 @@ async def get_containers_inactivity(
     _ = request
     inactivity_command = settings.DY_SIDECAR_CALLBACKS_MAPPING.inactivity
     if inactivity_command is None:
-        return InactivityResponse(is_inactive=False)
+        return InactivityResponse(seconds_inactive=None)
 
     container_name = inactivity_command.service
 
@@ -120,7 +120,7 @@ async def get_containers_inactivity(
             exc_info=True,
         )
 
-    return InactivityResponse(is_inactive=False)
+    return InactivityResponse(seconds_inactive=None)
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.

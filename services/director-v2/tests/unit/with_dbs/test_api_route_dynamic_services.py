@@ -609,7 +609,7 @@ def mock_internals_inactivity(
     [
         pytest.param(
             [
-                InactivityResponse(is_inactive=True, seconds_inactive=6),
+                InactivityResponse(seconds_inactive=6),
             ],
             5,
             True,
@@ -617,8 +617,8 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                InactivityResponse(is_inactive=True, seconds_inactive=6),
-                InactivityResponse(is_inactive=True, seconds_inactive=1),
+                InactivityResponse(seconds_inactive=6),
+                InactivityResponse(seconds_inactive=1),
             ],
             5,
             False,
@@ -626,8 +626,8 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                InactivityResponse(is_inactive=True, seconds_inactive=6),
-                InactivityResponse(is_inactive=True, seconds_inactive=6),
+                InactivityResponse(seconds_inactive=6),
+                InactivityResponse(seconds_inactive=6),
             ],
             5,
             True,
@@ -640,17 +640,17 @@ def mock_internals_inactivity(
             id="no_services_in_project_it_results_inactive",
         ),
         pytest.param(
-            [InactivityResponse(is_inactive=False, seconds_inactive=None)],
+            [InactivityResponse(seconds_inactive=None)],
             5,
             True,
             id="without_inactivity_support_considered_as_inactive",
         ),
         pytest.param(
             [
-                InactivityResponse(is_inactive=False, seconds_inactive=None),
-                InactivityResponse(is_inactive=True, seconds_inactive=6),
-                InactivityResponse(is_inactive=False, seconds_inactive=None),
-                InactivityResponse(is_inactive=True, seconds_inactive=6),
+                InactivityResponse(seconds_inactive=None),
+                InactivityResponse(seconds_inactive=6),
+                InactivityResponse(seconds_inactive=None),
+                InactivityResponse(seconds_inactive=6),
             ],
             5,
             True,
