@@ -18,6 +18,12 @@ class PaymentTransactionState(str, enum.Enum):
     FAILED = "FAILED"  # payment failed
     CANCELED = "CANCELED"  # payment explicitly aborted by user
 
+    def is_completed(self) -> bool:
+        return self != self.PENDING
+
+    def is_acknowledged(self) -> bool:
+        return self in (self.SUCCESS, self.FAILED)
+
 
 #
 # NOTE:
@@ -102,7 +108,7 @@ payments_transactions = sa.Table(
         "completed_at",
         sa.DateTime(timezone=True),
         nullable=True,
-        doc="Timestamps when transaction completed (payment acked)",
+        doc="Timestamps when transaction completed (payment acked or cancelled)",
     ),
     sa.Column(
         "state",
