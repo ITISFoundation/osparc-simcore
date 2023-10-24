@@ -192,9 +192,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         walletIndicatorModeSB.add(lItem);
       });
       const value = preferencesSettings.getWalletIndicatorMode();
-      walletIndicatorModeSB.getSelectables(selectable => {
+      walletIndicatorModeSB.getSelectables().forEach(selectable => {
         if (selectable.getModel() === value) {
-          walletIndicatorModeSB.setSelected([selectable]);
+          walletIndicatorModeSB.setSelection([selectable]);
         }
       });
       walletIndicatorModeSB.addListener("changeValue", e => {
@@ -217,9 +217,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         walletIndicatorVisibilitySB.add(lItem);
       });
       const value2 = preferencesSettings.getWalletIndicatorVisibility();
-      walletIndicatorVisibilitySB.getSelectables(selectable => {
+      walletIndicatorVisibilitySB.getSelectables().forEach(selectable => {
         if (selectable.getModel() === value2) {
-          walletIndicatorVisibilitySB.setSelected([selectable]);
+          walletIndicatorVisibilitySB.setSelection([selectable]);
         }
       });
       walletIndicatorVisibilitySB.addListener("changeValue", e => {

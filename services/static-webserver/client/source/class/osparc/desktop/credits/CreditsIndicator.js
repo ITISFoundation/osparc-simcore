@@ -130,7 +130,29 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     __applyBindToPreferences: function(bindToPreferences) {
       if (bindToPreferences) {
         const preferencesSettings = osparc.Preferences.getInstance();
+        preferencesSettings.addListener("changeWalletIndicatorMode", () => this.__computeMode());
+        this.__computeMode();
         preferencesSettings.addListener("changeWalletIndicatorVisibility", () => this.__computeVisibility());
+      }
+    },
+
+    __computeMode: function() {
+      if (this.getBindToPreferences()) {
+        const preferencesSettings = osparc.Preferences.getInstance();
+        switch (preferencesSettings.getWalletIndicatorMode()) {
+          case "text":
+            this.getChildControl("credits-text").show();
+            this.getChildControl("credits-bar").exclude();
+            break;
+          case "bar":
+            this.getChildControl("credits-text").exclude();
+            this.getChildControl("credits-bar").show();
+            break;
+          default:
+            this.getChildControl("credits-text").show();
+            this.getChildControl("credits-bar").show();
+            break;
+        }
       }
     },
 
