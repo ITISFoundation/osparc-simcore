@@ -290,6 +290,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     fmd.file_id,
                     file_size_bytes,
                     expiration_secs=self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+                    sha256_checksum=fmd.sha256_checksum,
                 )
                 # update the database so we keep the upload id
                 fmd.upload_id = multipart_presigned_links.upload_id
