@@ -1,8 +1,12 @@
 from aiohttp import web
+from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
+
+from ..rabbitmq import get_rabbitmq_rpc_server
+from . import _api
 
 router = RPCRouter()
 
@@ -15,7 +19,9 @@ async def create_api_keys(
     user_id: UserID,
     new: ApiKeyCreate,
 ) -> ApiKeyGet:
-    raise NotImplementedError
+    return await _api.create_api_key(
+        app, new=new, user_id=user_id, product_name=product_name
+    )
 
 
 @router.expose()
@@ -24,6 +30,13 @@ async def delete_api_keys(
     *,
     product_name: ProductName,
     user_id: UserID,
-    api_key: str,
+    name: str,
 ):
-    raise NotImplementedError
+    return await _api.delete_api_key(
+        app, name=name, user_id=user_id, product_name=product_name
+    )
+
+
+async def register_rpc_routes_on_startup(app: web.Application):
+    rpc_server = get_rabbitmq_rpc_server(app)
+    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)

@@ -2,10 +2,17 @@ import logging
 from collections.abc import AsyncIterator
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_RABBITMQ_CLIENT_KEY
+from servicelib.aiohttp.application_keys import (
+    APP_RABBITMQ_CLIENT_KEY,
+    APP_RABBITMQ_RPC_SERVER_KEY,
+)
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import (
+    RabbitMQClient,
+    RabbitMQRPCClient,
+    wait_till_rabbitmq_responsive,
+)
 
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 from .rest.healthcheck import HealthCheck, HealthCheckError
@@ -28,9 +35,12 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         await wait_till_rabbitmq_responsive(f"{settings.dsn}")
 
     with log_context(
-        _logger, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
+        _logger, logging.INFO, msg=f"Connect RabbitMQ clients to {settings.dsn}"
     ):
         app[APP_RABBITMQ_CLIENT_KEY] = RabbitMQClient("webserver", settings)
+        app[APP_RABBITMQ_RPC_SERVER_KEY] = RabbitMQRPCClient.create(
+            client_name="webserver_rpc_server", settings=settings
+        )
 
     # injects healthcheck
     healthcheck: HealthCheck = app[HealthCheck.__name__]
@@ -41,6 +51,7 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     # cleanup
     with log_context(_logger, logging.INFO, msg="Close RabbitMQ client"):
         await app[APP_RABBITMQ_CLIENT_KEY].close()
+        await app[APP_RABBITMQ_RPC_SERVER_KEY].close()
 
 
 @app_module_setup(
@@ -56,3 +67,7 @@ def setup_rabbitmq(app: web.Application) -> None:
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
     return app[APP_RABBITMQ_CLIENT_KEY]
+
+
+def get_rabbitmq_rpc_server(app: web.Application) -> RabbitMQRPCClient:
+    return app[APP_RABBITMQ_RPC_SERVER_KEY]
