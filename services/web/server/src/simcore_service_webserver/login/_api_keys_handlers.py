@@ -1,92 +1,73 @@
 import logging
-import uuid as uuidlib
-from typing import TypedDict
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
-from servicelib.aiohttp.requests_validation import parse_request_body_as
+from models_library.api_schemas_webserver.auth import ApiKeyCreate
+from models_library.users import UserID
+from pydantic import Field
+from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.errors import DatabaseError
+from simcore_service_webserver.security.decorators import permission_required
 
-from ..security.api import check_permission
-from ._api_keys_db import ApiKeyRepo
+from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from .._meta import API_VTAG
+from ..utils_aiohttp import envelope_json_response
+from . import _api_keys_api as _api
 from .decorators import login_required
-from .utils import get_random_string
 
 _logger = logging.getLogger(__name__)
-
-
-class ApiCredentials(TypedDict):
-    api_key: str
-    api_secret: str
-
-
-def _get_random_uuid_string() -> str:
-    return uuidlib.uuid5(uuidlib.NAMESPACE_DNS, get_random_string(20)).hex
-
-
-def _generate_api_credentials() -> ApiCredentials:
-    return ApiCredentials(
-        api_key=_get_random_uuid_string(), api_secret=_get_random_uuid_string()
-    )
-
-
-#
-# HANDLERS
-#
 
 
 routes = RouteTableDef()
 
 
-@routes.get("/v0/auth/api-keys", name="list_api_keys")
+class _RequestContext(RequestParams):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+
+
+@routes.get(f"/{API_VTAG}/auth/api-keys", name="list_api_keys")
 @login_required
+@permission_required("user.apikey.*")
 async def list_api_keys(request: web.Request):
-    await check_permission(request, "user.apikey.*")
+    req_ctx = _RequestContext.parse_obj(request)
+    api_keys_names = await _api.list_api_keys(request.app, user_id=req_ctx.user_id)
+    return envelope_json_response(api_keys_names)
 
-    crud = ApiKeyRepo.create_from_request(request)
-    return await crud.list_names()
 
-
-@routes.post("/v0/auth/api-keys", name="create_api_key")
+@routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
 @login_required
+@permission_required("user.apikey.*")
 async def create_api_key(request: web.Request):
-    await check_permission(request, "user.apikey.*")
-
-    api_key = await parse_request_body_as(ApiKeyCreate, request)
-    credentials = _generate_api_credentials()
+    req_ctx = _RequestContext.parse_obj(request)
+    new = await parse_request_body_as(ApiKeyCreate, request)
     try:
-        repo = ApiKeyRepo.create_from_request(request)
-        await repo.create(api_key, **credentials)
+        data = await _api.create_api_key(request.app, new=new, user_id=req_ctx.user_id)
     except DatabaseError as err:
         raise web.HTTPBadRequest(
             reason="Invalid API key name: already exists",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
-    return ApiKeyGet(
-        display_name=api_key.display_name,
-        api_key=credentials["api_key"],
-        api_secret=credentials["api_secret"],
-    ).dict(**RESPONSE_MODEL_POLICY)
+    return envelope_json_response(data)
 
 
-@routes.delete("/v0/auth/api-keys", name="delete_api_key")
+@routes.delete(f"/{API_VTAG}/auth/api-keys", name="delete_api_key")
 @login_required
+@permission_required("user.apikey.*")
 async def delete_api_key(request: web.Request):
-    await check_permission(request, "user.apikey.*")
+    req_ctx = _RequestContext.parse_obj(request)
 
+    # FIXME: pass this via params
     body = await request.json()
-    display_name = body.get("display_name")
+    name = body.get("display_name")
 
     try:
-        repo = ApiKeyRepo.create_from_request(request)
-        await repo.delete(display_name)
+        await _api.delete_api_key(request.app, name=name, user_id=req_ctx.user_id)
     except DatabaseError as err:
         _logger.warning(
-            "Failed to delete API key %s. Ignoring error", display_name, exc_info=err
+            "Failed to delete API key %s. Ignoring error", name, exc_info=err
         )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

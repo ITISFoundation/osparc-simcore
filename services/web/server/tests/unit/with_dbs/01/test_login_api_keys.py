@@ -7,24 +7,20 @@ from datetime import timedelta
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient, make_mocked_request
+from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from simcore_service_webserver._constants import RQT_USERID_KEY
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login._api_keys_api import prune_expired_api_keys
-from simcore_service_webserver.login._api_keys_handlers import ApiKeyRepo
+from simcore_service_webserver.login._api_keys_db import ApiKeyRepo
 
 
 @pytest.fixture()
 async def fake_user_api_keys(client: TestClient, logged_user):
+    assert client.app
     names = ["foo", "bar", "beta", "alpha"]
-
-    mock_request = make_mocked_request(method="GET", path="/foo", app=client.app)
-    mock_request[RQT_USERID_KEY] = logged_user["id"]
-
-    repo = ApiKeyRepo.create_from_request(mock_request)
+    repo = ApiKeyRepo.create_from_app(app=client.app, user_id=logged_user["id"])
 
     for name in names:
         await repo.create(

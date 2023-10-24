@@ -9,7 +9,6 @@ from aiopg.sa.result import ResultProxy
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.basic_types import IdInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from servicelib.request_keys import RQT_USERID_KEY
 from sqlalchemy.sql import func
 
 _logger = logging.getLogger(__name__)
@@ -21,21 +20,14 @@ class ApiKeyRepo:
     user_id: int | None = None  # =undefined
 
     @classmethod
-    def create_from_app(cls, app: web.Application):
-        return cls(engine=app[APP_DB_ENGINE_KEY])
-
-    @classmethod
-    def create_from_request(cls, request: web.Request):
-        return cls(
-            engine=request.app[APP_DB_ENGINE_KEY],
-            user_id=request.get(RQT_USERID_KEY, None),
-        )
+    def create_from_app(cls, app: web.Application, *, user_id: int | None = None):
+        return cls(engine=app[APP_DB_ENGINE_KEY], user_id=user_id)
 
     def _raise_if_no_user_defined(self):
         if self.user_id is None:
             raise ValueError("Unknown user_id")
 
-    async def list_names(self):
+    async def list_names(self) -> list[str]:
         self._raise_if_no_user_defined()
         async with self.engine.acquire() as conn:
             stmt = sa.select(
