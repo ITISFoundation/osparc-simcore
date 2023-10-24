@@ -27,18 +27,14 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this.set({
       alignX: "center",
-      padding: 4,
       margin: 6,
       marginRight: 20
     });
 
     // make it look like a button
     this.set({
-      cursor: "pointer",
-      backgroundColor: "background-main-3"
+      cursor: "pointer"
     });
-    this.addListener("pointerover", () => this.setBackgroundColor("background-main-4"), this);
-    this.addListener("pointerout", () => this.setBackgroundColor("background-main-3"), this);
     this.getContentElement().setStyles({
       "border-radius": "4px"
     });
