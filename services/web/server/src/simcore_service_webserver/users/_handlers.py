@@ -1,4 +1,5 @@
 import functools
+import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -18,7 +19,7 @@ from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _tokens, api
+from . import _api, _tokens, api
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -27,9 +28,11 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
-from .api import list_user_permissions as api_list_user_permissions
 from .exceptions import TokenNotFoundError, UserNotFoundError
 from .schemas import Permission, PermissionGet, ProfileGet, ProfileUpdate, TokenCreate
+
+_logger = logging.getLogger(__name__)
+
 
 routes = web.RouteTableDef()
 
@@ -214,7 +217,7 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 @permission_required("user.permissions.read")
 async def list_user_permissions(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    list_permissions: list[Permission] = await api_list_user_permissions(
+    list_permissions: list[Permission] = await _api.list_user_permissions(
         request.app, req_ctx.user_id, req_ctx.product_name
     )
     return envelope_json_response(
