@@ -32,7 +32,11 @@ class _RequestContext(RequestParams):
 @permission_required("user.apikey.*")
 async def list_api_keys(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    api_keys_names = await _api.list_api_keys(request.app, user_id=req_ctx.user_id)
+    api_keys_names = await _api.list_api_keys(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+    )
     return envelope_json_response(api_keys_names)
 
 
@@ -43,7 +47,12 @@ async def create_api_key(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     new = await parse_request_body_as(ApiKeyCreate, request)
     try:
-        data = await _api.create_api_key(request.app, new=new, user_id=req_ctx.user_id)
+        data = await _api.create_api_key(
+            request.app,
+            new=new,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
     except DatabaseError as err:
         raise web.HTTPBadRequest(
             reason="Invalid API key name: already exists",
@@ -64,7 +73,12 @@ async def delete_api_key(request: web.Request):
     name = body.get("display_name")
 
     try:
-        await _api.delete_api_key(request.app, name=name, user_id=req_ctx.user_id)
+        await _api.delete_api_key(
+            request.app,
+            name=name,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
     except DatabaseError as err:
         _logger.warning(
             "Failed to delete API key %s. Ignoring error", name, exc_info=err

@@ -2,14 +2,15 @@ import logging
 from dataclasses import dataclass
 from datetime import timedelta
 
-import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
+from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.models.api_keys import api_keys
 
 _logger = logging.getLogger(__name__)
 
@@ -22,13 +23,14 @@ class ApiKeyRepo:
     def create_from_app(cls, app: web.Application):
         return cls(engine=app[APP_DB_ENGINE_KEY])
 
-    async def list_names(self, *, user_id: UserID) -> list[str]:
+    async def list_names(
+        self, *, user_id: UserID, product_name: ProductName
+    ) -> list[str]:
         async with self.engine.acquire() as conn:
-            stmt = sa.select(
-                [
-                    orm.api_keys.c.display_name,
-                ]
-            ).where(orm.api_keys.c.user_id == user_id)
+            stmt = sa.select(api_keys.c.display_name,).where(
+                (api_keys.c.user_id == user_id)
+                & (api_keys.c.product_name == product_name)
+            )
 
             result: ResultProxy = await conn.execute(stmt)
             rows = await result.fetchall() or []
@@ -37,48 +39,62 @@ class ApiKeyRepo:
     async def create(
         self,
         *,
+        user_id: UserID,
+        product_name: ProductName,
         display_name: str,
         expiration: timedelta | None,
-        user_id: UserID,
         api_key: str,
         api_secret: str,
     ) -> list[IdInt]:
         async with self.engine.acquire() as conn:
             stmt = (
-                orm.api_keys.insert()
+                api_keys.insert()
                 .values(
                     display_name=display_name,
                     user_id=user_id,
+                    product_name=product_name,
                     api_key=api_key,
                     api_secret=api_secret,
                     expires_at=(sa.func.now() + expiration) if expiration else None,
                 )
-                .returning(orm.api_keys.c.id)
+                .returning(api_keys.c.id)
             )
 
             result: ResultProxy = await conn.execute(stmt)
             rows = await result.fetchall() or []
             return [r.id for r in rows]
 
-    async def delete(self, *, display_name: str, user_id: UserID):
+    async def delete_by_name(
+        self, *, display_name: str, user_id: UserID, product_name: ProductName
+    ):
         async with self.engine.acquire() as conn:
-            stmt = orm.api_keys.delete().where(
-                sa.and_(
-                    orm.api_keys.c.user_id == user_id,
-                    orm.api_keys.c.display_name == display_name,
-                )
+            stmt = api_keys.delete().where(
+                (api_keys.c.user_id == user_id)
+                & (api_keys.c.display_name == display_name)
+                & (api_keys.c.product_name == product_name)
+            )
+            await conn.execute(stmt)
+
+    async def delete_by_key(
+        self, *, api_key: str, user_id: UserID, product_name: ProductName
+    ):
+        async with self.engine.acquire() as conn:
+            stmt = api_keys.delete().where(
+                (api_keys.c.user_id == user_id)
+                & (api_keys.c.api_key == api_key)
+                & (api_keys.c.product_name == product_name)
             )
             await conn.execute(stmt)
 
     async def prune_expired(self) -> list[str]:
         async with self.engine.acquire() as conn:
             stmt = (
-                orm.api_keys.delete()
+                api_keys.delete()
                 .where(
-                    (orm.api_keys.c.expires_at != None)  # noqa: E711
-                    & (orm.api_keys.c.expires_at < sa.func.now())
+                    (api_keys.c.expires_at != None)  # noqa: E711
+                    & (api_keys.c.expires_at < sa.func.now())
                 )
-                .returning(orm.api_keys.c.display_name)
+                .returning(api_keys.c.display_name)
             )
             result: ResultProxy = await conn.execute(stmt)
             rows = await result.fetchall() or []

@@ -33,7 +33,7 @@ async def fake_user_api_keys(client: TestClient, logged_user):
     yield names
 
     for name in names:
-        await repo.delete(display_name=name, user_id=logged_user["id"])
+        await repo.delete_by_name(display_name=name, user_id=logged_user["id"])
 
 
 _USER_ACCESS_PARAMETERS = [
