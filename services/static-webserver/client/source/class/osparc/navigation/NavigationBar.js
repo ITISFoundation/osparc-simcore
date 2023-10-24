@@ -331,7 +331,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menu = new qx.ui.menu.Menu().set({
         position: "top-right"
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/question/20", menu).set({
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
         backgroundColor: "transparent"
       });
 
