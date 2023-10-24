@@ -63,7 +63,11 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
     file_id = _faker.file_name()
     file_size = parse_obj_as(ByteSize, "100Mib")
     upload_links = await storage_s3_client.create_multipart_upload_links(
-        storage_s3_bucket, file_id, file_size, expiration_secs=3600
+        storage_s3_bucket,
+        file_id,
+        file_size,
+        expiration_secs=3600,
+        sha256_checksum=parse_obj_as(SHA256Str, _faker.sha256()),
     )
 
     # ensure we have now an upload id
