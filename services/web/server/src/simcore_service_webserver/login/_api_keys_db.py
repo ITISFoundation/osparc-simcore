@@ -10,7 +10,6 @@ from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from sqlalchemy.sql import func
 
 _logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class ApiKeyRepo:
                     user_id=user_id,
                     api_key=api_key,
                     api_secret=api_secret,
-                    expires_at=(func.now() + expiration) if expiration else None,
+                    expires_at=(sa.func.now() + expiration) if expiration else None,
                 )
                 .returning(orm.api_keys.c.id)
             )
@@ -77,7 +76,7 @@ class ApiKeyRepo:
                 orm.api_keys.delete()
                 .where(
                     (orm.api_keys.c.expires_at != None)  # noqa: E711
-                    & (orm.api_keys.c.expires_at < func.now())
+                    & (orm.api_keys.c.expires_at < sa.func.now())
                 )
                 .returning(orm.api_keys.c.display_name)
             )
