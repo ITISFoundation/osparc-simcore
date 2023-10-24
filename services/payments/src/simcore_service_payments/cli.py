@@ -57,9 +57,6 @@ def echo_dotenv(
         PAYMENTS_USERNAME=username,
         PAYMENTS_PASSWORD=password,
         PAYMENTS_GATEWAY_URL="http://127.0.0.1:8000",  # NOSONAR
-        PAYMENTS_GATEWAY_API_KEY=os.environ.get(
-            "PAYMENTS_GATEWAY_API_KEY", "replace-with-api-key"
-        ),
         PAYMENTS_GATEWAY_API_SECRET=os.environ.get(
             "PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"
         ),

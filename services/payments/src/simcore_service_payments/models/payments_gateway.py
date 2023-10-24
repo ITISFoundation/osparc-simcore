@@ -3,22 +3,22 @@ from pathlib import Path
 from typing import Literal, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import NonEmptyStr, PositiveDecimal
-from pydantic import BaseModel, EmailStr, Extra
+from models_library.basic_types import AmountDecimal, NonEmptyStr
+from pydantic import BaseModel, EmailStr, Extra, Field
 
 
 class ErrorModel(BaseModel):
     message: str
-    exception: str
-    file: Path | str
-    line: int
-    trace: list
+    exception: str | None = None
+    file: Path | str | None = None
+    line: int | None = None
+    trace: list | None = None
 
 
 class InitPayment(BaseModel):
-    amount_dollars: PositiveDecimal
+    amount_dollars: AmountDecimal
     # metadata to store for billing or reference
-    credits: PositiveDecimal
+    credits_: AmountDecimal = Field(..., alias="credits")
     user_name: NonEmptyStr
     user_email: EmailStr
     wallet_name: NonEmptyStr
@@ -32,6 +32,10 @@ PaymentID: TypeAlias = UUID
 
 class PaymentInitiated(BaseModel):
     payment_id: PaymentID
+
+
+class PaymentCancelled(BaseModel):
+    message: str | None = None
 
 
 PaymentMethodID: TypeAlias = UUID
