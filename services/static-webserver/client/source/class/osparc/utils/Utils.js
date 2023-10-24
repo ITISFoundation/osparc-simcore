@@ -842,7 +842,11 @@ qx.Class.define("osparc.utils.Utils", {
       // close windows
       const children = qx.core.Init.getApplication().getRoot().getChildren();
       children.forEach(child => {
-        if (child.classname === "osparc.ui.window.Window") {
+        const closeClasses = [
+          "osparc.ui.window.Window",
+          "osparc.desktop.credits.UserCenterWindow"
+        ];
+        if (closeClasses.includes(child.classname)) {
           child.close();
         }
       });
