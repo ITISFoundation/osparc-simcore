@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
+from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from pydantic import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -17,11 +18,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver._constants import RQT_USERID_KEY
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.api_keys_db import prune_expired_api_keys
-from simcore_service_webserver.login.api_keys_handlers import (
-    ApiKeyCreate,
-    ApiKeyGet,
-    ApiKeyRepo,
-)
+from simcore_service_webserver.login.api_keys_handlers import ApiKeyRepo
 
 
 @pytest.fixture()
@@ -49,8 +46,7 @@ async def fake_user_api_keys(client: TestClient, logged_user):
 USER_ACCESS_PARAMETERS = [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
+    *((UserRole.USER, web.HTTPOk) for role in UserRole if role > UserRole.GUEST),
 ]
 
 

@@ -1,15 +1,14 @@
 import logging
 import uuid as uuidlib
-from datetime import timedelta
-from typing import Any, ClassVar, TypedDict
+from typing import TypedDict
 
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from aiopg.sa.result import ResultProxy
+from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.basic_types import IdInt
-from pydantic import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -22,51 +21,7 @@ from ..security.api import check_permission
 from .decorators import login_required
 from .utils import get_random_string
 
-log = logging.getLogger(__name__)
-
-
-#
-# MODELS
-#
-
-
-class ApiKeyCreate(BaseModel):
-    display_name: str = Field(..., min_length=3)
-    expiration: timedelta | None = Field(
-        None,
-        description="Time delta from creation time to expiration. If None, then it does not expire.",
-    )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "display_name": "test-api-forever",
-                },
-                {
-                    "display_name": "test-api-for-one-day",
-                    "expiration": 60 * 60 * 24,
-                },
-            ]
-        }
-
-
-class ApiKeyGet(BaseModel):
-    display_name: str = Field(..., min_length=3)
-    api_key: str
-    api_secret: str
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
-            ]
-        }
-
-
-#
-# HANDLERS / helpers
-#
+_logger = logging.getLogger(__name__)
 
 
 class ApiCredentials(TypedDict):
@@ -190,7 +145,7 @@ async def delete_api_key(request: web.Request):
         repo = ApiKeyRepo(request)
         await repo.delete(display_name)
     except DatabaseError as err:
-        log.warning(
+        _logger.warning(
             "Failed to delete API key %s. Ignoring error", display_name, exc_info=err
         )
 
