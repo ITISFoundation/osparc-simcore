@@ -82,10 +82,10 @@ def get_settings(env_file, deployment):
             swarm_stack_name="staging-simcore",
             portainer_endpoint_version=2,
         )
-    if deployment == "aws-production":
-        portainer_url = os.getenv("AWS_PRODUCTION_PORTAINER_URL")
-        portainer_username = os.getenv("AWS_PRODUCTION_PORTAINER_USERNAME")
-        portainer_password = os.getenv("AWS_PRODUCTION_PORTAINER_PASSWORD")
+    if deployment == "aws-nih-production":
+        portainer_url = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_URL")
+        portainer_username = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_USERNAME")
+        portainer_password = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_PASSWORD")
 
         return Settings(
             portainer_url=portainer_url,
@@ -94,6 +94,19 @@ def get_settings(env_file, deployment):
             starts_with="production-simcore_production",
             swarm_stack_name="production-simcore",
             portainer_endpoint_version=2,
+        )
+    if deployment == "aws-zmt-production":
+        portainer_url = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_URL")
+        portainer_username = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_USERNAME")
+        portainer_password = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_PASSWORD")
+
+        return Settings(
+            portainer_url=portainer_url,
+            portainer_username=portainer_username,
+            portainer_password=portainer_password,
+            starts_with="master-simcore_master",
+            swarm_stack_name="master-simcore",
+            portainer_endpoint_version=1,
         )
     else:
         raise ValueError("Invalid environment type provided.")
