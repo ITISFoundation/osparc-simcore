@@ -44,7 +44,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -91,6 +91,7 @@ from ..users.preferences_api import (
     get_frontend_user_preference,
 )
 from ..wallets import api as wallets_api
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
@@ -342,9 +343,15 @@ async def _start_dynamic_service(
             else:
                 project_wallet_id = project_wallet.wallet_id
             # Check whether user has access to the wallet
-            wallet = await wallets_api.get_wallet_by_user(
-                request.app, user_id, project_wallet_id, product_name
+            wallet = (
+                await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
+                    request.app, user_id, project_wallet_id, product_name
+                )
             )
+            if wallet.available_credits <= ZERO_CREDITS:
+                raise WalletNotEnoughCreditsError(
+                    reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+                )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id, wallet_name=wallet.name
             )
