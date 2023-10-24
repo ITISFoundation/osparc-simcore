@@ -15,7 +15,11 @@ branch_labels = None
 depends_on = None
 
 
-# FIXME: migrate to default product old data
+def find_default_product_name_or_none(conn):
+    query = sa.text("SELECT name FROM products ORDER BY priority LIMIT 1")
+    result = conn.execute(query)
+    row = result.fetchone()
+    return row[0] if row else None
 
 
 def upgrade():
@@ -31,6 +35,13 @@ def upgrade():
         ondelete="CASCADE",
     )
     # ### end Alembic commands ###
+
+    conn = op.get_bind()
+
+    default_product = find_default_product_name_or_none(conn)
+
+    if default_product:
+        op.execute(f"UPDATE api_keys SET product_name = '{default_product}'")
 
 
 def downgrade():
