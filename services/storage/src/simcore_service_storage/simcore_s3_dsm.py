@@ -384,7 +384,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 file_id=fmd.file_id,
                 upload_id=fmd.upload_id,
                 uploaded_parts=uploaded_parts,
-                sha256_checksum=fmd.sha256_checksum,
             )
         async with self.engine.acquire() as conn:
             fmd = await self._update_database_from_storage(conn, fmd)

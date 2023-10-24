@@ -246,7 +246,6 @@ class StorageS3Client:
         file_id: SimcoreS3FileID,
         upload_id: UploadID,
         uploaded_parts: list[UploadedPart],
-        sha256_checksum: SHA256Str | None,
     ) -> ETag:
         inputs: dict[str, Any] = {
             "Bucket": bucket,
@@ -259,8 +258,6 @@ class StorageS3Client:
                 ]
             },
         }
-        if sha256_checksum:
-            inputs["ChecksumSHA256"] = sha256_checksum
         response = await self.client.complete_multipart_upload(**inputs)
         return response["ETag"]
 
