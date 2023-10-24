@@ -18,6 +18,7 @@ from unit.conftest import SideEffectCallback
 # pylint: disable=unused-variable
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "capture", ["get_job_wallet_found.json", "get_job_wallet_not_found.json"]
 )
@@ -47,10 +48,23 @@ async def test_get_solver_job_wallet(
             response["data"]["walletId"] = _wallet_id
         return response
 
+    def _get_wallet_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        response = capture.response_body
+        assert isinstance(response, dict)
+        if data := response.get("data"):
+            assert isinstance(data, dict)
+            assert data.get("walletId")
+            response["data"]["walletId"] = _wallet_id
+        return response
+
     respx_mock = respx_mock_from_capture(
         mocked_webserver_service_api_base,
         project_tests_dir / "mocks" / capture,
-        [_get_job_wallet_side_effect],
+        [_get_job_wallet_side_effect, _get_wallet_side_effect],
     )
 
     solver_key: str = "simcore/services/comp/my_super_hpc_solver"
