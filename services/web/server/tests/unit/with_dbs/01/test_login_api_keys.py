@@ -8,7 +8,6 @@ from datetime import timedelta
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
@@ -20,19 +19,21 @@ from simcore_service_webserver.login._api_keys_db import ApiKeyRepo
 async def fake_user_api_keys(client: TestClient, logged_user):
     assert client.app
     names = ["foo", "bar", "beta", "alpha"]
-    repo = ApiKeyRepo.create_from_app(app=client.app, user_id=logged_user["id"])
+    repo = ApiKeyRepo.create_from_app(app=client.app)
 
     for name in names:
         await repo.create(
-            ApiKeyCreate(display_name=name, expiration=None),
+            display_name=name,
+            expiration=None,
             api_key=f"{name}-key",
             api_secret=f"{name}-secret",
+            user_id=logged_user["id"],
         )
 
     yield names
 
     for name in names:
-        await repo.delete(name)
+        await repo.delete(display_name=name, user_id=logged_user["id"])
 
 
 _USER_ACCESS_PARAMETERS = [
