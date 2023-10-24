@@ -114,7 +114,7 @@ qx.Class.define("osparc.task.TaskUI", {
         win.getCancelButton().setLabel(this.tr("Ignore"));
         win.center();
         win.open();
-        win.addListener("close", () => {
+        win.addListenerOnce("close", () => {
           if (win.getConfirmed()) {
             task.abortRequested();
           }

@@ -193,7 +193,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         });
         win.center();
         win.open();
-        win.addListener("close", () => {
+        win.addListenerOnce("close", () => {
           if (win.getConfirmed()) {
             this.__updateAllTemplates();
           }
@@ -318,7 +318,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       win.center();
       win.open();
-      win.addListener("close", () => {
+      win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
           this.__doDeleteTemplate(templateData);
         }

@@ -254,7 +254,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           });
           win.center();
           win.open();
-          win.addListener("close", () => {
+          win.addListenerOnce("close", () => {
             if (win.getConfirmed()) {
               const preferenceSettings = osparc.Preferences.getInstance();
               preferenceSettings.requestChangePreferredWalletId(walletId);

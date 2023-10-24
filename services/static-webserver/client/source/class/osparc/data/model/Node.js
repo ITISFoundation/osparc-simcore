@@ -985,7 +985,7 @@ qx.Class.define("osparc.data.model.Node", {
         });
         win.center();
         win.open();
-        win.addListener("close", () => {
+        win.addListenerOnce("close", () => {
           if (win.getConfirmed()) {
             const params = {
               url: {

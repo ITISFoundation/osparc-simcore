@@ -352,7 +352,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           });
           win.center();
           win.open();
-          win.addListener("close", () => {
+          win.addListenerOnce("close", () => {
             if (win.getConfirmed()) {
               this.__requestStartPipeline(studyId, partialPipeline, true);
             }
@@ -539,7 +539,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const studyId = e.getData();
         this.fireDataEvent("startIteration", studyId);
       });
-      win.addListener("close", () => {
+      win.addListenerOnce("close", () => {
         iterations.unlistenToNodeUpdates();
         this.__workbenchView.listenToNodeUpdated();
       }, this);

@@ -241,7 +241,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       });
       win.center();
       win.open();
-      win.addListener("close", () => {
+      win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
           const params = {
             url: {

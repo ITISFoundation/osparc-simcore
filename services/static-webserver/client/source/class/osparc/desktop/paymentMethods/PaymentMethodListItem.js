@@ -189,7 +189,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
       });
       win.center();
       win.open();
-      win.addListener("close", () => {
+      win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
           this.fireDataEvent("deletePaymentMethod", this.getKey());
         }

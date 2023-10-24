@@ -144,7 +144,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       });
       win.center();
       win.open();
-      win.addListener("close", () => {
+      win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
           const params = {
             data: {
@@ -284,7 +284,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       });
       win.center();
       win.open();
-      win.addListener("close", () => {
+      win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
           const params = {
             url: {

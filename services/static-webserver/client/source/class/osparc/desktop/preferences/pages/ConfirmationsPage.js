@@ -90,7 +90,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
           });
           win.center();
           win.open();
-          win.addListener("close", () => {
+          win.addListenerOnce("close", () => {
             if (win.getConfirmed()) {
               this.self().patchPreference("confirmDeleteStudy", cbConfirmDeleteStudy, false);
             } else {
@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
             });
             win.center();
             win.open();
-            win.addListener("close", () => {
+            win.addListenerOnce("close", () => {
               if (win.getConfirmed()) {
                 this.self().patchPreference("confirmDeleteNode", cbConfirmDeleteNode, false);
               } else {

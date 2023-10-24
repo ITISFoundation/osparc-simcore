@@ -343,7 +343,7 @@ qx.Class.define("osparc.share.Collaborators", {
             confirmAction: "delete"
           });
           win.open();
-          win.addListener("close", () => {
+          win.addListenerOnce("close", () => {
             if (win.getConfirmed()) {
               this._deleteMember({gid: myGid});
               qx.event.message.Bus.dispatchByName("reloadStudies");
