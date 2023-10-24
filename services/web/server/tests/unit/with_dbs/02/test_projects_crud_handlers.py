@@ -738,9 +738,7 @@ def mock_director_v2_inactivity(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        *((role, web.HTTPOk) for role in UserRole if role > UserRole.ANONYMOUS),
     ],
 )
 @pytest.mark.parametrize("is_inactive", [True, False])
