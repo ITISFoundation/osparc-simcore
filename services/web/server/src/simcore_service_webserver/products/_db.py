@@ -9,9 +9,9 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName
 from pydantic import parse_obj_as
+from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
-    QUANTIZE_EXP_ARG,
     get_product_latest_credit_price_or_none,
 )
 

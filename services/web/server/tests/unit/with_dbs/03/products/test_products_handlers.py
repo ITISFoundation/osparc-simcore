@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.product import GetProduct
 from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from simcore_postgres_database.utils_products_prices import QUANTIZE_EXP_ARG
+from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db.models import UserRole
 
