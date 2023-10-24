@@ -22,8 +22,6 @@ from servicelib.common_headers import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
-from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG as VTAG
 from ..director_v2.exceptions import DirectorServiceError
@@ -32,6 +30,9 @@ from ..notifications import project_logs
 from ..products.api import Product, get_current_product
 from ..security.decorators import permission_required
 from ..users import api
+from ..users.exceptions import UserDefaultWalletNotFoundError
+from ..utils_aiohttp import envelope_json_response
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
@@ -63,6 +64,9 @@ def _handle_project_exceptions(handler: Handler):
 
         except ProjectTooManyProjectOpenedError as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
+
+        except WalletNotEnoughCreditsError as exc:
+            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return _wrapper
 

@@ -44,6 +44,9 @@ MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[
     str
 ] = "Unauthorized: you cannot submit the code anymore, please restart."
 MSG_UNKNOWN_EMAIL: Final[str] = "This email is not registered"
+MSG_USER_DELETED: Final[
+    str
+] = "This account was requested for deletion. To reactivate or further information please contact support: {support_email}"
 MSG_USER_BANNED: Final[
     str
 ] = "This user does not have anymore access. Please contact support for further details: {support_email}"

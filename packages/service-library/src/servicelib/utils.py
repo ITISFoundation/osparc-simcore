@@ -71,6 +71,7 @@ def fire_and_forget_task(
     task_suffix_name: str,
     fire_and_forget_tasks_collection: set[asyncio.Task],
 ) -> asyncio.Task:
+    # NOTE: details on rationale in https://github.com/ITISFoundation/osparc-simcore/pull/3120
     task = asyncio.create_task(obj, name=f"fire_and_forget_task_{task_suffix_name}")
     fire_and_forget_tasks_collection.add(task)
 
