@@ -5,6 +5,8 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+
 import httpx
 import pytest
 from faker import Faker
@@ -26,9 +28,10 @@ pytest_simcore_ops_services_selection = [
 def app_environment(
     app_environment: EnvVarsDict,
     postgres_env_vars_dict: EnvVarsDict,
+    external_environment: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
     monkeypatch: pytest.MonkeyPatch,
-):
+) -> EnvVarsDict:
     # set environs
     monkeypatch.delenv("PAYMENTS_POSTGRES", raising=False)
 
@@ -37,9 +40,33 @@ def app_environment(
         {
             **app_environment,
             **postgres_env_vars_dict,
+            **external_environment,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )
+
+
+@pytest.fixture
+async def client(
+    client: httpx.AsyncClient, external_environment: EnvVarsDict
+) -> AsyncIterator[httpx.AsyncClient]:
+
+    # EITHER tests against external payments API
+    if external_base_url := external_environment.get("PAYMENTS_SERVICE_API_BASE_URL"):
+        # If there are external secrets, build a new client and point to `external_base_url`
+        print(
+            "🚨 EXTERNAL: tests running against external payment API at",
+            external_base_url,
+        )
+        async with httpx.AsyncClient(
+            app=None,
+            base_url=external_base_url,
+            headers={"Content-Type": "application/json"},
+        ) as new_client:
+            yield new_client
+    # OR tests against app
+    else:
+        yield client
 
 
 async def test_payments_api_authentication(
@@ -62,8 +89,6 @@ async def test_payments_api_authentication(
     response = await client.post(
         f"/v1/payments/{payments_id}:ack", json=payment_ack, headers=auth_headers
     )
-
-    print(response.json())
 
     # NOTE: for the moment this entry is not implemented
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
