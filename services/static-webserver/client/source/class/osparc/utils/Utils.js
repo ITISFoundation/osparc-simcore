@@ -842,7 +842,8 @@ qx.Class.define("osparc.utils.Utils", {
       // close windows
       const children = qx.core.Init.getApplication().getRoot().getChildren();
       children.forEach(child => {
-        if (child.classname === "osparc.ui.window.Window") {
+        // eslint-disable-next-line no-underscore-dangle
+        if ("__appearanceSelector" in child && child.__appearanceSelector === "service-window") {
           child.close();
         }
       });

@@ -2,17 +2,21 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import importlib.resources
 import json
 import random
 from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import timezone
 from pathlib import Path
+from typing import Any
 
 import aiodocker
 import httpx
 import pytest
 import requests
 import simcore_service_clusters_keeper
+import simcore_service_clusters_keeper.data
+import yaml
 from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
 from faker import Faker
@@ -26,7 +30,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
-    EC2Settings,
+    EC2ClustersKeeperSettings,
 )
 from simcore_service_clusters_keeper.modules.ec2 import (
     ClustersKeeperEC2,
@@ -79,15 +83,25 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "CLUSTERS_KEEPER_EC2_ACCESS": "{}",
+            "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": faker.pystr(),
+            "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": faker.pystr(),
+            "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
+            "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
+            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "WORKERS_EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
+            "WORKERS_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
         },
     )
     return mock_env_devel_environment | envs
@@ -123,7 +137,7 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID")
+    monkeypatch.setenv("CLUSTERS_KEEPER_EC2_ACCESS", "null")
 
 
 @pytest.fixture
@@ -197,9 +211,9 @@ def mocked_aws_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs = {
-        "CLUSTERS_KEEPER_EC2_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
-        "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": "xxx",
-        "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": "xxx",
+        "EC2_CLUSTERS_KEEPER_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
+        "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": "xxx",
+        "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": "xxx",
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -210,7 +224,7 @@ def aws_allowed_ec2_instance_type_names(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs = {
-        "CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+        "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
             [
                 "t2.xlarge",
                 "t2.2xlarge",
@@ -267,7 +281,7 @@ async def aws_subnet_id(
     subnet_id = subnet["Subnet"]["SubnetId"]
     print(f"--> Created Subnet in AWS with {subnet_id=}")
 
-    monkeypatch.setenv("CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID", subnet_id)
+    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_SUBNET_ID", subnet_id)
     yield subnet_id
 
     # all the instances in the subnet must be terminated before that works
@@ -303,7 +317,7 @@ async def aws_security_group_id(
     security_group_id = security_group["GroupId"]
     print(f"--> Created Security Group in AWS with {security_group_id=}")
     monkeypatch.setenv(
-        "CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS",
+        "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS",
         json.dumps([security_group_id]),
     )
     yield security_group_id
@@ -321,7 +335,7 @@ async def aws_ami_id(
     images = await ec2_client.describe_images()
     image = random.choice(images["Images"])  # noqa S311
     ami_id = image["ImageId"]  # type: ignore
-    monkeypatch.setenv("CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID", ami_id)
+    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_AMI_ID", ami_id)
     return ami_id
 
 
@@ -329,7 +343,7 @@ async def aws_ami_id(
 async def clusters_keeper_ec2(
     app_environment: EnvVarsDict,
 ) -> AsyncIterator[ClustersKeeperEC2]:
-    settings = EC2Settings.create_from_envs()
+    settings = EC2ClustersKeeperSettings.create_from_envs()
     ec2 = await ClustersKeeperEC2.create(settings)
     assert ec2
     yield ec2
@@ -374,3 +388,12 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+def clusters_keeper_docker_compose() -> dict[str, Any]:
+    data = importlib.resources.read_text(
+        simcore_service_clusters_keeper.data, "docker-compose.yml"
+    )
+    assert data
+    return yaml.safe_load(data)
