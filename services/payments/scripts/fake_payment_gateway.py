@@ -343,17 +343,6 @@ def create_app():
     app = FastAPI(
         title="fake-payment-gateway",
         version="0.2.0",
-        # servers=[
-        #     {
-        #         "url": "{scheme}://{host}:{port}",
-        #         "description": "development server",
-        #         "variables": {
-        #             "scheme": {"default": "http"},
-        #             "host": {"default": "localhost"},
-        #             "port": {"default": "8080"},
-        #         },
-        #     }
-        # ],
         lifespan=_app_lifespan,
         debug=True,
     )
