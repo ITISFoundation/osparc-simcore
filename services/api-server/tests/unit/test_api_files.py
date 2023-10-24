@@ -184,7 +184,8 @@ async def test_delete_file(
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -210,7 +211,7 @@ async def test_delete_file(
         return capture.response_body
 
     respx_mock = respx_mock_from_capture(
-        mocked_storage_service_api_base,
+        [mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "delete_file.json",
         [search_side_effect, delete_side_effect],
     )
@@ -302,7 +303,8 @@ async def test_search_file(
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -329,7 +331,7 @@ async def test_search_file(
         return response
 
     respx_mock = respx_mock_from_capture(
-        mocked_storage_service_api_base,
+        [mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "search_file_checksum.json",
         [side_effect_callback],
     )
