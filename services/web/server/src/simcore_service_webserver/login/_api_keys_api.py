@@ -16,13 +16,13 @@ _SECRET_LEN: Final = 30
 
 async def list_api_keys(app: web.Application, *, user_id: UserID) -> list[str]:
     repo = ApiKeyRepo.create_from_app(app)
-    return await repo.list_names(user_id=user_id)
+    names: list[str] = await repo.list_names(user_id=user_id)
+    return names
 
 
 async def create_api_key(
     app: web.Application, *, new: ApiKeyCreate, user_id: UserID
 ) -> ApiKeyGet:
-
     api_key = get_random_string(_KEY_LEN)
     api_secret = get_random_string(_SECRET_LEN)
 
@@ -50,4 +50,5 @@ async def delete_api_key(app: web.Application, *, name: str, user_id: UserID) ->
 
 async def prune_expired_api_keys(app: web.Application) -> list[str]:
     repo = ApiKeyRepo.create_from_app(app)
-    return await repo.prune_expired()
+    names: list[str] = await repo.prune_expired()
+    return names
