@@ -569,9 +569,7 @@ async def get_job_wallet(
     try:
         project_wallet = await webserver_api.get_project_wallet(project_id=job_id)
         if project_wallet:
-            return await webserver_api.get_wallet(
-                wallet_id=project_wallet.wallet_id
-            )  # NEW
+            return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
         return None
 
     except ProjectNotFoundError:
