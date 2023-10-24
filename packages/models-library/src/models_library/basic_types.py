@@ -21,7 +21,8 @@ class PositiveDecimal(ConstrainedDecimal):
     gt = 0
 
 
-class BoundedPositiveDecimal(ConstrainedDecimal):
+class AmountDecimal(ConstrainedDecimal):
+    # Used for amounts like credits or dollars
     # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
     # NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
     # before passing the value

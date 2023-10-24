@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import BoundedPositiveDecimal, NonEmptyStr
+from models_library.basic_types import AmountDecimal, NonEmptyStr
 from pydantic import BaseModel, EmailStr, Extra, Field
 
 
@@ -16,9 +16,9 @@ class ErrorModel(BaseModel):
 
 
 class InitPayment(BaseModel):
-    amount_dollars: BoundedPositiveDecimal
+    amount_dollars: AmountDecimal
     # metadata to store for billing or reference
-    credits_: BoundedPositiveDecimal = Field(..., alias="credits")
+    credits_: AmountDecimal = Field(..., alias="credits")
     user_name: NonEmptyStr
     user_email: EmailStr
     wallet_name: NonEmptyStr
