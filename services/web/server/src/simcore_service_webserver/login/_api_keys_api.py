@@ -15,8 +15,8 @@ _SECRET_LEN: Final = 30
 
 
 async def list_api_keys(app: web.Application, *, user_id: UserID) -> list[str]:
-    repo = ApiKeyRepo.create_from_app(app, user_id=user_id)
-    return await repo.list_names()
+    repo = ApiKeyRepo.create_from_app(app)
+    return await repo.list_names(user_id=user_id)
 
 
 async def create_api_key(
@@ -27,9 +27,11 @@ async def create_api_key(
     api_secret = get_random_string(_SECRET_LEN)
 
     # raises if name exists already!
-    repo = ApiKeyRepo.create_from_app(app, user_id=user_id)
+    repo = ApiKeyRepo.create_from_app(app)
     await repo.create(
-        new,
+        display_name=new.display_name,
+        expiration=new.expiration,
+        user_id=user_id,
         api_key=api_key,
         api_secret=api_secret,
     )
@@ -42,8 +44,8 @@ async def create_api_key(
 
 
 async def delete_api_key(app: web.Application, *, name: str, user_id: UserID) -> None:
-    repo = ApiKeyRepo.create_from_app(app, user_id=user_id)
-    await repo.delete(name)
+    repo = ApiKeyRepo.create_from_app(app)
+    await repo.delete(display_name=name, user_id=user_id)
 
 
 async def prune_expired_api_keys(app: web.Application) -> list[str]:

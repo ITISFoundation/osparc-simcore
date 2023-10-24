@@ -1,13 +1,14 @@
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
-from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.basic_types import IdInt
+from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from sqlalchemy.sql import func
 
@@ -17,24 +18,18 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class ApiKeyRepo:
     engine: Engine
-    user_id: int | None = None  # =undefined
 
     @classmethod
-    def create_from_app(cls, app: web.Application, *, user_id: int | None = None):
-        return cls(engine=app[APP_DB_ENGINE_KEY], user_id=user_id)
+    def create_from_app(cls, app: web.Application):
+        return cls(engine=app[APP_DB_ENGINE_KEY])
 
-    def _raise_if_no_user_defined(self):
-        if self.user_id is None:
-            raise ValueError("Unknown user_id")
-
-    async def list_names(self) -> list[str]:
-        self._raise_if_no_user_defined()
+    async def list_names(self, *, user_id: UserID) -> list[str]:
         async with self.engine.acquire() as conn:
             stmt = sa.select(
                 [
                     orm.api_keys.c.display_name,
                 ]
-            ).where(orm.api_keys.c.user_id == self.user_id)
+            ).where(orm.api_keys.c.user_id == user_id)
 
             result: ResultProxy = await conn.execute(stmt)
             rows = await result.fetchall() or []
@@ -42,23 +37,22 @@ class ApiKeyRepo:
 
     async def create(
         self,
-        request_data: ApiKeyCreate,
         *,
+        display_name: str,
+        expiration: timedelta | None,
+        user_id: UserID,
         api_key: str,
         api_secret: str,
     ) -> list[IdInt]:
-        self._raise_if_no_user_defined()
         async with self.engine.acquire() as conn:
             stmt = (
                 orm.api_keys.insert()
                 .values(
-                    display_name=request_data.display_name,
-                    user_id=self.user_id,
+                    display_name=display_name,
+                    user_id=user_id,
                     api_key=api_key,
                     api_secret=api_secret,
-                    expires_at=func.now() + request_data.expiration
-                    if request_data.expiration
-                    else None,
+                    expires_at=(func.now() + expiration) if expiration else None,
                 )
                 .returning(orm.api_keys.c.id)
             )
@@ -67,13 +61,12 @@ class ApiKeyRepo:
             rows = await result.fetchall() or []
             return [r.id for r in rows]
 
-    async def delete(self, name: str):
-        self._raise_if_no_user_defined()
+    async def delete(self, *, display_name: str, user_id: UserID):
         async with self.engine.acquire() as conn:
             stmt = orm.api_keys.delete().where(
                 sa.and_(
-                    orm.api_keys.c.user_id == self.user_id,
-                    orm.api_keys.c.display_name == name,
+                    orm.api_keys.c.user_id == user_id,
+                    orm.api_keys.c.display_name == display_name,
                 )
             )
             await conn.execute(stmt)
