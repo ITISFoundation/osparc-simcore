@@ -18,7 +18,6 @@ from unit.conftest import SideEffectCallback
 # pylint: disable=unused-variable
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "capture", ["get_job_wallet_found.json", "get_job_wallet_not_found.json"]
 )
