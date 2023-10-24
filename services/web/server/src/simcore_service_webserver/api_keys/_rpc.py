@@ -13,13 +13,17 @@ async def create_api_keys(
     *,
     product_name: ProductName,
     user_id: UserID,
-    new: ApiKeyCreate
+    new: ApiKeyCreate,
 ) -> ApiKeyGet:
     raise NotImplementedError
 
 
 @router.expose()
 async def delete_api_keys(
-    app: web.Application, *, product_name: ProductName, user_id: UserID, api_key: str
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    api_key: str,
 ):
     raise NotImplementedError
