@@ -8,31 +8,32 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from pprint import pformat
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
 import httpx
 import pytest
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_api_server.db.tables as orm
 import sqlalchemy as sa
 import sqlalchemy.engine as sa_engine
 import yaml
-from aiopg.sa.result import RowProxy
-from faker import Faker
+from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from pytest import MonkeyPatch
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.rawdata_fakers import (
+    ramdom_api_key,
+    random_product,
+    random_user,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.base import metadata
+from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
-from simcore_service_api_server.db.repositories import BaseRepository
-from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 ## POSTGRES -----
@@ -144,7 +145,7 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
 
@@ -166,63 +167,50 @@ def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
     return init_app()
 
 
-## FAKE DATA injected at repositories interface ----------------------
-
-
-class _ExtendedUsersRepository(UsersRepository):
-    # pylint: disable=no-value-for-parameter
-
-    async def create(self, **user) -> int:
-        values = random_user(**user)
-        async with self.db_engine.acquire() as conn:
-            user_id = await conn.scalar(orm.users.insert().values(**values))
-
-        print("Created user ", pformat(values), f"with user_id={user_id}")
-        return user_id
-
-
-class _ExtendedApiKeysRepository(BaseRepository):
-    # pylint: disable=no-value-for-parameter
-
-    async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
-        values = {
-            "display_name": name,
-            "user_id": user_id,
-            "api_key": api_key,
-            "api_secret": api_secret,
-        }
-        async with self.db_engine.acquire() as conn:
-            _id = await conn.scalar(orm.api_keys.insert().values(**values))
-
-            # check inserted
-            row: RowProxy = await (
-                await conn.execute(
-                    orm.api_keys.select().where(orm.api_keys.c.id == _id)
-                )
-            ).first()
-
-        return ApiKeyInDB.from_orm(row)
+@pytest.fixture
+async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
+    async with app.state.db_engine.acquire() as conn:
+        yield conn
 
 
 @pytest.fixture
-async def fake_user_id(app: FastAPI, faker: Faker) -> int:
-    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    return await _ExtendedUsersRepository(app.state.engine).create(
-        email=faker.email(),
-        password=faker.password(),
-        name=faker.user_name(),
+async def user_id(connection: SAConnection) -> AsyncIterator[int]:
+    uid = await connection.scalar(
+        users.insert().values(random_user()).returning(users.c.id)
     )
+    assert uid
+    yield uid
+
+    await connection.execute(users.delete().where(users.c.id == uid))
 
 
 @pytest.fixture
-async def fake_api_key(app: FastAPI, fake_user_id: int, faker: Faker) -> ApiKeyInDB:
-    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    return await _ExtendedApiKeysRepository(app.state.engine).create(
-        "test-api-key",
-        api_key=faker.word(),
-        api_secret=faker.password(),
-        user_id=fake_user_id,
+async def product_name(connection: SAConnection) -> AsyncIterator[str]:
+    name = await connection.scalar(
+        products.insert()
+        .values(random_product(group_id=None))
+        .returning(products.c.name)
     )
+    assert name
+    yield name
+
+    await connection.execute(products.delete().where(products.c.name == name))
+
+
+@pytest.fixture
+async def fake_api_key(
+    app: FastAPI, user_id: int, product_name: str
+) -> AsyncIterator[ApiKeyInDB]:
+    result = await connection.execute(
+        api_keys.insert()
+        .values(**ramdom_api_key(product_name, user_id))
+        .returning(sa.literal_column("*"))
+    )
+    row = await result.fetchone()
+    assert row
+    yield ApiKeyInDB.from_orm(row)
+
+    await connection.execute(api_keys.delete().where(api_keys.c.id == row.id))
 
 
 @pytest.fixture

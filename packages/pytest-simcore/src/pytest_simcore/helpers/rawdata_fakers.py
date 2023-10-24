@@ -21,6 +21,7 @@ from uuid import uuid4
 
 import faker
 from faker import Faker
+from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
@@ -230,4 +231,18 @@ def random_payment_transaction(
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
 
     data.update(overrides)
+    return data
+
+
+def ramdom_api_key(product_name, user_id, **overrides) -> dict[str, Any]:
+    data = {
+        "display_name": FAKE.word(),
+        "product_name": product_name,
+        "user_id": user_id,
+        "api_key": FAKE.password(),
+        "api_secret": FAKE.password(),
+        "expires_at": None,
+    }
+    assert set(data.keys()).issubset({c.name for c in api_keys.columns})  # nosec
+    data.update(**overrides)
     return data
