@@ -13,7 +13,7 @@ from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressCallback,
@@ -450,7 +450,7 @@ class SidecarsClient:
         response = await self._thin_client.get_containers_inactivity(
             dynamic_sidecar_endpoint
         )
-        return parse_obj_as(InactivityResponse, response.json())
+        return InactivityResponse.parse_obj(response.json())
 
 
 def _get_proxy_configuration(
