@@ -68,7 +68,7 @@ async def create_api_key(request: web.Request):
 async def delete_api_key(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
 
-    # FIXME: pass this via params
+    # NOTE: SEE https://github.com/ITISFoundation/osparc-simcore/issues/4920
     body = await request.json()
     name = body.get("display_name")
 
