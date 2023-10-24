@@ -2,37 +2,15 @@ from typing import Any
 
 import pytest
 from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
-from pydantic import ValidationError, parse_obj_as
 
 
 @pytest.mark.parametrize(
-    "data, will_raise",
+    "data, is_inactive",
     [
-        pytest.param(
-            {"is_inactive": True, "seconds_inactive": None},
-            True,
-            id="mark_as_inactive_when_inactivity_was_not_defined",
-        ),
-        pytest.param(
-            {"is_inactive": False, "seconds_inactive": None},
-            False,
-            id="seconds_inactive_none_when_is_inactive_false",
-        ),
-        pytest.param(
-            {"is_inactive": True, "seconds_inactive": 1},
-            False,
-            id="accepted_values",
-        ),
-        pytest.param(
-            {"is_inactive": True, "seconds_inactive": -1},
-            True,
-            id="negative_seconds_inactive_provided",
-        ),
+        pytest.param({"seconds_inactive": None}, False),
+        pytest.param({"seconds_inactive": 0}, True),
+        pytest.param({"seconds_inactive": 100}, True),
     ],
 )
-def test_expected(data: dict[str, Any], will_raise: bool):
-    if will_raise:
-        with pytest.raises(ValidationError):
-            parse_obj_as(InactivityResponse, data)
-    else:
-        parse_obj_as(InactivityResponse, data)
+def test_expected(data: dict[str, Any], is_inactive: bool):
+    assert InactivityResponse.parse_obj(data).is_inactive == is_inactive
