@@ -234,7 +234,7 @@ def random_payment_transaction(
     return data
 
 
-def ramdom_api_key(product_name, user_id, **overrides) -> dict[str, Any]:
+def ramdom_api_key(product_name: str, user_id: int, **overrides) -> dict[str, Any]:
     data = {
         "display_name": FAKE.word(),
         "product_name": product_name,
