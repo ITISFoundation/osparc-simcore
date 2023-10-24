@@ -21,7 +21,7 @@ class PaymentTransactionState(str, enum.Enum):
     def is_completed(self) -> bool:
         return self != self.PENDING
 
-    def is_acknoledged(self) -> bool:
+    def is_acknowledged(self) -> bool:
         return self in (self.SUCCESS, self.FAILED)
 
 

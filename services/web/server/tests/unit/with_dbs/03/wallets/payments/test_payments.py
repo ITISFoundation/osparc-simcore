@@ -278,12 +278,22 @@ async def test_multiple_payments(
     for pid in payments_cancelled:
         assert all_transactions[pid].state == PaymentTransactionState.CANCELED
         assert all_transactions[pid].invoice_url is None
+        assert not PaymentTransactionState(
+            all_transactions[pid].state
+        ).is_acknowledged()
+        assert PaymentTransactionState(all_transactions[pid].state).is_completed()
     for pid in payments_successful:
         assert all_transactions[pid].state == PaymentTransactionState.SUCCESS
         assert all_transactions[pid].invoice_url is not None
+        assert PaymentTransactionState(all_transactions[pid].state).is_acknowledged()
+        assert PaymentTransactionState(all_transactions[pid].state).is_completed()
     for pid in payments_pending:
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
         assert all_transactions[pid].invoice_url is None
+        assert not PaymentTransactionState(
+            all_transactions[pid].state
+        ).is_acknowledged()
+        assert not PaymentTransactionState(all_transactions[pid].state).is_completed()
 
     assert send_message.called
 
