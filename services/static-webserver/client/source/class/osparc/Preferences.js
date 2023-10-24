@@ -82,6 +82,14 @@ qx.Class.define("osparc.Preferences", {
       check: "Boolean",
       event: "changeSnapNodeToGrid",
       apply: "__patchPreference"
+    },
+
+    walletIndicatorMode: {
+      check: ["both", "text", "bar"],
+      nullable: false,
+      init: "both",
+      event: "changeWalletIndicatorMode",
+      apply: "__patchPreference"
     }
   },
 

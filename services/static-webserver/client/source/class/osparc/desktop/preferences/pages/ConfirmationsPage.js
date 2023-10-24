@@ -34,6 +34,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       const experimentalSettings = this.__createExperimentalSettings();
       this.add(experimentalSettings);
     }
+
+    const walletIndicatorSettings = this.__createWalletIndicatorSettings();
+    this.add(walletIndicatorSettings);
   },
 
   statics: {
@@ -155,6 +158,41 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");
       cbAutoPorts.addListener("changeValue", e => this.self().patchPreference("autoConnectPorts", cbAutoPorts, e.getData()));
       box.add(cbAutoPorts);
+
+      return box;
+    },
+
+    __createWalletIndicatorSettings: function() {
+      // layout
+      const box = this._createSectionBox(this.tr("Wallet Indicator"));
+
+      const preferencesSettings = osparc.Preferences.getInstance();
+
+      const walletIndicatorModeSB = new qx.ui.form.SelectBox();
+      [{
+        id: "both",
+        label: "Both"
+      }, {
+        id: "text",
+        label: "Text"
+      }, {
+        id: "bar",
+        label: "Bar"
+      }].forEach(options => {
+        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        walletIndicatorModeSB.add(lItem);
+      });
+      const value = preferencesSettings.getWalletIndicatorMode();
+      walletIndicatorModeSB.getSelectables(selectable => {
+        if (selectable.getModel() === value) {
+          walletIndicatorModeSB.setSelected([selectable]);
+        }
+      });
+      walletIndicatorModeSB.addListener("changeValue", e => {
+        const selectable = e.getData();
+        osparc.Preferences.patchPreference("walletIndicatorMode", selectable.getModel());
+      });
+      box.add(walletIndicatorModeSB);
 
       return box;
     }
