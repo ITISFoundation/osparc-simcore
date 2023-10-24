@@ -79,8 +79,9 @@ async def list_wallets_with_available_credits_for_user(
 
 async def get_wallet_with_available_credits_by_user_and_wallet(
     app: web.Application,
-    wallet_id: WalletID,
+    *,
     user_id: UserID,
+    wallet_id: WalletID,
     product_name: ProductName,
 ) -> WalletGetWithAvailableCredits:
     user_wallet_db: UserWalletDB = await db.get_wallet_for_user(
