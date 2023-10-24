@@ -38,11 +38,12 @@ qx.Class.define("osparc.desktop.credits.DeleteAccount", {
       let control = null;
       switch (id) {
         case "intro-text": {
-          const text = this.tr("\
+          const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+          const text = this.tr(`\
             This account will be deleted in 14 days.<br>\
             During this period, if you want to recover it or delete your\
-            data right away, please send us an email to support@osparc.com.\
-          ");
+            data right away, please send us an email to ${supportEmail}.\
+            `);
           control = new qx.ui.basic.Label().set({
             value: text,
             font: "text-14",
