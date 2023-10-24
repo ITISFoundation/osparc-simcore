@@ -2,6 +2,8 @@ from typing import Final
 
 import sqlalchemy as sa
 
+from ..constants import DECIMAL_PLACES
+
 
 def column_created_datetime(*, timezone: bool = True) -> sa.Column:
     return sa.Column(
@@ -70,4 +72,4 @@ def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
     sa.event.listen(table, "after_create", modified_timestamp_trigger)
 
 
-NUMERIC_KWARGS = {"scale": 2}
+NUMERIC_KWARGS = {"scale": DECIMAL_PLACES}
