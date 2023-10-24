@@ -312,7 +312,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       });
       deleteBtn.addListener("execute", () => {
         const deleteAccount = new osparc.desktop.credits.DeleteAccount();
-        const win = osparc.ui.window.Window.popUpInWindow(deleteAccount, qx.locale.Manager.tr("Delete Account"), 400, null);
+        const win = osparc.ui.window.Window.popUpInWindow(deleteAccount, qx.locale.Manager.tr("Delete Account"), 430, null);
         deleteAccount.addListener("cancel", () => win.close());
         deleteAccount.addListener("deleted", () => win.close());
       });
