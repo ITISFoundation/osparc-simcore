@@ -170,11 +170,15 @@ class StorageS3Client:
         file_id: SimcoreS3FileID,
         file_size: ByteSize,
         expiration_secs: int,
+        sha256_checksum: SHA256Str | None,
     ) -> MultiPartUploadLinks:
         # NOTE: ensure the bucket/object exists, this will raise if not
         await self.client.head_bucket(Bucket=bucket)
         # first initiate the multipart upload
-        response = await self.client.create_multipart_upload(Bucket=bucket, Key=file_id)
+        create_input: dict[str, Any] = {"Bucket": bucket, "Key": file_id}
+        if sha256_checksum:
+            create_input["Metadata"] = {"sha256_checksum": sha256_checksum}
+        response = await self.client.create_multipart_upload(**create_input)
         upload_id = response["UploadId"]
         # compute the number of links, based on the announced file size
         num_upload_links, chunk_size = compute_num_file_chunks(file_size)
@@ -242,7 +246,6 @@ class StorageS3Client:
         file_id: SimcoreS3FileID,
         upload_id: UploadID,
         uploaded_parts: list[UploadedPart],
-        sha256_checksum: SHA256Str | None,
     ) -> ETag:
         inputs: dict[str, Any] = {
             "Bucket": bucket,
@@ -255,8 +258,6 @@ class StorageS3Client:
                 ]
             },
         }
-        if sha256_checksum:
-            inputs["ChecksumSHA256"] = sha256_checksum
         response = await self.client.complete_multipart_upload(**inputs)
         return response["ETag"]
 
