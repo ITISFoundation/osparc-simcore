@@ -46,9 +46,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     }
   },
 
-  statics: {
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
