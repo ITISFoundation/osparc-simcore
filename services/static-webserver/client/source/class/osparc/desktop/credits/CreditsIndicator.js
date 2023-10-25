@@ -90,15 +90,14 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
 
         const indicator = this.getChildControl("credits-bar");
         const progress = osparc.desktop.credits.Utils.normalizeCredits(credits);
-        const bgColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
-        indicator.setBackgroundColor(bgColor);
-        const ourBlue = qx.theme.manager.Color.getInstance().resolve("strong-main");
+        const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+        const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
         const textColor = qx.theme.manager.Color.getInstance().resolve("text");
         const arr = qx.util.ColorUtil.stringToRgb(textColor);
         arr[3] = 0.5;
         const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
         indicator.getContentElement().setStyles({
-          background: `linear-gradient(90deg, ${ourBlue} ${progress}%, ${color2} ${progress}%)`
+          background: `linear-gradient(90deg, ${color1} ${progress}%, ${color2} ${progress}%)`
         });
       }
     }
