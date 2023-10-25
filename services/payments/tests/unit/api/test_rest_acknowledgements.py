@@ -14,6 +14,7 @@ from fastapi import status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
+from simcore_service_payments.models.schemas.errors import DefaultApiError
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -50,7 +51,6 @@ def app_environment(
 async def client(
     client: httpx.AsyncClient, external_environment: EnvVarsDict
 ) -> AsyncIterator[httpx.AsyncClient]:
-
     # EITHER tests against external payments API
     if external_base_url := external_environment.get("PAYMENTS_SERVICE_API_BASE_URL"):
         # If there are external secrets, build a new client and point to `external_base_url`
@@ -90,5 +90,6 @@ async def test_payments_api_authentication(
         f"/v1/payments/{payments_id}:ack", json=payment_ack, headers=auth_headers
     )
 
-    # NOTE: for the moment this entry is not implemented
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
+    error = DefaultApiError.parse_obj(response.json())
+    assert "not initialized" in str(error.detail)
