@@ -620,19 +620,27 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       switch (logLevel) {
         case "DEBUG":
           this.__loggerView.debugs(nodeId, logs);
-          nodeLogger.debugs(nodeId, logs);
+          if (nodeLogger) {
+            nodeLogger.debugs(nodeId, logs);
+          }
           break;
         case "WARNING":
           this.__loggerView.warns(nodeId, logs);
-          nodeLogger.warns(nodeId, logs);
+          if (nodeLogger) {
+            nodeLogger.warns(nodeId, logs);
+          }
           break;
         case "ERROR":
           this.__loggerView.errors(nodeId, logs);
-          nodeLogger.errors(nodeId, logs);
+          if (nodeLogger) {
+            nodeLogger.errors(nodeId, logs);
+          }
           break;
         default:
           this.__loggerView.infos(nodeId, logs);
-          nodeLogger.infos(nodeId, logs);
+          if (nodeLogger) {
+            nodeLogger.infos(nodeId, logs);
+          }
           break;
       }
     },

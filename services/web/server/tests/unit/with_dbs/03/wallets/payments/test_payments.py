@@ -13,6 +13,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
+    PaymentID,
     PaymentTransaction,
     WalletGet,
     WalletPaymentCreated,
@@ -112,13 +113,32 @@ def mock_rpc_payments_service_api(
             payment_id=payment_id, payment_form_url=f"{external_form_link}"
         )
 
-    mock_init_payment = mocker.patch(
-        "simcore_service_webserver.payments._onetime_api._rpc.init_payment",
-        autospec=True,
-        side_effect=_fake_rpc_init_payment,
-    )
+    async def _fake_rpc_cancel_payment(
+        app: web.Application,
+        *,
+        payment_id: PaymentID,
+        user_id: UserID,
+        wallet_id: WalletID,
+    ):
+        await _ack_creation_of_wallet_payment(
+            app,
+            payment_id=payment_id,
+            completion_state=PaymentTransactionState.CANCELED,
+            message="Payment aborted by user",
+        )
 
-    return {"init_payment": mock_init_payment}
+    return {
+        "init_payment": mocker.patch(
+            "simcore_service_webserver.payments._onetime_api._rpc.init_payment",
+            autospec=True,
+            side_effect=_fake_rpc_init_payment,
+        ),
+        "cancel_payment": mocker.patch(
+            "simcore_service_webserver.payments._onetime_api._rpc.cancel_payment",
+            autospec=True,
+            side_effect=_fake_rpc_cancel_payment,
+        ),
+    }
 
 
 @pytest.mark.acceptance_test(
@@ -259,6 +279,8 @@ async def test_multiple_payments(
         f"/v0/wallets/{wallet.wallet_id}/payments/{pending_id}:cancel",
     )
     await assert_status(response, web.HTTPNoContent)
+    assert mock_rpc_payments_service_api["cancel_payment"].called
+
     payments_cancelled.append(pending_id)
 
     assert (
@@ -355,6 +377,7 @@ async def test_payment_not_found(
     client: TestClient,
     logged_user_wallet: WalletGet,
     faker: Faker,
+    mock_rpc_payments_service_api: dict[str, Mock],
 ):
     wallet = logged_user_wallet
     payment_id = faker.uuid4()
@@ -363,6 +386,7 @@ async def test_payment_not_found(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments/{payment_id}:cancel",
     )
+    assert mock_rpc_payments_service_api["cancel_payment"].called
 
     data, error = await assert_status(response, web.HTTPNotFound)
     assert data is None

@@ -15,15 +15,13 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcherMenuBtn", {
   construct: function() {
     this.base(arguments);
 
-    this.setLabel(this.tr("Switch theme"));
-
     if (!osparc.ui.switch.ThemeSwitcher.isSwitchUseful()) {
       this.setVisibility("excluded");
       return;
     }
 
+    osparc.ui.switch.ThemeSwitcher.bindLabelToTheme(this);
+    osparc.ui.switch.ThemeSwitcher.bindIconToTheme(this, 14);
     this.addListener("execute", () => osparc.ui.switch.ThemeSwitcher.switchTheme());
-
-    osparc.ui.switch.ThemeSwitcher.bindIconToTheme(this, 18);
   }
 });

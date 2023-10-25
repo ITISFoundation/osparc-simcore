@@ -345,7 +345,10 @@ async def _start_dynamic_service(
             # Check whether user has access to the wallet
             wallet = (
                 await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
-                    request.app, user_id, project_wallet_id, product_name
+                    request.app,
+                    user_id=user_id,
+                    wallet_id=project_wallet_id,
+                    product_name=product_name,
                 )
             )
             if wallet.available_credits <= ZERO_CREDITS:

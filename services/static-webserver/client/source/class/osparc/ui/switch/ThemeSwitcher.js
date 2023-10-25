@@ -39,6 +39,14 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       }
     },
 
+    bindLabelToTheme: function(widget, buttonImageSize) {
+      const themeManager = qx.theme.manager.Meta.getInstance();
+      themeManager.addListener("changeTheme", () => {
+        osparc.ui.switch.ThemeSwitcher.updateLabel(widget, buttonImageSize);
+      }, this);
+      osparc.ui.switch.ThemeSwitcher.updateLabel(widget, buttonImageSize);
+    },
+
     bindIconToTheme: function(widget, buttonImageSize) {
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => {
@@ -47,12 +55,20 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       osparc.ui.switch.ThemeSwitcher.updateIcon(widget, buttonImageSize);
     },
 
+    updateLabel: function(widget) {
+      const themeManager = qx.theme.manager.Meta.getInstance();
+      const theme = themeManager.getTheme();
+      const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+      const idx = validThemes.findIndex(validTheme => validTheme.name === theme.name);
+      widget.setLabel(idx === 0 ? qx.locale.Manager.tr("Dark theme") : qx.locale.Manager.tr("Light theme"));
+    },
+
     updateIcon: function(widget, buttonImageSize) {
       const themeManager = qx.theme.manager.Meta.getInstance();
       const theme = themeManager.getTheme();
       const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
       const idx = validThemes.findIndex(validTheme => validTheme.name === theme.name);
-      widget.setIcon(idx === 0 ? "@FontAwesome5Solid/toggle-on/"+buttonImageSize : "@FontAwesome5Solid/toggle-off/"+buttonImageSize);
+      widget.setIcon((idx === 0 ? "@FontAwesome5Solid/moon/" : "@FontAwesome5Solid/sun/") + buttonImageSize);
     }
   }
 });
