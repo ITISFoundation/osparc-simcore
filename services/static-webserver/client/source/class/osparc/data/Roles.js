@@ -59,19 +59,19 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     // study, templates, services
-    RESOURCE: {
+    RESOURCES: {
       1: {
         id: "read",
-        label: qx.locale.Manager.tr("Viewer"),
-        longLabel: qx.locale.Manager.tr("Viewer: Read access"),
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
           qx.locale.Manager.tr("- can open it")
         ]
       },
       2: {
         id: "write",
-        label: qx.locale.Manager.tr("Collaborator"),
-        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access"),
+        label: qx.locale.Manager.tr("Editor"),
+        longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
         canDo: [
           qx.locale.Manager.tr("- can make changes")
         ]
@@ -192,7 +192,7 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     createRolesResourceInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.STUDY, osparc.data.Roles.SERVICES);
+      return this.__createIntoFromRoles(osparc.data.Roles.RESOURCES);
     },
 
     createRolesStudyResourceInfo: function() {
