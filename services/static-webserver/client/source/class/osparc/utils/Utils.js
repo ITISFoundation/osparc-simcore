@@ -106,6 +106,22 @@ qx.Class.define("osparc.utils.Utils", {
       return defaultFont;
     },
 
+    prettifyMenu: function(menu) {
+      menu.set({
+        font: "text-14",
+        padding: 4
+      });
+      menu.getChildren().forEach(menuItem => {
+        if (menuItem.classname !== "qx.ui.menu.Separator") {
+          menuItem.setPadding(4);
+        }
+      });
+
+      menu.getContentElement().setStyles({
+        "border-radius": "4px"
+      });
+    },
+
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
@@ -842,8 +858,11 @@ qx.Class.define("osparc.utils.Utils", {
       // close windows
       const children = qx.core.Init.getApplication().getRoot().getChildren();
       children.forEach(child => {
-        // eslint-disable-next-line no-underscore-dangle
-        if ("__appearanceSelector" in child && child.__appearanceSelector === "service-window") {
+        const closeClasses = [
+          "osparc.ui.window.Window",
+          "osparc.desktop.credits.UserCenterWindow"
+        ];
+        if (closeClasses.includes(child.classname)) {
           child.close();
         }
       });

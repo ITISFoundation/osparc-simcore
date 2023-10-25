@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.UserCenter", {
+qx.Class.define("osparc.desktop.credits.BillingCenter", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -32,96 +32,49 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(this.self().createMiniProfileView());
+    const miniWallet = this.self().createMiniWalletView().set({
+      paddingRight: 10
+    });
+    tabViews.getChildControl("bar").add(miniWallet);
 
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-    if (walletsEnabled) {
-      const overviewPage = this.__overviewPage = this.__getOverviewPage();
-      tabViews.add(overviewPage);
-    }
+    const overviewPage = this.__overviewPage = this.__getOverviewPage();
+    tabViews.add(overviewPage);
 
-    const profilePage = this.__profilePage = this.__getProfilePage();
-    tabViews.add(profilePage);
+    const walletsPage = this.__walletsPage = this.__getWalletsPage();
+    tabViews.add(walletsPage);
 
-    if (walletsEnabled) {
-      const walletsPage = this.__walletsPage = this.__getWalletsPage();
-      tabViews.add(walletsPage);
-    }
+    const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
+    tabViews.add(paymentMethodsPage);
 
-    if (walletsEnabled) {
-      const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
-      tabViews.add(paymentMethodsPage);
-    }
+    const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
+    tabViews.add(buyCreditsPage);
 
-    if (walletsEnabled) {
-      const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
-      tabViews.add(buyCreditsPage);
-    }
+    const activityPage = this.__activityPage = this.__getActivityPage();
+    tabViews.add(activityPage);
 
-    if (walletsEnabled) {
-      const activityPage = this.__activityPage = this.__getActivityPage();
-      tabViews.add(activityPage);
-    }
-
-    if (walletsEnabled) {
-      const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
-      tabViews.add(transactionsPage);
-    }
+    const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
+    tabViews.add(transactionsPage);
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-      const usageOverviewPage = this.__usageOverviewPage = this.__getUsageOverviewPage();
-      tabViews.add(usageOverviewPage);
+      const usagePage = this.__usagePage = this.__getUsagePage();
+      tabViews.add(usagePage);
     }
 
     this._add(tabViews);
   },
 
   statics: {
-    createMiniProfileView: function() {
+    createMiniWalletView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
         minWidth: 120,
         maxWidth: 150
       });
 
-      const authData = osparc.auth.Data.getInstance();
-      const email = authData.getEmail();
-      const img = new qx.ui.basic.Image().set({
-        source: osparc.utils.Avatar.getUrl(email, 100),
-        maxWidth: 80,
-        maxHeight: 80,
-        scale: true,
-        decorator: new qx.ui.decoration.Decorator().set({
-          radius: 30
-        }),
-        alignX: "center"
-      });
-      layout.add(img);
-
-      const name = new qx.ui.basic.Label().set({
-        font: "text-14",
-        alignX: "center"
-      });
-      layout.add(name);
-      authData.bind("firstName", name, "value", {
-        converter: firstName => firstName + " " + authData.getLastName()
-      });
-      authData.bind("lastName", name, "value", {
-        converter: lastName => authData.getFirstName() + " " + lastName
-      });
-
-      const role = authData.getFriendlyRole();
-      const roleLabel = new qx.ui.basic.Label(role).set({
-        font: "text-13",
-        alignX: "center"
-      });
-      layout.add(roleLabel);
-
-      const emailLabel = new qx.ui.basic.Label(email).set({
-        font: "text-13",
-        alignX: "center"
-      });
-      layout.add(emailLabel);
+      const store = osparc.store.Store.getInstance();
+      const creditsIndicator = new osparc.desktop.credits.CreditsIndicator();
+      store.bind("contextWallet", creditsIndicator, "wallet");
+      layout.add(creditsIndicator);
 
       layout.add(new qx.ui.core.Spacer(15, 15));
 
@@ -132,13 +85,12 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
   members: {
     __tabsView: null,
     __overviewPage: null,
-    __profilePage: null,
     __walletsPage: null,
     __buyCreditsPage: null,
     __paymentMethodsPage: null,
     __activityPage: null,
     __transactionsPage: null,
-    __usageOverviewPage: null,
+    __usagePage: null,
     __buyCredits: null,
     __transactionsTable: null,
 
@@ -165,7 +117,6 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       overview.addListener("toWallets", () => this.openWallets());
       overview.addListener("toActivity", () => this.__openActivity());
       overview.addListener("toTransactions", () => this.__openTransactions());
-      overview.addListener("toUsageOverview", () => this.__openUsageOverview());
       page.add(overview);
       return page;
     },
@@ -253,16 +204,16 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       return page;
     },
 
-    __getUsageOverviewPage: function() {
+    __getUsagePage: function() {
       const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const usageOverview = new osparc.desktop.credits.Usage();
-      usageOverview.set({
+      const usage = new osparc.desktop.credits.Usage();
+      usage.set({
         margin: 10
       });
-      page.add(usageOverview);
+      page.add(usage);
       return page;
     },
 
@@ -278,22 +229,13 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       if (this.__overviewPage) {
         return this.__openPage(this.__overviewPage);
       }
-      // fallback
-      this.__openPage(this.__profilePage);
       return false;
-    },
-
-    openProfile: function() {
-      this.__openPage(this.__profilePage);
-      return true;
     },
 
     openWallets: function() {
       if (this.__walletsPage) {
         return this.__openPage(this.__walletsPage);
       }
-      // fallback
-      this.__openPage(this.__profilePage);
       return false;
     },
 
@@ -312,10 +254,6 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       } else {
         this.__openPage(this.__transactionsPage);
       }
-    },
-
-    __openUsageOverview: function() {
-      this.__openPage(this.__usageOverviewPage);
     }
   }
 });
