@@ -127,7 +127,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("help");
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         this.getChildControl("current-usage-indicator");
-        this.getChildControl("wallets-viewer");
+        this.getChildControl("credits-menu-button");
       }
       this.getChildControl("log-in-button");
       this.getChildControl("user-menu");
@@ -230,6 +230,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         }
+        case "credits-menu-button":
+          control = new osparc.navigation.CreditsMenuButton().set({
+            maxHeight: this.self().HEIGHT
+          });
+          this.getChildControl("right-items").add(control);
+          break;
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
             maxHeight: this.self().HEIGHT
