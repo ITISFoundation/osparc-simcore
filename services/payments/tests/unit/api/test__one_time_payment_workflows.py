@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
