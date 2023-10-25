@@ -1,7 +1,7 @@
 import base64
 import datetime
 import functools
-from typing import Final
+from typing import Any, Final
 
 from models_library.clusters import NoAuthentication
 from models_library.rpc_schemas_clusters_keeper.clusters import (
@@ -21,19 +21,46 @@ _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
 
 
 @functools.lru_cache
-def docker_compose_yml_base64_encoded() -> str:
+def _docker_compose_yml_base64_encoded() -> str:
     file_path = PACKAGE_DATA_FOLDER / _DOCKER_COMPOSE_FILE_NAME
     assert file_path.exists()  # nosec
     with file_path.open("rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
 
-def create_startup_script(app_settings: ApplicationSettings) -> str:
+def create_startup_script(
+    app_settings: ApplicationSettings, cluster_machines_name_prefix: str
+) -> str:
+    assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
+    assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
+
+    def _convert_to_env_list(entries: list[Any]) -> str:
+        entries_as_str = ",".join(rf"\"{k}\"" for k in entries)
+        return f"[{entries_as_str}]"
+
+    environment_variables = [
+        f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
+        f"EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID}",
+        f"EC2_CLUSTERS_KEEPER_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_ENDPOINT}",
+        f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
+        f"WORKERS_EC2_INSTANCES_AMI_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_AMI_ID}",
+        f"WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS)}",
+        f"WORKERS_EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME}",
+        f"WORKERS_EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
+        f"WORKERS_EC2_INSTANCES_MAX_START_TIME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_START_TIME}",
+        f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
+        f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
+        f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
+        f"EC2_CLUSTERS_KEEPER_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_REGION_NAME}",
+        f"EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY}",
+        f"LOG_LEVEL={app_settings.LOG_LEVEL}",
+    ]
+
     return "\n".join(
         [
-            f"echo '{docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
+            f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
             "docker swarm init",
-            f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
+            f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
         ]
     )
 

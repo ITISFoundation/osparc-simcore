@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, ClassVar
 
 from models_library.products import ProductName
-from pydantic import Field, HttpUrl, PositiveInt
+from pydantic import ConstrainedInt, Field, HttpUrl, PositiveInt
 
 from ..basic_types import NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
@@ -48,10 +48,15 @@ class GetProduct(OutputSchema):
     credits_per_usd: NonNegativeDecimal | None
 
 
+class ExtraCreditsUsdRangeInt(ConstrainedInt):
+    ge = 0
+    lt = 200
+
+
 class GenerateInvitation(InputSchema):
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
-    extra_credits_in_usd: PositiveInt | None = None
+    extra_credits_in_usd: ExtraCreditsUsdRangeInt | None = None
 
 
 class InvitationGenerated(OutputSchema):

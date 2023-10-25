@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 import yaml
 from models_library.utils.specs_substitution import (
+    IdentifierSubstitutionError,
     SpecsSubstitutionsResolver,
     SubstitutionValue,
 )
@@ -77,9 +78,10 @@ def available_osparc_variables(
                     "DISPLAY=${DISPLAY}",
                     "SOME_LIST=$OSPARC_VARIABLE_VENDOR_SECRET_LIST",
                     "MY_LICENSE=$OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE",
-                    "SOMETHIONG=${OSPARC_VARIABLE__EMPTY_DEFAULT:-}",
-                    "SOMETHIONG=${OSPARC_VARIABLE__WITH_A_DEFAULT:-{}}",
-                    "SOMETHIONG=${OSPARC_VARIABLE__WITH_BRACES}",
+                    "USING_EMPTY_DEFAULT=${OSPARC_VARIABLE__EMPTY_DEFAULT:-}",
+                    "USING_DEFAULT=${OSPARC_VARIABLE__WITH_A_DEFAULT:-{}}",
+                    "RESOLVES_EXTERNALLY=${OSPARC_VARIABLE__WITH_BRACES}",
+                    "OVERWRITING_DEFAULT_BECAUSE_RESOLVES_EXTERNALLY=${OSPARC_VARIABLE__WITH_BRACES:-ignore_default}",
                 ],
                 "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
             },
@@ -88,9 +90,10 @@ def available_osparc_variables(
                     "DISPLAY=True",
                     "SOME_LIST=[1, 2, 3]",
                     "MY_LICENSE=license.txt",
-                    "SOMETHIONG=",
-                    "SOMETHIONG={}",
-                    "SOMETHIONG=has_a_value",
+                    "USING_EMPTY_DEFAULT=",
+                    "USING_DEFAULT={}",
+                    "RESOLVES_EXTERNALLY=has_a_value",
+                    "OVERWRITING_DEFAULT_BECAUSE_RESOLVES_EXTERNALLY=has_a_value",
                 ],
                 "image": "mock_registry_basename/simcore/services/dynamic/this_service:1.2.3",
                 "init": True,
@@ -176,3 +179,40 @@ def test_specs_substitutions_resolver_various_cases(var_template: str, value: st
 
     assert input_dict != replaced_dict
     assert replaced_dict["key"] == value
+
+
+def test_safe_unsafe_substitution():
+    input_dict = {"key": "$VAR"}
+    text_template = SpecsSubstitutionsResolver(input_dict, upgrade=True)
+
+    # var is found
+    replace_with: dict[str, Any] = {"VAR": "a_value"}
+    text_template.set_substitutions(replace_with)
+    replaced_dict = text_template.run(safe=True)
+    assert replaced_dict == {"key": "a_value"}
+
+    # var is not found and not replaced without raising an error
+    text_template.set_substitutions({})
+    replaced_dict = text_template.run(safe=True)
+    assert replaced_dict == {"key": "$VAR"}
+
+    # when var is not replace with safe=False an error will be raised
+    with pytest.raises(
+        IdentifierSubstitutionError, match="Was not able to substitute identifier"
+    ):
+        text_template.run(safe=False)
+
+
+def test_substitution_with_defaults_and_same_var_name():
+    input_dict = {"k1": "${VAR:-v1}", "k2": "${VAR:-v2}"}
+    text_template = SpecsSubstitutionsResolver(input_dict, upgrade=True)
+
+    # with a provided value
+    text_template.set_substitutions({"VAR": "a_value"})
+    replaced_dict = text_template.run()
+    assert replaced_dict == {"k1": "a_value", "k2": "a_value"}
+
+    # using defaults
+    text_template.set_substitutions({})
+    replaced_dict = text_template.run()
+    assert replaced_dict == {"k1": "v1", "k2": "v2"}

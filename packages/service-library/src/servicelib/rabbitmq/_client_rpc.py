@@ -6,13 +6,14 @@ from dataclasses import dataclass
 from typing import Any
 
 import aio_pika
+from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from ._models import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
+from ._models import RPCMethodName, RPCNamespacedMethodName
 from ._rpc_router import RPCRouter
 from ._utils import get_rabbitmq_client_unique_name
 

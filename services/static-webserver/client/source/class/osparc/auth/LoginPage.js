@@ -61,7 +61,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         case "logo-w-platform":
           control = new osparc.ui.basic.LogoWPlatform();
           control.setSize({
-            width: 240,
+            width: 300,
             height: 120
           });
           control.setFont("text-18");

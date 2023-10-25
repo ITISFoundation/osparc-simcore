@@ -25,7 +25,7 @@ async def _find_terminateable_instances(
     app: FastAPI, instances: list[EC2InstanceData]
 ) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
 
     # get the corresponding ec2 instance data
     terminateable_instances: list[EC2InstanceData] = []

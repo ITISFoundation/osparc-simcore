@@ -103,7 +103,7 @@ async def test_studies_read_workflow(
     resp = await client.get(f"/v0/studies/{inexistent_study_id}", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     error = parse_obj_as(ErrorGet, resp.json())
-    assert f"{inexistent_study_id}" in error.errors[0]
+    assert f"{inexistent_study_id}" in error.errors[0][0]["message"]
 
     resp = await client.get(f"/v0/studies/{inexistent_study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND

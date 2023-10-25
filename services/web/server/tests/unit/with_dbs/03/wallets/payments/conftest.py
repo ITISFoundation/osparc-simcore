@@ -6,15 +6,17 @@
 
 
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import Any, Iterator, TypeAlias
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import WalletGet
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_webserver.db.models import UserRole
 
 OpenApiDict: TypeAlias = dict[str, Any]
@@ -53,3 +55,10 @@ async def logged_user_wallet(
 ) -> WalletGet:
     assert client.app
     return await create_new_wallet()
+
+
+@pytest.fixture
+def payments_transactions_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    with postgres_db.connect() as con:
+        yield
+        con.execute(payments_transactions.delete())

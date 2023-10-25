@@ -26,12 +26,12 @@ from ..login.decorators import login_required
 from ..payments import api
 from ..payments.api import (
     cancel_creation_of_wallet_payment_method,
-    create_payment_to_wallet,
     delete_wallet_payment_method,
-    get_user_payments_page,
     get_wallet_payment_autorecharge,
     get_wallet_payment_method,
+    init_creation_of_wallet_payment,
     init_creation_of_wallet_payment_method,
+    list_user_payments_page,
     list_wallet_payment_methods,
     replace_wallet_payment_autorecharge,
 )
@@ -76,7 +76,7 @@ async def create_payment(request: web.Request):
             # '0 or None' should raise
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-        payment: WalletPaymentCreated = await create_payment_to_wallet(
+        payment: WalletPaymentCreated = await init_creation_of_wallet_payment(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -104,7 +104,7 @@ async def list_all_payments(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
 
-    payments, total_number_of_items = await get_user_payments_page(
+    payments, total_number_of_items = await list_user_payments_page(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,

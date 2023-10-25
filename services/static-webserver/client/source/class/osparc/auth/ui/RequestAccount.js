@@ -63,32 +63,22 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         osparc.product.Utils.isProduct("s4lacad") ||
         osparc.product.Utils.isProduct("s4ldektopacad")
       ) {
-        const university = new qx.ui.form.TextField().set({
-          required: true
-        });
+        const university = new qx.ui.form.TextField();
         doubleSpaced.push(university);
         this._form.add(university, this.tr("University"), null, "university");
       } else {
-        const company = new qx.ui.form.TextField().set({
-          required: true
-        });
+        const company = new qx.ui.form.TextField();
         doubleSpaced.push(company);
         this._form.add(company, this.tr("Company Name"), null, "company");
       }
 
-      const address = new qx.ui.form.TextField().set({
-        required: true
-      });
+      const address = new qx.ui.form.TextField();
       this._form.add(address, this.tr("Address"), null, "address");
 
-      const country = new qx.ui.form.TextField().set({
-        required: true
-      });
+      const country = new qx.ui.form.TextField();
       this._form.add(country, this.tr("Country"), null, "country");
 
-      const application = new qx.ui.form.SelectBox().set({
-        required: true
-      });
+      const application = new qx.ui.form.SelectBox();
       [{
         id: "Antenna_Design",
         label: "Antenna Design"
@@ -123,15 +113,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
         application.add(lItem);
       });
+      doubleSpaced.push(application);
       this._form.add(application, this.tr("Application"), null, "application");
 
       const description = new qx.ui.form.TextField();
       doubleSpaced.push(description);
       this._form.add(description, this.tr("Description"), null, "description");
 
-      const hear = new qx.ui.form.SelectBox().set({
-        required: true
-      });
+      const hear = new qx.ui.form.SelectBox();
       [{
         id: "Search_Engine",
         label: "Search Engine"

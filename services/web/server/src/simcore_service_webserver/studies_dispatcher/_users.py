@@ -18,7 +18,7 @@ from servicelib.logging_utils import log_decorator
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
-from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
+from ..login.utils import ACTIVE, GUEST, get_random_string
 from ..redis import get_redis_lock_manager_client
 from ..security.api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users.api import get_user
@@ -99,7 +99,6 @@ async def _create_temporary_guest_user(request: web.Request):
                 "password_hash": encrypt_password(password),
                 "status": ACTIVE,
                 "role": GUEST,
-                "created_ip": get_client_ip(request),
                 "expires_at": expires_at,
             }
         )

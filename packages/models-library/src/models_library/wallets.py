@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from enum import auto
 from typing import Any, ClassVar, TypeAlias
 
@@ -22,6 +23,9 @@ class WalletInfo(BaseModel):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [{"wallet_id": 1, "wallet_name": "My Wallet"}]
         }
+
+
+ZERO_CREDITS = Decimal(0)
 
 
 ### DB

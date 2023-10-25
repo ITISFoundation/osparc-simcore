@@ -5,6 +5,10 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
+from simcore_postgres_database.models.projects_node_to_pricing_unit import (
+    projects_node_to_pricing_unit,
+)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_nodes import projects_nodes
@@ -193,3 +197,67 @@ class ProjectNodesRepo:
             & (projects_nodes.c.node_id == f"{node_id}")
         )
         await connection.execute(delete_stmt)
+
+    async def get_project_node_pricing_unit_id(
+        self, connection: SAConnection, *, node_uuid: uuid.UUID
+    ) -> tuple | None:
+        """get a pricing unit that is connected to the project node or None if there is non connected
+
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+        """
+        result = await connection.execute(
+            sqlalchemy.select(
+                projects_node_to_pricing_unit.c.pricing_plan_id,
+                projects_node_to_pricing_unit.c.pricing_unit_id,
+            )
+            .select_from(
+                projects_nodes.join(
+                    projects_node_to_pricing_unit,
+                    projects_nodes.c.project_node_id
+                    == projects_node_to_pricing_unit.c.project_node_id,
+                )
+            )
+            .where(
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
+                & (projects_nodes.c.node_id == f"{node_uuid}")
+            )
+        )
+        row = await result.fetchone()
+        if row:
+            return (row[0], row[1])
+        return None
+
+    async def connect_pricing_unit_to_project_node(
+        self,
+        connection: SAConnection,
+        *,
+        node_uuid: uuid.UUID,
+        pricing_plan_id: int,
+        pricing_unit_id: int,
+    ) -> None:
+        result = await connection.scalar(
+            sqlalchemy.select(projects_nodes.c.project_node_id).where(
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}")
+                & (projects_nodes.c.node_id == f"{node_uuid}")
+            )
+        )
+        project_node_id = int(result) if result else 0
+
+        insert_stmt = pg_insert(projects_node_to_pricing_unit).values(
+            project_node_id=project_node_id,
+            pricing_plan_id=pricing_plan_id,
+            pricing_unit_id=pricing_unit_id,
+            created=sqlalchemy.func.now(),
+            modified=sqlalchemy.func.now(),
+        )
+        on_update_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                projects_node_to_pricing_unit.c.project_node_id,
+            ],
+            set_={
+                "pricing_plan_id": insert_stmt.excluded.pricing_plan_id,
+                "pricing_unit_id": insert_stmt.excluded.pricing_unit_id,
+                "modified": sqlalchemy.func.now(),
+            },
+        )
+        await connection.execute(on_update_stmt)

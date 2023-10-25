@@ -12,7 +12,6 @@ from cryptography import fernet
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
-from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._constants import (
@@ -20,6 +19,7 @@ from simcore_service_webserver.login._constants import (
     MSG_LOGGED_IN,
     MSG_UNKNOWN_EMAIL,
     MSG_USER_BANNED,
+    MSG_USER_DELETED,
     MSG_USER_EXPIRED,
     MSG_WRONG_PASSWORD,
 )
@@ -39,77 +39,79 @@ async def test_login_with_unknown_email(client: TestClient):
     assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
-        f"{url}", json={"email": "unknown@email.com", "password": "wrong."}
+        url.path, json={"email": "unknown@email.com", "password": "wrong."}
     )
-    payload = await r.json()
 
-    assert r.status == web.HTTPUnauthorized.status_code, str(payload)
-    assert r.url.path == url.path
-    assert MSG_UNKNOWN_EMAIL in await r.text()
+    _, error = await assert_status(r, web.HTTPUnauthorized)
+    assert MSG_UNKNOWN_EMAIL in error["errors"][0]["message"]
+    assert len(error["errors"]) == 1
 
 
 async def test_login_with_wrong_password(client: TestClient):
     assert client.app
     url = client.app.router["auth_login"].url_for()
 
-    r = await client.post(f"{url}")
+    r = await client.post(url.path)
     payload = await r.json()
 
     assert MSG_WRONG_PASSWORD not in await r.text(), str(payload)
 
     async with NewUser(app=client.app) as user:
         r = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": user["email"],
                 "password": "wrong.",
             },
         )
-        payload = await r.json()
-    assert r.status == web.HTTPUnauthorized.status_code, str(payload)
-    assert r.url.path == url.path
-    assert MSG_WRONG_PASSWORD in await r.text()
+    _, error = await assert_status(r, web.HTTPUnauthorized)
+    assert MSG_WRONG_PASSWORD in error["errors"][0]["message"]
+    assert len(error["errors"]) == 1
 
 
 @pytest.mark.parametrize(
     "user_status,expected_msg",
-    ((UserStatus.BANNED, MSG_USER_BANNED), (UserStatus.EXPIRED, MSG_USER_EXPIRED)),
+    [
+        (UserStatus.BANNED, MSG_USER_BANNED),
+        (UserStatus.EXPIRED, MSG_USER_EXPIRED),
+        (UserStatus.DELETED, MSG_USER_DELETED),
+    ],
 )
 async def test_login_blocked_user(
     client: TestClient, user_status: UserStatus, expected_msg: str
 ):
     assert client.app
     url = client.app.router["auth_login"].url_for()
-    r = await client.post(f"{url}")
+    r = await client.post(url.path)
     assert expected_msg not in await r.text()
 
     async with NewUser({"status": user_status.name}, app=client.app) as user:
         r = await client.post(
-            f"{url}", json={"email": user["email"], "password": user["raw_password"]}
+            url.path, json={"email": user["email"], "password": user["raw_password"]}
         )
-        payload = await r.json()
 
-    assert r.status == web.HTTPUnauthorized.status_code, str(payload)
-    assert r.url.path == url.path
+    _, error = await assert_status(r, web.HTTPUnauthorized)
     # expected_msg contains {support_email} at the end of the string
-    assert expected_msg[:-20] in payload["error"]["errors"][0]["message"]
+    assert expected_msg[: -len("xxx{support_email}")] in error["errors"][0]["message"]
+    assert len(error["errors"]) == 1
 
 
 async def test_login_inactive_user(client: TestClient):
     assert client.app
     url = client.app.router["auth_login"].url_for()
-    r = await client.post(f"{url}")
+    r = await client.post(url.path)
     assert MSG_ACTIVATION_REQUIRED not in await r.text()
 
     async with NewUser(
         {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
     ) as user:
         r = await client.post(
-            f"{url}", json={"email": user["email"], "password": user["raw_password"]}
+            url.path, json={"email": user["email"], "password": user["raw_password"]}
         )
-    assert r.status == web.HTTPUnauthorized.status_code
-    assert r.url.path == url.path
-    assert MSG_ACTIVATION_REQUIRED in await r.text()
+
+    _, error = await assert_status(r, web.HTTPUnauthorized)
+    assert MSG_ACTIVATION_REQUIRED in error["errors"][0]["message"]
+    assert len(error["errors"]) == 1
 
 
 async def test_login_successfully(client: TestClient):
@@ -118,13 +120,10 @@ async def test_login_successfully(client: TestClient):
 
     async with NewUser(app=client.app) as user:
         r = await client.post(
-            f"{url}", json={"email": user["email"], "password": user["raw_password"]}
+            url.path, json={"email": user["email"], "password": user["raw_password"]}
         )
-    assert r.status == 200
-    data, error = unwrap_envelope(await r.json())
 
-    assert not error
-    assert data
+    data, _ = await assert_status(r, web.HTTPOk)
     assert MSG_LOGGED_IN in data["message"]
 
 
@@ -138,17 +137,13 @@ async def test_login_successfully_with_email_containing_uppercase_letters(
     # Testing auth with upper case email for user registered with lower case email
     async with NewUser(app=client.app) as user:
         r = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": user["email"].upper(),  # <--- upper case email
                 "password": user["raw_password"],
             },
         )
-    assert r.status == 200
-    data, error = unwrap_envelope(await r.json())
-
-    assert not error
-    assert data
+    data, _ = await assert_status(r, web.HTTPOk)
     assert MSG_LOGGED_IN in data["message"]
 
 

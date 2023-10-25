@@ -72,6 +72,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "user.apikey.*",
             "user.notifications.update",
             "user.notifications.write",
+            "user.profile.delete",
             "user.profile.update",
             "user.tokens.*",
             "wallets.*",

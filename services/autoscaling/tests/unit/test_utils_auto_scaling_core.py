@@ -62,9 +62,9 @@ def test_node_host_name_from_ec2_private_dns(
 
 
 def test_node_host_name_from_ec2_private_dns_raises_with_invalid_name(
-    fake_ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData], faker: Faker
 ):
-    instance = fake_ec2_instance_data()
+    instance = fake_ec2_instance_data(aws_private_dns=faker.name())
     with pytest.raises(Ec2InvalidDnsNameError):
         node_host_name_from_ec2_private_dns(instance)
 

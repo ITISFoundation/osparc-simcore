@@ -1,0 +1,162 @@
+[
+  {
+    "name": "GET /projects/87643648-3a38-44e2-9cfe-d86ab3d50629",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/87643648-3a38-44e2-9cfe-d86ab3d50629')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "project_id",
+          "required": true,
+          "schema_": {
+            "title": "Project Id",
+            "type_": "str",
+            "pattern": null,
+            "format_": "uuid",
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "uuid": "87643648-3a38-44e2-9cfe-d86ab3d50629",
+        "name": "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.24/jobs/87643648-3a38-44e2-9cfe-d86ab3d50629",
+        "description": "Study associated to solver job:\n{\n  \"id\": \"87643648-3a38-44e2-9cfe-d86ab3d50629\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.24/jobs/87643648-3a38-44e2-9cfe-d86ab3d50629\",\n  \"inputs_checksum\": \"015ba4cd5cf00c511a8217deb65c242e3b15dc6ae4b1ecf94982d693887d9e8a\",\n  \"created_at\": \"2023-10-10T20:15:22.071797+00:00\"\n}",
+        "thumbnail": "https://via.placeholder.com/170x120.png",
+        "creationDate": "2023-10-10T20:15:22.096Z",
+        "lastChangeDate": "2023-10-10T20:15:22.096Z",
+        "workbench": {
+          "4b03863d-107a-5c77-a3ca-c5ba1d7048c0": {
+            "key": "simcore/services/comp/isolve",
+            "version": "2.1.24",
+            "label": "isolve edge",
+            "progress": 0.0,
+            "inputs": {
+              "x": 4.33,
+              "n": 55,
+              "title": "Temperature",
+              "enabled": true,
+              "input_file": {
+                "store": 0,
+                "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                "label": "input.txt"
+              }
+            },
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {},
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": null
+            }
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "3": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "tags": [],
+        "classifiers": [],
+        "state": {
+          "locked": {
+            "value": false,
+            "status": "CLOSED"
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "ui": {
+          "workbench": {
+            "4b03863d-107a-5c77-a3ca-c5ba1d7048c0": {
+              "position": {
+                "x": 633,
+                "y": 229
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "4b03863d-107a-5c77-a3ca-c5ba1d7048c0",
+          "annotations": {}
+        },
+        "quality": {},
+        "dev": {}
+      }
+    },
+    "status_code": 200
+  },
+  {
+    "name": "GET /projects/87643648-3a38-44e2-9cfe-d86ab3d50629/nodes/4b03863d-107a-5c77-a3ca-c5ba1d7048c0/pricing-unit",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/87643648-3a38-44e2-9cfe-d86ab3d50629/nodes/4b03863d-107a-5c77-a3ca-c5ba1d7048c0/pricing-unit')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/nodes/{node_id}/pricing-unit",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "node_id",
+          "required": true,
+          "schema_": {
+            "title": "Node Id",
+            "type_": "str",
+            "pattern": null,
+            "format_": "uuid",
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "nodes"
+        },
+        {
+          "in_": "path",
+          "name": "project_id",
+          "required": true,
+          "schema_": {
+            "title": "Project Id",
+            "type_": "str",
+            "pattern": null,
+            "format_": "uuid",
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "pricingUnitId": 1,
+        "unitName": "small",
+        "unitExtraInfo": {},
+        "currentCostPerUnit": 50,
+        "default": true
+      }
+    },
+    "status_code": 200
+  }
+]

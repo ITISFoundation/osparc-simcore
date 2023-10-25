@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import Optional
+from typing import AsyncIterable
 
 import pytest
 from aiopg.sa.connection import SAConnection
@@ -14,43 +14,42 @@ from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 
-USERNAME = f"{__name__}.me"
-PARENT_PROJECT_NAME = f"{__name__}.parent"
-
 
 @pytest.fixture
 async def user(pg_engine: Engine) -> RowProxy:
+    _USERNAME = f"{__name__}.me"
     # some user
     async with pg_engine.acquire() as conn:
-        result: Optional[ResultProxy] = await conn.execute(
-            users.insert().values(**random_user(name=USERNAME)).returning(users)
+        result: ResultProxy | None = await conn.execute(
+            users.insert().values(**random_user(name=_USERNAME)).returning(users)
         )
         assert result.rowcount == 1
 
-        _user: Optional[RowProxy] = await result.first()
+        _user: RowProxy | None = await result.first()
         assert _user
-        assert _user.name == USERNAME
+        assert _user.name == _USERNAME
         return _user
 
 
 @pytest.fixture
 async def project(pg_engine: Engine, user: RowProxy) -> RowProxy:
+    _PARENT_PROJECT_NAME = f"{__name__}.parent"
     # a user's project
     async with pg_engine.acquire() as conn:
-        result: Optional[ResultProxy] = await conn.execute(
+        result: ResultProxy | None = await conn.execute(
             projects.insert()
-            .values(**random_project(prj_owner=user.id, name=PARENT_PROJECT_NAME))
+            .values(**random_project(prj_owner=user.id, name=_PARENT_PROJECT_NAME))
             .returning(projects)
         )
         assert result.rowcount == 1
 
-        _project: Optional[RowProxy] = await result.first()
+        _project: RowProxy | None = await result.first()
         assert _project
-        assert _project.name == PARENT_PROJECT_NAME
+        assert _project.name == _PARENT_PROJECT_NAME
         return _project
 
 
 @pytest.fixture
-async def conn(pg_engine: Engine) -> SAConnection:
+async def conn(pg_engine: Engine) -> AsyncIterable[SAConnection]:
     async with pg_engine.acquire() as conn:
         yield conn

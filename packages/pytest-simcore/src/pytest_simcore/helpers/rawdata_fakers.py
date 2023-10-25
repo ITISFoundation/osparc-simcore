@@ -65,7 +65,6 @@ def random_user(**overrides) -> dict[str, Any]:
         "email": FAKE.email().lower(),
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
-        "created_ip": FAKE.ipv4(),
     }
     assert set(data.keys()).issubset({c.name for c in users.columns})  # nosec
 

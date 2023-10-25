@@ -53,7 +53,7 @@ charset-normalizer==3.0.1
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.1.3
+click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -121,6 +121,7 @@ itsdangerous==2.1.2
 jinja2==3.1.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   flask
     #   moto
 jmespath==1.0.1
@@ -151,6 +152,7 @@ lupa==2.0
     # via fakeredis
 markupsafe==2.1.3
     # via
+    #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
 moto==4.2.2
@@ -165,7 +167,7 @@ openapi-spec-validator==0.4.0
     # via moto
 ordered-set==4.1.0
     # via deepdiff
-packaging==23.0
+packaging==23.1
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -179,7 +181,9 @@ pluggy==1.3.0
 pprintpp==0.4.0
     # via pytest-icdiff
 psutil==5.9.5
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 py-partiql-parser==0.3.6
     # via moto
 pyasn1==0.5.0
@@ -277,7 +281,9 @@ sniffio==1.3.0
     #   httpcore
     #   httpx
 sortedcontainers==2.4.0
-    # via fakeredis
+    # via
+    #   -c requirements/_base.txt
+    #   fakeredis
 sshpubkeys==3.3.1
     # via moto
 sympy==1.12
@@ -293,7 +299,7 @@ typing-extensions==4.5.0
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   pydantic
-urllib3==1.26.14
+urllib3==1.26.16
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

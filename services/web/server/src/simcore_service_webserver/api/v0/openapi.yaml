@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.34.0
+  version: 0.35.0
 servers:
 - url: ''
   description: webserver
@@ -107,6 +107,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
+  /v0/auth/unregister:
+    post:
+      tags:
+      - auth
+      summary: Unregister Account
+      operationId: unregister_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnregisterCheck'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Log_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/verify-phone-number:
     post:
       tags:
@@ -2243,6 +2268,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/projects/{project_id}/inactivity:
+    get:
+      tags:
+      - projects
+      summary: Get Project Inactivity
+      operationId: get_project_inactivity
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -5293,6 +5339,14 @@ components:
           $ref: '#/components/schemas/GetProduct'
         error:
           title: Error
+    Envelope_GetProjectInactivityResponse_:
+      title: Envelope[GetProjectInactivityResponse]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetProjectInactivityResponse'
+        error:
+          title: Error
     Envelope_GetWalletAutoRecharge_:
       title: Envelope[GetWalletAutoRecharge]
       type: object
@@ -6291,9 +6345,10 @@ components:
           minimum: 0
         extraCreditsInUsd:
           title: Extracreditsinusd
-          exclusiveMinimum: true
-          type: integer
+          exclusiveMaximum: true
           minimum: 0
+          type: integer
+          maximum: 200
     GetCreditPrice:
       title: GetCreditPrice
       required:
@@ -6366,6 +6421,15 @@ components:
           title: Creditsperusd
           minimum: 0.0
           type: number
+    GetProjectInactivityResponse:
+      title: GetProjectInactivityResponse
+      required:
+      - is_inactive
+      type: object
+      properties:
+        is_inactive:
+          title: Is Inactive
+          type: boolean
     GetWalletAutoRecharge:
       title: GetWalletAutoRecharge
       required:
@@ -9517,6 +9581,22 @@ components:
       example:
         service: github-api-v1
         token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+    UnregisterCheck:
+      title: UnregisterCheck
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          format: email
+        password:
+          title: Password
+          type: string
+          format: password
+          writeOnly: true
     UploadedPart:
       title: UploadedPart
       required:

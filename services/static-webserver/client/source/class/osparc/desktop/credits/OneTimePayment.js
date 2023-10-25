@@ -307,37 +307,13 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
             const modal = true;
             const useNativeModalDialog = false; // this allow using the Blocker
 
-            const blocker = qx.bom.Window.getBlocker();
-            blocker.setBlockerColor("#FFF");
-            blocker.setBlockerOpacity(0.6);
-            let pgWindow = qx.bom.Window.open(
+            const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
               url,
               "pgWindow",
               options,
               modal,
               useNativeModalDialog
             );
-
-            // enhance the blocker
-            const blockerDomEl = blocker.getBlockerElement();
-            blockerDomEl.style.cursor = "pointer";
-
-            // text on blocker
-            const label = document.createElement("h1");
-            label.innerHTML = "Don’t see the secure Payment Window?<br>Click here to complete your purchase";
-            label.style.position = "fixed";
-            const labelWidth = 550;
-            const labelHeight = 100;
-            label.style.width = labelWidth + "px";
-            label.style.height = labelHeight + "px";
-            const root = qx.core.Init.getApplication().getRoot();
-            if (root && root.getBounds()) {
-              label.style.left = Math.round(root.getBounds().width/2) - labelWidth/2 + "px";
-              label.style.top = Math.round(root.getBounds().height/2) - labelHeight/2 + "px";
-            }
-            blockerDomEl.appendChild(label);
-
-            blockerDomEl.addEventListener("click", () => pgWindow.focus());
 
             // Listen to socket event
             const socket = osparc.wrapper.WebSocket.getInstance();
@@ -382,7 +358,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
               };
               osparc.data.Resources.fetch("payments", "cancelPayment", params2);
             };
-            // Listen to close window event
+            // Listen to close window event (Bug: it doesn't work)
             pgWindow.onbeforeunload = () => {
               const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
               osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");

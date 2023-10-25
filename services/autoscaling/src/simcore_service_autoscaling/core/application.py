@@ -8,6 +8,7 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_STARTED_COMPUTATIONAL_BANNER_MSG,
     APP_STARTED_DISABLED_BANNER_MSG,
     APP_STARTED_DYNAMIC_BANNER_MSG,
 )
@@ -54,6 +55,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
         if settings.AUTOSCALING_NODES_MONITORING:
             print(APP_STARTED_DYNAMIC_BANNER_MSG, flush=True)  # noqa: T201
+        elif settings.AUTOSCALING_DASK:
+            print(APP_STARTED_COMPUTATIONAL_BANNER_MSG, flush=True)  # noqa: T201
         else:
             print(APP_STARTED_DISABLED_BANNER_MSG, flush=True)  # noqa: T201
 

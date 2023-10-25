@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
+from typing import Any, TypeAlias
 
 from models_library.generated_models.docker_rest_api import Node
 from pydantic import BaseModel, ByteSize, NonNegativeFloat, PositiveInt
@@ -91,3 +92,13 @@ class Cluster:
         }
     )
     terminated_instances: list[EC2InstanceData]
+
+
+DaskTaskId: TypeAlias = str
+DaskTaskResources: TypeAlias = dict[str, Any]
+
+
+@dataclass(frozen=True, kw_only=True)
+class DaskTask:
+    task_id: DaskTaskId
+    required_resources: DaskTaskResources

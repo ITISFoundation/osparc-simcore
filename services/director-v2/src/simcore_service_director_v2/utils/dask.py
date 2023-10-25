@@ -344,6 +344,7 @@ async def compute_task_envs(
             node_image.envs,
             service_key=ServiceKey(node_image.name),
             service_version=ServiceVersion(node_image.tag),
+            product_name=product_name,
         )
         resolved_envs = await resolve_and_substitute_session_variables_in_specs(
             app,

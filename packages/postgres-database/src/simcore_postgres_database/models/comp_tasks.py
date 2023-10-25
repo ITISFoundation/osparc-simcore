@@ -87,6 +87,19 @@ comp_tasks = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    sa.Column(
+        "pricing_info",
+        postgresql.JSONB,
+        nullable=True,
+        doc="Billing information of this task",
+    ),
+    sa.Column(
+        "hardware_info",
+        postgresql.JSONB,
+        nullable=True,
+        doc="Harware information of this task",
+    ),
+    # ------
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
 )
 

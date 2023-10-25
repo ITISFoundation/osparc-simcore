@@ -62,6 +62,13 @@ async def get_monitored_nodes(
     )
 
 
+async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
+    return parse_obj_as(
+        list[Node],
+        await docker_client.nodes.list(filters={"role": ["worker"]}),
+    )
+
+
 async def remove_nodes(
     docker_client: AutoscalingDocker, nodes: list[Node], force: bool = False
 ) -> list[Node]:

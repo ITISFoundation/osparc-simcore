@@ -87,7 +87,7 @@ WORKDIR /build
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 RUN \
   --mount=type=bind,source=services/datcore-adapter/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement _base.txt
 

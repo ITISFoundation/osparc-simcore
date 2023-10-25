@@ -58,6 +58,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
+    // study, templates, services
     RESOURCE: {
       1: {
         id: "read",

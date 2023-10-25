@@ -24,6 +24,7 @@ from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from . import (
+    _registration_handlers,
     api_keys_handlers,
     handlers_2fa,
     handlers_auth,
@@ -160,6 +161,7 @@ def setup_login(app: web.Application):
     app.router.add_routes(handlers_auth.routes)
     app.router.add_routes(handlers_confirmation.routes)
     app.router.add_routes(handlers_registration.routes)
+    app.router.add_routes(_registration_handlers.routes)
     app.router.add_routes(handlers_change.routes)
     app.router.add_routes(handlers_2fa.routes)
     app.router.add_routes(api_keys_handlers.routes)
