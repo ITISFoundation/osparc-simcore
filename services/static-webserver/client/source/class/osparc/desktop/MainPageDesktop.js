@@ -28,13 +28,13 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
     const navBar = new osparc.navigation.NavigationBar();
     navBar.populateLayout()
       .then(() => {
-        // remove some items from the navigation bar
+        // exclude some items from the navigation bar
         navBar.getChildControl("dashboard-label").exclude();
         navBar.getChildControl("dashboard-button").exclude();
         navBar.getChildControl("notifications-button").exclude();
         navBar.getChildControl("help").exclude();
 
-        // remove all the menu entries except "log-out" from user menu
+        // exclude all the menu entries except "log-out" from user menu
         const userMenuButton = navBar.getChildControl("user-menu");
         const userMenu = userMenuButton.getMenu();
         // eslint-disable-next-line no-underscore-dangle
@@ -44,7 +44,12 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
             userMenuEntry.exclude();
           }
         });
-        console.log("userMenu", userMenu);
+        // exclude also the separators
+        userMenu.getChildren().forEach(child => {
+          if (child.classname === "qx.ui.menu.Separator") {
+            child.exclude();
+          }
+        });
       });
     this._add(navBar);
 
