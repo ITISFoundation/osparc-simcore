@@ -23,19 +23,19 @@ qx.Class.define("osparc.data.Roles", {
     ORG: {
       0: {
         id: "noRead",
-        label: qx.locale.Manager.tr("User"),
-        longLabel: qx.locale.Manager.tr("User: no Read access"),
+        label: qx.locale.Manager.tr("Restricted user"),
+        longLabel: qx.locale.Manager.tr("Restricted user: no Read access"),
         canDo: [
           qx.locale.Manager.tr("- can access content shared within the Organization")
         ]
       },
       1: {
         id: "read",
-        label: qx.locale.Manager.tr("Member"),
-        longLabel: qx.locale.Manager.tr("Member: Read access"),
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can See other members"),
-          qx.locale.Manager.tr("- can Share with other members")
+          qx.locale.Manager.tr("- can see other users"),
+          qx.locale.Manager.tr("- can share with other users")
         ]
       },
       2: {
@@ -81,6 +81,54 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
         canDo: [
           qx.locale.Manager.tr("- can delete it")
+        ]
+      }
+    },
+
+    STUDY: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- can open it")
+        ]
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Editor"),
+        longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- can make changes"),
+          qx.locale.Manager.tr("- can share it")
+        ]
+      },
+      3: {
+        id: "delete",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
+        canDo: [
+          qx.locale.Manager.tr("- can delete it")
+        ]
+      }
+    },
+
+    SERVICES: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- can use it")
+        ]
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- can make changes"),
+          qx.locale.Manager.tr("- can share it")
         ]
       }
     },
@@ -143,7 +191,15 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     createRolesResourceInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.RESOURCE);
+      return this.__createIntoFromRoles(osparc.data.Roles.STUDY, osparc.data.Roles.SERVICES);
+    },
+
+    createRolesStudyResourceInfo: function() {
+      return this.__createIntoFromRoles(osparc.data.Roles.STUDY);
+    },
+
+    createServicesRolesResourceInfo: function() {
+      return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
     }
   }
 });
