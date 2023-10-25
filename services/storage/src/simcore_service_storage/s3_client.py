@@ -177,7 +177,7 @@ class StorageS3Client:
         # first initiate the multipart upload
         create_input: dict[str, Any] = {"Bucket": bucket, "Key": file_id}
         if sha256_checksum:
-            create_input.update(Metadata={"sha256_checksum": sha256_checksum})
+            create_input["Metadata"] = {"sha256_checksum": sha256_checksum}
         response = await self.client.create_multipart_upload(**create_input)
         upload_id = response["UploadId"]
         # compute the number of links, based on the announced file size
