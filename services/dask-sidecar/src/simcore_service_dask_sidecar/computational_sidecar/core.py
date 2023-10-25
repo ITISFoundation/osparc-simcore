@@ -3,11 +3,12 @@ import json
 import logging
 import os
 import socket
+from collections.abc import Coroutine
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Coroutine, cast
+from typing import cast
 from uuid import uuid4
 
 from aiodocker import Docker
