@@ -132,7 +132,8 @@ async def _ack_creation_of_wallet_payment(
     invoice_url: HttpUrl | None = None,
 ) -> PaymentTransaction:
     #
-    # NOTE: implements endpoint in payment service hit by the gateway (ONLY for testing or fake completion!)
+    # NOTE: implements endpoint in payment service hit by the gateway
+    # IMPORTANT: ONLY for testing or fake completion!
     #
     transaction = await _onetime_db.complete_payment_transaction(
         app,
@@ -179,16 +180,12 @@ async def cancel_payment_to_wallet(
     user_id: UserID,
     wallet_id: WalletID,
     product_name: ProductName,
-) -> PaymentTransaction:
+) -> None:
     await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
-
-    return await _ack_creation_of_wallet_payment(
-        app,
-        payment_id=payment_id,
-        completion_state=PaymentTransactionState.CANCELED,
-        message="Payment aborted by user",
+    await _rpc.cancel_payment(
+        app, payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
     )
 
 

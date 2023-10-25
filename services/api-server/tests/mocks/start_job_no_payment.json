@@ -1,0 +1,47 @@
+[
+ {
+  "name": "POST /v2/computations",
+  "description": "<Request('POST', 'http://director-v2:8000/v2/computations')>",
+  "method": "POST",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations",
+   "path_parameters": []
+  },
+  "query": null,
+  "request_payload": {
+   "user_id": 1,
+   "project_id": "6e52228c-6edd-4505-9131-e901fdad5b17",
+   "start_pipeline": true,
+   "product_name": "osparc",
+   "use_on_demand_clusters": false
+  },
+  "response_body": {
+   "id": "6e52228c-6edd-4505-9131-e901fdad5b17",
+   "state": "PUBLISHED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "97792753-cbda-56a7-b8c0-576f990b21c0": []
+    },
+    "progress": 0.0,
+    "node_states": {
+     "97792753-cbda-56a7-b8c0-576f990b21c0": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "PUBLISHED",
+      "progress": null
+     }
+    }
+   },
+   "iteration": 9,
+   "cluster_id": 0,
+   "started": null,
+   "stopped": "2023-10-19T12:59:28.719336+00:00",
+   "submitted": "2023-10-19T12:59:50.999473+00:00",
+   "url": "http://director-v2:8000/v2/computations/6e52228c-6edd-4505-9131-e901fdad5b17?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/6e52228c-6edd-4505-9131-e901fdad5b17:stop?user_id=1"
+  },
+  "status_code": 201
+ }
+]

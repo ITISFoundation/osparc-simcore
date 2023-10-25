@@ -37,7 +37,6 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   # only the cli is needed and we remove the unnecessary stuff again
   docker-ce-cli=${DOCKER_APT_VERSION} \
   && apt-get remove -y\
-  ca-certificates \
   gnupg \
   curl \
   lsb-release \

@@ -106,7 +106,9 @@ def simcore_stack_deployed_services(
     finally:
         for stack_namespace in (core_stack_namespace, ops_stack_namespace):
             subprocess.run(
-                f"docker stack ps {stack_namespace}", shell=True, check=False
+                f"docker stack ps {stack_namespace}",
+                shell=True,  # noqa: S602
+                check=False,
             )
 
         # logs table like
@@ -117,7 +119,6 @@ def simcore_stack_deployed_services(
         # 1lh2hulxmc4q        simcore_director.1    itisfoundation/director:latest             crespo-wkstn        Running             Running 34 seconds ago
         # ...
 
-    # TODO: find a more reliable way to list services in a stack
     core_stack_services: list[Service] = list(
         docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
@@ -148,7 +149,6 @@ def ops_services_selection(ops_docker_compose: ComposeSpec) -> list[ServiceNameS
 @pytest.fixture(scope="module")
 def ops_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
     """returns 'com.docker.stack.namespace' service label operations stack"""
-    # TODO: set in environment
     return "pytest-ops"
 
 

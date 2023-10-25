@@ -114,7 +114,7 @@ async def start_computation(request: web.Request) -> web.Response:
                 request.app, project_id=project_id
             )
             if project_wallet is None:
-                user_default_wallet_preference = await user_preferences_api.get_user_preference(
+                user_default_wallet_preference = await user_preferences_api.get_frontend_user_preference(
                     request.app,
                     user_id=req_ctx.user_id,
                     product_name=req_ctx.product_name,
@@ -139,9 +139,9 @@ async def start_computation(request: web.Request) -> web.Response:
             wallet = (
                 await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
                     request.app,
-                    req_ctx.user_id,
-                    project_wallet_id,
-                    req_ctx.product_name,
+                    user_id=req_ctx.user_id,
+                    wallet_id=project_wallet_id,
+                    product_name=req_ctx.product_name,
                 )
             )
             if wallet.available_credits <= ZERO_CREDITS:
