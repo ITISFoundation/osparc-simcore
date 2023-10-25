@@ -88,7 +88,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       return osparc.service.Utils.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborators: function(gids, cb) {
+    _addEditors: function(gids, cb) {
       if (gids.length === 0) {
         return;
       }
@@ -177,7 +177,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         .finally(() => item.setEnabled(true));
     },
 
-    _promoteToCollaborator: function(collaborator, item) {
+    _promoteToEditor: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
@@ -191,7 +191,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
-    _demoteToViewer: function(collaborator, item) {
+    _demoteToUser: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
@@ -201,7 +201,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       );
     },
 
-    _demoteToCollaborator: function(collaborator, item) {
+    _demoteToEditor: function(collaborator, item) {
       osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }

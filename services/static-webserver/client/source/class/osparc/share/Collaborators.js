@@ -217,15 +217,15 @@ qx.Class.define("osparc.share.Collaborators", {
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
 
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add Collaborators...")).set({
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add Editors...")).set({
         appearance: "strong-button",
         allowGrowX: false
       });
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedData);
-        collaboratorsManager.addListener("addCollaborators", e => {
+        collaboratorsManager.addListener("addEditors", e => {
           const cb = () => collaboratorsManager.close();
-          this._addCollaborators(e.getData(), cb);
+          this._addEditors(e.getData(), cb);
         }, this);
       }, this);
       vBox.add(addCollaboratorBtn);
@@ -275,21 +275,21 @@ qx.Class.define("osparc.share.Collaborators", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteToCollaborator", e => {
+          item.addListener("promoteToEditor", e => {
             const orgMember = e.getData();
-            this._promoteToCollaborator(orgMember, item);
+            this._promoteToEditor(orgMember, item);
           });
           item.addListener("promoteToOwner", e => {
             const orgMember = e.getData();
             this._promoteToOwner(orgMember, item);
           });
-          item.addListener("demoteToViewer", e => {
+          item.addListener("demoteToUser", e => {
             const orgMember = e.getData();
-            this._demoteToViewer(orgMember, item);
+            this._demoteToUser(orgMember, item);
           });
-          item.addListener("demoteToCollaborator", e => {
+          item.addListener("demoteToEditor", e => {
             const orgMember = e.getData();
-            this._demoteToCollaborator(orgMember, item);
+            this._demoteToEditor(orgMember, item);
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
@@ -381,7 +381,7 @@ qx.Class.define("osparc.share.Collaborators", {
       throw new Error("Abstract method called!");
     },
 
-    _addCollaborators: function(gids) {
+    _addEditors: function(gids) {
       throw new Error("Abstract method called!");
     },
 
@@ -393,15 +393,15 @@ qx.Class.define("osparc.share.Collaborators", {
       throw new Error("Abstract method called!");
     },
 
-    _promoteToCollaborator: function(collaborator, item) {
+    _promoteToEditor: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _demoteToViewer: function(collaborator, item) {
+    _demoteToUser: function(collaborator, item) {
       throw new Error("Abstract method called!");
     },
 
-    _demoteToCollaborator: function(collaborator, item) {
+    _demoteToEditor: function(collaborator, item) {
       throw new Error("Abstract method called!");
     }
   }
