@@ -27,11 +27,14 @@ class InitPayment(BaseModel):
         extra = Extra.forbid
 
 
-PaymentID: TypeAlias = UUID
+#
+# TODO: PaymentID was globally defined as a IDStr. We should change that to this and allow only UUIDS
+#
+PaymentUUID: TypeAlias = UUID
 
 
 class PaymentInitiated(BaseModel):
-    payment_id: PaymentID
+    payment_id: PaymentUUID
 
 
 class PaymentCancelled(BaseModel):

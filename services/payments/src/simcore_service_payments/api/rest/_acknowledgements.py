@@ -15,8 +15,8 @@ from ...models.db import PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
-    PaymentID,
     PaymentMethodID,
+    PaymentUUID,
 )
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 from ._dependencies import get_current_session, get_repository, get_rut_api
@@ -64,7 +64,7 @@ async def on_payment_completed(
 
 @router.post("/payments/{payment_id}:ack")
 async def acknowledge_payment(
-    payment_id: PaymentID,
+    payment_id: PaymentUUID,
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
     repo: Annotated[
@@ -106,7 +106,7 @@ async def acknowledge_payment(
         )
 
     if transaction.state == PaymentTransactionState.SUCCESS:
-        assert payment_id == transaction.payment_id  # nosec
+        assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
         background_tasks.add_task(on_payment_completed, transaction, rut_api)
 
 

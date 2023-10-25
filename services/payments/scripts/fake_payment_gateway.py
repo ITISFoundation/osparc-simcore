@@ -32,11 +32,11 @@ from simcore_service_payments.models.payments_gateway import (
     InitPayment,
     InitPaymentMethod,
     PaymentCancelled,
-    PaymentID,
     PaymentInitiated,
     PaymentMethodID,
     PaymentMethodInitiated,
     PaymentMethodsBatch,
+    PaymentUUID,
 )
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
 from simcore_service_payments.models.schemas.auth import Token
@@ -181,7 +181,7 @@ def create_payment_router():
         responses=ERROR_HTML_RESPONSES,
     )
     def get_payment_form(
-        id: PaymentID,
+        id: PaymentUUID,
         all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert id  # nosec
@@ -198,7 +198,7 @@ def create_payment_router():
         include_in_schema=False,
     )
     def pay(
-        id: PaymentID,
+        id: PaymentUUID,
         payment_form: Annotated[PaymentForm, Depends()],
         all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
         settings: Annotated[Settings, Depends(get_settings)],

@@ -79,6 +79,10 @@ async def test_successful_one_time_payment_workflow(
     auth_headers: dict[str, str],
     payments_clean_db: None,
 ):
+    assert (
+        mock_payments_gateway_service_or_none
+    ), "cannot run against external because we ACK here"
+
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     # INIT
@@ -86,12 +90,10 @@ async def test_successful_one_time_payment_workflow(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_payment"),
         **init_payment_kwargs,
+        timeout_s=None,  # for debug
     )
     assert isinstance(result, WalletPaymentCreated)
 
-    assert (
-        mock_payments_gateway_service_or_none
-    ), "cannot run against external becase we ACK"
     assert mock_payments_gateway_service_or_none.routes["init_payment"].called
 
     # ACK

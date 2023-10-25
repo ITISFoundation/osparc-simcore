@@ -2,7 +2,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, HttpUrl, validator
 
-from ..payments_gateway import PaymentID, PaymentMethodID
+from ..payments_gateway import PaymentMethodID, PaymentUUID
 
 
 class _BaseAck(BaseModel):
@@ -76,11 +76,11 @@ class AckPayment(_BaseAck):
         return v
 
 
-assert PaymentID  # nosec
+assert PaymentUUID  # nosec
 assert PaymentMethodID  # nosec
 
 
 __all__: tuple[str, ...] = (
-    "PaymentID",
+    "PaymentUUID",
     "PaymentMethodID",
 )

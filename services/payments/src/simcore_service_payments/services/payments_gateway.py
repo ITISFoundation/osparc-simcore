@@ -19,10 +19,10 @@ from ..models.payments_gateway import (
     InitPayment,
     InitPaymentMethod,
     PaymentCancelled,
-    PaymentID,
     PaymentInitiated,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentUUID,
 )
 from ..utils.http_client import AppStateMixin, BaseHttpApi
 
@@ -53,7 +53,7 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
 
-    def get_form_payment_url(self, id_: PaymentID) -> URL:
+    def get_form_payment_url(self, id_: PaymentUUID) -> URL:
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
 
     async def cancel_payment(
