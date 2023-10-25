@@ -350,10 +350,7 @@ async def test_update_volume_state(
 
 @pytest.mark.parametrize(
     "mock_json",
-    [
-        {"is_inactive": True, "seconds_inactive": 1},
-        {"is_inactive": False, "seconds_inactive": None},
-    ],
+    [{"seconds_inactive": 1}, {"seconds_inactive": None}],
 )
 async def test_get_service_inactivity(
     get_patched_client: Callable,
