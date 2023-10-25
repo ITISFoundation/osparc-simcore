@@ -56,6 +56,7 @@ class ServiceRunStoppedAtUpdate(BaseModel):
     service_run_id: ServiceRunId
     stopped_at: datetime
     service_run_status: ServiceRunStatus
+    service_run_status_msg: str | None
 
 
 class ServiceRunDB(BaseModel):
@@ -82,6 +83,8 @@ class ServiceRunDB(BaseModel):
     service_run_status: ServiceRunStatus
     modified: datetime
     last_heartbeat_at: datetime
+    service_run_status_msg: str | None
+    missed_heartbeat_counter: int
 
     class Config:
         orm_mode = True
@@ -98,3 +101,13 @@ class ServiceRunWithCreditsDB(ServiceRunDB):
 class ServiceRunPage(NamedTuple):
     items: list[ServiceRunGet]
     total: PositiveInt
+
+
+class ServiceRunForCheckDB(BaseModel):
+    product_name: ProductName
+    service_run_id: ServiceRunId
+    last_heartbeat_at: datetime
+    missed_heartbeat_counter: int
+
+    class Config:
+        orm_mode = True

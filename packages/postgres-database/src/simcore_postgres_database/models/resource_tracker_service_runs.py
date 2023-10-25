@@ -180,4 +180,17 @@ resource_tracker_service_runs = sa.Table(
         nullable=False,
         doc="Timestamp when was the last heartbeat",
     ),
+    sa.Column(
+        "service_run_status_msg",
+        sa.String,
+        nullable=False,
+        doc="Custom message/comment, for example to help understand root cause of the error during investigation",
+    ),
+    sa.Column(
+        "missed_heartbeat_counter",
+        sa.SmallInteger,
+        nullable=False,
+        default=0,
+        doc="How many heartbeat checks have been missed",
+    ),
 )

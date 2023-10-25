@@ -21,7 +21,7 @@ async def list_service_runs(
     user_id: UserID,
     product_name: ProductName,
     page_params: Annotated[LimitOffsetParamsWithDefault, Depends()],
-    resource_tacker_repo: Annotated[
+    resource_tracker_repo: Annotated[
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
     wallet_id: WalletID = Query(None),
@@ -29,12 +29,12 @@ async def list_service_runs(
 ) -> ServiceRunPage:
     # Situation when we want to see all usage of a specific user
     if wallet_id is None and access_all_wallet_usage is None:
-        total_service_runs: PositiveInt = await resource_tacker_repo.total_service_runs_by_product_and_user_and_wallet(
+        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
             product_name, user_id=user_id, wallet_id=None
         )
         service_runs_db_model: list[
             ServiceRunWithCreditsDB
-        ] = await resource_tacker_repo.list_service_runs_by_product_and_user_and_wallet(
+        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
             product_name,
             user_id=user_id,
             wallet_id=None,
@@ -43,12 +43,12 @@ async def list_service_runs(
         )
     # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
-        total_service_runs: PositiveInt = await resource_tacker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
+        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
             product_name, user_id=None, wallet_id=wallet_id
         )
         service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunWithCreditsDB
-        ] = await resource_tacker_repo.list_service_runs_by_product_and_user_and_wallet(
+        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
             product_name,
             user_id=None,
             wallet_id=wallet_id,
@@ -57,12 +57,12 @@ async def list_service_runs(
         )
     # Situation when regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = await resource_tacker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
+        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
             product_name, user_id=user_id, wallet_id=wallet_id
         )
         service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunWithCreditsDB
-        ] = await resource_tacker_repo.list_service_runs_by_product_and_user_and_wallet(
+        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
             product_name,
             user_id=user_id,
             wallet_id=wallet_id,

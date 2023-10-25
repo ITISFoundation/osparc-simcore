@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from decimal import Decimal
 from typing import cast
 
@@ -56,6 +57,7 @@ from ....models.resource_tracker_pricing_units import PricingUnitsDB
 from ....models.resource_tracker_service_runs import (
     ServiceRunCreate,
     ServiceRunDB,
+    ServiceRunForCheckDB,
     ServiceRunLastHeartbeatUpdate,
     ServiceRunStoppedAtUpdate,
     ServiceRunWithCreditsDB,
@@ -87,7 +89,7 @@ class ResourceTrackerRepository(BaseRepository):
                     user_id=data.user_id,
                     user_email=data.user_email,
                     project_id=f"{data.project_id}",
-                    project_name=data.product_name,
+                    project_name=data.project_name,
                     node_id=f"{data.node_id}",
                     node_name=data.node_name,
                     service_key=data.service_key,
@@ -118,7 +120,9 @@ class ResourceTrackerRepository(BaseRepository):
             update_stmt = (
                 resource_tracker_service_runs.update()
                 .values(
-                    modified=sa.func.now(), last_heartbeat_at=data.last_heartbeat_at
+                    modified=sa.func.now(),
+                    last_heartbeat_at=data.last_heartbeat_at,
+                    missed_heartbeat_counter=0,
                 )
                 .where(
                     (
@@ -152,6 +156,7 @@ class ResourceTrackerRepository(BaseRepository):
                     modified=sa.func.now(),
                     stopped_at=data.stopped_at,
                     service_run_status=data.service_run_status,
+                    service_run_status_msg=data.service_run_status_msg,
                 )
                 .where(
                     (
@@ -207,6 +212,8 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_service_runs.c.service_run_status,
                     resource_tracker_service_runs.c.modified,
                     resource_tracker_service_runs.c.last_heartbeat_at,
+                    resource_tracker_service_runs.c.service_run_status_msg,
+                    resource_tracker_service_runs.c.missed_heartbeat_counter,
                     resource_tracker_credit_transactions.c.osparc_credits,
                     resource_tracker_credit_transactions.c.transaction_status,
                 )
@@ -270,6 +277,83 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(query)
         row = result.first()
         return cast(PositiveInt, row[0]) if row else 0
+
+    ### For Background check purpose:
+
+    async def list_service_runs_with_running_status_across_all_products(
+        self,
+        *,
+        offset: int,
+        limit: int,
+    ) -> list[ServiceRunForCheckDB]:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_service_runs.c.product_name,
+                    resource_tracker_service_runs.c.service_run_id,
+                    resource_tracker_service_runs.c.last_heartbeat_at,
+                    resource_tracker_service_runs.c.missed_heartbeat_counter,
+                )
+                .where(
+                    resource_tracker_service_runs.c.service_run_status
+                    == ServiceRunStatus.RUNNING
+                )
+                .order_by(resource_tracker_service_runs.c.started_at.desc())
+                .offset(offset)
+                .limit(limit)
+            )
+            result = await conn.execute(query)
+
+        return [ServiceRunForCheckDB.from_orm(row) for row in result.fetchall()]
+
+    async def total_service_runs_with_running_status_across_all_products(
+        self,
+    ) -> PositiveInt:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(sa.func.count())
+                .select_from(resource_tracker_service_runs)
+                .where(
+                    resource_tracker_service_runs.c.service_run_status
+                    == ServiceRunStatus.RUNNING
+                )
+            )
+            result = await conn.execute(query)
+        row = result.first()
+        return cast(PositiveInt, row[0]) if row else 0
+
+    async def update_service_missed_heartbeat_counter(
+        self,
+        service_run_id: ServiceRunId,
+        last_heartbeat_at: datetime,
+        missed_heartbeat_counter: int,
+    ) -> ServiceRunDB | None:
+        async with self.db_engine.begin() as conn:
+            update_stmt = (
+                resource_tracker_service_runs.update()
+                .values(
+                    modified=sa.func.now(),
+                    missed_heartbeat_counter=missed_heartbeat_counter,
+                )
+                .where(
+                    (resource_tracker_service_runs.c.service_run_id == service_run_id)
+                    & (
+                        resource_tracker_service_runs.c.service_run_status
+                        == ServiceRunStatus.RUNNING
+                    )
+                    & (
+                        resource_tracker_service_runs.c.last_heartbeat_at
+                        == last_heartbeat_at
+                    )
+                )
+                .returning(sa.literal_column("*"))
+            )
+
+            result = await conn.execute(update_stmt)
+        row = result.first()
+        if row is None:
+            return None
+        return ServiceRunDB.from_orm(row)
 
     #################################
     # Credit transactions
