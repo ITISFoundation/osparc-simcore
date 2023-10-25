@@ -44,6 +44,9 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       contentPadding: 0
     });
 
+    const visualsPage = new osparc.desktop.preferences.pages.GeneralPage();
+    tabView.add(visualsPage);
+
     const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
     tabView.add(confirmPage);
 

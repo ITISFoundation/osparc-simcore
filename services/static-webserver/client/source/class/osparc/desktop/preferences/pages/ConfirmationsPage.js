@@ -34,9 +34,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       const experimentalSettings = this.__createExperimentalSettings();
       this.add(experimentalSettings);
     }
-
-    const walletIndicatorSettings = this.__createCreditsIndicatorSettings();
-    this.add(walletIndicatorSettings);
   },
 
   statics: {
@@ -158,77 +155,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");
       cbAutoPorts.addListener("changeValue", e => this.self().patchPreference("autoConnectPorts", cbAutoPorts, e.getData()));
       box.add(cbAutoPorts);
-
-      return box;
-    },
-
-    __createCreditsIndicatorSettings: function() {
-      // layout
-      const box = this._createSectionBox(this.tr("Credits Indicator"));
-
-      const label = this._createHelpLabel(this.tr(
-        "Choose how you want the Credits Indicator to look like and when it is shown:"
-      ));
-      box.add(label);
-
-      const form = new qx.ui.form.Form();
-
-      const preferencesSettings = osparc.Preferences.getInstance();
-
-      const walletIndicatorModeSB = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
-      });
-      [{
-        id: "both",
-        label: "Both"
-      }, {
-        id: "text",
-        label: "Text"
-      }, {
-        id: "bar",
-        label: "Bar"
-      }].forEach(options => {
-        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
-        walletIndicatorModeSB.add(lItem);
-      });
-      const value = preferencesSettings.getWalletIndicatorMode();
-      walletIndicatorModeSB.getSelectables().forEach(selectable => {
-        if (selectable.getModel() === value) {
-          walletIndicatorModeSB.setSelection([selectable]);
-        }
-      });
-      walletIndicatorModeSB.addListener("changeValue", e => {
-        const selectable = e.getData();
-        this.self().patchPreference("walletIndicatorMode", walletIndicatorModeSB, selectable.getModel());
-      });
-      form.add(walletIndicatorModeSB, this.tr("Indicator mode"));
-
-      const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
-      });
-      [{
-        id: "always",
-        label: "Always"
-      }, {
-        id: "warning",
-        label: "Warning"
-      }].forEach(options => {
-        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
-        walletIndicatorVisibilitySB.add(lItem);
-      });
-      const value2 = preferencesSettings.getWalletIndicatorVisibility();
-      walletIndicatorVisibilitySB.getSelectables().forEach(selectable => {
-        if (selectable.getModel() === value2) {
-          walletIndicatorVisibilitySB.setSelection([selectable]);
-        }
-      });
-      walletIndicatorVisibilitySB.addListener("changeValue", e => {
-        const selectable = e.getData();
-        this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
-      });
-      form.add(walletIndicatorVisibilitySB, this.tr("Show it"));
-
-      box.add(new qx.ui.form.renderer.Single(form));
 
       return box;
     }
