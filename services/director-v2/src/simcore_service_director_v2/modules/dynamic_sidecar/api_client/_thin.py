@@ -254,3 +254,12 @@ class ThinSidecarsClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(proxy_endpoint, "/load", no_api_version=True)
         return await self.client.post(url, json=proxy_configuration)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_200_OK)
+    async def get_containers_inactivity(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/inactivity")
+        return await self.client.get(url)
