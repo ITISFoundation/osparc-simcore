@@ -47,7 +47,9 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
-    const navBar = this.__navBar = this.__createNavigationBar();
+    const navBar = this.__navBar = new osparc.navigation.NavigationBar();
+    navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+    navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
     this._add(navBar);
 
     // Some resources request before building the main stack
@@ -89,13 +91,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     __dashboardLayout: null,
     __loadingPage: null,
     __studyEditor: null,
-
-    __createNavigationBar: function() {
-      const navBar = new osparc.navigation.NavigationBar();
-      navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
-      navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
-      return navBar;
-    },
 
     __backToDashboardPressed: function() {
       if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
