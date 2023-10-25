@@ -25,8 +25,9 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
-    // Some resources request before building the main stack
-    osparc.WindowSizeTracker.getInstance().startTracker();
+    const navBar = new osparc.navigation.NavigationBar();
+    this._add(navBar);
+
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
