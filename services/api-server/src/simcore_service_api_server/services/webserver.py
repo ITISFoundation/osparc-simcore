@@ -415,10 +415,14 @@ class AuthSession:
         self, project_id: UUID, cluster_id: ClusterID | None = None
     ) -> None:
         with _handle_webserver_api_errors():
-            body: ComputationStart
+            body_input: dict[str, Any] = {}
+            if cluster_id:
+                body_input["cluster_id"] = cluster_id
+            body: ComputationStart = ComputationStart(**body_input)
             response = await self.client.post(
                 f"/computations/{project_id}:start",
                 cookies=self.session_cookies,
+                json=jsonable_encoder(body),
             )
             response.raise_for_status()
 

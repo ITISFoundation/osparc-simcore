@@ -201,15 +201,14 @@ async def start_job(
             )
 
     with log_context(_logger, logging.DEBUG, "Starting job"):
-        task = await director2_api.start_computation(
-            project_id=job_id,
+        await webserver_api.start_project(project_id=job_id, cluster_id=cluster_id)
+        return await inspect_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
             user_id=user_id,
-            product_name=product_name,
-            cluster_id=cluster_id,
-            groups_extra_properties_repository=groups_extra_properties_repository,
+            director2_api=director2_api,
         )
-        job_status: JobStatus = create_jobstatus_from_task(task)
-        return job_status
 
 
 @router.post(
