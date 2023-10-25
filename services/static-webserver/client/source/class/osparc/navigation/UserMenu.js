@@ -32,6 +32,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       switch (id) {
         case "mini-profile-view":
           control = new osparc.navigation.MiniProfileMenuButton();
+          this.setMinWidth(150);
           this.addAt(control, 0);
           break;
         case "theme-switcher":
@@ -125,6 +126,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
     populateMenu: function() {
       this.removeAll();
 
+      this.getChildControl("mini-profile-view");
+
       if (osparc.auth.Data.getInstance().isGuest()) {
         this.getChildControl("log-in");
       } else {
@@ -158,8 +161,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("log-out");
 
       osparc.utils.Utils.prettifyMenu(this);
-
-      this.getChildControl("mini-profile-view");
     },
 
     populateMenuCompact: function() {
