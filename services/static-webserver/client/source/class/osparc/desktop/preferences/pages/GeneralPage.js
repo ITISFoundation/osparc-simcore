@@ -55,23 +55,13 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const box = this._createSectionBox(this.tr("Credits Indicator"));
 
       const label = this._createHelpLabel(this.tr(
-        "Choose when you want the Credits Indicator to be shown:"
+        "Choose when you want the Credits Indicator to be shown in the navigation bar:"
       ));
       box.add(label);
 
       const form = new qx.ui.form.Form();
 
       const preferencesSettings = osparc.Preferences.getInstance();
-
-      const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
-        minimum: 100,
-        maximum: 10000,
-        singleStep: 10,
-        allowGrowX: false
-      });
-      preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
-      creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
-      form.add(creditsWarningThresholdField, this.tr("Warning threshold"));
 
       const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
@@ -97,6 +87,16 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
       });
       form.add(walletIndicatorVisibilitySB, this.tr("Show it"));
+
+      const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
+        minimum: 100,
+        maximum: 10000,
+        singleStep: 10,
+        allowGrowX: false
+      });
+      preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
+      creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
+      form.add(creditsWarningThresholdField, this.tr("Warning threshold"));
 
       box.add(new qx.ui.form.renderer.Single(form));
 

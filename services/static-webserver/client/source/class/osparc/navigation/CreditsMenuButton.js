@@ -47,7 +47,8 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
     preferencesSettings.addListener("changeWalletIndicatorVisibility", () => computeVisibility());
     preferencesSettings.addListener("changeCreditsWarningThreshold", () => computeVisibility());
 
-    const updateContextWallet = wallet => {
+    const updateContextWallet = () => {
+      const wallet = store.getContextWallet();
       if (wallet) {
         wallet.bind("creditsAvailable", this, "label", {
           converter: credits => osparc.desktop.credits.Utils.creditsToFixed(credits) + " credits"
@@ -56,7 +57,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
     };
 
     updateContextWallet(store.getContextWallet());
-    store.addListener("changeContextWallet", e => updateContextWallet(e.getData()));
+    store.addListener("changeContextWallet", () => updateContextWallet());
 
 
     const preferencesButton = new qx.ui.menu.Button(this.tr("Preferences"));
