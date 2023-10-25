@@ -25,6 +25,10 @@ qx.Class.define("osparc.desktop.credits.DesktopCenter", {
   construct: function() {
     this.base(arguments);
 
+    this.set({
+      backgroundColor: "background-main-2"
+    });
+
     const page = new osparc.desktop.credits.ProfilePage();
     page.showLabelOnTab();
     const profilePos = 2; // 0: Miniview, 1: Summary
