@@ -33,7 +33,6 @@ qx.Class.define("osparc.Application", {
   members: {
     __current: null,
     __mainPage: null,
-    __openViewAfterLogin: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -122,7 +121,6 @@ qx.Class.define("osparc.Application", {
     },
 
     __rerouteNav: function(urlFragment) {
-      this.__openViewAfterLogin = null;
       const page = urlFragment.nav[0];
       switch (page) {
         case "study": {
@@ -176,15 +174,6 @@ qx.Class.define("osparc.Application", {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__restart();
           }
-          break;
-        }
-        case "wallets": {
-          // Route: /#/wallets
-          this.__openViewAfterLogin = "wallets";
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          osparc.auth.Manager.getInstance().validateToken()
-            .then(() => this.__loadMainPage())
-            .catch(() => this.__loadLoginPage());
           break;
         }
         case "error": {
@@ -406,7 +395,7 @@ qx.Class.define("osparc.Application", {
         if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
           mainPage = new osparc.desktop.MainPageDesktop();
         } else {
-          mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
+          mainPage = new osparc.desktop.MainPage();
         }
         this.__mainPage = mainPage;
         this.__loadView(mainPage);
