@@ -47,24 +47,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   },
 
   statics: {
-    creditsToColor: function(credits, defaultColor = "text") {
-      const preferencesSettings = osparc.Preferences.getInstance();
-      let color = defaultColor;
-      if (credits <= 0) {
-        color = "danger-red";
-      } else if (credits <= preferencesSettings.getCreditsWarningThreshold()) {
-        color = "warning-yellow";
-      }
-      return color;
-    },
-
-    normalizeCredits: function(credits) {
-      const logBase = (n, base) => Math.log(n) / Math.log(base);
-
-      let normalized = logBase(credits, 10000) + 0.01;
-      normalized = Math.min(Math.max(normalized, 0), 1);
-      return normalized * 100;
-    }
   },
 
   members: {
@@ -103,12 +85,12 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
         const label = this.getChildControl("credits-text");
         label.set({
           value: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
-          textColor: this.self().creditsToColor(credits, "text")
+          textColor: osparc.desktop.credits.Utils.creditsToColor(credits, "text")
         });
 
         const indicator = this.getChildControl("credits-bar");
-        const progress = this.self().normalizeCredits(credits);
-        const bgColor = this.self().creditsToColor(credits, "strong-main");
+        const progress = osparc.desktop.credits.Utils.normalizeCredits(credits);
+        const bgColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
         indicator.setBackgroundColor(bgColor);
         const ourBlue = qx.theme.manager.Color.getInstance().resolve("strong-main");
         const textColor = qx.theme.manager.Color.getInstance().resolve("text");
