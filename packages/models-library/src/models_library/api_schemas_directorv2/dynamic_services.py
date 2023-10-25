@@ -78,3 +78,7 @@ class DynamicServiceCreate(ServiceDetails):
 
 
 DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails
+
+
+class GetProjectInactivityResponse(BaseModel):
+    is_inactive: bool

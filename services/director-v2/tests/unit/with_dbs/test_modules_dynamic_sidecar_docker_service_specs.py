@@ -207,7 +207,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
                         '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
                         ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
-                        '"command": ["ls", "-lah"], "timeout": 1.0}]}'
+                        '"command": ["ls", "-lah"], "timeout": 1.0}], "inactivity": null}'
                     ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
