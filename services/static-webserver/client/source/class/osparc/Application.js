@@ -395,7 +395,7 @@ qx.Class.define("osparc.Application", {
 
         let mainPage = null;
         if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
-          mainPage = new osparc.desktop.credits.DesktopCenter();
+          mainPage = new osparc.desktop.MainPageDesktop();
         } else {
           mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
         }
