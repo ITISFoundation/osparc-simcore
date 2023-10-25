@@ -62,7 +62,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
         case "s4ldesktop":
           backgroundImage = "url(resource/osparc/s4ldesktop_splitimage.png)";
           break;
-        case "s4lacaddesktop":
+        case "s4ldesktopacad":
           backgroundImage = "url(resource/osparc/s4ldesktopacad_splitimage.png)";
           break;
         case "s4l":
