@@ -30,6 +30,10 @@ qx.Class.define("osparc.navigation.UserMenu", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "mini-profile-view":
+          control = new osparc.navigation.MiniProfileMenuButton();
+          this.addAt(control, 0);
+          break;
         case "theme-switcher":
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
           this.add(control);
@@ -154,7 +158,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
       osparc.utils.Utils.prettifyMenu(this);
 
-      this.addAt(new osparc.navigation.MiniProfileMenuButton(), 0);
+      this.getChildControl("mini-profile-view");
     },
 
     populateMenuCompact: function() {

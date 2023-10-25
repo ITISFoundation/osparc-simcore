@@ -48,6 +48,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
     const navBar = this.__navBar = new osparc.navigation.NavigationBar();
+    navBar.populateLayout();
     navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
     navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
     this._add(navBar);
