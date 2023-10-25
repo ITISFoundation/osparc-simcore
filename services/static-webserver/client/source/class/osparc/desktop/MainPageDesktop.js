@@ -26,6 +26,26 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
     const navBar = new osparc.navigation.NavigationBar();
+    navBar.populateLayout()
+      .then(() => {
+        // remove some items from the navigation bar
+        navBar.getChildControl("dashboard-label").exclude();
+        navBar.getChildControl("dashboard-button").exclude();
+        navBar.getChildControl("notifications-button").exclude();
+        navBar.getChildControl("help").exclude();
+
+        // remove all the menu entries except "log-out" from user menu
+        const userMenuButton = navBar.getChildControl("user-menu");
+        const userMenu = userMenuButton.getMenu();
+        // eslint-disable-next-line no-underscore-dangle
+        const userMenuEntries = userMenu._getCreatedChildControls();
+        Object.entries(userMenuEntries).forEach(([id, userMenuEntry]) => {
+          if (!["mini-profile-view", "log-out"].includes(id)) {
+            userMenuEntry.exclude();
+          }
+        });
+        console.log("userMenu", userMenu);
+      });
     this._add(navBar);
 
     osparc.MaintenanceTracker.getInstance().startTracker();
@@ -48,3 +68,4 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
       });
   }
 });
+
