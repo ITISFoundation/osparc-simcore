@@ -71,8 +71,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "organizations":
-          control = new qx.ui.menu.Button(this.tr("Organizations"));
-          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          control = new qx.ui.menu.Button(this.tr("Organizations")).set({
+            visibility: osparc.data.Permissions.getInstance().canDo("user.organizations.create") ? "visible" :"excluded"
+          });
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.add(control);
           break;
