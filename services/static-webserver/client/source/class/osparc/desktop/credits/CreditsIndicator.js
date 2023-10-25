@@ -74,15 +74,9 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
         case "credits-text":
           control = new qx.ui.basic.Label().set({
             alignX: "center",
-            allowGrowY: true,
             font: "text-16"
           });
-          control.getContentElement().setStyles({
-            "line-height": "33px"
-          });
-          this._add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         case "credits-bar":
           control = new qx.ui.core.Widget().set({
