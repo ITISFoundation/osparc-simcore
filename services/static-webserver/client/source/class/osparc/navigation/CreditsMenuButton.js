@@ -60,9 +60,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
 
 
     const preferencesButton = new qx.ui.menu.Button(this.tr("Preferences"));
-    preferencesButton.addListener("execute", () => {
-      osparc.desktop.preferences.PreferencesWindow.openWindow();
-    }, this);
+    preferencesButton.addListener("execute", () => osparc.desktop.preferences.PreferencesWindow.openWindow(), this);
     menu.add(preferencesButton);
 
     const billingCenterButton = new qx.ui.menu.Button(this.tr("Billing Center"));
