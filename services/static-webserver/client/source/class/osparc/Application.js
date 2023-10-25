@@ -393,7 +393,13 @@ qx.Class.define("osparc.Application", {
           osparc.store.Store.getInstance().setCurrentStudyId(studyId);
         }
 
-        const mainPage = this.__mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
+        let mainPage = null;
+        if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
+          mainPage = new osparc.desktop.credits.DesktopCenter();
+        } else {
+          mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
+        }
+        this.__mainPage = mainPage;
         this.__loadView(mainPage);
       }
     },
@@ -442,7 +448,7 @@ qx.Class.define("osparc.Application", {
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.announcement.Tracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
-      if (this.__mainPage) {
+      if ("closeEditor" in this.__mainPage) {
         this.__mainPage.closeEditor();
       }
       osparc.utils.Utils.closeHangingWindows();

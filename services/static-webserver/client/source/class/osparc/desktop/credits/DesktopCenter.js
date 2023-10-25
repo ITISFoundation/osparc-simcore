@@ -19,7 +19,6 @@
  * A mix between the Billing Center and My Account
  */
 
-
 qx.Class.define("osparc.desktop.credits.DesktopCenter", {
   extend: osparc.desktop.credits.BillingCenter,
 
