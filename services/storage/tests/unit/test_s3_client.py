@@ -20,6 +20,7 @@ import pytest
 from aiohttp import ClientSession
 from faker import Faker
 from models_library.api_schemas_storage import UploadedPart
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
@@ -239,7 +240,7 @@ async def test_create_multipart_presigned_upload_link(
 
     # now complete it
     received_e_tag = await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
+        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
     )
 
     # check that the multipart upload is not listed anymore
@@ -284,14 +285,13 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
             file_id,
             upload_links.upload_id,
             uploaded_parts,
-            None,
         )
 
     wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
     # with pytest.raises(S3KeyNotFoundError):
     # NOTE: this does not raise... and it returns the file_id of the original file...
     await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts, None
+        storage_s3_bucket, wrong_file_id, upload_links.upload_id, uploaded_parts
     )
     # call it again triggers
     with pytest.raises(S3AccessError):
@@ -300,7 +300,6 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
             wrong_file_id,
             upload_links.upload_id,
             uploaded_parts,
-            None,
         )
 
 
@@ -356,12 +355,12 @@ async def test_multiple_completion_of_multipart_upload(
 
     # first completion
     await storage_s3_client.complete_multipart_upload(
-        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
+        storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
     )
 
     with pytest.raises(S3AccessError):
         await storage_s3_client.complete_multipart_upload(
-            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
+            storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
         )
 
 
@@ -384,7 +383,7 @@ async def test_break_completion_of_multipart_upload(
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(
             storage_s3_client.complete_multipart_upload(
-                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts, None
+                storage_s3_bucket, file_id, upload_links.upload_id, uploaded_parts
             ),
             timeout=VERY_SHORT_TIMEOUT,
         )
@@ -453,6 +452,7 @@ def upload_file_multipart_presigned_link_without_completion(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     create_file_of_size: Callable[[ByteSize], Path],
+    faker: Faker,
 ) -> Callable[
     ..., Awaitable[tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]]
 ]:
@@ -468,6 +468,7 @@ def upload_file_multipart_presigned_link_without_completion(
             file_id,
             ByteSize(file.stat().st_size),
             expiration_secs=DEFAULT_EXPIRATION_SECS,
+            sha256_checksum=parse_obj_as(SHA256Str, faker.sha256()),
         )
         assert upload_links
 
