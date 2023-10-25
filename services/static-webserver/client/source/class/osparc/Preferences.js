@@ -84,11 +84,11 @@ qx.Class.define("osparc.Preferences", {
       apply: "__patchPreference"
     },
 
-    walletIndicatorMode: {
-      check: ["both", "bar"],
+    creditsWarningThreshold: {
+      check: "Number",
       nullable: false,
-      init: "both",
-      event: "changeWalletIndicatorMode",
+      init: 200,
+      event: "changeCreditsWarningThreshold",
       apply: "__patchPreference"
     },
 

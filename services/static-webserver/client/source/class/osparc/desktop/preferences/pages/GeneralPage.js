@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const box = this._createSectionBox(this.tr("Credits Indicator"));
 
       const label = this._createHelpLabel(this.tr(
-        "Choose how you want the Credits Indicator to look like and when it is shown:"
+        "Choose when you want the Credits Indicator to be shown:"
       ));
       box.add(label);
 
@@ -63,33 +63,15 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
       const preferencesSettings = osparc.Preferences.getInstance();
 
-      const walletIndicatorModeSB = new qx.ui.form.SelectBox().set({
+      const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
+        minimum: 100,
+        maximum: 10000,
+        singleStep: 10,
         allowGrowX: false
       });
-      [{
-        id: "both",
-        label: "Both"
-      }, {
-        id: "text",
-        label: "Text"
-      }, {
-        id: "bar",
-        label: "Bar"
-      }].forEach(options => {
-        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
-        walletIndicatorModeSB.add(lItem);
-      });
-      const value = preferencesSettings.getWalletIndicatorMode();
-      walletIndicatorModeSB.getSelectables().forEach(selectable => {
-        if (selectable.getModel() === value) {
-          walletIndicatorModeSB.setSelection([selectable]);
-        }
-      });
-      walletIndicatorModeSB.addListener("changeValue", e => {
-        const selectable = e.getData();
-        this.self().patchPreference("walletIndicatorMode", walletIndicatorModeSB, selectable.getModel());
-      });
-      form.add(walletIndicatorModeSB, this.tr("Indicator mode"));
+      preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
+      creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
+      form.add(creditsWarningThresholdField, this.tr("Warning threshold"));
 
       const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
         allowGrowX: false

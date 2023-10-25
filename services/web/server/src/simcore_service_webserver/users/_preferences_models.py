@@ -65,9 +65,9 @@ class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
     value: int | None = None
 
 
-class WalletIndicatorModeFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "walletIndicatorMode"
-    value: str | None = "both"
+class CreditsWarningThresholdFrontendUserPreference(FrontendUserPreference):
+    preference_identifier = "creditsWarningThreshold"
+    value: int | None = 200
 
 
 class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
@@ -92,7 +92,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ThemeNameFrontendUserPreference,
     LastVcsRefUIFrontendUserPreference,
     PreferredWalletIdFrontendUserPreference,
-    WalletIndicatorModeFrontendUserPreference,
+    CreditsWarningThresholdFrontendUserPreference,
     WalletIndicatorVisibilityFrontendUserPreference,
     UserInactivityThresholdFrontendUserPreference,
 ]
