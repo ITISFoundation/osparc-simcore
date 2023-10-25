@@ -35,9 +35,18 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       allowGrowY: false,
       menu
     });
+
+    const ourBlue = qx.theme.manager.Color.getInstance().resolve("strong-main");
+    const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+    const arr = qx.util.ColorUtil.stringToRgb(textColor);
+    arr[3] = 0.5;
+    const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
     this.getContentElement().setStyles({
-      "border-radius": "20px"
+      "border-radius": "20px",
+      // "display": "flex",
+      "background": `radial-gradient(closest-side, white 79%, transparent 80% 100%), conic-gradient(${ourBlue} 75%, ${color2} 0)`
     });
+
     this.getChildControl("icon").getContentElement().setStyles({
       "border-radius": "16px"
     });
