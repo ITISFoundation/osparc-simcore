@@ -323,7 +323,11 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
 
     upload_links_list: list[MultiPartUploadLinks] = [
         await storage_s3_client.create_multipart_upload_links(
-            storage_s3_bucket, file_id, file_size, expiration_secs=3600
+            storage_s3_bucket,
+            file_id,
+            file_size,
+            expiration_secs=3600,
+            sha256_checksum=parse_obj_as(SHA256Str, _faker.sha256()),
         )
         for file_id in file_ids_to_upload
     ]
@@ -392,7 +396,11 @@ async def test_clean_expired_uploads_cleans_dangling_multipart_uploads_if_no_cor
     assert fmd_in_db.upload_expires_at
     # we create the multipart upload link
     upload_links = await storage_s3_client.create_multipart_upload_links(
-        storage_s3_bucket, simcore_file_id, file_size, expiration_secs=3600
+        storage_s3_bucket,
+        simcore_file_id,
+        file_size,
+        expiration_secs=3600,
+        sha256_checksum=parse_obj_as(SHA256Str, _faker.sha256()),
     )
 
     # ensure we have now an upload id
