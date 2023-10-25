@@ -12,6 +12,7 @@ from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
@@ -94,11 +95,17 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         self,
         node_uuid: NodeID,
         can_save: bool | None,
+        *,
         skip_observation_recreation: bool = False,
     ) -> None:
         return await self._scheduler.mark_service_for_removal(
-            node_uuid, can_save, skip_observation_recreation
+            node_uuid, can_save, skip_observation_recreation=skip_observation_recreation
         )
+
+    async def mark_all_services_in_wallet_for_removal(
+        self, wallet_id: WalletID
+    ) -> None:
+        await self._scheduler.mark_all_services_in_wallet_for_removal(wallet_id)
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
         return await self._scheduler.is_service_awaiting_manual_intervention(node_uuid)

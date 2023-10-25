@@ -19,6 +19,7 @@ import functools
 import logging
 from asyncio import Lock, Queue, Task, sleep
 from dataclasses import dataclass, field
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -32,7 +33,8 @@ from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy, SimcoreServiceLabels
 from models_library.users import UserID
-from pydantic import AnyHttpUrl
+from models_library.wallets import WalletID
+from pydantic import AnyHttpUrl, NonNegativeFloat
 from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
@@ -55,6 +57,7 @@ logger = logging.getLogger(__name__)
 
 
 _DISABLED_MARK = object()
+_MAX_WAIT_TASKS_SHUTDOWN_S: Final[NonNegativeFloat] = 5
 
 
 @dataclass
@@ -128,10 +131,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         for task in running_tasks:
             task.cancel()
         try:
-            MAX_WAIT_TIME_SECONDS = 5
             results = await asyncio.wait_for(
                 asyncio.gather(*running_tasks, return_exceptions=True),
-                timeout=MAX_WAIT_TIME_SECONDS,
+                timeout=_MAX_WAIT_TASKS_SHUTDOWN_S,
             )
             if bad_results := list(filter(lambda r: isinstance(r, Exception), results)):
                 logger.error(
@@ -139,7 +141,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                     f"{bad_results}",
                 )
         except asyncio.TimeoutError:
-            logger.error(
+            logger.exception(
                 "Timed-out waiting for %s to complete. Action: Check why this is blocking",
                 f"{running_tasks=}",
             )
@@ -304,6 +306,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         self,
         node_uuid: NodeID,
         can_save: bool | None,
+        *,
         skip_observation_recreation: bool = False,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
@@ -319,7 +322,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
 
             # if service is already being removed no need to force a cancellation and removal of the service
             if current.dynamic_sidecar.service_removal_state.can_remove:
-                logger.info(
+                logger.debug(
                     "Service %s is already being removed, will not cancel observation",
                     node_uuid,
                 )
@@ -357,6 +360,26 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
             )
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
+
+    async def mark_all_services_in_wallet_for_removal(
+        self, wallet_id: WalletID
+    ) -> None:
+        # TODO: have a test that runs this multiple times in a row, should not do anything bad
+        async with self._lock:
+            to_remove: list[SchedulerData] = [
+                scheduler_data
+                for scheduler_data in self._to_observe.values()
+                if (
+                    scheduler_data.wallet_info
+                    and scheduler_data.wallet_info.wallet_id == wallet_id
+                )
+            ]
+
+        for scheduler_data in to_remove:
+            await self.mark_service_for_removal(
+                scheduler_data.node_uuid,
+                can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
+            )
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
         """returns True if services is waiting for manual intervention"""

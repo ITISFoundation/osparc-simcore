@@ -1,7 +1,12 @@
 import logging
+from functools import partial
 from typing import cast
 
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import (
+    CreditsLimit,
+    WalletCreditsLimitReachedMessage,
+)
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
@@ -10,8 +15,18 @@ from servicelib.rabbitmq import (
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
+from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
+
+
+async def message_handler(app: FastAPI, data: bytes) -> bool:
+    message = WalletCreditsLimitReachedMessage.parse_raw(data)
+
+    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
+    await scheduler.mark_all_services_in_wallet_for_removal(wallet_id=message.wallet_id)
+
+    return True
 
 
 def setup(app: FastAPI) -> None:
@@ -23,6 +38,12 @@ def setup(app: FastAPI) -> None:
         )
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
             client_name="director-v2", settings=settings
+        )
+
+        await app.state.rabbitmq_client.subscribe(
+            WalletCreditsLimitReachedMessage.get_channel_name(),
+            partial(message_handler, app),
+            topics=[f"*.{CreditsLimit.SHUTDOWN_SERVICES}"],
         )
 
     async def on_shutdown() -> None:

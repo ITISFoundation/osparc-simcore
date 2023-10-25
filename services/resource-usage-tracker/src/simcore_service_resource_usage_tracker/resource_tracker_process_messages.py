@@ -168,14 +168,17 @@ async def _process_heartbeat_event(
             running_service.product_name,
             running_service.wallet_id,
         )
-        if wallet_total_credits.available_osparc_credits < CreditsLimit.MIN_CREDITS:
+        if (
+            wallet_total_credits.available_osparc_credits
+            < CreditsLimit.SHUTDOWN_SERVICES
+        ):
             await publish_to_rabbitmq_wallet_credits_limit_reached(
                 resource_tracker_repo,
                 rabbitmq_client,
                 product_name=running_service.product_name,
                 wallet_id=running_service.wallet_id,
                 credits_=wallet_total_credits.available_osparc_credits,
-                credits_limit=CreditsLimit.MIN_CREDITS,
+                credits_limit=CreditsLimit.SHUTDOWN_SERVICES,
             )
 
 
