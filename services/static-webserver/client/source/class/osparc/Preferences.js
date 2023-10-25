@@ -85,7 +85,7 @@ qx.Class.define("osparc.Preferences", {
     },
 
     walletIndicatorMode: {
-      check: ["both", "text", "bar"],
+      check: ["both", "bar"],
       nullable: false,
       init: "both",
       event: "changeWalletIndicatorMode",
@@ -95,7 +95,7 @@ qx.Class.define("osparc.Preferences", {
     walletIndicatorVisibility: {
       check: ["always", "warning"],
       nullable: false,
-      init: "both",
+      init: "always",
       event: "changeWalletIndicatorVisibility",
       apply: "__patchPreference"
     }
