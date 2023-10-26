@@ -12,7 +12,11 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.users import UserID
+from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQClient
@@ -46,35 +50,43 @@ def app_environment(
     )
 
 
-async def test_it(
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return parse_obj_as(UserID, faker.pyint())
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return parse_obj_as(ProjectID, faker.uuid4())
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return parse_obj_as(NodeID, faker.uuid4())
+
+
+async def test_subscribe_publish_receive_logs(
     client: httpx.AsyncClient,
     app: FastAPI,
     faker: Faker,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
-    # create exchange
-    # create producer
-    rabbitmq_producer = create_rabbitmq_client("pytest_producer")
-
-    # create consumer & subscribe
-    rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-
-    project_id = faker.uuid4()
-    user_id = faker.pyint()
-    node_id = faker.uuid4()
-    exchange_name = LoggerRabbitMessage.get_channel_name()
-    topics = [f"{project_id}.*"]
-
     _comsumer_message_handler = AsyncMock(return_value=True)
 
-    await rabbit_client.subscribe(
-        exchange_name,
+    # create consumer & subscribe
+    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
+    queue_name = await rabbit_consumer.subscribe(
+        LoggerRabbitMessage.get_channel_name(),
         _comsumer_message_handler,
         exclusive_queue=False,  # this instance should receive the incoming messages
-        topics=topics,
+        topics=[f"{project_id}.*"],
     )
 
-    # produce log
+    # log producer
+    rabbitmq_producer = create_rabbitmq_client("pytest_producer")
     log_message = LoggerRabbitMessage(
         user_id=user_id,
         project_id=project_id,
@@ -84,7 +96,6 @@ async def test_it(
     await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     # check it received
-
     await asyncio.sleep(1)
 
     assert _comsumer_message_handler.await_count
@@ -93,4 +104,4 @@ async def test_it(
     assert LoggerRabbitMessage.parse_raw(data) == log_message
 
     # unsuscribe
-    await rabbit_client.remove_topics(exchange_name, topics=topics)
+    await rabbit_consumer.remove_topics(queue_name, topics=[f"{project_id}.*"])
