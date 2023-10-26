@@ -314,7 +314,8 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         .then(data => {
           const paymentId = data["paymentId"];
           const url = data["paymentFormUrl"];
-          const pgWindow = this.__popUpPaymentGatewayOld(paymentId, url);
+          const oldWay = false;
+          const pgWindow = oldWay ? this.__popUpPaymentGatewayOld(paymentId, url) : this.__popUpPaymentGateway(paymentId, url);
 
           // Listen to socket event
           const socket = osparc.wrapper.WebSocket.getInstance();
