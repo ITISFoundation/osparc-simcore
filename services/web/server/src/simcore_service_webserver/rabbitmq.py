@@ -38,7 +38,7 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         _logger, logging.INFO, msg=f"Connect RabbitMQ clients to {settings.dsn}"
     ):
         app[APP_RABBITMQ_CLIENT_KEY] = RabbitMQClient("webserver", settings)
-        app[APP_RABBITMQ_RPC_SERVER_KEY] = RabbitMQRPCClient.create(
+        app[APP_RABBITMQ_RPC_SERVER_KEY] = await RabbitMQRPCClient.create(
             client_name="webserver_rpc_server", settings=settings
         )
 

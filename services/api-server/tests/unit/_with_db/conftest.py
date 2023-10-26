@@ -201,7 +201,7 @@ async def product_name(connection: SAConnection) -> AsyncIterator[str]:
 
 @pytest.fixture
 async def fake_api_key(
-    app: FastAPI, user_id: int, product_name: str
+    connection: SAConnection, user_id: int, product_name: str
 ) -> AsyncIterator[ApiKeyInDB]:
     result = await connection.execute(
         api_keys.insert()
