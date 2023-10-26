@@ -234,26 +234,6 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       });
       row++;
 
-      const walletTitle = new qx.ui.basic.Label().set({
-        value: "Credit Account",
-        font: "text-14"
-      });
-      layout.add(walletTitle, {
-        row,
-        column: 0
-      });
-      const walletLabel = new qx.ui.basic.Label().set({
-        font: "text-14"
-      });
-      this.bind("wallet", walletLabel, "value", {
-        converter: wallet => wallet ? wallet.getName() : this.tr("Select Credit Account")
-      });
-      layout.add(walletLabel, {
-        row,
-        column: 1
-      });
-      row++;
-
       return layout;
     },
 
@@ -265,113 +245,140 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         maxWidth: 150,
         center: true
       });
-
-      const buyingBtn = () => {
-        buyBtn.set({
-          fetching: true,
-          label: this.tr("Buying...")
-        });
-      };
-      const buyCreditsBtn = () => {
-        buyBtn.set({
-          fetching: false,
-          label: this.tr("Buy Credits")
-        });
-      };
-      buyBtn.addListener("execute", () => {
-        const nCredits = this.getNCredits();
-        const totalPrice = this.getTotalPrice();
-        const wallet = this.getWallet();
-        buyingBtn();
-
-        const params = {
-          url: {
-            walletId: wallet.getWalletId()
-          },
-          data: {
-            priceDollars: totalPrice,
-            osparcCredits: nCredits
-          }
-        };
-        osparc.data.Resources.fetch("payments", "startPayment", params)
-          .then(data => {
-            const paymentId = data["paymentId"];
-            const url = data["paymentFormUrl"];
-            const options = {
-              width: 400,
-              height: 400,
-              top: 200,
-              left: 100,
-              scrollbars: false
-            };
-            const modal = true;
-            const useNativeModalDialog = false; // this allow using the Blocker
-
-            const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
-              url,
-              "pgWindow",
-              options,
-              modal,
-              useNativeModalDialog
-            );
-
-            // Listen to socket event
-            const socket = osparc.wrapper.WebSocket.getInstance();
-            const slotName = "paymentCompleted";
-            socket.on(slotName, jsonString => {
-              const paymentData = JSON.parse(jsonString);
-              if (paymentData["completedStatus"]) {
-                const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
-                switch (paymentData["completedStatus"]) {
-                  case "SUCCESS":
-                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-                    // demo purposes
-                    wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
-                    break;
-                  case "PENDING":
-                    osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-                    break;
-                  case "CANCELED":
-                  case "FAILED":
-                    osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                    break;
-                  default:
-                    console.error("completedStatus unknown");
-                    break;
-                }
-              }
-              socket.removeSlot(slotName);
-              buyCreditsBtn();
-              pgWindow.close();
-              this.fireEvent("transactionCompleted");
-            });
-
-            const cancelPayment = () => {
-              socket.removeSlot(slotName);
-              buyCreditsBtn();
-              // inform backend
-              const params2 = {
-                url: {
-                  walletId: wallet.getWalletId(),
-                  paymentId
-                }
-              };
-              osparc.data.Resources.fetch("payments", "cancelPayment", params2);
-            };
-            // Listen to close window event (Bug: it doesn't work)
-            pgWindow.onbeforeunload = () => {
-              const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
-              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-              cancelPayment();
-            };
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-            buyCreditsBtn();
-          });
-      });
+      buyBtn.addListener("execute", () => this.__startPayment());
       return buyBtn;
+    },
+
+    __buyingCredits: function(isBuying) {
+      const buyBtn = this.getChildControl("buy-button");
+      buyBtn.set({
+        fetching: isBuying,
+        label: isBuying ? this.tr("Buying...") : this.tr("Buy Credits")
+      });
+    },
+
+    __paymentCompleted: function(paymentData) {
+      this.__buyingCredits(false);
+
+      if (paymentData["completedStatus"]) {
+        const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
+        switch (paymentData["completedStatus"]) {
+          case "SUCCESS":
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+            break;
+          case "PENDING":
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            break;
+          case "CANCELED":
+          case "FAILED":
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            break;
+          default:
+            console.error("completedStatus unknown");
+            break;
+        }
+      }
+      this.fireEvent("transactionCompleted");
+    },
+
+    __cancelPayment: function(paymentId) {
+      this.__buyingCredits(false);
+
+      const wallet = this.getWallet();
+      // inform backend
+      const params = {
+        url: {
+          walletId: wallet.getWalletId(),
+          paymentId
+        }
+      };
+      osparc.data.Resources.fetch("payments", "cancelPayment", params);
+    },
+
+    __startPayment: function() {
+      this.__buyingCredits(true);
+
+      const wallet = this.getWallet();
+      const nCredits = this.getNCredits();
+      const totalPrice = this.getTotalPrice();
+      const params = {
+        url: {
+          walletId: wallet.getWalletId()
+        },
+        data: {
+          priceDollars: totalPrice,
+          osparcCredits: nCredits
+        }
+      };
+      osparc.data.Resources.fetch("payments", "startPayment", params)
+        .then(data => {
+          const paymentId = data["paymentId"];
+          const url = data["paymentFormUrl"];
+          const pgWindow = this.__popUpPaymentGatewayOld(paymentId, url);
+
+          // Listen to socket event
+          const socket = osparc.wrapper.WebSocket.getInstance();
+          const slotName = "paymentCompleted";
+          socket.on(slotName, jsonString => {
+            const paymentData = JSON.parse(jsonString);
+            this.__paymentCompleted(paymentData);
+            socket.removeSlot(slotName);
+            pgWindow.close();
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          this.__buyingCredits(false);
+        });
+    },
+
+    __popUpPaymentGateway: function(paymentId, url) {
+      paymentId = 123412431243;
+      url = "https://cdn.omise.co/assets/credit-card-icon-blog/credit-card-icon-blog-01.jpg";
+      const options = {
+        width: 400,
+        height: 400
+      };
+
+      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
+        url,
+        "pgWindow",
+        options
+      );
+      // listen to "tap" instead of "execute": the "execute" is not propagated
+      pgWindow.getChildControl("close-button").addListener("tap", () => this.__cancelPayment(paymentId));
+
+      return pgWindow;
+    },
+
+    __popUpPaymentGatewayOld: function(paymentId, url) {
+      const options = {
+        width: 400,
+        height: 400,
+        top: 200,
+        left: 100,
+        scrollbars: false
+      };
+      const modal = true;
+      const useNativeModalDialog = false; // this allow using the Blocker
+
+      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
+        url,
+        "pgWindow",
+        options,
+        modal,
+        useNativeModalDialog
+      );
+
+      // Listen to close window event (Bug: it doesn't work)
+      pgWindow.onbeforeunload = () => {
+        const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        this.__cancelPayment(paymentId);
+      };
+
+      return pgWindow;
     }
   }
 });
