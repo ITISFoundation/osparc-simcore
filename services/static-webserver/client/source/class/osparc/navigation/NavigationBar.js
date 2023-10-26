@@ -235,12 +235,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         }
-        case "credits-menu-button":
-          control = new osparc.navigation.CreditsMenuButton().set({
-            maxHeight: this.self().HEIGHT
-          });
-          this.getChildControl("right-items").add(control);
-          break;
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
             maxHeight: this.self().HEIGHT
