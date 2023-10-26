@@ -3,7 +3,6 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI
-from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditTransactionStatus,
     ServiceRunId,
@@ -25,71 +24,75 @@ _BATCH_SIZE = 20
 
 
 async def _check_service_heartbeat(
-    *,
     resource_tracker_repo: ResourceTrackerRepository,
     base_start_timestamp: datetime,
-    resource_usage_tracker_missed_heartbeat_interval_sec: timedelta,
+    resource_usage_tracker_missed_heartbeat_interval: timedelta,
     resource_usage_tracker_missed_heartbeat_counter_fail: int,
-    product_name: ProductName,
     service_run_id: ServiceRunId,
-    last_hearbeat_at: datetime,
-    missed_heartbeat_counter: int
+    last_heartbeat_at: datetime,
+    missed_heartbeat_counter: int,
 ):
-    # If true we have not recieved any heartbeat in the allowed interval
+    # Check for missed heartbeats
     if (
-        last_hearbeat_at
-        < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval_sec
+        last_heartbeat_at
+        < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
     ):
         missed_heartbeat_counter += 1
-        # If true the service is considered unhealty from billing point of view
         if (
             missed_heartbeat_counter
             > resource_usage_tracker_missed_heartbeat_counter_fail
         ):
+            # Handle unhealthy service
             _logger.error(
-                "Service run id: %s missed more heartbeats, it is considered us unhealthy and it is not billed.",
+                "Service run id: %s is considered unhealthy and not billed.",
                 service_run_id,
             )
-            # 1. We will close the service_run
-            update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
-                service_run_id=service_run_id,
-                stopped_at=base_start_timestamp,
-                service_run_status=ServiceRunStatus.ERROR,
-                service_run_status_msg="Service missed more heartbeats. Its considered unhealthy.",
+            await _close_unhealthy_service(
+                resource_tracker_repo, service_run_id, base_start_timestamp
             )
-            running_service = await resource_tracker_repo.update_service_run_stopped_at(
-                update_service_run_stopped_at
-            )
-            if running_service is None:
-                _logger.error(
-                    "Service run id: %s Nothing to update. This should not happen investigate.",
-                    service_run_id,
-                )
-                return
-
-            # 2. We will close the billing transaction (as not billed)
-            if running_service.wallet_id and running_service.pricing_unit_cost:
-                computed_credits = await compute_service_run_credit_costs(
-                    running_service.started_at,
-                    running_service.last_heartbeat_at,
-                    running_service.pricing_unit_cost,
-                )
-                # Update credits in the transaction table and close the transaction
-                update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
-                    service_run_id=service_run_id,
-                    osparc_credits=make_negative(computed_credits),
-                    transaction_status=CreditTransactionStatus.NOT_BILLED,
-                )
-                await resource_tracker_repo.update_credit_transaction_credits_and_status(
-                    update_credit_transaction
-                )
-
         else:
             _logger.warning("Service run id: %s missed heartbeat.", service_run_id)
-            # We will increase the missed heartbeat counter by one
             await resource_tracker_repo.update_service_missed_heartbeat_counter(
-                service_run_id, last_hearbeat_at, missed_heartbeat_counter
+                service_run_id, last_heartbeat_at, missed_heartbeat_counter
             )
+
+
+async def _close_unhealthy_service(
+    resource_tracker_repo, service_run_id, base_start_timestamp
+):
+    # 1. Close the service_run
+    update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
+        service_run_id=service_run_id,
+        stopped_at=base_start_timestamp,
+        service_run_status=ServiceRunStatus.ERROR,
+        service_run_status_msg="Service missed more heartbeats. It's considered unhealthy.",
+    )
+    running_service = await resource_tracker_repo.update_service_run_stopped_at(
+        update_service_run_stopped_at
+    )
+
+    if running_service is None:
+        _logger.error(
+            "Service run id: %s Nothing to update. This should not happen; investigate.",
+            service_run_id,
+        )
+        return
+
+    # 2. Close the billing transaction (as not billed)
+    if running_service.wallet_id and running_service.pricing_unit_cost:
+        computed_credits = await compute_service_run_credit_costs(
+            running_service.started_at,
+            running_service.last_heartbeat_at,
+            running_service.pricing_unit_cost,
+        )
+        update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
+            service_run_id=service_run_id,
+            osparc_credits=make_negative(computed_credits),
+            transaction_status=CreditTransactionStatus.NOT_BILLED,
+        )
+        await resource_tracker_repo.update_credit_transaction_credits_and_status(
+            update_credit_transaction
+        )
 
 
 async def periodic_check_of_running_services_task(app: FastAPI) -> None:
@@ -117,11 +120,10 @@ async def periodic_check_of_running_services_task(app: FastAPI) -> None:
                 _check_service_heartbeat(
                     resource_tracker_repo=resource_tracker_repo,
                     base_start_timestamp=base_start_timestamp,
-                    resource_usage_tracker_missed_heartbeat_interval_sec=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
+                    resource_usage_tracker_missed_heartbeat_interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
                     resource_usage_tracker_missed_heartbeat_counter_fail=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL,
-                    product_name=check_service.product_name,
                     service_run_id=check_service.service_run_id,
-                    last_hearbeat_at=check_service.last_heartbeat_at,
+                    last_heartbeat_at=check_service.last_heartbeat_at,
                     missed_heartbeat_counter=check_service.missed_heartbeat_counter,
                 )
                 for check_service in batch_check_services
