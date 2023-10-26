@@ -6,6 +6,7 @@
 
 import asyncio
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock
 
 import httpx
@@ -105,3 +106,64 @@ async def test_subscribe_publish_receive_logs(
 
     # unsuscribe
     await rabbit_consumer.remove_topics(queue_name, topics=[f"{project_id}.*"])
+
+
+@asynccontextmanager
+async def rabbit_consuming_context(app: FastAPI):
+    _comsumer_message_handler = AsyncMock(return_value=True)
+
+    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
+    queue_name = await rabbit_consumer.subscribe(
+        LoggerRabbitMessage.get_channel_name(),
+        _comsumer_message_handler,
+        exclusive_queue=False,  # this instance should receive the incoming messages
+        topics=[f"{project_id}.*"],
+    )
+
+    yield _comsumer_message_handler
+
+    await rabbit_consumer.remove_topics(queue_name, topics=[f"{project_id}.*"])
+
+
+async def test_multiple_producers_and_single_consumer(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    faker: Faker,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+):
+
+    async with rabbit_consuming_context(app) as consumer_message_handler:
+        # multiple producers
+        async def _produce_logs(name, project_id_=None, node_id_=None, messages_=None):
+            rabbitmq_producer = create_rabbitmq_client(f"pytest_producer_{name}")
+            log_message = LoggerRabbitMessage(
+                user_id=user_id,
+                project_id=project_id_ or faker.uuid4(),
+                node_id=node_id_,
+                messages=messages_ or [faker.text() for _ in range(10)],
+            )
+            await rabbitmq_producer.publish(log_message.channel_name, log_message)
+
+        asyncio.gather(
+            *[
+                _produce_logs(
+                    "expected", project_id, node_id, ["expected message"] * 3
+                ),
+                *(_produce_logs(f"{n}") for n in range(5)),
+            ]
+        )
+
+    # check it received
+    await asyncio.sleep(1)
+    assert consumer_message_handler.await_count == 1
+    (data,) = consumer_message_handler.call_args[0]
+    assert isinstance(data, bytes)
+    received_message = LoggerRabbitMessage.parse_raw(data)
+
+    assert received_message.user_id == user_id
+    assert received_message.project_id == project_id
+    assert received_message.node_id == node_id
+    assert received_message.messages == ["expected message"] * 3
