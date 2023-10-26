@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
     contextWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
-      nullable: false,
+      nullable: true,
       apply: "__buildLayout"
     }
   },
@@ -169,8 +169,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         resolveWResponse: true
       };
 
-      const walletId = this.getContextWallet().getWalletId();
-      if (walletId) {
+      const contextWallet = this.getContextWallet();
+      if (contextWallet) {
+        const walletId = contextWallet.getWalletId();
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
       }

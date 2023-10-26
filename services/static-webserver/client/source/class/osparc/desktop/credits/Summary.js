@@ -239,13 +239,13 @@ qx.Class.define("osparc.desktop.credits.Summary", {
         });
 
         wallet.bind("autoRecharge", t1v, "value", {
-          converter: arData => arData["enabled"] ? this.tr("On") : this.tr("Off")
+          converter: arData => arData && arData["enabled"] ? this.tr("On") : this.tr("Off")
         });
         wallet.bind("autoRecharge", t2v, "value", {
-          converter: arData => arData["enabled"] ? (arData["topUpAmountInUsd"]*arData["topUpCountdown"]) + " US$" : null
+          converter: arData => arData && arData["enabled"] ? (arData["topUpAmountInUsd"]*arData["topUpCountdown"]) + " US$" : null
         });
         wallet.bind("autoRecharge", t3v, "value", {
-          converter: arData => arData["enabled"] ? arData["paymentMethodId"] : null
+          converter: arData => arData && arData["enabled"] ? arData["paymentMethodId"] : null
         });
 
         return layout;
