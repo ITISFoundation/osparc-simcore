@@ -16,6 +16,8 @@ from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
+from .settings import Settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -85,9 +87,6 @@ class TaskPublisher:
         )
 
 
-_TASK_ABORTION_INTERVAL_CHECK_S: int = 2
-
-
 @contextlib.asynccontextmanager
 async def monitor_task_abortion(
     task_name: str, log_publisher: distributed.Pub
@@ -111,6 +110,7 @@ async def monitor_task_abortion(
             task.cancel()
 
     async def periodicaly_check_if_aborted(task_name: str) -> None:
+        settings: Settings = Settings.create_from_env()
         while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
             logger.debug("checking if %s should be cancelled", f"{task_name=}")
             if is_current_task_aborted():

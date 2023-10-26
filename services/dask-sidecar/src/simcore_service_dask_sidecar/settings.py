@@ -22,7 +22,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
     SIDECAR_COMP_SERVICES_SHARED_FOLDER: Path
 
-    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int | None = 5
+    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int = 2
 
     DASK_EC2_INSTANCE_TYPE: str | None = Field(
         default=None,
@@ -31,7 +31,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     # dask config ----
 
-    DASK_START_AS_SCHEDULER: bool | None = Field(
+    DASK_START_AS_SCHEDULER: bool = Field(
         default=False, description="If this env is set, then the app boots as scheduler"
     )
 
