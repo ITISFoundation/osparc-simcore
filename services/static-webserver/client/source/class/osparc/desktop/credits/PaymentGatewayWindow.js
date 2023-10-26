@@ -19,7 +19,14 @@ qx.Class.define("osparc.desktop.credits.PaymentGatewayWindow", {
   type: "static",
 
   statics: {
-    popUp: function(url, id, options, modal, useNativeModalDialog) {
+    popUp: function(url, title, options) {
+      const iframe = new qx.ui.embed.Iframe(url);
+      return osparc.ui.window.Window.popUpInWindow(iframe, title, options.width, options.height).set({
+        maxHeight: 1000
+      });
+    },
+
+    popUpOld: function(url, id, options, modal, useNativeModalDialog) {
       const blocker = qx.bom.Window.getBlocker();
       blocker.setBlockerColor("#FFF");
       blocker.setBlockerOpacity(0.6);
