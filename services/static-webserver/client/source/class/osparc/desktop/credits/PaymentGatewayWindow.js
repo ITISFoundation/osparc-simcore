@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGatewayWindow", {
     popUp: function(url, title, options) {
       const iframe = new qx.ui.embed.Iframe(url);
       return osparc.ui.window.Window.popUpInWindow(iframe, title, options.width, options.height).set({
-        maxHeight: 1000
+        clickAwayClose: false
       });
     },
 
