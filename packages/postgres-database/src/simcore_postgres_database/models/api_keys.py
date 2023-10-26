@@ -37,7 +37,7 @@ api_keys = sa.Table(
         sa.BigInteger(),
         sa.ForeignKey(users.c.id, ondelete="CASCADE"),
         nullable=False,
-        doc="This auth keys are indenfy this user",
+        doc="Identified user",
     ),
     sa.Column(
         "product_name",
@@ -49,7 +49,7 @@ api_keys = sa.Table(
             name="fk_api_keys_product_name",
         ),
         nullable=False,
-        doc="This auth keys are indenfy this product",
+        doc="Identified product",
     ),
     sa.Column("api_key", sa.String(), nullable=False),
     sa.Column("api_secret", sa.String(), nullable=False),

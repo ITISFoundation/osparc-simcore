@@ -34,6 +34,10 @@ class ApiKeyCreate(BaseModel):
                     "display_name": "test-api-for-one-day",
                     "expiration": 60 * 60 * 24,
                 },
+                {
+                    "display_name": "test-api-for-another-day",
+                    "expiration": "24:00:00",
+                },
             ]
         }
 
