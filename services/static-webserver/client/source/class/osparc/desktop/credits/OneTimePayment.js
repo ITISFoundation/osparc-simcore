@@ -351,7 +351,8 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         "Buy Credits",
         options
       );
-      pgWindow.addListener("closeButtonTapped", () => this.__windowClosed(paymentId));
+      // listen to "tap" instead of "execute": the "execute" is not propagated
+      pgWindow.getChildControl("close-button").addListener("tap", () => this.__windowClosed(paymentId));
 
       return pgWindow;
     },

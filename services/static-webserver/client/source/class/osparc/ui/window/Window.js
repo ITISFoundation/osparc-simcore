@@ -26,10 +26,6 @@ qx.Class.define("osparc.ui.window.Window", {
       backgroundColor: "background-main-2"
     });
 
-
-    // listen to "tap" instead of "execute": the "execute" is not propagated
-    this.getChildControl("close-button").addListener("tap", () => this.fireEvent("closeButtonTapped"));
-
     // Enable closing when clicking outside the modal
     this.addListener("appear", () => {
       const thisDom = this.getContentElement().getDomElement();
@@ -59,10 +55,6 @@ qx.Class.define("osparc.ui.window.Window", {
       check: "Boolean",
       init: false
     }
-  },
-
-  events: {
-    "closeButtonTapped": "qx.event.type.Event"
   },
 
   statics: {
