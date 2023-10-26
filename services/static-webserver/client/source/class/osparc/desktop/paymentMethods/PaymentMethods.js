@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       const params = {
         url: {
           walletId: wallet.getWalletId(),
-          paymentId: paymentMethodId
+          paymentMethodId
         }
       };
       osparc.data.Resources.fetch("paymentMethods", "cancel", params);
