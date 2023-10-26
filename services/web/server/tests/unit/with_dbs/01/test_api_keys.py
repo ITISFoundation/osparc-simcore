@@ -1,41 +1,38 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
 from datetime import timedelta
-from pprint import pformat
-from typing import Any
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient, make_mocked_request
-from pydantic import BaseModel
+from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver._constants import RQT_USERID_KEY
+from simcore_service_webserver.api_keys._api import prune_expired_api_keys
+from simcore_service_webserver.api_keys._db import ApiKeyRepo
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.login.api_keys_db import prune_expired_api_keys
-from simcore_service_webserver.login.api_keys_handlers import (
-    ApiKeyCreate,
-    ApiKeyGet,
-    ApiKeyRepo,
-)
 
 
-@pytest.fixture()
-async def fake_user_api_keys(client: TestClient, logged_user):
+@pytest.fixture
+async def fake_user_api_keys(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+):
+    assert client.app
     names = ["foo", "bar", "beta", "alpha"]
-
-    mock_request = make_mocked_request(method="GET", path="/foo", app=client.app)
-    mock_request[RQT_USERID_KEY] = logged_user["id"]
-
-    repo = ApiKeyRepo(mock_request)
+    repo = ApiKeyRepo.create_from_app(app=client.app)
 
     for name in names:
         await repo.create(
-            ApiKeyCreate(display_name=name, expiration=None),
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            display_name=name,
+            expiration=None,
             api_key=f"{name}-key",
             api_secret=f"{name}-secret",
         )
@@ -43,26 +40,29 @@ async def fake_user_api_keys(client: TestClient, logged_user):
     yield names
 
     for name in names:
-        await repo.delete(name)
+        await repo.delete_by_name(
+            display_name=name,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
 
 
-USER_ACCESS_PARAMETERS = [
+_USER_ACCESS_PARAMETERS = [
     (UserRole.ANONYMOUS, web.HTTPUnauthorized),
     (UserRole.GUEST, web.HTTPForbidden),
-    (UserRole.USER, web.HTTPOk),
-    (UserRole.TESTER, web.HTTPOk),
+    *((UserRole.USER, web.HTTPOk) for role in UserRole if role > UserRole.GUEST),
 ]
 
 
 @pytest.mark.parametrize(
     "user_role,expected",
-    USER_ACCESS_PARAMETERS,
+    _USER_ACCESS_PARAMETERS,
 )
 async def test_list_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.get("/v0/auth/api-keys")
@@ -72,12 +72,12 @@ async def test_list_api_keys(
         assert not data
 
 
-@pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
+@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
 async def test_create_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.post("/v0/auth/api-keys", json={"display_name": "foo"})
@@ -101,8 +101,11 @@ async def test_create_api_keys(
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        *(
+            (UserRole.USER, web.HTTPNoContent)
+            for role in UserRole
+            if role > UserRole.GUEST
+        ),
     ],
 )
 async def test_delete_api_keys(
@@ -110,7 +113,7 @@ async def test_delete_api_keys(
     fake_user_api_keys,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
@@ -121,12 +124,12 @@ async def test_delete_api_keys(
         await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
+@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
 async def test_create_api_key_with_expiration(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected,
+    expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
     assert client.app
@@ -157,16 +160,3 @@ async def test_create_api_key_with_expiration(
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
         assert not data
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [ApiKeyCreate, ApiKeyGet],
-)
-def test_api_keys_model_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-) -> None:
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_obj = model_cls(**example)
-        assert model_obj.json(**RESPONSE_MODEL_POLICY)
