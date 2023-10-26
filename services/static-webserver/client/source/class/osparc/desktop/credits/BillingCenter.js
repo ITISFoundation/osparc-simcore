@@ -28,7 +28,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       paddingLeft: 10
     });
 
-    const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
+    const tabViews = this._tabsView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
       contentPadding: 0
     });
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
   },
 
   members: {
-    __tabsView: null,
+    _tabsView: null,
     __overviewPage: null,
     __walletsPage: null,
     __buyCreditsPage: null,
@@ -219,7 +219,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __openPage: function(page) {
       if (page) {
-        this.__tabsView.setSelection([page]);
+        this._tabsView.setSelection([page]);
         return true;
       }
       return false;

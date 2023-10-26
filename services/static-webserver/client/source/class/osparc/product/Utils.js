@@ -34,24 +34,16 @@ qx.Class.define("osparc.product.Utils", {
 
     getStudyAlias: function(options = {}) {
       let alias = null;
-      const product = this.getProductName();
-      switch (product) {
-        case "s4l":
-        case "s4llite":
-        case "s4lacad":
-          if (options.plural) {
-            alias = qx.locale.Manager.tr("projects");
-          } else {
-            alias = qx.locale.Manager.tr("project");
-          }
-          break;
-        default:
-          if (options.plural) {
-            alias = qx.locale.Manager.tr("studies");
-          } else {
-            alias = qx.locale.Manager.tr("study");
-          }
-          break;
+      if (this.getProductName().includes("s4l")) {
+        if (options.plural) {
+          alias = qx.locale.Manager.tr("projects");
+        } else {
+          alias = qx.locale.Manager.tr("project");
+        }
+      } else if (options.plural) {
+        alias = qx.locale.Manager.tr("studies");
+      } else {
+        alias = qx.locale.Manager.tr("study");
       }
 
       if (options.firstUpperCase) {
@@ -65,24 +57,16 @@ qx.Class.define("osparc.product.Utils", {
 
     getTemplateAlias: function(options = {}) {
       let alias = null;
-      const product = this.getProductName();
-      switch (product) {
-        case "s4l":
-        case "s4llite":
-        case "s4lacad":
-          if (options.plural) {
-            alias = qx.locale.Manager.tr("tutorials");
-          } else {
-            alias = qx.locale.Manager.tr("tutorial");
-          }
-          break;
-        default:
-          if (options.plural) {
-            alias = qx.locale.Manager.tr("templates");
-          } else {
-            alias = qx.locale.Manager.tr("template");
-          }
-          break;
+      if (this.getProductName().includes("s4l")) {
+        if (options.plural) {
+          alias = qx.locale.Manager.tr("tutorials");
+        } else {
+          alias = qx.locale.Manager.tr("tutorial");
+        }
+      } else if (options.plural) {
+        alias = qx.locale.Manager.tr("templates");
+      } else {
+        alias = qx.locale.Manager.tr("template");
       }
 
       if (options.firstUpperCase) {
@@ -147,6 +131,12 @@ qx.Class.define("osparc.product.Utils", {
           break;
         case "s4lacad":
           logosPath = lightLogo ? "osparc/s4lacad-white.png" : "osparc/s4lacad-black.png";
+          break;
+        case "s4ldesktop":
+          logosPath = lightLogo ? "osparc/s4ldesktop-white.png" : "osparc/s4ldesktop-black.png";
+          break;
+        case "s4ldesktopacad":
+          logosPath = lightLogo ? "osparc/s4ldesktopacad-white.png" : "osparc/s4ldesktopacad-black.png";
           break;
         case "tis":
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
@@ -216,17 +206,26 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showQuality: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
+      if (this.getProductName().includes("s4l")) {
         return false;
       }
       return true;
     },
 
     showClassifiers: function() {
-      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("s4lacad")) {
+      if (this.getProductName().includes("s4l")) {
         return false;
       }
       return true;
+    },
+
+    shouldHaveWalletsEnabled: function() {
+      return [
+        "s4l",
+        "s4lacad",
+        "s4ldesktop",
+        "s4ldesktopacad"
+      ].includes(this.getProductName());
     }
   }
 });
