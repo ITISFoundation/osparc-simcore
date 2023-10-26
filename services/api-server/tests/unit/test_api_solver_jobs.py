@@ -268,6 +268,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
 
 async def test_get_solver_job_pricing_unit_no_payment(
     client: AsyncClient,
+    mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
     mocked_groups_extra_properties,
     respx_mock_from_capture: Callable[
@@ -283,9 +284,9 @@ async def test_get_solver_job_pricing_unit_no_payment(
     _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
 
     respx_mock = respx_mock_from_capture(
-        [mocked_directorv2_service_api_base],
+        [mocked_directorv2_service_api_base, mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / "start_job_no_payment.json",
-        [get_start_job_side_effect(job_id=_job_id)],
+        [_start_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
     )
 
     response = await client.post(
