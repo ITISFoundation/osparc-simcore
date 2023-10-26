@@ -21,8 +21,9 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
+from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import (
-    ramdom_api_key,
+    random_api_key,
     random_product,
     random_user,
 )
@@ -63,7 +64,7 @@ def docker_compose_file(
     # configs
     subprocess.run(
         f'docker compose --file "{src_path}" config > "{dst_path}"',
-        shell=True,
+        shell=True,  # noqa: S602
         check=True,
         env=environ,
     )
@@ -175,7 +176,7 @@ async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
 
 
 @pytest.fixture
-async def user_id(connection: SAConnection) -> AsyncIterator[int]:
+async def user_id(connection: SAConnection) -> AsyncIterator[UserID]:
     uid = await connection.scalar(
         users.insert().values(random_user()).returning(users.c.id)
     )
@@ -204,7 +205,7 @@ async def fake_api_key(
 ) -> AsyncIterator[ApiKeyInDB]:
     result = await connection.execute(
         api_keys.insert()
-        .values(**ramdom_api_key(product_name, user_id))
+        .values(**random_api_key(product_name, user_id))
         .returning(sa.literal_column("*"))
     )
     row = await result.fetchone()
