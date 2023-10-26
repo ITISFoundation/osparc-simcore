@@ -69,12 +69,14 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
     WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
-        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
+        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes) "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
+        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
@@ -201,12 +203,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=30),
-        description="interval between each clusters clean check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        description="interval between each clusters clean check "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=60),
-        description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ)",
+        description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ) "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(

@@ -545,7 +545,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
-        description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)",
+        description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
+        " (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(

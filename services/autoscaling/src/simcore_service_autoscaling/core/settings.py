@@ -72,7 +72,8 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
+        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     EC2_INSTANCES_NAME_PREFIX: str = Field(
         default="autoscaling",
@@ -85,7 +86,8 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=30),
-        description="time interval between pulls of images (minimum is 1 minute)",
+        description="time interval between pulls of images (minimum is 1 minute) "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
@@ -103,7 +105,8 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
+        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)"
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
@@ -201,7 +204,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_POLL_INTERVAL: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=10),
-        description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        description="interval between each resource check "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
     AUTOSCALING_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
