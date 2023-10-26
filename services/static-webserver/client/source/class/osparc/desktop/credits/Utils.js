@@ -43,7 +43,8 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     creditsToColor: function(credits, defaultColor = "text") {
       const preferencesSettings = osparc.Preferences.getInstance();
       let color = defaultColor;
-      if (credits <= 0) {
+      const dangerZone = 25; // one hour consumption
+      if (credits <= dangerZone) {
         color = "danger-red";
       } else if (credits <= preferencesSettings.getCreditsWarningThreshold()) {
         color = "warning-yellow";
