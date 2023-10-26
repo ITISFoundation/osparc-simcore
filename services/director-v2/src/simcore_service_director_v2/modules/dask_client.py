@@ -261,6 +261,10 @@ class DaskClient:
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
+            if hardware_info.aws_ec2_instances:
+                dask_resources[
+                    f"EC2-INSTANCE-TYPE:{hardware_info.aws_ec2_instances[0]}"
+                ] = 1
 
             check_scheduler_is_still_the_same(
                 self.backend.scheduler_id, self.backend.client
