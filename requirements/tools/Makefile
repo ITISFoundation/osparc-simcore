@@ -68,7 +68,7 @@ touch: ## touches all package requirement inputs
 	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
-only-tools: ## upgrades all _tools.in inside the project
+only-tools: ## upgrades tools repo wide
 	# Upgrading ONLY _tools.in
 	@$(foreach p,${_tools-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
