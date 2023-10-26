@@ -37,35 +37,17 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     }
   },
 
-  statics: {
-    POLLING_INTERVAL: 10000
-  },
-
   members: {
-    __interval: null,
-
     __currentStudyChanged: function(currentStudy) {
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         if (currentStudy) {
-          this.__startRequesting();
-        } else {
-          this.__stopRequesting();
+          const store = osparc.store.Store.getInstance();
+          const contextWallet = store.getContextWallet();
+          if (contextWallet) {
+            this.__fetchUsedCredits();
+            contextWallet.addListener("changeCreditsAvailable", () => this.__fetchUsedCredits());
+          }
         }
-      }
-    },
-
-    __startRequesting: function() {
-      this.setUsedCredits(0);
-
-      this.__interval = setInterval(() => this.__fetchUsedCredits(), this.self().POLLING_INTERVAL);
-      this.__fetchUsedCredits();
-    },
-
-    __stopRequesting: function() {
-      this.setUsedCredits(null);
-
-      if (this.__interval) {
-        clearInterval(this.__interval);
       }
     },
 
