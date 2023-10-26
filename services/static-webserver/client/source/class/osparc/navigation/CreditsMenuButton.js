@@ -27,13 +27,18 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
 
     this.set({
       font: "text-16",
-      backgroundColor: "transparent",
+      padding: 1,
+      paddingLeft: 8,
+      paddingRight: 8,
+      marginTop: 4,
+      marginBottom: 4,
       rich: true
     });
 
     this.getChildControl("label").set({
-      textAlign: "center"
+      textAlign: "right"
     });
+    this.getContentElement().setStyle("line-height", 1.2);
 
     const preferencesSettings = osparc.Preferences.getInstance();
     this.__computeVisibility();
@@ -77,7 +82,10 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
   members: {
     __applyCurrentUsage: function(currentUsage) {
       if (currentUsage) {
-        currentUsage.addListener("changeUsedCredits", () => this.__updateCredits());
+        currentUsage.addListener("changeUsedCredits", () => {
+          this.__updateCredits();
+          this.__animate();
+        });
       }
     },
 
@@ -91,23 +99,8 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
     },
 
     __animate: function() {
-      const desc = {
-        duration: 500,
-        timing: "ease-out",
-        keyFrames: {
-          0: {
-            "opacity": 1
-          },
-          70: {
-            "opacity": 0.8
-          },
-          100: {
-            "opacity": 1
-          }
-        }
-      };
-      const label = this.getChildControl("credits-label");
-      qx.bom.element.Animation.animate(label.getContentElement().getDomElement(), desc);
+      const label = this.getChildControl("label");
+      osparc.utils.Utils.animateUsage(label.getContentElement().getDomElement());
     },
 
     __updateCredits: function() {
@@ -122,12 +115,16 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
         }
         const creditsLeft = wallet.getCreditsAvailable();
         if (creditsLeft !== null) {
-          text = "<span style='font-size:13px;display:inline-block'>credits</span><br>";
+          text = "<span style='font-size:12px;display:inline-block'>CREDITS</span><br>";
           let creditsLeftText = osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
           if (used !== null) {
             creditsLeftText += " / -" + osparc.desktop.credits.Utils.creditsToFixed(used);
           }
           text += `<span>${creditsLeftText}</span>`;
+          this.set({
+            minWidth: used ? 90 : null,
+            width: used ? 90 : null
+          });
         }
         this.set({
           label: text,
