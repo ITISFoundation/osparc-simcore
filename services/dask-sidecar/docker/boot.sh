@@ -136,7 +136,7 @@ else
   print_info "Worker resources set as: "$resources""
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-      env SIDECAR_EC2_INSTANCE_TYPE="${SIDECAR_EC2_INSTANCE_TYPE:-}" \
+      env DASK_EC2_INSTANCE_TYPE="${DASK_EC2_INSTANCE_TYPE:-}" \
       dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
@@ -147,7 +147,7 @@ else
       --resources "$resources" \
       --name "${DASK_WORKER_NAME}"
   else
-    exec env SIDECAR_EC2_INSTANCE_TYPE="${SIDECAR_EC2_INSTANCE_TYPE:-}" \
+    exec env DASK_EC2_INSTANCE_TYPE="${DASK_EC2_INSTANCE_TYPE:-}" \
       dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \

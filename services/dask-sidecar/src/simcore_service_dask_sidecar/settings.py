@@ -24,7 +24,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int | None = 5
 
-    SIDECAR_EC2_INSTANCE_TYPE: str | None = Field(
+    DASK_EC2_INSTANCE_TYPE: str | None = Field(
         default=None,
         description="if set describe the instance type on which the sidecar runs",
     )

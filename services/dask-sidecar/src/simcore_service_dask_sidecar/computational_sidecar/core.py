@@ -182,9 +182,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
-        if settings.SIDECAR_EC2_INSTANCE_TYPE:
+        if settings.DASK_EC2_INSTANCE_TYPE:
             await self._publish_sidecar_log(
-                f"Using a '{settings.SIDECAR_EC2_INSTANCE_TYPE}' instance..."
+                f"Using a '{settings.DASK_EC2_INSTANCE_TYPE}' instance..."
             )
 
         run_id = f"{uuid4()}"
