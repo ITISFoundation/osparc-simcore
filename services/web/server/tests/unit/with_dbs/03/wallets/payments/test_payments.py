@@ -427,7 +427,6 @@ async def test_payment_on_wallet_without_access(
         assert f"{wallet.wallet_id}" in error_msg
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4897"
 )

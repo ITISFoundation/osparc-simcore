@@ -12,11 +12,9 @@ _logger = logging.getLogger(__name__)
 
 class ApiKeysRepository(BaseRepository):
     async def get_user_id(self, api_key: str, api_secret: str) -> PositiveInt | None:
-        stmt = sa.select(tbl.api_keys.c.user_id,).where(
-            sa.and_(
-                tbl.api_keys.c.api_key == api_key,
-                tbl.api_keys.c.api_secret == api_secret,
-            )
+        stmt = sa.select(tbl.api_keys.c.user_id).where(
+            (tbl.api_keys.c.api_key == api_key)
+            & (tbl.api_keys.c.api_secret == api_secret),
         )
 
         try:
