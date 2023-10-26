@@ -4,12 +4,11 @@
 
 
 import pytest
-from pytest import MonkeyPatch
 
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, str]:
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")

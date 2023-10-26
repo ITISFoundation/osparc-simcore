@@ -75,7 +75,9 @@ async def _cluster_dask_client(
     cluster: BaseCluster = scheduler.settings.default_cluster
     if pipeline_params.use_on_demand_clusters:
         cluster = await get_or_create_on_demand_cluster(
-            user_id, scheduler.rabbitmq_rpc_client
+            scheduler.rabbitmq_rpc_client,
+            user_id=user_id,
+            wallet_id=pipeline_params.run_metadata.get("wallet_id"),
         )
     if pipeline_params.cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo = ClustersRepository.instance(scheduler.db_engine)
