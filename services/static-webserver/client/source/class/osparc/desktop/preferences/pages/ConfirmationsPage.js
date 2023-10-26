@@ -60,7 +60,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
   members: {
     __createConfirmationsSettings: function() {
       // layout
-      const label = this._createHelpLabel(this.tr("Show Confirmation/Warning Message Window for the following actions:"));
+      const label = this._createHelpLabel(this.tr("Ask for confirmation for the following actions:"));
       this.add(label);
 
       this.add(new qx.ui.core.Spacer(null, 10));

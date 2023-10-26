@@ -35,6 +35,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       allowGrowY: false,
       menu
     });
+
     this.getContentElement().setStyles({
       "border-radius": "20px"
     });
@@ -42,6 +43,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       "border-radius": "16px"
     });
     osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
+
+    const store = osparc.store.Store.getInstance();
+    this.__bindWalletToHalo();
+    store.addListener("changeContextWallet", () => this.__bindWalletToHalo());
 
     const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const icon = this.getChildControl("icon");
@@ -69,6 +74,30 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
+    __bindWalletToHalo: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (contextWallet) {
+        this.__updateHalloCredits(contextWallet.getCreditsAvailable());
+        contextWallet.addListener("changeCreditsAvailable", e => this.__updateHalloCredits(e.getData()));
+      }
+    },
+
+    __updateHalloCredits: function(credits) {
+      if (credits !== null) {
+        const progress = osparc.desktop.credits.Utils.normalizeCredits(credits);
+        const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+        const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
+        const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+        const arr = qx.util.ColorUtil.stringToRgb(textColor);
+        arr[3] = 0.5;
+        const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
+        this.getContentElement().setStyles({
+          "background": `radial-gradient(closest-side, white 79%, transparent 80% 100%), conic-gradient(${color1} ${progress}%, ${color2} 0)`
+        });
+      }
+    },
+
     populateMenu: function() {
       this.getMenu().populateMenu();
     },

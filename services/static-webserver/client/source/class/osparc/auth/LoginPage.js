@@ -166,7 +166,7 @@ qx.Class.define("osparc.auth.LoginPage", {
           osparc.product.Utils.isProduct("s4l") ||
           osparc.product.Utils.isProduct("s4lacad") ||
           osparc.product.Utils.isProduct("s4ldesktop") ||
-          osparc.product.Utils.isProduct("s4ldektopacad")
+          osparc.product.Utils.isProduct("s4ldesktopacad")
         )
       ) {
         requestAccount = this.getChildControl("request-account");
