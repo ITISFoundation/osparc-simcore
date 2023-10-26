@@ -61,7 +61,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       if (
         osparc.product.Utils.isProduct("s4lacad") ||
-        osparc.product.Utils.isProduct("s4ldektopacad")
+        osparc.product.Utils.isProduct("s4ldesktopacad")
       ) {
         const university = new qx.ui.form.TextField();
         doubleSpaced.push(university);
