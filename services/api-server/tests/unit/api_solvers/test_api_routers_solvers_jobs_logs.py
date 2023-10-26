@@ -8,7 +8,7 @@
 import asyncio
 import datetime
 import json
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 
 import httpx
 import pytest
@@ -22,6 +22,7 @@ from fastapi.responses import StreamingResponse
 
 
 _NEW_LINE = "\n"
+CHUNK_MSG = "expected" + _NEW_LINE
 
 
 @pytest.fixture()
@@ -29,9 +30,9 @@ def app() -> FastAPI:
     app = FastAPI()
 
     async def _text_generator() -> AsyncIterable[str]:
-        for i in range(10):
-            yield f"some log data {i}\n"
-            await asyncio.sleep(1)
+        for _ in range(10):
+            yield CHUNK_MSG
+            await asyncio.sleep(0)
 
     async def _json_generator() -> AsyncIterable[str]:
         i = 0
@@ -54,9 +55,20 @@ def app() -> FastAPI:
 async def test_it(client: httpx.AsyncClient, as_json: bool):
     # https://www.python-httpx.org/quickstart/#streaming-responses
 
+    chunk_size = len(CHUNK_MSG)
+
+    received = []
     async with client.stream("GET", "/logs") as r:
-        async for text in r.aiter_text():
-            print(text)
+        async for text in r.aiter_text(chunk_size):
+            received.append(text)
+
+    assert (
+        received
+        == [
+            CHUNK_MSG,
+        ]
+        * 10
+    )
 
     async with client.stream("GET", f"/logs?as_json={1 if as_json else 0}") as r:
         async for line in r.aiter_lines():
