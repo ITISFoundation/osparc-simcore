@@ -295,6 +295,12 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       osparc.data.Resources.fetch("payments", "cancelPayment", params);
     },
 
+    __windowClosed: function(paymentId) {
+      const msg = this.tr("The window was closed. Try again and follow the instructions inside the opened window.");
+      osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      this.__cancelPayment(paymentId);
+    },
+
     __startPayment: function() {
       this.__buyingCredits(true);
 
@@ -314,8 +320,8 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         .then(data => {
           const paymentId = data["paymentId"];
           const url = data["paymentFormUrl"];
-          const oldWay = false;
-          const pgWindow = oldWay ? this.__popUpPaymentGatewayOld(paymentId, url) : this.__popUpPaymentGateway(paymentId, url);
+          const stayWithinApp = true;
+          const pgWindow = stayWithinApp ? this.__popUpPaymentGateway(paymentId, url) : this.__popUpPaymentGatewayOld(paymentId, url);
 
           // Listen to socket event
           const socket = osparc.wrapper.WebSocket.getInstance();
@@ -335,20 +341,18 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     },
 
     __popUpPaymentGateway: function(paymentId, url) {
-      paymentId = 123412431243;
-      url = "https://cdn.omise.co/assets/credit-card-icon-blog/credit-card-icon-blog-01.jpg";
       const options = {
         width: 400,
-        height: 400
+        height: 600
       };
 
       const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
         url,
-        "pgWindow",
+        "Buy Credits",
         options
       );
       // listen to "tap" instead of "execute": the "execute" is not propagated
-      pgWindow.getChildControl("close-button").addListener("tap", () => this.__cancelPayment(paymentId));
+      pgWindow.getChildControl("close-button").addListener("tap", () => this.__windowClosed(paymentId));
 
       return pgWindow;
     },
@@ -356,15 +360,15 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     __popUpPaymentGatewayOld: function(paymentId, url) {
       const options = {
         width: 400,
-        height: 400,
-        top: 200,
-        left: 100,
+        height: 600,
+        top: 100,
+        left: 200,
         scrollbars: false
       };
       const modal = true;
       const useNativeModalDialog = false; // this allow using the Blocker
 
-      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
+      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUpOld(
         url,
         "pgWindow",
         options,
@@ -373,11 +377,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       );
 
       // Listen to close window event (Bug: it doesn't work)
-      pgWindow.onbeforeunload = () => {
-        const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
-        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-        this.__cancelPayment(paymentId);
-      };
+      pgWindow.onbeforeunload = () => this.__windowClosed(paymentId);
 
       return pgWindow;
     }
