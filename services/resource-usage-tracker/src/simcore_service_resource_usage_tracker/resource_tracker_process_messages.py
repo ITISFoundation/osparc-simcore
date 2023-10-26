@@ -185,7 +185,9 @@ async def _process_stop_event(
     rabbitmq_client: RabbitMQClient,
 ):
     _status, _status_msg = ServiceRunStatus.SUCCESS, None
-    if msg.simcore_platform_status == SimcorePlatformStatus.BAD:
+    if (
+        msg.simcore_platform_status == SimcorePlatformStatus.BAD
+    ):  # TODO: Do not use this
         _status, _status_msg = (
             ServiceRunStatus.ERROR,
             "Director-v2 considers service unhealthy",
