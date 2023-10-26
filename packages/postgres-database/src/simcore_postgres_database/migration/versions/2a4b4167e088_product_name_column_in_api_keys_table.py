@@ -1,21 +1,21 @@
 """product_name column in api_keys table
 
-Revision ID: 28aa90807453
+Revision ID: 2a4b4167e088
 Revises: be0dece4e67c
-Create Date: 2023-10-24 14:54:38.856859+00:00
+Create Date: 2023-10-26 06:53:52.079499+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "28aa90807453"
+revision = "2a4b4167e088"
 down_revision = "be0dece4e67c"
 branch_labels = None
 depends_on = None
 
 
-def find_default_product_name_or_none(conn):
+def _find_default_product_name_or_none(conn):
     query = sa.text("SELECT name FROM products ORDER BY priority LIMIT 1")
     result = conn.execute(query)
     row = result.fetchone()
@@ -37,9 +37,7 @@ def upgrade():
     # ### end Alembic commands ###
 
     conn = op.get_bind()
-
-    default_product = find_default_product_name_or_none(conn)
-
+    default_product = _find_default_product_name_or_none(conn)
     if default_product:
         op.execute(f"UPDATE api_keys SET product_name = '{default_product}'")
 
