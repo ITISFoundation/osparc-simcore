@@ -67,6 +67,11 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
+    WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=3),
+        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
+    )
+
     WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
