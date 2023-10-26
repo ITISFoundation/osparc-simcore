@@ -82,6 +82,22 @@ qx.Class.define("osparc.Preferences", {
       check: "Boolean",
       event: "changeSnapNodeToGrid",
       apply: "__patchPreference"
+    },
+
+    creditsWarningThreshold: {
+      check: "Number",
+      nullable: false,
+      init: 200,
+      event: "changeCreditsWarningThreshold",
+      apply: "__patchPreference"
+    },
+
+    walletIndicatorVisibility: {
+      check: ["always", "warning"],
+      nullable: false,
+      init: "always",
+      event: "changeWalletIndicatorVisibility",
+      apply: "__patchPreference"
     }
   },
 
