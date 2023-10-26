@@ -24,6 +24,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int | None = 5
 
+    SIDECAR_EC2_INSTANCE_TYPE: str | None = Field(
+        default=None,
+        description="if set describe the instance type on which the sidecar runs",
+    )
+
     # dask config ----
 
     DASK_START_AS_SCHEDULER: bool | None = Field(
@@ -31,7 +36,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DASK_SCHEDULER_HOST: str | None = Field(
-        None,
+        default=None,
         description="Address of the scheduler to register (only if started as worker )",
     )
 

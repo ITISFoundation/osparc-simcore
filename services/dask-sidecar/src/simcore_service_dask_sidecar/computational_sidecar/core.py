@@ -177,12 +177,16 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
     async def run(self, command: list[str]) -> TaskOutputData:
         # ensure we pass the initial logs and progress
+        self.task_publishers.publish_progress(0)
+        settings: Settings = Settings.create_from_envs()
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
-        self.task_publishers.publish_progress(0)
+        if settings.SIDECAR_EC2_INSTANCE_TYPE:
+            await self._publish_sidecar_log(
+                f"Using a '{settings.SIDECAR_EC2_INSTANCE_TYPE}' instance..."
+            )
 
-        settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")

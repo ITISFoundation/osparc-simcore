@@ -3,9 +3,10 @@ import contextlib
 import logging
 import re
 import socket
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from pprint import pformat
-from typing import Any, AsyncGenerator, AsyncIterator, Awaitable, Callable, cast
+from typing import Any, cast
 
 import aiofiles
 import aiofiles.tempfile
