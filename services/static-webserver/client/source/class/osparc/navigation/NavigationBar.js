@@ -132,7 +132,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("expiration-icon");
       this.getChildControl("help");
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        this.getChildControl("current-usage-indicator");
         this.getChildControl("credits-menu-button");
       }
       this.getChildControl("log-in-button");
@@ -227,21 +226,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
-        case "current-usage-indicator": {
+        case "credits-menu-button": {
           const currentUsage = new osparc.desktop.credits.CurrentUsage();
-          control = new osparc.desktop.credits.CurrentUsageIndicator(currentUsage).set({
-            allowGrowY: false,
-            alignY: "middle"
-          });
-          this.getChildControl("right-items").add(control);
-          break;
-        }
-        case "credits-menu-button":
           control = new osparc.navigation.CreditsMenuButton().set({
+            currentUsage,
             maxHeight: this.self().HEIGHT
           });
           this.getChildControl("right-items").add(control);
           break;
+        }
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
             maxHeight: this.self().HEIGHT

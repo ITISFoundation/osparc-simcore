@@ -106,6 +106,25 @@ qx.Class.define("osparc.utils.Utils", {
       return defaultFont;
     },
 
+    animateUsage: function(domElement) {
+      const desc = {
+        duration: 500,
+        timing: "ease-out",
+        keyFrames: {
+          0: {
+            "opacity": 1
+          },
+          70: {
+            "opacity": 0.8
+          },
+          100: {
+            "opacity": 1
+          }
+        }
+      };
+      qx.bom.element.Animation.animate(domElement, desc);
+    },
+
     prettifyMenu: function(menu) {
       menu.set({
         font: "text-14",
