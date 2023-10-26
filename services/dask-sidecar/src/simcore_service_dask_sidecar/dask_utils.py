@@ -110,8 +110,10 @@ async def monitor_task_abortion(
             task.cancel()
 
     async def periodicaly_check_if_aborted(task_name: str) -> None:
-        settings: Settings = Settings.create_from_env()
-        while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
+        settings = Settings.create_from_envs()
+        while await asyncio.sleep(
+            settings.SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S, result=True
+        ):
             logger.debug("checking if %s should be cancelled", f"{task_name=}")
             if is_current_task_aborted():
                 await cancel_task(task_name)
