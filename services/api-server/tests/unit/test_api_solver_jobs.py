@@ -187,10 +187,7 @@ async def test_get_solver_job_pricing_unit(
 
 @pytest.mark.parametrize(
     "capture_name,expected_status_code",
-    [
-        ("start_job_with_payment.json", 200),
-        # ("start_job_not_enough_credit.json", 200)
-    ],
+    [("start_job_with_payment.json", 200), ("start_job_not_enough_credit.json", 402)],
 )
 async def test_start_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
@@ -240,16 +237,19 @@ async def test_start_solver_job_pricing_unit_with_payment(
         assert int(path_params["pricing_unit_id"]) == _pricing_unit_id
         return capture.response_body
 
+    callbacks = [
+        _get_job_side_effect,
+        _put_pricing_plan_and_unit_side_effect,
+        _start_job_side_effect,
+    ]
+    if expected_status_code == 200:
+        callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
+
     _put_pricing_plan_and_unit_side_effect.was_called = False
     respx_mock = respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
         project_tests_dir / "mocks" / capture_name,
-        [
-            _get_job_side_effect,
-            _put_pricing_plan_and_unit_side_effect,
-            _start_job_side_effect,
-            get_inspect_job_side_effect(job_id=_job_id),
-        ],
+        callbacks,
     )
 
     response = await client.post(
