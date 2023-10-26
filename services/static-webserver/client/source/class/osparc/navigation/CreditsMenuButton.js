@@ -27,7 +27,12 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
 
     this.set({
       font: "text-16",
-      backgroundColor: "transparent"
+      backgroundColor: "transparent",
+      rich: true
+    });
+
+    this.getChildControl("label").set({
+      textAlign: "center"
     });
 
     const preferencesSettings = osparc.Preferences.getInstance();
@@ -60,7 +65,22 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
     osparc.utils.Utils.prettifyMenu(menu);
   },
 
+  properties: {
+    currentUsage: {
+      check: "osparc.desktop.credits.CurrentUsage",
+      init: null,
+      nullable: true,
+      apply: "__applyCurrentUsage"
+    }
+  },
+
   members: {
+    __applyCurrentUsage: function(currentUsage) {
+      if (currentUsage) {
+        currentUsage.addListener("changeUsedCredits", () => this.__updateCredits());
+      }
+    },
+
     __contextWalletChanged: function() {
       const store = osparc.store.Store.getInstance();
       const wallet = store.getContextWallet();
@@ -70,14 +90,48 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
       }
     },
 
+    __animate: function() {
+      const desc = {
+        duration: 500,
+        timing: "ease-out",
+        keyFrames: {
+          0: {
+            "opacity": 1
+          },
+          70: {
+            "opacity": 0.8
+          },
+          100: {
+            "opacity": 1
+          }
+        }
+      };
+      const label = this.getChildControl("credits-label");
+      qx.bom.element.Animation.animate(label.getContentElement().getDomElement(), desc);
+    },
+
     __updateCredits: function() {
       const store = osparc.store.Store.getInstance();
       const wallet = store.getContextWallet();
       if (wallet) {
-        const credits = wallet.getCreditsAvailable();
+        let text = "-";
+        const currentUsage = this.getCurrentUsage();
+        let used = null;
+        if (currentUsage) {
+          used = currentUsage.getUsedCredits();
+        }
+        const creditsLeft = wallet.getCreditsAvailable();
+        if (creditsLeft !== null) {
+          text = "<span style='font-size:13px;display:inline-block'>credits</span><br>";
+          let creditsLeftText = osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
+          if (used !== null) {
+            creditsLeftText += " / -" + osparc.desktop.credits.Utils.creditsToFixed(used);
+          }
+          text += `<span>${creditsLeftText}</span>`;
+        }
         this.set({
-          label: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
-          textColor: osparc.desktop.credits.Utils.creditsToColor(credits, "text")
+          label: text,
+          textColor: osparc.desktop.credits.Utils.creditsToColor(creditsLeft, "text")
         });
       }
     },
