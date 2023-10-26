@@ -91,7 +91,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     __activityPage: null,
     __transactionsPage: null,
     __usagePage: null,
-    __buyCredits: null,
     __transactionsTable: null,
 
     __getOverviewPage: function() {
@@ -103,17 +102,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       overview.set({
         margin: 10
       });
-      overview.addListener("buyCredits", e => {
-        this.__openBuyCredits();
-        const {
-          walletId
-        } = e.getData();
-        const store = osparc.store.Store.getInstance();
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
-        if (found) {
-          this.__buyCredits.setWallet(found);
-        }
-      });
+      overview.addListener("buyCredits", () => this.__openBuyCredits());
       overview.addListener("toWallets", () => this.openWallets());
       overview.addListener("toActivity", () => this.__openActivity());
       overview.addListener("toTransactions", () => this.__openTransactions());
@@ -136,17 +125,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       walletsView.set({
         margin: 10
       });
-      walletsView.addListener("buyCredits", e => {
-        this.__openBuyCredits();
-        const {
-          walletId
-        } = e.getData();
-        const store = osparc.store.Store.getInstance();
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
-        if (found) {
-          this.__buyCredits.setWallet(found);
-        }
-      });
+      walletsView.addListener("buyCredits", () => this.__openBuyCredits());
       page.add(walletsView);
       return page;
     },
