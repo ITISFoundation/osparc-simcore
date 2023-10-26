@@ -1,6 +1,14 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import asyncio
 import datetime
 import json
+from typing import AsyncIterable
 
 import httpx
 import pytest
@@ -18,20 +26,20 @@ _NEW_LINE = "\n"
 
 @pytest.fixture()
 def app() -> FastAPI:
-    _app = FastAPI()
+    app = FastAPI()
 
-    async def _text_generator():
+    async def _text_generator() -> AsyncIterable[str]:
         for i in range(10):
             yield f"some log data {i}\n"
             await asyncio.sleep(1)
 
-    async def _json_generator():
+    async def _json_generator() -> AsyncIterable[str]:
         i = 0
         async for text in _text_generator():
             yield json.dumps({"envent_id": i, "data": text}, indent=None) + _NEW_LINE
             i += 1
 
-    @_app.get("/logs")
+    @app.get("/logs")
     async def stream_logs(as_json: bool = False):
         if as_json:
             return StreamingResponse(
@@ -39,7 +47,7 @@ def app() -> FastAPI:
             )
         return StreamingResponse(_text_generator())
 
-    return _app
+    return app
 
 
 @pytest.mark.parametrize("as_json", [True, False])
