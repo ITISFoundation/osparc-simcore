@@ -118,7 +118,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
           text = "<span style='font-size:12px;display:inline-block'>CREDITS</span><br>";
           let creditsLeftText = osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
           if (used !== null) {
-            creditsLeftText += " / -" + osparc.desktop.credits.Utils.creditsToFixed(used);
+            creditsLeftText += " / " + osparc.desktop.credits.Utils.creditsToFixed(used);
           }
           text += `<span>${creditsLeftText}</span>`;
           this.set({
