@@ -6,6 +6,7 @@ from models_library.rpc_schemas_clusters_keeper.clusters import (
     OnDemandCluster,
 )
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -24,7 +25,10 @@ _logger = logging.getLogger(__name__)
 
 
 async def get_or_create_on_demand_cluster(
-    user_id: UserID, rabbitmq_rpc_client: RabbitMQRPCClient
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID | None,
 ) -> BaseCluster:
     try:
         returned_cluster: OnDemandCluster = await rabbitmq_rpc_client.request(
@@ -32,7 +36,7 @@ async def get_or_create_on_demand_cluster(
             RPCMethodName("get_or_create_cluster"),
             timeout_s=300,
             user_id=user_id,
-            wallet_id=None,  # NOTE: --> MD this will need to be replaced by the real walletID
+            wallet_id=wallet_id,
         )
         _logger.info("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
