@@ -61,7 +61,7 @@ from ..core.errors import (
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
-from ..models.comp_tasks import Image
+from ..models.comp_tasks import HardwareInfo, Image
 from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
 from ..utils.dask import (
@@ -209,6 +209,7 @@ class DaskClient:
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
         metadata: RunMetadataDict,
+        hardware_info: HardwareInfo,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""

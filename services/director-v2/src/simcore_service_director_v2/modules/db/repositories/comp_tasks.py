@@ -234,7 +234,7 @@ async def _generate_tasks_list_from_project(
             task_state = RunningState.PUBLISHED
 
         pricing_info = None
-        hardware_info = None
+        hardware_info = HardwareInfo(aws_ec2_instances=[])
         if is_wallet:
             output = await project_nodes_repo.get_project_node_pricing_unit_id(
                 connection, node_uuid=NodeID(node_id)
@@ -291,7 +291,7 @@ async def _generate_tasks_list_from_project(
             created=arrow.utcnow().datetime,
             modified=arrow.utcnow().datetime,
             pricing_info=pricing_info.dict() if pricing_info else None,
-            hardware_info=hardware_info.dict() if hardware_info else None,
+            hardware_info=hardware_info,
         )
 
         list_comp_tasks.append(task_db)
