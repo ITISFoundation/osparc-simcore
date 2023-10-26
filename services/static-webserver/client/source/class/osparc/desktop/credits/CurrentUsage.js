@@ -47,6 +47,8 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
             this.__fetchUsedCredits();
             contextWallet.addListener("changeCreditsAvailable", () => this.__fetchUsedCredits());
           }
+        } else {
+          this.setUsedCredits(null);
         }
       }
     },
