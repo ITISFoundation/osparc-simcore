@@ -135,8 +135,6 @@ async def create_computation(  # noqa: C901, PLR0912
         # get the project
         project: ProjectAtDB = await project_repo.get_project(computation.project_id)
 
-        # FIXME: this could not be valid anymore if the user deletes the project in between right?
-
         # check if current state allow to modify the computation
         comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             computation.project_id
@@ -202,9 +200,9 @@ async def create_computation(  # noqa: C901, PLR0912
             NodeID(n) for n in minimal_computational_dag.nodes()
         ]
         inserted_comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
-            project,
-            catalog_client,
-            director_client,
+            project=project,
+            catalog_client=catalog_client,
+            director_client=director_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,

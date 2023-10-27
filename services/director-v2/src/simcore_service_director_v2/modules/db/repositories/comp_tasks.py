@@ -354,6 +354,7 @@ class CompTasksRepository(BaseRepository):
 
     async def upsert_tasks_from_project(
         self,
+        *,
         project: ProjectAtDB,
         catalog_client: CatalogClient,
         director_client: DirectorV0Client,
