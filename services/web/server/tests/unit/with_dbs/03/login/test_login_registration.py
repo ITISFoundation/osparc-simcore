@@ -186,7 +186,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
             response,
             web.HTTPUnauthorized,
             MSG_WEAK_PASSWORD.format(
-                LOGIN_PASSWORD_MIN_LENGTH=session_settings.LOGIN_PASSWORD_MIN_LENGTH
+                LOGIN_PASSWORD_MIN_LENGTH=login_settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
         )
         response = await client.post(
@@ -211,7 +211,7 @@ async def test_registration_with_weak_password_fails(
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
-    session_settings = get_plugin_settings(client.app, default_product_name)
+    login_settings = get_plugin_settings(client.app, default_product_name)
     response = await client.post(
         url.path,
         json={
@@ -224,7 +224,7 @@ async def test_registration_with_weak_password_fails(
         response,
         web.HTTPUnauthorized,
         MSG_WEAK_PASSWORD.format(
-            LOGIN_PASSWORD_MIN_LENGTH=session_settings.LOGIN_PASSWORD_MIN_LENGTH
+            LOGIN_PASSWORD_MIN_LENGTH=login_settings.LOGIN_PASSWORD_MIN_LENGTH
         ),
     )
 
