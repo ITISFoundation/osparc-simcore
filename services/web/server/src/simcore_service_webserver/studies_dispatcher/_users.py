@@ -168,4 +168,5 @@ async def ensure_authentication(
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
         identity = user.email
+        # FIXME:
         await remember(request, response, identity)

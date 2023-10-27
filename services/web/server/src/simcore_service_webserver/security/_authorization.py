@@ -16,6 +16,7 @@ from tenacity import retry
 from ..db.models import UserStatus, users
 from ..db.plugin import get_database_engine
 from ._access_model import ContextType, RoleBasedAccessModel, check_access
+from ._identity import IdentityJsonStr
 
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +43,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return _engine
 
     @retry(**PostgresRetryPolicyUponOperation(_logger).kwargs)
-    async def _get_active_user_with(self, identity: str) -> _UserIdentity | None:
+    async def _get_active_user_with(
+        self, identity: IdentityJsonStr
+    ) -> _UserIdentity | None:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
         user: _UserIdentity | None = self.timed_cache.get(identity, None)
         if user is None:
@@ -64,7 +67,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
         return user
 
-    async def authorized_userid(self, identity: str) -> int | None:
+    async def authorized_userid(self, identity: IdentityJsonStr) -> int | None:
         """Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
@@ -80,7 +83,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def permits(
         self,
-        identity: str,
+        identity: IdentityJsonStr,
         permission: str,
         context: ContextType = None,
     ) -> bool:
@@ -103,5 +106,6 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         if user is None:
             return False
 
+        # role-based access
         role = user.get("role")
         return await check_access(self.access_model, role, permission, context)

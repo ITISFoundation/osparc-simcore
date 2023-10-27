@@ -16,6 +16,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from ._access_model import RoleBasedAccessModel
 from ._authorization import AuthorizationPolicy
+from ._identity import VerifiedIdentity, remember_identity
 
 
 def encrypt_password(password: str) -> str:
@@ -45,7 +46,8 @@ __all__: tuple[str, ...] = (
     "forget",
     "get_access_model",
     "is_anonymous",
-    "remember",
+    "remember_identity",
+    "VerifiedIdentity",
     "UserRole",
 )
 

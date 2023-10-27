@@ -24,8 +24,10 @@ async def login_granted_response(
 
     Uses security API
     """
+
     email = user["email"]
     user_id = user.get("id")
+
     with log_context(
         log,
         logging.INFO,
@@ -35,6 +37,7 @@ async def login_granted_response(
         extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_IN, "INFO")
+        # FIXME: use instead remember_identity
         await remember(
             request=request,
             response=response,

@@ -3,6 +3,7 @@ from functools import wraps
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
 
+from ..products.api import get_product_name
 from .api import check_permission
 
 
@@ -16,13 +17,18 @@ def permission_required(permissions: str):
     raises HTTPForbidden.
     """
 
-    def decorator(handler: Handler):
+    def _decorator(handler: Handler):
         @wraps(handler)
-        async def wrapped(request: web.Request):
-            await check_permission(request, permissions)
-            ret = await handler(request)
-            return ret
+        async def _wrapped(request: web.Request):
 
-        return wrapped
+            # FIXME: avoid using check_permissions in the api!
+            await check_permission(
+                request,
+                permissions,
+                context={"product_name": get_product_name(request)},
+            )
+            return await handler(request)
 
-    return decorator
+        return _wrapped
+
+    return _decorator

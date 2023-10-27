@@ -8,8 +8,9 @@
 import inspect
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, TypeAlias
+from typing import Any, Optional, TypeAlias
 
 from ..db.models import UserRole
 
@@ -29,7 +30,6 @@ class _RolePermissions:
 
     @classmethod
     def from_rawdata(cls, role: str | UserRole, value: dict) -> "_RolePermissions":
-
         if isinstance(role, str):
             name = role
             role = UserRole[name]
@@ -44,7 +44,8 @@ class _RolePermissions:
             elif isinstance(item, str):
                 allowed.add(item)
             else:
-                raise ValueError(f"Unexpected item for role '{role}'")
+                msg = f"Unexpected item for role '{role}'"
+                raise ValueError(msg)
 
         role_permission.allowed = list(allowed)
         role_permission.check = check
@@ -131,7 +132,10 @@ _OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
 async def check_access(
-    model: RoleBasedAccessModel, role: UserRole, operations: str, context: dict = None
+    model: RoleBasedAccessModel,
+    role: UserRole,
+    operations: str,
+    context: dict | None = None,
 ) -> bool:
     """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 

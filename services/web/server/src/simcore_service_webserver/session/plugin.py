@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 def generate_fernet_secret_key() -> bytes:
     # secret_key must be 32 url-safe base64-encoded bytes
     fernet_key = fernet.Fernet.generate_key()
-    secret_key = base64.urlsafe_b64decode(fernet_key)
+    secret_key: bytes = base64.urlsafe_b64decode(fernet_key)
     return secret_key
 
 

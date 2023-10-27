@@ -406,6 +406,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         _logger.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
 
+        # FIXME:
         await remember(request, response, identity)
 
         # NOTE: session is encrypted and stored in a cookie in the session middleware
