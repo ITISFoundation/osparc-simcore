@@ -23,19 +23,34 @@ class PeriodicTaskCancellationError(PydanticErrorMixin, Exception):
     msg_template: str = "Could not cancel task '{task_name}'"
 
 
+class ContinueCondition:
+    def __init__(self) -> None:
+        self._can_continue: bool = True
+
+    def stop(self):
+        self._can_continue = False
+
+    def __call__(self) -> bool:
+        return self._can_continue
+
+
 async def _periodic_scheduled_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
+    continue_condition: ContinueCondition,
     task_name: str,
     **task_kwargs,
 ) -> None:
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
+            if not continue_condition():
+                logger.debug("'%s' finished periodic actions", task_name)
+                return
             with log_context(
                 logger,
-                logging.INFO,
+                logging.DEBUG,
                 msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
             ), log_catch(logger):
                 await task(**task_kwargs)
@@ -53,15 +68,20 @@ def start_periodic_task(
     with log_context(
         logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
-        return asyncio.create_task(
+        continue_condition = ContinueCondition()
+        new_periodic_task: asyncio.Task = asyncio.create_task(
             _periodic_scheduled_task(
                 task,
                 interval=interval,
+                continue_condition=continue_condition,
                 task_name=task_name,
                 **kwargs,
             ),
             name=task_name,
         )
+        # pylint: disable=protected-access
+        new_periodic_task._continue_condition = continue_condition  # noqa: SLF001
+        return new_periodic_task
 
 
 async def cancel_task(
@@ -99,9 +119,24 @@ async def stop_periodic_task(
     with log_context(
         logger,
         logging.DEBUG,
-        msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
+        msg=f"stop periodic background task '{asyncio_task.get_name()}'",
     ):
-        await cancel_task(asyncio_task, timeout=timeout)
+        # TODO: add notes behind the idea here
+
+        # pylint: disable=protected-access
+        continue_condition: ContinueCondition = (
+            asyncio_task._continue_condition
+        )  # noqa: SLF001
+        continue_condition.stop()
+
+        _, pending = await asyncio.wait((asyncio_task,), timeout=timeout)
+        if pending:
+            with log_context(
+                logger,
+                logging.WARNING,
+                msg=f"could not gracefully stop task '{asyncio_task.get_name()}', cancelling it",
+            ):
+                await cancel_task(asyncio_task, timeout=timeout)
 
 
 @contextlib.asynccontextmanager

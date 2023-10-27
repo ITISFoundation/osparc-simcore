@@ -1,8 +1,9 @@
 import contextlib
 import datetime
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Final
+from typing import Final
 from uuid import uuid4
 
 import redis.asyncio as aioredis
@@ -21,9 +22,6 @@ from .background_task import periodic_task
 from .logging_utils import log_catch, log_context
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_CANCEL_TASK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=0.1)
-_MINUTE: Final[NonNegativeFloat] = 60
-_WAIT_SECS: Final[NonNegativeFloat] = 1
 
 
 logger = logging.getLogger(__name__)
@@ -91,7 +89,7 @@ class RedisClientSDK:
         lock_value: bytes | str | None = None,
         *,
         blocking: bool = False,
-        blocking_timeout_s: NonNegativeFloat = 5,
+        blocking_timeout_s: NonNegativeFloat | None = 5,
     ) -> AsyncIterator[Lock]:
         """Tries to acquire a lock.
 
