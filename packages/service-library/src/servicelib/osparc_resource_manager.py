@@ -44,7 +44,7 @@ class BaseResourceHandler:
 class OsparcResourceType(StrAutoEnum):
     """Types of resources that are tracked by oSPARC"""
 
-    SERVICE = auto()
+    DYNAMIC_SERVICE = auto()
 
 
 def _key_space(resource_type: OsparcResourceType, prefix: str) -> str:
