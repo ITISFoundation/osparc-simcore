@@ -726,14 +726,15 @@ qx.Class.define("osparc.store.Store", {
 
       const socket = osparc.wrapper.WebSocket.getInstance();
       const slotName = "walletOsparcCreditsUpdated";
-      socket.removeSlot(slotName);
-      socket.on(slotName, jsonString => {
-        const data = JSON.parse(jsonString);
-        const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
-        if (walletFound) {
-          walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
-        }
-      }, this);
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+          if (walletFound) {
+            walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+          }
+        }, this);
+      }
 
       store.setWallets([]);
       return new Promise((resolve, reject) => {
