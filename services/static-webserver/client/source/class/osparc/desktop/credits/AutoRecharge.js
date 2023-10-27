@@ -36,6 +36,10 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     }
   },
 
+  events: {
+    "addNewPaymentMethod": "qx.event.type.Event"
+  },
+
   members: {
     __rechargeField: null,
     __limitField: null,
@@ -198,6 +202,12 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200
       });
       paymentMethodLayout.add(paymentMethodField);
+      const addNewPaymentMethod = new qx.ui.basic.Label(this.tr("Add Payment Method")).set({
+        padding: 0,
+        cursor: "pointer",
+        font: "link-label-12"
+      });
+      addNewPaymentMethod.addListener("tap", () => this.fireEvent("addNewPaymentMethod"));
       layout.add(paymentMethodLayout);
 
       return layout;
