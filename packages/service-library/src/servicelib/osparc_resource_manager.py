@@ -4,7 +4,9 @@ from enum import auto
 from typing import Any, Final, TypeAlias
 
 from models_library.utils.enums import StrAutoEnum
+from pydantic import NonNegativeInt
 from servicelib.redis import RedisClientSDK
+from servicelib.utils import logged_gather
 
 ResourceIdentifier: TypeAlias = str
 
@@ -14,6 +16,10 @@ _LOCK_PREFIX: Final[str] = "LOCK"
 # NOTE: whens keeping track of resources the value is not required
 # everything is encoded in the key
 _RESOURCE_KEY_VALUE: Final[str] = ""
+
+# NOTE: there should not be any issue in having a higher parallelism
+# since there are no key collisions, limiting to reduce concurrency
+_PARALLEL_REDIS_CALLS: Final[NonNegativeInt] = 10
 
 
 class BaseResourceHandler:
@@ -59,7 +65,12 @@ def _get_key_resource_name(
 
 @dataclass
 class OsparcResoruceManager:
-    """Allows to track and manage the lifecycle of resource inside oSPARc"""
+    """
+    Allows to track and manage the lifecycle of resource inside oSPARc
+
+    NOTE: all operations are thread safe, since creation and removal run
+    under a unique lock for the given resource identifier.
+    """
 
     redis_client_sdk: RedisClientSDK
     registered_handlers: dict[OsparcResourceType, BaseResourceHandler] = field(
@@ -160,3 +171,46 @@ class OsparcResoruceManager:
         keys_prefix = f"{_key_space(resource_type, _RESOURCE_PREFIX)}:"
         found_keys = await self.redis_client_sdk.redis.keys(f"{keys_prefix}*")
         return {key.removeprefix(keys_prefix) for key in found_keys}
+
+    async def remove_all_not_present_resources(self) -> None:
+        """Intended to be ran at any time from anywhere.
+        It is left up to the user of this class to decide when to run this cleanup.
+
+        NOTE: this only removes resources for which a handler was registered. The handler
+        # requires to have at least it's `BaseResourceHandler.is_present` method implemented
+        """
+
+        for resource_type in self.registered_handlers:
+            await self.remove_resources_which_are_no_longer_present(resource_type)
+
+    async def remove_resources_which_are_no_longer_present(
+        self,
+        resource_type: OsparcResourceType,
+    ) -> None:
+        """Removes the given resource type using it's registered handler.
+
+        NOTE: the user is free to use this method or `remove_all_not_present_resources`
+
+        Arguments:
+            resource_type -- the type of resource which is tracked
+        """
+        identifiers = await self.get_resources(resource_type)
+
+        handler = self._get_handler(resource_type)
+
+        resources_present: list[bool] = await logged_gather(
+            *(handler.is_present(identifier) for identifier in identifiers),
+            max_concurrency=_PARALLEL_REDIS_CALLS,
+        )
+
+        # NOTE: since resources are no longer present, it makes no sense to destroy them
+        await logged_gather(
+            *(
+                self.remove(resource_type, identifier=identifier, destroy=False)
+                for identifier, is_present in zip(
+                    identifiers, resources_present, strict=True
+                )
+                if not is_present
+            ),
+            max_concurrency=_PARALLEL_REDIS_CALLS,
+        )

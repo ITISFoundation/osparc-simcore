@@ -160,3 +160,55 @@ async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_externa
     )
 
     assert not await _resource_exists(resource_identifier)
+
+
+@pytest.fixture
+def resource_identifiers(faker: Faker) -> set[ResourceIdentifier]:
+    return {faker.pystr() for _ in range(100)}
+
+
+async def test_remove_not_present_resources(
+    redis_client_sdk: RedisClientSDK, resource_identifiers: list[ResourceIdentifier]
+):
+    class MockedExternalAPI:
+        def __init__(self) -> None:
+            self.reply_as_present: bool = True
+
+        def is_present(self, _: ResourceIdentifier) -> bool:
+            return self.reply_as_present
+
+    # pylint: disable=abstract-method
+    class ExternalSystemResourceHandler(BaseResourceHandler):
+        def __init__(self, external_api: MockedExternalAPI) -> None:
+            self.external_api: MockedExternalAPI = external_api
+
+        async def is_present(self, identifier: ResourceIdentifier) -> bool:
+            return self.external_api.is_present(identifier)
+
+    mocked_api = MockedExternalAPI()
+
+    manager = OsparcResoruceManager(redis_client_sdk=redis_client_sdk)
+
+    manager.register(
+        OsparcResourceType.SERVICE,
+        resource_handler=ExternalSystemResourceHandler(external_api=mocked_api),
+    )
+
+    await logged_gather(
+        *(
+            manager.add(OsparcResourceType.SERVICE, identifier=identifier)
+            for identifier in resource_identifiers
+        )
+    )
+
+    assert (
+        await manager.get_resources(OsparcResourceType.SERVICE) == resource_identifiers
+    )
+
+    # simulate resources are no longer present in the system
+    mocked_api.reply_as_present = False
+
+    await manager.remove_all_not_present_resources()
+
+    # no more resources are tracked by the system
+    assert await manager.get_resources(OsparcResourceType.SERVICE) == set()
