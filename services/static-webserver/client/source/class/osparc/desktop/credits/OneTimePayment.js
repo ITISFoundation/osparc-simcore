@@ -218,7 +218,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       const layout = new qx.ui.container.Composite(grid);
 
       const title = new qx.ui.basic.Label().set({
-        value: this.tr("PAYMENT METHOD"),
+        value: this.tr("PAY WITH"),
         font: "text-14"
       });
       layout.add(title, {
