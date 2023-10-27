@@ -114,10 +114,10 @@ async def create_dynamic_service(
     x_dynamic_sidecar_request_scheme: str = Header(...),
     x_simcore_user_agent: str = Header(...),
 ) -> DynamicServiceGet | RedirectResponse:
-    simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(key=service.key, version=service.version)
-        )
+    simcore_service_labels: (
+        SimcoreServiceLabels
+    ) = await director_v0_client.get_service_labels(
+        service=ServiceKeyVersion(key=service.key, version=service.version)
     )
 
     # LEGACY (backwards compatibility)
@@ -135,12 +135,14 @@ async def create_dynamic_service(
             },
         )
         logger.debug("Redirecting %s", redirect_url_with_query)
+        # TODO: add service here if not present, TODO: maybe with a delay?
         return RedirectResponse(str(redirect_url_with_query))
 
     #
     if not await is_sidecar_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
+        # TODO: add service here
         await scheduler.add_service(
             service=service,
             simcore_service_labels=simcore_service_labels,
@@ -164,6 +166,8 @@ async def get_dynamic_sidecar_status(
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
 ) -> DynamicServiceGet | RedirectResponse:
+    # TODO: should this be used to push the status to the cache?
+    # maybe not a good idea at this point
     try:
         return await scheduler.get_stack_status(node_uuid)
     except DynamicSidecarNotFoundError:
@@ -215,9 +219,9 @@ async def stop_dynamic_service(
     # take care of stopping cleaning up all allocated resources:
     # services, containers, volumes and networks.
     # Once the service is no longer being tracked this can return
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        dynamic_services_settings.DYNAMIC_SIDECAR
-    )
+    dynamic_sidecar_settings: (
+        DynamicSidecarSettings
+    ) = dynamic_services_settings.DYNAMIC_SIDECAR
 
     def _log_error(retry_state: RetryCallState):
         logger.error(
@@ -238,6 +242,10 @@ async def stop_dynamic_service(
         with attempt:
             if scheduler.is_service_tracked(node_uuid):
                 raise TryAgain
+
+    # TODO: remove service here?
+    # TODO: extend resoruce manager to automatically purge services if they do not exist in the system any longer
+    #
 
     return NoContentResponse()
 
@@ -271,9 +279,9 @@ async def service_retrieve_data_on_ports(
             node_uuid, director_v0_client
         )
 
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            dynamic_services_settings.DYNAMIC_SIDECAR
-        )
+        dynamic_sidecar_settings: (
+            DynamicSidecarSettings
+        ) = dynamic_services_settings.DYNAMIC_SIDECAR
         timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,

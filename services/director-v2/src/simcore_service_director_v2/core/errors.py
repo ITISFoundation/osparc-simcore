@@ -114,10 +114,6 @@ class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorException):
     msg_template = "Computational task {node_id} not found"
 
 
-class NodeRightsAcquireError(PydanticErrorMixin, DirectorException):
-    msg_template = "Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
-
-
 #
 # SCHEDULER ERRORS
 #
