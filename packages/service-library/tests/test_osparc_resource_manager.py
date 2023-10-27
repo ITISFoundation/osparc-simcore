@@ -59,23 +59,27 @@ async def test_workflow_resource_is_tracked(
     manager = OsparcResoruceManager(redis_client_sdk=redis_client_sdk)
 
     resource_key = _get_key_resource_name(
-        OsparcResourceType.SERVICE, resource_identifier
+        OsparcResourceType.DYNAMIC_SERVICE, resource_identifier
     )
 
     # resource does not exit
     assert not await _is_key_present(redis_client_sdk.redis, resource_key)
-    await manager.add(OsparcResourceType.SERVICE, identifier=resource_identifier)
+    await manager.add(
+        OsparcResourceType.DYNAMIC_SERVICE, identifier=resource_identifier
+    )
 
     # resource is now present
     assert await _is_key_present(redis_client_sdk.redis, resource_key)
 
     # check to ss
-    assert await manager.get_resources(OsparcResourceType.SERVICE) == {
+    assert await manager.get_resources(OsparcResourceType.DYNAMIC_SERVICE) == {
         resource_identifier
     }
 
     # resource was removed
-    await manager.remove(OsparcResourceType.SERVICE, identifier=resource_identifier)
+    await manager.remove(
+        OsparcResourceType.DYNAMIC_SERVICE, identifier=resource_identifier
+    )
     assert not await _is_key_present(redis_client_sdk.redis, resource_key)
 
 
@@ -118,20 +122,22 @@ async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_externa
 
     external_api = ExternalSystemAPI()
     manager.register(
-        OsparcResourceType.SERVICE,
+        OsparcResourceType.DYNAMIC_SERVICE,
         resource_handler=ExternalSystemResourceHandler(api=external_api),
     )
 
     # not possible to create a resource without specifying the additional defined kwargs
     with pytest.raises(TypeError, match="required positional argument"):
         await manager.add(
-            OsparcResourceType.SERVICE, identifier=resource_identifier, create=True
+            OsparcResourceType.DYNAMIC_SERVICE,
+            identifier=resource_identifier,
+            create=True,
         )
 
     async def _resource_exists(identifier: ResourceIdentifier) -> bool:
         return external_api.exists(identifier) and await _is_key_present(
             redis_client_sdk.redis,
-            _get_key_resource_name(OsparcResourceType.SERVICE, identifier),
+            _get_key_resource_name(OsparcResourceType.DYNAMIC_SERVICE, identifier),
         )
 
     assert not await _resource_exists(resource_identifier)
@@ -139,7 +145,7 @@ async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_externa
     await logged_gather(
         *(
             manager.add(
-                OsparcResourceType.SERVICE,
+                OsparcResourceType.DYNAMIC_SERVICE,
                 identifier=resource_identifier,
                 create=True,
                 letter_count=10,
@@ -153,7 +159,9 @@ async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_externa
     await logged_gather(
         *(
             manager.remove(
-                OsparcResourceType.SERVICE, identifier=resource_identifier, destroy=True
+                OsparcResourceType.DYNAMIC_SERVICE,
+                identifier=resource_identifier,
+                destroy=True,
             )
             for _ in range(concurrent_requests)
         )
@@ -190,19 +198,20 @@ async def test_remove_not_present_resources(
     manager = OsparcResoruceManager(redis_client_sdk=redis_client_sdk)
 
     manager.register(
-        OsparcResourceType.SERVICE,
+        OsparcResourceType.DYNAMIC_SERVICE,
         resource_handler=ExternalSystemResourceHandler(external_api=mocked_api),
     )
 
     await logged_gather(
         *(
-            manager.add(OsparcResourceType.SERVICE, identifier=identifier)
+            manager.add(OsparcResourceType.DYNAMIC_SERVICE, identifier=identifier)
             for identifier in resource_identifiers
         )
     )
 
     assert (
-        await manager.get_resources(OsparcResourceType.SERVICE) == resource_identifiers
+        await manager.get_resources(OsparcResourceType.DYNAMIC_SERVICE)
+        == resource_identifiers
     )
 
     # simulate resources are no longer present in the system
@@ -211,4 +220,4 @@ async def test_remove_not_present_resources(
     await manager.remove_all_not_present_resources()
 
     # no more resources are tracked by the system
-    assert await manager.get_resources(OsparcResourceType.SERVICE) == set()
+    assert await manager.get_resources(OsparcResourceType.DYNAMIC_SERVICE) == set()
