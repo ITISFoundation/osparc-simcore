@@ -170,6 +170,7 @@ def test_render_templates(template_path: Path):
             "code": "123",
             "reason": "no reason",
             "link": "https://link.com",
+            "product": {"name": "foo"},
         },
     )
 
