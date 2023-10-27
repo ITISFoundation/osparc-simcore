@@ -10,7 +10,7 @@ from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
 from ...services.webserver import AuthSession
 from .application import get_app, get_settings
-from .authentication import User, get_active_user_email, get_current_user
+from .authentication import Identity, get_active_user_email, get_current_identity
 
 
 def _get_settings(
@@ -61,13 +61,15 @@ def get_session_cookie(
 def get_webserver_session(
     app: Annotated[FastAPI, Depends(get_app)],
     session_cookies: Annotated[dict, Depends(get_session_cookie)],
-    user: Annotated[User, Depends(get_current_user)],
+    identity: Annotated[Identity, Depends(get_current_identity)],
 ) -> AuthSession:
     """
     Lifetime of AuthSession wrapper is one request because it needs different session cookies
     Lifetime of embedded client is attached to the app lifetime
     """
-    product_header: dict[str, str] = {"X-Simcore-Products-Name": f"{user.product_id}"}
+    product_header: dict[str, str] = {
+        "X-Simcore-Products-Name": f"{identity.product_id}"
+    }
     session = AuthSession.create(app, session_cookies, product_header)
     assert isinstance(session, AuthSession)  # nosec
     return session

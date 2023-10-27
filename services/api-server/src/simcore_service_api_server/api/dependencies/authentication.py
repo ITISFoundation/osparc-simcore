@@ -12,7 +12,7 @@ from .database import get_repository
 basic_scheme = HTTPBasic()
 
 
-class User(BaseModel):
+class Identity(BaseModel):
     user_id: PositiveInt
     product_id: PositiveInt
     email: str
@@ -31,13 +31,13 @@ def _create_exception() -> HTTPException:
     )
 
 
-async def get_current_user(
+async def get_current_identity(
     apikeys_repo: Annotated[
         ApiKeysRepository, Depends(get_repository(ApiKeysRepository))
     ],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     credentials: HTTPBasicCredentials = Security(basic_scheme),
-) -> User:
+) -> Identity:
     user_and_product: UserAndProduct | None = await apikeys_repo.get_user(
         api_key=credentials.username, api_secret=credentials.password
     )
@@ -48,18 +48,18 @@ async def get_current_user(
     if not email:
         exc = _create_exception()
         raise exc
-    return User(
+    return Identity(
         user_id=user_and_product[0], product_id=user_and_product[1], email=email
     )
 
 
 async def get_current_user_id(
-    user: Annotated[User, Depends(get_current_user)],
+    identity: Annotated[Identity, Depends(get_current_identity)],
 ) -> PositiveInt:
-    return user.user_id
+    return identity.user_id
 
 
 async def get_active_user_email(
-    user: Annotated[User, Depends(get_current_user)],
+    identity: Annotated[Identity, Depends(get_current_identity)],
 ) -> str:
-    return user.email
+    return identity.email
