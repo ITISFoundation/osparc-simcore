@@ -148,7 +148,6 @@ async def test_cannot_unregister_invalid_credentials(
     await assert_status(response, web.HTTPConflict)
 
 
-@pytest.mark.testit
 async def test_request_an_account(
     client: TestClient, faker: Faker, mocked_send_email: MagicMock
 ):
@@ -171,5 +170,6 @@ async def test_request_an_account(
 
     # sent email?
     mimetext = mocked_send_email.call_args[1]["message"]
-    assert mimetext["Subject"]
+    assert "account" in mimetext["Subject"]
+    assert mimetext["From"] == product.support_email
     assert mimetext["To"] == product.support_email
