@@ -108,15 +108,15 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __cancelPaymentMethod: function(paymentMethodId) {
-      const wallet = this.getWallet();
       // inform backend
       const params = {
         url: {
-          walletId: wallet.getWalletId(),
+          walletId: this.getContextWallet().getWalletId(),
           paymentMethodId
         }
       };
-      osparc.data.Resources.fetch("paymentMethods", "cancel", params);
+      osparc.data.Resources.fetch("paymentMethods", "cancel", params)
+        .finally(() => this.__fetchPaymentMethods());
     },
 
     __windowClosed: function(paymentMethodId) {

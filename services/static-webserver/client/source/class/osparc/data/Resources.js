@@ -708,6 +708,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/products/{productName}"
+          },
+          updateEmailTemplate: {
+            method: "PUT",
+            url: statics.API + "/products/{productName}/templates/{templateId}"
           }
         }
       },
@@ -863,6 +867,10 @@ qx.Class.define("osparc.data.Resources", {
           postRegister: {
             method: "POST",
             url: statics.API + "/auth/register"
+          },
+          postRequestAccount: {
+            method: "POST",
+            url: statics.API + "/auth/request-account"
           },
           checkInvitation: {
             method: "POST",
