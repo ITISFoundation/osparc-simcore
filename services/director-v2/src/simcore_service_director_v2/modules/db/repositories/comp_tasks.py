@@ -167,6 +167,7 @@ async def _generate_task_image(
 
 
 async def _generate_tasks_list_from_project(
+    *,
     project: ProjectAtDB,
     catalog_client: CatalogClient,
     director_client: DirectorV0Client,
@@ -234,7 +235,7 @@ async def _generate_tasks_list_from_project(
             task_state = RunningState.PUBLISHED
 
         pricing_info = None
-        hardware_info = None
+        hardware_info = HardwareInfo(aws_ec2_instances=[])
         if is_wallet:
             output = await project_nodes_repo.get_project_node_pricing_unit_id(
                 connection, node_uuid=NodeID(node_id)
@@ -291,7 +292,7 @@ async def _generate_tasks_list_from_project(
             created=arrow.utcnow().datetime,
             modified=arrow.utcnow().datetime,
             pricing_info=pricing_info.dict() if pricing_info else None,
-            hardware_info=hardware_info.dict() if hardware_info else None,
+            hardware_info=hardware_info,
         )
 
         list_comp_tasks.append(task_db)
@@ -354,6 +355,7 @@ class CompTasksRepository(BaseRepository):
 
     async def upsert_tasks_from_project(
         self,
+        *,
         project: ProjectAtDB,
         catalog_client: CatalogClient,
         director_client: DirectorV0Client,
@@ -368,15 +370,15 @@ class CompTasksRepository(BaseRepository):
             list_of_comp_tasks_in_project: list[
                 CompTaskAtDB
             ] = await _generate_tasks_list_from_project(
-                project,
-                catalog_client,
-                director_client,
-                published_nodes,
-                user_id,
-                product_name,
-                conn,
-                rut_client,
-                is_wallet,
+                project=project,
+                catalog_client=catalog_client,
+                director_client=director_client,
+                published_nodes=published_nodes,
+                user_id=user_id,
+                product_name=product_name,
+                connection=conn,
+                rut_client=rut_client,
+                is_wallet=is_wallet,
             )
             # get current tasks
             result = await conn.execute(

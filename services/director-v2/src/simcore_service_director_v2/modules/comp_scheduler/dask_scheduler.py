@@ -123,6 +123,7 @@ class DaskScheduler(BaseCompScheduler):
                         project_id=project_id,
                         cluster_id=pipeline_params.cluster_id,
                         tasks={node_id: task.image},
+                        hardware_info=task.hardware_info,
                         callback=self._wake_up_scheduler_now,
                         metadata=pipeline_params.run_metadata,
                     )
