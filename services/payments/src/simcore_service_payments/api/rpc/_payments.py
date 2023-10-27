@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import arrow
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
+from models_library.api_schemas_webserver.wallets import PaymentID, WalletPaymentCreated
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -19,7 +19,7 @@ from simcore_service_payments.core.errors import (
 
 from ..._constants import PAG, PGDB
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
-from ...models.payments_gateway import InitPayment, PaymentID, PaymentInitiated
+from ...models.payments_gateway import InitPayment, PaymentInitiated
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
