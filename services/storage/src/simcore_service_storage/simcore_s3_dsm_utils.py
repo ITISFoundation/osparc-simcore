@@ -55,6 +55,8 @@ async def expand_directory(
                 entity_tag=x.e_tag,
                 is_soft_link=False,
                 is_directory=False,
+                project_id=fmd.project_id,
+                node_id=fmd.node_id,
             )
         )
         for x in files_in_folder

@@ -253,7 +253,7 @@ def _update_container_labels(
                 labels.append(docker_label)
 
 
-async def assemble_spec(
+async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     app: FastAPI,
     service_key: ServiceKey,
@@ -279,9 +279,9 @@ async def assemble_spec(
     the dynamic-sidecar to start the service
     """
 
-    docker_registry_settings: RegistrySettings = (
-        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
-    )
+    docker_registry_settings: (
+        RegistrySettings
+    ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
 
     docker_compose_version = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
