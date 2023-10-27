@@ -162,6 +162,13 @@ class CompTaskAtDB(BaseModel):
             v = v.replace(tzinfo=datetime.timezone.utc)
         return v
 
+    @validator("hardware_info", pre=True)
+    @classmethod
+    def backward_compatible_null_value(cls, v: HardwareInfo | None) -> HardwareInfo:
+        if v is None:
+            return HardwareInfo(aws_ec2_instances=[])
+        return v
+
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
         comp_task_dict = self.dict(by_alias=True, exclude_unset=True, **exclusion_rules)
         if "state" in comp_task_dict:
