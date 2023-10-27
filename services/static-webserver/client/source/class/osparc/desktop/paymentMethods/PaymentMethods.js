@@ -115,7 +115,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           paymentMethodId
         }
       };
-      osparc.data.Resources.fetch("paymentMethods", "cancel", params);
+      osparc.data.Resources.fetch("paymentMethods", "cancel", params)
+        .finally(() => this.__fetchPaymentMethods());
     },
 
     __windowClosed: function(paymentMethodId) {
