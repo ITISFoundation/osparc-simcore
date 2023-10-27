@@ -2,7 +2,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, HttpUrl, validator
 
-from ..payments_gateway import PaymentMethodID, PaymentUUID
+from ..payments_gateway import PaymentMethodUUID, PaymentUUID
 
 
 class _BaseAck(BaseModel):
@@ -10,12 +10,17 @@ class _BaseAck(BaseModel):
     message: str = Field(default=None)
 
 
+#
+# ACK payment-methods
+#
+
+
 class AckPaymentMethod(_BaseAck):
     ...
 
 
 class SavedPaymentMethod(AckPaymentMethod):
-    payment_method_id: PaymentMethodID
+    payment_method_id: PaymentMethodUUID
 
 
 _ONE_TIME_SUCCESS: dict[str, Any] = {
@@ -49,6 +54,11 @@ _EXAMPLES: list[dict[str, Any]] = [
 ]
 
 
+#
+# ACK one-time payments
+#
+
+
 class AckPayment(_BaseAck):
     invoice_url: HttpUrl | None = Field(
         default=None, description="Link to invoice is required when success=true"
@@ -77,10 +87,10 @@ class AckPayment(_BaseAck):
 
 
 assert PaymentUUID  # nosec
-assert PaymentMethodID  # nosec
+assert PaymentMethodUUID  # nosec
 
 
 __all__: tuple[str, ...] = (
     "PaymentUUID",
-    "PaymentMethodID",
+    "PaymentMethodUUID",
 )

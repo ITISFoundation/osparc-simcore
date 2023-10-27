@@ -20,8 +20,8 @@ from ..models.payments_gateway import (
     InitPaymentMethod,
     PaymentCancelled,
     PaymentInitiated,
-    PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentMethodUUID,
     PaymentUUID,
 )
 from ..utils.http_client import AppStateMixin, BaseHttpApi
@@ -76,7 +76,7 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     ) -> PaymentMethodInitiated:
         raise NotImplementedError
 
-    async def get_form_payment_method(self, id_: PaymentMethodID) -> URL:
+    async def get_form_payment_method(self, id_: PaymentMethodUUID) -> URL:
         raise NotImplementedError
 
     async def list_payment_methods(self) -> list[GetPaymentMethod]:
@@ -84,11 +84,11 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
 
     async def get_payment_method(
         self,
-        id_: PaymentMethodID,
+        id_: PaymentMethodUUID,
     ) -> GetPaymentMethod:
         raise NotImplementedError
 
-    async def delete_payment_method(self, id_: PaymentMethodID) -> None:
+    async def delete_payment_method(self, id_: PaymentMethodUUID) -> None:
         raise NotImplementedError
 
     async def pay_with_payment_method(self, payment: InitPayment) -> PaymentInitiated:

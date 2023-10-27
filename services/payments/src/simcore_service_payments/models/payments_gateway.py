@@ -1,9 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, TypeAlias
-from uuid import UUID
+from typing import Literal
 
-from models_library.basic_types import AmountDecimal, NonEmptyStr
+from models_library.api_schemas_webserver.wallets import PaymentMethodUUID, PaymentUUID
+from models_library.basic_types import AmountDecimal, IDStr
 from pydantic import BaseModel, EmailStr, Extra, Field
 
 
@@ -19,18 +19,12 @@ class InitPayment(BaseModel):
     amount_dollars: AmountDecimal
     # metadata to store for billing or reference
     credits_: AmountDecimal = Field(..., alias="credits")
-    user_name: NonEmptyStr
+    user_name: IDStr
     user_email: EmailStr
-    wallet_name: NonEmptyStr
+    wallet_name: IDStr
 
     class Config:
         extra = Extra.forbid
-
-
-#
-# TODO: PaymentID was globally defined as a IDStr. We should change that to this and allow only UUIDS
-#
-PaymentUUID: TypeAlias = UUID
 
 
 class PaymentInitiated(BaseModel):
@@ -41,26 +35,23 @@ class PaymentCancelled(BaseModel):
     message: str | None = None
 
 
-PaymentMethodID: TypeAlias = UUID
-
-
 class InitPaymentMethod(BaseModel):
     method: Literal["CC"] = "CC"
     # metadata to store for billing or reference
-    user_name: NonEmptyStr
+    user_name: IDStr
     user_email: EmailStr
-    wallet_name: NonEmptyStr
+    wallet_name: IDStr
 
     class Config:
         extra = Extra.forbid
 
 
 class PaymentMethodInitiated(BaseModel):
-    payment_method_id: PaymentMethodID
+    payment_method_id: PaymentMethodUUID
 
 
 class GetPaymentMethod(BaseModel):
-    idr: PaymentMethodID
+    idr: PaymentMethodUUID
     card_holder_name: str
     card_number_masked: str
     card_type: str
@@ -73,7 +64,7 @@ class GetPaymentMethod(BaseModel):
 
 
 class BatchGetPaymentMethods(BaseModel):
-    payment_methods_ids: list[PaymentMethodID]
+    payment_methods_ids: list[PaymentMethodUUID]
 
 
 class PaymentMethodsBatch(BaseModel):

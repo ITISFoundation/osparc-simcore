@@ -15,7 +15,7 @@ from ...models.db import PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
-    PaymentMethodID,
+    PaymentMethodUUID,
     PaymentUUID,
 )
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
@@ -112,7 +112,7 @@ async def acknowledge_payment(
 
 @router.post("/payments-methods/{payment_method_id}:ack")
 async def acknowledge_payment_method(
-    payment_method_id: PaymentMethodID,
+    payment_method_id: PaymentMethodUUID,
     ack: AckPaymentMethod,
     session: Annotated[SessionData, Depends(get_current_session)],
 ):
