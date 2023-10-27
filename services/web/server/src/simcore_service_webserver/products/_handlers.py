@@ -85,4 +85,7 @@ async def update_product_template(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProductTemplateParams, request)
 
+    assert req_ctx  # nosec
+    assert path_params  # nosec
+
     raise NotImplementedError
