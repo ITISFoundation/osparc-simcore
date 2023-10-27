@@ -77,7 +77,7 @@ qx.Class.define("osparc.po.POCenter", {
 
     __getMsgTemplatesPage: function() {
       const title = this.tr("Message Templates");
-      const iconSrc = "@FontAwesome5Solid/envelope-open-text/22";
+      const iconSrc = "@FontAwesome5Solid/envelope-open/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
       const productInfo = new osparc.po.MessageTemplates();
