@@ -40,7 +40,7 @@
 qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function(openView) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
@@ -68,11 +68,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(store.getTags());
     Promise.all(preloadPromises)
       .then(() => {
-        if (openView && openView === "wallets" && walletsEnabled) {
-          const billingCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
-          billingCenterWindow.openOverview();
-        }
-
         const mainStack = this.__createMainStack();
         this._add(mainStack, {
           flex: 1
