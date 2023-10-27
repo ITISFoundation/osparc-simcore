@@ -68,6 +68,7 @@ def presigned_download_link(
         # Some fake auth, otherwise botocore.exceptions.NoCredentialsError: Unable to locate credentials
         aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
+        region_name="us-east-1",  # don't remove this
     )
     s3_client.create_bucket(Bucket=bucket_name)
 
@@ -205,6 +206,7 @@ async def test_solver_logs(
     pprint(dict(resp.headers))  # noqa: T203
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
