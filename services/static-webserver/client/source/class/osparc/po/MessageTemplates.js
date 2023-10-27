@@ -37,29 +37,7 @@ qx.Class.define("osparc.po.MessageTemplates", {
       };
       osparc.data.Resources.fetch("productMetadata", "get", params)
         .then(respData => {
-          // dummy
-          respData["messageTemplates"] = [{
-            templateId: "t1",
-            template: "<b>Hello world</b>"
-          }, {
-            templateId: "t2",
-            template: "Welcome to Sim4Life\
-            <p>\
-              Dear {{ name }} <br><br>\
-              Thank you for your interest in Sim4Life. You have successfully registered for {{ host }}.<br>\
-              Please activate your account via the link below:\
-            </p>\
-            <p>\
-              <a href='{{ link }}'>{{ link }}</a>\
-            </p>\
-            <p>\
-              Please don't hesitate to contact us at {{ support_email }} if you need further help.<br><br>\
-              Best regards <br>\
-              The <i>Sim4Life</i> Team\
-            </p>\
-            "
-          }];
-          this.__messageTemplates = respData["messageTemplates"];
+          this.__messageTemplates = respData["templates"];
           this.__buildLayout();
         });
     },
@@ -89,7 +67,7 @@ qx.Class.define("osparc.po.MessageTemplates", {
         this.__populateMessage(templateId);
       }, this);
       this.__messageTemplates.forEach(template => {
-        const lItem = new qx.ui.form.ListItem(template.templateId, null, template.templateId);
+        const lItem = new qx.ui.form.ListItem(template.id, null, template.id);
         templatesSB.add(lItem);
       });
       htmlViewer.addListener("textChanged", e => {
@@ -100,9 +78,9 @@ qx.Class.define("osparc.po.MessageTemplates", {
     },
 
     __populateMessage: function(templateId) {
-      const found = this.__messageTemplates.find(template => template.templateId === templateId);
+      const found = this.__messageTemplates.find(template => template.id === templateId);
       if (found) {
-        this.__htmlViewer.setText(found.template);
+        this.__htmlViewer.setText(found.content);
       }
     },
 
@@ -113,7 +91,9 @@ qx.Class.define("osparc.po.MessageTemplates", {
           productName,
           templateId
         },
-        data: newTemplate
+        data: {
+          content: newTemplate
+        }
       };
       osparc.data.Resources.fetch("productMetadata", "updateEmailTemplate", params)
         .then(() => osparc.FlashMessenger.logAs(this.tr("Template updated"), "INFO"))
