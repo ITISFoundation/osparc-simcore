@@ -215,6 +215,12 @@ qx.Class.define("osparc.store.Store", {
   },
 
   members: {
+    // fetch resources that do not require log in
+    preloadCalls: async function() {
+      await osparc.data.Resources.get("config");
+      await osparc.data.Resources.get("statics");
+    },
+
     /**
      * Updates an element or a set of elements in the store.
      * @param {String} resource Name of the resource property. If used with {osparc.data.Resources}, it has to be the same there.

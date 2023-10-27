@@ -98,8 +98,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __preloadCalls: async function() {
-      await osparc.data.Resources.get("config");
-      await osparc.data.Resources.get("statics");
+      osparc.store.Store.getInstance().preloadCalls();
     },
 
     __initRouting: function() {
