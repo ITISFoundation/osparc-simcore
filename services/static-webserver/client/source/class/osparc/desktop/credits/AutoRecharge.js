@@ -208,6 +208,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         font: "link-label-12"
       });
       addNewPaymentMethod.addListener("tap", () => this.fireEvent("addNewPaymentMethod"));
+      paymentMethodLayout.add(addNewPaymentMethod);
       layout.add(paymentMethodLayout);
 
       return layout;
