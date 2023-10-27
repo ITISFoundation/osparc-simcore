@@ -147,7 +147,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
 
       const rechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const rechargeTitle = new qx.ui.basic.Label().set({
-        value: this.tr("RECHARGING AMOUNT"),
+        value: this.tr("RECHARGING AMOUNT (US$)"),
         font: "text-14"
       });
       rechargeLayout.add(rechargeTitle);
@@ -168,7 +168,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
 
       const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const limitTitle = new qx.ui.basic.Label().set({
-        value: this.tr("RECHARGING AMOUNT"),
+        value: this.tr("MONTHLY LIMIT (US$)"),
         font: "text-14"
       });
       limitLayout.add(limitTitle);
