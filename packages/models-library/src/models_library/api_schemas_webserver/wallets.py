@@ -49,6 +49,7 @@ class PutWalletBodyParams(OutputSchema):
 # Payments to top-up credits in wallets
 #
 
+# NOTE: that these can be UUIDs (or not)
 PaymentID: TypeAlias = IDStr
 PaymentMethodID: TypeAlias = IDStr
 
