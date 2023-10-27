@@ -249,7 +249,7 @@ async function showLogger(page, show = true) {
 }
 
 async function findLogMessage(page, text) {
-  console.log("Finding Log Message");
+  console.log("Finding Log Message containing '" + text + "'");
   await this.showLogger(page, true);
 
   await utils.waitAndClick(page, '[osparc-test-id="logsFilterField"]');
