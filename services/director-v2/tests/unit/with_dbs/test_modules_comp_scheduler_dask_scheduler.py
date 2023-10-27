@@ -466,6 +466,7 @@ async def _assert_schedule_pipeline_PENDING(
                 tasks={f"{p.node_id}": p.image},
                 callback=scheduler._wake_up_scheduler_now,  # noqa: SLF001
                 metadata=mock.ANY,
+                hardware_info=mock.ANY,
             )
             for p in expected_pending_tasks
         ],
@@ -772,6 +773,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         },
         callback=scheduler._wake_up_scheduler_now,  # noqa: SLF001
         metadata=mock.ANY,
+        hardware_info=mock.ANY,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
