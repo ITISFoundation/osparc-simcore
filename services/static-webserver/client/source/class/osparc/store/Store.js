@@ -732,8 +732,6 @@ qx.Class.define("osparc.store.Store", {
     },
 
     reloadWallets: function() {
-      const store = osparc.store.Store.getInstance();
-
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("wallets", "get")
           .then(walletsData => {
@@ -742,11 +740,11 @@ qx.Class.define("osparc.store.Store", {
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
             });
-            store.setWallets(wallets);
+            this.setWallets(wallets);
 
             // 1) fetch the access rights
             const accessRightPromises = [];
-            store.getWallets().forEach(wallet => {
+            this.getWallets().forEach(wallet => {
               accessRightPromises.push(this.reloadWalletAccessRights(wallet));
             });
 
@@ -755,7 +753,7 @@ qx.Class.define("osparc.store.Store", {
                 wallets.sort(this.sortWallets);
                 // 2) depending on the access rights, fetch the auto recharge
                 const autoRechargePromises = [];
-                store.getWallets().forEach(wallet => {
+                this.getWallets().forEach(wallet => {
                   if (wallet.getMyAccessRights() && wallet.getMyAccessRights()["write"]) {
                     autoRechargePromises.push(this.reloadWalletAutoRecharge(wallet));
                   }
