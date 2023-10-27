@@ -341,7 +341,7 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
-async def _upload_to_s3(  # noqa: PLR0913
+async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     user_id: UserID,
     store_id: LocationID | None,
