@@ -31,7 +31,7 @@ qx.Class.define("osparc.editor.TextEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(2));
 
-    this.__textArea = this.getChildControl("text-area");
+    this.getChildControl("text-area");
     this.getChildControl("preview");
     if (initText) {
       this.setText(initText);
@@ -55,8 +55,6 @@ qx.Class.define("osparc.editor.TextEditor", {
   },
 
   members: {
-    __textArea: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -143,7 +141,7 @@ qx.Class.define("osparc.editor.TextEditor", {
           const buttons = this.getChildControl("buttons");
           control = new qx.ui.form.Button(this.tr("Save"));
           control.addListener("execute", () => {
-            const newText = this.__textArea.getValue();
+            const newText = this.getChildControl("text-area").getValue();
             this.fireDataEvent("textChanged", newText);
           }, this);
           buttons.add(control);
