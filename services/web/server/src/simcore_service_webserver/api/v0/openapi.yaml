@@ -6528,6 +6528,7 @@ components:
       - paymentMethodId
       - minBalanceInUsd
       - topUpAmountInUsd
+      - monthlyLimitInUsd
       type: object
       properties:
         enabled:
@@ -6545,18 +6546,19 @@ components:
           title: Minbalanceinusd
           minimum: 0.0
           type: number
-          description: Minimum balance in USD that triggers an auto-recharge
+          description: Minimum balance in USD that triggers an auto-recharge [Read
+            only]
         topUpAmountInUsd:
           title: Topupamountinusd
           minimum: 0.0
           type: number
           description: Amount in USD payed when auto-recharge condition is satisfied
-        topUpCountdown:
-          title: Topupcountdown
-          exclusiveMinimum: true
-          type: integer
-          description: Maximum number of top-ups left or None to denote unlimited
-          minimum: 0
+        monthlyLimitInUsd:
+          title: Monthlylimitinusd
+          minimum: 0.0
+          type: number
+          description: Maximum amount in USD charged within a natural month.None indicates
+            no limit.
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -8589,7 +8591,6 @@ components:
       required:
       - enabled
       - paymentMethodId
-      - minBalanceInUsd
       - topUpAmountInUsd
       type: object
       properties:
@@ -8600,19 +8601,14 @@ components:
           title: Paymentmethodid
           minLength: 1
           type: string
-        minBalanceInUsd:
-          title: Minbalanceinusd
-          minimum: 0.0
-          type: number
         topUpAmountInUsd:
           title: Topupamountinusd
           minimum: 0.0
           type: number
-        topUpCountdown:
-          title: Topupcountdown
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
+        monthlyLimitInUsd:
+          title: Monthlylimitinusd
+          minimum: 0.0
+          type: number
     RepoApiModel:
       title: RepoApiModel
       required:
