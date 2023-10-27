@@ -106,19 +106,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
 
     __requestData: function() {
       const wallet = this.getWallet();
-      // populate the payment methods
-      osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
-        .then(paymentMethods => {
-          const paymentMethodSB = this.__form.getItem("paymentMethod");
-          paymentMethodSB.removeAll();
-          paymentMethods.forEach(paymentMethod => {
-            let label = paymentMethod.cardHolderName;
-            label += " ";
-            label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
-            const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
-            paymentMethodSB.add(lItem);
-          });
-        });
+      const paymentMethodSB = this.__form.getItem("paymentMethod");
+      osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB);
 
       // populate the form
       const params = {

@@ -132,6 +132,21 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return false;
     },
 
+    populatePaymentMethodSelector: function(wallet, paymentMethodSB) {
+      // populate the payment methods
+      osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
+        .then(paymentMethods => {
+          paymentMethodSB.removeAll();
+          paymentMethods.forEach(paymentMethod => {
+            let label = paymentMethod.cardHolderName;
+            label += " ";
+            label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
+            const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
+            paymentMethodSB.add(lItem);
+          });
+        });
+    },
+
     getWallet: function(walletId) {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
