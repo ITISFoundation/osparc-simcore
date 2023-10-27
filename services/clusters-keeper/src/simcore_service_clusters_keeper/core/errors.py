@@ -17,6 +17,10 @@ class Ec2InstanceNotFoundError(ClustersKeeperRuntimeError):
     msg_template: str = "EC2 instance was not found"
 
 
+class Ec2InstanceTypeInvalidError(ClustersKeeperRuntimeError):
+    msg_template: str = "EC2 instance type is invalid"
+
+
 class Ec2TooManyInstancesError(ClustersKeeperRuntimeError):
     msg_template: str = (
         "The maximum amount of instances {num_instances} is already reached!"

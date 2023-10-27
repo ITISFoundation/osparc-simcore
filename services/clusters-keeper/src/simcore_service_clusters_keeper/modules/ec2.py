@@ -20,6 +20,7 @@ from types_aiobotocore_ec2.type_defs import FilterTypeDef
 from ..core.errors import (
     ConfigurationError,
     Ec2InstanceNotFoundError,
+    Ec2InstanceTypeInvalidError,
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
@@ -72,22 +73,27 @@ class ClustersKeeperEC2:
         instance_type_names: set[InstanceTypeType],
     ) -> list[EC2InstanceType]:
         """instance_type_names must be a set of unique values"""
-        instance_types = await self.client.describe_instance_types(
-            InstanceTypes=list(instance_type_names)
-        )
-        list_instances: list[EC2InstanceType] = []
-        for instance in instance_types.get("InstanceTypes", []):
-            with contextlib.suppress(KeyError):
-                list_instances.append(
-                    EC2InstanceType(
-                        name=instance["InstanceType"],
-                        cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                        ram=parse_obj_as(
-                            ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
-                        ),
+        try:
+            instance_types = await self.client.describe_instance_types(
+                InstanceTypes=list(instance_type_names)
+            )
+            list_instances: list[EC2InstanceType] = []
+            for instance in instance_types.get("InstanceTypes", []):
+                with contextlib.suppress(KeyError):
+                    list_instances.append(
+                        EC2InstanceType(
+                            name=instance["InstanceType"],
+                            cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                            ram=parse_obj_as(
+                                ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
+                            ),
+                        )
                     )
-                )
-        return list_instances
+            return list_instances
+        except botocore.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
+                raise Ec2InstanceTypeInvalidError from exc
+            raise  # pragma: no cover
 
     async def start_aws_instance(
         self,
