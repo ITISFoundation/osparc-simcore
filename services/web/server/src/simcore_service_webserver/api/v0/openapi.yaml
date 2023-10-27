@@ -3986,6 +3986,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallet:
+    get:
+      tags:
+      - wallets
+      summary: Get Default Wallet
+      operationId: get_default_wallet
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
   /v0/wallets/{wallet_id}:
     get:
       tags:

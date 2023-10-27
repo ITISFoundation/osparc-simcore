@@ -16,7 +16,10 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletGetWithAvailableCredits,
+)
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -209,3 +212,24 @@ async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
     assert mock_add_credits_to_wallet.called == product.is_payment_enabled
+
+    # Test whether default wallet was set in user preferences
+    url = client.app.router["get_default_wallet"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data
+    wallet = WalletGetWithAvailableCredits(**data)
+    assert wallet.available_credits > Decimal(0)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+async def test_get_default_wallet_not_found(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: type[web.HTTPException],
+    wallets_clean_db: AsyncIterator[None],
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+):
+    url = client.app.router["get_default_wallet"].url_for()
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPNotFound)
