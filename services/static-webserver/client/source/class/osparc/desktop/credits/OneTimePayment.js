@@ -328,28 +328,49 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
           osparcCredits: nCredits
         }
       };
-      osparc.data.Resources.fetch("payments", "startPayment", params)
-        .then(data => {
-          const paymentId = data["paymentId"];
-          const url = data["paymentFormUrl"];
-          const stayWithinApp = true;
-          const pgWindow = stayWithinApp ? this.__popUpPaymentGateway(paymentId, url) : this.__popUpPaymentGatewayOld(paymentId, url);
+      const paymentMethodId = this.__paymentMethodSB.getSelection()[0].getModel();
+      if (paymentMethodId) {
+        params.url["paymentMethodId"] = paymentMethodId;
+        osparc.data.Resources.fetch("payments", "payWithPaymentMethod", params)
+          .then(() => {
+            // Listen to socket event
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "paymentCompleted";
+            socket.on(slotName, jsonString => {
+              const paymentData = JSON.parse(jsonString);
+              this.__paymentCompleted(paymentData);
+              socket.removeSlot(slotName);
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          })
+          .finally(() => this.__buyingCredits(false));
+      } else {
+        osparc.data.Resources.fetch("payments", "startPayment", params)
+          .then(data => {
+            const paymentId = data["paymentId"];
+            const url = data["paymentFormUrl"];
+            const stayWithinApp = true;
+            const pgWindow = stayWithinApp ? this.__popUpPaymentGateway(paymentId, url) : this.__popUpPaymentGatewayOld(paymentId, url);
 
-          // Listen to socket event
-          const socket = osparc.wrapper.WebSocket.getInstance();
-          const slotName = "paymentCompleted";
-          socket.on(slotName, jsonString => {
-            const paymentData = JSON.parse(jsonString);
-            this.__paymentCompleted(paymentData);
-            socket.removeSlot(slotName);
-            pgWindow.close();
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-          this.__buyingCredits(false);
-        });
+            // Listen to socket event
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "paymentCompleted";
+            socket.on(slotName, jsonString => {
+              const paymentData = JSON.parse(jsonString);
+              this.__paymentCompleted(paymentData);
+              socket.removeSlot(slotName);
+              pgWindow.close();
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          })
+          .finally(() => this.__buyingCredits(false));
+      }
     },
 
     __popUpPaymentGateway: function(paymentId, url) {
