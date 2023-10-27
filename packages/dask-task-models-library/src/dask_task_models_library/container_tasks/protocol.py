@@ -18,7 +18,7 @@ ContainerLabelsDict: TypeAlias = dict[DockerLabelKey, str]
 
 
 class ContainerRemoteFct(Protocol):
-    def __call__(  # noqa: PLR0913
+    def __call__(  # pylint: disable=too-many-arguments # noqa: PLR0913
         self,
         *,
         docker_auth: DockerBasicAuth,
