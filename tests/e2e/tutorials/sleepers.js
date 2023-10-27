@@ -35,6 +35,8 @@ async function runTutorial() {
       "out_1"
     ];
     await tutorial.checkNodeOutputs(0, outFiles);
+
+    await tutorial.checkNodeLogsFunctional();
   }
   catch(err) {
     await tutorial.setTutorialFailed(true);
