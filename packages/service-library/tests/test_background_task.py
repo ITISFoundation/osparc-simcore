@@ -127,4 +127,5 @@ async def test_periodic_task_context_manager(
         await asyncio.sleep(5 * task_interval.total_seconds())
         assert asyncio_task.cancelled() is False
         assert asyncio_task.done() is False
-    assert asyncio_task.cancelled() is True
+    # NOTE: task is no longer cancelled but gracefully stopped
+    assert asyncio_task.cancelled() is False
