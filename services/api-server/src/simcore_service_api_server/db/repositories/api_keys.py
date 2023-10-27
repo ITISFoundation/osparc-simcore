@@ -24,7 +24,7 @@ class ApiKeysRepository(BaseRepository):
                 db_result = await conn.execute(stmt)
                 row = await db_result.fetchone()
                 if row:
-                    result = (row.user_id, row.product_id)
+                    result = (row.user_id, row.product_name)
 
         except DatabaseError as err:
             _logger.debug("Failed to get user id: %s", err)

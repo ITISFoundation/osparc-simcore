@@ -10,6 +10,7 @@ class ApiKeyInDB(ApiKey):
     id_: int = Field(0, alias="id")
     display_name: str
     user_id: int
+    product_name: int
 
     class Config:
         orm_mode = True
