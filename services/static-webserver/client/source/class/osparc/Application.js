@@ -98,8 +98,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __preloadCalls: async function() {
-      await osparc.data.Resources.get("config");
-      await osparc.data.Resources.get("statics");
+      await osparc.store.Store.getInstance().preloadCalls();
     },
 
     __initRouting: function() {
@@ -332,10 +331,6 @@ qx.Class.define("osparc.Application", {
     __loadMainPage: async function(studyId = null) {
       // logged in
 
-      // Invalidate the entire cache
-      osparc.store.Store.getInstance().invalidateEntireCache();
-      await this.__preloadCalls();
-
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (osparc.product.Utils.shouldHaveWalletsEnabled() && !walletsEnabled) {
         const infoLabel = this.tr("Credits information is not ready.<br>Please contact us by email:<br>");
@@ -403,10 +398,6 @@ qx.Class.define("osparc.Application", {
     },
 
     __loadNodeViewerPage: async function(studyId, viewerNodeId) {
-      // Invalidate the entire cache
-      osparc.store.Store.getInstance().invalidateEntireCache();
-      await this.__preloadCalls();
-
       this.__connectWebSocket();
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
     },
@@ -450,7 +441,11 @@ qx.Class.define("osparc.Application", {
         this.__mainPage.closeEditor();
       }
       osparc.utils.Utils.closeHangingWindows();
-      osparc.store.Store.getInstance().dispose();
+
+      // Remove all bindings and Invalidate the entire cache
+      const store = osparc.store.Store.getInstance();
+      store.removeAllBindings();
+      store.invalidateEntireCache();
 
       // back to the dark theme to make pretty forms
       const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
