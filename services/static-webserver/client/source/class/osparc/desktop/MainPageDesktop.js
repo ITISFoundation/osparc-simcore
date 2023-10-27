@@ -70,7 +70,26 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
         this._add(desktopCenter, {
           flex: 1
         });
+
+        this.__listenToWalletSocket();
       });
+  },
+
+  members: {
+    __listenToWalletSocket: function() {
+      const store = osparc.store.Store.getInstance();
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "walletOsparcCreditsUpdated";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+          if (walletFound) {
+            walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+          }
+        }, this);
+      }
+    }
   }
 });
 

@@ -73,6 +73,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           flex: 1
         });
 
+        this.__listenToWalletSocket();
         this.__attachHandlers();
       });
   },
@@ -87,6 +88,21 @@ qx.Class.define("osparc.desktop.MainPage", {
     __dashboardLayout: null,
     __loadingPage: null,
     __studyEditor: null,
+
+    __listenToWalletSocket: function() {
+      const store = osparc.store.Store.getInstance();
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "walletOsparcCreditsUpdated";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+          if (walletFound) {
+            walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+          }
+        }, this);
+      }
+    },
 
     __backToDashboardPressed: function() {
       if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
