@@ -20,7 +20,7 @@
  * It can be used to dit a longer texts
  */
 
-qx.Class.define("osparc.editor.TextEditor", {
+qx.Class.define("osparc.editor.MarkdownEditor", {
   extend: qx.ui.core.Widget,
 
   /**
