@@ -167,6 +167,7 @@ async def _generate_task_image(
 
 
 async def _generate_tasks_list_from_project(
+    *,
     project: ProjectAtDB,
     catalog_client: CatalogClient,
     director_client: DirectorV0Client,
@@ -369,15 +370,15 @@ class CompTasksRepository(BaseRepository):
             list_of_comp_tasks_in_project: list[
                 CompTaskAtDB
             ] = await _generate_tasks_list_from_project(
-                project,
-                catalog_client,
-                director_client,
-                published_nodes,
-                user_id,
-                product_name,
-                conn,
-                rut_client,
-                is_wallet,
+                project=project,
+                catalog_client=catalog_client,
+                director_client=director_client,
+                published_nodes=published_nodes,
+                user_id=user_id,
+                product_name=product_name,
+                connection=conn,
+                rut_client=rut_client,
+                is_wallet=is_wallet,
             )
             # get current tasks
             result = await conn.execute(
