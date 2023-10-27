@@ -10,11 +10,13 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login._constants import MSG_USER_DELETED
+from simcore_service_webserver.products.api import get_product
 
 
 @pytest.mark.parametrize(
@@ -144,3 +146,30 @@ async def test_cannot_unregister_invalid_credentials(
         },
     )
     await assert_status(response, web.HTTPConflict)
+
+
+@pytest.mark.testit
+async def test_request_an_account(
+    client: TestClient, faker: Faker, mocked_send_email: MagicMock
+):
+    assert client.app
+
+    response = await client.post(
+        "/v0/auth/request-account",
+        json={
+            "form": {
+                "first_name": faker.first_name(),
+                "last_name": faker.last_name(),
+                "email": faker.email(),
+            }
+        },
+    )
+
+    await assert_status(response, web.HTTPNoContent)
+
+    product = get_product(client.app, product_name="osparc")
+
+    # sent email?
+    mimetext = mocked_send_email.call_args[1]["message"]
+    assert mimetext["Subject"]
+    assert mimetext["To"] == product.support_email
