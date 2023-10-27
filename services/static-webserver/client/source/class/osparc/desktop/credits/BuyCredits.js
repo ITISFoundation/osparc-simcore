@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   events: {
+    "addNewPaymentMethod": "qx.event.type.Event",
     "transactionCompleted": "qx.event.type.Event"
   },
 
@@ -78,6 +79,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             maxWidth: 400
           });
           this.bind("contextWallet", control, "wallet");
+          control.addListener("addNewPaymentMethod", () => this.fireEvent("transactionCompleted"));
           control.addListener("transactionCompleted", () => this.fireEvent("transactionCompleted"));
           this._add(control);
           break;

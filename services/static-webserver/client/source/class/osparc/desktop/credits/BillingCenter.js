@@ -152,6 +152,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       buyCredits.set({
         margin: 10
       });
+      buyCredits.addListener("addNewPaymentMethod", () => this.__openPaymentMethods(true), this);
       buyCredits.addListener("transactionCompleted", () => this.__openTransactions(true), this);
       page.add(buyCredits);
       return page;
@@ -224,6 +225,10 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __openActivity: function() {
       this.__openPage(this.__activityPage);
+    },
+
+    __openPaymentMethods: function() {
+      this.__openPage(this.__paymentMethodsPage);
     },
 
     __openTransactions: function(fetchTransactions = false) {

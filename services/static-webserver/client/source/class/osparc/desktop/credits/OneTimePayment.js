@@ -64,6 +64,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
   },
 
   events: {
+    "addNewPaymentMethod": "qx.event.type.Event",
     "transactionCompleted": "qx.event.type.Event"
   },
 
@@ -111,6 +112,14 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         myAccessRights = wallet.getMyAccessRights();
       }
       this.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
+
+      const paymentMethodSB = this.__paymentMethodSB;
+      osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB)
+        .then(() => {
+          const newItem = new qx.ui.form.ListItem("", null, null);
+          paymentMethodSB.addAt(newItem, 0);
+          paymentMethodSB.setSelection([newItem]);
+        });
     },
 
     __buildLayout: function() {
@@ -218,17 +227,20 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       });
 
       const paymentMethodSB = this.__paymentMethodSB = new qx.ui.form.SelectBox().set({
+        minWidth: 200,
         maxWidth: 200
       });
-      const wallet = this.getWallet();
-      osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB)
-        .then(() => {
-          const newItem = new qx.ui.form.ListItem(this.tr("New Credit Card"), null, null);
-          paymentMethodSB.add(newItem);
-          paymentMethodSB.setSelection([newItem]);
-        });
       layout.add(paymentMethodSB, {
         row: 1,
+        column: 0
+      });
+
+      const addNewPaymentMethod = new osparc.ui.form.LinkButton(this.tr("Add new Payment Method")).set({
+        font: "text-12"
+      });
+      addNewPaymentMethod.addListener("execute", () => this.fireEvent("addNewPaymentMethod"));
+      layout.add(addNewPaymentMethod, {
+        row: 2,
         column: 0
       });
 
