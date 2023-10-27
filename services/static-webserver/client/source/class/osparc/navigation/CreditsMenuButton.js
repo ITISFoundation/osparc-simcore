@@ -116,11 +116,12 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
         const creditsLeft = wallet.getCreditsAvailable();
         if (creditsLeft !== null) {
           text = "<span style='font-size:12px;display:inline-block'>CREDITS</span><br>";
-          let creditsLeftText = osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
+          let nCreditsText = "";
           if (used !== null) {
-            creditsLeftText += " / " + osparc.desktop.credits.Utils.creditsToFixed(used);
+            nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(used) + " / ";
           }
-          text += `<span>${creditsLeftText}</span>`;
+          nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
+          text += `<span>${nCreditsText}</span>`;
           this.set({
             minWidth: used ? 90 : null,
             width: used ? 90 : null

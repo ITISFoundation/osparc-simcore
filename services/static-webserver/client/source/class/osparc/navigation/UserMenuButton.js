@@ -92,7 +92,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       if (contextWallet) {
         const credits = contextWallet.getCreditsAvailable();
         if (credits !== null) {
-          const progress = osparc.desktop.credits.Utils.normalizeCredits(credits);
+          const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make hallo red
           const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
           const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
           const textColor = qx.theme.manager.Color.getInstance().resolve("text");

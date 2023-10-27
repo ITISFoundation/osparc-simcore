@@ -86,7 +86,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
         });
 
         const indicator = this.getChildControl("credits-bar");
-        const progress = osparc.desktop.credits.Utils.normalizeCredits(credits);
+        const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make bar red
         const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
         const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
         const textColor = qx.theme.manager.Color.getInstance().resolve("text");
