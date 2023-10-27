@@ -230,7 +230,7 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": {"aws_ec2_instance": ["aws-specific-instance"]},
+                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]
