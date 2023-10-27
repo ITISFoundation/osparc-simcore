@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator
 
 import pytest
 import redis.asyncio as aioredis
@@ -14,6 +14,7 @@ from servicelib.osparc_resource_manager import (
     _get_key_resource_name,
 )
 from servicelib.redis import RedisClientSDK
+from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_simcore_core_services_selection = [
@@ -78,8 +79,11 @@ async def test_workflow_resource_is_tracked(
     assert not await _is_key_present(redis_client_sdk.redis, resource_key)
 
 
+@pytest.mark.parametrize("concurrent_requests", [1, 2, 100])
 async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_external_system(
-    redis_client_sdk: RedisClientSDK, resource_identifier: ResourceIdentifier
+    redis_client_sdk: RedisClientSDK,
+    resource_identifier: ResourceIdentifier,
+    concurrent_requests: int,
 ):
     @dataclass
     class ExternalSystemAPI:
@@ -132,17 +136,27 @@ async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_externa
 
     assert not await _resource_exists(resource_identifier)
 
-    await manager.add(
-        OsparcResourceType.SERVICE,
-        identifier=resource_identifier,
-        create=True,
-        letter_count=10,
+    await logged_gather(
+        *(
+            manager.add(
+                OsparcResourceType.SERVICE,
+                identifier=resource_identifier,
+                create=True,
+                letter_count=10,
+            )
+            for _ in range(concurrent_requests)
+        )
     )
 
     assert await _resource_exists(resource_identifier)
 
-    await manager.remove(
-        OsparcResourceType.SERVICE, identifier=resource_identifier, destroy=True
+    await logged_gather(
+        *(
+            manager.remove(
+                OsparcResourceType.SERVICE, identifier=resource_identifier, destroy=True
+            )
+            for _ in range(concurrent_requests)
+        )
     )
 
     assert not await _resource_exists(resource_identifier)
