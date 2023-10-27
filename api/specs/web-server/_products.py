@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     GetCreditPrice,
     GetProduct,
-    GetProductTemplate,
     InvitationGenerated,
     UpdateProductTemplate,
 )
@@ -46,7 +45,6 @@ async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
 
 @router.put(
     "/products/{product_name}/templates/{template_id}",
-    response_model=Envelope[GetProductTemplate],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def update_product_template(
