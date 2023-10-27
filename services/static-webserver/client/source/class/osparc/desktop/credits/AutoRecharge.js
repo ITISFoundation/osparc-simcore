@@ -207,7 +207,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       return {
         minBalanceInUsd: 0,
         topUpAmountInUsd: this.__rechargeField.getValue(),
-        topUpCountdown: -1,
+        topUpCountdown: 30,
         paymentMethodId: this.__paymentMethodField.getSelection()[0].getModel()
       };
     },
