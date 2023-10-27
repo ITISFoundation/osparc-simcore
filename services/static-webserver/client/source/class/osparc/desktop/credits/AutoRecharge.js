@@ -37,7 +37,9 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
   },
 
   members: {
-    __form: null,
+    __rechargeField: null,
+    __limitField: null,
+    __paymentMethodField: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -104,10 +106,10 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       this.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
     },
 
-    __requestData: function() {
+    __requestData: async function() {
       const wallet = this.getWallet();
-      const paymentMethodSB = this.__form.getItem("paymentMethod");
-      osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB);
+      const paymentMethodSB = this.__paymentMethodField;
+      await osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB);
 
       // populate the form
       const params = {
@@ -121,10 +123,9 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __populateForm: function(arData) {
-      this.__form.getItem("minBalanceInUsd").setValue(arData["minBalanceInUsd"]);
-      this.__form.getItem("topUpAmountInUsd").setValue(arData["topUpAmountInUsd"]);
-      this.__form.getItem("topUpCountdown").setValue(arData["topUpCountdown"] ? arData["topUpCountdown"] : -1);
-      const paymentMethodSB = this.__form.getItem("paymentMethod");
+      this.__rechargeField.setValue(arData["topUpAmountInUsd"]);
+      this.__limitField.setValue(arData["topUpCountdown"] > 0 ? arData["topUpCountdown"]*arData["topUpAmountInUsd"] : 0);
+      const paymentMethodSB = this.__paymentMethodField;
       const paymentMethodFound = paymentMethodSB.getSelectables().find(selectable => selectable.getModel() === arData["paymentMethodId"]);
       if (paymentMethodFound) {
         paymentMethodSB.setSelection([paymentMethodFound]);
@@ -142,73 +143,72 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __getAutoRechargeForm: function() {
-      const form = this.__form = new qx.ui.form.Form();
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const lowerThresholdLabel = new qx.ui.basic.Label().set({
-        value: this.tr("When balance goes below (US$):"),
+      const rechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const rechargeTitle = new qx.ui.basic.Label().set({
+        value: this.tr("RECHARGING AMOUNT"),
         font: "text-14"
       });
-      layout.add(lowerThresholdLabel);
-
-      const lowerThresholdField = new qx.ui.form.Spinner().set({
-        minimum: 0,
+      rechargeLayout.add(rechargeTitle);
+      const rechargeField = this.__rechargeField = new qx.ui.form.Spinner().set({
+        minimum: 10,
         maximum: 10000,
         maxWidth: 200
       });
-      form.add(lowerThresholdField, null, null, "minBalanceInUsd");
-      layout.add(lowerThresholdField);
+      rechargeLayout.add(rechargeField);
+      const rechargeHelper = new qx.ui.basic.Label().set({
+        value: this.tr("When your account reaches 25, it gets recharged by this amount"),
+        font: "text-12",
+        rich: true,
+        wrap: true
+      });
+      rechargeLayout.add(rechargeHelper);
+      layout.add(rechargeLayout);
 
-      const balanceBackLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Top up with (US$):"),
+      const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const limitTitle = new qx.ui.basic.Label().set({
+        value: this.tr("RECHARGING AMOUNT"),
         font: "text-14"
       });
-      layout.add(balanceBackLabel);
-
-      const paymentAmountField = new qx.ui.form.Spinner().set({
-        minimum: 0,
-        maximum: 10000,
+      limitLayout.add(limitTitle);
+      const limitField = this.__limitField = new qx.ui.form.Spinner().set({
+        minimum: 100,
+        maximum: 100000,
         maxWidth: 200
       });
-      form.add(paymentAmountField, null, null, "topUpAmountInUsd");
-      layout.add(paymentAmountField);
+      limitLayout.add(limitField);
+      const limitHelper = new qx.ui.basic.Label().set({
+        value: this.tr("To disable spending limit, clear input field"),
+        font: "text-12",
+        rich: true,
+        wrap: true
+      });
+      limitLayout.add(limitHelper);
+      layout.add(limitLayout);
 
-      const nTopUpsLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Number of Top ups left (-1 unlimited):"),
+      const paymentMethodLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const paymentMethodTitle = new qx.ui.basic.Label().set({
+        value: this.tr("PAY WITH"),
         font: "text-14"
       });
-      layout.add(nTopUpsLabel);
-
-      const nTopUpsField = new qx.ui.form.Spinner().set({
-        minimum: -1,
-        maximum: 100,
+      paymentMethodLayout.add(paymentMethodTitle);
+      const paymentMethodField = this.__paymentMethodField = new qx.ui.form.SelectBox().set({
+        minWidth: 200,
         maxWidth: 200
       });
-      form.add(nTopUpsField, null, null, "topUpCountdown");
-      layout.add(nTopUpsField);
-
-      const label = new qx.ui.basic.Label().set({
-        value: this.tr("Payment Method:"),
-        font: "text-14"
-      });
-      layout.add(label);
-
-      const paymentMethods = new qx.ui.form.SelectBox().set({
-        maxWidth: 200
-      });
-      form.add(paymentMethods, null, null, "paymentMethod");
-      layout.add(paymentMethods);
+      paymentMethodLayout.add(paymentMethodField);
+      layout.add(paymentMethodLayout);
 
       return layout;
     },
 
     __getFieldsData: function() {
       return {
-        minBalanceInUsd: this.__form.getItem("minBalanceInUsd").getValue(),
-        topUpAmountInUsd: this.__form.getItem("topUpAmountInUsd").getValue(),
-        topUpCountdown: this.__form.getItem("topUpCountdown").getValue(),
-        paymentMethodId: this.__form.getItem("paymentMethod").getSelection()[0].getModel()
+        minBalanceInUsd: 0,
+        topUpAmountInUsd: this.__rechargeField.getValue(),
+        topUpCountdown: -1,
+        paymentMethodId: this.__paymentMethodField.getSelection()[0].getModel()
       };
     },
 
