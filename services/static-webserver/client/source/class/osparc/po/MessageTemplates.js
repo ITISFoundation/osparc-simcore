@@ -65,6 +65,8 @@ qx.Class.define("osparc.po.MessageTemplates", {
     },
 
     __buildLayout: function() {
+      this._removeAll();
+
       const templatesSB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
@@ -73,6 +75,7 @@ qx.Class.define("osparc.po.MessageTemplates", {
       const htmlViewer = this.__htmlViewer = new osparc.editor.HtmlEditor().set({
         minHeight: 400
       });
+      htmlViewer.getChildControl("cancel-button").exclude();
       const container = new qx.ui.container.Scroll();
       container.add(htmlViewer, {
         flex: 1
@@ -89,6 +92,11 @@ qx.Class.define("osparc.po.MessageTemplates", {
         const lItem = new qx.ui.form.ListItem(template.templateId, null, template.templateId);
         templatesSB.add(lItem);
       });
+      htmlViewer.addListener("textChanged", e => {
+        const newTemplate = e.getData();
+        const templateId = templatesSB.getSelection()[0].getModel();
+        this.__saveTemplate(templateId, newTemplate);
+      });
     },
 
     __populateMessage: function(templateId) {
@@ -96,6 +104,24 @@ qx.Class.define("osparc.po.MessageTemplates", {
       if (found) {
         this.__htmlViewer.setText(found.template);
       }
+    },
+
+    __saveTemplate: function(templateId, newTemplate) {
+      const productName = osparc.product.Utils.getProductName();
+      const params = {
+        url: {
+          productName,
+          templateId
+        },
+        data: newTemplate
+      };
+      osparc.data.Resources.fetch("productMetadata", "updateEmailTemplate", params)
+        .then(() => osparc.FlashMessenger.logAs(this.tr("Template updated"), "INFO"))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        })
+        .finally(() => this.__fetchInfo());
     }
   }
 });
