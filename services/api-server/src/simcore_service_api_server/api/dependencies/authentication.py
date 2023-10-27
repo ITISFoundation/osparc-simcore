@@ -2,9 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from pydantic.types import PositiveInt
 
-from ...db.repositories.api_keys import ApiKeysRepository
+from ...db.repositories.api_keys import ApiKeysRepository, User
 from ...db.repositories.users import UsersRepository
 from .database import get_repository
 
@@ -25,26 +24,26 @@ def _create_exception() -> HTTPException:
     )
 
 
-async def get_current_user_id(
+async def get_current_user(
     apikeys_repo: Annotated[
         ApiKeysRepository, Depends(get_repository(ApiKeysRepository))
     ],
     credentials: HTTPBasicCredentials = Security(basic_scheme),
-) -> PositiveInt:
-    user_id = await apikeys_repo.get_user_id(
+) -> User:
+    user: User | None = await apikeys_repo.get_user(
         api_key=credentials.username, api_secret=credentials.password
     )
-    if not user_id:
+    if user is None:
         exc = _create_exception()
         raise exc
-    return user_id
+    return user
 
 
 async def get_active_user_email(
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user: Annotated[User, Depends(get_current_user)],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
 ) -> str:
-    email = await users_repo.get_email_from_user_id(user_id)
+    email = await users_repo.get_email_from_user_id(user.user_id)
     if not email:
         exc = _create_exception()
         raise exc
