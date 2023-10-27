@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
           this._add(control);
           break;
         case "summary-view":
-          control = this.__getSummaryView();
+          control = this.__getOneTimePaymentForm();
           this._add(control);
           break;
         case "payment-methods":
@@ -138,7 +138,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       }
     },
 
-    __getSummaryView: function() {
+    __getOneTimePaymentForm: function() {
       const grid = new qx.ui.layout.Grid(25, 5);
       grid.setColumnAlign(0, "center", "middle");
       grid.setColumnAlign(1, "center", "middle");
