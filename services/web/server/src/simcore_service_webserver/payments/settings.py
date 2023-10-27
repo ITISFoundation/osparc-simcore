@@ -46,9 +46,9 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         description="FAKE Base url to the payment gateway",
     )
 
-    PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE: NonNegativeDecimal = Field(
+    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD: NonNegativeDecimal = Field(
         default=20.0,
-        description="Default value on the minimum balance to top-up for auto-recharge",
+        description="Minimum balance in USD to top-up for auto-recharge",
     )
 
     PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(

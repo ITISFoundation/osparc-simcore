@@ -25,9 +25,8 @@ def _from_db_to_api_model(db_model: PaymentsAutorechargeDB) -> GetWalletAutoRech
     return GetWalletAutoRecharge(
         enabled=db_model.enabled,
         payment_method_id=db_model.primary_payment_method_id,
-        min_balance_in_usd=db_model.min_balance_in_usd,
         top_up_amount_in_usd=db_model.top_up_amount_in_usd,
-        top_up_countdown=db_model.top_up_countdown,
+        monthly_limit_in_usd=db_model.monthly_limit_in_usd,
     )
 
 
@@ -38,9 +37,8 @@ def _from_api_to_db_model(
         wallet_id=wallet_id,
         enabled=api_model.enabled,
         primary_payment_method_id=api_model.payment_method_id,
-        min_balance_in_usd=api_model.min_balance_in_usd,
         top_up_amount_in_usd=api_model.top_up_amount_in_usd,
-        top_up_countdown=api_model.top_up_countdown,
+        monthly_limit_in_usd=api_model.monthly_limit_in_usd,
     )
 
 
@@ -79,9 +77,9 @@ async def get_wallet_payment_autorecharge(
         return GetWalletAutoRecharge(
             enabled=False,
             payment_method_id=payment_method_id,
-            min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE,
+            min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD,
             top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
-            top_up_countdown=None,
+            monthly_limit_in_usd=None,
         )
 
     return _from_db_to_api_model(got)

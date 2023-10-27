@@ -22,9 +22,8 @@ class PaymentsAutorechargeDB(BaseModel):
     wallet_id: WalletID
     enabled: bool
     primary_payment_method_id: PaymentMethodID
-    min_balance_in_usd: NonNegativeDecimal
     top_up_amount_in_usd: NonNegativeDecimal
-    top_up_countdown: PositiveInt | None
+    monthly_limit_in_usd: NonNegativeDecimal
 
     class Config:
         orm_mode = True
@@ -70,9 +69,8 @@ async def replace_wallet_autorecharge(
             wallet_id=wallet_id,
             enabled=new.enabled,
             primary_payment_method_id=new.primary_payment_method_id,
-            min_balance_in_usd=new.min_balance_in_usd,
             top_up_amount_in_usd=new.top_up_amount_in_usd,
-            top_up_countdown=new.top_up_countdown,
+            monthly_limit_in_usd=new.monthly_limit_in_usd,
         )
         result = await conn.execute(stmt)
         row = await result.first()

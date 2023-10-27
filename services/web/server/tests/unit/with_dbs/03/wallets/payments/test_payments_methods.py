@@ -22,9 +22,10 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
 )
+from simcore_service_webserver.payments.settings import PaymentsSettings
+from simcore_service_webserver.payments.settings import get_plugin_settings
 from simcore_service_webserver.payments.settings import (
-    PaymentsSettings,
-    get_plugin_settings,
+    get_plugin_settings as get_payments_plugin_settings,
 )
 
 
@@ -164,6 +165,7 @@ async def test_wallet_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
+    assert client.app
     wallet = logged_user_wallet
 
     # get default
@@ -172,7 +174,7 @@ async def test_wallet_autorecharge(
     data, _ = await assert_status(response, web.HTTPOk)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
-    assert default_auto_recharge.top_up_countdown is None
+    assert default_auto_recharge.monthly_limit_in_usd is None
     assert default_auto_recharge.payment_method_id is None
 
     # A wallet with a payment method
@@ -186,7 +188,7 @@ async def test_wallet_autorecharge(
     data, _ = await assert_status(response, web.HTTPOk)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
-    assert default_auto_recharge.top_up_countdown is None
+    assert default_auto_recharge.monthly_limit_in_usd is None
     assert default_auto_recharge.payment_method_id == payment_method_id
 
     # Activate auto-rechange
@@ -194,9 +196,8 @@ async def test_wallet_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
             "paymentMethodId": payment_method_id,
-            "minBalanceInUsd": 0.0,
-            "topUpAmountInUsd": 100.0,  # $
-            "topUpCountdown": 3,
+            "topUpAmountInUsd": 123.45,  # $
+            "monthlyLImitInUsd": 6543.21,  # $
             "enabled": True,
         },
     )
@@ -204,9 +205,11 @@ async def test_wallet_autorecharge(
     updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert updated_auto_recharge == GetWalletAutoRecharge(
         payment_method_id=payment_method_id,
-        min_balance_in_usd=0.0,
-        top_up_amount_in_usd=100.0,  # $
-        top_up_countdown=3,
+        min_balance_in_usd=get_payments_plugin_settings(
+            client.app
+        ).PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD,
+        top_up_amount_in_usd=125.45,  # $
+        monthly_limit_in_usd=6543.21,  # $
         enabled=True,
     )
 
