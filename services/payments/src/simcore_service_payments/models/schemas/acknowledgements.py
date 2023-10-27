@@ -1,13 +1,17 @@
 from typing import Any, ClassVar
 
+from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import BaseModel, Field, HttpUrl, validator
-
-from ..payments_gateway import PaymentID, PaymentMethodID
 
 
 class _BaseAck(BaseModel):
     success: bool
     message: str = Field(default=None)
+
+
+#
+# ACK payment-methods
+#
 
 
 class AckPaymentMethod(_BaseAck):
@@ -47,6 +51,11 @@ _EXAMPLES: list[dict[str, Any]] = [
         "message": "No more credit",
     },
 ]
+
+
+#
+# ACK one-time payments
+#
 
 
 class AckPayment(_BaseAck):
