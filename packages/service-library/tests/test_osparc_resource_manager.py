@@ -8,7 +8,7 @@ import redis.asyncio as aioredis
 from faker import Faker
 from servicelib.osparc_resource_manager import (
     BaseResourceHandler,
-    OsparcResoruceManager,
+    OsparcResourceManager,
     OsparcResourceType,
     ResourceIdentifier,
     _get_key_resource_name,
@@ -56,7 +56,7 @@ async def test_workflow_resource_is_tracked(
     redis_client_sdk: RedisClientSDK, resource_identifier: ResourceIdentifier
 ):
     # setup oSPARC resource manager for handling a resource of type service
-    manager = OsparcResoruceManager(redis_client_sdk=redis_client_sdk)
+    manager = OsparcResourceManager(redis_client_sdk=redis_client_sdk)
 
     resource_key = _get_key_resource_name(
         OsparcResourceType.DYNAMIC_SERVICE, resource_identifier
@@ -118,7 +118,7 @@ async def test_workflow_resource_tracked_and_is_crated_then_destroyed_in_externa
         ) -> None:
             self.api.create(identifier, letter_count)
 
-    manager = OsparcResoruceManager(redis_client_sdk=redis_client_sdk)
+    manager = OsparcResourceManager(redis_client_sdk=redis_client_sdk)
 
     external_api = ExternalSystemAPI()
     manager.register(
@@ -195,7 +195,7 @@ async def test_remove_not_present_resources(
 
     mocked_api = MockedExternalAPI()
 
-    manager = OsparcResoruceManager(redis_client_sdk=redis_client_sdk)
+    manager = OsparcResourceManager(redis_client_sdk=redis_client_sdk)
 
     manager.register(
         OsparcResourceType.DYNAMIC_SERVICE,

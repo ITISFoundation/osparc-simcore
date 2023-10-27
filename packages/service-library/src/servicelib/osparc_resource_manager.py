@@ -64,7 +64,7 @@ def _get_key_resource_name(
 
 
 @dataclass
-class OsparcResoruceManager:
+class OsparcResourceManager:
     """
     Allows to track and manage the lifecycle of resource inside oSPARc
 
