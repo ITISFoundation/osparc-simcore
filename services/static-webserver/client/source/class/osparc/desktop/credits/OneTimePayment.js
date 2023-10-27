@@ -235,7 +235,8 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         column: 0
       });
 
-      const addNewPaymentMethod = new osparc.ui.form.LinkButton(this.tr("Add new Payment Method")).set({
+      const addNewPaymentMethod = new osparc.ui.form.LinkButton(this.tr("Add Payment Method")).set({
+        padding: 0,
         font: "text-12"
       });
       addNewPaymentMethod.addListener("execute", () => this.fireEvent("addNewPaymentMethod"));
