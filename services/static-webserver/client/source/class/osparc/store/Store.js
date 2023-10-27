@@ -310,13 +310,17 @@ qx.Class.define("osparc.store.Store", {
       if (typeof resources === "string" || resources instanceof String) {
         this.reset(resources);
       } else {
-        let propertyArray;
+        let propertyKeys;
         if (resources == null) {
-          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
+          propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
         } else if (Array.isArray(resources)) {
-          propertyArray = resources;
+          propertyKeys = resources;
         }
-        propertyArray.forEach(propName => {
+        propertyKeys.forEach(propName => {
+          // do not reset these resources
+          if (["statics", "config"].includes(propName)) {
+            return;
+          }
           this.reset(propName);
           // Not sure reset actually works
           const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
