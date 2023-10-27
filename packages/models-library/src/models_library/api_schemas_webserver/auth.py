@@ -2,9 +2,13 @@ from datetime import timedelta
 from typing import Any, ClassVar
 
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, Json, SecretStr
 
 from ._base import InputSchema
+
+
+class AccountRequestInfo(InputSchema):
+    form: Json
 
 
 class UnregisterCheck(InputSchema):

@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 from models_library.products import ProductName
 from pydantic import ConstrainedInt, Field, HttpUrl, PositiveInt
 
-from ..basic_types import NonNegativeDecimal
+from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema, OutputSchema
 
@@ -24,6 +24,15 @@ class GetCreditPrice(OutputSchema):
                 {"productName": "osparc", "usdPerCredit": "10"},
             ]
         }
+
+
+class GetProductTemplate(OutputSchema):
+    id_: IDStr = Field(..., alias="id")
+    content: str
+
+
+class UpdateProductTemplate(InputSchema):
+    content: str
 
 
 class GetProduct(OutputSchema):
@@ -46,6 +55,11 @@ class GetProduct(OutputSchema):
     max_open_studies_per_user: PositiveInt | None
     is_payment_enabled: bool
     credits_per_usd: NonNegativeDecimal | None
+
+    templates: list[GetProductTemplate] = Field(
+        default_factory=list,
+        description="List of templates available to this product for communications (e.g. emails, sms, etc)",
+    )
 
 
 class ExtraCreditsUsdRangeInt(ConstrainedInt):
