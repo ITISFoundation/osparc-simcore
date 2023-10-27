@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
-from uuid import UUID
 
 from pydantic import Field, HttpUrl, PositiveInt
 
@@ -51,7 +50,7 @@ class PutWalletBodyParams(OutputSchema):
 #
 
 PaymentID: TypeAlias = IDStr
-PaymentUUID: TypeAlias = UUID
+PaymentMethodID: TypeAlias = IDStr
 
 
 class CreateWalletPayment(InputSchema):
@@ -80,10 +79,6 @@ class PaymentTransaction(OutputSchema):
     )
     state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()
-
-
-PaymentMethodID: TypeAlias = IDStr
-PaymentMethodUUID: TypeAlias = UUID
 
 
 class PaymentMethodInit(OutputSchema):

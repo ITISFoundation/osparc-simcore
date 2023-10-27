@@ -19,7 +19,7 @@ from simcore_service_payments.core.errors import (
 
 from ..._constants import PAG, PGDB
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
-from ...models.payments_gateway import InitPayment, PaymentInitiated, PaymentUUID
+from ...models.payments_gateway import InitPayment, PaymentID, PaymentInitiated
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ async def init_payment(
 async def cancel_payment(
     app: FastAPI,
     *,
-    payment_id: PaymentUUID,
+    payment_id: PaymentID,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:

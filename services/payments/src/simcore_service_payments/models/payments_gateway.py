@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from models_library.api_schemas_webserver.wallets import PaymentMethodUUID, PaymentUUID
+from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.basic_types import AmountDecimal, IDStr
 from pydantic import BaseModel, EmailStr, Extra, Field
 
@@ -28,7 +28,7 @@ class InitPayment(BaseModel):
 
 
 class PaymentInitiated(BaseModel):
-    payment_id: PaymentUUID
+    payment_id: PaymentID
 
 
 class PaymentCancelled(BaseModel):
@@ -47,11 +47,11 @@ class InitPaymentMethod(BaseModel):
 
 
 class PaymentMethodInitiated(BaseModel):
-    payment_method_id: PaymentMethodUUID
+    payment_method_id: PaymentMethodID
 
 
 class GetPaymentMethod(BaseModel):
-    idr: PaymentMethodUUID
+    idr: PaymentMethodID
     card_holder_name: str
     card_number_masked: str
     card_type: str
@@ -64,7 +64,7 @@ class GetPaymentMethod(BaseModel):
 
 
 class BatchGetPaymentMethods(BaseModel):
-    payment_methods_ids: list[PaymentMethodUUID]
+    payment_methods_ids: list[PaymentMethodID]
 
 
 class PaymentMethodsBatch(BaseModel):

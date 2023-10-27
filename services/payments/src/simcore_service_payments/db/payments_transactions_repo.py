@@ -18,7 +18,7 @@ from ..core.errors import (
     PaymentNotFoundError,
 )
 from ..models.db import PaymentsTransactionsDB
-from ..models.payments_gateway import PaymentUUID
+from ..models.payments_gateway import PaymentID
 
 
 class BaseRepository:
@@ -34,7 +34,7 @@ class BaseRepository:
 class PaymentsTransactionsRepo(BaseRepository):
     async def insert_init_payment_transaction(
         self,
-        payment_id: PaymentUUID,
+        payment_id: PaymentID,
         price_dollars: Decimal,
         osparc_credits: Decimal,
         product_name: str,
@@ -43,7 +43,7 @@ class PaymentsTransactionsRepo(BaseRepository):
         wallet_id: WalletID,
         comment: str | None,
         initiated_at: datetime.datetime,
-    ) -> PaymentUUID:
+    ) -> PaymentID:
         """Annotates init-payment transaction
         Raises:
             PaymentAlreadyExistsError
@@ -70,7 +70,7 @@ class PaymentsTransactionsRepo(BaseRepository):
 
     async def update_ack_payment_transaction(
         self,
-        payment_id: PaymentUUID,
+        payment_id: PaymentID,
         completion_state: PaymentTransactionState,
         state_message: str | None,
         invoice_url: HttpUrl | None,
@@ -172,7 +172,7 @@ class PaymentsTransactionsRepo(BaseRepository):
             )
 
     async def get_payment_transaction(
-        self, payment_id: PaymentUUID, user_id: UserID, wallet_id: WalletID
+        self, payment_id: PaymentID, user_id: UserID, wallet_id: WalletID
     ) -> PaymentsTransactionsDB | None:
         # NOTE: user access and rights are expected to be checked at this point
         # nonetheless, `user_id` and `wallet_id` are added here for caution
