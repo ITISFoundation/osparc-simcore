@@ -13,6 +13,7 @@ from faker import Faker
 from fastapi import status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_service_payments.core.errors import PaymentNotFoundError
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
 from simcore_service_payments.models.schemas.errors import DefaultApiError
 
@@ -92,4 +93,6 @@ async def test_payments_api_authentication(
 
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
     error = DefaultApiError.parse_obj(response.json())
-    assert "not initialized" in str(error.detail)
+    assert PaymentNotFoundError.msg_template.format(payment_id=payments_id) == str(
+        error.detail
+    )
