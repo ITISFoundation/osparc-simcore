@@ -40,8 +40,28 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       });
     },
 
+    creditsToColor: function(credits, defaultColor = "text") {
+      const preferencesSettings = osparc.Preferences.getInstance();
+      let color = defaultColor;
+      const dangerZone = 25; // one hour consumption
+      if (credits <= dangerZone) {
+        color = "danger-red";
+      } else if (credits <= preferencesSettings.getCreditsWarningThreshold()) {
+        color = "warning-yellow";
+      }
+      return color;
+    },
+
+    normalizeCredits: function(credits) {
+      const logBase = (n, base) => Math.log(n) / Math.log(base);
+
+      let normalized = logBase(credits, 10000) + 0.01;
+      normalized = Math.min(Math.max(normalized, 0), 1);
+      return normalized * 100;
+    },
+
     creditsToFixed: function(credits) {
-      if (credits < 100) {
+      if (credits < 10) {
         return (credits).toFixed(1);
       }
       return parseInt(credits);
