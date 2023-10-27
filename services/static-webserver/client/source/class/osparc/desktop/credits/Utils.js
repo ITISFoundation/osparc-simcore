@@ -19,6 +19,8 @@ qx.Class.define("osparc.desktop.credits.Utils", {
   type: "static",
 
   statics: {
+    DANGER_ZONE: 25, // one hour consumption
+
     areWalletsEnabled: function() {
       const statics = osparc.store.Store.getInstance().get("statics");
       return Boolean(statics && statics["isPaymentEnabled"]);
@@ -43,7 +45,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     creditsToColor: function(credits, defaultColor = "text") {
       const preferencesSettings = osparc.Preferences.getInstance();
       let color = defaultColor;
-      const dangerZone = 25; // one hour consumption
+      const dangerZone = this.DANGER_ZONE;
       if (credits <= dangerZone) {
         color = "danger-red";
       } else if (credits <= preferencesSettings.getCreditsWarningThreshold()) {
