@@ -133,18 +133,20 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     },
 
     populatePaymentMethodSelector: function(wallet, paymentMethodSB) {
-      // populate the payment methods
-      osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
-        .then(paymentMethods => {
-          paymentMethodSB.removeAll();
-          paymentMethods.forEach(paymentMethod => {
-            let label = paymentMethod.cardHolderName;
-            label += " ";
-            label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
-            const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
-            paymentMethodSB.add(lItem);
-          });
-        });
+      paymentMethodSB.removeAll();
+      return new Promise(resolve => {
+        osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
+          .then(paymentMethods => {
+            paymentMethods.forEach(paymentMethod => {
+              let label = paymentMethod.cardHolderName;
+              label += " ";
+              label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
+              const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
+              paymentMethodSB.add(lItem);
+            });
+          })
+          .finally(() => resolve());
+      });
     },
 
     getWallet: function(walletId) {

@@ -68,6 +68,8 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
   },
 
   members: {
+    __paymentMethodSB: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -91,6 +93,10 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
           control = this.__getSummaryView();
           this._add(control);
           break;
+        case "payment-methods":
+          control = this.__getPaymentMethods();
+          this._add(control);
+          break;
         case "buy-button":
           control = this.__getBuyButton();
           this._add(control);
@@ -111,6 +117,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       this.getChildControl("one-time-payment-title");
       this.getChildControl("one-time-payment-description");
       this.getChildControl("summary-view");
+      this.getChildControl("payment-methods");
       this.getChildControl("buy-button");
     },
 
@@ -123,7 +130,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     },
 
     __getSummaryView: function() {
-      const grid = new qx.ui.layout.Grid(25, 10);
+      const grid = new qx.ui.layout.Grid(25, 5);
       grid.setColumnAlign(0, "center", "middle");
       grid.setColumnAlign(1, "center", "middle");
       grid.setColumnAlign(2, "center", "middle");
@@ -131,7 +138,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
 
       let row = 0;
       const totalTitle = new qx.ui.basic.Label().set({
-        value: this.tr("TOTAL (US$):"),
+        value: this.tr("TOTAL (US$)"),
         font: "text-14"
       });
       layout.add(totalTitle, {
@@ -193,6 +200,37 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       });
 
       row++;
+
+      return layout;
+    },
+
+    __getPaymentMethods: function() {
+      const grid = new qx.ui.layout.Grid(25, 5);
+      const layout = new qx.ui.container.Composite(grid);
+
+      const title = new qx.ui.basic.Label().set({
+        value: this.tr("PAYMENT METHOD"),
+        font: "text-14"
+      });
+      layout.add(title, {
+        row: 0,
+        column: 0
+      });
+
+      const paymentMethodSB = this.__paymentMethodSB = new qx.ui.form.SelectBox().set({
+        maxWidth: 200
+      });
+      const wallet = this.getWallet();
+      osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB)
+        .then(() => {
+          const newItem = new qx.ui.form.ListItem(this.tr("New Credit Card"), null, null);
+          paymentMethodSB.add(newItem);
+          paymentMethodSB.setSelection([newItem]);
+        });
+      layout.add(paymentMethodSB, {
+        row: 1,
+        column: 0
+      });
 
       return layout;
     },
