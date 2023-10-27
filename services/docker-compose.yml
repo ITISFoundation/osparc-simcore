@@ -895,7 +895,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "6",
+        "8",
         "--appendonly",
         "yes"
       ]
