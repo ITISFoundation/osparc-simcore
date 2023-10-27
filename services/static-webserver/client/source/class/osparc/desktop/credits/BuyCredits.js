@@ -74,6 +74,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         }
         case "one-time-payment":
           control = new osparc.desktop.credits.OneTimePayment().set({
+            margin: 10,
             maxWidth: 400
           });
           this.bind("contextWallet", control, "wallet");
@@ -82,6 +83,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           break;
         case "auto-recharge":
           control = new osparc.desktop.credits.AutoRecharge().set({
+            margin: 10,
             maxWidth: 400
           });
           this.bind("contextWallet", control, "wallet");
