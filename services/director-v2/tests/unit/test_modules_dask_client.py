@@ -54,6 +54,7 @@ from models_library.clusters import (
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import HardwareInfo
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
@@ -492,6 +493,16 @@ def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
     )
 
 
+@pytest.fixture
+def hardware_info() -> HardwareInfo:
+    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+
+
+@pytest.fixture
+def empty_hardware_info() -> HardwareInfo:
+    return HardwareInfo(aws_ec2_instances=[])
+
+
 async def test_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -504,6 +515,7 @@ async def test_send_computation_task(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     task_labels: ContainerLabelsDict,
+    empty_hardware_info: HardwareInfo,
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
@@ -542,8 +554,13 @@ async def test_send_computation_task(
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
     assert image_params.fake_tasks[node_id].node_requirements is not None
+    assert isinstance(
+        image_params.fake_tasks[node_id].node_requirements, NodeRequirements
+    )
     assert image_params.fake_tasks[node_id].node_requirements.cpu
     assert image_params.fake_tasks[node_id].node_requirements.ram
+    assert "product_name" in comp_run_metadata
+    assert "simcore_user_agent" in comp_run_metadata
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -567,6 +584,7 @@ async def test_send_computation_task(
             },  # type: ignore
         ),
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -616,6 +634,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -658,6 +677,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         callback=mocked_user_completed_cb,
         remote_fct=fake_sidecar_fct,
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -708,6 +728,7 @@ async def test_abort_computation_tasks(
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -753,6 +774,7 @@ async def test_abort_computation_tasks(
         callback=mocked_user_completed_cb,
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -799,6 +821,7 @@ async def test_failed_task_returns_exceptions(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -826,6 +849,7 @@ async def test_failed_task_returns_exceptions(
         callback=mocked_user_completed_cb,
         remote_fct=fake_failing_sidecar_fct,
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -855,7 +879,7 @@ async def test_failed_task_returns_exceptions(
 @pytest.mark.parametrize(
     "dask_client", ["create_dask_client_from_scheduler"], indirect=True
 )
-async def test_missing_resource_send_computation_task(
+async def test_send_computation_task_with_missing_resources_raises(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
     user_id: UserID,
@@ -866,6 +890,7 @@ async def test_missing_resource_send_computation_task(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
@@ -892,6 +917,38 @@ async def test_missing_resource_send_computation_task(
             callback=mocked_user_completed_cb,
             remote_fct=None,
             metadata=comp_run_metadata,
+            hardware_info=empty_hardware_info,
+        )
+    mocked_user_completed_cb.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "dask_client", ["create_dask_client_from_scheduler"], indirect=True
+)
+async def test_send_computation_task_with_hardware_info_raises(
+    dask_spec_local_cluster: SpecCluster,
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    image_params: ImageParams,
+    _mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    mocked_storage_service_api: respx.MockRouter,
+    comp_run_metadata: RunMetadataDict,
+    hardware_info: HardwareInfo,
+):
+    # NOTE: running on the default cluster will raise missing resources
+    with pytest.raises(MissingComputationalResourcesError):
+        await dask_client.send_computation_tasks(
+            user_id=user_id,
+            project_id=project_id,
+            cluster_id=cluster_id,
+            tasks=image_params.fake_tasks,
+            callback=mocked_user_completed_cb,
+            remote_fct=None,
+            metadata=comp_run_metadata,
+            hardware_info=hardware_info,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -909,6 +966,7 @@ async def test_too_many_resources_send_computation_task(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -932,6 +990,7 @@ async def test_too_many_resources_send_computation_task(
             callback=mocked_user_completed_cb,
             remote_fct=None,
             metadata=comp_run_metadata,
+            hardware_info=empty_hardware_info,
         )
 
     mocked_user_completed_cb.assert_not_called()
@@ -949,6 +1008,7 @@ async def test_disconnected_backend_raises_exception(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -963,6 +1023,7 @@ async def test_disconnected_backend_raises_exception(
             callback=mocked_user_completed_cb,
             remote_fct=None,
             metadata=comp_run_metadata,
+            hardware_info=empty_hardware_info,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -982,6 +1043,7 @@ async def test_changed_scheduler_raises_exception(
     mocked_storage_service_api: respx.MockRouter,
     unused_tcp_port_factory: Callable,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -1011,6 +1073,7 @@ async def test_changed_scheduler_raises_exception(
                 callback=mocked_user_completed_cb,
                 remote_fct=None,
                 metadata=comp_run_metadata,
+                hardware_info=empty_hardware_info,
             )
     mocked_user_completed_cb.assert_not_called()
 
@@ -1029,6 +1092,7 @@ async def test_get_tasks_status(
     faker: Faker,
     fail_remote_fct: bool,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -1063,6 +1127,7 @@ async def test_get_tasks_status(
         callback=mocked_user_completed_cb,
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -1119,6 +1184,7 @@ async def test_dask_sub_handlers(
     mocked_storage_service_api: respx.MockRouter,
     fake_task_handlers: TaskHandlers,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
 ):
     dask_client.register_handlers(fake_task_handlers)
     _DASK_START_EVENT = "start"
@@ -1155,6 +1221,7 @@ async def test_dask_sub_handlers(
         callback=mocked_user_completed_cb,
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -1194,6 +1261,7 @@ async def test_get_cluster_details(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
     faker: Faker,
 ):
     cluster_details = await dask_client.get_cluster_details()
@@ -1238,6 +1306,7 @@ async def test_get_cluster_details(
             fake_sidecar_fct, expected_annotations=image_params.expected_annotations
         ),
         metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
