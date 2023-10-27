@@ -6,6 +6,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
+from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from pydantic import parse_obj_as
@@ -175,12 +176,12 @@ async def test_get_solver_job_pricing_unit(
         auth=auth,
     )
     if capture_file == "get_job_pricing_unit_success.json":
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         _ = parse_obj_as(PricingUnitGet, response.json())
     elif capture_file == "get_job_pricing_unit_invalid_job.json":
-        assert response.status_code == 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
-        assert response.status_code == 422
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     else:
         pytest.fail()
 
@@ -242,7 +243,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         _put_pricing_plan_and_unit_side_effect,
         _start_job_side_effect,
     ]
-    if expected_status_code == 200:
+    if expected_status_code == status.HTTP_200_OK:
         callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
 
     _put_pricing_plan_and_unit_side_effect.was_called = False
@@ -261,7 +262,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         },
     )
     assert response.status_code == expected_status_code
-    if expected_status_code == 200:
+    if expected_status_code == status.HTTP_200_OK:
         assert _put_pricing_plan_and_unit_side_effect.was_called
         assert response.json()["job_id"] == _job_id
 
@@ -294,5 +295,5 @@ async def test_get_solver_job_pricing_unit_no_payment(
         auth=auth,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["job_id"] == _job_id

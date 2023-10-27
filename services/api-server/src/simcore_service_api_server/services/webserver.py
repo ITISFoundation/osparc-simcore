@@ -422,7 +422,7 @@ class AuthSession:
             response = await self.client.post(
                 f"/computations/{project_id}:start",
                 cookies=self.session_cookies,
-                json=jsonable_encoder(body),
+                json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
             )
             response.raise_for_status()
 
