@@ -35,7 +35,9 @@ def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
 async def _do_send_mail(
     *, message: MIMEText | MIMEMultipart, settings: SMTPSettings
 ) -> None:
+    #
     # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
+    #
 
     _logger.debug("Email configuration %s", settings.json(indent=1))
 
