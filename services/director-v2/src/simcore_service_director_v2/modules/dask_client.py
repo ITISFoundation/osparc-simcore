@@ -42,6 +42,7 @@ from models_library.api_schemas_directorv2.clusters import ClusterDetails, Sched
 from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import HardwareInfo
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -61,7 +62,7 @@ from ..core.errors import (
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
-from ..models.comp_tasks import HardwareInfo, Image
+from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
 from ..utils.dask import (
