@@ -1886,6 +1886,13 @@ paths:
             type: string
         name: product_name
         in: path
+      - required: true
+        schema:
+          title: Template Id
+          minLength: 1
+          type: string
+        name: template_id
+        in: path
       requestBody:
         content:
           application/json:

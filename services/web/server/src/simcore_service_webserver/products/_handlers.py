@@ -75,7 +75,7 @@ class _ProductTemplateParams(_ProductsRequestParams):
     template_id: IDStr
 
 
-@routes.get(
+@routes.put(
     f"/{VTAG}/products/{{product_name}}/templates/{{template_id}}",
     name="update_product_template",
 )
