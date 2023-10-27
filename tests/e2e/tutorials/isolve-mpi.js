@@ -37,14 +37,9 @@ async function runTutorial() {
     ];
     await tutorial.checkNodeOutputs(1, outFiles);
 
-    // check logs
-    const mustHave = "Running MPI version 3.1 on 2 processes";
-    const found = await tutorial.findLogMessage(mustHave);
-    if (!found) {
-      throw `log message '${mustHave}' is missing from logger!`;
-    }
+    await tutorial.checkNodeLogsFunctional();
   }
-  catch(err) {
+  catch (err) {
     await tutorial.setTutorialFailed(true, err);
     console.log('Tutorial error: ' + err);
   }

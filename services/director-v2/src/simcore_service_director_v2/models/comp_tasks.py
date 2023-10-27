@@ -9,6 +9,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
+from models_library.resource_tracker import HardwareInfo
 from models_library.services import (
     SERVICE_KEY_RE,
     ServiceInputsDict,
@@ -140,7 +141,7 @@ class CompTaskAtDB(BaseModel):
     modified: datetime.datetime
     # Additional information about price and hardware (ex. AWS EC2 instance type)
     pricing_info: dict | None
-    hardware_info: dict | None
+    hardware_info: HardwareInfo
 
     @validator("state", pre=True)
     @classmethod
@@ -159,6 +160,13 @@ class CompTaskAtDB(BaseModel):
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
             v = v.replace(tzinfo=datetime.timezone.utc)
+        return v
+
+    @validator("hardware_info", pre=True)
+    @classmethod
+    def backward_compatible_null_value(cls, v: HardwareInfo | None) -> HardwareInfo:
+        if v is None:
+            return HardwareInfo(aws_ec2_instances=[])
         return v
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
@@ -222,7 +230,7 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": {"aws_ec2_instance": ["aws-specific-instance"]},
+                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]
