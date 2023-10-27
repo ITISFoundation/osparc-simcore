@@ -213,7 +213,7 @@ class DaskClient:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _comp_sidecar_fct(  # noqa: PLR0913
+        def _comp_sidecar_fct(  # pylint: disable=too-many-arguments # noqa: PLR0913
             *,
             docker_auth: DockerBasicAuth,
             service_key: ContainerImage,

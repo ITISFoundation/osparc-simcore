@@ -28,6 +28,15 @@ def _is_expired(token: _AccessToken) -> bool:
     return expired
 
 
+def _is_valid(token) -> bool:
+    # NOTE: We have experience (old) tokens that
+    # were not deserialized as AccessToken dicts
+    try:
+        return token["count"] > 0 and not _is_expired(token)
+    except (KeyError, TypeError):
+        return False
+
+
 @contextmanager
 def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessToken]]:
     # WARNING: make sure this does not wrapp any ``await handler(request)``
@@ -41,15 +50,6 @@ def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessTo
         yield access_tokens
 
     finally:
-
-        def _is_valid(token) -> bool:
-            # NOTE: We have experience (old) tokens that
-            # were not deserialized as AccessToken dicts
-            try:
-                return token["count"] > 0 and not _is_expired(token)
-            except (KeyError, TypeError):
-                return False
-
         # prunes
         pruned_access_tokens = {
             name: token for name, token in access_tokens.items() if _is_valid(token)

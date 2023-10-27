@@ -82,7 +82,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
     return service_state
 
 
-async def run_dynamic_service(
+async def run_dynamic_service(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     app: web.Application,
     product_name: str,
