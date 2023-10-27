@@ -71,8 +71,8 @@ paths:
     post:
       tags:
       - auth
-      summary: Request Account
-      operationId: request_account
+      summary: Request Product Account
+      operationId: request_product_account
       requestBody:
         content:
           application/json:
@@ -4501,12 +4501,13 @@ components:
       additionalProperties: false
     AccountRequestInfo:
       title: AccountRequestInfo
+      required:
+      - form
       type: object
       properties:
         form:
           title: Form
-          type: string
-          format: json-string
+          type: object
     Activity:
       title: Activity
       required:

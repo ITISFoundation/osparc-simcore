@@ -46,10 +46,10 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
 
 @router.post(
     "/auth/request-account",
-    operation_id="request_account",
+    operation_id="request_product_account",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def request_account(_body: AccountRequestInfo):
+async def request_product_account(_body: AccountRequestInfo):
     ...
 
 
