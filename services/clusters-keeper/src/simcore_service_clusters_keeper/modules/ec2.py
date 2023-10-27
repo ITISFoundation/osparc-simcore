@@ -7,6 +7,7 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
+from models_library.rpc_schemas_clusters_keeper.clusters import EC2InstanceType
 from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying
@@ -29,7 +30,7 @@ from ..core.settings import (
     PrimaryEC2InstancesSettings,
     get_application_settings,
 )
-from ..models import EC2InstanceData, EC2InstanceType, EC2Tags
+from ..models import EC2InstanceData, EC2Tags
 from ..utils.ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)

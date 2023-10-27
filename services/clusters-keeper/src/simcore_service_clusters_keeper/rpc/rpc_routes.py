@@ -8,15 +8,17 @@ from ..modules.rabbitmq import (
     is_rabbitmq_enabled,
 )
 from .clusters import router as clusters_router
+from .ec2_instances import router as ec2_instances_router
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _start() -> None:
         if is_rabbitmq_enabled(app):
             rpc_client = get_rabbitmq_rpc_client(app)
-            await rpc_client.register_router(
-                clusters_router, CLUSTERS_KEEPER_RPC_NAMESPACE, app
-            )
+            for router in [clusters_router, ec2_instances_router]:
+                await rpc_client.register_router(
+                    router, CLUSTERS_KEEPER_RPC_NAMESPACE, app
+                )
 
     return _start
 
