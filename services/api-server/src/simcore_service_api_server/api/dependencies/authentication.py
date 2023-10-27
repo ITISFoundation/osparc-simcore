@@ -59,12 +59,6 @@ async def get_current_user_id(
     return user.user_id
 
 
-async def get_active_product_id(
-    user: Annotated[User, Depends(get_current_user)],
-) -> PositiveInt:
-    return user.product_id
-
-
 async def get_active_user_email(
     user: Annotated[User, Depends(get_current_user)],
 ) -> str:
