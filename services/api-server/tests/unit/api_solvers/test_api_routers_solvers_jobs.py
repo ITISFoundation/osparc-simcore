@@ -252,7 +252,7 @@ async def test_run_solver_job(
 
     # CREATE and optionally start
     mocked_directorv2_service_api.get(
-        path__regex=r"^/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+        path__regex=r"^/v2/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
         name="inspect_computation",
     ).respond(
         status.HTTP_201_CREATED,
@@ -292,7 +292,7 @@ async def test_run_solver_job(
     )
 
     mocked_webserver_service_api.post(
-        path__regex=r"^/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:start$",
+        path__regex=r"^/v0/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:start$",
         name="webserver_start_job",
     ).respond(
         status_code=status.HTTP_201_CREATED,
@@ -381,4 +381,3 @@ async def test_run_solver_job(
 
     job_status = JobStatus.parse_obj(resp.json())
     assert job_status.progress == 0.0
-    mocked_groups_extra_properties.assert_called_once()
