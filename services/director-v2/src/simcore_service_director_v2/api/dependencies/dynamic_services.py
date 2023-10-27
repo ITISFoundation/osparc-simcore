@@ -6,6 +6,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 )
 from models_library.projects_nodes import NodeID
 from servicelib.logging_utils import log_decorator
+from servicelib.osparc_resource_manager import OsparcResourceManager
 from starlette.datastructures import URL
 
 from ...core.settings import DynamicServicesSettings
@@ -23,9 +24,9 @@ async def get_service_base_url(
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
 ) -> URL:
     # get the service details
-    service_details: RunningDynamicServiceDetails = (
-        await director_v0_client.get_running_service_details(node_uuid)
-    )
+    service_details: (
+        RunningDynamicServiceDetails
+    ) = await director_v0_client.get_running_service_details(node_uuid)
     return URL(service_details.legacy_service_url)
 
 
@@ -42,3 +43,8 @@ def get_dynamic_services_settings(request: Request) -> DynamicServicesSettings:
 def get_scheduler(request: Request) -> DynamicSidecarsScheduler:
     scheduler: DynamicSidecarsScheduler = request.app.state.dynamic_sidecar_scheduler
     return scheduler
+
+
+def get_osparc_resource_manager(request: Request) -> OsparcResourceManager:
+    manager: OsparcResourceManager = request.app.state.osparc_resource_manager
+    return manager

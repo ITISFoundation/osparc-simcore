@@ -23,6 +23,7 @@ from pydantic import NonNegativeFloat
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
+from servicelib.osparc_resource_manager import OsparcResourceManager, OsparcResourceType
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from starlette import status
@@ -51,6 +52,7 @@ from ...utils.routes import NoContentResponse
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.dynamic_services import (
     get_dynamic_services_settings,
+    get_osparc_resource_manager,
     get_scheduler,
     get_service_base_url,
     get_services_client,
@@ -110,6 +112,9 @@ async def create_dynamic_service(
         DynamicServicesSettings, Depends(get_dynamic_services_settings)
     ],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
+    osparc_resoruce_manager: Annotated[
+        OsparcResourceManager, Depends(get_osparc_resource_manager)
+    ],
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
     x_simcore_user_agent: str = Header(...),
@@ -135,14 +140,15 @@ async def create_dynamic_service(
             },
         )
         logger.debug("Redirecting %s", redirect_url_with_query)
-        # TODO: add service here if not present, TODO: maybe with a delay?
+        await osparc_resoruce_manager.add(
+            OsparcResourceType.DYNAMIC_SERVICE, identifier=f"{service.node_uuid}"
+        )
         return RedirectResponse(str(redirect_url_with_query))
 
     #
     if not await is_sidecar_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
-        # TODO: add service here
         await scheduler.add_service(
             service=service,
             simcore_service_labels=simcore_service_labels,
@@ -151,6 +157,9 @@ async def create_dynamic_service(
             request_scheme=x_dynamic_sidecar_request_scheme,
             request_simcore_user_agent=x_simcore_user_agent,
             can_save=service.can_save,
+        )
+        await osparc_resoruce_manager.add(
+            OsparcResourceType.DYNAMIC_SERVICE, identifier=f"{service.node_uuid}"
         )
 
     return await scheduler.get_stack_status(service.node_uuid)
@@ -166,8 +175,6 @@ async def get_dynamic_sidecar_status(
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
 ) -> DynamicServiceGet | RedirectResponse:
-    # TODO: should this be used to push the status to the cache?
-    # maybe not a good idea at this point
     try:
         return await scheduler.get_stack_status(node_uuid)
     except DynamicSidecarNotFoundError:
@@ -194,6 +201,9 @@ async def stop_dynamic_service(
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     dynamic_services_settings: Annotated[
         DynamicServicesSettings, Depends(get_dynamic_services_settings)
+    ],
+    osparc_resoruce_manager: Annotated[
+        OsparcResourceManager, Depends(get_osparc_resource_manager)
     ],
     *,
     can_save: bool | None = True,
@@ -243,9 +253,9 @@ async def stop_dynamic_service(
             if scheduler.is_service_tracked(node_uuid):
                 raise TryAgain
 
-    # TODO: remove service here?
-    # TODO: extend resoruce manager to automatically purge services if they do not exist in the system any longer
-    #
+    await osparc_resoruce_manager.remove(
+        OsparcResourceType.DYNAMIC_SERVICE, identifier=f"{node_uuid}"
+    )
 
     return NoContentResponse()
 

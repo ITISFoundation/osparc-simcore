@@ -29,6 +29,7 @@ from ..modules import (
     redis,
     remote_debug,
     resource_usage_tracker_client,
+    service_status_observer,
     storage,
 )
 from .errors import (
@@ -137,6 +138,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     osparc_variables_substitutions.setup(app)
 
     redis.setup(app)
+    service_status_observer.setup(app)
 
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
