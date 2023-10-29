@@ -61,7 +61,7 @@ async def list_wallets():
 
 
 @router.get(
-    "/wallet",
+    "/wallets/default",
     response_model=Envelope[WalletGetWithAvailableCredits],
 )
 async def get_default_wallet():

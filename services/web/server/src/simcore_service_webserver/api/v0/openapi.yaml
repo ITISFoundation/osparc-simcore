@@ -3986,7 +3986,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
-  /v0/wallet:
+  /v0/wallets/default:
     get:
       tags:
       - wallets

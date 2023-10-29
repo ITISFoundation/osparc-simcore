@@ -124,7 +124,7 @@ async def list_wallets(request: web.Request):
     return envelope_json_response(wallets)
 
 
-@routes.get(f"/{VTAG}/wallet", name="get_default_wallet")
+@routes.get(f"/{VTAG}/wallets/default", name="get_default_wallet")
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
