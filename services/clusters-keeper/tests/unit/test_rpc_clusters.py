@@ -11,11 +11,12 @@ import arrow
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCNamespace
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
@@ -96,7 +97,6 @@ def mocked_dask_ping_scheduler(mocker: MockerFixture) -> MockedDaskModule:
 @pytest.mark.parametrize("use_wallet_id", [True, False])
 async def test_get_or_create_cluster(
     _base_configuration: None,
-    clusters_keeper_namespace: RPCNamespace,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
     ec2_client: EC2Client,
     user_id: UserID,
@@ -106,7 +106,7 @@ async def test_get_or_create_cluster(
 ):
     # send rabbitmq rpc to create_cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
-        clusters_keeper_namespace,
+        CLUSTERS_KEEPER_RPC_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
         user_id=user_id,
         wallet_id=wallet_id if use_wallet_id else None,
@@ -122,7 +122,7 @@ async def test_get_or_create_cluster(
 
     # calling it again returns the existing cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
-        clusters_keeper_namespace,
+        CLUSTERS_KEEPER_RPC_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
         user_id=user_id,
         wallet_id=wallet_id if use_wallet_id else None,

@@ -1,12 +1,9 @@
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
+from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 
-from ..modules.rabbitmq import (
-    CLUSTERS_KEEPER_RPC_NAMESPACE,
-    get_rabbitmq_rpc_client,
-    is_rabbitmq_enabled,
-)
+from ..modules.rabbitmq import get_rabbitmq_rpc_client, is_rabbitmq_enabled
 from .clusters import router as clusters_router
 from .ec2_instances import router as ec2_instances_router
 

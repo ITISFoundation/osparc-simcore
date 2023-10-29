@@ -22,9 +22,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.rabbitmq_basic_types import RPCNamespace
 from moto.server import ThreadedMotoServer
-from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -400,11 +398,6 @@ def clusters_keeper_docker_compose() -> dict[str, Any]:
     )
     assert data
     return yaml.safe_load(data)
-
-
-@pytest.fixture(scope="session")
-def clusters_keeper_namespace() -> RPCNamespace:
-    return parse_obj_as(RPCNamespace, "clusters-keeper")
 
 
 @pytest.fixture
