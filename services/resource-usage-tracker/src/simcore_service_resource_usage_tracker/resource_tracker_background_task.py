@@ -44,14 +44,19 @@ async def _check_service_heartbeat(
         ):
             # Handle unhealthy service
             _logger.error(
-                "Service run id: %s is considered unhealthy and not billed.",
+                "Service run id: %s is considered unhealthy and not billed. Counter %s",
                 service_run_id,
+                missed_heartbeat_counter,
             )
             await _close_unhealthy_service(
                 resource_tracker_repo, service_run_id, base_start_timestamp
             )
         else:
-            _logger.warning("Service run id: %s missed heartbeat.", service_run_id)
+            _logger.warning(
+                "Service run id: %s missed heartbeat. Counter %s",
+                service_run_id,
+                missed_heartbeat_counter,
+            )
             await resource_tracker_repo.update_service_missed_heartbeat_counter(
                 service_run_id, last_heartbeat_at, missed_heartbeat_counter
             )

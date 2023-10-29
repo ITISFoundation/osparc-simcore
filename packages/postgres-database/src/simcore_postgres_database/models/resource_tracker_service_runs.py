@@ -183,7 +183,7 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "service_run_status_msg",
         sa.String,
-        nullable=False,
+        nullable=True,
         doc="Custom message/comment, for example to help understand root cause of the error during investigation",
     ),
     sa.Column(
