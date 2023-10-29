@@ -7,7 +7,7 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
-from models_library.rpc_schemas_clusters_keeper.clusters import EC2InstanceType
+from models_library.api_schemas_clusters_keeper.clusters import EC2InstanceType
 from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying

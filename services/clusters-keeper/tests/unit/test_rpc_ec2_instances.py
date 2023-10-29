@@ -4,7 +4,7 @@
 
 import pytest
 from fastapi import FastAPI
-from models_library.rpc_schemas_clusters_keeper.clusters import EC2InstanceType
+from models_library.api_schemas_clusters_keeper.clusters import EC2InstanceType
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCNamespace
 
 pytest_simcore_core_services_selection = [

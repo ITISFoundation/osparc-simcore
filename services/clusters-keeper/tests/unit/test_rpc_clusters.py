@@ -11,7 +11,7 @@ import arrow
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.rpc_schemas_clusters_keeper.clusters import OnDemandCluster
+from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
