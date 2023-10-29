@@ -1,8 +1,7 @@
 import datetime
-from dataclasses import dataclass
 from enum import auto
 
-from pydantic import AnyUrl, BaseModel, ByteSize, PositiveInt
+from pydantic import AnyUrl, BaseModel
 
 from ..clusters import ClusterAuthentication
 from ..users import UserID
@@ -24,10 +23,3 @@ class OnDemandCluster(BaseModel):
     wallet_id: WalletID | None
     dask_scheduler_ready: bool
     eta: datetime.timedelta
-
-
-@dataclass(frozen=True)
-class EC2InstanceType:
-    name: str
-    cpus: PositiveInt
-    ram: ByteSize
