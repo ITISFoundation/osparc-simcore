@@ -19,6 +19,7 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
+    ClustersKeeperRuntimeError,
     ConfigurationError,
     Ec2InstanceNotFoundError,
     Ec2InstanceTypeInvalidError,
@@ -94,7 +95,7 @@ class ClustersKeeperEC2:
         except botocore.exceptions.ClientError as exc:
             if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
                 raise Ec2InstanceTypeInvalidError from exc
-            raise  # pragma: no cover
+            raise ClustersKeeperRuntimeError from exc  # pragma: no cover
 
     async def start_aws_instance(
         self,
