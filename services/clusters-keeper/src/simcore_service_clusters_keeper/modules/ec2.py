@@ -8,7 +8,7 @@ import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -85,8 +85,8 @@ class ClustersKeeperEC2:
                         EC2InstanceType(
                             name=instance["InstanceType"],
                             cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                            ram=parse_obj_as(
-                                ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
+                            ram=ByteSize(
+                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
                             ),
                         )
                     )
