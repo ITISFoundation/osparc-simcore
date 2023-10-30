@@ -50,11 +50,11 @@ class PaymentsMethodsRepo(BaseRepository):
         self,
         payment_method_id: PaymentMethodID,
         *,
-        state: InitPromptAckFlowState,
+        completion_state: InitPromptAckFlowState,
         state_message: str | None,
-    ):
-        if state == InitPromptAckFlowState.PENDING:
-            msg = f"{state} is not a completion state"
+    ) -> PaymentsMethodsDB:
+        if completion_state == InitPromptAckFlowState.PENDING:
+            msg = f"{completion_state} is not a completion state"
             raise ValueError(msg)
 
         optional = {}
@@ -83,7 +83,7 @@ class PaymentsMethodsRepo(BaseRepository):
 
             result = await conn.execute(
                 payments_methods.update()
-                .values(completed_at=sa.func.now(), state=state, **optional)
+                .values(completed_at=sa.func.now(), state=completion_state, **optional)
                 .where(payments_methods.c.payment_method_id == payment_method_id)
                 .returning(sa.literal_column("*"))
             )
@@ -97,7 +97,8 @@ class PaymentsMethodsRepo(BaseRepository):
         *,
         user_id: UserID,
         wallet_id: WalletID,
-    ):
+    ) -> list[PaymentsMethodsDB]:
+        # NOTE: we do not expect many payment methods, so no pagination is neede here
         async with self.db_engine.begin() as conn:
             result = await conn.execute(
                 payments_methods.select()
@@ -117,7 +118,7 @@ class PaymentsMethodsRepo(BaseRepository):
         *,
         user_id: UserID,
         wallet_id: WalletID,
-    ):
+    ) -> PaymentsMethodsDB:
         async with self.db_engine.begin() as conn:
             result = await conn.execute(
                 payments_methods.select().where(
@@ -139,12 +140,16 @@ class PaymentsMethodsRepo(BaseRepository):
         *,
         user_id: UserID,
         wallet_id: WalletID,
-    ):
+    ) -> PaymentsMethodsDB | None:
         async with self.db_engine.begin() as conn:
-            await conn.execute(
-                payments_methods.delete().where(
+            result = await conn.execute(
+                payments_methods.delete()
+                .where(
                     (payments_methods.c.user_id == user_id)
                     & (payments_methods.c.wallet_id == wallet_id)
                     & (payments_methods.c.payment_method_id == payment_method_id)
                 )
+                .returning(sa.literal_column("*"))
             )
+            row = result.first()
+            return row if row is None else PaymentsMethodsDB.from_orm(row)

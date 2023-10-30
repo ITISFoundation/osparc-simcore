@@ -77,6 +77,8 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
         state_message="DONE",
     )
 
+    assert transaction_acked.payment_id == payment_id
+
     # list
     total_number_of_items, user_payments = await repo.list_user_payment_transactions(
         user_id=fake.user_id
