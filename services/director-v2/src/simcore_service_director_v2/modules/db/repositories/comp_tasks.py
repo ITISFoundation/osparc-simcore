@@ -34,7 +34,12 @@ from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME, BootM
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
+from servicelib.rabbitmq import (
+    RabbitMQRPCClient,
+    RemoteMethodNotRegisteredError,
+    RPCMethodName,
+    RPCServerError,
+)
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.core.errors import (
@@ -260,9 +265,7 @@ async def _update_project_node_resources_from_hardware_info(
             "limit"
         ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
             "reservation"
-        ] = (
-            selected_ec2_instance_type.cpus * 1e9
-        )
+        ] = selected_ec2_instance_type.cpus
         node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
             "limit"
         ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
@@ -273,7 +276,7 @@ async def _update_project_node_resources_from_hardware_info(
             node_id=node_id,
             required_resources=node.required_resources,
         )
-    except RPCServerError as exc:
+    except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc
 
 
