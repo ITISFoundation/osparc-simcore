@@ -318,7 +318,7 @@ def create_payment_method_router():
         response_model=PaymentInitiated,
         responses=ERROR_RESPONSES,
     )
-    def pay_with_payment_method(
+    def init_payment_with_payment_method(
         id: PaymentMethodID,
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],

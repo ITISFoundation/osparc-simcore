@@ -159,8 +159,10 @@ async def test_payment_methods_workflow(
     payment_method_id = initiated.payment_method_id
 
     # get payment-method
-    got = await payment_gateway_api.get_payment_methods(payment_method_id)
-    assert got.id == payment_method_id
+    got_payment_method = await payment_gateway_api.get_payment_methods(
+        payment_method_id
+    )
+    assert got_payment_method.id == payment_method_id
 
     # list payment-methods
     batch = await payment_gateway_api.get_many_payment_methods(
@@ -174,8 +176,8 @@ async def test_payment_methods_workflow(
     assert batch.items
     assert batch.items[0].idr == payment_method_id
 
-    # pay with payment-method
-    payment_initiated = await payment_gateway_api.pay_with_payment_method(
+    # init payments with payment-method (needs to be ACK to complete)
+    payment_initiated = await payment_gateway_api.init_payment_with_payment_method(
         InitPayment(
             payment=InitPayment(
                 amount_dollars=amount_dollars,
@@ -196,3 +198,9 @@ async def test_payment_methods_workflow(
 
     with pytest.raises(PaymentMethodNotFoundError):
         await payment_gateway_api.get_payment_methods(payment_method_id)
+
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes[
+            "init_payment_with_payment_method"
+        ].called
+        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called

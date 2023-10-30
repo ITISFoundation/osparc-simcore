@@ -111,7 +111,7 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
         response = await self.client.delete(f"/payment-methods/{id_}")
         response.raise_for_status()
 
-    async def pay_with_payment_method(
+    async def init_payment_with_payment_method(
         self, id_: PaymentMethodID, payment: InitPayment
     ) -> PaymentInitiated:
         response = await self.client.post(

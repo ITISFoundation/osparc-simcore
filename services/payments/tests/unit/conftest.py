@@ -7,6 +7,7 @@
 
 from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
+from typing import NamedTuple
 from unittest.mock import Mock
 
 import httpx
@@ -18,6 +19,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.rawdata_fakers import random_payment_method_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
@@ -25,8 +27,12 @@ from simcore_postgres_database.models.payments_transactions import payments_tran
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (
+    BatchGetPaymentMethods,
+    GetPaymentMethod,
     InitPayment,
+    InitPaymentMethod,
     PaymentInitiated,
+    PaymentMethodsBatch,
 )
 
 #
@@ -163,6 +169,111 @@ def mock_payments_routes(faker: Faker) -> Callable:
     return _mock
 
 
+@pytest.fixture
+def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
+    class PaymentMethodInfoTuple(NamedTuple):
+        init: InitPaymentMethod
+        get: GetPaymentMethod
+
+    _payment_methods: dict[str, PaymentMethodInfoTuple] = {}
+
+    def _mock(mock_router: MockRouter):
+        def _init(request: httpx.Request):
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+
+            payment_method_id = faker.uuid4()
+            _payment_methods[payment_method_id] = PaymentMethodInfoTuple(
+                init=InitPaymentMethod.parse_raw(request.content),
+                get=GetPaymentMethod(
+                    **random_payment_method_data(idr=payment_method_id)
+                ),
+            )
+
+            return httpx.Response(
+                status.HTTP_200_OK,
+                json=jsonable_encoder(PaymentInitiated(payment_id=payment_method_id)),
+            )
+
+        def _get(request: httpx.Request):
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+            pm_id = request.url.path.split("/")[-1]
+
+            try:
+                _, payment_method = _payment_methods[pm_id]
+                return httpx.Response(
+                    status.HTTP_200_OK, json=jsonable_encoder(payment_method)
+                )
+            except KeyError:
+                return httpx.Response(status.HTTP_404_NOT_FOUND)
+
+        def _del(request: httpx.Request):
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+            pm_id = request.url.path.split("/")[-1]
+
+            try:
+                _payment_methods.pop(pm_id)
+                return httpx.Response(status.HTTP_204_NO_CONTENT)
+            except KeyError:
+                return httpx.Response(status.HTTP_404_NOT_FOUND)
+
+        def _batch_get(request: httpx.Request):
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+            batch = BatchGetPaymentMethods.parse_raw(request.content)
+
+            try:
+                items = [_payment_methods[pm].get for pm in batch.payment_methods_ids]
+            except KeyError:
+                return httpx.Response(status.HTTP_404_NOT_FOUND)
+
+            return httpx.Response(
+                status.HTTP_200_OK,
+                json=jsonable_encoder(PaymentMethodsBatch(items=items)),
+            )
+
+        def _init_payment(request: httpx.Request):
+            assert "*" not in request.headers["X-Init-Api-Secret"]
+            assert InitPayment.parse_raw(request.content) is not None
+
+            # checks
+            _get(request)
+
+            return httpx.Response(
+                status.HTTP_200_OK,
+                json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
+            )
+
+        # ------
+
+        mock_router.post(
+            path="/payment-methods:init",
+            name="init_payment_method",
+        ).mock(side_effect=_init)
+
+        mock_router.post(
+            path="/payment-methods:batchGet",
+            name="batch_get_payment_methods",
+        ).mock(side_effect=_batch_get)
+
+        mock_router.get(
+            path__regex=r"/payment-methods/(?P<id>{\w+})$",
+            name="get_payment_method",
+        ).mock(side_effect=_get)
+
+        mock_router.delete(
+            path__regex=r"/payment-methods/(?P<id>{\w+})$",
+            name="delete_payment_method",
+        ).mock(side_effect=_del)
+
+        mock_router.post(
+            path__regex=r"/payment-methods/(?P<id>{\w+}):pay$",
+            name="init_payment_with_payment_method",
+        ).mock(side_effect=_init_payment)
+
+    yield _mock
+
+    _payment_methods.clear()
+
+
 def pytest_addoption(parser: pytest.Parser):
     group = parser.getgroup(
         "external_environment",
@@ -201,6 +312,7 @@ def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
 def mock_payments_gateway_service_or_none(
     mock_payments_gateway_service_api_base: MockRouter,
     mock_payments_routes: Callable,
+    mock_payments_methods_routes: Callable,
     external_environment: EnvVarsDict,
 ) -> MockRouter | None:
 
@@ -212,4 +324,5 @@ def mock_payments_gateway_service_or_none(
 
     # OR tests against mock payments-gateway
     mock_payments_routes(mock_payments_gateway_service_api_base)
+    mock_payments_methods_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base

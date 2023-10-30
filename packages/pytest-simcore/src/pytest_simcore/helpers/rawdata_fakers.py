@@ -246,3 +246,20 @@ def random_api_key(product_name: str, user_id: int, **overrides) -> dict[str, An
     assert set(data.keys()).issubset({c.name for c in api_keys.columns})  # nosec
     data.update(**overrides)
     return data
+
+
+def random_payment_method_data(**overrides):
+    # Produces data for GetPaymentMethod
+    data = {
+        "idr": FAKE.uuid4(),
+        "card_holder_name": FAKE.name(),
+        "card_number_masked": f"**** **** **** {FAKE.credit_card_number()[:4]}",
+        "card_type": FAKE.credit_card_provider(),
+        "expiration_month": FAKE.random_int(min=1, max=12),
+        "expiration_year": FAKE.future_date().year,
+        "street_address": FAKE.street_address(),
+        "zipcode": FAKE.zipcode(),
+        "country": FAKE.country(),
+    }
+    data.update(**overrides)
+    return data
