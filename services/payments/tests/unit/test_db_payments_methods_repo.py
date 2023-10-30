@@ -14,7 +14,6 @@ from simcore_service_payments.models.db import InitPromptAckFlowState, PaymentsM
 
 pytest_simcore_core_services_selection = [
     "postgres",
-    "rabbit",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
