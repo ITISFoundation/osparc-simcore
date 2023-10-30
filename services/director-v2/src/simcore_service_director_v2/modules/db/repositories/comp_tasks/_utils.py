@@ -34,7 +34,9 @@ from servicelib.rabbitmq import (
     RemoteMethodNotRegisteredError,
     RPCServerError,
 )
-from servicelib.rabbitmq.rpc_interfaces.clusters_keeper import get_instance_type_details
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
+    get_instance_type_details,
+)
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 
 from .....core.errors import ClustersKeeperNotAvailableError
