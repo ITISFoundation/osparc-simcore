@@ -248,7 +248,7 @@ def random_api_key(product_name: str, user_id: int, **overrides) -> dict[str, An
     return data
 
 
-def random_payment_method_data(**overrides):
+def random_payment_method_data(**overrides) -> dict[str, Any]:
     # Produces data for GetPaymentMethod
     data = {
         "idr": FAKE.uuid4(),
