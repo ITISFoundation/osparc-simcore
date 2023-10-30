@@ -7,6 +7,7 @@ from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
@@ -23,18 +24,21 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..application_settings import get_settings
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..products import api as products_api
+from ..projects import api as projects_api
 from ..security.decorators import permission_required
+from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..version_control.models import CommitID
+from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ._abc import get_project_run_policy
 from ._api_utils import get_wallet_info
 from ._core_computations import ComputationsApi
-from ._core_utils import get_wallet_info
 from .exceptions import DirectorServiceError
 
 _logger = logging.getLogger(__name__)
@@ -62,8 +66,9 @@ class _ComputationStarted(BaseModel):
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def start_computation(request: web.Request) -> web.Response:
+    # pylint: disable=too-many-statements
     try:
-        req_ctx: RequestContext = RequestContext.parse_obj(request)
+        req_ctx = RequestContext.parse_obj(request)
         computations = ComputationsApi(request.app)
 
         run_policy = get_project_run_policy(request.app)
