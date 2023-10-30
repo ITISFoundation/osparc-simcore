@@ -147,7 +147,7 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     # pylint: disable=protected-access
     monkeypatch.setattr(
         simcore_service_webserver.email._core,
-        "send_email",
+        "_send_email",
         _print_mail_to_stdout,
     )
 
