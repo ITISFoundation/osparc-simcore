@@ -1,7 +1,7 @@
 """resource_tracker_service_runs helpers for missing heartbeat
 
 Revision ID: 22404057a50c
-Revises: 2a4b4167e088
+Revises: d0d544695487
 Create Date: 2023-10-25 19:17:29.928871+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "22404057a50c"
-down_revision = "2a4b4167e088"
+down_revision = "d0d544695487"
 branch_labels = None
 depends_on = None
 
