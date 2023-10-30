@@ -182,21 +182,29 @@ class DaskScheduler(BaseCompScheduler):
         tasks: list[CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
     ) -> None:
-        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
-            await asyncio.gather(
-                *[client.abort_computation_task(t.job_id) for t in tasks if t.job_id]
-            )
-            # tasks that have no-worker must be unpublished as these are blocking forever
-            tasks_with_no_worker = [
-                t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
-            ]
-            await asyncio.gather(
-                *[
-                    client.release_task_result(t.job_id)
-                    for t in tasks_with_no_worker
-                    if t.job_id
+        try:
+            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+                await asyncio.gather(
+                    *[
+                        client.abort_computation_task(t.job_id)
+                        for t in tasks
+                        if t.job_id
+                    ]
+                )
+                # tasks that have no-worker must be unpublished as these are blocking forever
+                tasks_with_no_worker = [
+                    t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
                 ]
-            )
+                await asyncio.gather(
+                    *[
+                        client.release_task_result(t.job_id)
+                        for t in tasks_with_no_worker
+                        if t.job_id
+                    ]
+                )
+        except ComputationalBackendOnDemandNotReadyError:
+            # this means the cluster is not there, so there is nothing to stop
+            ...
 
     async def _process_completed_tasks(
         self,
