@@ -28,27 +28,26 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     this.base(arguments, source);
 
     this.themeSwitchHandler = msg => {
-      this.postThemeSwitch(msg.getData())
-    }
+      this.postThemeSwitch(msg.getData());
+    };
 
     this.postThemeSwitch = theme => {
-      const iframe = this._getIframeElement()
+      const iframe = this._getIframeElement();
       if (this._getIframeElement()) {
-        const iframeDomEl = iframe.getDomElement()
-        const iframeSource = iframe.getSource()
+        const iframeDomEl = iframe.getDomElement();
+        const iframeSource = iframe.getSource();
         if (iframeDomEl && iframeSource) {
-          const msg = 'osparc;theme=' + theme
+          const msg = "osparc;theme=" + theme;
           try {
-            iframeDomEl.contentWindow.postMessage(msg, iframeSource)
-          }
-          catch (err) {
-            console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`)
+            iframeDomEl.contentWindow.postMessage(msg, iframeSource);
+          } catch (err) {
+            console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
           }
         }
       }
     }
 
-    qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler)
+    qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
   },
 
   statics: {
@@ -110,13 +109,13 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     // override
     _createContentElement : function() {
       let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
-      const persistentIframe = this
+      const persistentIframe = this;
       iframe.addListener("load", () => {
-        const currentTheme = qx.theme.manager.Meta.getInstance().getTheme()
+        const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
         if (currentTheme && persistentIframe.postThemeSwitch) {
-          persistentIframe.postThemeSwitch(currentTheme.name)
+          persistentIframe.postThemeSwitch(currentTheme.name);
         }
-        this.fireEvent("load")
+        this.fireEvent("load");
       });
       iframe.addListener("navigate", e => this.fireDataEvent("navigate", e.getData()));
 
@@ -281,6 +280,6 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     this.__iframe.exclude();
     this.__iframe.dispose();
     this.__iframe = undefined;
-    qx.event.message.Bus.getInstance().unsubscribe("themeSwitch", this.themeSwitchHandler)
+    qx.event.message.Bus.getInstance().unsubscribe("themeSwitch", this.themeSwitchHandler);
   }
 });
