@@ -38,7 +38,7 @@ async def test_payment_method_worfklow(
 ):
     # preamble
     assert client.app
-    settings: PaymentsSettings = get_plugin_settings(client.app)
+    settings: PaymentsSettings = get_payments_plugin_settings(client.app)
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
