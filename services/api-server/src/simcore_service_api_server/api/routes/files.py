@@ -325,8 +325,8 @@ async def search_files_page(
             stored_files = stored_files[: page_params.limit]
         return create_page(
             [to_file_api_model(fmd) for fmd in stored_files],
-            total=len(stored_files),
-            params=page_params,
+            len(stored_files),
+            page_params,
         )
 
     except (ValueError, ValidationError) as err:

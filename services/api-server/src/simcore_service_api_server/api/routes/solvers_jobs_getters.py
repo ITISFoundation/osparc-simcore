@@ -126,8 +126,8 @@ async def get_jobs_page(
 
     return create_page(
         jobs,
-        total=projects_page.meta.total,
-        params=page_params,
+        projects_page.meta.total,
+        page_params,
     )
 
 
