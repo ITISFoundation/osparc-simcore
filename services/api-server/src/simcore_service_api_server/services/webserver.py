@@ -127,7 +127,6 @@ class AuthSession:
 
     _api: WebserverApi
     vtag: str
-    product_header: dict[str, str]
     session_cookies: dict | None = None
 
     @classmethod
@@ -137,10 +136,10 @@ class AuthSession:
         api = WebserverApi.get_instance(app)
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
+        api.client.headers = product_header
         return cls(
             _api=api,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
-            product_header=product_header,
             session_cookies=session_cookies,
         )
 
@@ -207,9 +206,7 @@ class AuthSession:
     async def get(self, path: str) -> AnyJson | None:
         url = path.lstrip("/")
         try:
-            resp = await self.client.get(
-                url, cookies=self.session_cookies, headers=self.product_header
-            )
+            resp = await self.client.get(url, cookies=self.session_cookies)
         except Exception as err:
             _logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
@@ -223,7 +220,6 @@ class AuthSession:
                 url,
                 json=body,
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
         except Exception as err:
             _logger.exception("Failed to put %s", url)
@@ -252,7 +248,6 @@ class AuthSession:
                     **optional,
                 },
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             resp.raise_for_status()
 
@@ -288,7 +283,6 @@ class AuthSession:
             params={"hidden": True},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
-            headers=self.product_header,
         )
         data = self._get_data_or_raise(response)
         assert data is not None  # nosec
@@ -300,7 +294,6 @@ class AuthSession:
         response = await self.client.post(
             f"/projects/{project_id}:clone",
             cookies=self.session_cookies,
-            headers=self.product_header,
         )
         data = self._get_data_or_raise(
             response,
@@ -316,7 +309,6 @@ class AuthSession:
             response = await self.client.get(
                 f"/projects/{project_id}",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             response.raise_for_status()
             data = Envelope[ProjectGet].parse_raw(response.text).data
@@ -346,7 +338,6 @@ class AuthSession:
         response = await self.client.delete(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
-            headers=self.product_header,
         )
         data = self._get_data_or_raise(
             response,
@@ -364,7 +355,6 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
-            headers=self.product_header,
         )
 
         data = self._get_data_or_raise(
@@ -380,7 +370,6 @@ class AuthSession:
             response = await self.client.get(
                 f"/projects/{project_id}/metadata",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             response.raise_for_status()
             data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
@@ -395,7 +384,6 @@ class AuthSession:
                 f"/projects/{project_id}/metadata",
                 cookies=self.session_cookies,
                 json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
-                headers=self.product_header,
             )
             response.raise_for_status()
             data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
@@ -409,7 +397,6 @@ class AuthSession:
             response = await self.client.get(
                 f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
 
             response.raise_for_status()
@@ -427,7 +414,6 @@ class AuthSession:
             response = await self.client.put(
                 f"/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan}/pricing-unit/{pricing_unit}",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             response.raise_for_status()
 
@@ -438,7 +424,6 @@ class AuthSession:
             response = await self.client.get(
                 f"/wallets/{wallet_id}",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             response.raise_for_status()
             data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
@@ -450,7 +435,6 @@ class AuthSession:
             response = await self.client.get(
                 f"/projects/{project_id}/wallet",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             response.raise_for_status()
             data = Envelope[WalletGet].parse_raw(response.text).data
@@ -467,7 +451,6 @@ class AuthSession:
             response = await self.client.get(
                 f"/catalog/services/{service_key}/{version}/pricing-plan",
                 cookies=self.session_cookies,
-                headers=self.product_header,
             )
             response.raise_for_status()
             data = Envelope[ServicePricingPlanGet].parse_raw(response.text).data

@@ -68,7 +68,7 @@ def get_webserver_session(
     Lifetime of embedded client is attached to the app lifetime
     """
     product_header: dict[str, str] = {
-        "X-Simcore-Products-Name": f"{identity.product_id}"
+        "X-Simcore-Products-Name": f"{identity.product_name}"
     }
     session = AuthSession.create(app, session_cookies, product_header)
     assert isinstance(session, AuthSession)  # nosec

@@ -43,6 +43,7 @@ from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     PathDescription,
@@ -123,14 +124,11 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         engine.maxsize = 10
         app.state.engine = engine
 
-    # patch authentication entry in repo
-    faker_user_id = faker.pyint()
-
     # NOTE: here, instead of using the database, we patch repositories interface
     mocker.patch(
-        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user_id",
+        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user",
         autospec=True,
-        return_value=faker_user_id,
+        return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",

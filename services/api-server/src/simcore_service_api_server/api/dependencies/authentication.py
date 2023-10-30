@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, PositiveInt
 
-from ...db.repositories.api_keys import ApiKeysRepository, UserAndProduct
+from ...db.repositories.api_keys import ApiKeysRepository, UserAndProductTuple
 from ...db.repositories.users import UsersRepository
 from .database import get_repository
 
@@ -14,7 +14,7 @@ basic_scheme = HTTPBasic()
 
 class Identity(BaseModel):
     user_id: PositiveInt
-    product_id: PositiveInt
+    product_name: str
     email: str
 
 
@@ -38,7 +38,7 @@ async def get_current_identity(
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     credentials: HTTPBasicCredentials = Security(basic_scheme),
 ) -> Identity:
-    user_and_product: UserAndProduct | None = await apikeys_repo.get_user(
+    user_and_product: UserAndProductTuple | None = await apikeys_repo.get_user(
         api_key=credentials.username, api_secret=credentials.password
     )
     if user_and_product is None:
@@ -49,7 +49,7 @@ async def get_current_identity(
         exc = _create_exception()
         raise exc
     return Identity(
-        user_id=user_and_product[0], product_id=user_and_product[1], email=email
+        user_id=user_and_product[0], product_name=user_and_product[1], email=email
     )
 
 
