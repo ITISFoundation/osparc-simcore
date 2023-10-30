@@ -7,6 +7,8 @@ import aiopg.sa
 import arrow
 import sqlalchemy as sa
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
     ServiceExtras,
@@ -32,9 +34,13 @@ from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME, BootM
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
-from simcore_service_director_v2.core.errors import ComputationalTaskNotFoundError
+from simcore_service_director_v2.core.errors import (
+    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ComputationalTaskNotFoundError,
+)
 from simcore_service_director_v2.modules.resource_usage_tracker_client import (
     ResourceUsageTrackerClient,
 )
@@ -231,21 +237,44 @@ async def _update_project_node_resources_from_hardware_info(
     project_id: ProjectID,
     node_id: NodeID,
     hardware_info: HardwareInfo,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
 ) -> None:
     if not is_wallet:
         return
     if not hardware_info.aws_ec2_instances:
         return
-    project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-    node = await project_nodes_repo.get(connection, node_id=node_id)
-    node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
-        "limit"
-    ] = (4 * 10e9)
-    await project_nodes_repo.update(
-        connection,
-        node_id=node_id,
-        required_resources=node.required_resources,
-    )
+    try:
+        list_ec2_instance_types: list[
+            EC2InstanceType
+        ] = await rabbitmq_rpc_client.request(
+            CLUSTERS_KEEPER_RPC_NAMESPACE,
+            RPCMethodName("get_instance_type_details"),
+            instance_type_names=set(hardware_info.aws_ec2_instances),
+        )
+        assert list_ec2_instance_types  # nosec
+        assert len(list_ec2_instance_types) == 1  # nosec
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        node = await project_nodes_repo.get(connection, node_id=node_id)
+        selected_ec2_instance_type = list_ec2_instance_types[0]
+        node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
+            "limit"
+        ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
+            "reservation"
+        ] = (
+            selected_ec2_instance_type.cpus * 1e9
+        )
+        node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
+            "limit"
+        ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
+            "reservation"
+        ] = selected_ec2_instance_type.ram
+        await project_nodes_repo.update(
+            connection,
+            node_id=node_id,
+            required_resources=node.required_resources,
+        )
+    except RPCServerError as exc:
+        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
 
 
 async def _generate_tasks_list_from_project(
@@ -259,6 +288,7 @@ async def _generate_tasks_list_from_project(
     connection: aiopg.sa.connection.SAConnection,
     rut_client: ResourceUsageTrackerClient,
     is_wallet: bool,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
 
@@ -321,6 +351,7 @@ async def _generate_tasks_list_from_project(
             project_id=project.uuid,
             node_id=NodeID(node_id),
             hardware_info=hardware_info,
+            rabbitmq_rpc_client=rabbitmq_rpc_client,
         )
 
         image = await _generate_task_image(
@@ -426,6 +457,7 @@ class CompTasksRepository(BaseRepository):
         product_name: str,
         rut_client: ResourceUsageTrackerClient,
         is_wallet: bool,
+        rabbitmq_rpc_client: RabbitMQRPCClient,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.acquire() as conn:
@@ -441,6 +473,7 @@ class CompTasksRepository(BaseRepository):
                 connection=conn,
                 rut_client=rut_client,
                 is_wallet=is_wallet,
+                rabbitmq_rpc_client=rabbitmq_rpc_client,
             )
             # get current tasks
             result = await conn.execute(

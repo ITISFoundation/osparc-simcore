@@ -35,6 +35,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.rabbitmq import RabbitMQRPCClient
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -46,6 +47,7 @@ from tenacity.wait import wait_random
 from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
+    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalRunNotFoundError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
@@ -83,6 +85,7 @@ from ...utils.dags import (
 from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
+from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
@@ -125,6 +128,7 @@ async def create_computation(  # noqa: C901, PLR0912
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
+    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -208,6 +212,7 @@ async def create_computation(  # noqa: C901, PLR0912
             product_name=computation.product_name,
             rut_client=rut_client,
             is_wallet=bool(computation.wallet_info),
+            rabbitmq_rpc_client=rabbitmq_rpc_client,
         )
 
         if computation.start_pipeline:
@@ -304,6 +309,10 @@ async def create_computation(  # noqa: C901, PLR0912
         ) from e
     except PricingPlanUnitNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ComputationalBackendOnDemandClustersKeeperNotReadyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}"
+        ) from e
 
 
 @router.get(
