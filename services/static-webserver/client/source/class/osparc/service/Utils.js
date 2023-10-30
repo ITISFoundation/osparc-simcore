@@ -171,6 +171,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getVersions: function(services, key, filterDeprecates = true) {
+      if (services === null) {
+        services = osparc.service.Utils.servicesCached;
+      }
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
