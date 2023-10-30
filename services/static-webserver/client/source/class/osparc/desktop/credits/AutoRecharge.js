@@ -129,7 +129,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
 
     __populateForm: function(arData) {
       this.__topUpAmountField.setValue(arData["topUpAmountInUsd"]);
-      this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} US$, it gets recharged by this amount`));
+      this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} credits, it gets recharged by this amount`));
       if (arData["monthlyLimitInUsd"]) {
         this.__monthlyLimitField.setValue(arData["monthlyLimitInUsd"] > 0 ? arData["monthlyLimitInUsd"] : 0);
       } else {
