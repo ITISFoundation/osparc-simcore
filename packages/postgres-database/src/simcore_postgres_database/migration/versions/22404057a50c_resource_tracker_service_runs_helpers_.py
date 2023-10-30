@@ -26,7 +26,7 @@ def upgrade():
         sa.Column(
             "missed_heartbeat_counter",
             sa.SmallInteger(),
-            server_default=0,
+            server_default="0",
             nullable=False,
         ),
     )
