@@ -41,9 +41,10 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
   },
 
   members: {
-    __rechargeField: null,
-    __limitField: null,
+    __topUpAmountField: null,
+    __monthlyLimitField: null,
     __paymentMethodField: null,
+    __topUpAmountHelper: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -127,8 +128,9 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __populateForm: function(arData) {
-      this.__rechargeField.setValue(arData["topUpAmountInUsd"]);
-      this.__limitField.setValue(arData["topUpCountdown"] > 0 ? arData["topUpCountdown"]*arData["topUpAmountInUsd"] : 0);
+      this.__topUpAmountField.setValue(arData["topUpAmountInUsd"]);
+      this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} US$, it gets recharged by this amount`));
+      this.__monthlyLimitField.setValue(arData["topUpCountdown"] > 0 ? arData["topUpCountdown"]*arData["topUpAmountInUsd"] : 0);
       const paymentMethodSB = this.__paymentMethodField;
       const paymentMethodFound = paymentMethodSB.getSelectables().find(selectable => selectable.getModel() === arData["paymentMethodId"]);
       if (paymentMethodFound) {
@@ -147,49 +149,48 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __getAutoRechargeForm: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const autoRechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
-      const rechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const rechargeTitle = new qx.ui.basic.Label().set({
+      const topUpAmountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const topUpAmountTitle = new qx.ui.basic.Label().set({
         value: this.tr("RECHARGING AMOUNT (US$)"),
         font: "text-14"
       });
-      rechargeLayout.add(rechargeTitle);
-      const rechargeField = this.__rechargeField = new qx.ui.form.Spinner().set({
+      topUpAmountLayout.add(topUpAmountTitle);
+      const topUpAmountField = this.__topUpAmountField = new qx.ui.form.Spinner().set({
         minimum: 10,
         maximum: 10000,
         maxWidth: 200
       });
-      rechargeLayout.add(rechargeField);
-      const rechargeHelper = new qx.ui.basic.Label().set({
-        value: this.tr("When your account reaches 25, it gets recharged by this amount"),
+      topUpAmountLayout.add(topUpAmountField);
+      const topUpAmountHelper = this.__topUpAmountHelper = new qx.ui.basic.Label().set({
         font: "text-12",
         rich: true,
         wrap: true
       });
-      rechargeLayout.add(rechargeHelper);
-      layout.add(rechargeLayout);
+      topUpAmountLayout.add(topUpAmountHelper);
+      autoRechargeLayout.add(topUpAmountLayout);
 
-      const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const limitTitle = new qx.ui.basic.Label().set({
+      const monthlyLimitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const monthlyLimitTitle = new qx.ui.basic.Label().set({
         value: this.tr("MONTHLY LIMIT (US$)"),
         font: "text-14"
       });
-      limitLayout.add(limitTitle);
-      const limitField = this.__limitField = new qx.ui.form.Spinner().set({
-        minimum: 100,
+      monthlyLimitLayout.add(monthlyLimitTitle);
+      const monthlyLimitField = this.__monthlyLimitField = new qx.ui.form.Spinner().set({
+        minimum: 0,
         maximum: 100000,
         maxWidth: 200
       });
-      limitLayout.add(limitField);
-      const limitHelper = new qx.ui.basic.Label().set({
+      monthlyLimitLayout.add(monthlyLimitField);
+      const monthlyLimitHelper = new qx.ui.basic.Label().set({
         value: this.tr("To disable spending limit, clear input field"),
         font: "text-12",
         rich: true,
         wrap: true
       });
-      limitLayout.add(limitHelper);
-      layout.add(limitLayout);
+      monthlyLimitLayout.add(monthlyLimitHelper);
+      autoRechargeLayout.add(monthlyLimitLayout);
 
       const paymentMethodLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const paymentMethodTitle = new qx.ui.basic.Label().set({
@@ -209,15 +210,15 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       });
       addNewPaymentMethod.addListener("tap", () => this.fireEvent("addNewPaymentMethod"));
       paymentMethodLayout.add(addNewPaymentMethod);
-      layout.add(paymentMethodLayout);
+      autoRechargeLayout.add(paymentMethodLayout);
 
-      return layout;
+      return autoRechargeLayout;
     },
 
     __getFieldsData: function() {
       return {
         minBalanceInUsd: 0,
-        topUpAmountInUsd: this.__rechargeField.getValue(),
+        topUpAmountInUsd: this.__topUpAmountField.getValue(),
         topUpCountdown: 30,
         paymentMethodId: this.__paymentMethodField.getSelection()[0].getModel()
       };
