@@ -53,7 +53,12 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
 
     PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
         default=100.0,
-        description="Default value on the amount to top-up for auto-recharge",
+        description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: NonNegativeDecimal | None = Field(
+        default=6000.0,
+        description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
     )
 
     @cached_property

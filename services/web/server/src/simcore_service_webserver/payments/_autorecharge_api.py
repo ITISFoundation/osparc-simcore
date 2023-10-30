@@ -82,7 +82,7 @@ async def get_wallet_payment_autorecharge(
             payment_method_id=payment_method_id,
             min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD,
             top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
-            monthly_limit_in_usd=None,
+            monthly_limit_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT,
         )
 
     return _from_db_to_api_model(
