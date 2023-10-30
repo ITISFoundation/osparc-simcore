@@ -5,7 +5,7 @@
 import importlib.resources
 import json
 import random
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from datetime import timezone
 from pathlib import Path
 from typing import Any
@@ -26,6 +26,7 @@ from moto.server import ThreadedMotoServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
@@ -397,3 +398,12 @@ def clusters_keeper_docker_compose() -> dict[str, Any]:
     )
     assert data
     return yaml.safe_load(data)
+
+
+@pytest.fixture
+async def clusters_keeper_rabbitmq_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+) -> RabbitMQRPCClient:
+    rpc_client = await rabbitmq_rpc_client("pytest_clusters_keeper_rpc_client")
+    assert rpc_client
+    return rpc_client
