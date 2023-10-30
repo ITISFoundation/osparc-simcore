@@ -12,7 +12,6 @@ from respx import MockRouter
 from simcore_service_payments.core.errors import PaymentMethodNotFoundError
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (
-    BatchGetPaymentMethods,
     InitPayment,
     InitPaymentMethod,
 )
@@ -74,13 +73,16 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
-@pytest.mark.parametrize(
-    "amount_dollars",
-    [
+@pytest.fixture(
+    params=[
         10,
         999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
     ],
 )
+def amount_dollars(request: pytest.FixtureRequest) -> float:
+    return request.param
+
+
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
@@ -123,13 +125,7 @@ async def test_one_time_payment_workflow(
         assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
 
 
-@pytest.mark.parametrize(
-    "amount_dollars",
-    [
-        10,
-        999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
-    ],
-)
+@pytest.mark.testit()
 async def test_payment_methods_workflow(
     app: FastAPI,
     faker: Faker,
@@ -137,7 +133,7 @@ async def test_payment_methods_workflow(
     amount_dollars: float,
 ):
 
-    payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
+    payment_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
     assert payment_gateway_api
 
     # init payment-method
@@ -150,7 +146,9 @@ async def test_payment_methods_workflow(
     )
 
     # from url
-    form_link = payment_gateway_api.get_form_payment_method()
+    form_link = payment_gateway_api.get_form_payment_method_url(
+        initiated.payment_method_id
+    )
 
     app_settings: ApplicationSettings = app.state.settings
     assert form_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
@@ -159,34 +157,27 @@ async def test_payment_methods_workflow(
     payment_method_id = initiated.payment_method_id
 
     # get payment-method
-    got_payment_method = await payment_gateway_api.get_payment_methods(
-        payment_method_id
-    )
-    assert got_payment_method.id == payment_method_id
+    got_payment_method = await payment_gateway_api.get_payment_method(payment_method_id)
+    assert got_payment_method.idr == payment_method_id
+    print(got_payment_method.json(indent=2))
 
     # list payment-methods
-    batch = await payment_gateway_api.get_many_payment_methods(
-        BatchGetPaymentMethods(
-            payment_methods_ids=[
-                payment_method_id,
-            ]
-        )
-    )
+    items = await payment_gateway_api.get_many_payment_methods([payment_method_id])
 
-    assert batch.items
-    assert batch.items[0].idr == payment_method_id
+    assert items
+    assert len(items) == 1
+    assert items[0] == got_payment_method
 
     # init payments with payment-method (needs to be ACK to complete)
     payment_initiated = await payment_gateway_api.init_payment_with_payment_method(
-        InitPayment(
-            payment=InitPayment(
-                amount_dollars=amount_dollars,
-                credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
-                user_name=faker.user_name(),
-                user_email=faker.email(),
-                wallet_name=faker.word(),
-            )
-        )
+        id_=payment_method_id,
+        payment=InitPayment(
+            amount_dollars=amount_dollars,
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            wallet_name=faker.word(),
+        ),
     )
 
     # cancel payment
@@ -197,10 +188,12 @@ async def test_payment_methods_workflow(
     await payment_gateway_api.delete_payment_method(payment_method_id)
 
     with pytest.raises(PaymentMethodNotFoundError):
-        await payment_gateway_api.get_payment_methods(payment_method_id)
+        await payment_gateway_api.get_payment_method(payment_method_id)
 
     if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes[
-            "init_payment_with_payment_method"
-        ].called
         assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
+
+        # all defined payment-methods
+        for route in mock_payments_gateway_service_or_none.routes:
+            if route.name and "payment_method" in route.name:
+                assert route.called

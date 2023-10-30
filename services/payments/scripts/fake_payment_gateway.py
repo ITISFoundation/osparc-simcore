@@ -323,6 +323,7 @@ def create_payment_method_router():
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
     ):
+        assert id  # nosec
         assert payment  # nosec
         assert auth  # nosec
 

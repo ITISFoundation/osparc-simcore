@@ -18,4 +18,4 @@ class PaymentAlreadyAckedError(PaymentsValueError):
 
 
 class PaymentMethodNotFoundError(PaymentsValueError):
-    msg_template = "Payment method '{payment_method_id}' was not found"
+    msg_template = "The specified payment method '{payment_method_id}' does not exist"

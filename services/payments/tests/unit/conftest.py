@@ -18,6 +18,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -32,6 +33,7 @@ from simcore_service_payments.models.payments_gateway import (
     InitPayment,
     InitPaymentMethod,
     PaymentInitiated,
+    PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
 
@@ -181,22 +183,19 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
         def _init(request: httpx.Request):
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
-            payment_method_id = faker.uuid4()
-            _payment_methods[payment_method_id] = PaymentMethodInfoTuple(
+            pm_id = faker.uuid4()
+            _payment_methods[pm_id] = PaymentMethodInfoTuple(
                 init=InitPaymentMethod.parse_raw(request.content),
-                get=GetPaymentMethod(
-                    **random_payment_method_data(idr=payment_method_id)
-                ),
+                get=GetPaymentMethod(**random_payment_method_data(idr=pm_id)),
             )
 
             return httpx.Response(
                 status.HTTP_200_OK,
-                json=jsonable_encoder(PaymentInitiated(payment_id=payment_method_id)),
+                json=jsonable_encoder(PaymentMethodInitiated(payment_method_id=pm_id)),
             )
 
-        def _get(request: httpx.Request):
+        def _get(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
-            pm_id = request.url.path.split("/")[-1]
 
             try:
                 _, payment_method = _payment_methods[pm_id]
@@ -206,9 +205,8 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
             except KeyError:
                 return httpx.Response(status.HTTP_404_NOT_FOUND)
 
-        def _del(request: httpx.Request):
+        def _del(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
-            pm_id = request.url.path.split("/")[-1]
 
             try:
                 _payment_methods.pop(pm_id)
@@ -230,12 +228,12 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
                 json=jsonable_encoder(PaymentMethodsBatch(items=items)),
             )
 
-        def _init_payment(request: httpx.Request):
+        def _init_payment(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
             assert InitPayment.parse_raw(request.content) is not None
 
             # checks
-            _get(request)
+            _get(request, pm_id)
 
             return httpx.Response(
                 status.HTTP_200_OK,
@@ -255,17 +253,17 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
         ).mock(side_effect=_batch_get)
 
         mock_router.get(
-            path__regex=r"/payment-methods/(?P<id>{\w+})$",
+            path__regex=r"/payment-methods/(?P<pm_id>[\w-]+)$",
             name="get_payment_method",
         ).mock(side_effect=_get)
 
         mock_router.delete(
-            path__regex=r"/payment-methods/(?P<id>{\w+})$",
+            path__regex=r"/payment-methods/(?P<pm_id>[\w-]+)$",
             name="delete_payment_method",
         ).mock(side_effect=_del)
 
         mock_router.post(
-            path__regex=r"/payment-methods/(?P<id>{\w+}):pay$",
+            path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
             name="init_payment_with_payment_method",
         ).mock(side_effect=_init_payment)
 

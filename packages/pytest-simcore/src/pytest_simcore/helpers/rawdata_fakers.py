@@ -260,6 +260,7 @@ def random_payment_method_data(**overrides):
         "street_address": FAKE.street_address(),
         "zipcode": FAKE.zipcode(),
         "country": FAKE.country(),
+        "created": utcnow(),
     }
     data.update(**overrides)
     return data
