@@ -141,7 +141,7 @@ async def test_payment_methods_workflow(
     assert payment_gateway_api
 
     # init payment-method
-    inited = await payment_gateway_api.init_payment_method(
+    initiated = await payment_gateway_api.init_payment_method(
         InitPaymentMethod(
             user_name=faker.user_name(),
             user_email=faker.email(),
@@ -156,14 +156,14 @@ async def test_payment_methods_workflow(
     assert form_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # CRUD
-    payment_method_id = inited.payment_method_id
+    payment_method_id = initiated.payment_method_id
 
     # get payment-method
     got = await payment_gateway_api.get_payment_methods(payment_method_id)
     assert got.id == payment_method_id
 
     # list payment-methods
-    batch = await payment_gateway_api.batch_get_payment_methods(
+    batch = await payment_gateway_api.get_many_payment_methods(
         BatchGetPaymentMethods(
             payment_methods_ids=[
                 payment_method_id,

@@ -23,6 +23,7 @@ from ..models.payments_gateway import (
     PaymentCancelled,
     PaymentInitiated,
     PaymentMethodInitiated,
+    PaymentMethodsBatch,
 )
 from ..utils.http_client import AppStateMixin, BaseHttpApi
 
@@ -74,29 +75,51 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
         self,
         payment_method: InitPaymentMethod,
     ) -> PaymentMethodInitiated:
-        raise NotImplementedError
+        response = await self.client.post(
+            "/payment-methods:init",
+            json=jsonable_encoder(payment_method),
+        )
+        response.raise_for_status()
+        return PaymentMethodInitiated.parse_obj(response.json())
 
-    async def get_form_payment_method(self, id_: PaymentMethodID) -> URL:
-        raise NotImplementedError
+    async def get_form_payment_method_url(self, id_: PaymentMethodID) -> URL:
+        return self.client.base_url.copy_with(
+            path="/payment-methods/form", params={"id": f"{id_}"}
+        )
 
     # CRUD
 
     async def get_many_payment_methods(
-        self, selection: BatchGetPaymentMethods
+        self, batch: BatchGetPaymentMethods
     ) -> list[GetPaymentMethod]:
-        raise NotImplementedError
+        response = await self.client.post(
+            "/payment-methods:batchGet",
+            json=jsonable_encoder(batch),
+        )
+        response.raise_for_status()
+        return PaymentMethodsBatch.parse_obj(response.json()).items
 
     async def get_payment_method(
         self,
         id_: PaymentMethodID,
     ) -> GetPaymentMethod:
-        raise NotImplementedError
+        response = await self.client.get(f"/payment-methods/{id_}")
+        response.raise_for_status()
+        return GetPaymentMethod.parse_obj(response.json())
 
     async def delete_payment_method(self, id_: PaymentMethodID) -> None:
-        raise NotImplementedError
+        response = await self.client.delete(f"/payment-methods/{id_}")
+        response.raise_for_status()
 
-    async def pay_with_payment_method(self, payment: InitPayment) -> PaymentInitiated:
-        raise NotImplementedError
+    async def pay_with_payment_method(
+        self, id_: PaymentMethodID, payment: InitPayment
+    ) -> PaymentInitiated:
+        response = await self.client.post(
+            f"/payment-methods/{id_}:pay",
+            json=jsonable_encoder(payment),
+        )
+        response.raise_for_status()
+        return PaymentInitiated.parse_obj(response.json())
 
 
 def setup_payments_gateway(app: FastAPI):

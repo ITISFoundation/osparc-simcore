@@ -29,6 +29,7 @@ from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
     ErrorModel,
+    GetPaymentMethod,
     InitPayment,
     InitPaymentMethod,
     PaymentCancelled,
@@ -290,7 +291,7 @@ def create_payment_method_router():
 
     @router.get(
         "/{id}",
-        response_class=HTMLResponse,
+        response_class=GetPaymentMethod,
         responses=ERROR_RESPONSES,
     )
     def get_payment_method(
