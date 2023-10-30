@@ -263,7 +263,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      const successfulMsg = this.tr("Auto recharge was successfully enabled");
+      const successfulMsg = this.tr("Auto recharge was successfully enabled. Coming soon.");
       enableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, enableAutoRechargeBtn, successfulMsg));
       return enableAutoRechargeBtn;
     },
