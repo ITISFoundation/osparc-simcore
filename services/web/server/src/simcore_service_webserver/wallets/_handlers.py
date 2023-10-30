@@ -19,7 +19,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -35,6 +34,7 @@ from ..payments.errors import (
     PaymentUniqueViolationError,
 )
 from ..security.decorators import permission_required
+from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from . import _api
 from .errors import WalletAccessForbiddenError, WalletNotFoundError
