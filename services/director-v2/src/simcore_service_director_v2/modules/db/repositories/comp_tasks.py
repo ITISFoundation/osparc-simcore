@@ -22,7 +22,12 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import ServiceDockerData, ServiceKeyVersion
+from models_library.services import (
+    ServiceDockerData,
+    ServiceKey,
+    ServiceKeyVersion,
+    ServiceVersion,
+)
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -166,6 +171,58 @@ async def _generate_task_image(
     return Image.parse_obj(data)
 
 
+async def _get_pricing_and_hardware_infos(
+    connection: aiopg.sa.connection.SAConnection,
+    rut_client: ResourceUsageTrackerClient,
+    *,
+    is_wallet: bool,
+    project_id: ProjectID,
+    node_id: NodeID,
+    product_name: str,
+    node_key: ServiceKey,
+    node_version: ServiceVersion,
+) -> tuple[PricingInfo | None, HardwareInfo]:
+    if not is_wallet:
+        return None, HardwareInfo(aws_ec2_instances=[])
+    project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+    output = await project_nodes_repo.get_project_node_pricing_unit_id(
+        connection, node_uuid=node_id
+    )
+    # NOTE: this is some kind of lazy insertion of the pricing unit
+    # the projects_nodes is already in at this time, and not in sync with the hardware info
+    # this will need to move away and be in sync.
+    if output:
+        pricing_plan_id, pricing_unit_id = output
+        pricing_unit_get = await rut_client.get_pricing_unit(
+            product_name, pricing_plan_id, pricing_unit_id
+        )
+        pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+        aws_ec2_instances = pricing_unit_get.specific_info["aws_ec2_instances"]
+    else:
+        (
+            pricing_plan_id,
+            pricing_unit_id,
+            pricing_unit_cost_id,
+            aws_ec2_instances,
+        ) = await rut_client.get_default_pricing_and_hardware_info(
+            product_name, node_key, node_version
+        )
+        await project_nodes_repo.connect_pricing_unit_to_project_node(
+            connection,
+            node_uuid=node_id,
+            pricing_plan_id=pricing_plan_id,
+            pricing_unit_id=pricing_unit_id,
+        )
+
+    pricing_info = PricingInfo(
+        pricing_plan_id=pricing_plan_id,
+        pricing_unit_id=pricing_unit_id,
+        pricing_unit_cost_id=pricing_unit_cost_id,
+    )
+    hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
+    return pricing_info, hardware_info
+
+
 async def _generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
@@ -180,7 +237,7 @@ async def _generate_tasks_list_from_project(
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
 
-    unique_service_key_versions = {
+    unique_service_key_versions: set[ServiceKeyVersion] = {
         ServiceKeyVersion.construct(
             key=node.key, version=node.version
         )  # the service key version is frozen
@@ -234,43 +291,16 @@ async def _generate_tasks_list_from_project(
         ):
             task_state = RunningState.PUBLISHED
 
-        pricing_info = None
-        hardware_info = HardwareInfo(aws_ec2_instances=[])
-        if is_wallet:
-            output = await project_nodes_repo.get_project_node_pricing_unit_id(
-                connection, node_uuid=NodeID(node_id)
-            )
-            if output:
-                pricing_plan_id, pricing_unit_id = output
-                pricing_unit_get = await rut_client.get_pricing_unit(
-                    product_name, pricing_plan_id, pricing_unit_id
-                )
-                pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-                aws_ec2_instances = pricing_unit_get.specific_info["aws_ec2_instances"]
-            else:
-                (
-                    pricing_plan_id,
-                    pricing_unit_id,
-                    pricing_unit_cost_id,
-                    aws_ec2_instances,
-                ) = await rut_client.get_default_pricing_and_hardware_info(
-                    product_name,
-                    node.key,
-                    node.version,
-                )
-                await project_nodes_repo.connect_pricing_unit_to_project_node(
-                    connection,
-                    node_uuid=NodeID(node_id),
-                    pricing_plan_id=pricing_plan_id,
-                    pricing_unit_id=pricing_unit_id,
-                )
-
-            pricing_info = PricingInfo(
-                pricing_plan_id=pricing_plan_id,
-                pricing_unit_id=pricing_unit_id,
-                pricing_unit_cost_id=pricing_unit_cost_id,
-            )
-            hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
+        pricing_info, hardware_info = await _get_pricing_and_hardware_infos(
+            connection,
+            rut_client,
+            is_wallet=is_wallet,
+            project_id=project.uuid,
+            node_id=NodeID(node_id),
+            product_name=product_name,
+            node_key=node.key,
+            node_version=node.version,
+        )
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
