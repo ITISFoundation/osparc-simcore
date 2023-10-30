@@ -1,5 +1,5 @@
 import re
-from typing import Any, Final, Protocol
+from typing import Final
 
 from pydantic import ConstrainedStr, parse_obj_as
 
@@ -25,8 +25,3 @@ class RPCMethodName(ConstrainedStr):
     min_length: int = 1
     max_length: int = 252
     regex: re.Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
-
-
-class RPCProtocol(Protocol):
-    async def request(self, namespace: str, method_name: str, **kwargs) -> Any:
-        ...
