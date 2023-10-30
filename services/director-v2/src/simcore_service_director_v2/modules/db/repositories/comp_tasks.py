@@ -38,7 +38,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.core.errors import (
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ClustersKeeperNotAvailableError,
     ComputationalTaskNotFoundError,
 )
 from simcore_service_director_v2.modules.resource_usage_tracker_client import (
@@ -274,7 +274,7 @@ async def _update_project_node_resources_from_hardware_info(
             required_resources=node.required_resources,
         )
     except RPCServerError as exc:
-        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
+        raise ClustersKeeperNotAvailableError from exc
 
 
 async def _generate_tasks_list_from_project(

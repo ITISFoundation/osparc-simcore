@@ -47,7 +47,7 @@ from tenacity.wait import wait_random
 from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
@@ -309,7 +309,7 @@ async def create_computation(  # noqa: C901, PLR0912
         ) from e
     except PricingPlanUnitNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ComputationalBackendOnDemandClustersKeeperNotReadyError as e:
+    except ClustersKeeperNotAvailableError as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}"
         ) from e

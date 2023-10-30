@@ -17,7 +17,7 @@ from servicelib.rabbitmq import (
 from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.errors import (
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ClustersKeeperNotAvailableError,
     ComputationalBackendOnDemandNotReadyError,
 )
 
@@ -57,6 +57,6 @@ async def get_or_create_on_demand_cluster(
         )
     except RemoteMethodNotRegisteredError as exc:
         # no clusters-keeper, that is not going to work!
-        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
+        raise ClustersKeeperNotAvailableError from exc
     except RPCServerError as exc:
-        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
+        raise ClustersKeeperNotAvailableError from exc
