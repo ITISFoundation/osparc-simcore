@@ -1,16 +1,15 @@
 from asyncio import Task
-from contextlib import suppress
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Final
 
-from fastapi import FastAPI, status
-from httpx import AsyncClient, HTTPError
+from fastapi import FastAPI
+from httpx import AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.projects_nodes_io import NodeID
-from pydantic import NonNegativeFloat, NonNegativeInt, ValidationError
+from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.osparc_resource_manager import (
     OsparcResourceManager,
@@ -21,6 +20,7 @@ from servicelib.utils import logged_gather
 
 from ...meta import API_VTAG
 from ..osparc_resource_tracker import get_osparc_resource_manager
+from ..utils import get_service_status
 from ._store import update_status_cache
 
 _WAIT_FOR_TASK_TO_STOP: Final[NonNegativeFloat] = 5
@@ -33,7 +33,7 @@ _PARALLEL_REQUESTS: Final[NonNegativeInt] = 5
 class StatusesMonitor:
     app: FastAPI
     task: Task | None = None
-    httpx_client = AsyncClient(base_url=f"http://localhost:8000/{API_VTAG}", timeout=5)
+    httpx_client = AsyncClient(base_url=f"http://localhost:8000/{API_VTAG}")
 
     async def _periodic_task(self) -> None:
         osparc_resoruce_manager: OsparcResourceManager = get_osparc_resource_manager(
@@ -53,18 +53,11 @@ class StatusesMonitor:
         )
 
     async def _update_status_cache(self, node_id: NodeID) -> None:
-        try:
-            response = await self.httpx_client.get(f"/dynamic_services/{node_id}")
-        except HTTPError:
-            return
-
-        if response.status_code != status.HTTP_200_OK:
-            return
-
-        with suppress(ValidationError):
-            await update_status_cache(
-                self.app, node_id, RunningDynamicServiceDetails.parse_raw(response.text)
-            )
+        status: RunningDynamicServiceDetails | None = await get_service_status(
+            self.httpx_client, node_id
+        )
+        if status:
+            await update_status_cache(self.app, node_id, status)
 
     async def startup(self) -> None:
         self.task = start_periodic_task(

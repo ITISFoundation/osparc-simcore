@@ -2,13 +2,10 @@ from asyncio import Task
 from datetime import timedelta
 from typing import Final
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from httpx import AsyncClient
-from models_library.api_schemas_directorv2.dynamic_services_service import (
-    RunningDynamicServiceDetails,
-)
 from models_library.projects_nodes_io import NodeID
-from pydantic import NonNegativeFloat, NonNegativeInt, ValidationError
+from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.osparc_resource_manager import (
     BaseResourceHandler,
@@ -22,6 +19,7 @@ from servicelib.utils import logged_gather
 from ..meta import API_VTAG
 from .redis import get_redis_client_sdk
 from .service_status_observer import remove_from_status_cache
+from .utils import get_service_status
 
 _REMOVE_NOT_PRESENT_SERVICES_INTERVAL: Final[timedelta] = timedelta(seconds=60)
 _STOP_TASK_TIMEOUT_S: Final[NonNegativeFloat] = 5
@@ -33,21 +31,12 @@ class DynamicServicesHandler(BaseResourceHandler):
     # NOTE: only used to check if a service is present in oSPARC
 
     def __init__(self) -> None:
-        self.httpx_client = AsyncClient(
-            base_url=f"http://localhost:8000/{API_VTAG}", timeout=5
-        )
+        self.httpx_client = AsyncClient(base_url=f"http://localhost:8000/{API_VTAG}")
 
     async def is_present(self, identifier: ResourceIdentifier) -> bool:
-        response = await self.httpx_client.get(f"/dynamic_services/{identifier}")
-
-        if response.status_code != status.HTTP_200_OK:
-            return False
-
-        try:
-            RunningDynamicServiceDetails.parse_raw(response.text)
-            return True
-        except ValidationError:
-            return False
+        return (
+            await get_service_status(self.httpx_client, NodeID(identifier)) is not None
+        )
 
 
 class DirectorV2OsparcResourceManager(OsparcResourceManager):
