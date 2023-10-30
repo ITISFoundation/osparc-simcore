@@ -4,9 +4,11 @@
 
 import pytest
 from fastapi import FastAPI
-from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
+    get_instance_type_details,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -34,10 +36,9 @@ async def test_get_instance_type_details_all_options(
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
     # an empty set returns all options
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
-        CLUSTERS_KEEPER_RPC_NAMESPACE,
-        RPCMethodName("get_instance_type_details"),
-        instance_type_names=set(),
+
+    rpc_response = await get_instance_type_details(
+        clusters_keeper_rabbitmq_rpc_client, instance_type_names=set()
     )
     assert rpc_response
     assert isinstance(rpc_response, list)
@@ -48,10 +49,8 @@ async def test_get_instance_type_details_specific_type_names(
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
-    # an empty set returns all options
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
-        CLUSTERS_KEEPER_RPC_NAMESPACE,
-        RPCMethodName("get_instance_type_details"),
+    rpc_response = await get_instance_type_details(
+        clusters_keeper_rabbitmq_rpc_client,
         instance_type_names={"t2.micro", "g4dn.xlarge"},
     )
     assert rpc_response
