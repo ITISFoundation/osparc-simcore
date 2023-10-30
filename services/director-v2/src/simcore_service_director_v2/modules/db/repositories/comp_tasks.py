@@ -28,7 +28,7 @@ from models_library.services import (
     ServiceKeyVersion,
     ServiceVersion,
 )
-from models_library.services_resources import BootMode
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME, BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
@@ -224,6 +224,30 @@ async def _get_pricing_and_hardware_infos(
     return pricing_info, hardware_info
 
 
+async def _update_project_node_resources_from_hardware_info(
+    connection: aiopg.sa.connection.SAConnection,
+    *,
+    is_wallet: bool,
+    project_id: ProjectID,
+    node_id: NodeID,
+    hardware_info: HardwareInfo,
+) -> None:
+    if not is_wallet:
+        return
+    if not hardware_info.aws_ec2_instances:
+        return
+    project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+    node = await project_nodes_repo.get(connection, node_id=node_id)
+    node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
+        "limit"
+    ] = (4 * 10e9)
+    await project_nodes_repo.update(
+        connection,
+        node_id=node_id,
+        required_resources=node.required_resources,
+    )
+
+
 async def _generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
@@ -289,6 +313,14 @@ async def _generate_tasks_list_from_project(
             product_name=product_name,
             node_key=node.key,
             node_version=node.version,
+        )
+
+        await _update_project_node_resources_from_hardware_info(
+            connection,
+            is_wallet=is_wallet,
+            project_id=project.uuid,
+            node_id=NodeID(node_id),
+            hardware_info=hardware_info,
         )
 
         image = await _generate_task_image(
