@@ -12,6 +12,7 @@ import httpx
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL
+from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -19,9 +20,7 @@ from ..models.payments_gateway import (
     InitPayment,
     InitPaymentMethod,
     PaymentCancelled,
-    PaymentID,
     PaymentInitiated,
-    PaymentMethodID,
     PaymentMethodInitiated,
 )
 from ..utils.http_client import AppStateMixin, BaseHttpApi

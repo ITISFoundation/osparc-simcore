@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.rpc_schemas_clusters_keeper.clusters import ClusterState
+from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.models import EC2InstanceData

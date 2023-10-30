@@ -380,7 +380,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
           const button = osparc.utils.Utils.getEditButton();
           button.addListener("execute", () => {
             const title = this.tr("Edit References");
-            const textEditor = new osparc.editor.TextEditor(currentRule.references);
+            const textEditor = new osparc.editor.MarkdownEditor(currentRule.references);
             textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
             const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
             textEditor.addListener("textChanged", e => {

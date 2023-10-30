@@ -1,15 +1,13 @@
 import contextlib
 import logging
-from typing import Final, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
-from pydantic import parse_obj_as
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
-    RPCNamespace,
     wait_till_rabbitmq_responsive,
 )
 from settings_library.rabbit import RabbitSettings
@@ -18,10 +16,6 @@ from ..core.errors import ConfigurationError
 from ..core.settings import get_application_settings
 
 logger = logging.getLogger(__name__)
-
-CLUSTERS_KEEPER_RPC_NAMESPACE: Final[RPCNamespace] = parse_obj_as(
-    RPCNamespace, "clusters-keeper"
-)
 
 
 def setup(app: FastAPI) -> None:

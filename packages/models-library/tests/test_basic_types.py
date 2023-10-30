@@ -1,7 +1,14 @@
 from typing import NamedTuple
 
 import pytest
-from models_library.basic_types import EnvVarKey, MD5Str, SHA1Str, UUIDStr, VersionTag
+from models_library.basic_types import (
+    EnvVarKey,
+    IDStr,
+    MD5Str,
+    SHA1Str,
+    UUIDStr,
+    VersionTag,
+)
 from pydantic import ConstrainedStr, ValidationError
 from pydantic.tools import parse_obj_as
 
@@ -30,6 +37,11 @@ _EXAMPLES = [
         good="d2cbbd98-d0f8-4de1-864e-b390713194eb",
         bad="123456-is-not-an-uuid",
     ),
+    _Example(
+        constr=IDStr,
+        good="d2cbbd98-d0f8-4de1-864e-b390713194eb",  # as an uuid
+        bad="",  # empty string not allowed
+    ),
 ]
 
 
@@ -50,3 +62,14 @@ def test_constrained_str_succeeds(
 def test_constrained_str_fails(constraint_str_type: type[ConstrainedStr], sample: str):
     with pytest.raises(ValidationError):
         parse_obj_as(constraint_str_type, sample)
+
+
+def test_string_identifier_constraint_type():
+
+    # strip spaces
+    assert parse_obj_as(IDStr, "   123 trim spaces   ") == "123 trim spaces"
+
+    # limited to 50!
+    parse_obj_as(IDStr, "X" * 50)
+    with pytest.raises(ValidationError):
+        parse_obj_as(IDStr, "X" * 51)

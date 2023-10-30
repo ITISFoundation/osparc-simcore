@@ -199,11 +199,11 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           row: 0,
           column: 0
         });
-        const t1v = new qx.ui.basic.Label().set({
-          value: "Off",
+        const autoRechargeEnabled = new qx.ui.basic.Label().set({
+          value: this.tr("Off"),
           font: "text-14"
         });
-        layout.add(t1v, {
+        layout.add(autoRechargeEnabled, {
           row: 0,
           column: 1
         });
@@ -215,10 +215,10 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           row: 1,
           column: 0
         });
-        const t2v = new qx.ui.basic.Label().set({
+        const monthlyLimit = new qx.ui.basic.Label().set({
           font: "text-14"
         });
-        layout.add(t2v, {
+        layout.add(monthlyLimit, {
           row: 1,
           column: 1
         });
@@ -230,21 +230,29 @@ qx.Class.define("osparc.desktop.credits.Summary", {
           row: 2,
           column: 0
         });
-        const t3v = new qx.ui.basic.Label().set({
+        const paymentMethod = new qx.ui.basic.Label().set({
           font: "text-14"
         });
-        layout.add(t3v, {
+        layout.add(paymentMethod, {
           row: 2,
           column: 1
         });
 
-        wallet.bind("autoRecharge", t1v, "value", {
+        wallet.bind("autoRecharge", autoRechargeEnabled, "value", {
           converter: arData => arData && arData["enabled"] ? this.tr("On") : this.tr("Off")
         });
-        wallet.bind("autoRecharge", t2v, "value", {
-          converter: arData => arData && arData["enabled"] ? (arData["topUpAmountInUsd"]*arData["topUpCountdown"]) + " US$" : null
+        wallet.bind("autoRecharge", monthlyLimit, "value", {
+          converter: arData => {
+            if (arData && arData["enabled"]) {
+              if (arData["monthlyLimitInUsd"]) {
+                return arData["monthlyLimitInUsd"] + " US$";
+              }
+              return (arData["topUpAmountInUsd"]*arData["topUpCountdown"]) + " US$";
+            }
+            return null;
+          }
         });
-        wallet.bind("autoRecharge", t3v, "value", {
+        wallet.bind("autoRecharge", paymentMethod, "value", {
           converter: arData => arData && arData["enabled"] ? arData["paymentMethodId"] : null
         });
 

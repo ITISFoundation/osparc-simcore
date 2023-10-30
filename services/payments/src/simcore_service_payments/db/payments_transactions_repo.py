@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
+from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import HttpUrl, PositiveInt, parse_obj_as
@@ -18,7 +19,6 @@ from ..core.errors import (
     PaymentNotFoundError,
 )
 from ..models.db import PaymentsTransactionsDB
-from ..models.payments_gateway import PaymentID
 
 
 class BaseRepository:
