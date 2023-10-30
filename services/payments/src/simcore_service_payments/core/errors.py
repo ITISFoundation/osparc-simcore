@@ -15,3 +15,7 @@ class PaymentAlreadyExistsError(PaymentsValueError):
 
 class PaymentAlreadyAckedError(PaymentsValueError):
     msg_template = "Payment transaction '{payment_id}' cannot be changes since it was already closed."
+
+
+class PaymentMethodNotFoundError(PaymentsValueError):
+    msg_template = "Payment method '{payment_method_id}' was not found"

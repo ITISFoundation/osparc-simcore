@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMetho
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
+    BatchGetPaymentMethods,
     GetPaymentMethod,
     InitPayment,
     InitPaymentMethod,
@@ -78,7 +79,11 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     async def get_form_payment_method(self, id_: PaymentMethodID) -> URL:
         raise NotImplementedError
 
-    async def list_payment_methods(self) -> list[GetPaymentMethod]:
+    # CRUD
+
+    async def get_many_payment_methods(
+        self, selection: BatchGetPaymentMethods
+    ) -> list[GetPaymentMethod]:
         raise NotImplementedError
 
     async def get_payment_method(
