@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from dataclasses import dataclass, field
 from enum import auto
 from typing import Any, Final, TypeAlias
 
@@ -63,7 +62,6 @@ def _get_key_resource_name(
     return f"{_key_space(resource_type,_RESOURCE_PREFIX)}:{identifier}"
 
 
-@dataclass
 class OsparcResourceManager:
     """
     Allows to track and manage the lifecycle of resource inside oSPARc
@@ -72,10 +70,9 @@ class OsparcResourceManager:
     under a unique lock for the given resource identifier.
     """
 
-    redis_client_sdk: RedisClientSDK
-    registered_handlers: dict[OsparcResourceType, BaseResourceHandler] = field(
-        default_factory=dict
-    )
+    def __init__(self, redis_client_sdk: RedisClientSDK) -> None:
+        self.redis_client_sdk: RedisClientSDK = redis_client_sdk
+        self.registered_handlers: dict[OsparcResourceType, BaseResourceHandler] = {}
 
     def _get_handler(self, resource_type: OsparcResourceType) -> BaseResourceHandler:
         return self.registered_handlers[resource_type]
@@ -186,7 +183,7 @@ class OsparcResourceManager:
     async def remove_resources_which_are_no_longer_present(
         self,
         resource_type: OsparcResourceType,
-    ) -> None:
+    ) -> set[ResourceIdentifier]:
         """Removes the given resource type using it's registered handler.
 
         NOTE: the user is free to use this method or `remove_all_not_present_resources`
@@ -203,10 +200,16 @@ class OsparcResourceManager:
             max_concurrency=_PARALLEL_REDIS_CALLS,
         )
 
+        removed_identifiers: set[ResourceIdentifier] = set()
+
+        async def _remove(identifier: ResourceIdentifier):
+            await self.remove(resource_type, identifier=identifier, destroy=False)
+            removed_identifiers.add(identifier)
+
         # NOTE: since resources are no longer present, it makes no sense to destroy them
         await logged_gather(
             *(
-                self.remove(resource_type, identifier=identifier, destroy=False)
+                _remove(identifier)
                 for identifier, is_present in zip(
                     identifiers, resources_present, strict=True
                 )
@@ -214,3 +217,5 @@ class OsparcResourceManager:
             ),
             max_concurrency=_PARALLEL_REDIS_CALLS,
         )
+
+        return removed_identifiers
