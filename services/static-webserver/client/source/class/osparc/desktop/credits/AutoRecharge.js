@@ -156,11 +156,15 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const autoRechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
       const topUpAmountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const topUpAmountTitleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const topUpAmountTitle = new qx.ui.basic.Label().set({
         value: this.tr("RECHARGING AMOUNT (US$)"),
         font: "text-14"
       });
-      topUpAmountLayout.add(topUpAmountTitle);
+      topUpAmountTitleLayout.add(topUpAmountTitle);
+      const topUpAmountInfo = new osparc.ui.hint.InfoHint("Amount in US$ payed when auto-recharge condition is satisfied.");
+      topUpAmountTitleLayout.add(topUpAmountInfo);
+      topUpAmountLayout.add(topUpAmountTitleLayout);
       const topUpAmountField = this.__topUpAmountField = new qx.ui.form.Spinner().set({
         minimum: 10,
         maximum: 10000,
@@ -176,11 +180,15 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       autoRechargeLayout.add(topUpAmountLayout);
 
       const monthlyLimitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const monthlyLimitTitleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const monthlyLimitTitle = new qx.ui.basic.Label().set({
         value: this.tr("MONTHLY LIMIT (US$)"),
         font: "text-14"
       });
-      monthlyLimitLayout.add(monthlyLimitTitle);
+      monthlyLimitTitleLayout.add(monthlyLimitTitle);
+      const monthlyLimitTitleInfo = new osparc.ui.hint.InfoHint(this.tr("Maximum amount in US$ charged within a natural month."));
+      monthlyLimitTitleLayout.add(monthlyLimitTitleInfo);
+      monthlyLimitLayout.add(monthlyLimitTitleLayout);
       const monthlyLimitField = this.__monthlyLimitField = new qx.ui.form.Spinner().set({
         minimum: 0,
         maximum: 100000,
