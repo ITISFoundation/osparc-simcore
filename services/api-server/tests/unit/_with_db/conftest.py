@@ -10,6 +10,7 @@ import subprocess
 import sys
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
+from typing import AsyncGenerator
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -21,7 +22,7 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from models_library.users import UserID
+from pydantic import PositiveInt
 from pytest_simcore.helpers.rawdata_fakers import (
     random_api_key,
     random_product,
@@ -176,36 +177,52 @@ async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
 
 
 @pytest.fixture
-async def user_id(connection: SAConnection) -> AsyncIterator[UserID]:
-    uid = await connection.scalar(
-        users.insert().values(random_user()).returning(users.c.id)
-    )
-    assert uid
-    yield uid
+async def user_id(connection: SAConnection):
+    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, int]:
+        for _ in range(n):
+            uid = await connection.scalar(
+                users.insert().values(random_user()).returning(users.c.id)
+            )
+            assert uid
+            _generate_user_ids.generated_ids.append(uid)
+            yield uid
 
-    await connection.execute(users.delete().where(users.c.id == uid))
+    _generate_user_ids.generated_ids = []
+    yield _generate_user_ids
+
+    for uid in _generate_user_ids.generated_ids:
+        await connection.execute(users.delete().where(users.c.id == uid))
 
 
 @pytest.fixture
-async def product_name(connection: SAConnection) -> AsyncIterator[str]:
-    name = await connection.scalar(
-        products.insert()
-        .values(random_product(group_id=None))
-        .returning(products.c.name)
-    )
-    assert name
-    yield name
+async def product_name(connection: SAConnection):
+    async def _generate_product_names(
+        n: PositiveInt,
+    ) -> AsyncGenerator[PositiveInt, str]:
+        for _ in range(n):
+            name = await connection.scalar(
+                products.insert()
+                .values(random_product(group_id=None))
+                .returning(products.c.name)
+            )
+            assert name
+            _generate_product_names.generated_names.append(name)
+            yield name
 
-    await connection.execute(products.delete().where(products.c.name == name))
+    _generate_product_names.generated_names = []
+    yield _generate_product_names
+
+    for name in _generate_product_names.generated_names:
+        await connection.execute(products.delete().where(products.c.name == name))
 
 
 @pytest.fixture
 async def fake_api_key(
-    connection: SAConnection, user_id: int, product_name: str
+    connection: SAConnection, user_id: int, product_name
 ) -> AsyncIterator[ApiKeyInDB]:
     result = await connection.execute(
         api_keys.insert()
-        .values(**random_api_key(product_name, user_id))
+        .values(**random_api_key(await product_name(1), user_id))
         .returning(sa.literal_column("*"))
     )
     row = await result.fetchone()
@@ -213,6 +230,35 @@ async def fake_api_key(
     yield ApiKeyInDB.from_orm(row)
 
     await connection.execute(api_keys.delete().where(api_keys.c.id == row.id))
+
+
+@pytest.fixture
+async def two_fake_api_keys(
+    connection: SAConnection, user_id, product_name
+) -> AsyncIterator[list[ApiKeyInDB]]:
+    keys: list[ApiKeyInDB] = []
+    row_ids: list[int] = []
+    n_elements: int = 2
+
+    products = product_name(n_elements)
+    users = user_id(n_elements)
+    for _ in range(n_elements):
+        product_name = await anext(products)
+        user_id = await anext(users)
+        result = await connection.execute(
+            api_keys.insert()
+            .values(**random_api_key(product_name, user_id))
+            .returning(sa.literal_column("*"))
+        )
+        row = await result.fetchone()
+        assert row
+        row_ids.append(row.id)
+        keys.append(ApiKeyInDB.from_orm(row))
+
+    yield keys
+
+    for row_id in row_ids:
+        await connection.execute(api_keys.delete().where(api_keys.c.id == row_id))
 
 
 @pytest.fixture
