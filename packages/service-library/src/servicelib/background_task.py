@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Final
+from typing import Final, cast
 
 from pydantic.errors import PydanticErrorMixin
 from servicelib.logging_utils import log_catch, log_context
@@ -30,8 +30,15 @@ class ContinueCondition:
     def stop(self):
         self._can_continue = False
 
-    def __call__(self) -> bool:
+    @property
+    def can_continue(self) -> bool:
         return self._can_continue
+
+
+class _ExtendedTask(asyncio.Task):
+    def __init__(self, coro, *, loop=None, name=None):
+        super().__init__(coro=coro, loop=loop, name=name)
+        self.continue_condition: ContinueCondition | None = None
 
 
 async def _periodic_scheduled_task(
@@ -45,7 +52,7 @@ async def _periodic_scheduled_task(
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
-            if not continue_condition():
+            if not continue_condition.can_continue:
                 logger.debug("'%s' finished periodic actions", task_name)
                 return
             with log_context(
@@ -79,8 +86,10 @@ def start_periodic_task(
             ),
             name=task_name,
         )
-        # pylint: disable=protected-access
-        new_periodic_task._continue_condition = continue_condition  # noqa: SLF001
+        # NOTE: adds an additional property to the task object
+        # which will be used when stopping the priodic task
+        new_periodic_task = cast(_ExtendedTask, new_periodic_task)
+        new_periodic_task.continue_condition = continue_condition
         return new_periodic_task
 
 
@@ -121,13 +130,10 @@ async def stop_periodic_task(
         logging.DEBUG,
         msg=f"stop periodic background task '{asyncio_task.get_name()}'",
     ):
-        # TODO: add notes behind the idea here
-
-        # pylint: disable=protected-access
-        continue_condition: ContinueCondition = (
-            asyncio_task._continue_condition
-        )  # noqa: SLF001
-        continue_condition.stop()
+        asyncio_task = cast(_ExtendedTask, asyncio_task)
+        continue_condition: ContinueCondition | None = asyncio_task.continue_condition
+        if continue_condition:
+            continue_condition.stop()
 
         _, pending = await asyncio.wait((asyncio_task,), timeout=timeout)
         if pending:
