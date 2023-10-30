@@ -7,7 +7,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "warning-yellow": "#F8DB1F", // Speag yellow
     "busy-orange": "#FFA500",
     "failed-red": "#FF2D2D",
-    "danger-red": "E00020", // Z43 red
+    "danger-red": "#E00020", // Z43 red
 
     "visual-blue": "#007fd4", // Visual Studio blue
 
