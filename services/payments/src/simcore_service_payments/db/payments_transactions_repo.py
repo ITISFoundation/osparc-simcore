@@ -11,7 +11,6 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.errors import (
     PaymentAlreadyAckedError,
@@ -19,22 +18,14 @@ from ..core.errors import (
     PaymentNotFoundError,
 )
 from ..models.db import PaymentsTransactionsDB
-
-
-class BaseRepository:
-    """
-    Repositories are pulled at every request
-    """
-
-    def __init__(self, db_engine: AsyncEngine):
-        assert db_engine is not None  # nosec
-        self.db_engine = db_engine
+from ._base import BaseRepository
 
 
 class PaymentsTransactionsRepo(BaseRepository):
     async def insert_init_payment_transaction(
         self,
         payment_id: PaymentID,
+        *,
         price_dollars: Decimal,
         osparc_credits: Decimal,
         product_name: str,
