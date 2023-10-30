@@ -28,7 +28,7 @@ from models_library.services import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME, BootMode
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -222,6 +222,9 @@ async def _get_pricing_and_hardware_infos(
     return pricing_info, hardware_info
 
 
+_RAM_SAFE_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "1GiB")
+
+
 async def _update_project_node_resources_from_hardware_info(
     connection: aiopg.sa.connection.SAConnection,
     *,
@@ -257,7 +260,9 @@ async def _update_project_node_resources_from_hardware_info(
             "limit"
         ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
             "reservation"
-        ] = selected_ec2_instance_type.ram
+        ] = (
+            selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
+        )
         await project_nodes_repo.update(
             connection,
             node_id=node_id,
