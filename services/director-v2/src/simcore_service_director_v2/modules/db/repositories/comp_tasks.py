@@ -7,7 +7,6 @@ import aiopg.sa
 import arrow
 import sqlalchemy as sa
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
-from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
@@ -37,23 +36,21 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
-    RPCMethodName,
     RPCServerError,
 )
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper import get_instance_type_details
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
-from simcore_service_director_v2.core.errors import (
-    ClustersKeeperNotAvailableError,
-    ComputationalTaskNotFoundError,
-)
-from simcore_service_director_v2.modules.resource_usage_tracker_client import (
-    ResourceUsageTrackerClient,
-)
-from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
+from ....core.errors import (
+    ClustersKeeperNotAvailableError,
+    ComputationalTaskNotFoundError,
+)
 from ....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
+from ....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
+from ....utils.comp_scheduler import COMPLETED_STATES
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
 from ...catalog import CatalogClient, ServiceResourcesDict
@@ -251,11 +248,11 @@ async def _update_project_node_resources_from_hardware_info(
     try:
         list_ec2_instance_types: list[
             EC2InstanceType
-        ] = await rabbitmq_rpc_client.request(
-            CLUSTERS_KEEPER_RPC_NAMESPACE,
-            RPCMethodName("get_instance_type_details"),
+        ] = await get_instance_type_details(
+            rabbitmq_rpc_client,
             instance_type_names=set(hardware_info.aws_ec2_instances),
         )
+
         assert list_ec2_instance_types  # nosec
         assert len(list_ec2_instance_types) == 1  # nosec
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
