@@ -4,10 +4,10 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "activitytree-background-memory": "#358475",
 
     "ready-green": "#58A6FF", // It is not really green because of reasons
-    "warning-yellow": "#f8db1f",
+    "warning-yellow": "#F8DB1F", // Speag yellow
     "busy-orange": "#FFA500",
     "failed-red": "#FF2D2D",
-    "danger-red": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.danger", 40),
+    "danger-red": "E00020", // Z43 red
 
     "visual-blue": "#007fd4", // Visual Studio blue
 
