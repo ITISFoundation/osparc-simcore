@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
       },
       cost: {
         pos: 6,
-        title: qx.locale.Manager.tr("Cost")
+        title: qx.locale.Manager.tr("Credits")
       },
       user: {
         pos: 7,

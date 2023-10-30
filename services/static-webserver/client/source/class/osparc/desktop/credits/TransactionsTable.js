@@ -51,20 +51,16 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
         pos: 2,
         title: qx.locale.Manager.tr("Credits")
       },
-      wallet: {
-        pos: 3,
-        title: qx.locale.Manager.tr("Credit Account")
-      },
       status: {
-        pos: 4,
+        pos: 3,
         title: qx.locale.Manager.tr("Status")
       },
       comment: {
-        pos: 5,
+        pos: 4,
         title: qx.locale.Manager.tr("Comment")
       },
       invoice: {
-        pos: 6,
+        pos: 5,
         title: qx.locale.Manager.tr("Invoice")
       }
     },
@@ -106,12 +102,6 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
       newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["createdAt"]));
       newData[cols["price"].pos] = data["priceDollars"] ? data["priceDollars"] : 0;
       newData[cols["credits"].pos] = data["osparcCredits"] ? data["osparcCredits"] : 0;
-      let walletName = "Unknown";
-      const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
-      if (found) {
-        walletName = found.getName();
-      }
-      newData[cols["wallet"].pos] = walletName;
       if (data["completedStatus"]) {
         newData[cols["status"].pos] = this.addColorTag(data["completedStatus"]);
       }
