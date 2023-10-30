@@ -7,7 +7,8 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
-from pydantic import ByteSize, parse_obj_as
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
+from pydantic import ByteSize
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -18,8 +19,10 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
+    ClustersKeeperRuntimeError,
     ConfigurationError,
     Ec2InstanceNotFoundError,
+    Ec2InstanceTypeInvalidError,
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
@@ -28,7 +31,7 @@ from ..core.settings import (
     PrimaryEC2InstancesSettings,
     get_application_settings,
 )
-from ..models import EC2InstanceData, EC2InstanceType, EC2Tags
+from ..models import EC2InstanceData, EC2Tags
 from ..utils.ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)
@@ -72,22 +75,27 @@ class ClustersKeeperEC2:
         instance_type_names: set[InstanceTypeType],
     ) -> list[EC2InstanceType]:
         """instance_type_names must be a set of unique values"""
-        instance_types = await self.client.describe_instance_types(
-            InstanceTypes=list(instance_type_names)
-        )
-        list_instances: list[EC2InstanceType] = []
-        for instance in instance_types.get("InstanceTypes", []):
-            with contextlib.suppress(KeyError):
-                list_instances.append(
-                    EC2InstanceType(
-                        name=instance["InstanceType"],
-                        cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                        ram=parse_obj_as(
-                            ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
-                        ),
+        try:
+            instance_types = await self.client.describe_instance_types(
+                InstanceTypes=list(instance_type_names)
+            )
+            list_instances: list[EC2InstanceType] = []
+            for instance in instance_types.get("InstanceTypes", []):
+                with contextlib.suppress(KeyError):
+                    list_instances.append(
+                        EC2InstanceType(
+                            name=instance["InstanceType"],
+                            cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                            ram=ByteSize(
+                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
+                            ),
+                        )
                     )
-                )
-        return list_instances
+            return list_instances
+        except botocore.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
+                raise Ec2InstanceTypeInvalidError from exc
+            raise ClustersKeeperRuntimeError from exc  # pragma: no cover
 
     async def start_aws_instance(
         self,

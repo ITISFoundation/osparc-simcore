@@ -130,7 +130,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
 
     __editText: function() {
       const title = this.tr("Edit Instructions");
-      const textEditor = new osparc.editor.TextEditor(this.getInstructions());
+      const textEditor = new osparc.editor.MarkdownEditor(this.getInstructions());
       textEditor.getChildControl("accept-button").setLabel(this.tr("Save"));
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 500, 300);
       textEditor.addListener("textChanged", e => {
