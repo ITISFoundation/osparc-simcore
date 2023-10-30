@@ -23,7 +23,12 @@ def upgrade():
     )
     op.add_column(
         "resource_tracker_service_runs",
-        sa.Column("missed_heartbeat_counter", sa.SmallInteger(), nullable=False),
+        sa.Column(
+            "missed_heartbeat_counter",
+            sa.SmallInteger(),
+            server_default=0,
+            nullable=False,
+        ),
     )
     # ### end Alembic commands ###
 

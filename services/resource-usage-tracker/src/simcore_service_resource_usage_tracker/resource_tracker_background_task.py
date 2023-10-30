@@ -8,7 +8,7 @@ from models_library.resource_tracker import (
     ServiceRunId,
     ServiceRunStatus,
 )
-from pydantic import PositiveInt
+from pydantic import NonNegativeInt, PositiveInt
 
 from .core.settings import ApplicationSettings
 from .models.resource_tracker_credit_transactions import (
@@ -27,10 +27,10 @@ async def _check_service_heartbeat(
     resource_tracker_repo: ResourceTrackerRepository,
     base_start_timestamp: datetime,
     resource_usage_tracker_missed_heartbeat_interval: timedelta,
-    resource_usage_tracker_missed_heartbeat_counter_fail: int,
+    resource_usage_tracker_missed_heartbeat_counter_fail: NonNegativeInt,
     service_run_id: ServiceRunId,
     last_heartbeat_at: datetime,
-    missed_heartbeat_counter: int,
+    missed_heartbeat_counter: NonNegativeInt,
 ):
     # Check for missed heartbeats
     if (
@@ -63,7 +63,9 @@ async def _check_service_heartbeat(
 
 
 async def _close_unhealthy_service(
-    resource_tracker_repo, service_run_id, base_start_timestamp
+    resource_tracker_repo: ResourceTrackerRepository,
+    service_run_id: ServiceRunId,
+    base_start_timestamp: datetime,
 ):
     # 1. Close the service_run
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
