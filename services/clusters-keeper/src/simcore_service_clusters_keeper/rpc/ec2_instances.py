@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from models_library.api_schemas_clusters_keeper.clusters import EC2InstanceType
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from servicelib.rabbitmq import RPCRouter
 
 from ..modules.ec2 import get_ec2_client
