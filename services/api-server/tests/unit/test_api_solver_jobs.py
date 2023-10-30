@@ -6,6 +6,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
+from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from pydantic import parse_obj_as
@@ -19,18 +20,27 @@ from unit.conftest import SideEffectCallback
 # pylint: disable=unused-variable
 
 
-def get_start_job_side_effect(job_id: str) -> SideEffectCallback:
-    def _start_job_side_effect(
+def _start_job_side_effect(
+    request: httpx.Request,
+    path_params: dict[str, Any],
+    capture: HttpApiCallCaptureModel,
+) -> Any:
+    return capture.response_body
+
+
+def get_inspect_job_side_effect(job_id: str) -> SideEffectCallback:
+    def _inspect_job_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
         response = capture.response_body
         assert isinstance(response, dict)
+        assert response.get("id") is not None
         response["id"] = job_id
         return response
 
-    return _start_job_side_effect
+    return _inspect_job_side_effect
 
 
 @pytest.mark.parametrize(
@@ -166,17 +176,21 @@ async def test_get_solver_job_pricing_unit(
         auth=auth,
     )
     if capture_file == "get_job_pricing_unit_success.json":
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         _ = parse_obj_as(PricingUnitGet, response.json())
     elif capture_file == "get_job_pricing_unit_invalid_job.json":
-        assert response.status_code == 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
-        assert response.status_code == 422
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     else:
         pytest.fail()
 
 
-async def test_get_solver_job_pricing_unit_with_payment(
+@pytest.mark.parametrize(
+    "capture_name,expected_status_code",
+    [("start_job_with_payment.json", 200), ("start_job_not_enough_credit.json", 402)],
+)
+async def test_start_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
@@ -188,6 +202,8 @@ async def test_get_solver_job_pricing_unit_with_payment(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     faker: Faker,
+    capture_name: str,
+    expected_status_code: int,
 ):
     assert mocked_groups_extra_properties
     _solver_key: str = "simcore/services/comp/isolve"
@@ -222,15 +238,19 @@ async def test_get_solver_job_pricing_unit_with_payment(
         assert int(path_params["pricing_unit_id"]) == _pricing_unit_id
         return capture.response_body
 
+    callbacks = [
+        _get_job_side_effect,
+        _put_pricing_plan_and_unit_side_effect,
+        _start_job_side_effect,
+    ]
+    if expected_status_code == status.HTTP_200_OK:
+        callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
+
     _put_pricing_plan_and_unit_side_effect.was_called = False
     respx_mock = respx_mock_from_capture(
-        [mocked_webserver_service_api_base] * 2 + [mocked_directorv2_service_api_base],
-        project_tests_dir / "mocks" / "start_job_with_payment.json",
-        [
-            _get_job_side_effect,
-            _put_pricing_plan_and_unit_side_effect,
-            get_start_job_side_effect(job_id=_job_id),
-        ],
+        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
+        project_tests_dir / "mocks" / capture_name,
+        callbacks,
     )
 
     response = await client.post(
@@ -241,13 +261,15 @@ async def test_get_solver_job_pricing_unit_with_payment(
             "x-pricing-unit": f"{_pricing_unit_id}",
         },
     )
-    assert response.status_code == 200
-    assert _put_pricing_plan_and_unit_side_effect.was_called
-    assert response.json()["job_id"] == _job_id
+    assert response.status_code == expected_status_code
+    if expected_status_code == status.HTTP_200_OK:
+        assert _put_pricing_plan_and_unit_side_effect.was_called
+        assert response.json()["job_id"] == _job_id
 
 
 async def test_get_solver_job_pricing_unit_no_payment(
     client: AsyncClient,
+    mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
     mocked_groups_extra_properties,
     respx_mock_from_capture: Callable[
@@ -263,9 +285,9 @@ async def test_get_solver_job_pricing_unit_no_payment(
     _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
 
     respx_mock = respx_mock_from_capture(
-        [mocked_directorv2_service_api_base],
+        [mocked_directorv2_service_api_base, mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / "start_job_no_payment.json",
-        [get_start_job_side_effect(job_id=_job_id)],
+        [_start_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
     )
 
     response = await client.post(
@@ -273,5 +295,5 @@ async def test_get_solver_job_pricing_unit_no_payment(
         auth=auth,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["job_id"] == _job_id
