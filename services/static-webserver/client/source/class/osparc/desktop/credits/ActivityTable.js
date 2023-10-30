@@ -35,10 +35,12 @@ qx.Class.define("osparc.desktop.credits.ActivityTable", {
     this.makeItLoose();
 
     const columnModel = this.getTableColumnModel();
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.invoice.pos, 60);
+    columnModel.getBehavior().setWidth(cols.invoice.pos, 60);
+
+    columnModel.setDataCellRenderer(cols.credits.pos, new qx.ui.table.cellrenderer.Number());
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.setColumnVisible(this.self().COLUMNS.invoice.pos, false);
+      columnModel.setColumnVisible(cols.invoice.pos, false);
     }
   },
 
