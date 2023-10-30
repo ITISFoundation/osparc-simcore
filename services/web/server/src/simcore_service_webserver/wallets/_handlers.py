@@ -34,6 +34,7 @@ from ..payments.errors import (
     PaymentUniqueViolationError,
 )
 from ..security.decorators import permission_required
+from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from . import _api
 from .errors import WalletAccessForbiddenError, WalletNotFoundError
@@ -51,6 +52,7 @@ def handle_wallets_exceptions(handler: Handler):
             WalletNotFoundError,
             PaymentNotFoundError,
             PaymentMethodNotFoundError,
+            UserDefaultWalletNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
@@ -120,6 +122,21 @@ async def list_wallets(request: web.Request):
     )
 
     return envelope_json_response(wallets)
+
+
+@routes.get(f"/{VTAG}/wallets/default", name="get_default_wallet")
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def get_default_wallet(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+
+    wallet: WalletGetWithAvailableCredits = (
+        await _api.get_user_default_wallet_with_available_credits(
+            app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+        )
+    )
+    return envelope_json_response(wallet)
 
 
 @routes.get(f"/{VTAG}/wallets/{{wallet_id}}", name="get_wallet")
