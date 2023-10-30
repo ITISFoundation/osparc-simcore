@@ -143,17 +143,18 @@ async def _generate_task_image(
     catalog_client: CatalogClient,
     connection: aiopg.sa.connection.SAConnection,
     user_id: UserID,
+    project_id: ProjectID,
     node_id: NodeID,
     node: Node,
     node_extras: ServiceExtras | None,
     node_labels: SimcoreServiceLabels | None,
-    project_nodes_repo: ProjectNodesRepo,
 ) -> Image:
     # aggregates node_details and node_extras into Image
     data: dict[str, Any] = {
         "name": node.key,
         "tag": node.version,
     }
+    project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
     node_resources = parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     if not node_resources:
@@ -268,18 +269,6 @@ async def _generate_tasks_list_from_project(
         if not node_details:
             continue
 
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
-        image = await _generate_task_image(
-            catalog_client=catalog_client,
-            connection=connection,
-            user_id=user_id,
-            node_id=NodeID(node_id),
-            node=node,
-            node_extras=node_extras,
-            node_labels=node_labels,
-            project_nodes_repo=project_nodes_repo,
-        )
-
         assert node.state is not None  # nosec
         task_state = node.state.current_status
         task_progress = None
@@ -300,6 +289,17 @@ async def _generate_tasks_list_from_project(
             product_name=product_name,
             node_key=node.key,
             node_version=node.version,
+        )
+
+        image = await _generate_task_image(
+            catalog_client=catalog_client,
+            connection=connection,
+            user_id=user_id,
+            project_id=project.uuid,
+            node_id=NodeID(node_id),
+            node=node,
+            node_extras=node_extras,
+            node_labels=node_labels,
         )
 
         task_db = CompTaskAtDB(
