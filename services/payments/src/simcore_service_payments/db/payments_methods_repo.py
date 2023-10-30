@@ -2,6 +2,7 @@ import datetime
 
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
+from arrow import utcnow
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -91,6 +92,28 @@ class PaymentsMethodsRepo(BaseRepository):
             assert row, "execute above should have caught this"  # nosec
 
             return PaymentsMethodsDB.from_orm(row)
+
+    async def insert_payment_method(
+        self,
+        payment_method_id: PaymentMethodID,
+        *,
+        user_id: UserID,
+        wallet_id: WalletID,
+        completion_state: InitPromptAckFlowState,
+        state_message: str | None,
+    ) -> PaymentsMethodsDB:
+        # TODO: how to do this on a single begin()?
+        await self.insert_init_payment_method(
+            payment_method_id,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            initiated_at=utcnow().datetime,
+        )
+        return await self.update_ack_payment_method(
+            payment_method_id,
+            completion_state=completion_state,
+            state_message=state_message,
+        )
 
     async def list_user_payment_methods(
         self,

@@ -3,15 +3,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from servicelib.logging_utils import log_context
+from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
+from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 
 from ..._constants import ACKED, PGDB, RUT
-from ...core.errors import PaymentNotFoundError
+from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
-from ...models.db import PaymentsTransactionsDB
+from ...models.db import PaymentsMethodsDB, PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
@@ -33,7 +35,9 @@ async def on_payment_completed(
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
 
-    _logger.debug("TODO next PR Notify front-end of payment -> sio ")
+    _logger.debug(
+        "Notify front-end of payment -> sio SOCKET_IO_PAYMENT_COMPLETED_EVENT "
+    )
 
     with log_context(
         _logger,
@@ -62,13 +66,25 @@ async def on_payment_completed(
     )
 
 
+async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
+    assert payment_method.completed_at is not None  # nosec
+    assert payment_method.initiated_at < payment_method.completed_at  # nosec
+
+    _logger.debug(
+        "Notify front-end of payment -> sio (SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT) "
+    )
+
+
 @router.post("/payments/{payment_id}:ack")
 async def acknowledge_payment(
     payment_id: PaymentID,
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
-    repo: Annotated[
+    repo_pay: Annotated[
         PaymentsTransactionsRepo, Depends(get_repository(PaymentsTransactionsRepo))
+    ],
+    repo_methods: Annotated[
+        PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))
     ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
     background_tasks: BackgroundTasks,
@@ -84,7 +100,7 @@ async def acknowledge_payment(
         f"{payment_id=}",
     ):
         try:
-            transaction = await repo.update_ack_payment_transaction(
+            transaction = await repo_pay.update_ack_payment_transaction(
                 payment_id=payment_id,
                 completion_state=(
                     PaymentTransactionState.SUCCESS
@@ -99,22 +115,55 @@ async def acknowledge_payment(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if ack.saved:
-        _logger.debug("%s: Creating payment method", PGDB)
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        )
-
     if transaction.state == PaymentTransactionState.SUCCESS:
         assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
         background_tasks.add_task(on_payment_completed, transaction, rut_api)
+
+    if ack.saved:
+        payment_method = await repo_methods.insert_payment_method(
+            payment_method_id=ack.saved.payment_method_id,
+            user_id=transaction.user_id,
+            wallet_id=transaction.wallet_id,
+            completion_state=InitPromptAckFlowState.SUCCESS
+            if ack.saved.success
+            else InitPromptAckFlowState.FAILED,
+            state_message=ack.saved.message,
+        )
+        background_tasks.add_task(on_payment_method_completed, payment_method)
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")
 async def acknowledge_payment_method(
     payment_method_id: PaymentMethodID,
     ack: AckPaymentMethod,
-    session: Annotated[SessionData, Depends(get_current_session)],
+    _session: Annotated[SessionData, Depends(get_current_session)],
+    repo: Annotated[PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))],
+    background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
+    with log_context(
+        _logger,
+        logging.INFO,
+        "%s: Update %s payment-method %s in db",
+        PGDB,
+        ACKED,
+        f"{payment_method_id=}",
+    ):
+        try:
+            payment_method = await repo.update_ack_payment_method(
+                payment_method_id=payment_method_id,
+                completion_state=(
+                    InitPromptAckFlowState.SUCCESS
+                    if ack.success
+                    else InitPromptAckFlowState.FAILED
+                ),
+                state_message=ack.message,
+            )
+        except PaymentMethodNotFoundError as err:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
+            ) from err
+
+    if payment_method.state == InitPromptAckFlowState.SUCCESS:
+        assert f"{payment_method_id}" == f"{payment_method.payment_method_id}"  # nosec
+        background_tasks.add_task(on_payment_method_completed, payment_method)
