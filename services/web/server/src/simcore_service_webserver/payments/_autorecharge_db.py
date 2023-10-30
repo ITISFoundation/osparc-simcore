@@ -23,7 +23,7 @@ class PaymentsAutorechargeDB(BaseModel):
     enabled: bool
     primary_payment_method_id: PaymentMethodID
     top_up_amount_in_usd: NonNegativeDecimal
-    monthly_limit_in_usd: NonNegativeDecimal
+    monthly_limit_in_usd: NonNegativeDecimal | None
 
     class Config:
         orm_mode = True
