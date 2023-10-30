@@ -60,7 +60,8 @@ async def _start_background_task(_app: FastAPI, _interval: timedelta) -> None:
             lock_value,
         )
     except Exception as e:
-        raise e
+        _logger.exception(e)
+        raise
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
