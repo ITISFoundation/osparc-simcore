@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- *   Collection of methods for dealing with services data type convertions, extract
+ *   Collection of methods for dealing with services data type conversions, extract
  * specific information.
  *
  * *Example*
