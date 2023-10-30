@@ -92,7 +92,7 @@ from .computations_tasks import analyze_pipeline
 
 PIPELINE_ABORT_TIMEOUT_S = 10
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -100,10 +100,9 @@ router = APIRouter()
 async def _check_pipeline_not_running(
     comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
 ) -> None:
-    comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
-        computation.project_id
+    pipeline_state = get_pipeline_state_from_task_states(
+        await comp_tasks_repo.list_computational_tasks(computation.project_id)
     )
-    pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
     if is_pipeline_running(pipeline_state):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -229,7 +228,7 @@ async def create_computation(  # noqa: PLR0913
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
 ) -> ComputationGet:
-    log.debug(
+    _logger.debug(
         "User %s is creating a new computation from project %s",
         f"{computation.user_id=}",
         f"{computation.project_id=}",
@@ -371,7 +370,7 @@ async def get_computation(
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
 ) -> ComputationGet:
-    log.debug(
+    _logger.debug(
         "User %s getting computation status for project %s",
         f"{user_id=}",
         f"{project_id=}",
@@ -386,7 +385,7 @@ async def get_computation(
 
     pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
-    log.debug(
+    _logger.debug(
         "Computational task status by %s for %s has %s",
         f"{user_id=}",
         f"{project_id=}",
@@ -446,7 +445,7 @@ async def stop_computation(
     ],
     scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> ComputationGet:
-    log.debug(
+    _logger.debug(
         "User %s stopping computation for project %s",
         computation_stop.user_id,
         project_id,
@@ -539,7 +538,7 @@ async def delete_computation(
             try:
                 await scheduler.stop_pipeline(computation_stop.user_id, project_id)
             except SchedulerError as e:
-                log.warning(
+                _logger.warning(
                     "Project %s could not be stopped properly.\n reason: %s",
                     project_id,
                     e,
@@ -555,7 +554,7 @@ async def delete_computation(
                 retry_error_callback=return_last_value,
                 retry=retry_if_result(lambda result: result is False),
                 reraise=False,
-                before_sleep=before_sleep_log(log, logging.INFO),
+                before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
                 comp_tasks: list[
@@ -568,7 +567,7 @@ async def delete_computation(
 
             # wait for the pipeline to be stopped
             if not await check_pipeline_stopped():
-                log.error(
+                _logger.error(
                     "pipeline %s could not be stopped properly after %ss",
                     project_id,
                     PIPELINE_ABORT_TIMEOUT_S,
