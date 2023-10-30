@@ -1,6 +1,3 @@
-from ._core import CompTaskAtDB, CompTasksRepository
+from ._core import CompTasksRepository
 
-__all__: tuple[str, ...] = (
-    "CompTaskAtDB",
-    "CompTasksRepository",
-)
+__all__: tuple[str, ...] = ("CompTasksRepository",)

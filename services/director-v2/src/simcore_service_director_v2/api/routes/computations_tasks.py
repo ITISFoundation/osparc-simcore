@@ -7,7 +7,7 @@ Therefore,
 """
 
 import logging
-from typing import NamedTuple
+from typing import Annotated, NamedTuple
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -113,10 +113,12 @@ async def _get_task_log_file(
 async def get_all_tasks_log_files(
     user_id: UserID,
     project_id: ProjectID,
-    comp_pipelines_repo: CompPipelinesRepository = Depends(
-        get_repository(CompPipelinesRepository)
-    ),
-    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
+    comp_pipelines_repo: Annotated[
+        CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
+    ],
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
 ) -> list[TaskLogFileGet]:
     """Returns download links to log-files of each task in a computation.
     Each log is only available when the corresponding task is done
@@ -145,7 +147,9 @@ async def get_task_log_file(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
-    comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
 ) -> TaskLogFileGet:
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
