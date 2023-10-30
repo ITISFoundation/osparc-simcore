@@ -13,8 +13,14 @@ from faker import Faker
 from fastapi import status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_payments.core.errors import PaymentNotFoundError
-from simcore_service_payments.models.schemas.acknowledgements import AckPayment
+from simcore_service_payments.core.errors import (
+    PaymentMethodNotFoundError,
+    PaymentNotFoundError,
+)
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPayment,
+    AckPaymentMethod,
+)
 from simcore_service_payments.models.schemas.errors import DefaultApiError
 
 pytest_simcore_core_services_selection = [
@@ -96,3 +102,33 @@ async def test_payments_api_authentication(
     assert PaymentNotFoundError.msg_template.format(payment_id=payments_id) == str(
         error.detail
     )
+
+
+async def test_payments_methods_api_authentication(
+    with_disabled_rabbitmq_and_rpc: None,
+    client: httpx.AsyncClient,
+    faker: Faker,
+    auth_headers: dict[str, str],
+):
+    payment_method_id = faker.uuid4()
+    payment_method_ack = AckPaymentMethod(success=True, message=faker.word()).dict()
+
+    # w/o header
+    response = await client.post(
+        f"/v1/payments-method/{payment_method_id}:ack",
+        json=payment_method_ack,
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.json()
+
+    # same but w/ header
+    response = await client.post(
+        response.request.url.path,
+        content=response.request.content,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
+    error = DefaultApiError.parse_obj(response.json())
+    assert PaymentMethodNotFoundError.msg_template.format(
+        payment_method_id=payment_method_id
+    ) == str(error.detail)
