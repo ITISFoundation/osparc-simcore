@@ -34,6 +34,7 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ._abc import get_project_run_policy
 from ._api_utils import get_wallet_info
 from ._core_computations import ComputationsApi
+from ._core_utils import get_wallet_info
 from .exceptions import DirectorServiceError
 
 _logger = logging.getLogger(__name__)
@@ -61,9 +62,8 @@ class _ComputationStarted(BaseModel):
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def start_computation(request: web.Request) -> web.Response:
-    # pylint: disable=too-many-statements
     try:
-        req_ctx = RequestContext.parse_obj(request)
+        req_ctx: RequestContext = RequestContext.parse_obj(request)
         computations = ComputationsApi(request.app)
 
         run_policy = get_project_run_policy(request.app)
