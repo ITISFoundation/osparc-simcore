@@ -104,10 +104,10 @@ class ServiceRunPage(NamedTuple):
 
 
 class ServiceRunForCheckDB(BaseModel):
-    product_name: ProductName
     service_run_id: ServiceRunId
     last_heartbeat_at: datetime
     missed_heartbeat_counter: NonNegativeInt
+    modified: datetime
 
     class Config:
         orm_mode = True

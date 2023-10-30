@@ -31,11 +31,18 @@ async def _check_service_heartbeat(
     service_run_id: ServiceRunId,
     last_heartbeat_at: datetime,
     missed_heartbeat_counter: NonNegativeInt,
+    modified_at: datetime,
 ):
     # Check for missed heartbeats
     if (
+        # Checks that in last 5 minutes we didn't get any heartbeat (ex. last heartbeat < current time - 5 minutes).
         last_heartbeat_at
         < base_start_timestamp - resource_usage_tracker_missed_heartbeat_interval
+    ) and (  # Checks that last modified timestamp is older than some reasonable small threshold (this is here to prevent situation
+        # when RUT is restarting and in the beginning starts the `check_of_running_services_task`. If the task was already running in
+        # last 2 minutes it will not allow it to compute. )
+        modified_at
+        < base_start_timestamp - timedelta(minutes=2)
     ):
         missed_heartbeat_counter += 1
         if (
@@ -103,6 +110,8 @@ async def _close_unhealthy_service(
 
 
 async def periodic_check_of_running_services_task(app: FastAPI) -> None:
+    _logger.info("Periodic check started")
+
     # This check runs across all products
     app_settings: ApplicationSettings = app.state.settings
     resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
@@ -132,6 +141,7 @@ async def periodic_check_of_running_services_task(app: FastAPI) -> None:
                     service_run_id=check_service.service_run_id,
                     last_heartbeat_at=check_service.last_heartbeat_at,
                     missed_heartbeat_counter=check_service.missed_heartbeat_counter,
+                    modified_at=check_service.modified,
                 )
                 for check_service in batch_check_services
             )

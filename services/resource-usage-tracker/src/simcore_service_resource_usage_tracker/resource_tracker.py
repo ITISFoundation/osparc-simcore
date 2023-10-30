@@ -1,12 +1,14 @@
 import functools
 import logging
 from collections.abc import Awaitable, Callable
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitResourceTrackingBaseMessage
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.redis import CouldNotAcquireLockError
 from servicelib.redis_utils import exclusive
 from settings_library.rabbit import RabbitSettings
 
@@ -18,7 +20,8 @@ from .resource_tracker_process_messages import process_message
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME = "periodic_check_of_running_services"
+_TASK_NAME_START_PERIODIC_TASK = "start_background_task"
+_TASK_NAME_PERIODICALY_CHECK_RUNNING_SERVICES = "periodic_check_of_running_services"
 
 
 async def _subscribe_to_rabbitmq(app) -> str:
@@ -30,6 +33,34 @@ async def _subscribe_to_rabbitmq(app) -> str:
             exclusive_queue=False,
         )
         return subscribed_queue
+
+
+async def _start_background_task(_app: FastAPI, _interval: timedelta) -> None:
+    """With this mechanism each replica of RUT is periodically trying to start
+    'periodic_check_of_running_services_task'. When it is sucesfully started the task runs
+    exclusively what is secured with Redis Lock Mechanism. When this lock is release
+    for example when the replica dies then other replicate takes over the task."""
+
+    lock_key = f"{_app.title}:periodic_check_of_running_services_task_lock"
+    lock_value = f"locked from {datetime.now(tz=timezone.utc)}"
+
+    try:
+        await exclusive(
+            get_redis_client(_app), lock_key=lock_key, lock_value=lock_value
+        )(start_periodic_task)(
+            periodic_check_of_running_services_task,
+            interval=_interval,
+            task_name=_TASK_NAME_PERIODICALY_CHECK_RUNNING_SERVICES,
+            app=_app,
+        )
+    except CouldNotAcquireLockError:
+        _logger.debug(
+            "CouldNotAcquireLockError for lock_key: %s and lock_value: %s",
+            lock_key,
+            lock_value,
+        )
+    except Exception as e:
+        raise e
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
@@ -49,17 +80,14 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             app.state.resource_tracker_rabbitmq_consumer = await _subscribe_to_rabbitmq(
                 app
             )
-            # Setup periodic task
+            # Setup periodic task that will try to run "periodic_check_of_running_services_task"
             if app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED:
-                lock_key = f"{app.title}:periodic_check_of_running_services_task_lock"
-                lock_value = "locked"
-                app.state.resource_tracker_background_task = start_periodic_task(
-                    exclusive(
-                        get_redis_client(app), lock_key=lock_key, lock_value=lock_value
-                    )(periodic_check_of_running_services_task),
+                app.state.resource_tracker_background_task = await start_periodic_task(
+                    _start_background_task,
                     interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
-                    task_name=_TASK_NAME,
-                    app=app,
+                    task_name=_TASK_NAME_START_PERIODIC_TASK,
+                    _app=app,
+                    _interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
                 )
 
     return _startup

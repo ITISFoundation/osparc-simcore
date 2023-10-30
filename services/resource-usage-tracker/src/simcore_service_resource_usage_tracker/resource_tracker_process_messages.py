@@ -184,16 +184,17 @@ async def _process_stop_event(
     msg: RabbitResourceTrackingStoppedMessage,
     rabbitmq_client: RabbitMQClient,
 ):
-    # NOTE: MD/ANE discussed: Initial thought was to use SimcorePlatformStatus to
-    # inform RUT that there was some problem on Simcore side and therefore we will
-    # not bill the user for running the service. This is currently not used as intented
-    # therefore we will always consider it as SUCCESS for now.
-
+    _run_status, _run_status_msg = ServiceRunStatus.SUCCESS, None
+    if msg.simcore_platform_status is SimcorePlatformStatus.BAD:
+        _run_status, _run_status_msg = (
+            ServiceRunStatus.ERROR,
+            "Director-v2 or Sidecar consideres service as unhealthy",
+        )
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=msg.service_run_id,
         stopped_at=msg.created_at,
-        service_run_status=ServiceRunStatus.SUCCESS,
-        service_run_status_msg=None,
+        service_run_status=_run_status,
+        service_run_status_msg=_run_status_msg,
     )
 
     running_service = await resource_tracker_repo.update_service_run_stopped_at(

@@ -289,16 +289,16 @@ class ResourceTrackerRepository(BaseRepository):
         async with self.db_engine.begin() as conn:
             query = (
                 sa.select(
-                    resource_tracker_service_runs.c.product_name,
                     resource_tracker_service_runs.c.service_run_id,
                     resource_tracker_service_runs.c.last_heartbeat_at,
                     resource_tracker_service_runs.c.missed_heartbeat_counter,
+                    resource_tracker_service_runs.c.modified,
                 )
                 .where(
                     resource_tracker_service_runs.c.service_run_status
                     == ServiceRunStatus.RUNNING
                 )
-                .order_by(resource_tracker_service_runs.c.started_at.desc())
+                .order_by(resource_tracker_service_runs.c.started_at.desc())  # NOTE:
                 .offset(offset)
                 .limit(limit)
             )
