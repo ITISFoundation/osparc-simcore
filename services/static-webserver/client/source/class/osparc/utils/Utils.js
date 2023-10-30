@@ -879,7 +879,7 @@ qx.Class.define("osparc.utils.Utils", {
       children.forEach(child => {
         const closeClasses = [
           "osparc.ui.window.Window",
-          "osparc.desktop.credits.UserCenterWindow"
+          "osparc.desktop.credits.MyAccountWindow"
         ];
         if (closeClasses.includes(child.classname)) {
           child.close();

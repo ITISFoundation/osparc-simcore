@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.35.0
+  version: 0.36.0
 servers:
 - url: ''
   description: webserver
@@ -67,6 +67,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.announcements._models.Announcement__'
+  /v0/auth/request-account:
+    post:
+      tags:
+      - auth
+      summary: Request Product Account
+      operationId: request_product_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRequestInfo'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/auth/register/invitations:check:
     post:
       tags:
@@ -1853,6 +1868,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProduct_'
+  /v0/products/{product_name}/templates/{template_id}:
+    put:
+      tags:
+      - products
+      summary: Update Product Template
+      operationId: update_product_template
+      parameters:
+      - required: true
+        schema:
+          title: Product Name
+          anyOf:
+          - minLength: 1
+            type: string
+          - enum:
+            - current
+            type: string
+        name: product_name
+        in: path
+      - required: true
+        schema:
+          title: Template Id
+          minLength: 1
+          type: string
+        name: template_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductTemplate'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/invitation:generate:
     post:
       tags:
@@ -4457,6 +4506,15 @@ components:
           type: boolean
           description: gives deletion rights
       additionalProperties: false
+    AccountRequestInfo:
+      title: AccountRequestInfo
+      required:
+      - form
+      type: object
+      properties:
+        form:
+          title: Form
+          type: object
     Activity:
       title: Activity
       required:
@@ -6434,6 +6492,27 @@ components:
           title: Creditsperusd
           minimum: 0.0
           type: number
+        templates:
+          title: Templates
+          type: array
+          items:
+            $ref: '#/components/schemas/GetProductTemplate'
+          description: List of templates available to this product for communications
+            (e.g. emails, sms, etc)
+    GetProductTemplate:
+      title: GetProductTemplate
+      required:
+      - id
+      - content
+      type: object
+      properties:
+        id:
+          title: Id
+          minLength: 1
+          type: string
+        content:
+          title: Content
+          type: string
     GetProjectInactivityResponse:
       title: GetProjectInactivityResponse
       required:
@@ -9610,6 +9689,15 @@ components:
           type: string
           format: password
           writeOnly: true
+    UpdateProductTemplate:
+      title: UpdateProductTemplate
+      required:
+      - content
+      type: object
+      properties:
+        content:
+          title: Content
+          type: string
     UploadedPart:
       title: UploadedPart
       required:

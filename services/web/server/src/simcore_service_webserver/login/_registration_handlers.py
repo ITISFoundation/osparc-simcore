@@ -1,7 +1,10 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.auth import UnregisterCheck
+from models_library.api_schemas_webserver.auth import (
+    AccountRequestInfo,
+    UnregisterCheck,
+)
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -12,11 +15,17 @@ from servicelib.utils import fire_and_forget_task
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
+from ..products.api import get_current_product
 from ..security.api import check_password, forget
 from ..security.decorators import permission_required
 from ..users.api import get_user_credentials, set_user_as_deleted
+from ..utils import MINUTE
+from ..utils_rate_limiting import global_rate_limit_route
 from ._constants import MSG_LOGGED_OUT
-from ._registration_api import send_close_account_email
+from ._registration_api import (
+    send_account_request_email_to_support,
+    send_close_account_email,
+)
 from .decorators import login_required
 from .utils import flash_response, notify_user_logout
 
@@ -26,7 +35,28 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _RequestContext(BaseModel):
+@routes.post(
+    f"/{API_VTAG}/auth/request-account",
+    name="request_product_account",
+)
+@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+async def request_product_account(request: web.Request):
+    product = get_current_product(request)
+    body = await parse_request_body_as(AccountRequestInfo, request)
+    assert body.form  # nosec
+
+    # send email to fogbugz or user itself
+    fire_and_forget_task(
+        send_account_request_email_to_support(
+            request, product=product, request_form=body.form
+        ),
+        task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
+        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
+    raise web.HTTPNoContent
+
+
+class _AuthenticatedContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
@@ -35,7 +65,7 @@ class _RequestContext(BaseModel):
 @login_required
 @permission_required("user.profile.delete")
 async def unregister_account(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _AuthenticatedContext.parse_obj(request)
     body = await parse_request_body_as(UnregisterCheck, request)
 
     # checks before deleting
