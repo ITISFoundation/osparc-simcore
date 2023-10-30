@@ -45,8 +45,6 @@ def resource_tracker_setup_db(
     random_resource_tracker_credit_transactions,
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
-        con.execute(resource_tracker_service_runs.delete())
-        con.execute(resource_tracker_credit_transactions.delete())
         # Populate service runs table
         con.execute(
             resource_tracker_service_runs.insert().values(

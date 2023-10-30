@@ -108,7 +108,7 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=5),
-        description="Interval to check heartbeat of running services.",
+        description="Interval to check heartbeat of running services. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL: int = Field(
         default=6,
