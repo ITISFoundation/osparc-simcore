@@ -52,6 +52,7 @@ def resource_tracker_setup_db(
                     service_run_id=_SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
                     product_name="osparc",
                     last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
                     started_at=_LAST_HEARTBEAT_10_MIN_OLD - timedelta(minutes=1),
                 )
             )
@@ -62,6 +63,7 @@ def resource_tracker_setup_db(
                     service_run_id=_SERVICE_RUN_ID_S4L_10_MIN_OLD,
                     product_name="s4l",
                     last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
                     started_at=_LAST_HEARTBEAT_10_MIN_OLD - timedelta(minutes=1),
                 )
             )
@@ -71,6 +73,7 @@ def resource_tracker_setup_db(
                 **random_resource_tracker_service_run(
                     service_run_id=_SERVICE_RUN_ID_OSPARC_NOW,
                     product_name="osparc",
+                    modified=_LAST_HEARTBEAT_NOW,
                     last_heartbeat_at=_LAST_HEARTBEAT_NOW,
                 )
             )
@@ -81,6 +84,7 @@ def resource_tracker_setup_db(
                 **random_resource_tracker_credit_transactions(
                     service_run_id=_SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
                     product_name="osparc",
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
                     last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
                     transaction_status="PENDING",
                 )
@@ -91,6 +95,7 @@ def resource_tracker_setup_db(
                 **random_resource_tracker_credit_transactions(
                     service_run_id=_SERVICE_RUN_ID_S4L_10_MIN_OLD,
                     product_name="s4l",
+                    modified=_LAST_HEARTBEAT_10_MIN_OLD,
                     last_heartbeat_at=_LAST_HEARTBEAT_10_MIN_OLD,
                     transaction_status="PENDING",
                 )
@@ -101,6 +106,7 @@ def resource_tracker_setup_db(
                 **random_resource_tracker_credit_transactions(
                     service_run_id=_SERVICE_RUN_ID_OSPARC_NOW,
                     product_name="osparc",
+                    modified=_LAST_HEARTBEAT_NOW,
                     last_heartbeat_at=_LAST_HEARTBEAT_NOW,
                     transaction_status="PENDING",
                 )
@@ -128,6 +134,14 @@ async def test_process_event_functions(
 
     for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
         await periodic_check_of_running_services_task(initialized_app)
+        # NOTE: As we are doing check that the modified field needs to be older then some
+        # threshold, we need to make this field artificaly older in this test
+        with postgres_db.connect() as con:
+            fake_old_modified_at = datetime.now(tz=timezone.utc) - timedelta(minutes=5)
+            update_stmt = resource_tracker_service_runs.update().values(
+                modified=fake_old_modified_at
+            )
+            con.execute(update_stmt)
 
     # Check max acceptable missed heartbeats reached before considering them as unhealthy
     with postgres_db.connect() as con:

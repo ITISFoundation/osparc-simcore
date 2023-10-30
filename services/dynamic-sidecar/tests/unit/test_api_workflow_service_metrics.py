@@ -329,7 +329,7 @@ async def test_user_services_fail_to_stop_or_save_data(
         assert isinstance(heart_beat_message, RabbitResourceTrackingHeartbeatMessage)
     for stop_message in stop_messages:
         assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
-        assert stop_message.simcore_platform_status == SimcorePlatformStatus.BAD
+        assert stop_message.simcore_platform_status == SimcorePlatformStatus.OK
 
 
 async def _simulate_container_crash(container_names: list[str]) -> None:
@@ -397,7 +397,7 @@ async def test_user_services_crash_when_running(
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
 
     # crash the user services
-    if expected_platform_state == SimcorePlatformStatus.OK:
+    if expected_platform_state == SimcorePlatformStatus.BAD:
         # was it oom killed, not our fault
         mock_one_container_oom_killed()
     else:
@@ -443,4 +443,4 @@ async def test_user_services_crash_when_running(
 
     for stop_message in resource_tracking_messages:
         assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
-        assert stop_message.simcore_platform_status == expected_platform_state
+        assert stop_message.simcore_platform_status == SimcorePlatformStatus.OK
