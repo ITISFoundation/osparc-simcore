@@ -7,16 +7,13 @@
 
 
 import logging
-from contextlib import contextmanager
 
 import httpx
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 
-from .._constants import PAG
-from ..core.errors import PaymentMethodNotFoundError
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
     BatchGetPaymentMethods,
@@ -40,18 +37,6 @@ class _GatewayApiAuth(httpx.Auth):
     def auth_flow(self, request):
         request.headers["X-Init-Api-Secret"] = self.token
         yield request
-
-
-@contextmanager
-def _handle_payment_methods_errors(**ctx):
-    try:
-
-        yield
-
-    except httpx.HTTPStatusError as err:
-        _logger.debug("%s handled error: %s", PAG, err)
-        if err.response.status_code == status.HTTP_404_NOT_FOUND:
-            raise PaymentMethodNotFoundError(**ctx) from err
 
 
 class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
@@ -107,35 +92,31 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     async def get_many_payment_methods(
         self, ids_: list[PaymentMethodID]
     ) -> list[GetPaymentMethod]:
-        with _handle_payment_methods_errors(payments_methods_ids=ids_):
-            response = await self.client.post(
-                "/payment-methods:batchGet",
-                json=jsonable_encoder(BatchGetPaymentMethods(payment_methods_ids=ids_)),
-            )
-            response.raise_for_status()
-            return PaymentMethodsBatch.parse_obj(response.json()).items
+        response = await self.client.post(
+            "/payment-methods:batchGet",
+            json=jsonable_encoder(BatchGetPaymentMethods(payment_methods_ids=ids_)),
+        )
+        response.raise_for_status()
+        return PaymentMethodsBatch.parse_obj(response.json()).items
 
     async def get_payment_method(self, id_: PaymentMethodID) -> GetPaymentMethod:
-        with _handle_payment_methods_errors(payment_method_id=id_):
-            response = await self.client.get(f"/payment-methods/{id_}")
-            response.raise_for_status()
-            return GetPaymentMethod.parse_obj(response.json())
+        response = await self.client.get(f"/payment-methods/{id_}")
+        response.raise_for_status()
+        return GetPaymentMethod.parse_obj(response.json())
 
     async def delete_payment_method(self, id_: PaymentMethodID) -> None:
-        with _handle_payment_methods_errors(payment_method_id=id_):
-            response = await self.client.delete(f"/payment-methods/{id_}")
-            response.raise_for_status()
+        response = await self.client.delete(f"/payment-methods/{id_}")
+        response.raise_for_status()
 
     async def init_payment_with_payment_method(
         self, id_: PaymentMethodID, payment: InitPayment
     ) -> PaymentInitiated:
-        with _handle_payment_methods_errors(payment_method_id=id_):
-            response = await self.client.post(
-                f"/payment-methods/{id_}:pay",
-                json=jsonable_encoder(payment),
-            )
-            response.raise_for_status()
-            return PaymentInitiated.parse_obj(response.json())
+        response = await self.client.post(
+            f"/payment-methods/{id_}:pay",
+            json=jsonable_encoder(payment),
+        )
+        response.raise_for_status()
+        return PaymentInitiated.parse_obj(response.json())
 
 
 def setup_payments_gateway(app: FastAPI):
