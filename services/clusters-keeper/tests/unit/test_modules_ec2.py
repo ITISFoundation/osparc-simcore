@@ -15,6 +15,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.errors import (
     ConfigurationError,
     Ec2InstanceNotFoundError,
+    Ec2InstanceTypeInvalidError,
     Ec2TooManyInstancesError,
 )
 from simcore_service_clusters_keeper.core.settings import (
@@ -146,6 +147,25 @@ async def test_get_ec2_instance_capabilities(
         app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
     ):
         assert any(i.name == instance_type_name for i in instance_types)
+
+
+async def test_get_ec2_instance_capabilities_with_empty_set_returns_all_options(
+    mocked_aws_server_envs: None,
+    clusters_keeper_ec2: ClustersKeeperEC2,
+):
+    instance_types = await clusters_keeper_ec2.get_ec2_instance_capabilities(set())
+    assert instance_types
+    # NOTE: this might need adaptation when moto is updated
+    assert 700 < len(instance_types) < 800
+
+
+async def test_get_ec2_instance_capabilities_with_invalid_names(
+    mocked_aws_server_envs: None, clusters_keeper_ec2: ClustersKeeperEC2, faker: Faker
+):
+    with pytest.raises(Ec2InstanceTypeInvalidError):
+        await clusters_keeper_ec2.get_ec2_instance_capabilities(
+            faker.pyset(allowed_types=(str,))
+        )
 
 
 async def test_start_aws_instance(

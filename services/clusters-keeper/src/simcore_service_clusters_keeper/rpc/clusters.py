@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from models_library.rpc_schemas_clusters_keeper.clusters import OnDemandCluster
+from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
