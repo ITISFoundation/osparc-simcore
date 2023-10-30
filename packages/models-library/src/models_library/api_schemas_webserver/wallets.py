@@ -49,7 +49,9 @@ class PutWalletBodyParams(OutputSchema):
 # Payments to top-up credits in wallets
 #
 
+# NOTE: that these can be UUIDs (or not)
 PaymentID: TypeAlias = IDStr
+PaymentMethodID: TypeAlias = IDStr
 
 
 class CreateWalletPayment(InputSchema):
@@ -78,9 +80,6 @@ class PaymentTransaction(OutputSchema):
     )
     state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()
-
-
-PaymentMethodID: TypeAlias = IDStr
 
 
 class PaymentMethodInit(OutputSchema):

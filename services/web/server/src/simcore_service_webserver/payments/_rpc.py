@@ -90,7 +90,7 @@ async def cancel_payment(
 
     await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "payment_id"),
+        parse_obj_as(RPCMethodName, "cancel_payment"),
         payment_id=payment_id,
         user_id=user_id,
         wallet_id=wallet_id,
