@@ -46,18 +46,19 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         description="FAKE Base url to the payment gateway",
     )
 
-    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD: NonNegativeDecimal = Field(
-        default=20.0,
-        description="Minimum balance in USD to top-up for auto-recharge",
+    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: NonNegativeDecimal = Field(
+        default=100,
+        description="Minimum balance in credits to top-up for auto-recharge",
+        # NOTE: Using credits (instead of USD) simplify RUT monitoring which is reponsible to trigger auto-recharge
     )
 
     PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
-        default=100.0,
+        default=100,
         description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
     )
 
     PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: NonNegativeDecimal | None = Field(
-        default=6000.0,
+        default=10000,
         description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
     )
 

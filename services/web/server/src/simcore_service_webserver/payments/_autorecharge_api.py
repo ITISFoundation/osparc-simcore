@@ -23,12 +23,12 @@ _logger = logging.getLogger(__name__)
 
 
 def _from_db_to_api_model(
-    db_model: PaymentsAutorechargeDB, min_balance_in_usd: NonNegativeDecimal
+    db_model: PaymentsAutorechargeDB, min_balance_in_credits: NonNegativeDecimal
 ) -> GetWalletAutoRecharge:
     return GetWalletAutoRecharge(
         enabled=db_model.enabled,
         payment_method_id=db_model.primary_payment_method_id,
-        min_balance_in_usd=min_balance_in_usd,
+        min_balance_in_credits=min_balance_in_credits,
         top_up_amount_in_usd=db_model.top_up_amount_in_usd,
         monthly_limit_in_usd=db_model.monthly_limit_in_usd,
     )
@@ -80,13 +80,14 @@ async def get_wallet_payment_autorecharge(
         return GetWalletAutoRecharge(
             enabled=False,
             payment_method_id=payment_method_id,
-            min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD,
+            min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
             top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
             monthly_limit_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT,
         )
 
     return _from_db_to_api_model(
-        got, min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD
+        got,
+        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
     )
 
 
@@ -111,5 +112,6 @@ async def replace_wallet_payment_autorecharge(
     )
 
     return _from_db_to_api_model(
-        got, min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD
+        got,
+        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
     )

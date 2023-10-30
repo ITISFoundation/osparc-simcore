@@ -171,9 +171,9 @@ class GetWalletAutoRecharge(OutputSchema):
         ...,
         description="Payment method in the wallet used to perform the auto-recharge payments or None if still undefined",
     )
-    min_balance_in_usd: NonNegativeDecimal = Field(
+    min_balance_in_credits: NonNegativeDecimal = Field(
         ...,
-        description="Minimum balance in USD that triggers an auto-recharge [Read only]",
+        description="Minimum balance in credits that triggers an auto-recharge [Read only]",
     )
     top_up_amount_in_usd: NonNegativeDecimal = Field(
         ...,

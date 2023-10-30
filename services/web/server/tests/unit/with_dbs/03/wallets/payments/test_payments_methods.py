@@ -176,8 +176,8 @@ async def test_wallet_autorecharge(
     assert default_auto_recharge.enabled is False
     assert default_auto_recharge.payment_method_id is None
     assert (
-        default_auto_recharge.min_balance_in_usd
-        == settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD
+        default_auto_recharge.min_balance_in_credits
+        == settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
     )
     assert (
         default_auto_recharge.top_up_amount_in_usd
@@ -219,7 +219,7 @@ async def test_wallet_autorecharge(
     updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert updated_auto_recharge == GetWalletAutoRecharge(
         payment_method_id=payment_method_id,
-        min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_USD,
+        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
         top_up_amount_in_usd=123.45,  # $
         monthly_limit_in_usd=6543.21,  # $
         enabled=True,
@@ -252,7 +252,6 @@ async def test_delete_primary_payment_method_in_autorecharge(
     logged_user_wallet: WalletGet,
 ):
     assert client.app
-    settings = get_payments_plugin_settings(client.app)
 
     wallet = logged_user_wallet
     payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
@@ -263,6 +262,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
         json={
             "paymentMethodId": payment_method_id,
             "topUpAmountInUsd": 100.0,  # $
+            "monthlyLimitInUsd": 123,
             "enabled": True,
         },
     )
@@ -270,10 +270,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
     auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert auto_recharge.enabled is True
     assert auto_recharge.payment_method_id == payment_method_id
-    assert (
-        auto_recharge.monthly_limit_in_usd
-        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
-    )
+    assert auto_recharge.monthly_limit_in_usd == 123
 
     # delete payment-method
     response = await client.delete(
