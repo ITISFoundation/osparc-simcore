@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return parseInt(credits);
     },
 
-    createWalletSelector: function(accessRight = "read", emptySelection = false) {
+    createWalletSelector: function(accessRight = "read") {
       const store = osparc.store.Store.getInstance();
 
       const walletSelector = new qx.ui.form.SelectBox();
@@ -78,11 +78,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         selectBox.removeAll();
 
         const wallets = store.getWallets();
-        if (emptySelection) {
-          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Credit Account"));
-          sbItem.walletId = null;
-          selectBox.add(sbItem);
-        }
         wallets.forEach(wallet => {
           const found = wallet.getMyAccessRights();
           if (found && found[accessRight]) {

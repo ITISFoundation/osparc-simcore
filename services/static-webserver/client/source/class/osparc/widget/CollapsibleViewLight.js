@@ -32,7 +32,7 @@ qx.Class.define("osparc.widget.CollapsibleViewLight", {
     this.addListener("changeCollapsed", e => {
       const collapsed = e.getData();
       if (collapsed) {
-        this.precollapseWidth = this.getBounds() ? this.getBounds().width : 60;
+        this.precollapseWidth = (this.getBounds() && ("width" in this.getBounds())) ? this.getBounds().width : 60;
       }
     }, this);
   },
