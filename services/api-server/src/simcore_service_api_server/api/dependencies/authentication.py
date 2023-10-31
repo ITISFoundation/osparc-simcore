@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from models_library.products import ProductName
 from pydantic import BaseModel, PositiveInt
 
 from ...db.repositories.api_keys import ApiKeysRepository, UserAndProductTuple
@@ -57,6 +58,12 @@ async def get_current_user_id(
     identity: Annotated[Identity, Depends(get_current_identity)],
 ) -> PositiveInt:
     return identity.user_id
+
+
+async def get_product_name(
+    identity: Annotated[Identity, Depends(get_current_identity)],
+) -> ProductName:
+    return identity.product_name
 
 
 async def get_active_user_email(
