@@ -4,7 +4,8 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
-from ....rabbitmq import RabbitMQRPCClient
+from ..._client_rpc import RabbitMQRPCClient
+from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 
 
 async def get_or_create_cluster(
@@ -13,7 +14,7 @@ async def get_or_create_cluster(
     on_demand_cluster: OnDemandCluster = await client.request(
         CLUSTERS_KEEPER_RPC_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
-        timeout_s=300,
+        timeout_s=RPC_REMOTE_METHOD_TIMEOUT_S,
         user_id=user_id,
         wallet_id=wallet_id,
     )
