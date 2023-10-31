@@ -38,7 +38,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
      * - Version selection
      * - Pricing unit selection if applies
      */
-    // But the toggle button consumes all the events
+    // But the toggle button consumes all the events, I believe that the trick is to use the anonymous property
     // this.addListener("changeValue", e => this.__itemSelected(e.getData()));
   },
 
