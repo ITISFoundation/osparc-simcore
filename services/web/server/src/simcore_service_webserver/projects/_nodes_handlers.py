@@ -84,7 +84,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             DefaultPricingUnitNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except (WalletNotEnoughCreditsError) as exc:
+        except WalletNotEnoughCreditsError as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return wrapper
@@ -357,7 +357,9 @@ async def get_node_resources(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
     if f"{path_params.node_id}" not in project["workbench"]:
-        raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
+        project_uuid = f"{path_params.project_id}"
+        node_id = f"{path_params.node_id}"
+        raise NodeNotFoundError(project_uuid, node_id)
 
     resources: ServiceResourcesDict = await projects_api.get_project_node_resources(
         request.app,

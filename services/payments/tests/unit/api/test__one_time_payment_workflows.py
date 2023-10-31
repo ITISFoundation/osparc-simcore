@@ -12,12 +12,13 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
+from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
 

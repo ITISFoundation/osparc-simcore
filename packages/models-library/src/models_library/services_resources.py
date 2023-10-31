@@ -56,6 +56,9 @@ class ResourceValue(BaseModel):
     def set_reservation_same_as_limit(self) -> None:
         self.reservation = self.limit
 
+    def set_value(self, value: StrictInt | StrictFloat | str) -> None:
+        self.limit = self.reservation = value
+
     class Config:
         validate_assignment = True
 

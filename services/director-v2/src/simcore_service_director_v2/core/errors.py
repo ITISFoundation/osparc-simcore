@@ -249,13 +249,9 @@ class ComputationalBackendTaskResultsNotReadyError(PydanticErrorMixin, Scheduler
     msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
-class ComputationalBackendOnDemandClustersKeeperNotReadyError(
-    PydanticErrorMixin, SchedulerError
-):
-    code = "computational_backend.on_demand_cluster.clusters_keeper_not_ready"
-    msg_template = (
-        "The on demand computational cannot be reached: no clusters-keeper available!"
-    )
+class ClustersKeeperNotAvailableError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.clusters_keeper_not_available"
+    msg_template = "clusters-keeper service is not available!"
 
 
 class ComputationalBackendOnDemandNotReadyError(PydanticErrorMixin, SchedulerError):
