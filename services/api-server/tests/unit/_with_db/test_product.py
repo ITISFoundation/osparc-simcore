@@ -15,7 +15,7 @@ from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 
-async def test_webserver_product(
+async def test_product_webserver(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base: respx.MockRouter,
     fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
@@ -67,3 +67,43 @@ async def test_webserver_product(
         )
         assert response.status_code == status.HTTP_200_OK
     assert wallet_get_mock.call_count == len(keys)
+
+
+async def test_product_catalog(
+    client: httpx.AsyncClient,
+    mocked_catalog_service_api_base: respx.MockRouter,
+    fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+) -> None:
+    assert client
+
+    keys: list[ApiKeyInDB] = [key async for key in fake_api_keys(2)]
+    assert len({key.product_name for key in keys}) == 2
+
+    def _get_service_side_effect(request: httpx.Request, **kwargs):
+        assert (
+            received_product := request.headers.get("x-simcore-products-name")
+        ) is not None
+        assert (
+            user_id := dict(
+                elm.split("=") for elm in request.url.query.decode().split("&")
+            ).get("user_id")
+        ) is not None
+        key: ApiKeyInDB | None = None
+        for key in keys:
+            if key.id_ == int(user_id):
+                break
+        assert key is not None
+        assert key.product_name == received_product
+        return httpx.Response(status_code=status.HTTP_200_OK)
+
+    respx_mock = mocked_catalog_service_api_base.get(
+        r"/v0/services/simcore%2Fservices%2Fcomp%2Fisolve/2.0.24"
+    ).mock(side_effect=_get_service_side_effect)
+
+    for key in keys:
+        response = await client.get(
+            f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
+            auth=httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value()),
+        )
+
+    assert respx_mock.call_count == len(keys)
