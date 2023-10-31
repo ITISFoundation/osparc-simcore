@@ -82,10 +82,6 @@ qx.Class.define("osparc.service.ServiceListItem", {
           control.add(infoBtn);
           break;
         }
-        case "version-select-box": {
-          this.getChildControl("version-layout").add(control);
-          break;
-        }
       }
       return control || this.base(arguments, id);
     },
