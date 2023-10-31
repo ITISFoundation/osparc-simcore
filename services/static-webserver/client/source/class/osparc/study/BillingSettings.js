@@ -63,16 +63,18 @@ qx.Class.define("osparc.study.BillingSettings", {
         };
         osparc.data.Resources.fetch("studies", "getWallet", paramsGet)
           .then(wallet => {
-            const walletFound = walletSelector.getSelectables().find(selectables => selectables.walletId === wallet["walletId"]);
-            if (walletFound) {
-              walletSelector.setSelection([walletFound]);
-            } else {
-              const emptyItem = new qx.ui.form.ListItem("");
-              emptyItem.walletId = null;
-              walletSelector.add(emptyItem);
-              walletSelector.setSelection([emptyItem]);
-              const label = new qx.ui.basic.Label(this.tr("You don't have access to the last used Credit Account"));
-              hBox.add(label);
+            if (wallet) {
+              const walletFound = walletSelector.getSelectables().find(selectables => selectables.walletId === wallet["walletId"]);
+              if (walletFound) {
+                walletSelector.setSelection([walletFound]);
+              } else {
+                const emptyItem = new qx.ui.form.ListItem("");
+                emptyItem.walletId = null;
+                walletSelector.add(emptyItem);
+                walletSelector.setSelection([emptyItem]);
+                const label = new qx.ui.basic.Label(this.tr("You don't have access to the last used Credit Account"));
+                hBox.add(label);
+              }
             }
           })
           .finally(() => {

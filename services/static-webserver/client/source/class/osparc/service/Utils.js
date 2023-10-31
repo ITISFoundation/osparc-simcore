@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- *   Collection of methods for dealing with services data type convertions, extract
+ *   Collection of methods for dealing with services data type conversions, extract
  * specific information.
  *
  * *Example*
@@ -152,6 +152,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getFromObject: function(services, key, version) {
+      if (services === null) {
+        services = osparc.service.Utils.servicesCached;
+      }
       if (key in services) {
         const serviceVersions = services[key];
         if (version in serviceVersions) {
@@ -171,6 +174,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getVersions: function(services, key, filterDeprecates = true) {
+      if (services === null) {
+        services = osparc.service.Utils.servicesCached;
+      }
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
