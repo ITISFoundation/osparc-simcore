@@ -9,9 +9,9 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.redis import RedisClientSDK
 
 from ..redis import get_redis_client_sdk
-from ._constants import CACHE_TTL
+from ._constants import CACHE_ENTRIES_TTL_S
 
-_REDIS_KEY_PREFIX: Final[str] = "STATUS"
+_REDIS_KEY_PREFIX: Final[str] = "DYNAMIC_SERVICE_STATUS"
 
 
 def _get_key(node_id: NodeID) -> str:
@@ -30,13 +30,18 @@ class StatusesStore:
         await self.reset_ttl_status_duration(node_id)
 
     async def reset_ttl_status_duration(self, node_id: NodeID) -> None:
-        await self.redis_client_sdk.redis.expire(_get_key(node_id), CACHE_TTL)
+        await self.redis_client_sdk.redis.expire(_get_key(node_id), CACHE_ENTRIES_TTL_S)
 
     async def get_status(self, node_id: NodeID) -> RunningDynamicServiceDetails | None:
         stored_info = await self.redis_client_sdk.redis.get(_get_key(node_id))
         return (
             RunningDynamicServiceDetails.parse_raw(stored_info) if stored_info else None
         )
+
+    async def get_node_ids(self) -> set[NodeID]:
+        keys_prefix = f"{_REDIS_KEY_PREFIX}:"
+        found_keys = await self.redis_client_sdk.redis.keys(f"{keys_prefix}*")
+        return {NodeID(key.removeprefix(keys_prefix)) for key in found_keys}
 
     async def remove_status(self, node_id: NodeID) -> None:
         await self.redis_client_sdk.redis.delete(_get_key(node_id))
@@ -54,12 +59,8 @@ async def remove_from_status_cache(app: FastAPI, node_id: NodeID) -> None:
     await statuses_store.remove_status(node_id)
 
 
-async def update_status_cache(
-    app: FastAPI, node_id: NodeID, status: RunningDynamicServiceDetails
-) -> None:
-    """called each time the service status is retrieved"""
-    statuses_store: StatusesStore = app.state.statuses_store
-    await statuses_store.set_status(node_id, status)
+def get_statuses_store(app: FastAPI) -> StatusesStore:
+    return app.state.statuses_store
 
 
 def setup_statuses_store(app: FastAPI):
