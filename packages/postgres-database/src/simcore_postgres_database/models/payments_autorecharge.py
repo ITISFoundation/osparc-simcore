@@ -61,36 +61,22 @@ payments_autorecharge = sa.Table(
         # the user would loose his previous settings.
     ),
     sa.Column(
-        "min_balance_in_usd",
-        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
-        nullable=False,
-        server_default=sa.text("0"),
-        doc="[Required] Minimum or equal balance in USD that triggers auto-recharge",
-    ),
-    sa.Column(
         "top_up_amount_in_usd",
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
-        doc="[Required] Increase in USD when balance reaches min_balance_in_usd",
+        doc="[Required] Increase in USD when balance reaches minimum balance threshold",
     ),
     sa.Column(
-        "top_up_countdown",
-        sa.Integer(),
+        "monthly_limit_in_usd",
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=True,
         server_default=None,
-        doc="[Optional] Number of auto-recharges left."
-        "If it reaches zero, then auto-recharge stops."
-        "Used to limit the number of times that the system can auto-recharge."
-        "If None, then inc has no limit.",
+        doc="[Optional] Maximum amount in USD charged within a natural month"
+        "If None, indicates no limit",
     ),
     # time-stamps
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    #
-    sa.CheckConstraint(
-        "(top_up_countdown >= 0) OR (top_up_countdown IS NULL)",
-        name="check_top_up_countdown_nonnegative",
-    ),
 )
 
 
