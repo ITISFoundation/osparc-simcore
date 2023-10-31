@@ -5,13 +5,6 @@ from typing import Any, Final, cast
 import aiopg.sa
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
-from models_library.api_schemas_catalog.services_resources import (
-    DEFAULT_SINGLE_SERVICE_NAME,
-    BootMode,
-    ImageResources,
-    ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
-)
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
@@ -32,6 +25,13 @@ from models_library.services import (
     ServiceKey,
     ServiceKeyVersion,
     ServiceVersion,
+)
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    BootMode,
+    ImageResources,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as

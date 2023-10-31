@@ -5,8 +5,8 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, status
-from models_library.api_schemas_catalog.services_resources import ServiceResourcesDict
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from settings_library.catalog import CatalogSettings

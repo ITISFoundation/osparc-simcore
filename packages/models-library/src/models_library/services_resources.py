@@ -12,9 +12,9 @@ from pydantic import (
     root_validator,
 )
 
-from ..docker import DockerGenericTag
-from ..utils.enums import StrAutoEnum
-from ..utils.fastapi_encoders import jsonable_encoder
+from .docker import DockerGenericTag
+from .utils.enums import StrAutoEnum
+from .utils.fastapi_encoders import jsonable_encoder
 
 _logger = logging.getLogger(__name__)
 
