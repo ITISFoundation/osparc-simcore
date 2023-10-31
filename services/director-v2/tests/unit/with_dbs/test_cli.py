@@ -134,6 +134,9 @@ async def mock_close_service_routes(
         respx_mock.post(
             re.compile(f"{regex_base}/state:save"), name="save_service_state"
         ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.get(
+            re.compile(f"{regex_base}/state"), name="service_internal_state"
+        ).respond(status_code=status.HTTP_200_OK)
         respx_mock.post(
             re.compile(f"{regex_base}/outputs:push"), name="push_service_outputs"
         ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
