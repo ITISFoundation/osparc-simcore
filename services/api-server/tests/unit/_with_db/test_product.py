@@ -55,7 +55,7 @@ async def test_webserver_product(
             ),
         )
 
-    mocked_webserver_service_api_base.get(
+    wallet_get_mock = mocked_webserver_service_api_base.get(
         path__regex=r"/wallets/(?P<wallet_id>[-+]?\d+)"
     ).mock(side_effect=_check_key_product_compatibility)
 
@@ -66,3 +66,4 @@ async def test_webserver_product(
             auth=httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value()),
         )
         assert response.status_code == status.HTTP_200_OK
+    assert wallet_get_mock.call_count == len(keys)
