@@ -32,7 +32,7 @@ async def test_webserver_product(
             received_product_name := request.headers.get("x-simcore-products-name")
         ) is not None
         assert (wallet_id := kwargs.get("wallet_id")) is not None
-        key = keys[int(wallet_id)]
+        assert (key := keys[int(wallet_id)]) is not None
         assert key.product_name == received_product_name
         return httpx.Response(
             status.HTTP_200_OK,
