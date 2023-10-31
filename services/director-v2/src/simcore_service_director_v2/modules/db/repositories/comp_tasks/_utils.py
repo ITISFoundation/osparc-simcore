@@ -239,18 +239,27 @@ async def _update_project_node_resources_from_hardware_info(
     if not hardware_info.aws_ec2_instances:
         return
     try:
-        list_ec2_instance_types: list[
+        unordered_list_ec2_instance_types: list[
             EC2InstanceType
         ] = await get_instance_type_details(
             rabbitmq_rpc_client,
             instance_type_names=set(hardware_info.aws_ec2_instances),
         )
 
-        assert list_ec2_instance_types  # nosec
-        assert len(list_ec2_instance_types) == 1  # nosec
+        assert unordered_list_ec2_instance_types  # nosec
+
+        # NOTE: with the current implementation, there is no use to get the instance past the first one
+        def _by_type_name(ec2: EC2InstanceType) -> bool:
+            return ec2.name == hardware_info.aws_ec2_instances[0]
+
+        selected_ec2_instance_type = next(
+            iter(filter(_by_type_name, unordered_list_ec2_instance_types))
+        )
+        # now update the project node required resources
+        # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
+        # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
-        selected_ec2_instance_type = list_ec2_instance_types[0]
         node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
             "limit"
         ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
