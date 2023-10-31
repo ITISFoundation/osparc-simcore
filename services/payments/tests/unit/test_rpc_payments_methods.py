@@ -7,9 +7,13 @@
 from collections.abc import Awaitable, Callable
 
 import pytest
+from arrow import utcnow
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import PaymentMethodInitiated
+from models_library.api_schemas_webserver.wallets import (
+    PaymentMethodInitiated,
+    WalletPaymentInitiated,
+)
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -18,7 +22,13 @@ from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
-from simcore_service_payments.models.db import InitPromptAckFlowState
+from simcore_service_payments.db.payments_transactions_repo import (
+    PaymentsTransactionsRepo,
+)
+from simcore_service_payments.models.db import (
+    InitPromptAckFlowState,
+    PaymentTransactionState,
+)
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -102,7 +112,6 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
         ].called
 
 
-@pytest.mark.testit
 async def test_webserver_crud_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
@@ -182,3 +191,58 @@ async def test_webserver_crud_payment_method_workflow(
         assert mock_payments_gateway_service_or_none.routes[
             "delete_payment_method"
         ].called
+
+
+async def test_webserver_pay_with_payment_method_workflow(
+    is_pdb_enabled: bool,
+    app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    mock_payments_gateway_service_or_none: MockRouter | None,
+    faker: Faker,
+    payments_clean_db: None,
+):
+    assert app
+    user_id = faker.pyint()
+    wallet_id = faker.pyint()
+
+    # Faking Payment method ----
+    payment_method_id = faker.uuid4()
+    repo = PaymentsMethodsRepo(app.state.engine)
+    await repo.insert_init_payment_method(
+        payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        initiated_at=utcnow().datetime,
+    )
+    await repo.update_ack_payment_method(
+        payment_method_id,
+        completion_state=InitPromptAckFlowState.SUCCESS,
+        state_message="FAKED ACK",
+    )
+    # -----
+
+    rpc_client = await rabbitmq_rpc_client("web-server-client")
+
+    payment_inited = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "init_payment_with_payment_method"),
+        payment_method_id=payment_method_id,
+        amount_dollars=faker.pyint(),
+        target_credits=faker.pyint(),
+        wallet_id=wallet_id,
+        wallet_name=faker.word(),
+        user_id=user_id,
+        user_name=faker.name(),
+        user_email=faker.email(),
+        comments="Payment with stored credit-card",
+    )
+
+    assert isinstance(payment_inited, WalletPaymentInitiated)
+    assert payment_inited.payment_id
+    assert payment_inited.payment_form_url is None
+
+    payment = await PaymentsTransactionsRepo(app.state.engine).get_payment_transaction(
+        payment_inited.payment_id, user_id=user_id, wallet_id=wallet_id
+    )
+    assert payment is not None
+    assert payment.state == PaymentTransactionState.PENDING
