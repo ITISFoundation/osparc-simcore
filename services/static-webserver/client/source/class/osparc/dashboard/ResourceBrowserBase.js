@@ -327,7 +327,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.data.Resources.fetch("studies", "getWallet", params)
           .then(wallet => {
             if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
-              // pop up study options only if it has no wallet assigned or user has no access to it
+              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
               resourceSelector.addListener("startStudy", () => {
