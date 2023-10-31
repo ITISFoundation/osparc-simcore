@@ -1,23 +1,21 @@
 import logging
 
-from models_library.api_schemas_clusters_keeper.clusters import (
-    ClusterState,
-    OnDemandCluster,
-)
+from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from models_library.clusters import BaseCluster, ClusterTypeInModel
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
-    RPCMethodName,
-    RPCNamespace,
     RPCServerError,
+)
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.clusters import (
+    get_or_create_cluster,
 )
 from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.errors import (
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ClustersKeeperNotAvailableError,
     ComputationalBackendOnDemandNotReadyError,
 )
 
@@ -31,12 +29,8 @@ async def get_or_create_on_demand_cluster(
     wallet_id: WalletID | None,
 ) -> BaseCluster:
     try:
-        returned_cluster: OnDemandCluster = await rabbitmq_rpc_client.request(
-            RPCNamespace("clusters-keeper"),
-            RPCMethodName("get_or_create_cluster"),
-            timeout_s=300,
-            user_id=user_id,
-            wallet_id=wallet_id,
+        returned_cluster = await get_or_create_cluster(
+            rabbitmq_rpc_client, user_id=user_id, wallet_id=wallet_id
         )
         _logger.info("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
@@ -57,6 +51,6 @@ async def get_or_create_on_demand_cluster(
         )
     except RemoteMethodNotRegisteredError as exc:
         # no clusters-keeper, that is not going to work!
-        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
+        raise ClustersKeeperNotAvailableError from exc
     except RPCServerError as exc:
-        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
+        raise ClustersKeeperNotAvailableError from exc

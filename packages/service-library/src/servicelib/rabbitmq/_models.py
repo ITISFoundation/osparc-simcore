@@ -4,6 +4,7 @@ from typing import Any, Protocol
 
 from models_library.rabbitmq_basic_types import (
     REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS,
+    RPCMethodName,
     RPCNamespace,
 )
 from pydantic import ConstrainedStr, parse_obj_as
@@ -17,12 +18,6 @@ class RabbitMessage(Protocol):
 
     def routing_key(self) -> str | None:
         ...
-
-
-class RPCMethodName(ConstrainedStr):
-    min_length: int = 1
-    max_length: int = 252
-    regex: re.Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
 
 
 class RPCNamespacedMethodName(ConstrainedStr):
