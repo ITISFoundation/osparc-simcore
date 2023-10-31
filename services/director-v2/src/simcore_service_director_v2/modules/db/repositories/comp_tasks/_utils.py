@@ -270,7 +270,9 @@ async def _update_project_node_resources_from_hardware_info(
         node = await project_nodes_repo.get(connection, node_id=node_id)
         node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
         assert DEFAULT_SINGLE_SERVICE_NAME in node_resources  # nosec
-        assert isinstance(node_resources[DEFAULT_SINGLE_SERVICE_NAME], ImageResources)
+        assert isinstance(
+            node_resources[DEFAULT_SINGLE_SERVICE_NAME], ImageResources
+        )  # nosec
         image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
         image_resources.resources["CPU"].set_value(selected_ec2_instance_type.cpus)
         image_resources.resources["RAM"].set_value(
