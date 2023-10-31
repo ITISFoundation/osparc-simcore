@@ -72,7 +72,8 @@ qx.Class.define("osparc.study.StudyOptions", {
       const minHeight = 200;
       const maxHeight = 600;
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
-        maxHeight
+        maxHeight,
+        clickAwayClose: false
       });
       win.center();
       win.open();
@@ -119,7 +120,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", true).set({
+          control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
             width: 150
           });
           this.getChildControl("wallet-selector-layout").add(control);
@@ -206,8 +207,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         });
       }
 
-      // OM: puppeteer has no wallets. Enable it when BE is ready
-      // this.getChildControl("open-button").setEnabled(Boolean(wallet));
+      this.getChildControl("open-button").setEnabled(Boolean(wallet));
     },
 
     __buildLayout: function() {
