@@ -45,7 +45,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           }
         }
       }
-    }
+    };
 
     qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
   },
