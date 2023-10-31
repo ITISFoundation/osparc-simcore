@@ -260,6 +260,7 @@ async def _update_project_node_resources_from_hardware_info(
         # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
+        assert DEFAULT_SINGLE_SERVICE_NAME in node.required_resources  # nosec
         node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
             "limit"
         ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
