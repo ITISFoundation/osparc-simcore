@@ -63,7 +63,7 @@ qx.Class.define("osparc.service.ServiceList", {
       });
 
       model.toArray().forEach(service => {
-        const button = new osparc.service.ServiceButtonList(service);
+        const button = new osparc.service.ServiceListItem(service);
         if (this.__filterGroup !== null) {
           button.subscribeToFilterGroup(this.__filterGroup);
         }

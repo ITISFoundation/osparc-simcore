@@ -152,6 +152,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getFromObject: function(services, key, version) {
+      if (services === null) {
+        services = osparc.service.Utils.servicesCached;
+      }
       if (key in services) {
         const serviceVersions = services[key];
         if (version in serviceVersions) {
