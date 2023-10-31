@@ -235,10 +235,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __getSidePanelsNewWidth: function(collapsing, sidePanels, collapsibleView) {
       let sidePanelsNewWidth = null;
-      const sidePanelsWidth = sidePanels.getBounds().width;
+      const sidePanelsWidth = (sidePanels.getBounds() && ("width" in sidePanels.getBounds())) ? sidePanels.getBounds().width : 250;
       if (collapsing) {
         const content = collapsibleView.getChildControl("scroll-content");
-        sidePanelsNewWidth = sidePanelsWidth - content.getBounds().width;
+        sidePanelsNewWidth = (content.getBounds() && ("width" in content.getBounds())) ? sidePanelsWidth - content.getBounds().width : 150;
       } else if ("precollapseWidth" in collapsibleView) {
         sidePanelsNewWidth = sidePanelsWidth + (collapsibleView.precollapseWidth - osparc.widget.CollapsibleViewLight.CARET_WIDTH);
       }
