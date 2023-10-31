@@ -9,7 +9,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import PaymentMethodInit
+from models_library.api_schemas_webserver.wallets import PaymentMethodInitiated
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -76,7 +76,7 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
         user_email=faker.email(),
     )
 
-    assert isinstance(initiated, PaymentMethodInit)
+    assert isinstance(initiated, PaymentMethodInitiated)
 
     if mock_payments_gateway_service_or_none:
         assert mock_payments_gateway_service_or_none.routes[
@@ -123,7 +123,7 @@ async def test_webserver_crud_payment_method_workflow(
         user_email=faker.email(),
     )
 
-    assert isinstance(inited, PaymentMethodInit)
+    assert isinstance(inited, PaymentMethodInitiated)
 
     if mock_payments_gateway_service_or_none:
         assert mock_payments_gateway_service_or_none.routes[

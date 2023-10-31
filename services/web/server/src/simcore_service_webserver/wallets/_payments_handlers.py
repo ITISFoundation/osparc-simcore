@@ -6,10 +6,10 @@ from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentID,
     PaymentMethodGet,
-    PaymentMethodInit,
+    PaymentMethodInitiated,
     PaymentTransaction,
     ReplaceWalletAutoRecharge,
-    WalletPaymentCreated,
+    WalletPaymentInitiated,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
@@ -76,7 +76,7 @@ async def create_payment(request: web.Request):
             # '0 or None' should raise
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-        payment: WalletPaymentCreated = await init_creation_of_wallet_payment(
+        payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -182,11 +182,13 @@ async def init_creation_of_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        initiated: PaymentMethodInit = await init_creation_of_wallet_payment_method(
-            request.app,
-            user_id=req_ctx.user_id,
-            wallet_id=path_params.wallet_id,
-            product_name=req_ctx.product_name,
+        initiated: PaymentMethodInitiated = (
+            await init_creation_of_wallet_payment_method(
+                request.app,
+                user_id=req_ctx.user_id,
+                wallet_id=path_params.wallet_id,
+                product_name=req_ctx.product_name,
+            )
         )
 
         # NOTE: the request has been accepted to create a payment-method

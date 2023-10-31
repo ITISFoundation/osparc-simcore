@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentTransaction,
-    WalletPaymentCreated,
+    WalletPaymentInitiated,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -87,7 +87,7 @@ async def init_creation_of_wallet_payment(
     user_id: UserID,
     wallet_id: WalletID,
     comment: str | None,
-) -> WalletPaymentCreated:
+) -> WalletPaymentInitiated:
     """
 
     Raises:
@@ -108,7 +108,7 @@ async def init_creation_of_wallet_payment(
     user = await get_user_name_and_email(app, user_id=user_id)
 
     # call to payment-service
-    payment_inited: WalletPaymentCreated = await _rpc.init_payment(
+    payment_inited: WalletPaymentInitiated = await _rpc.init_payment(
         app,
         amount_dollars=price_dollars,
         target_credits=osparc_credits,

@@ -3,7 +3,10 @@ from decimal import Decimal
 
 import arrow
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import PaymentID, WalletPaymentCreated
+from models_library.api_schemas_webserver.wallets import (
+    PaymentID,
+    WalletPaymentInitiated,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -41,7 +44,7 @@ async def init_payment(
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-) -> WalletPaymentCreated:
+) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
     # Payment-Gateway
@@ -90,7 +93,7 @@ async def init_payment(
         )
         assert payment_id == init.payment_id  # nosec
 
-    return WalletPaymentCreated(
+    return WalletPaymentInitiated(
         payment_id=f"{payment_id}",
         payment_form_url=f"{submission_link}",
     )

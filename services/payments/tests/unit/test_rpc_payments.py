@@ -11,8 +11,8 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -108,7 +108,7 @@ async def test_webserver_one_time_payment_workflow(
         **init_payment_kwargs,
     )
 
-    assert isinstance(result, WalletPaymentCreated)
+    assert isinstance(result, WalletPaymentInitiated)
 
     if mock_payments_gateway_service_or_none:
         assert mock_payments_gateway_service_or_none.routes["init_payment"].called
