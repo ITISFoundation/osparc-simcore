@@ -22,6 +22,7 @@ from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
+from ...models.dynamic_services_scheduler import SchedulerData
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.routes import NoContentResponse
 from ..dependencies.dynamic_sidecar import get_dynamic_sidecar_scheduler
@@ -119,6 +120,24 @@ async def delete_service_containers(
         )
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@router.get(
+    "/services/{node_uuid}/state",
+    summary="Returns the internals of the scheduler for the given service",
+    status_code=status.HTTP_200_OK,
+    response_model=SchedulerData,
+)
+async def get_service_state(
+    node_uuid: NodeID,
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
+):
+    # pylint: disable=protected-access
+    return dynamic_sidecars_scheduler._scheduler.get_scheduler_data(
+        node_uuid
+    )  # noqa: SLF001
 
 
 @router.post(

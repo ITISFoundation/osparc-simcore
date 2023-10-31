@@ -235,3 +235,11 @@ def test_close_and_save_service(
     result = cli_runner.invoke(main, ["close-and-save-service", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)
+
+
+def test_service_state(
+    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
+):
+    result = cli_runner.invoke(main, ["service-state", f"{node_id}"])
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    print(result.stdout)
