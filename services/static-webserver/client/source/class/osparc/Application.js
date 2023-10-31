@@ -330,15 +330,6 @@ qx.Class.define("osparc.Application", {
 
     __loadMainPage: async function(studyId = null) {
       // logged in
-
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      if (osparc.product.Utils.shouldHaveWalletsEnabled() && !walletsEnabled) {
-        const infoLabel = this.tr("Credits information is not ready.<br>Please contact us by email:<br>");
-        const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-        osparc.FlashMessenger.getInstance().logAs(infoLabel + supportEmail, "ERROR");
-        this.logout();
-      }
-
       const profile = await osparc.data.Resources.getOne("profile");
       if (profile) {
         this.__connectWebSocket();

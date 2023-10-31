@@ -795,7 +795,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "delete", params2, studyData["uuid"]);
           };
-          this._startStudyById(studyData["uuid"], openCB, cancelCB);
+          const isStudyCreation = true;
+          this._startStudyById(studyData["uuid"], openCB, cancelCB, isStudyCreation);
         })
         .catch(err => {
           this._hideLoadingPage();
