@@ -16,6 +16,8 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
+from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
+from simcore_service_payments.models.db import InitPromptAckFlowState
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -51,7 +53,7 @@ def app_environment(
     )
 
 
-async def test_webserver_add_payment_method_workflow(
+async def test_webserver_init_and_cancel_payment_method_workflow(
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mock_payments_gateway_service_or_none: MockRouter | None,
@@ -64,7 +66,7 @@ async def test_webserver_add_payment_method_workflow(
 
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 
-    result = await rpc_client.request(
+    initiated = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
         wallet_id=wallet_id,
@@ -74,23 +76,105 @@ async def test_webserver_add_payment_method_workflow(
         user_email=faker.email(),
     )
 
-    assert isinstance(result, PaymentMethodInit)
+    assert isinstance(initiated, PaymentMethodInit)
 
     if mock_payments_gateway_service_or_none:
         assert mock_payments_gateway_service_or_none.routes[
             "init_payment_method"
         ].called
 
-    result = await rpc_client.request(
+    cancelled = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "cancel_creation_of_payment_method"),
-        payment_method_id=result.payment_method_id,
+        payment_method_id=initiated.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
         timeout_s=20,  # while debugging to avoid failures withe breakpoints
     )
 
-    assert result is None
+    assert cancelled is None
+
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes[
+            "delete_payment_method"
+        ].called
+
+
+async def test_webserver_crud_payment_method_workflow(
+    app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    mock_payments_gateway_service_or_none: MockRouter | None,
+    faker: Faker,
+    payments_clean_db: None,
+):
+    assert app
+    user_id = faker.pyint()
+    wallet_id = faker.pyint()
+
+    rpc_client = await rabbitmq_rpc_client("web-server-client")
+
+    inited = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
+        wallet_id=wallet_id,
+        wallet_name=faker.word(),
+        user_id=user_id,
+        user_name=faker.name(),
+        user_email=faker.email(),
+    )
+
+    assert isinstance(inited, PaymentMethodInit)
+
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes[
+            "init_payment_method"
+        ].called
+
+    # Faking ACK----
+    repo = PaymentsMethodsRepo(app.state.engine)
+    await repo.update_ack_payment_method(
+        inited.payment_method_id,
+        completion_state=InitPromptAckFlowState.SUCCESS,
+        state_message="FAKED ACK",
+    )
+    # -----
+
+    listed = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "list_payment_methods"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+        timeout_s=20,  # while debugging to avoid failures withe breakpoints
+    )
+    assert len(listed) == 1
+
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes[
+            "batch_get_payment_methods"
+        ].called
+
+    got = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payment_method"),
+        payment_method_id=inited.payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        timeout_s=20,  # while debugging to avoid failures withe breakpoints
+    )
+    assert got == listed[0]
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes["get_payment_method"].called
+
+    deleted = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "delete_payment_method"),
+        payment_method_id=inited.payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        timeout_s=20,  # while debugging to avoid failures withe breakpoints
+    )
+
+    assert deleted.payment_method_id == inited.payment_method_id
 
     if mock_payments_gateway_service_or_none:
         assert mock_payments_gateway_service_or_none.routes[

@@ -1,10 +1,13 @@
 import logging
+from decimal import Decimal
 
 import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import (
+    PaymentID,
     PaymentMethodID,
     PaymentMethodInit,
+    WalletPaymentCreated,
 )
 from models_library.basic_types import IDStr
 from models_library.users import UserID
@@ -17,6 +20,7 @@ from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRep
 from simcore_service_payments.models.payments_gateway import InitPaymentMethod
 
 from ..._constants import PAG, PGDB
+from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -35,7 +39,6 @@ async def init_creation_of_payment_method(
     user_name: IDStr,
     user_email: EmailStr,
 ) -> PaymentMethodInit:
-
     initiated_at = arrow.utcnow().datetime
 
     # Payment-Gateway
@@ -116,3 +119,60 @@ async def cancel_creation_of_payment_method(
         user_id=user_id,
         wallet_id=wallet_id,
     )
+
+
+@router.expose()
+async def list_payment_methods(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    raise NotImplementedError
+
+
+@router.expose()
+async def get_payment_method(
+    app: FastAPI,
+    *,
+    payment_method_id: PaymentMethodID,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    raise NotImplementedError
+
+
+@router.expose()
+async def delete_payment_method(
+    app: FastAPI,
+    *,
+    payment_method_id: PaymentMethodID,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    raise NotImplementedError
+
+
+@router.expose()
+async def init_payment_with_payment_method(
+    app: FastAPI,
+    *,
+    payment_method_id: PaymentMethodID,
+    amount_dollars: Decimal,
+    target_credits: Decimal,
+    product_name: str,
+    wallet_id: WalletID,
+    wallet_name: str,
+    user_id: UserID,
+    user_name: str,
+    user_email: EmailStr,
+    comment: str | None = None,
+) -> WalletPaymentCreated:
+
+    payment_id: PaymentID = "123"
+
+    payments_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
+
+    repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
+
+    raise NotImplementedError
