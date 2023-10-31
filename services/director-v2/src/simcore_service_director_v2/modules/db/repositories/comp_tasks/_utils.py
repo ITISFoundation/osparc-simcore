@@ -258,7 +258,7 @@ async def _update_project_node_resources_from_hardware_info(
 
         # NOTE: with the current implementation, there is no use to get the instance past the first one
         def _by_type_name(ec2: EC2InstanceType) -> bool:
-            return ec2.name == hardware_info.aws_ec2_instances[0]
+            return bool(ec2.name == hardware_info.aws_ec2_instances[0])
 
         selected_ec2_instance_type = next(
             iter(filter(_by_type_name, unordered_list_ec2_instance_types))
