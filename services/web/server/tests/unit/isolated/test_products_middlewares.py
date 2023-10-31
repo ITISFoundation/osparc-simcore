@@ -6,9 +6,9 @@
 from typing import Any
 
 import pytest
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT
 from simcore_postgres_database.webserver_models import products
-from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.products._events import _set_app_state
 from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._model import Product

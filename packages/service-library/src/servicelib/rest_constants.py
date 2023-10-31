@@ -1,6 +1,6 @@
 # SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
 
-from typing import TypedDict
+from typing import Final, TypedDict
 
 
 class PydanticExportParametersDict(TypedDict):
@@ -16,3 +16,6 @@ RESPONSE_MODEL_POLICY = PydanticExportParametersDict(
     exclude_defaults=False,
     exclude_none=False,
 )
+
+# Headers keys
+X_PRODUCT_NAME_HEADER: Final[str] = "X-Simcore-Products-Name"
