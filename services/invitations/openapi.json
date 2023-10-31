@@ -173,7 +173,7 @@
             "maxLength": 30,
             "minLength": 1,
             "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
           },
           "guest": {
             "title": "Guest",
@@ -225,7 +225,7 @@
             "maxLength": 30,
             "minLength": 1,
             "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
           },
           "guest": {
             "title": "Guest",
@@ -284,7 +284,7 @@
             "maxLength": 30,
             "minLength": 1,
             "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
           },
           "guest": {
             "title": "Guest",
