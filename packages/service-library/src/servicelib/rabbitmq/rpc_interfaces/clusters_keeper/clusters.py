@@ -11,6 +11,11 @@ from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 async def get_or_create_cluster(
     client: RabbitMQRPCClient, *, user_id: UserID, wallet_id: WalletID | None
 ) -> OnDemandCluster:
+    """**Remote method**
+
+    Raises:
+        RPCServerError -- if anything happens remotely
+    """
     on_demand_cluster: OnDemandCluster = await client.request(
         CLUSTERS_KEEPER_RPC_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),

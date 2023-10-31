@@ -9,6 +9,12 @@ from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 async def get_instance_type_details(
     client: RabbitMQRPCClient, *, instance_type_names: set[str]
 ) -> list[EC2InstanceType]:
+    """**Remote method**
+
+    Raises:
+        RPCServerError -- if anything happens remotely
+
+    """
     instance_types: list[EC2InstanceType] = await client.request(
         CLUSTERS_KEEPER_RPC_NAMESPACE,
         RPCMethodName("get_instance_type_details"),
