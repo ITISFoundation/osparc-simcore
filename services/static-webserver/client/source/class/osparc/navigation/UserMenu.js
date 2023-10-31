@@ -30,6 +30,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "mini-profile-view":
+          control = new osparc.navigation.MiniProfileMenuButton();
+          this.setMinWidth(150);
+          this.addAt(control, 0);
+          break;
         case "theme-switcher":
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
           this.add(control);
@@ -67,8 +72,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "organizations":
-          control = new qx.ui.menu.Button(this.tr("Organizations"));
-          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          control = new qx.ui.menu.Button(this.tr("Organizations")).set({
+            visibility: osparc.data.Permissions.getInstance().canDo("user.organizations.create") ? "visible" :"excluded"
+          });
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.add(control);
           break;
@@ -120,6 +126,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
     populateMenu: function() {
       this.removeAll();
 
+      this.getChildControl("mini-profile-view");
+
       if (osparc.auth.Data.getInstance().isGuest()) {
         this.getChildControl("log-in");
       } else {
@@ -153,8 +161,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("log-out");
 
       osparc.utils.Utils.prettifyMenu(this);
-
-      this.addAt(new osparc.navigation.MiniProfileMenuButton(), 0);
     },
 
     populateMenuCompact: function() {

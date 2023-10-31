@@ -40,20 +40,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
       orgsWindow.center();
       orgsWindow.open();
       return orgsWindow;
-    },
-
-    evaluateOrganizationsButton: function(btn) {
-      if (!osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
-        btn.exclude();
-        return;
-      }
-      osparc.data.Resources.get("organizations")
-        .then(resp => {
-          const orgs = resp["organizations"];
-          if (orgs.length) {
-            btn.show();
-          }
-        });
     }
   },
 

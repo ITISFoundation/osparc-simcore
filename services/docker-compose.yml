@@ -110,6 +110,7 @@ services:
       - WORKERS_EC2_INSTANCES_ALLOWED_TYPES=${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
       - WORKERS_EC2_INSTANCES_AMI_ID=${WORKERS_EC2_INSTANCES_AMI_ID}
       - WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS=${WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS}
+      - WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION=${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
       - WORKERS_EC2_INSTANCES_KEY_NAME=${WORKERS_EC2_INSTANCES_KEY_NAME}
       - WORKERS_EC2_INSTANCES_MAX_INSTANCES=${WORKERS_EC2_INSTANCES_MAX_INSTANCES}
       - WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS=${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
@@ -297,7 +298,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/s4lacad`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/s4lacad/`,`/tis/`,`/transpiled/`,`/resource/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/s4lacad`,`/s4ldesktop`,`/s4ldesktopacad`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/s4lacad/`,`/s4ldesktop/`,`/s4ldesktopacad/`,`/tis/`,`/transpiled/`,`/resource/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.service=${SWARM_STACK_NAME}_static_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
@@ -419,8 +420,9 @@ services:
       TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: ${TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT}
 
       WEBSERVER_PAYMENTS: ${WEBSERVER_PAYMENTS}
-      PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE: ${PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE}
+      PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: ${PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT}
       PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: ${PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT}
+      PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: ${PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS}
       PAYMENTS_FAKE_COMPLETION_DELAY_SEC: ${PAYMENTS_FAKE_COMPLETION_DELAY_SEC}
       PAYMENTS_FAKE_COMPLETION: ${PAYMENTS_FAKE_COMPLETION}
       PAYMENTS_FAKE_GATEWAY_URL: ${PAYMENTS_GATEWAY_URL}

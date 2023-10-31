@@ -90,7 +90,7 @@ async def dask_teardown(_worker: distributed.Worker) -> None:
     logger.warning("Tearing down worker!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
-async def _run_computational_sidecar_async(
+async def _run_computational_sidecar_async(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     docker_auth: DockerBasicAuth,
     service_key: ContainerImage,

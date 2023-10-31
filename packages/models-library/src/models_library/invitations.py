@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt, validator
 
 from .emails import LowerCaseEmailStr
 
@@ -10,7 +10,7 @@ class InvitationInputs(BaseModel):
 
     issuer: str = Field(
         ...,
-        description="Identifies who issued the invitation. E.g. an email, a service name etc",
+        description="Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum",
         min_length=1,
         max_length=30,
     )
@@ -27,6 +27,13 @@ class InvitationInputs(BaseModel):
         None,
         description="If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
     )
+
+    @validator("issuer", pre=True)
+    @classmethod
+    def trim_long_issuers_to_max_length(cls, v):
+        if v and isinstance(v, str):
+            return v[:29]
+        return v
 
 
 class InvitationContent(InvitationInputs):

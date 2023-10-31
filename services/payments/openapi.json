@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-payments web API",
     "description": " Service that manages creation and validation of registration payments",
-    "version": "1.3.0"
+    "version": "1.3.1"
   },
   "paths": {
     "/": {
@@ -104,7 +104,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
+              "maxLength": 50,
+              "minLength": 1,
               "title": "Payment Id"
             },
             "name": "payment_id",
@@ -161,7 +162,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
+              "maxLength": 50,
+              "minLength": 1,
               "title": "Payment Method Id"
             },
             "name": "payment_method_id",
@@ -360,7 +362,8 @@
           },
           "payment_method_id": {
             "type": "string",
-            "format": "uuid",
+            "maxLength": 50,
+            "minLength": 1,
             "title": "Payment Method Id"
           }
         },

@@ -8,7 +8,6 @@ from ._errors import (
     RPCNotInitializedError,
     RPCServerError,
 )
-from ._models import RPCMethodName
 from ._rpc_router import RPCRouter
 from ._utils import wait_till_rabbitmq_responsive
 
@@ -17,7 +16,6 @@ __all__: tuple[str, ...] = (
     "RabbitMQClient",
     "RabbitMQRPCClient",
     "RemoteMethodNotRegisteredError",
-    "RPCMethodName",
     "RPCNamespace",
     "RPCNotInitializedError",
     "RPCRouter",

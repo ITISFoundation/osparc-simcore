@@ -52,14 +52,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       height: this.self().HEIGHT,
       backgroundColor: "background-main-1"
     });
-
-    osparc.data.Resources.get("notifications")
-      .then(notifications => {
-        osparc.notification.Notifications.getInstance().addNotifications(notifications);
-        this.buildLayout();
-        this.setPageContext("dashboard");
-        osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
-      });
   },
 
   events: {
@@ -103,7 +95,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   members: {
     __tabButtons: null,
 
-    buildLayout: function() {
+    populateLayout: function() {
+      return new Promise(resolve => {
+        osparc.data.Resources.get("notifications")
+          .then(notifications => {
+            osparc.notification.Notifications.getInstance().addNotifications(notifications);
+            this.__buildLayout();
+            this.setPageContext("dashboard");
+            osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
+            resolve();
+          })
+          .catch(err => console.error(err));
+      });
+    },
+
+    __buildLayout: function() {
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
@@ -126,8 +132,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("expiration-icon");
       this.getChildControl("help");
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        this.getChildControl("current-usage-indicator");
-        this.getChildControl("wallets-viewer");
+        this.getChildControl("credits-menu-button");
       }
       this.getChildControl("log-in-button");
       this.getChildControl("user-menu");
@@ -221,11 +226,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
-        case "current-usage-indicator": {
+        case "credits-menu-button": {
           const currentUsage = new osparc.desktop.credits.CurrentUsage();
-          control = new osparc.desktop.credits.CurrentUsageIndicator(currentUsage).set({
-            allowGrowY: false,
-            alignY: "middle"
+          control = new osparc.navigation.CreditsMenuButton().set({
+            currentUsage,
+            maxHeight: this.self().HEIGHT
           });
           this.getChildControl("right-items").add(control);
           break;

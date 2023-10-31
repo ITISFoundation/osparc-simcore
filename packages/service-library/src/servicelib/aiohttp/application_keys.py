@@ -28,6 +28,7 @@ APP_CLIENT_SESSION_KEY: Final[str] = f"{__name__ }.session"
 APP_FIRE_AND_FORGET_TASKS_KEY: Final[str] = f"{__name__}.tasks"
 
 APP_RABBITMQ_CLIENT_KEY: Final[str] = f"{__name__}.rabbit_client"
+APP_RABBITMQ_RPC_SERVER_KEY: Final[str] = f"{__name__}.rabbit_rpc_server"
 
 #
 # web.Response keys, i.e. app[RSP_*_KEY]

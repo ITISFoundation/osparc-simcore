@@ -6,11 +6,11 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Final
 
 import pytest
+from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, ValidationError
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
-    RPCMethodName,
     RPCNamespace,
     RPCNotInitializedError,
 )

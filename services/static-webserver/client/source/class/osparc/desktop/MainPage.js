@@ -40,14 +40,17 @@
 qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function(openView) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
-    const navBar = this.__navBar = this.__createNavigationBar();
+    const navBar = this.__navBar = new osparc.navigation.NavigationBar();
+    navBar.populateLayout();
+    navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+    navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
     this._add(navBar);
 
     // Some resources request before building the main stack
@@ -65,16 +68,12 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(store.getTags());
     Promise.all(preloadPromises)
       .then(() => {
-        if (openView && openView === "wallets" && walletsEnabled) {
-          const billingCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
-          billingCenterWindow.openOverview();
-        }
-
         const mainStack = this.__createMainStack();
         this._add(mainStack, {
           flex: 1
         });
 
+        this.__listenToWalletSocket();
         this.__attachHandlers();
       });
   },
@@ -90,11 +89,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     __loadingPage: null,
     __studyEditor: null,
 
-    __createNavigationBar: function() {
-      const navBar = new osparc.navigation.NavigationBar();
-      navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
-      navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
-      return navBar;
+    __listenToWalletSocket: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "walletOsparcCreditsUpdated";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          const store = osparc.store.Store.getInstance();
+          const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
+          if (walletFound) {
+            walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
+          }
+        }, this);
+      }
     },
 
     __backToDashboardPressed: function() {

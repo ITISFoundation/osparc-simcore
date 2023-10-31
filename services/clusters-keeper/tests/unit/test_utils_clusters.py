@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.rpc_schemas_clusters_keeper.clusters import ClusterState
+from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.models import EC2InstanceData
@@ -69,7 +69,9 @@ def test_create_startup_script(
         if isinstance(v, str) and v.startswith("${")
     ] + ["DOCKER_IMAGE_TAG"]
     for env_key in expected_env_keys:
-        assert env_key in startup_script_env_keys_names
+        assert (
+            env_key in startup_script_env_keys_names
+        ), f"{env_key} is missing from startup script! please adjust"
 
     # check we do not define "too much"
     for env_key in startup_script_env_keys_names:

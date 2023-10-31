@@ -3,11 +3,11 @@ import datetime
 import functools
 from typing import Any, Final
 
-from models_library.clusters import NoAuthentication
-from models_library.rpc_schemas_clusters_keeper.clusters import (
+from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
 )
+from models_library.clusters import NoAuthentication
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from types_aiobotocore_ec2.literals import InstanceStateNameType
@@ -51,6 +51,7 @@ def create_startup_script(
         f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
         f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
+        f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
         f"EC2_CLUSTERS_KEEPER_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_REGION_NAME}",
         f"EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY}",
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",

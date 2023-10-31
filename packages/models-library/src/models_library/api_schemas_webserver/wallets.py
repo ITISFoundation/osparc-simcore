@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import Field, HttpUrl, PositiveInt
+from pydantic import Field, HttpUrl
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -49,7 +49,9 @@ class PutWalletBodyParams(OutputSchema):
 # Payments to top-up credits in wallets
 #
 
+# NOTE: that these can be UUIDs (or not)
 PaymentID: TypeAlias = IDStr
+PaymentMethodID: TypeAlias = IDStr
 
 
 class CreateWalletPayment(InputSchema):
@@ -78,9 +80,6 @@ class PaymentTransaction(OutputSchema):
     )
     state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()
-
-
-PaymentMethodID: TypeAlias = IDStr
 
 
 class PaymentMethodInit(OutputSchema):
@@ -172,23 +171,23 @@ class GetWalletAutoRecharge(OutputSchema):
         ...,
         description="Payment method in the wallet used to perform the auto-recharge payments or None if still undefined",
     )
-    min_balance_in_usd: NonNegativeDecimal = Field(
+    min_balance_in_credits: NonNegativeDecimal = Field(
         ...,
-        description="Minimum balance in USD that triggers an auto-recharge",
+        description="Minimum balance in credits that triggers an auto-recharge [Read only]",
     )
     top_up_amount_in_usd: NonNegativeDecimal = Field(
         ...,
         description="Amount in USD payed when auto-recharge condition is satisfied",
     )
-    top_up_countdown: PositiveInt | None = Field(
-        default=None,
-        description="Maximum number of top-ups left or None to denote unlimited",
+    monthly_limit_in_usd: NonNegativeDecimal | None = Field(
+        ...,
+        description="Maximum amount in USD charged within a natural month."
+        "None indicates no limit.",
     )
 
 
 class ReplaceWalletAutoRecharge(InputSchema):
     enabled: bool
     payment_method_id: PaymentMethodID
-    min_balance_in_usd: NonNegativeDecimal
     top_up_amount_in_usd: NonNegativeDecimal
-    top_up_countdown: PositiveInt | None
+    monthly_limit_in_usd: NonNegativeDecimal | None

@@ -1,10 +1,11 @@
 import logging
+from typing import Any
 
 from aiohttp import web
 from pydantic import EmailStr, PositiveInt
 
 from ..email.utils import send_email_from_template
-from ..products.api import get_current_product, get_product_template_path
+from ..products.api import Product, get_current_product, get_product_template_path
 
 _logger = logging.getLogger(__name__)
 
@@ -37,4 +38,40 @@ async def send_close_account_email(
             "Failed while sending '%s' email to %s",
             template_name,
             f"{user_email=}",
+        )
+
+
+async def send_account_request_email_to_support(
+    request: web.Request, *, product: Product, request_form: dict[str, Any]
+):
+    template_name = "request_account.jinja2"
+    support_email = product.support_email
+    email_template_path = await get_product_template_path(request, template_name)
+
+    try:
+        await send_email_from_template(
+            request,
+            from_=support_email,
+            to=support_email,
+            template=email_template_path,
+            context={
+                "host": request.host,
+                "name": "support-team",
+                "product": product.dict(
+                    include={
+                        "name",
+                        "display_name",
+                        "support_email",
+                        "vendor",
+                        "is_payment_enabled",
+                    }
+                ),
+                "request_form": request_form,
+            },
+        )
+    except Exception:  # pylint: disable=broad-except
+        _logger.exception(
+            "Failed while sending '%s' email to %s",
+            template_name,
+            f"{support_email=}",
         )

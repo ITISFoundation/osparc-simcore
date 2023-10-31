@@ -61,7 +61,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       if (
         osparc.product.Utils.isProduct("s4lacad") ||
-        osparc.product.Utils.isProduct("s4ldektopacad")
+        osparc.product.Utils.isProduct("s4ldesktopacad")
       ) {
         const university = new qx.ui.form.TextField();
         doubleSpaced.push(university);
@@ -195,6 +195,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
       osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
       this.fireDataEvent("done");
+
+      const params = {
+        data: {
+          "form": formData
+        }
+      };
+      osparc.data.Resources.fetch("auth", "postRequestAccount", params);
     },
 
     _onAppear: function() {

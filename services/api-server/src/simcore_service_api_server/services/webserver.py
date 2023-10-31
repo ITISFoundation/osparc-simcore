@@ -10,6 +10,7 @@ import httpx
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
+from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
@@ -19,7 +20,11 @@ from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServicePricingPlanGet,
 )
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletGetWithAvailableCredits,
+)
+from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
@@ -406,16 +411,31 @@ class AuthSession:
             )
             response.raise_for_status()
 
+    async def start_project(
+        self, project_id: UUID, cluster_id: ClusterID | None = None
+    ) -> None:
+        with _handle_webserver_api_errors():
+            body_input: dict[str, Any] = {}
+            if cluster_id:
+                body_input["cluster_id"] = cluster_id
+            body: ComputationStart = ComputationStart(**body_input)
+            response = await self.client.post(
+                f"/computations/{project_id}:start",
+                cookies=self.session_cookies,
+                json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
+            )
+            response.raise_for_status()
+
     # WALLETS -------------------------------------------------
 
-    async def get_wallet(self, wallet_id: int) -> WalletGet:
+    async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         with _handle_webserver_api_errors():
             response = await self.client.get(
                 f"/wallets/{wallet_id}",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
-            data = Envelope[WalletGet].parse_raw(response.text).data
+            data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
             assert data  # nosec
             return data
 

@@ -35,6 +35,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       allowGrowY: false,
       menu
     });
+
     this.getContentElement().setStyles({
       "border-radius": "20px"
     });
@@ -42,6 +43,13 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       "border-radius": "16px"
     });
     osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
+
+    const store = osparc.store.Store.getInstance();
+    this.__bindWalletToHalo();
+    store.addListener("changeContextWallet", () => this.__bindWalletToHalo());
+
+    const preferencesSettings = osparc.Preferences.getInstance();
+    preferencesSettings.addListener("changeCreditsWarningThreshold", () => this.__updateHalloCredits());
 
     const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const icon = this.getChildControl("icon");
@@ -69,6 +77,35 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
+    __bindWalletToHalo: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (contextWallet) {
+        this.__updateHalloCredits();
+        contextWallet.addListener("changeCreditsAvailable", () => this.__updateHalloCredits());
+      }
+    },
+
+    __updateHalloCredits: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (contextWallet) {
+        const credits = contextWallet.getCreditsAvailable();
+        if (credits !== null) {
+          const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make hallo red
+          const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+          const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
+          const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+          const arr = qx.util.ColorUtil.stringToRgb(textColor);
+          arr[3] = 0.5;
+          const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
+          this.getContentElement().setStyles({
+            "background": `radial-gradient(closest-side, white 79%, transparent 80% 100%), conic-gradient(${color1} ${progress}%, ${color2} 0)`
+          });
+        }
+      }
+    },
+
     populateMenu: function() {
       this.getMenu().populateMenu();
     },

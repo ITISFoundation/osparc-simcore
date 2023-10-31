@@ -18,14 +18,12 @@
 qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   extend: qx.ui.core.Widget,
 
-  construct: function(wallet) {
+  construct: function(wallet = null) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    if (wallet) {
-      this.setWallet(wallet);
-    }
+    this.setWallet(wallet);
 
     this.__updateCredits();
   },
@@ -48,40 +46,23 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     }
   },
 
-  statics: {
-    creditsToColor: function(credits, defaultColor = "text") {
-      let color = defaultColor;
-      if (credits <= 0) {
-        color = "danger-red";
-      } else if (credits <= 20) {
-        color = "warning-yellow";
-      }
-      return color;
-    },
-
-    normalizeCredits: function(credits) {
-      const logBase = (n, base) => Math.log(n) / Math.log(base);
-
-      let normalized = logBase(credits, 10000) + 0.01;
-      normalized = Math.min(Math.max(normalized, 0), 1);
-      return normalized * 100;
-    }
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "credits-label":
+        case "credits-text":
           control = new qx.ui.basic.Label().set({
             alignX: "center",
             font: "text-16"
           });
           this._add(control);
           break;
-        case "credits-indicator":
+        case "credits-bar":
           control = new qx.ui.core.Widget().set({
-            height: 5
+            height: 4
+          });
+          control.getContentElement().setStyles({
+            "border-radius": "2px"
           });
           this._add(control);
           break;
@@ -98,19 +79,22 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     __updateCredits: function() {
       const credits = this.getCreditsAvailable();
       if (credits !== null) {
-        const label = this.getChildControl("credits-label");
+        const label = this.getChildControl("credits-text");
         label.set({
           value: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
-          textColor: this.self().creditsToColor(credits, "text")
+          textColor: osparc.desktop.credits.Utils.creditsToColor(credits, "text")
         });
 
-        const indicator = this.getChildControl("credits-indicator");
-        const progress = this.self().normalizeCredits(credits);
-        const bgColor = this.self().creditsToColor(credits, "strong-main");
-        indicator.setBackgroundColor(bgColor);
+        const indicator = this.getChildControl("credits-bar");
+        const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make bar red
+        const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+        const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
+        const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+        const arr = qx.util.ColorUtil.stringToRgb(textColor);
+        arr[3] = 0.5;
+        const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
         indicator.getContentElement().setStyles({
-          minWidth: parseInt(progress) + "%",
-          maxWidth: parseInt(progress) + "%"
+          background: `linear-gradient(90deg, ${color1} ${progress}%, ${color2} ${progress}%)`
         });
       }
     }

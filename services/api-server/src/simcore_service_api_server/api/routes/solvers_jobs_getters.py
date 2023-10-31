@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
@@ -126,8 +126,8 @@ async def get_jobs_page(
 
     return create_page(
         jobs,
-        total=projects_page.meta.total,
-        params=page_params,
+        projects_page.meta.total,
+        page_params,
     )
 
 
@@ -305,7 +305,7 @@ async def get_job_custom_metadata(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
-    response_model=WalletGet | None,
+    response_model=WalletGetWithAvailableCredits | None,
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -319,7 +319,10 @@ async def get_job_wallet(
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     try:
-        return await webserver_api.get_project_wallet(project_id=job_id)
+        project_wallet = await webserver_api.get_project_wallet(project_id=job_id)
+        if project_wallet:
+            return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
+        return None
 
     except ProjectNotFoundError:
         return create_error_json_response(

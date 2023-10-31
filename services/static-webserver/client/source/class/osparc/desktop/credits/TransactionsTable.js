@@ -29,10 +29,10 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
       statusBarVisible: false
     });
 
-    const htmlRenderer = new qx.ui.table.cellrenderer.Html();
     const columnModel = this.getTableColumnModel();
-    columnModel.setDataCellRenderer(cols.status.pos, htmlRenderer);
-    columnModel.setDataCellRenderer(cols.invoice.pos, htmlRenderer);
+    columnModel.setDataCellRenderer(cols.credits.pos, new qx.ui.table.cellrenderer.Number());
+    columnModel.setDataCellRenderer(cols.status.pos, new qx.ui.table.cellrenderer.Html());
+    columnModel.setDataCellRenderer(cols.invoice.pos, new qx.ui.table.cellrenderer.Html());
     this.setColumnWidth(cols.invoice.pos, 50);
     this.makeItLoose();
   },
@@ -45,26 +45,22 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
       },
       price: {
         pos: 1,
-        title: qx.locale.Manager.tr("Price")
+        title: qx.locale.Manager.tr("Price US$")
       },
       credits: {
         pos: 2,
         title: qx.locale.Manager.tr("Credits")
       },
-      wallet: {
-        pos: 3,
-        title: qx.locale.Manager.tr("Credit Account")
-      },
       status: {
-        pos: 4,
+        pos: 3,
         title: qx.locale.Manager.tr("Status")
       },
       comment: {
-        pos: 5,
+        pos: 4,
         title: qx.locale.Manager.tr("Comment")
       },
       invoice: {
-        pos: 6,
+        pos: 5,
         title: qx.locale.Manager.tr("Invoice")
       }
     },
@@ -104,14 +100,8 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
       const cols = this.COLUMNS;
       const newData = [];
       newData[cols["date"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["createdAt"]));
-      newData[cols["price"].pos] = data["priceDollars"] ? data["priceDollars"] : 0;
-      newData[cols["credits"].pos] = data["osparcCredits"] ? data["osparcCredits"] : 0;
-      let walletName = "Unknown";
-      const found = osparc.desktop.credits.Utils.getWallet(data["walletId"]);
-      if (found) {
-        walletName = found.getName();
-      }
-      newData[cols["wallet"].pos] = walletName;
+      newData[cols["price"].pos] = data["priceDollars"] ? data["priceDollars"].toFixed(2) : 0;
+      newData[cols["credits"].pos] = data["osparcCredits"] ? data["osparcCredits"].toFixed(2) : 0;
       if (data["completedStatus"]) {
         newData[cols["status"].pos] = this.addColorTag(data["completedStatus"]);
       }

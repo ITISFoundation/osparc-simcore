@@ -35,7 +35,9 @@ def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
 async def _do_send_mail(
     *, message: MIMEText | MIMEMultipart, settings: SMTPSettings
 ) -> None:
-    # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
+    """
+    WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
+    """
 
     _logger.debug("Email configuration %s", settings.json(indent=1))
 
@@ -113,7 +115,7 @@ async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServe
         )
 
 
-async def send_email(
+async def _send_email(
     *,
     settings: SMTPSettings,
     sender: str,
@@ -141,7 +143,7 @@ class AttachmentTuple(NamedTuple):
     payload: bytearray
 
 
-async def send_email_with_attachements(
+async def _send_email_with_attachements(
     *,
     settings: SMTPSettings,
     sender: str,
@@ -229,7 +231,7 @@ async def send_email_from_template(
     subject, body = _render_template(request, template, context)
 
     if attachments:
-        return await send_email_with_attachements(
+        return await _send_email_with_attachements(
             settings=settings,
             sender=from_,
             recipient=to,
@@ -238,7 +240,7 @@ async def send_email_from_template(
             attachments=attachments,
         )
 
-    return await send_email(
+    return await _send_email(
         settings=settings,
         sender=from_,
         recipient=to,

@@ -8,11 +8,12 @@ from decimal import Decimal
 from aiohttp import web
 from models_library.api_schemas_payments import PAYMENTS_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import PaymentID, WalletPaymentCreated
+from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
+from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ..rabbitmq_settings import RabbitSettings
 from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
@@ -90,7 +91,7 @@ async def cancel_payment(
 
     await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "payment_id"),
+        parse_obj_as(RPCMethodName, "cancel_payment"),
         payment_id=payment_id,
         user_id=user_id,
         wallet_id=wallet_id,

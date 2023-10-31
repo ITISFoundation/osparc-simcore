@@ -61,7 +61,7 @@ qx.Class.define("osparc.notification.RibbonNotifications", {
      */
     __createNotificationUI: function(notification) {
       const notificationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5, "center")).set({
-        backgroundColor: notification.getType() === "announcement" ? "strong-main" : "warning-yellow-s4l",
+        backgroundColor: notification.getType() === "announcement" ? "strong-main" : "warning-yellow",
         allowGrowX: true
       });
 
