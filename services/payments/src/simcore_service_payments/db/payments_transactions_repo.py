@@ -18,7 +18,7 @@ from ..core.errors import (
     PaymentNotFoundError,
 )
 from ..models.db import PaymentsTransactionsDB
-from ._base import BaseRepository
+from .base import BaseRepository
 
 
 class PaymentsTransactionsRepo(BaseRepository):

@@ -18,7 +18,7 @@ from ..core.errors import (
     PaymentMethodUniqueViolationError,
 )
 from ..models.db import PaymentsMethodsDB
-from ._base import BaseRepository
+from .base import BaseRepository
 
 
 class PaymentsMethodsRepo(BaseRepository):
