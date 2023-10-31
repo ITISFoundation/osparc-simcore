@@ -17,14 +17,12 @@ def validate_new_service_resources(
     # the docker container entries shall be contained in the current resources
     for container_name, container_resources in new_resources.items():
         if container_name not in resources:
-            raise ProjectNodeResourcesInvalidError(
-                f"Incompatible '{container_name=}' cannot be applied on any of {tuple(resources.keys())}!"
-            )
+            msg = f"Incompatible '{container_name=}' cannot be applied on any of {tuple(resources.keys())}!"
+            raise ProjectNodeResourcesInvalidError(msg)
         # now check the image names fit
         if container_resources.image != resources[container_name].image:
-            raise ProjectNodeResourcesInvalidError(
-                f"Incompatible '{container_resources.image=}' cannot be applied on {container_name}:{resources[container_name].image}!"
-            )
+            msg = f"Incompatible '{container_resources.image=}' cannot be applied on {container_name}:{resources[container_name].image}!"
+            raise ProjectNodeResourcesInvalidError(msg)
 
 
 def set_reservation_same_as_limit(

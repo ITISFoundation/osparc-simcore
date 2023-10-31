@@ -33,8 +33,8 @@ from servicelib.utils import logged_gather
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
+    ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
     InvalidPipelineError,
@@ -758,7 +758,7 @@ class BaseCompScheduler(ABC):
             )
             for task in comp_tasks.values():
                 task.state = RunningState.WAITING_FOR_CLUSTER
-        except ComputationalBackendOnDemandClustersKeeperNotReadyError:
+        except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(
                 self.rabbitmq_client,

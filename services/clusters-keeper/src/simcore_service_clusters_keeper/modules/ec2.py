@@ -74,7 +74,16 @@ class ClustersKeeperEC2:
         self,
         instance_type_names: set[InstanceTypeType],
     ) -> list[EC2InstanceType]:
-        """instance_type_names must be a set of unique values"""
+        """returns the ec2 instance types from a list of instance type names
+            NOTE: the order might differ!
+        Arguments:
+            instance_type_names -- the types to filter with
+
+        Raises:
+            Ec2InstanceTypeInvalidError: some invalid types were used as filter
+            ClustersKeeperRuntimeError: unexpected error communicating with EC2
+
+        """
         try:
             instance_types = await self.client.describe_instance_types(
                 InstanceTypes=list(instance_type_names)

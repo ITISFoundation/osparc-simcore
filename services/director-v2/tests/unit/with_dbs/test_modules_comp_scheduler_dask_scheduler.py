@@ -48,8 +48,8 @@ from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
+    ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
@@ -1367,7 +1367,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
 
 @pytest.mark.parametrize(
     "get_or_create_exception",
-    [ComputationalBackendOnDemandClustersKeeperNotReadyError],
+    [ClustersKeeperNotAvailableError],
 )
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     with_disabled_scheduler_task: None,

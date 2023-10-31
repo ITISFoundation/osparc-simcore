@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -182,21 +183,27 @@ class DaskScheduler(BaseCompScheduler):
         tasks: list[CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
     ) -> None:
-        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
-            await asyncio.gather(
-                *[client.abort_computation_task(t.job_id) for t in tasks if t.job_id]
-            )
-            # tasks that have no-worker must be unpublished as these are blocking forever
-            tasks_with_no_worker = [
-                t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
-            ]
-            await asyncio.gather(
-                *[
-                    client.release_task_result(t.job_id)
-                    for t in tasks_with_no_worker
-                    if t.job_id
+        # NOTE: if this exception raises, it means the backend was anyway not up
+        with contextlib.suppress(ComputationalBackendOnDemandNotReadyError):
+            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+                await asyncio.gather(
+                    *[
+                        client.abort_computation_task(t.job_id)
+                        for t in tasks
+                        if t.job_id
+                    ]
+                )
+                # tasks that have no-worker must be unpublished as these are blocking forever
+                tasks_with_no_worker = [
+                    t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
                 ]
-            )
+                await asyncio.gather(
+                    *[
+                        client.release_task_result(t.job_id)
+                        for t in tasks_with_no_worker
+                        if t.job_id
+                    ]
+                )
 
     async def _process_completed_tasks(
         self,

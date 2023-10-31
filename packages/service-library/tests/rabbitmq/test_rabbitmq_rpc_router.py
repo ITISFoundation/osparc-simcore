@@ -5,12 +5,8 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 from faker import Faker
-from servicelib.rabbitmq import (
-    RabbitMQRPCClient,
-    RPCMethodName,
-    RPCNamespace,
-    RPCRouter,
-)
+from models_library.rabbitmq_basic_types import RPCMethodName
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCNamespace, RPCRouter
 
 pytest_simcore_core_services_selection = [
     "rabbit",
