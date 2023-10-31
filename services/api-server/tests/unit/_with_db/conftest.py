@@ -182,8 +182,16 @@ async def user_id(
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
     async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
         for _ in range(n):
+            while True:
+                user = random_user()
+                result = await connection.execute(
+                    users.select().where(users.c.name == user["name"])
+                )
+                entry = await result.first()
+                if entry is None:
+                    break
             uid = await connection.scalar(
-                users.insert().values(random_user()).returning(users.c.id)
+                users.insert().values(user).returning(users.c.id)
             )
             assert uid
             _generate_user_ids.generated_ids.append(uid)
@@ -204,10 +212,16 @@ async def product_name(
         n: PositiveInt,
     ) -> AsyncGenerator[str, None]:
         for _ in range(n):
+            while True:
+                product = random_product(group_id=None)
+                result = await connection.execute(
+                    products.select().where(products.c.name == product["name"])
+                )
+                entry = await result.first()
+                if entry is None:
+                    break
             name = await connection.scalar(
-                products.insert()
-                .values(random_product(group_id=None))
-                .returning(products.c.name)
+                products.insert().values(product).returning(products.c.name)
             )
             assert name
             _generate_product_names.generated_names.append(name)
