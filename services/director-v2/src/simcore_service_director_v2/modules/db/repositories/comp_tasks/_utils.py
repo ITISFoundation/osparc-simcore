@@ -274,7 +274,9 @@ async def _update_project_node_resources_from_hardware_info(
             node_resources[DEFAULT_SINGLE_SERVICE_NAME], ImageResources
         )  # nosec
         image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
-        image_resources.resources["CPU"].set_value(selected_ec2_instance_type.cpus)
+        image_resources.resources["CPU"].set_value(
+            float(selected_ec2_instance_type.cpus)
+        )
         image_resources.resources["RAM"].set_value(
             selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
         )
