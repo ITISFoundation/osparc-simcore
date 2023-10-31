@@ -234,7 +234,7 @@ async def test_webserver_pay_with_payment_method_workflow(
         user_id=user_id,
         user_name=faker.name(),
         user_email=faker.email(),
-        comments="Payment with stored credit-card",
+        comment="Payment with stored credit-card",
     )
 
     assert isinstance(payment_inited, WalletPaymentInitiated)
@@ -245,4 +245,6 @@ async def test_webserver_pay_with_payment_method_workflow(
         payment_inited.payment_id, user_id=user_id, wallet_id=wallet_id
     )
     assert payment is not None
+    assert payment.payment_id == payment_inited.payment_id
     assert payment.state == PaymentTransactionState.PENDING
+    assert payment.comment == "Payment with stored credit-card"
