@@ -5,6 +5,13 @@ from typing import Any, Final, cast
 import aiopg.sa
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_catalog.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    BootMode,
+    ImageResources,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
@@ -26,7 +33,6 @@ from models_library.services import (
     ServiceKeyVersion,
     ServiceVersion,
 )
-from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME, BootMode
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from servicelib.rabbitmq import (
@@ -44,7 +50,7 @@ from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.comp_scheduler import COMPLETED_STATES
 from .....utils.computations import to_node_class
-from ....catalog import CatalogClient, ServiceResourcesDict
+from ....catalog import CatalogClient
 from ....director_v0 import DirectorV0Client
 from ...tables import NodeClass
 
@@ -79,20 +85,22 @@ async def _get_service_details(
     return ServiceDockerData.construct(**service_details)
 
 
-def _compute_node_requirements(node_resources: dict[str, Any]) -> NodeRequirements:
+def _compute_node_requirements(
+    node_resources: ServiceResourcesDict,
+) -> NodeRequirements:
     node_defined_resources: dict[str, Any] = {}
 
     for image_data in node_resources.values():
-        for resource_name, resource_value in image_data.get("resources", {}).items():
+        for resource_name, resource_value in image_data.resources.items():
             node_defined_resources[resource_name] = node_defined_resources.get(
                 resource_name, 0
-            ) + min(resource_value["limit"], resource_value["reservation"])
+            ) + min(resource_value.limit, resource_value.reservation)
     return NodeRequirements.parse_obj(node_defined_resources)
 
 
-def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
+def _compute_node_boot_mode(node_resources: ServiceResourcesDict) -> BootMode:
     for image_data in node_resources.values():
-        return BootMode(image_data.get("boot_modes")[0])
+        return image_data.boot_modes[0]
     msg = "No BootMode"
     raise RuntimeError(msg)
 
@@ -260,23 +268,21 @@ async def _update_project_node_resources_from_hardware_info(
         # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
-        assert DEFAULT_SINGLE_SERVICE_NAME in node.required_resources  # nosec
-        node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
-            "limit"
-        ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["CPU"][
-            "reservation"
-        ] = selected_ec2_instance_type.cpus
-        node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
-            "limit"
-        ] = node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"]["RAM"][
-            "reservation"
-        ] = (
+        node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
+        assert DEFAULT_SINGLE_SERVICE_NAME in node_resources  # nosec
+        assert isinstance(node_resources[DEFAULT_SINGLE_SERVICE_NAME], ImageResources)
+        image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
+        image_resources.resources["CPU"].set_value(selected_ec2_instance_type.cpus)
+        image_resources.resources["RAM"].set_value(
             selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
         )
+
         await project_nodes_repo.update(
             connection,
             node_id=node_id,
-            required_resources=node.required_resources,
+            required_resources=ServiceResourcesDictHelpers.create_jsonable(
+                node_resources
+            ),
         )
     except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc

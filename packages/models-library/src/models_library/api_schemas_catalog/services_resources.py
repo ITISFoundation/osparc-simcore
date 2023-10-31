@@ -12,9 +12,9 @@ from pydantic import (
     root_validator,
 )
 
-from .docker import DockerGenericTag
-from .utils.enums import StrAutoEnum
-from .utils.fastapi_encoders import jsonable_encoder
+from ..docker import DockerGenericTag
+from ..utils.enums import StrAutoEnum
+from ..utils.fastapi_encoders import jsonable_encoder
 
 _logger = logging.getLogger(__name__)
 
@@ -55,6 +55,9 @@ class ResourceValue(BaseModel):
 
     def set_reservation_same_as_limit(self) -> None:
         self.reservation = self.limit
+
+    def set_value(self, value: StrictInt | StrictFloat | str) -> None:
+        self.limit = self.reservation = value
 
     class Config:
         validate_assignment = True
