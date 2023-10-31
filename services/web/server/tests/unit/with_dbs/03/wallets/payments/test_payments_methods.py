@@ -22,9 +22,9 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
 )
+from simcore_service_webserver.payments.settings import PaymentsSettings
 from simcore_service_webserver.payments.settings import (
-    PaymentsSettings,
-    get_plugin_settings,
+    get_plugin_settings as get_payments_plugin_settings,
 )
 
 
@@ -38,7 +38,7 @@ async def test_payment_method_worfklow(
 ):
     # preamble
     assert client.app
-    settings: PaymentsSettings = get_plugin_settings(client.app)
+    settings: PaymentsSettings = get_payments_plugin_settings(client.app)
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
@@ -164,6 +164,8 @@ async def test_wallet_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
+    assert client.app
+    settings = get_payments_plugin_settings(client.app)
     wallet = logged_user_wallet
 
     # get default
@@ -172,8 +174,19 @@ async def test_wallet_autorecharge(
     data, _ = await assert_status(response, web.HTTPOk)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
-    assert default_auto_recharge.top_up_countdown is None
     assert default_auto_recharge.payment_method_id is None
+    assert (
+        default_auto_recharge.min_balance_in_credits
+        == settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
+    )
+    assert (
+        default_auto_recharge.top_up_amount_in_usd
+        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT
+    )
+    assert (
+        default_auto_recharge.monthly_limit_in_usd
+        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
+    )
 
     # A wallet with a payment method
     older_payment_method_id = await _add_payment_method(
@@ -186,7 +199,10 @@ async def test_wallet_autorecharge(
     data, _ = await assert_status(response, web.HTTPOk)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
-    assert default_auto_recharge.top_up_countdown is None
+    assert (
+        default_auto_recharge.monthly_limit_in_usd
+        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
+    )
     assert default_auto_recharge.payment_method_id == payment_method_id
 
     # Activate auto-rechange
@@ -194,9 +210,8 @@ async def test_wallet_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
             "paymentMethodId": payment_method_id,
-            "minBalanceInUsd": 0.0,
-            "topUpAmountInUsd": 100.0,  # $
-            "topUpCountdown": 3,
+            "topUpAmountInUsd": 123.45,  # $
+            "monthlyLimitInUsd": 6543.21,  # $
             "enabled": True,
         },
     )
@@ -204,9 +219,9 @@ async def test_wallet_autorecharge(
     updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert updated_auto_recharge == GetWalletAutoRecharge(
         payment_method_id=payment_method_id,
-        min_balance_in_usd=0.0,
-        top_up_amount_in_usd=100.0,  # $
-        top_up_countdown=3,
+        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+        top_up_amount_in_usd=123.45,  # $
+        monthly_limit_in_usd=6543.21,  # $
         enabled=True,
     )
 
@@ -236,6 +251,8 @@ async def test_delete_primary_payment_method_in_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
+    assert client.app
+
     wallet = logged_user_wallet
     payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
 
@@ -244,9 +261,8 @@ async def test_delete_primary_payment_method_in_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
             "paymentMethodId": payment_method_id,
-            "minBalanceInUsd": 0.0,
             "topUpAmountInUsd": 100.0,  # $
-            "topUpCountdown": 3,
+            "monthlyLimitInUsd": 123,
             "enabled": True,
         },
     )
@@ -254,6 +270,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
     auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert auto_recharge.enabled is True
     assert auto_recharge.payment_method_id == payment_method_id
+    assert auto_recharge.monthly_limit_in_usd == 123
 
     # delete payment-method
     response = await client.delete(

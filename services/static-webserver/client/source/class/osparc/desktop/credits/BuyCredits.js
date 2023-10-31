@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   events: {
+    "addNewPaymentMethod": "qx.event.type.Event",
     "transactionCompleted": "qx.event.type.Event"
   },
 
@@ -74,16 +75,20 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         }
         case "one-time-payment":
           control = new osparc.desktop.credits.OneTimePayment().set({
+            margin: 10,
             maxWidth: 400
           });
           this.bind("contextWallet", control, "wallet");
+          control.addListener("addNewPaymentMethod", () => this.fireEvent("addNewPaymentMethod"));
           control.addListener("transactionCompleted", () => this.fireEvent("transactionCompleted"));
           this._add(control);
           break;
         case "auto-recharge":
           control = new osparc.desktop.credits.AutoRecharge().set({
+            margin: 10,
             maxWidth: 400
           });
+          control.addListener("addNewPaymentMethod", () => this.fireEvent("addNewPaymentMethod"));
           this.bind("contextWallet", control, "wallet");
           this._add(control);
           break;

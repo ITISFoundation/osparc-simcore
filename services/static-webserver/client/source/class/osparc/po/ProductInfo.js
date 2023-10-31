@@ -35,6 +35,8 @@ qx.Class.define("osparc.po.ProductInfo", {
       };
       osparc.data.Resources.fetch("productMetadata", "get", params)
         .then(respData => {
+          // "templates" has its own section
+          delete respData["templates"];
           const invitationRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "product-metadata");
           const container = new qx.ui.container.Scroll().set({
             maxHeight: 500

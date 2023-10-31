@@ -106,7 +106,7 @@ async def acknowledge_payment(
         )
 
     if transaction.state == PaymentTransactionState.SUCCESS:
-        assert payment_id == transaction.payment_id  # nosec
+        assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
         background_tasks.add_task(on_payment_completed, transaction, rut_api)
 
 

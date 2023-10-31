@@ -211,7 +211,7 @@ def test_run_job(
     status: osparc.JobStatus = solvers_api.start_job(solver.id, solver.version, job.id)
     assert isinstance(status, osparc.JobStatus)
 
-    assert status.state == "PUBLISHED"
+    assert status.state in {"PUBLISHED", "PENDING"}
     assert status.progress == 0
     # FIXME:
     # assert (

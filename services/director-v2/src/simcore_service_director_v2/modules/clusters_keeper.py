@@ -1,10 +1,10 @@
 import logging
 
-from models_library.clusters import BaseCluster, ClusterTypeInModel
-from models_library.rpc_schemas_clusters_keeper.clusters import (
+from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
 )
+from models_library.clusters import BaseCluster, ClusterTypeInModel
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import (

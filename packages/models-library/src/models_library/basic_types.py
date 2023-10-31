@@ -72,13 +72,12 @@ class UUIDStr(ConstrainedStr):
     regex = re.compile(UUID_RE)
 
 
-# non-empty string identifier e.g. "123" or "name_id1" (avoids "" identifiers)
-class NonEmptyStr(ConstrainedStr):
+# non-empty bounded string used as identifier
+# e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
+class IDStr(ConstrainedStr):
     strip_whitespace = True
     min_length = 1
-
-
-IDStr: TypeAlias = NonEmptyStr
+    max_length = 50
 
 
 # auto-incremented primary-key IDs

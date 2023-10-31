@@ -25,6 +25,8 @@ from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 
+from ..products.api import get_product
+from ._api_utils import get_wallet_info
 from ._core_base import DataType, request_director_v2
 from .exceptions import (
     ClusterAccessForbidden,
@@ -113,6 +115,13 @@ async def create_or_update_pipeline(
         "user_id": user_id,
         "project_id": f"{project_id}",
         "product_name": product_name,
+        "wallet_info": await get_wallet_info(
+            app,
+            product=get_product(app, product_name),
+            user_id=user_id,
+            project_id=project_id,
+            product_name=product_name,
+        ),
     }
     # request to director-v2
     try:
@@ -123,7 +132,7 @@ async def create_or_update_pipeline(
         return computation_task_out
 
     except DirectorServiceError as exc:
-        _logger.error(
+        _logger.error(  # noqa: TRY400
             "could not create pipeline from project %s: %s",
             project_id,
             exc,

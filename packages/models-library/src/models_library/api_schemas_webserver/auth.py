@@ -7,6 +7,10 @@ from pydantic import BaseModel, Field, SecretStr
 from ._base import InputSchema
 
 
+class AccountRequestInfo(InputSchema):
+    form: dict[str, Any]
+
+
 class UnregisterCheck(InputSchema):
     email: LowerCaseEmailStr
     password: SecretStr

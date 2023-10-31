@@ -9,6 +9,7 @@ from typing import Any
 from _common import Error, Log
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
+    AccountRequestInfo,
     ApiKeyCreate,
     ApiKeyGet,
     UnregisterCheck,
@@ -41,6 +42,15 @@ from simcore_service_webserver.login.handlers_registration import (
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
+
+
+@router.post(
+    "/auth/request-account",
+    operation_id="request_product_account",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def request_product_account(_body: AccountRequestInfo):
+    ...
 
 
 @router.post(
