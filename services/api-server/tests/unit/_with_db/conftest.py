@@ -177,8 +177,10 @@ async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
 
 
 @pytest.fixture
-async def user_id(connection: SAConnection):
-    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, int]:
+async def user_id(
+    connection: SAConnection,
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
+    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
         for _ in range(n):
             uid = await connection.scalar(
                 users.insert().values(random_user()).returning(users.c.id)
@@ -195,10 +197,12 @@ async def user_id(connection: SAConnection):
 
 
 @pytest.fixture
-async def product_name(connection: SAConnection):
+async def product_name(
+    connection: SAConnection,
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str, None]], None]:
     async def _generate_product_names(
         n: PositiveInt,
-    ) -> AsyncGenerator[PositiveInt, str]:
+    ) -> AsyncGenerator[str, None]:
         for _ in range(n):
             name = await connection.scalar(
                 products.insert()
@@ -217,7 +221,11 @@ async def product_name(connection: SAConnection):
 
 
 @pytest.fixture
-async def fake_api_keys(connection: SAConnection, user_id, product_name):
+async def fake_api_keys(
+    connection: SAConnection,
+    user_id: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
+    product_name: Callable[[PositiveInt], AsyncGenerator[str, None]],
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
     async def _generate_fake_api_key(n: PositiveInt):
         products = product_name(n)
         users = user_id(n)
@@ -242,7 +250,10 @@ async def fake_api_keys(connection: SAConnection, user_id, product_name):
 
 
 @pytest.fixture
-async def auth(fake_api_keys) -> httpx.BasicAuth:
+async def auth(
+    fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
+) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in fake_api_keys(1):
         return httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value())
+    assert False, "Did not generate authentication"

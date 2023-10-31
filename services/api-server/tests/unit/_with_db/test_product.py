@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from typing import AsyncGenerator, Callable
 
 import httpx
 import respx
@@ -9,6 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
 from models_library.wallets import WalletStatus
+from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
@@ -16,7 +18,7 @@ from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 async def test_webserver_product(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base: respx.MockRouter,
-    fake_api_keys,
+    fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
     faker: Faker,
 ) -> None:
     assert client
