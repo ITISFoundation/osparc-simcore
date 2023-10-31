@@ -212,7 +212,7 @@ async def delete_payment_method(
 
 
 @router.expose()
-async def init_payment_with_payment_method(
+async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     app: FastAPI,
     *,
     payment_method_id: PaymentMethodID,
