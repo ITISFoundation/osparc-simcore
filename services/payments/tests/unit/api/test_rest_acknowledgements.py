@@ -115,7 +115,7 @@ async def test_payments_methods_api_authentication(
 
     # w/o header
     response = await client.post(
-        f"/v1/payments-method/{payment_method_id}:ack",
+        f"/v1/payments-methods/{payment_method_id}:ack",
         json=payment_method_ack,
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.json()
