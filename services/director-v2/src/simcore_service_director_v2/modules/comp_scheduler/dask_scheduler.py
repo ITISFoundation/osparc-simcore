@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -182,7 +183,8 @@ class DaskScheduler(BaseCompScheduler):
         tasks: list[CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
     ) -> None:
-        try:
+        # NOTE: if this exception raises, it means the backend was anyway not up
+        with contextlib.suppress(ComputationalBackendOnDemandNotReadyError):
             async with _cluster_dask_client(user_id, pipeline_params, self) as client:
                 await asyncio.gather(
                     *[
@@ -202,9 +204,6 @@ class DaskScheduler(BaseCompScheduler):
                         if t.job_id
                     ]
                 )
-        except ComputationalBackendOnDemandNotReadyError:
-            # this means the cluster is not there, so there is nothing to stop
-            ...
 
     async def _process_completed_tasks(
         self,
