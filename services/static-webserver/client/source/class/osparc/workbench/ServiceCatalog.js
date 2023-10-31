@@ -303,6 +303,15 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       return osparc.service.Utils.getFromArray(this.__allServicesList, key, version);
     },
 
+    __showServiceDetails: function() {
+      const serviceMetadata = this.__getSelectedServiceMetadata();
+      const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
+      const title = this.tr("Service information");
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
+      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+    },
+
     __onCancel: function() {
       this.close();
     },
