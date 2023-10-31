@@ -33,7 +33,10 @@ qx.Class.define("osparc.service.ServiceListItem", {
 
     this.subscribeToFilterGroup("serviceCatalog");
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()));
+    this.addListener("changeValue", e => {
+      e.stopPropagation();
+      this.__itemSelected(e.getData());
+    });
   },
 
   properties: {
@@ -67,9 +70,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
           });
           break;
         case "version-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-            anonymous: true
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           this.getChildControl("extended-layout").add(control);
           const versionLabel = new qx.ui.basic.Label(this.tr("Version"));
           control.add(versionLabel);
