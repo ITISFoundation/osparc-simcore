@@ -217,15 +217,6 @@ qx.Class.define("osparc.product.Utils", {
         return false;
       }
       return true;
-    },
-
-    shouldHaveWalletsEnabled: function() {
-      return [
-        "s4l",
-        "s4lacad",
-        "s4ldesktop",
-        "s4ldesktopacad"
-      ].includes(this.getProductName());
     }
   }
 });
