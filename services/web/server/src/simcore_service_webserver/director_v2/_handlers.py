@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -46,12 +47,6 @@ class RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
 
 
-class _ComputationStart(BaseModel):
-    force_restart: bool = False
-    cluster_id: ClusterID = 0
-    subgraph: set[str] = set()
-
-
 class _ComputationStarted(BaseModel):
     pipeline_id: ProjectID = Field(
         ..., description="ID for created pipeline (=project identifier)"
@@ -82,7 +77,7 @@ async def start_computation(request: web.Request) -> web.Response:
 
         if request.can_read_body:
             body = await request.json()
-            assert parse_obj_as(_ComputationStart, body) is not None  # nosec
+            assert parse_obj_as(ComputationStart, body) is not None  # nosec
 
             subgraph = body.get("subgraph", [])
             force_restart = bool(body.get("force_restart", force_restart))

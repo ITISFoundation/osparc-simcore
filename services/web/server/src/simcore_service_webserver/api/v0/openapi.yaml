@@ -1854,7 +1854,8 @@ paths:
         schema:
           title: Product Name
           anyOf:
-          - minLength: 1
+          - maxLength: 50
+            minLength: 1
             type: string
           - enum:
             - current
@@ -4178,6 +4179,7 @@ paths:
       - required: true
         schema:
           title: Payment Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_id
@@ -4225,6 +4227,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_method_id
@@ -4273,6 +4276,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_method_id
@@ -4301,6 +4305,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_method_id
@@ -6528,6 +6533,7 @@ components:
       - paymentMethodId
       - minBalanceInUsd
       - topUpAmountInUsd
+      - monthlyLimitInUsd
       type: object
       properties:
         enabled:
@@ -6537,6 +6543,7 @@ components:
           default: false
         paymentMethodId:
           title: Paymentmethodid
+          maxLength: 50
           minLength: 1
           type: string
           description: Payment method in the wallet used to perform the auto-recharge
@@ -6545,18 +6552,19 @@ components:
           title: Minbalanceinusd
           minimum: 0.0
           type: number
-          description: Minimum balance in USD that triggers an auto-recharge
+          description: Minimum balance in USD that triggers an auto-recharge [Read
+            only]
         topUpAmountInUsd:
           title: Topupamountinusd
           minimum: 0.0
           type: number
           description: Amount in USD payed when auto-recharge condition is satisfied
-        topUpCountdown:
-          title: Topupcountdown
-          exclusiveMinimum: true
-          type: integer
-          description: Maximum number of top-ups left or None to denote unlimited
-          minimum: 0
+        monthlyLimitInUsd:
+          title: Monthlylimitinusd
+          minimum: 0.0
+          type: number
+          description: Maximum amount in USD charged within a natural month.None indicates
+            no limit.
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -7498,6 +7506,7 @@ components:
       properties:
         idr:
           title: Idr
+          maxLength: 50
           minLength: 1
           type: string
         walletId:
@@ -7553,6 +7562,7 @@ components:
           minimum: 0
         paymentMethodId:
           title: Paymentmethodid
+          maxLength: 50
           minLength: 1
           type: string
         paymentMethodFormUrl:
@@ -7575,6 +7585,7 @@ components:
       properties:
         paymentId:
           title: Paymentid
+          maxLength: 50
           minLength: 1
           type: string
         priceDollars:
@@ -8589,7 +8600,6 @@ components:
       required:
       - enabled
       - paymentMethodId
-      - minBalanceInUsd
       - topUpAmountInUsd
       type: object
       properties:
@@ -8598,21 +8608,17 @@ components:
           type: boolean
         paymentMethodId:
           title: Paymentmethodid
+          maxLength: 50
           minLength: 1
           type: string
-        minBalanceInUsd:
-          title: Minbalanceinusd
-          minimum: 0.0
-          type: number
         topUpAmountInUsd:
           title: Topupamountinusd
           minimum: 0.0
           type: number
-        topUpCountdown:
-          title: Topupcountdown
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
+        monthlyLimitInUsd:
+          title: Monthlylimitinusd
+          minimum: 0.0
+          type: number
     RepoApiModel:
       title: RepoApiModel
       required:
@@ -9991,6 +9997,7 @@ components:
       properties:
         paymentId:
           title: Paymentid
+          maxLength: 50
           minLength: 1
           type: string
         paymentFormUrl:

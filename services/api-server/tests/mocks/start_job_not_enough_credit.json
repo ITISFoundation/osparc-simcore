@@ -1,7 +1,7 @@
 [
  {
-  "name": "GET /projects/e551e994-a68d-4c26-b6fc-59019b35ee6e",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/e551e994-a68d-4c26-b6fc-59019b35ee6e')>",
+  "name": "GET /projects/48323c7f-e379-4e16-8b58-dc69643f653d",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/48323c7f-e379-4e16-8b58-dc69643f653d')>",
   "method": "GET",
   "host": "webserver",
   "path": {
@@ -30,14 +30,14 @@
   "request_payload": null,
   "response_body": {
    "data": {
-    "uuid": "e551e994-a68d-4c26-b6fc-59019b35ee6e",
-    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/e551e994-a68d-4c26-b6fc-59019b35ee6e",
-    "description": "Study associated to solver job:\n{\n  \"id\": \"e551e994-a68d-4c26-b6fc-59019b35ee6e\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/e551e994-a68d-4c26-b6fc-59019b35ee6e\",\n  \"inputs_checksum\": \"015ba4cd5cf00c511a8217deb65c242e3b15dc6ae4b1ecf94982d693887d9e8a\",\n  \"created_at\": \"2023-10-26T14:10:11.103041+00:00\"\n}",
+    "uuid": "48323c7f-e379-4e16-8b58-dc69643f653d",
+    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/48323c7f-e379-4e16-8b58-dc69643f653d",
+    "description": "Study associated to solver job:\n{\n  \"id\": \"48323c7f-e379-4e16-8b58-dc69643f653d\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/48323c7f-e379-4e16-8b58-dc69643f653d\",\n  \"inputs_checksum\": \"015ba4cd5cf00c511a8217deb65c242e3b15dc6ae4b1ecf94982d693887d9e8a\",\n  \"created_at\": \"2023-10-26T14:13:07.998632+00:00\"\n}",
     "thumbnail": "https://via.placeholder.com/170x120.png",
-    "creationDate": "2023-10-26T14:10:11.118Z",
-    "lastChangeDate": "2023-10-26T14:10:11.118Z",
+    "creationDate": "2023-10-26T14:13:08.013Z",
+    "lastChangeDate": "2023-10-26T14:13:08.013Z",
     "workbench": {
-     "657b124c-0697-5166-b820-a2ea2704ae84": {
+     "3b0b20e0-c860-51d9-9f82-d6b4bc5c2f24": {
       "key": "simcore/services/comp/itis/sleeper",
       "version": "2.0.2",
       "label": "sleeper",
@@ -85,7 +85,7 @@
     },
     "ui": {
      "workbench": {
-      "657b124c-0697-5166-b820-a2ea2704ae84": {
+      "3b0b20e0-c860-51d9-9f82-d6b4bc5c2f24": {
        "position": {
         "x": 633,
         "y": 229
@@ -93,7 +93,7 @@
       }
      },
      "slideshow": {},
-     "currentNodeId": "657b124c-0697-5166-b820-a2ea2704ae84",
+     "currentNodeId": "3b0b20e0-c860-51d9-9f82-d6b4bc5c2f24",
      "annotations": {}
     },
     "quality": {},
@@ -103,8 +103,8 @@
   "status_code": 200
  },
  {
-  "name": "PUT /projects/e551e994-a68d-4c26-b6fc-59019b35ee6e/nodes/657b124c-0697-5166-b820-a2ea2704ae84/pricing-plan/1/pricing-unit/1",
-  "description": "<Request('PUT', 'http://webserver:8080/v0/projects/e551e994-a68d-4c26-b6fc-59019b35ee6e/nodes/657b124c-0697-5166-b820-a2ea2704ae84/pricing-plan/1/pricing-unit/1')>",
+  "name": "PUT /projects/48323c7f-e379-4e16-8b58-dc69643f653d/nodes/3b0b20e0-c860-51d9-9f82-d6b4bc5c2f24/pricing-plan/1/pricing-unit/1",
+  "description": "<Request('PUT', 'http://webserver:8080/v0/projects/48323c7f-e379-4e16-8b58-dc69643f653d/nodes/3b0b20e0-c860-51d9-9f82-d6b4bc5c2f24/pricing-plan/1/pricing-unit/1')>",
   "method": "PUT",
   "host": "webserver",
   "path": {
@@ -186,8 +186,8 @@
   "status_code": 204
  },
  {
-  "name": "POST /computations/e551e994-a68d-4c26-b6fc-59019b35ee6e:start",
-  "description": "<Request('POST', 'http://webserver:8080/v0/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e:start')>",
+  "name": "POST /computations/48323c7f-e379-4e16-8b58-dc69643f653d:start",
+  "description": "<Request('POST', 'http://webserver:8080/v0/computations/48323c7f-e379-4e16-8b58-dc69643f653d:start')>",
   "method": "POST",
   "host": "webserver",
   "path": {
@@ -219,67 +219,21 @@
    "subgraph": []
   },
   "response_body": {
-   "data": {
-    "pipeline_id": "e551e994-a68d-4c26-b6fc-59019b35ee6e"
+   "data": null,
+   "error": {
+    "logs": [],
+    "errors": [
+     {
+      "code": "WalletNotEnoughCreditsError",
+      "message": "Wallet does not have enough credits. Wallet 1 credit balance -200.11",
+      "resource": null,
+      "field": null
+     }
+    ],
+    "status": 402,
+    "message": "Unexpected client error"
    }
   },
-  "status_code": 201
- },
- {
-  "name": "GET /v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e",
-  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e?user_id=1')>",
-  "method": "GET",
-  "host": "director-v2",
-  "path": {
-   "path": "/v2/computations/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "pattern": null,
-      "format": "uuid",
-      "exclusiveMinimum": null,
-      "minimum": null,
-      "anyOf": null,
-      "allOf": null,
-      "oneOf": null
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "query": "user_id=1",
-  "request_payload": null,
-  "response_body": {
-   "id": "e551e994-a68d-4c26-b6fc-59019b35ee6e",
-   "state": "STARTED",
-   "result": null,
-   "pipeline_details": {
-    "adjacency_list": {
-     "657b124c-0697-5166-b820-a2ea2704ae84": []
-    },
-    "progress": 0.0,
-    "node_states": {
-     "657b124c-0697-5166-b820-a2ea2704ae84": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "STARTED",
-      "progress": 0.0
-     }
-    }
-   },
-   "iteration": 1,
-   "cluster_id": 0,
-   "started": "2023-10-26T14:11:20.606448+00:00",
-   "stopped": null,
-   "submitted": "2023-10-26T14:11:20.460760+00:00",
-   "url": "http://director-v2:8000/v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e?user_id=1",
-   "stop_url": "http://director-v2:8000/v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e:stop?user_id=1"
-  },
-  "status_code": 200
+  "status_code": 402
  }
 ]
