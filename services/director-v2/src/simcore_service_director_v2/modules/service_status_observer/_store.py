@@ -27,9 +27,6 @@ class StatusesStore:
     ) -> None:
         key = _get_key(node_id)
         await self.redis_client_sdk.redis.set(key, value=status.json())
-        await self.reset_ttl_status_duration(node_id)
-
-    async def reset_ttl_status_duration(self, node_id: NodeID) -> None:
         await self.redis_client_sdk.redis.expire(_get_key(node_id), CACHE_ENTRIES_TTL_S)
 
     async def get_status(self, node_id: NodeID) -> RunningDynamicServiceDetails | None:
