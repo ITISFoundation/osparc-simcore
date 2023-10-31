@@ -12,7 +12,6 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method, utcnow
-from simcore_postgres_database import errors
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -47,9 +46,8 @@ async def _upsert_autorecharge(
     wallet_id,
     enabled,
     primary_payment_method_id,
-    min_balance_in_usd,
     top_up_amount_in_usd,
-    top_up_countdown,
+    monthly_limit_in_usd,
 ) -> RowProxy:
     # using this primary payment-method, create an autorecharge
     # NOTE: requires the entire
@@ -57,9 +55,8 @@ async def _upsert_autorecharge(
         wallet_id=wallet_id,
         enabled=enabled,
         primary_payment_method_id=primary_payment_method_id,
-        min_balance_in_usd=min_balance_in_usd,
         top_up_amount_in_usd=top_up_amount_in_usd,
-        top_up_countdown=top_up_countdown,
+        monthly_limit_in_usd=monthly_limit_in_usd,
     )
     row = await (await connection.execute(stmt)).first()
     assert row
@@ -68,12 +65,6 @@ async def _upsert_autorecharge(
 
 async def _update_autorecharge(connection, wallet_id, **settings) -> int | None:
     stmt = AutoRechargeStmts.update_wallet_autorecharge(wallet_id, **settings)
-    return await connection.scalar(stmt)
-
-
-async def _decrease_countdown(connection, wallet_id) -> int | None:
-    stmt = AutoRechargeStmts.decrease_wallet_autorecharge_countdown(wallet_id)
-    # updates payments countdown
     return await connection.scalar(stmt)
 
 
@@ -123,9 +114,8 @@ async def test_payments_automation_workflow(
         wallet_id,
         enabled=True,
         primary_payment_method_id=payment_method_id,
-        min_balance_in_usd=10,
         top_up_amount_in_usd=100,
-        top_up_countdown=5,
+        monthly_limit_in_usd=None,
     )
 
     auto_recharge = await _get_auto_recharge(connection, wallet_id)
@@ -133,31 +123,15 @@ async def test_payments_automation_workflow(
     assert auto_recharge.primary_payment_method_id == payment_method_id
     assert auto_recharge.enabled is True
 
-    # countdown
-    assert await _decrease_countdown(connection, wallet_id) == 4
-    assert await _decrease_countdown(connection, wallet_id) == 3
-    assert await _decrease_countdown(connection, wallet_id) == 2
-    assert await _decrease_countdown(connection, wallet_id) == 1
-    assert await _decrease_countdown(connection, wallet_id) == 0
-
-    with pytest.raises(errors.CheckViolation) as err_info:
-        await _decrease_countdown(connection, wallet_id)
-
-    exc = err_info.value
-    assert exc.pgerror
-    assert "check_top_up_countdown_nonnegative" in exc.pgerror
-
     # upsert: deactivate countdown
     auto_recharge = await _upsert_autorecharge(
         connection,
         wallet_id,
         enabled=True,
         primary_payment_method_id=payment_method_id,
-        min_balance_in_usd=10,
         top_up_amount_in_usd=100,
-        top_up_countdown=None,  # <----
+        monthly_limit_in_usd=10000,  # <----
     )
-    assert auto_recharge.top_up_countdown is None
+    assert auto_recharge.monthly_limit_in_usd == 10000
 
-    await _update_autorecharge(connection, wallet_id, top_up_countdown=None)
-    assert await _decrease_countdown(connection, wallet_id) is None
+    await _update_autorecharge(connection, wallet_id, monthly_limit_in_usd=None)
