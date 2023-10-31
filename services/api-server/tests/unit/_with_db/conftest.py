@@ -217,53 +217,34 @@ async def product_name(connection: SAConnection):
 
 
 @pytest.fixture
-async def fake_api_key(
-    connection: SAConnection, user_id: int, product_name
-) -> AsyncIterator[ApiKeyInDB]:
-    result = await connection.execute(
-        api_keys.insert()
-        .values(**random_api_key(await product_name(1), user_id))
-        .returning(sa.literal_column("*"))
-    )
-    row = await result.fetchone()
-    assert row
-    yield ApiKeyInDB.from_orm(row)
+async def fake_api_keys(connection: SAConnection, user_id, product_name):
+    async def _generate_fake_api_key(n: PositiveInt):
+        products = product_name(n)
+        users = user_id(n)
+        for _ in range(n):
+            product = await anext(products)
+            user = await anext(users)
+            result = await connection.execute(
+                api_keys.insert()
+                .values(**random_api_key(product, user))
+                .returning(sa.literal_column("*"))
+            )
+            row = await result.fetchone()
+            assert row
+            _generate_fake_api_key.row_ids.append(row.id)
+            yield ApiKeyInDB.from_orm(row)
 
-    await connection.execute(api_keys.delete().where(api_keys.c.id == row.id))
+    _generate_fake_api_key.row_ids = []
+    yield _generate_fake_api_key
 
-
-@pytest.fixture
-async def two_fake_api_keys(
-    connection: SAConnection, user_id, product_name
-) -> AsyncIterator[list[ApiKeyInDB]]:
-    keys: list[ApiKeyInDB] = []
-    row_ids: list[int] = []
-    n_elements: int = 2
-
-    products = product_name(n_elements)
-    users = user_id(n_elements)
-    for _ in range(n_elements):
-        product_name = await anext(products)
-        user_id = await anext(users)
-        result = await connection.execute(
-            api_keys.insert()
-            .values(**random_api_key(product_name, user_id))
-            .returning(sa.literal_column("*"))
-        )
-        row = await result.fetchone()
-        assert row
-        row_ids.append(row.id)
-        keys.append(ApiKeyInDB.from_orm(row))
-
-    yield keys
-
-    for row_id in row_ids:
+    for row_id in _generate_fake_api_key.row_ids:
         await connection.execute(api_keys.delete().where(api_keys.c.id == row_id))
 
 
 @pytest.fixture
-def auth(fake_api_key: ApiKeyInDB) -> httpx.BasicAuth:
+async def auth(fake_api_keys) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
+    fake_api_key = await fake_api_keys(1)
     return httpx.BasicAuth(
         fake_api_key.api_key, fake_api_key.api_secret.get_secret_value()
     )
