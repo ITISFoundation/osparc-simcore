@@ -33,10 +33,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
 
     this.subscribeToFilterGroup("serviceCatalog");
 
-    this.addListener("changeValue", e => {
-      e.stopPropagation();
-      this.__itemSelected(e.getData());
-    });
+    this.addListener("changeValue", e => this.__itemSelected(e.getData()));
   },
 
   properties: {
@@ -74,9 +71,13 @@ qx.Class.define("osparc.service.ServiceListItem", {
           this.getChildControl("extended-layout").add(control);
           const versionLabel = new qx.ui.basic.Label(this.tr("Version"));
           control.add(versionLabel);
-          const selectBox = this.__versionsBox = new qx.ui.form.SelectBox();
+          const selectBox = this.__versionsBox = new qx.ui.form.SelectBox().set({
+            anonymous: true
+          });
           control.add(selectBox);
-          const infoBtn = this.__infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
+          const infoBtn = this.__infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
+            anonymous: true
+          });
           infoBtn.addListener("execute", () => this.__showServiceDetails(), this);
           control.add(infoBtn);
           break;
