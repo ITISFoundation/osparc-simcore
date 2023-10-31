@@ -244,7 +244,5 @@ async def fake_api_keys(connection: SAConnection, user_id, product_name):
 @pytest.fixture
 async def auth(fake_api_keys) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
-    fake_api_key = await fake_api_keys(1)
-    return httpx.BasicAuth(
-        fake_api_key.api_key, fake_api_key.api_secret.get_secret_value()
-    )
+    async for key in fake_api_keys(1):
+        return httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value())
