@@ -34,6 +34,10 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     this._resourceType = "service";
     const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
 
+    if (serviceData.resourceType === "service") {
+      osparc.data.Roles.createServicesRolesResourceInfo();
+    }
+
     const initCollabs = this.self().getEveryoneObj();
 
     this.base(arguments, serializedData, [initCollabs]);
