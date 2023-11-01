@@ -46,9 +46,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 class Settings(BaseCustomSettings):
-    PAYMENTS_SERVICE_API_BASE_URL: HttpUrl
-    PAYMENTS_USERNAME: str
-    PAYMENTS_PASSWORD: SecretStr
+    PAYMENTS_SERVICE_API_BASE_URL: HttpUrl = "http://replace-with-ack-service.io"
+    PAYMENTS_USERNAME: str = "replace-with_username"
+    PAYMENTS_PASSWORD: SecretStr = "replace-with-password"
 
 
 def set_operation_id_as_handler_function_name(router: APIRouter):
@@ -344,7 +344,7 @@ async def _app_lifespan(app: FastAPI):
 def create_app():
     app = FastAPI(
         title="fake-payment-gateway",
-        version="0.2.0",
+        version="0.2.1",
         lifespan=_app_lifespan,
         debug=True,
     )
