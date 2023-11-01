@@ -229,6 +229,7 @@ async def test_webserver_pay_with_payment_method_workflow(
         payment_method_id=payment_method_id,
         amount_dollars=faker.pyint(),
         target_credits=faker.pyint(),
+        product_name=faker.word(),
         wallet_id=wallet_id,
         wallet_name=faker.word(),
         user_id=user_id,
