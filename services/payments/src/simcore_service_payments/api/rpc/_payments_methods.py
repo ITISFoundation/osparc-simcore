@@ -1,7 +1,6 @@
 import logging
 from decimal import Decimal
 
-import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
@@ -17,8 +16,7 @@ from servicelib.rabbitmq import RPCRouter
 
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
-from ...models.payments_gateway import InitPayment
-from ...services import payments_methods
+from ...services import payments, payments_methods
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -131,41 +129,18 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
 
-    initiated_at = arrow.utcnow().datetime
-
-    # check acked payment_method_id
-    repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    acked = await repo.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
-    )
-
-    # init -> gateway
-    gateway: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
-    payment_inited = await gateway.init_payment_with_payment_method(
-        acked.payment_method_id,
-        payment=InitPayment(
-            amount_dollars=amount_dollars,
-            credits=target_credits,
-            user_name=user_name,
-            user_email=user_email,
-            wallet_name=wallet_name,
-        ),
-    )
-
-    payment_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
-    payment_id = await payment_repo.insert_init_payment_transaction(
-        payment_id=payment_inited.payment_id,
-        price_dollars=amount_dollars,
-        osparc_credits=target_credits,
+    return await payments.init_payment_with_payment_method(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
+        repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+        payment_method_id=payment_method_id,
+        amount_dollars=amount_dollars,
+        target_credits=target_credits,
         product_name=product_name,
-        user_id=user_id,
-        user_email=user_email,
         wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
         comment=comment,
-        initiated_at=initiated_at,
-    )
-
-    return WalletPaymentInitiated(
-        payment_id=f"{payment_id}",
-        payment_form_url=None,
     )
