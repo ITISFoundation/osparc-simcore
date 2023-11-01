@@ -95,7 +95,7 @@ async def test_successful_create_payment_method_workflow(
     )
 
     assert isinstance(inited, PaymentMethodInitiated)
-    assert mock_payments_gateway_service_or_none.routes["init_payment"].called
+    assert mock_payments_gateway_service_or_none.routes["init_payment_method"].called
 
     # ACK via api/rest
     response = await client.post(
