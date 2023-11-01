@@ -125,7 +125,6 @@ async def test_one_time_payment_workflow(
         assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
 
 
-@pytest.mark.testit()
 async def test_payment_methods_workflow(
     app: FastAPI,
     faker: Faker,
