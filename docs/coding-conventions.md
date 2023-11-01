@@ -55,7 +55,8 @@ def create_something() -> Callable:
     # ...
   return _create
 
-def test_it(something: Something, create_something: Callable):
+def test_it(something: Something, create_something: Callable[..., Something]):
+
   new_something = create_something(color="blue")
   assert new_something != something
 
