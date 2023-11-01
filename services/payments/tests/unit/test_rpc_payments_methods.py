@@ -12,8 +12,12 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,
     WalletPaymentInitiated,
 )
+from models_library.basic_types import IDStr
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from models_library.users import UserID
+from models_library.wallets import WalletID
+from pydantic import EmailStr, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
@@ -69,21 +73,23 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
-    faker: Faker,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
+    wallet_name: IDStr,
+    wallet_id: WalletID,
     payments_clean_db: None,
 ):
     assert app
-    user_id = faker.pyint()
-    wallet_id = faker.pyint()
 
     initiated = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
         wallet_id=wallet_id,
-        wallet_name=faker.word(),
+        wallet_name=wallet_name,
         user_id=user_id,
-        user_name=faker.name(),
-        user_email=faker.email(),
+        user_name=user_name,
+        user_email=user_email,
     )
 
     assert isinstance(initiated, PaymentMethodInitiated)
@@ -115,21 +121,23 @@ async def test_webserver_crud_payment_method_workflow(
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
-    faker: Faker,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
+    wallet_name: IDStr,
+    wallet_id: WalletID,
     payments_clean_db: None,
 ):
     assert app
-    user_id = faker.pyint()
-    wallet_id = faker.pyint()
 
     inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
         wallet_id=wallet_id,
-        wallet_name=faker.word(),
+        wallet_name=wallet_name,
         user_id=user_id,
-        user_name=faker.name(),
-        user_email=faker.email(),
+        user_name=user_name,
+        user_email=user_email,
     )
 
     assert isinstance(inited, PaymentMethodInitiated)
@@ -195,11 +203,15 @@ async def test_webserver_pay_with_payment_method_workflow(
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
+    product_name: ProductName,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
+    wallet_name: IDStr,
+    wallet_id: WalletID,
     payments_clean_db: None,
 ):
     assert app
-    user_id = faker.pyint()
-    wallet_id = faker.pyint()
 
     # faking Payment method
     created = await create_payment_method(
@@ -216,12 +228,12 @@ async def test_webserver_pay_with_payment_method_workflow(
         payment_method_id=created.payment_method_id,
         amount_dollars=faker.pyint(),
         target_credits=faker.pyint(),
-        product_name=faker.word(),
+        product_name=product_name,
         wallet_id=wallet_id,
-        wallet_name=faker.word(),
+        wallet_name=wallet_name,
         user_id=user_id,
-        user_name=faker.name(),
-        user_email=faker.email(),
+        user_name=user_name,
+        user_email=user_email,
         comment="Payment with stored credit-card",
     )
 

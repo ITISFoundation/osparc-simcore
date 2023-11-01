@@ -12,6 +12,7 @@ import simcore_service_payments
 import yaml
 from faker import Faker
 from models_library.basic_types import IDStr
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
@@ -123,13 +124,8 @@ def app_environment(
 
 
 @pytest.fixture
-def wallet_id(faker: Faker) -> WalletID:
-    return parse_obj_as(WalletID, faker.pyint())
-
-
-@pytest.fixture
-def wallet_name(faker: Faker) -> IDStr:
-    return parse_obj_as(IDStr, f"wallet-{faker.word()}")
+def product_name(faker: Faker) -> ProductName:
+    return parse_obj_as(IDStr, f"product-{faker.word()}")
 
 
 @pytest.fixture
@@ -145,3 +141,13 @@ def user_email(faker: Faker) -> EmailStr:
 @pytest.fixture
 def user_name(user_email: str) -> IDStr:
     return parse_obj_as(IDStr, user_email.split("@")[0])
+
+
+@pytest.fixture
+def wallet_id(faker: Faker) -> WalletID:
+    return parse_obj_as(WalletID, faker.pyint())
+
+
+@pytest.fixture
+def wallet_name(faker: Faker) -> IDStr:
+    return parse_obj_as(IDStr, f"wallet-{faker.word()}")
