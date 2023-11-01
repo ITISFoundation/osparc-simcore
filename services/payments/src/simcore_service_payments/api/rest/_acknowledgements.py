@@ -8,19 +8,18 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
-from ..._constants import ACKED, PGDB, RUT
+from ..._constants import ACKED, PGDB
 from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
-from ...models.db import PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
     PaymentID,
     PaymentMethodID,
 )
-from ...services import payments_methods
+from ...services import payments, payments_methods
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 from ._dependencies import get_current_session, get_repository, get_rut_api
 
@@ -28,43 +27,6 @@ _logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
-
-
-async def on_payment_completed(
-    transaction: PaymentsTransactionsDB, rut_api: ResourceUsageTrackerApi
-):
-    assert transaction.completed_at is not None  # nosec
-    assert transaction.initiated_at < transaction.completed_at  # nosec
-
-    _logger.debug(
-        "Notify front-end of payment -> sio SOCKET_IO_PAYMENT_COMPLETED_EVENT "
-    )
-
-    with log_context(
-        _logger,
-        logging.INFO,
-        "%s: Top-up %s credits for %s",
-        RUT,
-        f"{transaction.osparc_credits}",
-        f"{transaction.payment_id=}",
-    ):
-        credit_transaction_id = await rut_api.create_credit_transaction(
-            product_name=transaction.product_name,
-            wallet_id=transaction.wallet_id,
-            wallet_name="id={transaction.wallet_id}",
-            user_id=transaction.user_id,
-            user_email=transaction.user_email,
-            osparc_credits=transaction.osparc_credits,
-            payment_transaction_id=transaction.payment_id,
-            created_at=transaction.completed_at,
-        )
-
-    _logger.debug(
-        "%s: Response to %s was %s",
-        RUT,
-        f"{transaction.payment_id=}",
-        f"{credit_transaction_id=}",
-    )
 
 
 @router.post("/payments/{payment_id}:ack")
@@ -109,21 +71,17 @@ async def acknowledge_payment(
 
     if transaction.state == PaymentTransactionState.SUCCESS:
         assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
-        background_tasks.add_task(on_payment_completed, transaction, rut_api)
+        background_tasks.add_task(payments.on_payment_completed, transaction, rut_api)
 
     if ack.saved:
-        payment_method = await repo_methods.insert_payment_method(
+        created = await payments_methods.create_payment_method(
+            repo=repo_methods,
             payment_method_id=ack.saved.payment_method_id,
             user_id=transaction.user_id,
             wallet_id=transaction.wallet_id,
-            completion_state=InitPromptAckFlowState.SUCCESS
-            if ack.saved.success
-            else InitPromptAckFlowState.FAILED,
-            state_message=ack.saved.message,
+            ack=ack.saved,
         )
-        background_tasks.add_task(
-            payments_methods.on_payment_method_completed, payment_method
-        )
+        background_tasks.add_task(payments_methods.on_payment_method_completed, created)
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")

@@ -3,6 +3,7 @@
 - Payment w/ payment-method
 
 """
+# pylint: disable=too-many-arguments
 
 import logging
 from decimal import Decimal
@@ -136,7 +137,7 @@ async def acknowledge_one_time_payment(
 
 
 async def on_payment_completed(
-    *, transaction: PaymentsTransactionsDB, rut_api: ResourceUsageTrackerApi
+    transaction: PaymentsTransactionsDB, rut_api: ResourceUsageTrackerApi
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
@@ -172,7 +173,7 @@ async def on_payment_completed(
     )
 
 
-async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
+async def init_payment_with_payment_method(
     gateway: PaymentsGatewayApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
