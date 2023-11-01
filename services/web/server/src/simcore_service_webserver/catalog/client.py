@@ -21,10 +21,10 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.catalog import CatalogSettings
 from yarl import URL
 
-from .._constants import X_PRODUCT_NAME_HEADER
 from .._meta import api_version_prefix
 from ._constants import MSG_CATALOG_SERVICE_UNAVAILABLE
 from .settings import get_plugin_settings
