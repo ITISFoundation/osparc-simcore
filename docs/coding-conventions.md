@@ -40,7 +40,8 @@ import os
 ### CC3: Naming fixtures that return `Callable`s
 
 - Use verb as prefix
-- If the callable creates an instance, you can use `factory_` as suffix instead (e.g. the [`tmp_path_factory` fixture](https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html#the-tmp-path-factory-fixture))
+- If the callable creates an instance, you can use `_factory` as suffix instead (e.g. the [`tmp_path_factory` fixture](https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html#the-tmp-path-factory-fixture))
+
 
 ```python
 
