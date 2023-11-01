@@ -30,9 +30,9 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
-from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._permalink_api import ProjectPermalink
