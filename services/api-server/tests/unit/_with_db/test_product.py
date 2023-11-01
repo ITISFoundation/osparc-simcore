@@ -15,6 +15,7 @@ from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
+from models_library.users import UserID
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
@@ -89,16 +90,10 @@ async def test_product_catalog(
         assert (
             received_product := request.headers.get("x-simcore-products-name")
         ) is not None
+        assert (user_id := request.url.params.get("user_id")) is not None
         assert (
-            user_id := dict(
-                elm.split("=") for elm in request.url.query.decode().split("&")
-            ).get("user_id")
+            key := {UserID(key.id_): key for key in keys}.get(UserID(user_id))
         ) is not None
-        key: ApiKeyInDB | None = None
-        for key in keys:
-            if key.id_ == int(user_id):
-                break
-        assert key is not None
         assert key.product_name == received_product
         return httpx.Response(status_code=status.HTTP_200_OK)
 
