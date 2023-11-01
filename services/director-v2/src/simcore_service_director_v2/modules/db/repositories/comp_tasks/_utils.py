@@ -356,7 +356,7 @@ async def generate_tasks_list_from_project(
             node_key=node.key,
             node_version=node.version,
         )
-
+        assert rabbitmq_rpc_client  # nosec
         # await _update_project_node_resources_from_hardware_info(
         #     connection,
         #     is_wallet=is_wallet,
