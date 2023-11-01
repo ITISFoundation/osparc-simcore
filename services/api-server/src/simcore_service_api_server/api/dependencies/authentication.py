@@ -2,7 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from pydantic import BaseModel, PositiveInt
+from models_library.products import ProductName
+from pydantic import BaseModel, EmailStr, PositiveInt
 
 from ...db.repositories.api_keys import ApiKeysRepository, UserAndProductTuple
 from ...db.repositories.users import UsersRepository
@@ -14,8 +15,8 @@ basic_scheme = HTTPBasic()
 
 class Identity(BaseModel):
     user_id: PositiveInt
-    product_name: str
-    email: str
+    product_name: ProductName
+    email: EmailStr
 
 
 def _create_exception() -> HTTPException:
