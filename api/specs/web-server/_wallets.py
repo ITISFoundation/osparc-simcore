@@ -17,13 +17,13 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodGet,
     PaymentMethodID,
-    PaymentMethodInit,
+    PaymentMethodInitiated,
     PaymentTransaction,
     PutWalletBodyParams,
     ReplaceWalletAutoRecharge,
     WalletGet,
     WalletGetWithAvailableCredits,
-    WalletPaymentCreated,
+    WalletPaymentInitiated,
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -89,7 +89,7 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 
 @router.post(
     "/wallets/{wallet_id}/payments",
-    response_model=Envelope[WalletPaymentCreated],
+    response_model=Envelope[WalletPaymentInitiated],
     response_description="Successfully initialized",
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -119,7 +119,7 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
 
 @router.post(
     "/wallets/{wallet_id}/payments-methods:init",
-    response_model=Envelope[PaymentMethodInit],
+    response_model=Envelope[PaymentMethodInitiated],
     response_description="Successfully initialized",
     status_code=status.HTTP_202_ACCEPTED,
 )

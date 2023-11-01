@@ -16,7 +16,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentTransaction,
     WalletGet,
-    WalletPaymentCreated,
+    WalletPaymentInitiated,
 )
 from models_library.rest_pagination import Page
 from models_library.users import UserID
@@ -109,7 +109,7 @@ def mock_rpc_payments_service_api(
                 )
                 == payment_id
             )
-        return WalletPaymentCreated(
+        return WalletPaymentInitiated(
             payment_id=payment_id, payment_form_url=f"{external_form_link}"
         )
 
@@ -176,7 +176,7 @@ async def test_payments_worfklow(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    payment = WalletPaymentCreated.parse_obj(data)
+    payment = WalletPaymentInitiated.parse_obj(data)
 
     assert payment.payment_id
     assert payment.payment_form_url.host == "some-fake-gateway.com"
@@ -259,7 +259,7 @@ async def test_multiple_payments(
         data, error = await assert_status(response, web.HTTPCreated)
         assert data
         assert not error
-        payment = WalletPaymentCreated.parse_obj(data)
+        payment = WalletPaymentInitiated.parse_obj(data)
 
         if n % 2:
             transaction = await _ack_creation_of_wallet_payment(
@@ -343,7 +343,7 @@ async def test_complete_payment_errors(
     assert mock_rpc_payments_service_api["init_payment"].called
 
     data, _ = await assert_status(response, web.HTTPCreated)
-    payment = WalletPaymentCreated.parse_obj(data)
+    payment = WalletPaymentInitiated.parse_obj(data)
 
     # Cannot complete as PENDING
     with pytest.raises(ValueError):

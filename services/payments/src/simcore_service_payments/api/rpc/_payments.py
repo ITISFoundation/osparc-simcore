@@ -3,7 +3,10 @@ from decimal import Decimal
 
 import arrow
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import PaymentID, WalletPaymentCreated
+from models_library.api_schemas_webserver.wallets import (
+    PaymentID,
+    WalletPaymentInitiated,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -12,12 +15,9 @@ from servicelib.rabbitmq import RPCRouter
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_payments.core.errors import (
-    PaymentAlreadyAckedError,
-    PaymentNotFoundError,
-)
 
 from ..._constants import PAG, PGDB
+from ...core.errors import PaymentAlreadyAckedError, PaymentNotFoundError
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.payments_gateway import InitPayment, PaymentInitiated
 from ...services.payments_gateway import PaymentsGatewayApi
@@ -41,7 +41,7 @@ async def init_payment(
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-) -> WalletPaymentCreated:
+) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
     # Payment-Gateway
@@ -90,7 +90,7 @@ async def init_payment(
         )
         assert payment_id == init.payment_id  # nosec
 
-    return WalletPaymentCreated(
+    return WalletPaymentInitiated(
         payment_id=f"{payment_id}",
         payment_form_url=f"{submission_link}",
     )
