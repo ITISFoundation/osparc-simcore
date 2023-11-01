@@ -58,34 +58,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
-    // study, templates, services
-    RESOURCES: {
-      1: {
-        id: "read",
-        label: qx.locale.Manager.tr("User"),
-        longLabel: qx.locale.Manager.tr("User: Read access"),
-        canDo: [
-          qx.locale.Manager.tr("- can open it")
-        ]
-      },
-      2: {
-        id: "write",
-        label: qx.locale.Manager.tr("Editor"),
-        longLabel: qx.locale.Manager.tr("Editor: Read/Write access"),
-        canDo: [
-          qx.locale.Manager.tr("- can make changes")
-        ]
-      },
-      3: {
-        id: "delete",
-        label: qx.locale.Manager.tr("Owner"),
-        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
-        canDo: [
-          qx.locale.Manager.tr("- can delete it")
-        ]
-      }
-    },
-
+    // study & templates
     STUDY: {
       1: {
         id: "read",
@@ -113,7 +86,7 @@ qx.Class.define("osparc.data.Roles", {
         ]
       }
     },
-
+    // services
     SERVICES: {
       1: {
         id: "read",
@@ -189,10 +162,6 @@ qx.Class.define("osparc.data.Roles", {
 
     createRolesWalletInfo: function() {
       return this.__createIntoFromRoles(osparc.data.Roles.WALLET);
-    },
-
-    createRolesResourceInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.RESOURCES);
     },
 
     createRolesStudyResourceInfo: function() {
