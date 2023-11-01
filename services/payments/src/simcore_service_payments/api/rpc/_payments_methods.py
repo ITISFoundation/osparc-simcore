@@ -20,8 +20,9 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from ..._constants import PAG, PGDB
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
-from ...models.db import PaymentsMethodsDB
 from ...models.payments_gateway import GetPaymentMethod, InitPayment, InitPaymentMethod
+from ...models.utils import merge_models
+from ...services import payments_methods
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -117,25 +118,6 @@ async def cancel_creation_of_payment_method(
     )
 
 
-def _merge_models(got: GetPaymentMethod, acked: PaymentsMethodsDB) -> PaymentMethodGet:
-    assert acked.completed_at  # nosec
-
-    return PaymentMethodGet(
-        idr=acked.payment_method_id,
-        wallet_id=acked.wallet_id,
-        card_holder_name=got.card_holder_name,
-        card_number_masked=got.card_number_masked,
-        card_type=got.card_type,
-        expiration_month=got.expiration_month,
-        expiration_year=got.expiration_year,
-        street_address=got.street_address,
-        zipcode=got.zipcode,
-        country=got.country,
-        created=acked.completed_at,
-        auto_recharge=False,  # this will be fileld in the web/server
-    )
-
-
 @router.expose()
 async def list_payment_methods(
     app: FastAPI,
@@ -156,7 +138,7 @@ async def list_payment_methods(
     )
 
     return [
-        _merge_models(got, acked)
+        merge_models(got, acked)
         for acked, got in zip(acked_many, got_many, strict=True)
     ]
 
@@ -179,7 +161,7 @@ async def get_payment_method(
     gateway: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
     got: GetPaymentMethod = await gateway.get_payment_method(acked.payment_method_id)
 
-    return _merge_models(got, acked)
+    return merge_models(got, acked)
 
 
 @router.expose()
@@ -190,16 +172,12 @@ async def delete_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ):
-    repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    acked = await repo.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
-    )
-
-    gateway: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
-    await gateway.delete_payment_method(acked.payment_method_id)
-
-    await repo.delete_payment_method(
-        acked.payment_method_id, user_id=acked.user_id, wallet_id=acked.wallet_id
+    await payments_methods.delete_payment_method(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo=PaymentsMethodsRepo(db_engine=app.state.engine),
+        payment_method_id=payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
     )
 
 
