@@ -52,7 +52,8 @@ def something() -> Something:
 @pytest.fixture
 def create_something() -> Callable[..., Something]:
 
-  def _create(*args, **kwargs):
+  def _create(*args, **kwargs) -> Something:
+
     # ...
   return _create
 
