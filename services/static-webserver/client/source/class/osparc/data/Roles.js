@@ -23,7 +23,7 @@ qx.Class.define("osparc.data.Roles", {
     ORG: {
       0: {
         id: "noRead",
-        label: qx.locale.Manager.tr("Restricted user"),
+        label: qx.locale.Manager.tr("Restricted Member"),
         longLabel: qx.locale.Manager.tr("Restricted user: no Read access"),
         canDo: [
           qx.locale.Manager.tr("- can access content shared within the Organization")
@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.Roles", {
       },
       1: {
         id: "read",
-        label: qx.locale.Manager.tr("User"),
+        label: qx.locale.Manager.tr("Member"),
         longLabel: qx.locale.Manager.tr("User: Read access"),
         canDo: [
           qx.locale.Manager.tr("- can see other users"),
