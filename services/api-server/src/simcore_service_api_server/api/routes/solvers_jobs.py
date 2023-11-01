@@ -32,8 +32,8 @@ from ...services.solver_job_models_converters import (
     create_new_project_for_job,
 )
 from ...services.webserver import ProjectNotFoundError
-from ..dependencies.application import get_product_name, get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response

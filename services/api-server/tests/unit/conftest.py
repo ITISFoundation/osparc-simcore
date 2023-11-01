@@ -136,13 +136,6 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         return_value=faker.email(),
     )
 
-    # patches simcore_postgres_database.utils_products.get_default_product_name
-    mocker.patch(
-        "simcore_service_api_server.api.dependencies.application.get_default_product_name",
-        autospec=True,
-        return_value="osparc",
-    )
-
     return HTTPBasicAuth(faker.word(), faker.password())
 
 
