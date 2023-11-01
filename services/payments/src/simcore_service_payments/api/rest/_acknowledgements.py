@@ -13,13 +13,14 @@ from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
-from ...models.db import PaymentsMethodsDB, PaymentsTransactionsDB
+from ...models.db import PaymentsTransactionsDB
 from ...models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
     PaymentID,
     PaymentMethodID,
 )
+from ...services import payments_methods
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 from ._dependencies import get_current_session, get_repository, get_rut_api
 
@@ -63,15 +64,6 @@ async def on_payment_completed(
         RUT,
         f"{transaction.payment_id=}",
         f"{credit_transaction_id=}",
-    )
-
-
-async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
-    assert payment_method.completed_at is not None  # nosec
-    assert payment_method.initiated_at < payment_method.completed_at  # nosec
-
-    _logger.debug(
-        "Notify front-end of payment -> sio (SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT) "
     )
 
 
@@ -129,7 +121,9 @@ async def acknowledge_payment(
             else InitPromptAckFlowState.FAILED,
             state_message=ack.saved.message,
         )
-        background_tasks.add_task(on_payment_method_completed, payment_method)
+        background_tasks.add_task(
+            payments_methods.on_payment_method_completed, payment_method
+        )
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")
@@ -150,14 +144,11 @@ async def acknowledge_payment_method(
         f"{payment_method_id=}",
     ):
         try:
-            payment_method = await repo.update_ack_payment_method(
-                payment_method_id=payment_method_id,
-                completion_state=(
-                    InitPromptAckFlowState.SUCCESS
-                    if ack.success
-                    else InitPromptAckFlowState.FAILED
-                ),
-                state_message=ack.message,
+
+            payment_method = (
+                await payments_methods.acknowledge_creation_of_payment_method(
+                    repo=repo, payment_method_id=payment_method_id, ack=ack
+                )
             )
         except PaymentMethodNotFoundError as err:
             raise HTTPException(
@@ -166,4 +157,6 @@ async def acknowledge_payment_method(
 
     if payment_method.state == InitPromptAckFlowState.SUCCESS:
         assert f"{payment_method_id}" == f"{payment_method.payment_method_id}"  # nosec
-        background_tasks.add_task(on_payment_method_completed, payment_method)
+        background_tasks.add_task(
+            payments_methods.on_payment_method_completed, payment_method
+        )
