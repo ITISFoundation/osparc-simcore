@@ -17,9 +17,6 @@ APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"
 # Request storage keys
 RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 
-# Headers keys
-X_PRODUCT_NAME_HEADER: Final[str] = "X-Simcore-Products-Name"
-
 # main index route name = front-end
 INDEX_RESOURCE_NAME: Final[str] = "statics.index"
 
