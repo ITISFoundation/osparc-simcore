@@ -27,8 +27,9 @@ class WalletInfo(BaseModel):
 
 ZERO_CREDITS = Decimal(0)
 
-
-### DB
+#
+# DB
+#
 
 
 class WalletDB(BaseModel):

@@ -36,6 +36,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.wallets import WalletInfo
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -239,6 +240,35 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 @pytest.fixture
+def mocked_resource_usage_tracker_service_fcts(
+    minimal_app: FastAPI,
+) -> Iterator[respx.MockRouter]:
+    def _mocked_service_default_pricing_plan(
+        request, service_key: str, service_version: str
+    ) -> httpx.Response:
+        if "frontend" in service_key:
+            return httpx.Response(status_code=404)
+        return httpx.Response(
+            200, json=jsonable_encoder(fake_service_resources, by_alias=True)
+        )
+
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=minimal_app.state.settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get(
+            re.compile(
+                r"services/(?P<service_key>simcore/services/(comp|dynamic|frontend)/[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).+"
+            ),
+            name="get_service_default_pricing_plan",
+        ).mock(side_effect=_mocked_service_default_pricing_plan)
+
+        yield respx_mock
+
+
+@pytest.fixture
 def product_name(faker: Faker) -> str:
     return faker.name()
 
@@ -307,6 +337,40 @@ async def test_create_computation(
         json=jsonable_encoder(
             ComputationCreate(
                 user_id=user["id"], project_id=proj.uuid, product_name=product_name
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+
+
+@pytest.fixture
+def wallet_info(faker: Faker) -> WalletInfo:
+    return WalletInfo(wallet_id=faker.pyint(), wallet_name=faker.name())
+
+
+async def test_create_computation_with_wallet(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+    wallet_info: WalletInfo,
+):
+    user = registered_user()
+    proj = await project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                product_name=product_name,
+                wallet_info=wallet_info,
             )
         ),
     )
