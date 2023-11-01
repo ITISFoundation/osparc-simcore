@@ -239,7 +239,7 @@ qx.Class.define("osparc.share.Collaborators", {
       const label = new qx.ui.basic.Label(this.tr("Shared with"));
       vBox.add(label);
 
-      const rolesLayout = osparc.data.Roles.createRolesResourceInfo();
+      const rolesLayout = osparc.data.Roles.createRolesStudyResourceInfo();
       const leaveButton = this.__getLeaveStudyButton();
       if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);
@@ -267,6 +267,7 @@ qx.Class.define("osparc.share.Collaborators", {
           ctrl.bindProperty("label", "title", null, item, id); // organization
           ctrl.bindProperty("login", "subtitleMD", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
+          ctrl.bindProperty("resourceType", "resourceType", null, item, id); // Resource type
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -366,6 +367,7 @@ qx.Class.define("osparc.share.Collaborators", {
           }
           collaborator["accessRights"] = accessRights[gid];
           collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
+          collaborator["resourceType"] = this._resourceType;
           collaboratorsList.push(collaborator);
         }
       });

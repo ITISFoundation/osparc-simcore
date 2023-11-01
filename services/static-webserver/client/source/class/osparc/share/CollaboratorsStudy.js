@@ -39,6 +39,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
       initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
     }
+    if (studyData.resourceType === "study" || studyData.resourceType === "template") {
+      osparc.data.Roles.createRolesStudyResourceInfo();
+    }
 
     this.base(arguments, serializedData, initCollabs);
   },
