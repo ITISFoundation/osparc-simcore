@@ -134,6 +134,9 @@ async def mock_close_service_routes(
         respx_mock.post(
             re.compile(f"{regex_base}/state:save"), name="save_service_state"
         ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.get(
+            re.compile(f"{regex_base}/state"), name="service_internal_state"
+        ).respond(status_code=status.HTTP_200_OK)
         respx_mock.post(
             re.compile(f"{regex_base}/outputs:push"), name="push_service_outputs"
         ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
@@ -233,5 +236,13 @@ def test_close_and_save_service(
     mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
 ):
     result = cli_runner.invoke(main, ["close-and-save-service", f"{node_id}"])
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    print(result.stdout)
+
+
+def test_service_state(
+    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
+):
+    result = cli_runner.invoke(main, ["service-state", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)
