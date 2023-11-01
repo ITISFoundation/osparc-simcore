@@ -13,15 +13,11 @@ from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
-from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
-from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 
-from ..._constants import PAG, PGDB
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
-from ...models.payments_gateway import GetPaymentMethod, InitPayment, InitPaymentMethod
-from ...models.utils import merge_models
+from ...models.payments_gateway import InitPayment
 from ...services import payments_methods
 from ...services.payments_gateway import PaymentsGatewayApi
 
@@ -41,51 +37,15 @@ async def init_creation_of_payment_method(
     user_name: IDStr,
     user_email: EmailStr,
 ) -> PaymentMethodInitiated:
-    initiated_at = arrow.utcnow().datetime
 
-    # Payment-Gateway
-    with log_context(
-        _logger,
-        logging.INFO,
-        "%s: Init payment-method %s in payments-gateway",
-        PAG,
-        f"{wallet_id=}",
-        extra=get_log_record_extra(user_id=user_id),
-    ):
-        gateway = PaymentsGatewayApi.get_from_app_state(app)
-
-        init = await gateway.init_payment_method(
-            InitPaymentMethod(
-                user_name=user_name,
-                user_email=user_email,
-                wallet_name=wallet_name,
-            )
-        )
-
-        form_link = gateway.get_form_payment_method_url(init.payment_method_id)
-
-    # Database
-    with log_context(
-        _logger,
-        logging.INFO,
-        "%s: Annotate INIT payment-method %s in db",
-        PGDB,
-        f"{init.payment_method_id=}",
-        extra=get_log_record_extra(user_id=user_id),
-    ):
-        repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-        payment_method_id = await repo.insert_init_payment_method(
-            init.payment_method_id,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            initiated_at=initiated_at,
-        )
-        assert payment_method_id == init.payment_method_id  # nosec
-
-    return PaymentMethodInitiated(
+    return await payments_methods.init_creation_of_payment_method(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo=PaymentsMethodsRepo(db_engine=app.state.engine),
         wallet_id=wallet_id,
-        payment_method_id=payment_method_id,
-        payment_method_form_url=f"{form_link}",
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
     )
 
 
@@ -97,22 +57,10 @@ async def cancel_creation_of_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    # Prevents card from being used
-    repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-
-    await repo.update_ack_payment_method(
-        payment_method_id,
-        completion_state=InitPromptAckFlowState.CANCELED,
-        state_message="User cancelled",
-    )
-
-    # gateway delete
-    gateway = PaymentsGatewayApi.get_from_app_state(app)
-    await gateway.delete_payment_method(payment_method_id)
-
-    # delete payment-method in db
-    await repo.delete_payment_method(
-        payment_method_id,
+    await payments_methods.cancel_creation_of_payment_method(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo=PaymentsMethodsRepo(db_engine=app.state.engine),
+        payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
     )
@@ -125,22 +73,12 @@ async def list_payment_methods(
     user_id: UserID,
     wallet_id: WalletID,
 ):
-
-    repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    acked_many = await repo.list_user_payment_methods(
-        user_id=user_id, wallet_id=wallet_id
+    return await payments_methods.list_payments_methods(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo=PaymentsMethodsRepo(db_engine=app.state.engine),
+        user_id=user_id,
+        wallet_id=wallet_id,
     )
-    assert not any(acked.completed_at is None for acked in acked_many)  # nosec
-
-    gateway: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
-    got_many: list[GetPaymentMethod] = await gateway.get_many_payment_methods(
-        [acked.payment_method_id for acked in acked_many]
-    )
-
-    return [
-        merge_models(got, acked)
-        for acked, got in zip(acked_many, got_many, strict=True)
-    ]
 
 
 @router.expose()
@@ -151,17 +89,13 @@ async def get_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentMethodGet:
-
-    repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    acked = await repo.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
+    return await payments_methods.get_payment_method(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo=PaymentsMethodsRepo(db_engine=app.state.engine),
+        payment_method_id=payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
     )
-    assert acked.state == InitPromptAckFlowState.SUCCESS  # nosec
-
-    gateway: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
-    got: GetPaymentMethod = await gateway.get_payment_method(acked.payment_method_id)
-
-    return merge_models(got, acked)
 
 
 @router.expose()
