@@ -102,7 +102,7 @@ class PaymentsMethodsRepo(BaseRepository):
         completion_state: InitPromptAckFlowState,
         state_message: str | None,
     ) -> PaymentsMethodsDB:
-        # TODO: how to do this on a single begin()?
+
         await self.insert_init_payment_method(
             payment_method_id,
             user_id=user_id,

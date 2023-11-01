@@ -96,8 +96,6 @@ async def cancel_creation_of_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    # TODO: with db transaction
-
     # Prevents card from being used
     repo = PaymentsMethodsRepo(db_engine=app.state.engine)
 
@@ -106,7 +104,6 @@ async def cancel_creation_of_payment_method(
         completion_state=InitPromptAckFlowState.CANCELED,
         state_message="User cancelled",
     )
-    # TODO: Notify?
 
     # gateway delete
     gateway = PaymentsGatewayApi.get_from_app_state(app)
@@ -177,11 +174,10 @@ async def get_payment_method(
     acked = await repo.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
+    assert acked.state == InitPromptAckFlowState.SUCCESS  # nosec
 
-    #
     gateway: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(app)
     got: GetPaymentMethod = await gateway.get_payment_method(acked.payment_method_id)
-    assert acked.completed_at is not None  # nosec
 
     return _merge_models(got, acked)
 
