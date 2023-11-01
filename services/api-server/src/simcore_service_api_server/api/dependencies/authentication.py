@@ -71,5 +71,5 @@ async def get_product_name(
 
 async def get_active_user_email(
     identity: Annotated[Identity, Depends(get_current_identity)],
-) -> str:
+) -> LowerCaseEmailStr:
     return identity.email
