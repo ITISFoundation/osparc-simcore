@@ -4,15 +4,16 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any
-
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
+from models_library.basic_types import IDStr
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from models_library.users import UserID
+from models_library.wallets import WalletID
+from pydantic import EmailStr, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -53,30 +54,21 @@ def app_environment(
     )
 
 
-@pytest.fixture
-def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
-    return {
-        "amount_dollars": 1000,
-        "target_credits": 10000,
-        "product_name": "osparc",
-        "wallet_id": faker.pyint(),
-        "wallet_name": faker.word(),
-        "user_id": faker.pyint(),
-        "user_name": faker.name(),
-        "user_email": faker.email(),
-    }
-
-
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_successful_one_time_payment_workflow(
+    is_pdb_enabled: bool,
     app: FastAPI,
     client: httpx.AsyncClient,
     faker: Faker,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
-    init_payment_kwargs: dict[str, Any],
+    wallet_id: WalletID,
+    wallet_name: IDStr,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
     auth_headers: dict[str, str],
     payments_clean_db: None,
     mocker: MockerFixture,
@@ -93,8 +85,15 @@ async def test_successful_one_time_payment_workflow(
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_payment"),
-        **init_payment_kwargs,
-        timeout_s=None,  # for debug
+        amount_dollars=1000,
+        target_credits=10000,
+        product_name="osparc",
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
+        timeout_s=None if is_pdb_enabled else 5,
     )
 
     assert isinstance(result, WalletPaymentInitiated)
