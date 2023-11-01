@@ -145,18 +145,14 @@ async def acknowledge_payment_method(
     ):
         try:
 
-            payment_method = (
-                await payments_methods.acknowledge_creation_of_payment_method(
-                    repo=repo, payment_method_id=payment_method_id, ack=ack
-                )
+            acked = await payments_methods.acknowledge_creation_of_payment_method(
+                repo=repo, payment_method_id=payment_method_id, ack=ack
             )
         except PaymentMethodNotFoundError as err:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if payment_method.state == InitPromptAckFlowState.SUCCESS:
-        assert f"{payment_method_id}" == f"{payment_method.payment_method_id}"  # nosec
-        background_tasks.add_task(
-            payments_methods.on_payment_method_completed, payment_method
-        )
+    if acked.state == InitPromptAckFlowState.SUCCESS:
+        assert f"{payment_method_id}" == f"{acked.payment_method_id}"  # nosec
+        background_tasks.add_task(payments_methods.on_payment_method_completed, acked)
