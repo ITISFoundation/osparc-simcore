@@ -7,10 +7,10 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 
 from ..._constants import ACKED, PGDB, RUT
 from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
+from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
 from ...models.db import PaymentsMethodsDB, PaymentsTransactionsDB

@@ -62,7 +62,7 @@ class CreateWalletPayment(InputSchema):
 class WalletPaymentInitiated(OutputSchema):
     payment_id: PaymentID
     payment_form_url: HttpUrl | None = Field(
-        None,
+        default=None,
         description="Link to external site that holds the payment submission form."
         "None if no prompt step is required (e.g. pre-selected credit card)",
     )

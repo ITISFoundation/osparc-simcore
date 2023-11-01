@@ -16,16 +16,12 @@ from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
-from simcore_service_payments.models.db import PaymentsMethodsDB
-from simcore_service_payments.models.payments_gateway import (
-    GetPaymentMethod,
-    InitPayment,
-    InitPaymentMethod,
-)
 
 from ..._constants import PAG, PGDB
+from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
+from ...models.db import PaymentsMethodsDB
+from ...models.payments_gateway import GetPaymentMethod, InitPayment, InitPaymentMethod
 from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)

@@ -15,12 +15,9 @@ from servicelib.rabbitmq import RPCRouter
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_payments.core.errors import (
-    PaymentAlreadyAckedError,
-    PaymentNotFoundError,
-)
 
 from ..._constants import PAG, PGDB
+from ...core.errors import PaymentAlreadyAckedError, PaymentNotFoundError
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.payments_gateway import InitPayment, PaymentInitiated
 from ...services.payments_gateway import PaymentsGatewayApi
