@@ -1,3 +1,9 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import datetime
 from decimal import Decimal
 from typing import AsyncGenerator, Callable
@@ -13,9 +19,6 @@ from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
-
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 
 
 async def test_product_webserver(
