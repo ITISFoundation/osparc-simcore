@@ -5,6 +5,7 @@ from typing import Annotated
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
@@ -67,9 +68,7 @@ def get_webserver_session(
     Lifetime of AuthSession wrapper is one request because it needs different session cookies
     Lifetime of embedded client is attached to the app lifetime
     """
-    product_header: dict[str, str] = {
-        "X-Simcore-Products-Name": f"{identity.product_name}"
-    }
+    product_header: dict[str, str] = {X_PRODUCT_NAME_HEADER: f"{identity.product_name}"}
     session = AuthSession.create(app, session_cookies, product_header)
     assert isinstance(session, AuthSession)  # nosec
     return session

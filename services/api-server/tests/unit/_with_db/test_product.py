@@ -18,14 +18,14 @@ from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 async def test_product_webserver(
     client: httpx.AsyncClient,
     mocked_webserver_service_api_base: respx.MockRouter,
-    fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
     faker: Faker,
 ) -> None:
     assert client
 
     keys: dict[int, ApiKeyInDB] = {}
     wallet_id: int = faker.pyint(min_value=1)
-    async for key in fake_api_keys(2):
+    async for key in create_fake_api_keys(2):
         wallet_id += faker.pyint(min_value=1)
         keys[wallet_id] = key
 
@@ -72,11 +72,11 @@ async def test_product_webserver(
 async def test_product_catalog(
     client: httpx.AsyncClient,
     mocked_catalog_service_api_base: respx.MockRouter,
-    fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
 ) -> None:
     assert client
 
-    keys: list[ApiKeyInDB] = [key async for key in fake_api_keys(2)]
+    keys: list[ApiKeyInDB] = [key async for key in create_fake_api_keys(2)]
     assert len({key.product_name for key in keys}) == 2
 
     def _get_service_side_effect(request: httpx.Request, **kwargs):

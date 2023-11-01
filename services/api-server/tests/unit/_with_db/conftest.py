@@ -177,7 +177,7 @@ async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
 
 
 @pytest.fixture
-async def user_id(
+async def create_user_ids(
     connection: SAConnection,
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
     async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
@@ -205,7 +205,7 @@ async def user_id(
 
 
 @pytest.fixture
-async def product_name(
+async def create_product_names(
     connection: SAConnection,
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str, None]], None]:
     async def _generate_product_names(
@@ -235,14 +235,14 @@ async def product_name(
 
 
 @pytest.fixture
-async def fake_api_keys(
+async def create_fake_api_keys(
     connection: SAConnection,
-    user_id: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
-    product_name: Callable[[PositiveInt], AsyncGenerator[str, None]],
+    create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
+    create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
     async def _generate_fake_api_key(n: PositiveInt):
-        products = product_name(n)
-        users = user_id(n)
+        users = create_user_ids(n)
+        products = create_product_names(n)
         for _ in range(n):
             product = await anext(products)
             user = await anext(users)
@@ -265,9 +265,9 @@ async def fake_api_keys(
 
 @pytest.fixture
 async def auth(
-    fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
-    async for key in fake_api_keys(1):
+    async for key in create_fake_api_keys(1):
         return httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value())
     assert False, "Did not generate authentication"
