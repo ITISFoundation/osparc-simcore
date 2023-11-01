@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import NamedTuple
 from unittest.mock import Mock
@@ -24,6 +24,7 @@ from pytest_simcore.helpers.rawdata_fakers import random_payment_method_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
@@ -63,6 +64,13 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
 @pytest.fixture
 def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
     disable_rabbitmq_and_rpc_setup()
+
+
+@pytest.fixture
+async def rpc_client(
+    faker: Faker, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client(f"web-server-client-{faker.word()}")
 
 
 #

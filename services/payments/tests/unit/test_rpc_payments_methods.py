@@ -4,10 +4,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Awaitable, Callable
 
 import pytest
-from arrow import utcnow
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import (
@@ -29,6 +27,8 @@ from simcore_service_payments.models.db import (
     InitPromptAckFlowState,
     PaymentTransactionState,
 )
+from simcore_service_payments.models.schemas.acknowledgements import AckPaymentMethod
+from simcore_service_payments.services.payments_methods import create_payment_method
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -67,7 +67,7 @@ def app_environment(
 async def test_webserver_init_and_cancel_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
     payments_clean_db: None,
@@ -75,8 +75,6 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
     assert app
     user_id = faker.pyint()
     wallet_id = faker.pyint()
-
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     initiated = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -115,7 +113,7 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
 async def test_webserver_crud_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
     payments_clean_db: None,
@@ -123,8 +121,6 @@ async def test_webserver_crud_payment_method_workflow(
     assert app
     user_id = faker.pyint()
     wallet_id = faker.pyint()
-
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -196,7 +192,7 @@ async def test_webserver_crud_payment_method_workflow(
 async def test_webserver_pay_with_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
     payments_clean_db: None,
@@ -205,28 +201,19 @@ async def test_webserver_pay_with_payment_method_workflow(
     user_id = faker.pyint()
     wallet_id = faker.pyint()
 
-    # Faking Payment method ----
-    payment_method_id = faker.uuid4()
-    repo = PaymentsMethodsRepo(app.state.engine)
-    await repo.insert_init_payment_method(
-        payment_method_id,
+    # faking Payment method
+    created = await create_payment_method(
+        repo=PaymentsMethodsRepo(app.state.engine),
+        payment_method_id=faker.uuid4(),
         user_id=user_id,
         wallet_id=wallet_id,
-        initiated_at=utcnow().datetime,
+        ack=AckPaymentMethod(success=True, message="Faked ACK"),
     )
-    await repo.update_ack_payment_method(
-        payment_method_id,
-        completion_state=InitPromptAckFlowState.SUCCESS,
-        state_message="FAKED ACK",
-    )
-    # -----
-
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     payment_inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_payment_with_payment_method"),
-        payment_method_id=payment_method_id,
+        payment_method_id=created.payment_method_id,
         amount_dollars=faker.pyint(),
         target_credits=faker.pyint(),
         product_name=faker.word(),
