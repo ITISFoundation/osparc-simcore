@@ -11,9 +11,8 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-
-from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
+from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -88,7 +87,7 @@ async def test_successful_one_time_payment_workflow(
     ), "cannot run against external because we ACK here"
 
     mock_on_payment_completed = mocker.patch(
-        "simcore_service_payments.api.rest._acknowledgements.on_payment_completed",
+        "simcore_service_payments.api.rest._acknowledgements.payments.on_payment_completed",
         autospec=True,
     )
 
