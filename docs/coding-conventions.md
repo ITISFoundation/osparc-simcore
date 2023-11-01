@@ -50,7 +50,8 @@ def something() -> Something:
   return Something("nice")
 
 @pytest.fixture
-def create_something() -> Callable:
+def create_something() -> Callable[..., Something]:
+
   def _create(*args, **kwargs):
     # ...
   return _create
