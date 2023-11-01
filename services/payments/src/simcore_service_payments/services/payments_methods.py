@@ -1,3 +1,20 @@
+""" This service just keeps a reference of the payment method `payment_method_id`
+and all the details are stored externaly.
+
+The creation of this resource can use any of these two workflows:
+1. init-prompt-ack workflow
+    - init_creation_of_payment_method
+    - cancel_creation_of_payment_method (optional)
+    - acknowledge_creation_of_payment_method
+2. direct creation
+    - create_payment_method
+
+This resource can also be read or deleted using
+- list_payments_methods
+- get_payment_method
+- delete_payment_method
+
+"""
 import logging
 
 import arrow
@@ -90,7 +107,7 @@ async def acknowledge_creation_of_payment_method(
     payment_method_id: PaymentMethodID,
     ack: AckPaymentMethod,
 ) -> PaymentsMethodsDB:
-    payment_method: PaymentsMethodsDB = await repo.update_ack_payment_method(
+    return await repo.update_ack_payment_method(
         payment_method_id=payment_method_id,
         completion_state=(
             InitPromptAckFlowState.SUCCESS
@@ -99,7 +116,6 @@ async def acknowledge_creation_of_payment_method(
         ),
         state_message=ack.message,
     )
-    return payment_method
 
 
 async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
@@ -109,6 +125,26 @@ async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
 
     _logger.debug(
         "Notify front-end of payment -> sio (SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT) "
+    )
+
+
+async def create_payment_method(
+    repo: PaymentsMethodsRepo,
+    *,
+    payment_method_id: PaymentMethodID,
+    user_id: UserID,
+    wallet_id: WalletID,
+    ack: AckPaymentMethod,
+) -> PaymentsMethodsDB:
+    """Direct creation of payment-method"""
+    return await repo.insert_payment_method(
+        payment_method_id=payment_method_id,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        completion_state=InitPromptAckFlowState.SUCCESS
+        if ack.success
+        else InitPromptAckFlowState.FAILED,
+        state_message=ack.message,
     )
 
 
