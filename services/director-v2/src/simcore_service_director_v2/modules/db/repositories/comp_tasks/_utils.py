@@ -45,7 +45,7 @@ from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
 )
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 
-from .....core.errors import ClustersKeeperNotAvailableError
+from .....core.errors import ClustersKeeperNotAvailableError, ConfigurationError
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.comp_scheduler import COMPLETED_STATES
@@ -264,28 +264,41 @@ async def _update_project_node_resources_from_hardware_info(
         selected_ec2_instance_type = next(
             iter(filter(_by_type_name, unordered_list_ec2_instance_types))
         )
+
         # now update the project node required resources
         # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
         # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
         node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
-        assert DEFAULT_SINGLE_SERVICE_NAME in node_resources  # nosec
-        image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
-        image_resources.resources["CPU"].set_value(
-            float(selected_ec2_instance_type.cpus)
-        )
-        image_resources.resources["RAM"].set_value(
-            selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
-        )
+        if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
+            image_resources: ImageResources = node_resources[
+                DEFAULT_SINGLE_SERVICE_NAME
+            ]
+            image_resources.resources["CPU"].set_value(
+                float(selected_ec2_instance_type.cpus)
+            )
+            image_resources.resources["RAM"].set_value(
+                selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
+            )
 
-        await project_nodes_repo.update(
-            connection,
-            node_id=node_id,
-            required_resources=ServiceResourcesDictHelpers.create_jsonable(
-                node_resources
-            ),
+            await project_nodes_repo.update(
+                connection,
+                node_id=node_id,
+                required_resources=ServiceResourcesDictHelpers.create_jsonable(
+                    node_resources
+                ),
+            )
+        else:
+            _logger.warning(
+                "Services resource override not implemented yet for multi-container services!!!"
+            )
+    except StopIteration as exc:
+        msg = (
+            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
+            " TIP: adjust product configuration"
         )
+        raise ConfigurationError(msg) from exc
     except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc
 

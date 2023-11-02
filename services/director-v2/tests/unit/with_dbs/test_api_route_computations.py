@@ -12,12 +12,14 @@ import urllib.parse
 from pathlib import Path
 from random import choice
 from typing import Any, Awaitable, Callable, Iterator
+from unittest import mock
 
 import httpx
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
     ComputationGet,
@@ -40,7 +42,7 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -49,6 +51,7 @@ from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.utils.computations import to_node_class
 from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -243,8 +246,29 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 @pytest.fixture
+def default_pricing_plan() -> ServicePricingPlanGet:
+    return ServicePricingPlanGet(
+        **ServicePricingPlanGet.Config.schema_extra["examples"][0]
+    )
+
+
+@pytest.fixture
+def default_pricing_plan_aws_ec2_type(
+    default_pricing_plan: ServicePricingPlanGet,
+) -> str | None:
+    for p in default_pricing_plan.pricing_units:
+        if p.default:
+            if p.specific_info.aws_ec2_instances:
+                return p.specific_info.aws_ec2_instances[0]
+            return None
+    pytest.fail("no default pricing plan defined!")
+    msg = "make pylint happy by raising here"
+    raise RuntimeError(msg)
+
+
+@pytest.fixture
 def mocked_resource_usage_tracker_service_fcts(
-    minimal_app: FastAPI,
+    minimal_app: FastAPI, default_pricing_plan: ServicePricingPlanGet
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_default_pricing_plan(
         request, service_key: str, service_version: str
@@ -255,13 +279,7 @@ def mocked_resource_usage_tracker_service_fcts(
             # NOTE: there are typically no frontend services that have pricing plans
             return httpx.Response(status_code=404)
         return httpx.Response(
-            200,
-            json=jsonable_encoder(
-                ServicePricingPlanGet(
-                    **ServicePricingPlanGet.Config.schema_extra["examples"][0]
-                ),
-                by_alias=True,
-            ),
+            200, json=jsonable_encoder(default_pricing_plan, by_alias=True)
         )
 
     # pylint: disable=not-context-manager
@@ -360,7 +378,120 @@ def wallet_info(faker: Faker) -> WalletInfo:
     return WalletInfo(wallet_id=faker.pyint(), wallet_name=faker.name())
 
 
+@pytest.fixture
+def mocked_clusters_keeper_service_get_instance_type_details(
+    mocker: MockerFixture, default_pricing_plan_aws_ec2_type: str
+) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.db.repositories.comp_tasks._utils.get_instance_type_details",
+        return_value=[
+            EC2InstanceType(
+                name=default_pricing_plan_aws_ec2_type,
+                cpus=4,
+                ram=parse_obj_as(ByteSize, "2MiB"),
+            )
+        ],
+    )
+
+
+@pytest.fixture
+def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
+    mocker: MockerFixture, faker: Faker
+) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.db.repositories.comp_tasks._utils.get_instance_type_details",
+        return_value=[
+            EC2InstanceType(
+                name=faker.pystr(),
+                cpus=4,
+                ram=parse_obj_as(ByteSize, "2MiB"),
+            )
+        ],
+    )
+
+
 async def test_create_computation_with_wallet(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
+    mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+    wallet_info: WalletInfo,
+):
+    user = registered_user()
+
+    proj = await project(
+        user,
+        project_nodes_overrides={
+            "required_resources": ServiceResourcesDictHelpers.Config.schema_extra[
+                "examples"
+            ][0]
+        },
+        workbench=fake_workbench_without_outputs,
+    )
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                product_name=product_name,
+                wallet_info=wallet_info,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    mocked_clusters_keeper_service_get_instance_type_details.assert_called()
+    assert mocked_resource_usage_tracker_service_fcts.calls.call_count == len(
+        [
+            v
+            for v in proj.workbench.values()
+            if to_node_class(v.key) != NodeClass.FRONTEND
+        ]
+    )
+
+
+async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
+    mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name: mock.Mock,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+    wallet_info: WalletInfo,
+):
+    user = registered_user()
+    proj = await project(
+        user,
+        workbench=fake_workbench_without_outputs,
+    )
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                product_name=product_name,
+                wallet_info=wallet_info,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name.assert_called_once()
+
+
+async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
     mocked_catalog_service_fcts: respx.MockRouter,
@@ -386,7 +517,7 @@ async def test_create_computation_with_wallet(
             )
         ),
     )
-    assert response.status_code == status.HTTP_201_CREATED, response.text
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, response.text
 
 
 async def test_start_computation_without_product_fails(
