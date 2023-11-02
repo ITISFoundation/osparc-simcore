@@ -9,11 +9,13 @@ import datetime
 import json
 import re
 import urllib.parse
+from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from random import choice
-from typing import Any, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 
+import aiopg.sa
 import httpx
 import pytest
 import respx
@@ -32,22 +34,25 @@ from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceDockerData
 from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, ByteSize, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
@@ -105,16 +110,15 @@ def fake_service_extras() -> ServiceExtras:
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    service_resources = parse_obj_as(
+    return parse_obj_as(
         ServiceResourcesDict,
         ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
     )
-    return service_resources
 
 
 @pytest.fixture
 def fake_service_labels() -> dict[str, Any]:
-    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])
+    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])  # noqa: S311
 
 
 @pytest.fixture
@@ -377,16 +381,29 @@ def wallet_info(faker: Faker) -> WalletInfo:
 
 
 @pytest.fixture
+def fake_ec2_cpus() -> PositiveInt:
+    return 4
+
+
+@pytest.fixture
+def fake_ec2_ram() -> ByteSize:
+    return parse_obj_as(ByteSize, "4GiB")
+
+
+@pytest.fixture
 def mocked_clusters_keeper_service_get_instance_type_details(
-    mocker: MockerFixture, default_pricing_plan_aws_ec2_type: str
+    mocker: MockerFixture,
+    default_pricing_plan_aws_ec2_type: str,
+    fake_ec2_cpus: PositiveInt,
+    fake_ec2_ram: ByteSize,
 ) -> mock.Mock:
     return mocker.patch(
         "simcore_service_director_v2.modules.db.repositories.comp_tasks._utils.get_instance_type_details",
         return_value=[
             EC2InstanceType(
                 name=default_pricing_plan_aws_ec2_type,
-                cpus=4,
-                ram=parse_obj_as(ByteSize, "2MiB"),
+                cpus=fake_ec2_cpus,
+                ram=fake_ec2_ram,
             )
         ],
     )
@@ -394,15 +411,18 @@ def mocked_clusters_keeper_service_get_instance_type_details(
 
 @pytest.fixture
 def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
-    mocker: MockerFixture, faker: Faker
+    mocker: MockerFixture,
+    faker: Faker,
+    fake_ec2_cpus: PositiveInt,
+    fake_ec2_ram: ByteSize,
 ) -> mock.Mock:
     return mocker.patch(
         "simcore_service_director_v2.modules.db.repositories.comp_tasks._utils.get_instance_type_details",
         return_value=[
             EC2InstanceType(
                 name=faker.pystr(),
-                cpus=4,
-                ram=parse_obj_as(ByteSize, "2MiB"),
+                cpus=fake_ec2_cpus,
+                ram=fake_ec2_ram,
             )
         ],
     )
@@ -427,7 +447,13 @@ async def test_create_computation_with_wallet(
     wallet_info: WalletInfo,
     project_nodes_overrides: dict[str, Any],
     default_pricing_plan_aws_ec2_type: str | None,
+    aiopg_engine: aiopg.sa.Engine,
+    fake_ec2_cpus: PositiveInt,
+    fake_ec2_ram: ByteSize,
 ):
+    # In billable product a wallet is passed, with a selected pricing plan
+    # the pricing plan contains information about the hardware that should be used
+    # this will then override the original service resources
     user = registered_user()
 
     proj = await project(
@@ -457,6 +483,46 @@ async def test_create_computation_with_wallet(
                 if to_node_class(v.key) != NodeClass.FRONTEND
             ]
         )
+        # check the project nodes were really overriden now
+        async with aiopg_engine.acquire() as connection:
+            project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
+            for node in await project_nodes_repo.list(connection):
+                if (
+                    to_node_class(proj.workbench[NodeIDStr(f"{node.node_id}")].key)
+                    != NodeClass.FRONTEND
+                ):
+                    assert node.required_resources
+                    if DEFAULT_SINGLE_SERVICE_NAME in node.required_resources:
+                        assert node.required_resources[DEFAULT_SINGLE_SERVICE_NAME][
+                            "resources"
+                        ] == {
+                            "CPU": {
+                                "limit": fake_ec2_cpus - 0.1,
+                                "reservation": fake_ec2_cpus - 0.1,
+                            },
+                            "RAM": {
+                                "limit": fake_ec2_ram - 1024**3,
+                                "reservation": fake_ec2_ram - 1024**3,
+                            },
+                        }
+                    elif "s4l-core" in node.required_resources:
+                        # multi-container service, currently not supported
+                        # hard-coded sim4life
+                        assert "s4l-core" in node.required_resources
+                        assert node.required_resources["s4l-core"]["resources"] == {
+                            "CPU": {"limit": 4.0, "reservation": 0.1},
+                            "RAM": {"limit": 17179869184, "reservation": 536870912},
+                            "VRAM": {"limit": 1, "reservation": 1},
+                        }
+                    else:
+                        # multi-container service, currently not supported
+                        # hard-coded jupyterlab
+                        assert "jupyter-lab" in node.required_resources
+                        assert node.required_resources["jupyter-lab"]["resources"] == {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {"limit": 2147483648, "reservation": 2147483648},
+                        }
+
     else:
         mocked_clusters_keeper_service_get_instance_type_details.assert_not_called()
 

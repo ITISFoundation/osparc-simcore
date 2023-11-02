@@ -232,6 +232,7 @@ async def _get_pricing_and_hardware_infos(
 
 
 _RAM_SAFE_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "1GiB")
+_CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
 async def _update_project_node_resources_from_hardware_info(
@@ -276,7 +277,7 @@ async def _update_project_node_resources_from_hardware_info(
                 DEFAULT_SINGLE_SERVICE_NAME
             ]
             image_resources.resources["CPU"].set_value(
-                float(selected_ec2_instance_type.cpus)
+                float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
             )
             image_resources.resources["RAM"].set_value(
                 selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
