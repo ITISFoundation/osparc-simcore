@@ -7,8 +7,11 @@ from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_payments import PAYMENTS_RPC_NAMESPACE
-from models_library.api_schemas_webserver.wallets import PaymentID, WalletPaymentCreated
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.api_schemas_webserver.wallets import (
+    PaymentID,
+    WalletPaymentInitiated,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
@@ -58,7 +61,7 @@ async def init_payment(
     user_name: str,
     user_email: str,
     comment: str | None = None,
-) -> WalletPaymentCreated:
+) -> WalletPaymentInitiated:
     rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
     # NOTE: remote errors are aio_pika.MessageProcessError
@@ -75,7 +78,7 @@ async def init_payment(
         user_email=user_email,
         comment=comment,
     )
-    assert isinstance(result, WalletPaymentCreated)  # nosec
+    assert isinstance(result, WalletPaymentInitiated)  # nosec
     return result
 
 

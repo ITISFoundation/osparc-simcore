@@ -14,8 +14,8 @@ from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
-from ..dependencies.application import get_product_name, get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED

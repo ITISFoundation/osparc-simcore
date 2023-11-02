@@ -10,7 +10,7 @@ from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
-    PaymentMethodInit,
+    PaymentMethodInitiated,
     PaymentMethodTransaction,
 )
 from models_library.products import ProductName
@@ -70,7 +70,7 @@ async def init_creation_of_wallet_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
     product_name: ProductName,
-) -> PaymentMethodInit:
+) -> PaymentMethodInitiated:
     """
 
     Raises:
@@ -107,7 +107,7 @@ async def init_creation_of_wallet_payment_method(
         initiated_at=initiated_at,
     )
 
-    return PaymentMethodInit(
+    return PaymentMethodInitiated(
         wallet_id=wallet_id,
         payment_method_id=payment_method_id,
         payment_method_form_url=f"{form_link}",

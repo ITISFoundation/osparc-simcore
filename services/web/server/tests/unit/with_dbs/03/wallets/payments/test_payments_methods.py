@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodGet,
     PaymentMethodID,
-    PaymentMethodInit,
+    PaymentMethodInitiated,
     WalletGet,
 )
 from models_library.wallets import WalletID
@@ -54,7 +54,7 @@ async def test_payment_method_worfklow(
     )
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
-    inited = PaymentMethodInit.parse_obj(data)
+    inited = PaymentMethodInitiated.parse_obj(data)
 
     assert inited.payment_method_id
     assert inited.payment_method_form_url.query
@@ -122,7 +122,7 @@ async def test_init_and_cancel_payment_method(
     )
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
-    inited = PaymentMethodInit.parse_obj(data)
+    inited = PaymentMethodInitiated.parse_obj(data)
 
     # cancel Create
     response = await client.post(
@@ -146,7 +146,7 @@ async def _add_payment_method(
     )
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
-    inited = PaymentMethodInit.parse_obj(data)
+    inited = PaymentMethodInitiated.parse_obj(data)
     await _ack_creation_of_wallet_payment_method(
         client.app,
         payment_method_id=inited.payment_method_id,

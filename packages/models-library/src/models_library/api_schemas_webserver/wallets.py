@@ -59,10 +59,12 @@ class CreateWalletPayment(InputSchema):
     comment: str = FieldNotRequired(max_length=100)
 
 
-class WalletPaymentCreated(OutputSchema):
+class WalletPaymentInitiated(OutputSchema):
     payment_id: PaymentID
-    payment_form_url: HttpUrl = Field(
-        ..., description="Link to external site that holds the payment submission form"
+    payment_form_url: HttpUrl | None = Field(
+        default=None,
+        description="Link to external site that holds the payment submission form."
+        "None if no prompt step is required (e.g. pre-selected credit card)",
     )
 
 
@@ -82,7 +84,7 @@ class PaymentTransaction(OutputSchema):
     invoice_url: HttpUrl = FieldNotRequired()
 
 
-class PaymentMethodInit(OutputSchema):
+class PaymentMethodInitiated(OutputSchema):
     wallet_id: WalletID
     payment_method_id: PaymentMethodID
     payment_method_form_url: HttpUrl = Field(
