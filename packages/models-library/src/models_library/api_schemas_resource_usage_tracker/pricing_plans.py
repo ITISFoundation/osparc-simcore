@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Any, ClassVar
 
 from models_library.resource_tracker import (
+    HardwareInfo,
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitCostId,
@@ -18,7 +19,7 @@ class PricingUnitGet(BaseModel):
     current_cost_per_unit: Decimal
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
-    specific_info: dict
+    specific_info: HardwareInfo
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -30,7 +31,7 @@ class PricingUnitGet(BaseModel):
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
-                    "specific_info": {},
+                    "specific_info": HardwareInfo.Config.schema_extra["examples"][0],
                 }
             ]
         }

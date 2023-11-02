@@ -246,7 +246,7 @@ async def _get_default_pricing_and_hardware_info(
                 service_pricing_plan_get.pricing_plan_id,
                 unit.pricing_unit_id,
                 unit.current_cost_per_unit_id,
-                unit.specific_info["aws_ec2_instances"],
+                unit.specific_info.aws_ec2_instances,
             )
 
     raise DefaultPricingUnitNotFoundError(
