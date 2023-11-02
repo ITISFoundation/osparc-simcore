@@ -189,7 +189,8 @@ async def _get_pricing_and_hardware_infos(
     node_key: ServiceKey,
     node_version: ServiceVersion,
 ) -> tuple[PricingInfo | None, HardwareInfo]:
-    if not is_wallet:
+    if not is_wallet or (to_node_class(node_key) == NodeClass.FRONTEND):
+        # NOTE: frontend services have no pricing plans, therefore no need to call RUT
         return None, HardwareInfo(aws_ec2_instances=[])
     project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
     output = await project_nodes_repo.get_project_node_pricing_unit_id(
