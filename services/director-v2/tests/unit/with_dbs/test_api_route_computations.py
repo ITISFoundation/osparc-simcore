@@ -249,7 +249,10 @@ def mocked_catalog_service_fcts_deprecated(
         yield respx_mock
 
 
-@pytest.fixture(params=ServicePricingPlanGet.Config.schema_extra["examples"])
+@pytest.fixture(
+    params=ServicePricingPlanGet.Config.schema_extra["examples"],
+    ids=["with ec2 restriction", "without"],
+)
 def default_pricing_plan(request: pytest.FixtureRequest) -> ServicePricingPlanGet:
     return ServicePricingPlanGet(**request.param)
 
@@ -292,7 +295,7 @@ def mocked_resource_usage_tracker_service_fcts(
     ) as respx_mock:
         respx_mock.get(
             re.compile(
-                r"services/(?P<service_key>simcore/services/(comp|dynamic|frontend)/[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).+"
+                r"services/(?P<service_key>simcore/services/(comp|dynamic|frontend)/[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+)/pricing-plan.+"
             ),
             name="get_service_default_pricing_plan",
         ).mock(side_effect=_mocked_service_default_pricing_plan)
@@ -527,6 +530,10 @@ async def test_create_computation_with_wallet(
         mocked_clusters_keeper_service_get_instance_type_details.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "default_pricing_plan",
+    [ServicePricingPlanGet.Config.schema_extra["examples"][0]],
+)
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
@@ -561,6 +568,10 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    "default_pricing_plan",
+    [ServicePricingPlanGet.Config.schema_extra["examples"][0]],
+)
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
