@@ -31,8 +31,9 @@ class PricingUnitGet(BaseModel):
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
-                    "specific_info": HardwareInfo.Config.schema_extra["examples"][0],
+                    "specific_info": hw_config_example,
                 }
+                for hw_config_example in HardwareInfo.Config.schema_extra["examples"]
             ]
         }
 
@@ -56,9 +57,10 @@ class ServicePricingPlanGet(BaseModel):
                     "classification": "TIER",
                     "created_at": "2023-01-11 13:11:47.293595",
                     "pricing_plan_key": "pricing-plan-sleeper",
-                    "pricing_units": [
-                        PricingUnitGet.Config.schema_extra["examples"][0]
-                    ],
+                    "pricing_units": [pricing_unit_get_example],
                 }
+                for pricing_unit_get_example in PricingUnitGet.Config.schema_extra[
+                    "examples"
+                ]
             ]
         }

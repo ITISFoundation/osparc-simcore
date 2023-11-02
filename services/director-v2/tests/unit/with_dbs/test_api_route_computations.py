@@ -245,11 +245,9 @@ def mocked_catalog_service_fcts_deprecated(
         yield respx_mock
 
 
-@pytest.fixture
-def default_pricing_plan() -> ServicePricingPlanGet:
-    return ServicePricingPlanGet(
-        **ServicePricingPlanGet.Config.schema_extra["examples"][0]
-    )
+@pytest.fixture(params=ServicePricingPlanGet.Config.schema_extra["examples"])
+def default_pricing_plan(request: pytest.FixtureRequest) -> ServicePricingPlanGet:
+    return ServicePricingPlanGet(**request.param)
 
 
 @pytest.fixture
@@ -410,6 +408,11 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
+@pytest.fixture(params=ServiceResourcesDictHelpers.Config.schema_extra["examples"])
+def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
+    return request.param
+
+
 async def test_create_computation_with_wallet(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
@@ -422,16 +425,14 @@ async def test_create_computation_with_wallet(
     project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     wallet_info: WalletInfo,
+    project_nodes_overrides: dict[str, Any],
+    default_pricing_plan_aws_ec2_type: str | None,
 ):
     user = registered_user()
 
     proj = await project(
         user,
-        project_nodes_overrides={
-            "required_resources": ServiceResourcesDictHelpers.Config.schema_extra[
-                "examples"
-            ][0]
-        },
+        project_nodes_overrides={"required_resources": project_nodes_overrides},
         workbench=fake_workbench_without_outputs,
     )
     create_computation_url = httpx.URL("/v2/computations")
@@ -447,14 +448,17 @@ async def test_create_computation_with_wallet(
         ),
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
-    mocked_clusters_keeper_service_get_instance_type_details.assert_called()
-    assert mocked_resource_usage_tracker_service_fcts.calls.call_count == len(
-        [
-            v
-            for v in proj.workbench.values()
-            if to_node_class(v.key) != NodeClass.FRONTEND
-        ]
-    )
+    if default_pricing_plan_aws_ec2_type:
+        mocked_clusters_keeper_service_get_instance_type_details.assert_called()
+        assert mocked_resource_usage_tracker_service_fcts.calls.call_count == len(
+            [
+                v
+                for v in proj.workbench.values()
+                if to_node_class(v.key) != NodeClass.FRONTEND
+            ]
+        )
+    else:
+        mocked_clusters_keeper_service_get_instance_type_details.assert_not_called()
 
 
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
