@@ -20,11 +20,11 @@ attrs==21.4.0
     #   jschema-to-python
     #   jsonschema
     #   sarif-om
-aws-sam-translator==1.74.0
+aws-sam-translator==1.79.0
     # via cfn-lint
-aws-xray-sdk==2.12.0
+aws-xray-sdk==2.12.1
     # via moto
-blinker==1.6.2
+blinker==1.7.0
     # via flask
 boto3==1.24.59
     # via
@@ -45,9 +45,9 @@ certifi==2023.7.22
     #   httpcore
     #   httpx
     #   requests
-cffi==1.15.1
+cffi==1.16.0
     # via cryptography
-cfn-lint==0.79.10
+cfn-lint==0.83.1
     # via moto
 charset-normalizer==3.0.1
     # via
@@ -57,17 +57,17 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.3.1
+coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==41.0.3
+cryptography==41.0.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
     #   python-jose
     #   sshpubkeys
-deepdiff==6.5.0
+deepdiff==6.6.1
     # via -r requirements/_test.in
 docker==6.1.3
     # via
@@ -80,11 +80,11 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.3
     # via pytest
-faker==19.6.1
+faker==19.13.0
     # via -r requirements/_test.in
-fakeredis==2.18.1
+fakeredis==2.20.0
     # via -r requirements/_test.in
-flask==2.3.3
+flask==3.0.0
     # via
     #   flask-cors
     #   moto
@@ -155,11 +155,11 @@ markupsafe==2.1.3
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.2.2
+moto==4.2.6
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-networkx==3.1
+networkx==3.2.1
     # via cfn-lint
 openapi-schema-validator==0.2.3
     # via openapi-spec-validator
@@ -184,7 +184,7 @@ psutil==5.9.5
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-py-partiql-parser==0.3.6
+py-partiql-parser==0.4.0
     # via moto
 pyasn1==0.5.0
     # via
@@ -203,7 +203,7 @@ pyrsistent==0.19.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -216,7 +216,7 @@ pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.8
     # via -r requirements/_test.in
-pytest-mock==3.11.1
+pytest-mock==3.12.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -229,9 +229,7 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
     # via -r requirements/_test.in
 python-jose==3.3.0
-    # via
-    #   moto
-    #   python-jose
+    # via moto
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -245,7 +243,7 @@ redis==4.5.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-regex==2023.8.8
+regex==2023.10.3
     # via cfn-lint
 requests==2.31.0
     # via
@@ -292,7 +290,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-types-pyyaml==6.0.12.11
+types-pyyaml==6.0.12.12
     # via responses
 typing-extensions==4.5.0
     # via
@@ -307,9 +305,9 @@ urllib3==1.26.16
     #   docker
     #   requests
     #   responses
-websocket-client==1.6.3
+websocket-client==1.6.4
     # via docker
-werkzeug==2.3.7
+werkzeug==3.0.1
     # via
     #   flask
     #   moto
