@@ -97,7 +97,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
         wallet.addListener("changeCreditsAvailable", () => this.__updateCredits());
       }
     },
-    // Fix me - Sometimes it doesn't work and it bring the credits indicator into a failed state
+    // Note - Sometimes it doesn't work and it bring the credits indicator into a failed state
     // __animate: function() {
     //   const label = this.getChildControl("label");
     //   osparc.utils.Utils.animateUsage(label.getContentElement().getDomElement());
