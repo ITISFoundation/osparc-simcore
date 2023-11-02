@@ -30,11 +30,9 @@ qx.Class.define("osparc.product.tours.Utils", {
 
     // it returns a promise
     getTours: function() {
-      if (osparc.utils.Utils.isDevelEnv()) {
-        const pName = osparc.product.Utils.getProductName();
-        if (Object.keys(this.TOURS).includes(pName)) {
-          return this.TOURS[pName].fetchTours();
-        }
+      const pName = osparc.product.Utils.getProductName();
+      if (Object.keys(this.TOURS).includes(pName)) {
+        return this.TOURS[pName].fetchTours();
       }
       return null;
     }
