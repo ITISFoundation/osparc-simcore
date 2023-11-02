@@ -71,7 +71,7 @@ export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERS
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
-export DYNAMIC_SCHDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
+export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 

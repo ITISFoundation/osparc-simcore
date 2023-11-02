@@ -21,7 +21,7 @@ PHONY: .init-swarm
 	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip))
 
 
-.PHONY: test-dask-schduler-deploy
+.PHONY: test-dask-scheduler-deploy
 deploy-dask-stack: .init-swarm ## deploy the dask stack for local testing
 	# using local/dask-sidecar:production images
 	@DOCKER_IMAGE_TAG=production \
