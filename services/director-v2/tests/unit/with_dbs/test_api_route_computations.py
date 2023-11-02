@@ -23,6 +23,9 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationGet,
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    ServicePricingPlanGet,
+)
 from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
@@ -246,10 +249,19 @@ def mocked_resource_usage_tracker_service_fcts(
     def _mocked_service_default_pricing_plan(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
+        # RUT only returns values if they are in the table resource_tracker_pricing_plan_to_service
+        # otherwise it returns 404s
         if "frontend" in service_key:
+            # NOTE: there are typically no frontend services that have pricing plans
             return httpx.Response(status_code=404)
         return httpx.Response(
-            200, json=jsonable_encoder(fake_service_resources, by_alias=True)
+            200,
+            json=jsonable_encoder(
+                ServicePricingPlanGet(
+                    **ServicePricingPlanGet.Config.schema_extra["examples"][0]
+                ),
+                by_alias=True,
+            ),
         )
 
     # pylint: disable=not-context-manager
