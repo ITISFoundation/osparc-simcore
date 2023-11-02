@@ -205,7 +205,7 @@ async def _get_pricing_and_hardware_infos(
             product_name, pricing_plan_id, pricing_unit_id
         )
         pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-        aws_ec2_instances = pricing_unit_get.specific_info["aws_ec2_instances"]
+        aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
     else:
         (
             pricing_plan_id,
