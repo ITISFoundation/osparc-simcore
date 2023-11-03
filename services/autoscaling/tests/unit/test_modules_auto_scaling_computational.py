@@ -291,7 +291,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
 
 
 @pytest.mark.acceptance_test()
-async def test_cluster_scaling_up(  # noqa: PLR0915
+async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
