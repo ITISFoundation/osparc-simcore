@@ -1,5 +1,5 @@
 from fastapi import Request
-from servicelib.fastapi.dependencies import get_app
+from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 
 from ...core.settings import ApplicationSettings
 
@@ -11,6 +11,7 @@ def get_settings(request: Request) -> ApplicationSettings:
 
 
 assert get_app  # nosec
+assert get_reverse_url_mapper  # nosec
 
 
 __all__: tuple[str, ...] = (
