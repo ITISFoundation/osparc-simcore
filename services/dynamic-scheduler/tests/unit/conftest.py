@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 from collections.abc import Awaitable, Callable
 
 import pytest
