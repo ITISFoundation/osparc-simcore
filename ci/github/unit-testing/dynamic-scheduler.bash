@@ -10,7 +10,7 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd services/dynamic-schduler
+  pushd services/dynamic-scheduler
   make install-ci
   popd
   .venv/bin/pip list --verbose
@@ -19,13 +19,13 @@ install() {
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd services/dynamic-schduler
+  pushd services/dynamic-scheduler
   make test-ci-unit
   popd
 }
 
 typecheck() {
-  pushd services/dynamic-schduler
+  pushd services/dynamic-scheduler
   make mypy
   popd
 }
