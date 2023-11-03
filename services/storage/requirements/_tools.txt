@@ -24,9 +24,9 @@ dill==0.3.7
     # via pylint
 distlib==0.3.7
     # via virtualenv
-filelock==3.12.4
+filelock==3.13.1
     # via virtualenv
-identify==2.5.30
+identify==2.5.31
     # via pre-commit
 isort==5.12.0
     # via
@@ -40,7 +40,7 @@ mypy-extensions==1.0.0
     #   black
 nodeenv==1.8.0
     # via pre-commit
-packaging==23.1
+packaging==23.2
     # via
     #   -c requirements/_test.txt
     #   black
@@ -67,7 +67,7 @@ pyyaml==6.0.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.1.2
+ruff==0.1.3
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
@@ -89,7 +89,7 @@ virtualenv==20.24.6
     # via pre-commit
 watchdog==3.0.0
     # via -r requirements/_tools.in
-wheel==0.41.2
+wheel==0.41.3
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
