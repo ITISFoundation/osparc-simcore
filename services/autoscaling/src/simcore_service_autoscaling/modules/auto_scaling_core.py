@@ -465,7 +465,7 @@ async def _deactivate_empty_nodes(
     )
     if active_empty_nodes:
         _logger.info(
-            "The following nodes set to drain: '%s'",
+            "following nodes set to drain: '%s'",
             f"{[node.node.Description.Hostname for node in active_empty_nodes if node.node.Description]}",
         )
     return dataclasses.replace(

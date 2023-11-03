@@ -412,7 +412,63 @@ async def test_cluster_scaling_up(
 
     # now scaling down, as we deleted all the tasks
     del dask_future
+    # the worker will not be found since there is none in this testing environment, but it should not raise
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    # check the number of instances did not change and is still running
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type="r5n.4xlarge",
+        instance_state="running",
+    )
+    # now mock the call so that it triggers deactivation
+    mocked_dask_get_worker_still_has_results_in_memory = mocker.patch(
+        "simcore_service_autoscaling.modules.dask.get_worker_still_has_results_in_memory",
+        return_value=0,
+        autospec=True,
+    )
+    mocked_dask_get_worker_used_resources = mocker.patch(
+        "simcore_service_autoscaling.modules.dask.get_worker_used_resources",
+        return_value=Resources.create_as_empty(),
+        autospec=True,
+    )
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    mocked_dask_get_worker_still_has_results_in_memory.assert_called()
+    assert mocked_dask_get_worker_still_has_results_in_memory.call_count == 2
+    mocked_dask_get_worker_still_has_results_in_memory.reset_mock()
+    mocked_dask_get_worker_used_resources.assert_called()
+    assert mocked_dask_get_worker_used_resources.call_count == 2
+    mocked_dask_get_worker_used_resources.reset_mock()
+    # the node shall be set to drain, but not yet terminated
+    mock_set_node_availability.assert_called_once_with(
+        get_docker_client(initialized_app), fake_node, available=False
+    )
+    mock_set_node_availability.reset_mock()
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type="r5n.4xlarge",
+        instance_state="running",
+    )
+
+    # now the node shall be terminated
+    fake_node.Spec.Availability = Availability.drain
+    mocked_docker_remove_node = mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_node",
+        return_value=None,
+        autospec=True,
+    )
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    mocked_docker_remove_node.assert_called_once_with(mock.ANY, [fake_node], force=True)
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type="r5n.4xlarge",
+        instance_state="shutdown",
+    )
 
 
 @dataclass(frozen=True)
