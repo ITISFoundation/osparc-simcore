@@ -456,7 +456,7 @@ async def test_cluster_scaling_up(
     # now the node shall be terminated
     fake_node.Spec.Availability = Availability.drain
     mocked_docker_remove_node = mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_node",
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
         return_value=None,
         autospec=True,
     )
