@@ -22,8 +22,8 @@ def test_cli_help_and_version(cli_runner: CliRunner):
 
 
 def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
-    # simcore-service-dynamic-scheduler echo-dotenv --auto-password
-    result = cli_runner.invoke(cli_main, "echo-dotenv --auto-password")
+    # simcore-service-dynamic-scheduler echo-dotenv
+    result = cli_runner.invoke(cli_main, "echo-dotenv")
     assert result.exit_code == os.EX_OK, result.output
 
     environs = load_dotenv(result.stdout)
