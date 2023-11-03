@@ -33,6 +33,7 @@ async def test_health(app: FastAPI):
     class TestMessage(RabbitMessageBase):
         channel_name: str = "test"
 
+        # pylint:disable=no-self-use
         def routing_key(self) -> str | None:
             return None
 
