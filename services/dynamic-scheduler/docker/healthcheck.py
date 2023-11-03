@@ -24,15 +24,12 @@ from urllib.request import urlopen
 # Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, etc)
 SC_BOOT_MODE = os.environ.get("SC_BOOT_MODE", "")
 
-# Adds a base-path if defined in environ
-SIMCORE_NODE_BASEPATH = os.environ.get("SIMCORE_NODE_BASEPATH", "")
-
 
 def is_service_healthy() -> bool:
     if "debug" in SC_BOOT_MODE.lower():
         return True
 
-    with suppress(Exception), urlopen(f"{sys.argv[1]}{SIMCORE_NODE_BASEPATH}") as f:
+    with suppress(Exception), urlopen(sys.argv[1]) as f:
         return f.getcode() == 200
     return False
 
