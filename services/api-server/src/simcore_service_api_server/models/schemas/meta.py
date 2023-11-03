@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from models_library.api_schemas__common.meta import BaseMeta
 from pydantic import AnyHttpUrl
 
@@ -7,7 +9,7 @@ class Meta(BaseMeta):
     docs_dev_url: AnyHttpUrl
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar = {
             "example": {
                 "name": "simcore_service_foo",
                 "version": "2.4.45",

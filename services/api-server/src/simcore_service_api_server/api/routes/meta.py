@@ -16,8 +16,8 @@ async def get_service_metadata(
 ):
     return Meta(
         name=__name__.split(".")[0],
-        version=API_VERSION,  # type: ignore
-        released={API_VTAG: API_VERSION},  # type: ignore
+        version=API_VERSION,
+        released={API_VTAG: API_VERSION},
         docs_url=url_for("swagger_ui_html"),
         docs_dev_url=url_for("swagger_ui_html"),
     )
