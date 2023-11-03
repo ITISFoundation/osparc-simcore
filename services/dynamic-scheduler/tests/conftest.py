@@ -6,10 +6,8 @@ from pathlib import Path
 import pytest
 import simcore_service_dynamic_scheduler
 import yaml
-from faker import Faker
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from servicelib.utils_secrets import generate_token_secret_key
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
@@ -36,21 +34,6 @@ def installed_package_dir() -> Path:
     dirpath = Path(simcore_service_dynamic_scheduler.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
-
-
-@pytest.fixture
-def secret_key() -> str:
-    return generate_token_secret_key(32)
-
-
-@pytest.fixture
-def fake_user_name(faker: Faker) -> str:
-    return faker.user_name()
-
-
-@pytest.fixture
-def fake_password(faker: Faker) -> str:
-    return faker.password(length=10)
 
 
 @pytest.fixture
