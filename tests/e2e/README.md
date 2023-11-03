@@ -20,11 +20,12 @@ docker volume prune
 Run the test
 ```bash
 /bin/bash ci/github/system-testing/e2e.bash test
-# or
+```
+To run a single toutorial
+```
 cd tests/e2e
 npm test
-npm run tutorials http://127.0.0.1:9081 --demo
-
+node tutorials/jupyterlabs.js http://127.0.0.1:9081
 ```
 
 Trying to cleanup
