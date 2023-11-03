@@ -1,12 +1,10 @@
 from typing import Any, ClassVar
 
-from models_library.basic_types import VersionStr
-from pydantic import BaseModel, HttpUrl
+from models_library.api_schemas__common.meta import BaseMeta
+from pydantic import HttpUrl
 
 
-class Meta(BaseModel):
-    name: str
-    version: VersionStr
+class Meta(BaseMeta):
     docs_url: HttpUrl
 
     class Config:
