@@ -107,7 +107,7 @@ class ResourceUsageTrackerClient:
                     service_pricing_plan_get.pricing_plan_id,
                     unit.pricing_unit_id,
                     unit.current_cost_per_unit_id,
-                    unit.specific_info["aws_ec2_instances"],
+                    unit.specific_info.aws_ec2_instances,
                 )
         raise PricingPlanUnitNotFoundError(
             "Default pricing plan and unit does not exist"
