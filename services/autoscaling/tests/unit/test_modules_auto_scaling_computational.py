@@ -293,24 +293,24 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
 
 
 @pytest.fixture
-def ec2_instance_type() -> InstanceTypeType:
-    return "m6a.12xlarge"
-
-
-@pytest.fixture
 def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
-    def _do(ec2_instance_type: InstanceTypeType) -> DaskTaskResources:
-        return DaskTaskResources(
+    def _do(ec2_instance_type: InstanceTypeType | None) -> DaskTaskResources:
+        resources = DaskTaskResources(
             {
                 "RAM": int(parse_obj_as(ByteSize, "128GiB")),
-                DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY: ec2_instance_type,
             }
         )
+        if ec2_instance_type is not None:
+            resources[DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY] = ec2_instance_type
+        return resources
 
     return _do
 
 
 @pytest.mark.acceptance_test()
+@pytest.mark.parametrize(
+    "dask_task_imposed_ec2_type, expected_ec2_type", [(None, "r5n.4xlarge")]
+)
 async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
     app_settings: ApplicationSettings,
@@ -326,14 +326,15 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
     create_dask_task_resources: Callable[..., DaskTaskResources],
-    ec2_instance_type: InstanceTypeType,
+    dask_task_imposed_ec2_type: InstanceTypeType | None,
+    expected_ec2_type: InstanceTypeType,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_task_resources = create_dask_task_resources()
+    dask_task_resources = create_dask_task_resources(dask_task_imposed_ec2_type)
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
 
@@ -347,7 +348,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="running",
     )
 
@@ -376,7 +377,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="running",
     )
     assert len(internal_dns_names) == 1
@@ -428,7 +429,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="running",
     )
 
@@ -445,7 +446,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="running",
     )
     # now mock the call so that it triggers deactivation
@@ -475,7 +476,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="running",
     )
 
@@ -498,7 +499,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="running",
     )
 
@@ -514,7 +515,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ec2_client,
         num_reservations=1,
         num_instances=1,
-        instance_type="r5n.4xlarge",
+        instance_type=expected_ec2_type,
         instance_state="terminated",
     )
 
