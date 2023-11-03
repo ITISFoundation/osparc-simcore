@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-anyio==3.7.1
+anyio==4.0.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -17,7 +17,7 @@ certifi==2023.7.22
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.2
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -38,11 +38,11 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.17.3
+httpcore==0.18.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.24.1
+httpx==0.25.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -59,7 +59,7 @@ iniconfig==2.0.0
     # via pytest
 jsonref==1.1.0
     # via -r requirements/_test.in
-packaging==23.1
+packaging==23.2
     # via
     #   -c requirements/_base.txt
     #   docker
