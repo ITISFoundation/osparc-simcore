@@ -9,7 +9,7 @@ configuration.
 
 ## To run the tests locally
 
-Setting up the test
+#### Dependencies
 
 ```bash
 /bin/bash ci/github/system-testing/e2e.bash clean_up
@@ -17,32 +17,46 @@ docker volume prune
 /bin/bash ci/github/system-testing/e2e.bash install
 ```
 
-Run the test
-```bash
-/bin/bash ci/github/system-testing/e2e.bash test
-```
-To run a single toutorial
+#### To run a single tutorial in the terminal
 ```
 cd tests/e2e
-npm test
-node tutorials/jupyterlabs.js http://127.0.0.1:9081
+node tutorials/sleepers.js http://127.0.0.1:9081
 ```
 
-Trying to cleanup
+#### To run the same with the debugger attached in VScode:
+- open `tests/e2e/tutorials/sleepers.js` in VSCode
+- go to `Run and Debug`
+- from the dropdown select `Debug tutorials/FILE`
+- press Play button
+
+**NOTE:** if breakpoints were added they should become active now.
+
+#### Cleanup after you are done
 ```bash
 /bin/bash ci/github/system-testing/e2e.bash clean_up
 ```
 
-## To debug the tests locally with VSCode
-Add the following configuration to your local ``launch.json``:
-```json
-{
+---
+
+## Run against a different deployment
+
+Add the following to your `.vscode/launch.json` file
+
+```js
+ {
   "type": "node",
   "request": "launch",
-  "name": "Debug tutorials/{FILE}",
+  "name": "Debug rclone_small.js @ staging.osparc.io",
   "program": "${workspaceFolder}/tests/e2e/tutorials/${fileBasename}",
   "args": [
-    "http://127.0.0.1:9081"
+    "https://DEPLYMENTADDRESS",
+    "--user",
+    "USER@E.MAIL",
+    "--pass",
+    "USER_PASSWORD",
+    "--demo",
+    "--start_timeout",
+    "200000"
   ],
   "cwd": "${workspaceFolder}/tests/e2e",
   "stopOnEntry": false,
@@ -50,8 +64,8 @@ Add the following configuration to your local ``launch.json``:
   "internalConsoleOptions": "neverOpen"
 }
 ```
-Now you can run the tests by clicking on the Play button, using that configuration. It should allow you to insert breakpoints and inspect variables.
 
+----
 
 ## Run end-to-end
 
