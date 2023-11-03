@@ -17,6 +17,7 @@ from servicelib.logging_utils import log_catch
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
+    DaskWorkerNotFoundError,
     Ec2InstanceNotFoundError,
     Ec2InvalidDnsNameError,
     Ec2TooManyInstancesError,
@@ -438,16 +439,18 @@ async def _deactivate_empty_nodes(
     active_empty_nodes: list[AssociatedInstance] = []
     active_non_empty_nodes: list[AssociatedInstance] = []
     for instance in cluster.active_nodes:
-        if (
-            await auto_scaling_mode.compute_node_used_resources(
+        try:
+            node_used_resources = await auto_scaling_mode.compute_node_used_resources(
                 app,
                 instance,
             )
-            == Resources.create_as_empty()
-        ):
-            active_empty_nodes.append(instance)
-        else:
-            active_non_empty_nodes.append(instance)
+            if node_used_resources == Resources.create_as_empty():
+                active_empty_nodes.append(instance)
+                continue
+        except DaskWorkerNotFoundError:
+            _logger.exception(
+                "EC2 node instance is not registered to dask-scheduler! TIP: Needs investigation"
+            )
 
     # drain this empty nodes
     await asyncio.gather(

@@ -406,9 +406,13 @@ async def test_cluster_scaling_up(
         instance_state="running",
     )
 
-    # check rabbit messages were sent
+    # check no rabbit messages were sent
     # NOTE: we currently have no real dask-worker here
     mock_rabbitmq_post_message.assert_not_called()
+
+    # now scaling down, as we deleted all the tasks
+    del dask_future
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
 
 
 @dataclass(frozen=True)
