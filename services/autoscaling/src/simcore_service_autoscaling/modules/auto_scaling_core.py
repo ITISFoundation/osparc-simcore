@@ -6,6 +6,7 @@ import itertools
 import logging
 from typing import cast
 
+import arrow
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -492,17 +493,14 @@ async def _find_terminateable_instances(
     terminateable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.drained_nodes:
-        # NOTE: AWS price is hourly based (e.g. same price for a machine used 2 minutes or 1 hour, so we wait until 55 minutes)
-        elapsed_time_since_launched = (
-            datetime.datetime.now(datetime.timezone.utc)
-            - instance.ec2_instance.launch_time
-        )
-        elapsed_time_since_full_hour = elapsed_time_since_launched % datetime.timedelta(
-            hours=1
+        assert instance.node.UpdatedAt  # nosec
+        node_last_updated = arrow.get(instance.node.UpdatedAt).datetime
+        elapsed_time_since_drained = (
+            datetime.datetime.now(datetime.timezone.utc) - node_last_updated
         )
         if (
-            elapsed_time_since_full_hour
-            >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+            elapsed_time_since_drained
+            > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         ):
             # let's terminate that one
             terminateable_nodes.append(instance)

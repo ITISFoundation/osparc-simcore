@@ -3,10 +3,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 
 
 import asyncio
 import base64
+import datetime
 from collections.abc import Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
@@ -288,7 +290,8 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     )
 
 
-async def test_cluster_scaling_up(
+@pytest.mark.acceptance_test()
+async def test_cluster_scaling_up(  # noqa: PLR0915
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -453,13 +456,35 @@ async def test_cluster_scaling_up(
         instance_state="running",
     )
 
-    # now the node shall be terminated
+    # we artifically set the node to drain
     fake_node.Spec.Availability = Availability.drain
+    fake_node.UpdatedAt = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    # the node will be not be terminated beforet the timeout triggers
+    assert (
+        datetime.timedelta(seconds=5)
+        < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+    )
     mocked_docker_remove_node = mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
         return_value=None,
         autospec=True,
     )
+    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    mocked_docker_remove_node.assert_not_called()
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=1,
+        instance_type="r5n.4xlarge",
+        instance_state="running",
+    )
+
+    # now changing the last update timepoint will trigger the node removal and shutdown the ec2 instance
+    fake_node.UpdatedAt = (
+        datetime.datetime.now(tz=datetime.timezone.utc)
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        - datetime.timedelta(seconds=1)
+    ).isoformat()
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_called_once_with(mock.ANY, [fake_node], force=True)
     await _assert_ec2_instances(
@@ -467,7 +492,7 @@ async def test_cluster_scaling_up(
         num_reservations=1,
         num_instances=1,
         instance_type="r5n.4xlarge",
-        instance_state="shutdown",
+        instance_state="terminated",
     )
 
 

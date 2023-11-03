@@ -4,6 +4,7 @@
 
 import asyncio
 import dataclasses
+import datetime
 import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
@@ -239,8 +240,8 @@ def create_fake_node(faker: Faker) -> Callable[..., Node]:
         default_config = {
             "ID": faker.uuid4(),
             "Version": ObjectVersion(Index=faker.pyint()),
-            "CreatedAt": faker.date_time(tzinfo=timezone.utc).isoformat(),
-            "UpdatedAt": faker.date_time(tzinfo=timezone.utc).isoformat(),
+            "CreatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "UpdatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
             "Description": NodeDescription(
                 Hostname=faker.pystr(),
                 Resources=ResourceObject(
