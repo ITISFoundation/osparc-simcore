@@ -1,4 +1,3 @@
-import logging
 from typing import cast
 
 from fastapi import FastAPI
@@ -9,8 +8,6 @@ from servicelib.rabbitmq import (
     wait_till_rabbitmq_responsive,
 )
 from settings_library.rabbit import RabbitSettings
-
-_logger = logging.getLogger(__name__)
 
 
 def setup_rabbitmq(app: FastAPI) -> None:

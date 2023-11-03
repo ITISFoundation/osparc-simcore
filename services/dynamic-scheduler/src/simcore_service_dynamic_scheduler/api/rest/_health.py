@@ -1,11 +1,6 @@
-import logging
-
 import arrow
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
-
-_logger = logging.getLogger(__name__)
-
 
 router = APIRouter()
 

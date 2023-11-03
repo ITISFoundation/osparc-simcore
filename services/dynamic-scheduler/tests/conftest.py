@@ -1,20 +1,28 @@
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
 
 import re
 from pathlib import Path
+from typing import AsyncIterator
 
 import pytest
 import simcore_service_dynamic_scheduler
 import yaml
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_service_dynamic_scheduler.core.application import create_app
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -79,3 +87,21 @@ def app_environment(
         monkeypatch,
         {**docker_compose_service_dynamic_scheduler_env_vars},
     )
+
+
+@pytest.fixture
+def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.core.application"
+    mocker.patch(f"{base_path}.setup_rabbitmq")
+    mocker.patch(f"{base_path}.setup_rpc_api_routes")
+
+
+@pytest.fixture
+async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
+    test_app = create_app()
+    async with LifespanManager(
+        test_app,
+        startup_timeout=None,  # for debugging
+        shutdown_timeout=10,
+    ):
+        yield test_app
