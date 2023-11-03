@@ -2,8 +2,10 @@ import datetime
 import logging
 from typing import Final
 
+from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
 from servicelib.utils_formatting import timedelta_as_minute_second
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import (
@@ -28,6 +30,10 @@ def get_max_resources_from_dask_task(task: DaskTask) -> Resources:
     )
 
 
+def _get_task_instance_restriction(task: DaskTask) -> InstanceTypeType | None:
+    return task.required_resources.get(DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY)
+
+
 def _compute_tasks_needed_resources(tasks: list[DaskTask]) -> Resources:
     total = Resources.create_as_empty()
     for t in tasks:
@@ -39,7 +45,20 @@ def try_assigning_task_to_node(
     pending_task: DaskTask,
     instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
-    for instance, node_assigned_tasks in instance_to_tasks:
+    filtered_list_of_instance_to_tasks = instance_to_tasks
+    task_instance_restriction = _get_task_instance_restriction(pending_task)
+    if task_instance_restriction:
+
+        def _by_instance_type(
+            instance_to_task: tuple[AssociatedInstance, list[DaskTask]]
+        ) -> bool:
+            ass_instance, _ = instance_to_task
+            return bool(ass_instance.ec2_instance.type == task_instance_restriction)
+
+        filtered_list_of_instance_to_tasks = filter(
+            _by_instance_type, instance_to_tasks
+        )
+    for instance, node_assigned_tasks in filtered_list_of_instance_to_tasks:
         instance_total_resource = utils_docker.get_node_total_resources(instance.node)
         tasks_needed_resources = _compute_tasks_needed_resources(node_assigned_tasks)
         if (
@@ -63,7 +82,22 @@ async def try_assigning_task_to_pending_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
+
+    filtered_list_of_instance_to_tasks = iter(list_of_pending_instance_to_tasks)
+    task_instance_restriction = _get_task_instance_restriction(pending_task)
+    if task_instance_restriction:
+
+        def _by_instance_type(
+            instance_to_task: tuple[EC2InstanceData, list[DaskTask]]
+        ) -> bool:
+            instance_data, _ = instance_to_task
+            return bool(instance_data.type == task_instance_restriction)
+
+        filtered_list_of_instance_to_tasks = filter(
+            _by_instance_type, list_of_pending_instance_to_tasks
+        )
+
+    for instance, instance_assigned_tasks in filtered_list_of_instance_to_tasks:
         instance_type = type_to_instance_map[instance.type]
         instance_total_resources = Resources(
             cpus=instance_type.cpus, ram=instance_type.ram
@@ -99,7 +133,21 @@ def try_assigning_task_to_instance_types(
     pending_task: DaskTask,
     list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[DaskTask]]],
 ) -> bool:
-    for instance, instance_assigned_tasks in list_of_instance_to_tasks:
+    filtered_list_of_instance_to_tasks = iter(list_of_instance_to_tasks)
+    task_instance_restriction = _get_task_instance_restriction(pending_task)
+    if task_instance_restriction:
+
+        def _by_instance_type(
+            instance_to_task: tuple[EC2InstanceType, list[DaskTask]]
+        ) -> bool:
+            instance_type, _ = instance_to_task
+            return bool(instance_type.name == task_instance_restriction)
+
+        filtered_list_of_instance_to_tasks = filter(
+            _by_instance_type, list_of_instance_to_tasks
+        )
+
+    for instance, instance_assigned_tasks in filtered_list_of_instance_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
         tasks_needed_resources = _compute_tasks_needed_resources(
             instance_assigned_tasks

@@ -309,7 +309,8 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
 
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
-    "dask_task_imposed_ec2_type, expected_ec2_type", [(None, "r5n.4xlarge")]
+    "dask_task_imposed_ec2_type, expected_ec2_type",
+    [(None, "r5n.4xlarge"), ("m6a.12xlarge", "m6a.12xlarge")],
 )
 async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
