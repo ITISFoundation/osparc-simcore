@@ -46,10 +46,10 @@ Add the following to your `.vscode/launch.json` file
  {
   "type": "node",
   "request": "launch",
-  "name": "Debug rclone_small.js @ staging.osparc.io",
+  "name": "Debug REMOTE DEPLOYMENT",
   "program": "${workspaceFolder}/tests/e2e/tutorials/${fileBasename}",
   "args": [
-    "https://DEPLYMENTADDRESS",
+    "https://REMOTE_DEPLOYMENT_ADDRESS",
     "--user",
     "USER@E.MAIL",
     "--pass",

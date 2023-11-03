@@ -162,7 +162,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug tutorials/FILE",
+      "name": "Debug tests/e2e/tutorials/{FILE}",
       "program": "${workspaceFolder}/tests/e2e/tutorials/${fileBasename}",
       "args": [
         "http://127.0.0.1:9081"
