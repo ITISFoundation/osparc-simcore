@@ -39,18 +39,15 @@ Add the following configuration to your local ``launch.json``:
 {
   "type": "node",
   "request": "launch",
-  "name": "Debug e2e tests",
-  "runtimeArgs": [
-    "--inspect-brk",
-    "${workspaceRoot}/tests/e2e/node_modules/.bin/jest",
-    "--runInBand",
-    "--colors"
+  "name": "Debug tutorials/{FILE}",
+  "program": "${workspaceFolder}/tests/e2e/tutorials/${fileBasename}",
+  "args": [
+    "http://127.0.0.1:9081"
   ],
   "cwd": "${workspaceFolder}/tests/e2e",
-  "restart": true,
+  "stopOnEntry": false,
   "console": "integratedTerminal",
-  "internalConsoleOptions": "neverOpen",
-  "port": 9229
+  "internalConsoleOptions": "neverOpen"
 }
 ```
 Now you can run the tests by clicking on the Play button, using that configuration. It should allow you to insert breakpoints and inspect variables.
