@@ -23,9 +23,7 @@ main.callback()(create_version_callback(__version__))
 
 
 @main.command()
-def echo_dotenv(
-    ctx: typer.Context, *, auto_password: bool = True, minimal: bool = True
-):
+def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
     """Generates and displays a valid environment variables file (also known as dot-envfile)
 
     Usage:
