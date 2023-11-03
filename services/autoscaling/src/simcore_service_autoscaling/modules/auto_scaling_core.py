@@ -107,7 +107,10 @@ async def _analyze_current_cluster(
 
 
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
-    await utils_docker.remove_nodes(get_docker_client(app), cluster.disconnected_nodes)
+    if cluster.disconnected_nodes:
+        await utils_docker.remove_nodes(
+            get_docker_client(app), cluster.disconnected_nodes
+        )
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
@@ -525,6 +528,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
             f"{[i.node.Description.Hostname for i in terminateable_instances if i.node.Description]}",
         )
         # since these nodes are being terminated, remove them from the swarm
+
         await utils_docker.remove_nodes(
             get_docker_client(app),
             [i.node for i in terminateable_instances],
