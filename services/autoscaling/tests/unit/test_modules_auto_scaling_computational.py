@@ -17,6 +17,7 @@ from unittest import mock
 
 import distributed
 import pytest
+from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
@@ -42,6 +43,7 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_computational import 
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
 from simcore_service_autoscaling.modules.docker import get_docker_client
 from types_aiobotocore_ec2.client import EC2Client
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 @pytest.fixture
@@ -290,6 +292,24 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     )
 
 
+@pytest.fixture
+def ec2_instance_type() -> InstanceTypeType:
+    return "m6a.12xlarge"
+
+
+@pytest.fixture
+def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
+    def _do(ec2_instance_type: InstanceTypeType) -> DaskTaskResources:
+        return DaskTaskResources(
+            {
+                "RAM": int(parse_obj_as(ByteSize, "128GiB")),
+                DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY: ec2_instance_type,
+            }
+        )
+
+    return _do
+
+
 @pytest.mark.acceptance_test()
 async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
@@ -305,13 +325,16 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_compute_node_used_resources: mock.Mock,
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
+    create_dask_task_resources: Callable[..., DaskTaskResources],
+    ec2_instance_type: InstanceTypeType,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_future = create_dask_task({"RAM": int(parse_obj_as(ByteSize, "128GiB"))})
+    dask_task_resources = create_dask_task_resources()
+    dask_future = create_dask_task(dask_task_resources)
     assert dask_future
 
     # this should trigger a scaling up as we have no nodes
