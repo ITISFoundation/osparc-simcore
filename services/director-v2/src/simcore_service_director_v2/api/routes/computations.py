@@ -49,6 +49,7 @@ from ...core.errors import (
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
+    ConfigurationError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
@@ -345,6 +346,8 @@ async def create_computation(  # noqa: PLR0913
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}"
         ) from e
+    except ConfigurationError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
 @router.get(

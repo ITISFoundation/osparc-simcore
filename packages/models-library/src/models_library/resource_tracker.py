@@ -57,7 +57,10 @@ class HardwareInfo(BaseModel):
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [{"aws_ec2_instances": ["c6a.4xlarge"]}]
+            "examples": [
+                {"aws_ec2_instances": ["c6a.4xlarge"]},
+                {"aws_ec2_instances": []},
+            ]
         }
 
 
