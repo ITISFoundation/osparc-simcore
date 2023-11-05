@@ -4,6 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
+from unittest.mock import MagicMock
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -17,6 +19,8 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletPaymentInitiated,
 )
+from models_library.basic_types import IDStr
+from models_library.emails import LowerCaseEmailStr
 from models_library.rest_pagination import Page
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
@@ -28,16 +32,51 @@ from simcore_postgres_database.models.payments_transactions import (
 )
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
+    _fake_init_creation_of_wallet_payment_method,
 )
 from simcore_service_webserver.payments._onetime_api import (
     _ack_creation_of_wallet_payment,
 )
 from simcore_service_webserver.payments.settings import PaymentsSettings
+from simcore_service_webserver.payments.settings import get_plugin_settings
 from simcore_service_webserver.payments.settings import (
     get_plugin_settings as get_payments_plugin_settings,
 )
 
 
+@pytest.fixture
+def mock_rpc_payments_service_api(
+    mocker: MockerFixture, faker: Faker, payments_transactions_clean_db: None
+) -> dict[str, MagicMock]:
+    async def _fake_init_creation_of_payment_method(
+        app,
+        wallet_id,
+        wallet_name,
+        user_id,
+        user_name,
+        user_email,
+    ) -> PaymentMethodInitiated:
+        assert parse_obj_as(IDStr, wallet_name)
+        assert parse_obj_as(IDStr, user_name)
+        assert parse_obj_as(LowerCaseEmailStr, user_email)
+
+        settings: PaymentsSettings = get_plugin_settings(app)
+        assert settings.PAYMENTS_FAKE_COMPLETION is False
+
+        return await _fake_init_creation_of_wallet_payment_method(
+            app, settings, user_id, wallet_id
+        )
+
+    return {
+        "init_creation_of_payment_method": mocker.patch(
+            "simcore_service_webserver.payments._methods_api._rpc.init_creation_of_payment_method",
+            autospec=True,
+            side_effect=_fake_init_creation_of_payment_method,
+        ),
+    }
+
+
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
 )
@@ -45,6 +84,7 @@ async def test_payment_method_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     # preamble
     assert client.app
@@ -69,6 +109,7 @@ async def test_payment_method_worfklow(
     assert inited.payment_method_id
     assert inited.payment_method_form_url.query
     assert inited.payment_method_form_url.query.endswith(inited.payment_method_id)
+    assert mock_rpc_payments_service_api["init_creation_of_payment_method"].called
 
     # Get: if I try to get the payment method here, it should fail since the flow is NOT acked!
     response = await client.get(
@@ -123,6 +164,7 @@ async def test_payment_method_worfklow(
 async def test_init_and_cancel_payment_method(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     wallet = logged_user_wallet
 
@@ -173,6 +215,7 @@ async def _add_payment_method(
 async def test_wallet_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     settings = get_payments_plugin_settings(client.app)
@@ -260,6 +303,7 @@ async def test_wallet_autorecharge(
 async def test_delete_primary_payment_method_in_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
 
@@ -315,6 +359,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
 async def wallet_payment_method_id(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
 
@@ -322,6 +367,7 @@ async def wallet_payment_method_id(
 async def test_one_time_payment_with_payment_method(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
     wallet_payment_method_id: PaymentMethodID,
     faker: Faker,
 ):
