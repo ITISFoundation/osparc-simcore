@@ -109,9 +109,10 @@ async def init_creation_of_wallet_payment(
     # user info
     user = await get_user_name_and_email(app, user_id=user_id)
 
+    payment_inited: WalletPaymentInitiated
     if payment_method_id is None:
         # call to payment-service
-        payment_inited: WalletPaymentInitiated = await _rpc.init_payment(
+        payment_inited = await _rpc.init_payment(
             app,
             amount_dollars=price_dollars,
             target_credits=osparc_credits,
@@ -125,20 +126,18 @@ async def init_creation_of_wallet_payment(
         )
     else:
         assert payment_method_id is not None  # nosec
-        payment_inited: WalletPaymentInitiated = (
-            await _rpc.init_payment_with_payment_method(
-                app,
-                payment_method_id=payment_method_id,
-                amount_dollars=price_dollars,
-                target_credits=osparc_credits,
-                product_name=product_name,
-                wallet_id=wallet_id,
-                wallet_name=user_wallet.name,
-                user_id=user_id,
-                user_name=user.name,
-                user_email=user.email,
-                comment=comment,
-            )
+        payment_inited = await _rpc.init_payment_with_payment_method(
+            app,
+            payment_method_id=payment_method_id,
+            amount_dollars=price_dollars,
+            target_credits=osparc_credits,
+            product_name=product_name,
+            wallet_id=wallet_id,
+            wallet_name=user_wallet.name,
+            user_id=user_id,
+            user_name=user.name,
+            user_email=user.email,
+            comment=comment,
         )
 
     return payment_inited
