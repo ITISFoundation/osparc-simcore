@@ -83,7 +83,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             )
             # Setup periodic task that will try to run "periodic_check_of_running_services_task"
             if app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED:
-                app.state.resource_tracker_background_task = await start_periodic_task(
+                app.state.resource_tracker_background_task = start_periodic_task(
                     _start_background_task,
                     interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
                     task_name=_TASK_NAME_START_PERIODIC_TASK,
