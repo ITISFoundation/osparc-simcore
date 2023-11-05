@@ -212,7 +212,6 @@
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
-          "product": "s4llite",
           "created": "2023-01-11 13:11:47.293595"
         }
       },
@@ -278,7 +277,6 @@
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
-          "product": "s4llite",
           "created": "2023-01-11 12:11:47.293595",
           "invitation_url": "https://foo.com/#/registration?invitation=1234"
         }
