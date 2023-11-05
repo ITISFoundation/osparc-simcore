@@ -7,20 +7,30 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentTransaction,
     WalletGet,
+    WalletPaymentInitiated,
 )
+from models_library.rest_pagination import Page
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
+)
+from simcore_service_webserver.payments._onetime_api import (
+    _ack_creation_of_wallet_payment,
 )
 from simcore_service_webserver.payments.settings import PaymentsSettings
 from simcore_service_webserver.payments.settings import (
@@ -299,3 +309,63 @@ async def test_delete_primary_payment_method_in_autorecharge(
     auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert auto_recharge.payment_method_id == new_payment_method_id
     assert auto_recharge.enabled is False
+
+
+@pytest.fixture
+async def wallet_payment_method_id(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+):
+    return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
+
+
+async def test_one_time_payment_with_payment_method(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    wallet_payment_method_id: PaymentMethodID,
+    faker: Faker,
+):
+    assert client.app
+
+    # TEST add payment to wallet
+    response = await client.post(
+        f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}",
+        json={
+            "priceDollars": 26,
+        },
+    )
+    data, error = await assert_status(response, web.HTTPAccepted)
+    assert error is None
+    payment = WalletPaymentInitiated.parse_obj(data)
+
+    assert payment.payment_id
+    assert payment.payment_form_url
+    assert payment.payment_form_url.host == "some-fake-gateway.com"
+    assert payment.payment_form_url.query
+    assert payment.payment_form_url.query.endswith(payment.payment_id)
+
+    # Complete
+    await _ack_creation_of_wallet_payment(
+        client.app,
+        payment_id=payment.payment_id,
+        completion_state=PaymentTransactionState.SUCCESS,
+        invoice_url=faker.url(),
+    )
+
+    # list all payment transactions in all my wallets
+    response = await client.get("/v0/wallets/-/payments")
+    data, error = await assert_status(response, web.HTTPOk)
+
+    page = parse_obj_as(Page[PaymentTransaction], data)
+
+    assert page.data
+    assert page.meta.total == 1
+    assert page.meta.offset == 0
+
+    transaction = page.data[0]
+    assert transaction.payment_id == payment.payment_id
+
+    # payment was completed successfully
+    assert transaction.completed_at is not None
+    assert transaction.created_at < transaction.completed_at
+    assert transaction.invoice_url is not None

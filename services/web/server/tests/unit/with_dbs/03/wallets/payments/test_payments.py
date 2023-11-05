@@ -144,7 +144,7 @@ def mock_rpc_payments_service_api(
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
-async def test_payments_worfklow(
+async def test_one_time_payment_worfklow(
     latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
@@ -179,6 +179,7 @@ async def test_payments_worfklow(
     payment = WalletPaymentInitiated.parse_obj(data)
 
     assert payment.payment_id
+    assert payment.payment_form_url
     assert payment.payment_form_url.host == "some-fake-gateway.com"
     assert payment.payment_form_url.query
     assert payment.payment_form_url.query.endswith(payment.payment_id)
