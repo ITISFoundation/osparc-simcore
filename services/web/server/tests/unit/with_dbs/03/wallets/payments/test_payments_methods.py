@@ -327,6 +327,14 @@ async def test_one_time_payment_with_payment_method(
 ):
     assert client.app
 
+    assert (
+        client.app.router["init_payment_with_payment_method"].url_for(
+            wallet_id=logged_user_wallet.wallet_id,
+            payment_method_id=wallet_payment_method_id,
+        )
+        == f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}"
+    )
+
     # TEST add payment to wallet
     response = await client.post(
         f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}",
