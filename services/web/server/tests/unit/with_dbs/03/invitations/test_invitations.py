@@ -20,7 +20,6 @@ from simcore_service_webserver.invitations.errors import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
 )
-from simcore_service_webserver.invitations.plugin import validate_invitation_url
 from simcore_service_webserver.products.api import Product
 from yarl import URL
 
