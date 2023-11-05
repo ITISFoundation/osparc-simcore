@@ -79,7 +79,6 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
         min_length=44,
     )
 
-    # TODO: create pairs
     INVITATIONS_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
     INVITATIONS_DEFAULT_PRODUCT: ProductName = Field(
         ...,

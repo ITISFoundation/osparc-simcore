@@ -48,9 +48,8 @@ class InvitationContent(InvitationInputs):
     product: str | None = Field(
         None,
         description="This invitations can only be used for this product."
-        "If None, then it can be used on any product of this deploy (backwards compatibility)",
+        "If None, it will use INVITATIONS_DEFAULT_PRODUCT",
     )
-
     # avoid using default to mark exactly the time
     created: datetime = Field(..., description="Timestamp for creation")
 
