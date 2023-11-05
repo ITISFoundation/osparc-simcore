@@ -175,6 +175,31 @@ async def _ack_creation_of_wallet_payment_method(
     return updated
 
 
+async def _fake_cancel_creation_of_wallet_payment_method(
+    app, payment_method_id, user_id, wallet_id
+):
+    await _ack_creation_of_wallet_payment_method(
+        app,
+        payment_method_id=payment_method_id,
+        completion_state=InitPromptAckFlowState.CANCELED,
+        message="Creation of payment-method aborted by user",
+    )
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: DELETE /payment-methods/%s", payment_method_id
+    )
+    await asyncio.sleep(1)
+    # response is OK
+    # -----
+
+    await delete_payment_method(
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_method_id=payment_method_id,
+    )
+
+
 async def cancel_creation_of_wallet_payment_method(
     app: web.Application,
     *,
@@ -182,32 +207,15 @@ async def cancel_creation_of_wallet_payment_method(
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
     product_name: ProductName,
-):
+) -> None:
     """Acks as CANCELED"""
     await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
-        await _ack_creation_of_wallet_payment_method(
-            app,
-            payment_method_id=payment_method_id,
-            completion_state=InitPromptAckFlowState.CANCELED,
-            message="Creation of payment-method aborted by user",
-        )
-        # FAKE -----
-        _logger.debug(
-            "FAKE Payments Gateway: DELETE /payment-methods/%s", payment_method_id
-        )
-        await asyncio.sleep(1)
-        # response is OK
-        # -----
-
-        await delete_payment_method(
-            app,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            payment_method_id=payment_method_id,
+        await _fake_cancel_creation_of_wallet_payment_method(
+            app, payment_method_id, user_id, wallet_id
         )
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
@@ -217,6 +225,38 @@ async def cancel_creation_of_wallet_payment_method(
             user_id=user_id,
             wallet_id=wallet_id,
         )
+
+
+async def _fake_list_wallet_payment_methods(
+    app, user_id, wallet_id
+) -> list[PaymentMethodGet]:
+    # get acked
+    acked = await list_successful_payment_methods(
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
+
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
+        json.dumps(
+            {"payment_methods_ids": [p.payment_method_id for p in acked]}, indent=1
+        ),
+    )
+    await asyncio.sleep(1)
+
+    # response
+    fake = Faker()
+    fake.seed_instance(user_id)
+    payments_methods: list[PaymentMethodGet] = [
+        _to_api_model(
+            ack,
+            payment_method_details_from_gateway=_generate_fake_data(fake),
+        )
+        for ack in acked
+    ]
+    return payments_methods
 
 
 async def list_wallet_payment_methods(
@@ -233,33 +273,9 @@ async def list_wallet_payment_methods(
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
-        # get acked
-        acked = await list_successful_payment_methods(
-            app,
-            user_id=user_id,
-            wallet_id=wallet_id,
+        payments_methods = await _fake_list_wallet_payment_methods(
+            app, user_id, wallet_id
         )
-
-        # FAKE -----
-        _logger.debug(
-            "FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
-            json.dumps(
-                {"payment_methods_ids": [p.payment_method_id for p in acked]}, indent=1
-            ),
-        )
-        await asyncio.sleep(1)
-
-        # response
-        fake = Faker()
-        fake.seed_instance(user_id)
-        payments_methods: list[PaymentMethodGet] = [
-            _to_api_model(
-                ack,
-                payment_method_details_from_gateway=_generate_fake_data(fake),
-            )
-            for ack in acked
-        ]
-        # -----
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
         payments_methods = await _rpc.list_payment_methods(
@@ -273,6 +289,27 @@ async def list_wallet_payment_methods(
             pm.auto_recharge = pm.idr == auto_rechage.primary_payment_method_id
 
     return payments_methods
+
+
+async def _fake_get_wallet_payment_method(app, user_id, wallet_id, payment_method_id):
+    acked = await get_successful_payment_method(
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_method_id=payment_method_id,
+    )
+
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: GET /payment-methods/%s", acked.payment_method_id
+    )
+    await asyncio.sleep(1)
+    # response
+    fake = Faker()
+    fake.seed_instance(user_id)
+    return _to_api_model(
+        acked, payment_method_details_from_gateway=_generate_fake_data(fake)
+    )
 
 
 async def get_wallet_payment_method(
@@ -290,23 +327,8 @@ async def get_wallet_payment_method(
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
-        acked = await get_successful_payment_method(
-            app,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            payment_method_id=payment_method_id,
-        )
-
-        # FAKE -----
-        _logger.debug(
-            "FAKE Payments Gateway: GET /payment-methods/%s", acked.payment_method_id
-        )
-        await asyncio.sleep(1)
-        # response
-        fake = Faker()
-        fake.seed_instance(user_id)
-        return _to_api_model(
-            acked, payment_method_details_from_gateway=_generate_fake_data(fake)
+        return await _fake_get_wallet_payment_method(
+            app, user_id, wallet_id, payment_method_id
         )
 
     assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
@@ -315,6 +337,33 @@ async def get_wallet_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
+    )
+
+
+async def _fake_delete_wallet_payment_method(
+    app, user_id, wallet_id, payment_method_id
+) -> None:
+    acked = await get_successful_payment_method(
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_method_id=payment_method_id,
+    )
+
+    # FAKE -----
+    _logger.debug(
+        "FAKE Payments Gateway: DELETE /payment-methods/%s", acked.payment_method_id
+    )
+    await asyncio.sleep(1)
+    # response is OK
+    # ------
+
+    # delete since it was deleted from gateway
+    await delete_payment_method(
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_method_id=payment_method_id,
     )
 
 
@@ -334,27 +383,8 @@ async def delete_wallet_payment_method(
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
-        acked = await get_successful_payment_method(
-            app,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            payment_method_id=payment_method_id,
-        )
-
-        # FAKE -----
-        _logger.debug(
-            "FAKE Payments Gateway: DELETE /payment-methods/%s", acked.payment_method_id
-        )
-        await asyncio.sleep(1)
-        # response is OK
-        # ------
-
-        # delete since it was deleted from gateway
-        await delete_payment_method(
-            app,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            payment_method_id=payment_method_id,
+        await _fake_delete_wallet_payment_method(
+            app, user_id, wallet_id, payment_method_id
         )
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
