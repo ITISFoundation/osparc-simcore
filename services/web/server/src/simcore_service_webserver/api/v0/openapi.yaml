@@ -1058,7 +1058,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_ComputationStart'
+              $ref: '#/components/schemas/ComputationStart'
         required: true
       responses:
         '200':
@@ -1880,7 +1880,8 @@ paths:
         schema:
           title: Product Name
           anyOf:
-          - minLength: 1
+          - maxLength: 50
+            minLength: 1
             type: string
           - enum:
             - current
@@ -1890,6 +1891,7 @@ paths:
       - required: true
         schema:
           title: Template Id
+          maxLength: 50
           minLength: 1
           type: string
         name: template_id
@@ -4122,11 +4124,11 @@ paths:
         required: true
       responses:
         '202':
-          description: Successfully initialized
+          description: Payment initialized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletPaymentCreated_'
+                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
   /v0/wallets/-/payments:
     get:
       tags:
@@ -4208,7 +4210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodInit_'
+                $ref: '#/components/schemas/Envelope_PaymentMethodInitiated_'
   /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
     post:
       tags:
@@ -4313,6 +4315,42 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay:
+    post:
+      tags:
+      - wallets
+      summary: Init Payment With Payment Method
+      operationId: init_payment_with_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          maxLength: 50
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletPayment'
+        required: true
+      responses:
+        '202':
+          description: Payment initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
   /v0/wallets/{wallet_id}/auto-recharge:
     get:
       tags:
@@ -5174,6 +5212,26 @@ components:
         next_url:
           title: Next Url
           type: string
+    ComputationStart:
+      title: ComputationStart
+      type: object
+      properties:
+        force_restart:
+          title: Force Restart
+          type: boolean
+          default: false
+        cluster_id:
+          title: Cluster Id
+          minimum: 0
+          type: integer
+          default: 0
+        subgraph:
+          title: Subgraph
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+          default: []
     ComputationTaskGet:
       title: ComputationTaskGet
       type: object
@@ -5503,12 +5561,12 @@ components:
           $ref: '#/components/schemas/PaymentMethodGet'
         error:
           title: Error
-    Envelope_PaymentMethodInit_:
-      title: Envelope[PaymentMethodInit]
+    Envelope_PaymentMethodInitiated_:
+      title: Envelope[PaymentMethodInitiated]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/PaymentMethodInit'
+          $ref: '#/components/schemas/PaymentMethodInitiated'
         error:
           title: Error
     Envelope_PresignedLink_:
@@ -5725,12 +5783,12 @@ components:
           $ref: '#/components/schemas/WalletGroupGet'
         error:
           title: Error
-    Envelope_WalletPaymentCreated_:
-      title: Envelope[WalletPaymentCreated]
+    Envelope_WalletPaymentInitiated_:
+      title: Envelope[WalletPaymentInitiated]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/WalletPaymentCreated'
+          $ref: '#/components/schemas/WalletPaymentInitiated'
         error:
           title: Error
     Envelope_WorkbenchViewApiModel_:
@@ -6513,6 +6571,7 @@ components:
       properties:
         id:
           title: Id
+          maxLength: 50
           minLength: 1
           type: string
         content:
@@ -6531,7 +6590,7 @@ components:
       title: GetWalletAutoRecharge
       required:
       - paymentMethodId
-      - minBalanceInUsd
+      - minBalanceInCredits
       - topUpAmountInUsd
       - monthlyLimitInUsd
       type: object
@@ -6548,11 +6607,11 @@ components:
           type: string
           description: Payment method in the wallet used to perform the auto-recharge
             payments or None if still undefined
-        minBalanceInUsd:
-          title: Minbalanceinusd
+        minBalanceInCredits:
+          title: Minbalanceincredits
           minimum: 0.0
           type: number
-          description: Minimum balance in USD that triggers an auto-recharge [Read
+          description: Minimum balance in credits that triggers an auto-recharge [Read
             only]
         topUpAmountInUsd:
           title: Topupamountinusd
@@ -7547,8 +7606,8 @@ components:
           type: boolean
           description: If true, this payment-method is used for auto-recharge
           default: false
-    PaymentMethodInit:
-      title: PaymentMethodInit
+    PaymentMethodInitiated:
+      title: PaymentMethodInitiated
       required:
       - walletId
       - paymentMethodId
@@ -9988,11 +10047,10 @@ components:
           title: Modified
           type: string
           format: date-time
-    WalletPaymentCreated:
-      title: WalletPaymentCreated
+    WalletPaymentInitiated:
+      title: WalletPaymentInitiated
       required:
       - paymentId
-      - paymentFormUrl
       type: object
       properties:
         paymentId:
@@ -10005,7 +10063,8 @@ components:
           maxLength: 2083
           minLength: 1
           type: string
-          description: Link to external site that holds the payment submission form
+          description: Link to external site that holds the payment submission form.None
+            if no prompt step is required (e.g. pre-selected credit card)
           format: uri
     WalletStatus:
       title: WalletStatus
@@ -10134,26 +10193,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/TaskCounts'
           description: task details
-    _ComputationStart:
-      title: _ComputationStart
-      type: object
-      properties:
-        force_restart:
-          title: Force Restart
-          type: boolean
-          default: false
-        cluster_id:
-          title: Cluster Id
-          minimum: 0
-          type: integer
-          default: 0
-        subgraph:
-          title: Subgraph
-          uniqueItems: true
-          type: array
-          items:
-            type: string
-          default: []
     _ComputationStarted:
       title: _ComputationStarted
       required:
