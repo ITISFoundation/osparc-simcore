@@ -96,7 +96,7 @@ async def _fake_init_payment(
     comment,
 ):
     # (1) Init payment
-    payment_id = uuid4()
+    payment_id = f"{uuid4()}"
     # get_form_payment_url
     settings: PaymentsSettings = get_plugin_settings(app)
     external_form_link = (
