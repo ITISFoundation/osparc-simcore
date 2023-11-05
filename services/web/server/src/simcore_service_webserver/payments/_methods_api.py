@@ -19,6 +19,9 @@ from models_library.wallets import WalletID
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
+from ..users.api import get_user_name_and_email
+from ..wallets.api import get_wallet_by_user
+from . import _rpc
 from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
     PaymentsMethodsDB,
@@ -64,31 +67,15 @@ def _to_api_model(
     )
 
 
-async def init_creation_of_wallet_payment_method(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    wallet_id: WalletID,
-    product_name: ProductName,
-) -> PaymentMethodInitiated:
-    """
-
-    Raises:
-        WalletAccessForbiddenError
-        PaymentMethodUniqueViolationError
-    """
-
-    # check permissions
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-
+async def _fake_init_creation_of_wallet_payment_method(
+    app, settings, user_id, wallet_id
+):
+    # NOTE: this will be removed as soon as dev payment gateway is available in master
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
 
     # FAKE -----
     _logger.debug("FAKE Payments Gateway: /payment-methods:init")
-    settings: PaymentsSettings = get_plugin_settings(app)
     await asyncio.sleep(1)
     payment_method_id = PaymentMethodID(f"{uuid4()}".upper())
     form_link = (
@@ -111,6 +98,48 @@ async def init_creation_of_wallet_payment_method(
         wallet_id=wallet_id,
         payment_method_id=payment_method_id,
         payment_method_form_url=f"{form_link}",
+    )
+
+
+async def init_creation_of_wallet_payment_method(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
+) -> PaymentMethodInitiated:
+    """
+
+    Raises:
+        WalletAccessForbiddenError
+    """
+
+    # check permissions
+    await raise_for_wallet_payments_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        return await _fake_init_creation_of_wallet_payment_method(
+            app, settings, user_id, wallet_id
+        )
+
+    assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+
+    user_wallet = await get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    assert user_wallet.wallet_id == wallet_id  # nosec
+
+    user = await get_user_name_and_email(app, user_id=user_id)
+    return await _rpc.init_creation_of_payment_method(
+        app,
+        wallet_id=wallet_id,
+        wallet_name=user_wallet.name,
+        user_id=user_id,
+        user_name=user.name,
+        user_email=user.email,
     )
 
 
