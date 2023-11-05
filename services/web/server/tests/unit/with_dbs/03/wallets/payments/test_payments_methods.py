@@ -334,15 +334,25 @@ async def wallet_payment_method_id(
     return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
 
 
+@pytest.mark.testit
 async def test_one_time_payment_with_payment_method(
     latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mock_rpc_payments_service_api: dict[str, MagicMock],
     wallet_payment_method_id: PaymentMethodID,
+    mocker: MockerFixture,
     faker: Faker,
 ):
     assert client.app
+
+    send_message = mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
+    mock_rut_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        autospec=True,
+    )
 
     assert (
         client.app.router["init_payment_with_payment_method"]
@@ -364,6 +374,7 @@ async def test_one_time_payment_with_payment_method(
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     payment = WalletPaymentInitiated.parse_obj(data)
+    assert mock_rpc_payments_service_api["init_payment_with_payment_method"].called
 
     assert payment.payment_id
     assert payment.payment_form_url
@@ -378,6 +389,13 @@ async def test_one_time_payment_with_payment_method(
         completion_state=PaymentTransactionState.SUCCESS,
         invoice_url=faker.url(),
     )
+    # check notification to RUT (fake)
+    assert mock_rut_add_credits_to_wallet.called
+    mock_rut_add_credits_to_wallet.assert_called_once()
+
+    # check notification (fake)
+    assert send_message.called
+    send_message.assert_called_once()
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")

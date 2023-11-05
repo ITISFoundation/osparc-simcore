@@ -338,7 +338,7 @@ async def _init_payment_with_payment_method(request: web.Request):
             payment_method_id=path_params.payment_method_id,
         )
 
-        return envelope_json_response(payment, web.HTTPCreated)
+        return envelope_json_response(payment, web.HTTPAccepted)
 
 
 #
@@ -373,7 +373,7 @@ async def _get_wallet_autorecharge(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def _update_wallet_autorecharge(request: web.Request):
+async def _replace_wallet_autorecharge(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)

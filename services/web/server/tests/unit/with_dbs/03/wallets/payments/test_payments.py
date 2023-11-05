@@ -110,11 +110,11 @@ async def test_one_time_payment_worfklow(
         invoice_url=faker.url(),
     )
 
-    # check notification to RUT
+    # check notification to RUT (fake)
     assert mock_rut_add_credits_to_wallet.called
     mock_rut_add_credits_to_wallet.assert_called_once()
 
-    # check notification
+    # check notification (fake)
     assert send_message.called
     send_message.assert_called_once()
 

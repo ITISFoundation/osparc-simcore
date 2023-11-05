@@ -207,7 +207,7 @@ def mock_rpc_payments_service_api(
             user_id=user_id,
             wallet_id=wallet_id,
         )
-        return _init(
+        return await _init(
             app,
             amount_dollars=amount_dollars,
             target_credits=target_credits,
