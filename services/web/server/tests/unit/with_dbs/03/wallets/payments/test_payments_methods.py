@@ -40,7 +40,6 @@ from simcore_service_webserver.payments.settings import (
 )
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
 )
@@ -80,6 +79,7 @@ async def test_payment_method_worfklow(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
     await assert_status(response, web.HTTPNotFound)
+    assert mock_rpc_payments_service_api["get_payment_method"].called
 
     # Ack
     await _ack_creation_of_wallet_payment_method(
@@ -103,6 +103,7 @@ async def test_payment_method_worfklow(
     # List
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
     data, _ = await assert_status(response, web.HTTPOk)
+    assert mock_rpc_payments_service_api["list_payment_methods"].called
 
     wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
     assert wallet_payments_methods == [payment_method]
@@ -112,17 +113,20 @@ async def test_payment_method_worfklow(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
     await assert_status(response, web.HTTPNoContent)
+    assert mock_rpc_payments_service_api["delete_payment_method"].called
 
     # Get -> NOT FOUND
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
     data, _ = await assert_status(response, web.HTTPNotFound)
+    assert mock_rpc_payments_service_api["get_payment_method"].call_count == 3
 
     # List -> empty
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data
+    assert mock_rpc_payments_service_api["list_payment_methods"].call_count == 2
 
 
 async def test_init_and_cancel_payment_method(

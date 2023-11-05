@@ -25,7 +25,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, validate_arguments
+from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -96,7 +96,6 @@ def payments_transactions_clean_db(postgres_db: sa.engine.Engine) -> Iterator[No
 def mock_rpc_payments_service_api(
     mocker: MockerFixture, faker: Faker, payments_transactions_clean_db: None
 ) -> dict[str, MagicMock]:
-    @validate_arguments
     async def _init(
         app: web.Application,
         *,
@@ -121,7 +120,6 @@ def mock_rpc_payments_service_api(
             comment,
         )
 
-    @validate_arguments
     async def _cancel(
         app: web.Application,
         *,
@@ -132,7 +130,6 @@ def mock_rpc_payments_service_api(
         await _fake_cancel_payment(app, payment_id)
 
     #  payment-methods  ----
-    @validate_arguments
     async def _init_pm(
         app: web.Application,
         *,
@@ -149,7 +146,6 @@ def mock_rpc_payments_service_api(
             app, settings, user_id, wallet_id
         )
 
-    @validate_arguments
     async def _cancel_pm(
         app: web.Application,
         *,
@@ -161,7 +157,6 @@ def mock_rpc_payments_service_api(
             app, payment_method_id, user_id, wallet_id
         )
 
-    @validate_arguments
     async def _list_pm(
         app: web.Application,
         *,
@@ -170,7 +165,6 @@ def mock_rpc_payments_service_api(
     ) -> list[PaymentMethodGet]:
         return await _fake_list_wallet_payment_methods(app, user_id, wallet_id)
 
-    @validate_arguments
     async def _get(
         app: web.Application,
         *,
@@ -182,7 +176,6 @@ def mock_rpc_payments_service_api(
             app, user_id, wallet_id, payment_method_id
         )
 
-    @validate_arguments
     async def _del(
         app: web.Application,
         *,
@@ -194,7 +187,6 @@ def mock_rpc_payments_service_api(
             app, user_id, wallet_id, payment_method_id
         )
 
-    @validate_arguments
     async def _pay(
         app: web.Application,
         *,
