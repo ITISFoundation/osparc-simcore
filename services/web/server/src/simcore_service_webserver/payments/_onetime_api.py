@@ -106,7 +106,7 @@ async def _fake_init_payment(
     )
     # (2) Annotate INIT transaction
     async with get_database_engine(app).acquire() as conn:
-        assert (
+        assert (  # nosec
             await insert_init_payment_transaction(
                 conn,
                 payment_id=payment_id,
@@ -279,7 +279,7 @@ async def cancel_payment_to_wallet(
         await _fake_cancel_payment(app, payment_id)
 
     else:
-        assert not settings.PAYMENTS_FAKE_COMPLETION  # nsoec
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
         await _rpc.cancel_payment(
             app, payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
         )
