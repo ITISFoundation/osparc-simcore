@@ -35,7 +35,6 @@ async def init_creation_of_payment_method(
     user_name: IDStr,
     user_email: EmailStr,
 ) -> PaymentMethodInitiated:
-
     return await payments_methods.init_creation_of_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo=PaymentsMethodsRepo(db_engine=app.state.engine),
@@ -70,7 +69,7 @@ async def list_payment_methods(
     *,
     user_id: UserID,
     wallet_id: WalletID,
-):
+) -> list[PaymentMethodGet]:
     return await payments_methods.list_payments_methods(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo=PaymentsMethodsRepo(db_engine=app.state.engine),
@@ -103,7 +102,7 @@ async def delete_payment_method(
     payment_method_id: PaymentMethodID,
     user_id: UserID,
     wallet_id: WalletID,
-):
+) -> None:
     await payments_methods.delete_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo=PaymentsMethodsRepo(db_engine=app.state.engine),
@@ -128,7 +127,6 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
     user_email: EmailStr,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
-
     return await payments.init_payment_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
