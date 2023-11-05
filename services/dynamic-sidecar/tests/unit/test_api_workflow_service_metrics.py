@@ -397,7 +397,7 @@ async def test_user_services_crash_when_running(
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
 
     # crash the user services
-    if expected_platform_state == SimcorePlatformStatus.BAD:
+    if expected_platform_state == SimcorePlatformStatus.OK:
         # was it oom killed, not our fault
         mock_one_container_oom_killed()
     else:
