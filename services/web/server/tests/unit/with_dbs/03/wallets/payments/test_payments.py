@@ -6,31 +6,25 @@
 
 from decimal import Decimal
 from typing import Any, TypeAlias
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
-    PaymentID,
     PaymentTransaction,
     WalletGet,
     WalletPaymentInitiated,
 )
 from models_library.rest_pagination import Page
-from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import utcnow
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_postgres_database.utils_payments import insert_init_payment_transaction
-from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.payments._onetime_api import (
     _ack_creation_of_wallet_payment,
 )
@@ -39,7 +33,6 @@ from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
 )
-from yarl import URL
 
 OpenApiDict: TypeAlias = dict[str, Any]
 
@@ -65,82 +58,6 @@ async def test_payment_on_invalid_wallet(
     assert error
 
 
-@pytest.fixture
-def mock_rpc_payments_service_api(
-    mocker: MockerFixture, faker: Faker, payments_transactions_clean_db: None
-) -> dict[str, Mock]:
-    async def _fake_rpc_init_payment(
-        app: web.Application,
-        *,
-        amount_dollars: Decimal,
-        target_credits: Decimal,
-        product_name: str,
-        wallet_id: WalletID,
-        wallet_name: str,
-        user_id: UserID,
-        user_name: str,
-        user_email: str,
-        comment: str | None = None,
-    ):
-        # EMULATES services/payments/src/simcore_service_payments/api/rpc/_payments.py
-        # (1) Init payment
-        payment_id = faker.uuid4()
-        # get_form_payment_url
-        settings: PaymentsSettings = get_plugin_settings(app)
-        external_form_link = (
-            URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
-            .with_path("/pay")
-            .with_query(id=payment_id)
-        )
-        # (2) Annotate INIT transaction
-        async with get_database_engine(app).acquire() as conn:
-            assert (
-                await insert_init_payment_transaction(
-                    conn,
-                    payment_id=payment_id,
-                    price_dollars=amount_dollars,
-                    osparc_credits=target_credits,
-                    product_name=product_name,
-                    user_id=user_id,
-                    user_email=user_email,
-                    wallet_id=wallet_id,
-                    comment=comment,
-                    initiated_at=utcnow(),
-                )
-                == payment_id
-            )
-        return WalletPaymentInitiated(
-            payment_id=payment_id, payment_form_url=f"{external_form_link}"
-        )
-
-    async def _fake_rpc_cancel_payment(
-        app: web.Application,
-        *,
-        payment_id: PaymentID,
-        user_id: UserID,
-        wallet_id: WalletID,
-    ):
-        await _ack_creation_of_wallet_payment(
-            app,
-            payment_id=payment_id,
-            completion_state=PaymentTransactionState.CANCELED,
-            message="Payment aborted by user",
-        )
-
-    return {
-        "init_payment": mocker.patch(
-            "simcore_service_webserver.payments._onetime_api._rpc.init_payment",
-            autospec=True,
-            side_effect=_fake_rpc_init_payment,
-        ),
-        "cancel_payment": mocker.patch(
-            "simcore_service_webserver.payments._onetime_api._rpc.cancel_payment",
-            autospec=True,
-            side_effect=_fake_rpc_cancel_payment,
-        ),
-    }
-
-
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
@@ -150,7 +67,7 @@ async def test_one_time_payment_worfklow(
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
     faker: Faker,
-    mock_rpc_payments_service_api: dict[str, Mock],
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -226,7 +143,7 @@ async def test_multiple_payments(
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
     faker: Faker,
-    mock_rpc_payments_service_api: dict[str, Mock],
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -326,7 +243,7 @@ async def test_complete_payment_errors(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
-    mock_rpc_payments_service_api: dict[str, Mock],
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     send_message = mocker.patch(
@@ -378,7 +295,7 @@ async def test_payment_not_found(
     client: TestClient,
     logged_user_wallet: WalletGet,
     faker: Faker,
-    mock_rpc_payments_service_api: dict[str, Mock],
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     wallet = logged_user_wallet
     payment_id = faker.uuid4()

@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,11 +19,9 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.rest_pagination import Page
-from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as, validate_arguments
+from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
@@ -33,138 +30,14 @@ from simcore_postgres_database.models.payments_transactions import (
 )
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
-    _fake_cancel_creation_of_wallet_payment_method,
-    _fake_delete_wallet_payment_method,
-    _fake_get_wallet_payment_method,
-    _fake_init_creation_of_wallet_payment_method,
-    _fake_list_wallet_payment_methods,
 )
 from simcore_service_webserver.payments._onetime_api import (
     _ack_creation_of_wallet_payment,
 )
 from simcore_service_webserver.payments.settings import PaymentsSettings
-from simcore_service_webserver.payments.settings import get_plugin_settings
 from simcore_service_webserver.payments.settings import (
     get_plugin_settings as get_payments_plugin_settings,
 )
-
-
-@pytest.fixture
-def mock_rpc_payments_service_api(
-    mocker: MockerFixture, faker: Faker, payments_transactions_clean_db: None
-) -> dict[str, MagicMock]:
-    # side-effect callback ----
-    @validate_arguments
-    async def _init(
-        app: web.Application,
-        *,
-        wallet_id: WalletID,
-        wallet_name: IDStr,
-        user_id: UserID,
-        user_name: IDStr,
-        user_email: EmailStr,
-    ) -> PaymentMethodInitiated:
-        settings: PaymentsSettings = get_plugin_settings(app)
-        assert settings.PAYMENTS_FAKE_COMPLETION is False
-
-        return await _fake_init_creation_of_wallet_payment_method(
-            app, settings, user_id, wallet_id
-        )
-
-    @validate_arguments
-    async def _cancel(
-        app: web.Application,
-        *,
-        payment_method_id: PaymentMethodID,
-        user_id: UserID,
-        wallet_id: WalletID,
-    ) -> None:
-        await _fake_cancel_creation_of_wallet_payment_method(
-            app, payment_method_id, user_id, wallet_id
-        )
-
-    @validate_arguments
-    async def _list(
-        app: web.Application,
-        *,
-        user_id: UserID,
-        wallet_id: WalletID,
-    ) -> list[PaymentMethodGet]:
-        return await _fake_list_wallet_payment_methods(app, user_id, wallet_id)
-
-    @validate_arguments
-    async def _get(
-        app: web.Application,
-        *,
-        payment_method_id: PaymentMethodID,
-        user_id: UserID,
-        wallet_id: WalletID,
-    ) -> PaymentMethodGet:
-        return await _fake_get_wallet_payment_method(
-            app, user_id, wallet_id, payment_method_id
-        )
-
-    @validate_arguments
-    async def _del(
-        app: web.Application,
-        *,
-        payment_method_id: PaymentMethodID,
-        user_id: UserID,
-        wallet_id: WalletID,
-    ) -> None:
-        await _fake_delete_wallet_payment_method(
-            app, user_id, wallet_id, payment_method_id
-        )
-
-    @validate_arguments
-    async def _pay(
-        app: web.Application,
-        *,
-        payment_method_id: PaymentMethodID,
-        amount_dollars: Decimal,
-        target_credits: Decimal,
-        product_name: str,
-        wallet_id: WalletID,
-        wallet_name: str,
-        user_id: UserID,
-        user_name: str,
-        user_email: EmailStr,
-        comment: str | None = None,
-    ):
-        ...
-
-    return {
-        "init_creation_of_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._methods_api._rpc.init_creation_of_payment_method",
-            autospec=True,
-            side_effect=_init,
-        ),
-        "cancel_creation_of_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._methods_api._rpc.cancel_creation_of_payment_method",
-            autospec=True,
-            side_effect=_cancel,
-        ),
-        "list_payment_methods": mocker.patch(
-            "simcore_service_webserver.payments._methods_api._rpc.list_payment_methods",
-            autospec=True,
-            side_effect=_list,
-        ),
-        "get_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._methods_api._rpc.get_payment_method",
-            autospec=True,
-            side_effect=_get,
-        ),
-        "delete_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._methods_api._rpc.delete_payment_method",
-            autospec=True,
-            side_effect=_del,
-        ),
-        "init_payment_with_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._onetime_api._rpc.init_payment_with_payment_method",
-            autospec=True,
-            side_effect=_pay,
-        ),
-    }
 
 
 @pytest.mark.testit
