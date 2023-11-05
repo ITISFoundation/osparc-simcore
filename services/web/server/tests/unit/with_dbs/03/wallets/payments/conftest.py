@@ -201,7 +201,24 @@ def mock_rpc_payments_service_api(
         user_email: EmailStr,
         comment: str | None = None,
     ):
-        raise NotImplementedError
+        assert await _get(
+            app,
+            payment_method_id=payment_method_id,
+            user_id=user_id,
+            wallet_id=wallet_id,
+        )
+        return _init(
+            app,
+            amount_dollars=amount_dollars,
+            target_credits=target_credits,
+            product_name=product_name,
+            wallet_id=wallet_id,
+            wallet_name=wallet_name,
+            user_id=user_id,
+            user_name=user_name,
+            user_email=user_email,
+            comment=comment,
+        )
 
     return {
         "init_payment": mocker.patch(

@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
@@ -334,6 +335,7 @@ async def wallet_payment_method_id(
 
 
 async def test_one_time_payment_with_payment_method(
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mock_rpc_payments_service_api: dict[str, MagicMock],
@@ -343,16 +345,18 @@ async def test_one_time_payment_with_payment_method(
     assert client.app
 
     assert (
-        client.app.router["init_payment_with_payment_method"].url_for(
-            wallet_id=logged_user_wallet.wallet_id,
+        client.app.router["init_payment_with_payment_method"]
+        .url_for(
+            wallet_id=f"{logged_user_wallet.wallet_id}",
             payment_method_id=wallet_payment_method_id,
         )
-        == f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}"
+        .path
+        == f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay"
     )
 
     # TEST add payment to wallet
     response = await client.post(
-        f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}",
+        f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay",
         json={
             "priceDollars": 26,
         },
