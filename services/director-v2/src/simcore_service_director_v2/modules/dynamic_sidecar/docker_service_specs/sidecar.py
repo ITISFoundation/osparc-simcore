@@ -117,6 +117,16 @@ def get_prometheus_service_labels(
     return prometheus_service_labels if enable_prometheus_scraping else {}
 
 
+def get_prometheus_monitoring_networks(
+    prometheus_networks: list[str], callbacks_mapping: CallbacksMapping
+) -> list[dict[str, str]]:
+    return (
+        []
+        if callbacks_mapping.metrics is None
+        else [{"Target": network_name} for network_name in prometheus_networks]
+    )
+
+
 def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -299,7 +309,13 @@ def get_dynamic_sidecar_spec(
             cpu_limit=0,  # this should get overwritten
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.service_name,
-        "networks": [{"Target": swarm_network_id}],
+        "networks": [
+            {"Target": swarm_network_id},
+            *get_prometheus_monitoring_networks(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                scheduler_data.callbacks_mapping,
+            ),
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
