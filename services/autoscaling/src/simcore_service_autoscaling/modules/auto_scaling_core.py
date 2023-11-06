@@ -327,14 +327,14 @@ async def _find_needed_instances(
                 needed_new_instance_types_for_tasks.append(
                     (filtered_instances[0], [task])
                 )
-
-            # we need a new instance, let's find one
-            best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
-                available_ec2_types,
-                auto_scaling_mode.get_max_resources_from_task(task),
-                score_type=utils_ec2.closest_instance_policy,
-            )
-            needed_new_instance_types_for_tasks.append((best_ec2_instance, [task]))
+            else:
+                # we need a new instance, let's find one
+                best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
+                    available_ec2_types,
+                    auto_scaling_mode.get_max_resources_from_task(task),
+                    score_type=utils_ec2.closest_instance_policy,
+                )
+                needed_new_instance_types_for_tasks.append((best_ec2_instance, [task]))
         except Ec2InstanceNotFoundError:
             _logger.exception(
                 "Task %s needs more resources than any EC2 instance "

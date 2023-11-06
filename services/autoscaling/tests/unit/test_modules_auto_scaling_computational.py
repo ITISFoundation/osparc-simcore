@@ -346,7 +346,13 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "dask_task_imposed_ec2_type, expected_ec2_type",
-    [(None, "r5n.4xlarge"), ("m6a.12xlarge", "m6a.12xlarge")],
+    [
+        pytest.param(None, "r5n.4xlarge", id="No explicit instance defined"),
+        pytest.param("t2.xlarge", "t2.xlarge", id="Explicitely ask for t2.xlarge"),
+        pytest.param(
+            "r5n.8xlarge", "r5n.8xlarge", id="Explicitely ask for r5n.8xlarge"
+        ),
+    ],
 )
 async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
@@ -521,6 +527,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     fake_node.Spec.Availability = Availability.drain
     fake_node.UpdatedAt = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     # the node will be not be terminated beforet the timeout triggers
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
         datetime.timedelta(seconds=5)
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
