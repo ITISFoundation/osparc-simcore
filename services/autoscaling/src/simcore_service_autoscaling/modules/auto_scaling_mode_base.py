@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
 
@@ -75,6 +76,11 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @staticmethod
     @abstractmethod
     def get_max_resources_from_task(task) -> Resources:
+        ...
+
+    @staticmethod
+    @abstracmethod
+    def get_task_defined_instance(task) -> InstanceTypeType:
         ...
 
     @staticmethod

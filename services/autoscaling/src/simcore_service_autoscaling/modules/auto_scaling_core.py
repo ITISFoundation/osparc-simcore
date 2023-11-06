@@ -299,6 +299,25 @@ async def _find_needed_instances(
             continue
 
         try:
+            # check if exact instance type is needed first
+            if instance_type_name := auto_scaling_mode.get_task_defined_instance(task):
+
+                def _by_instance_type_name(x: EC2InstanceType) -> bool:
+                    return x.name == instance_type_name
+
+                filtered_instances = list(
+                    filter(_by_instance_type_name, available_ec2_types)
+                )
+                if not filtered_instances:
+                    _logger.error(
+                        "Task %s requires an unauthorized EC2 instance type. Please check.",
+                        f"{task}",
+                    )
+                    continue
+                needed_new_instance_types_for_tasks.append(
+                    (filtered_instances[0], [task])
+                )
+
             # we need a new instance, let's find one
             best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
                 available_ec2_types,
