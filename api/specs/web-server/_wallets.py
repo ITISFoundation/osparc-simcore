@@ -90,7 +90,7 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 @router.post(
     "/wallets/{wallet_id}/payments",
     response_model=Envelope[WalletPaymentInitiated],
-    response_description="Successfully initialized",
+    response_description="Payment initialized",
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
@@ -161,6 +161,18 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
+    ...
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay",
+    response_model=Envelope[WalletPaymentInitiated],
+    response_description="Payment initialized",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def init_payment_with_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID, _body: CreateWalletPayment
 ):
     ...
 
