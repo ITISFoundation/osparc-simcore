@@ -320,10 +320,24 @@ async def _find_needed_instances(
                 )
                 if not filtered_instances:
                     _logger.error(
-                        "Task %s requires an unauthorized EC2 instance type. Asked for %s, authorized are %s Please check.",
+                        "Task %s requires an unauthorized EC2 instance type. "
+                        "Asked for %s, authorized are %s. Please check!",
                         f"{task}",
                         instance_type_name,
                         available_ec2_types,
+                    )
+                    continue
+                selected_instance = filtered_instances[0]
+                # check that the assigned resources and the machine resource fit
+                if auto_scaling_mode.get_max_resources_from_task(task) > Resources(
+                    cpus=selected_instance.cpus, ram=selected_instance.ram
+                ):
+                    _logger.error(
+                        "Task %s requires more resources than the selected instance provides."
+                        " Asked for %s, but task needs %s. Please check!",
+                        f"{task}",
+                        selected_instance,
+                        auto_scaling_mode.get_max_resources_from_task(task),
                     )
                     continue
                 needed_new_instance_types_for_tasks.append(
@@ -340,7 +354,7 @@ async def _find_needed_instances(
         except Ec2InstanceNotFoundError:
             _logger.exception(
                 "Task %s needs more resources than any EC2 instance "
-                "can provide with the current configuration. Please check.",
+                "can provide with the current configuration. Please check!",
                 f"{task}",
             )
 

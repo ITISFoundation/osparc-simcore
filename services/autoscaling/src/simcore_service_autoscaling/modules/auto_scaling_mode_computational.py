@@ -67,7 +67,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
         *,
         notify_progress: bool
     ) -> bool:
-        return await utils.try_assigning_task_to_pending_instances(
+        return await utils.try_assigning_task_to_instances(
             app,
             pending_task,
             list_of_pending_instance_to_tasks,
