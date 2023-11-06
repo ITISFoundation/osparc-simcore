@@ -128,7 +128,6 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         return data
 
-    # FROM HERE
     async def list_files(  # noqa C901
         self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
     ) -> list[FileMetaData]:
@@ -208,7 +207,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         # expanding directories
         for entry in delayed_expands:
-            data.append(await entry)  # noqa: PERF401
+            data.extend(await entry)
 
         # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
         #        with information from the projects table!
@@ -226,8 +225,6 @@ class SimcoreS3DataManager(BaseDataManager):
 
             data = clean_data
         return data
-
-    # DONE ABOVE
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.acquire() as conn, conn.begin():
