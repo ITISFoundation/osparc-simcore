@@ -181,6 +181,6 @@ def create_version_callback(application_version: str) -> Callable:
     ):
         """current version"""
         assert ctx  # nosec
-        assert version or 1  # nosec
+        assert version or not version  # nosec
 
     return version
