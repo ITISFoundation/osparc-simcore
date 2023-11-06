@@ -65,6 +65,7 @@ def app_environment(
             "PROMETHEUS_URL": f"{choice(['http', 'https'])}://{faker.domain_name()}",
             "PROMETHEUS_USERNAME": faker.user_name(),
             "PROMETHEUS_PASSWORD": faker.password(special_chars=False),
+            "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED": "0",
         },
     )
 
