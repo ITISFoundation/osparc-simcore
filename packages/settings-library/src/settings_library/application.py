@@ -1,5 +1,3 @@
-from typing import Any, ClassVar
-
 from pydantic import Field, PositiveInt
 
 from .base import BaseCustomSettings
@@ -27,16 +25,3 @@ class BaseApplicationSettings(BaseCustomSettings):
     )
     SC_USER_ID: int | None = None
     SC_USER_NAME: str | None = None
-
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "SC_BUILD_TARGET": "production",
-                    "SC_BOOT_TARGET": "production",
-                    "SC_HEALTHCHECK_TIMEOUT": 3,
-                    "SC_USER_ID": 8004,
-                    "SC_USER_NAME": "scu",
-                }
-            ]
-        }
