@@ -5,11 +5,11 @@ from pydantic import BaseModel, Field
 from ..basic_types import VersionStr
 
 
-class Meta(BaseModel):
+class BaseMeta(BaseModel):
     name: str
     version: VersionStr
     released: dict[str, VersionStr] | None = Field(
-        None, description="Maps every route's path tag with a released version"
+        default=None, description="Maps every route's path tag with a released version"
     )
 
     class Config:
