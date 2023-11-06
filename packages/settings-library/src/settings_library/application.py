@@ -1,7 +1,10 @@
 from pydantic import Field, PositiveInt, parse_obj_as
 
+from .base import BaseCustomSettings
+from .basic_types import BuildTargetEnum, VersionTag
 
-class ImageBuildSettings:
+
+class AppSettings(BaseCustomSettings):
     """Base settings of any osparc service's app"""
 
     # CODE STATICS ---------------------------------------------------------
@@ -10,7 +13,7 @@ class ImageBuildSettings:
     API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
 
 
-class ImageBuildSettings:
+class AppImageBuildSettings(BaseCustomSettings):
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
     SC_BUILD_DATE: str | None = None
