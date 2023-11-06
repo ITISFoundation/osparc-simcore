@@ -45,7 +45,7 @@ def try_assigning_task_to_node(
     pending_task: DaskTask,
     instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
-    filtered_list_of_instance_to_tasks = instance_to_tasks
+    filtered_list_of_instance_to_tasks = iter(instance_to_tasks)
     task_instance_restriction = get_task_instance_restriction(pending_task)
     if task_instance_restriction:
 
