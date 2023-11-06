@@ -48,7 +48,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         return utils.try_assigning_task_to_node(task, instance_to_tasks)
 
     @staticmethod
-    async def try_assigning_task_to_pending_instances(
+    async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
         list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list]],

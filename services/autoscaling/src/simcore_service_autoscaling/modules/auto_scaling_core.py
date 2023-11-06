@@ -283,7 +283,8 @@ async def _find_needed_instances(
     ]
     needed_new_instance_types_for_tasks: list[tuple[EC2InstanceType, list]] = []
     for task in pending_tasks:
-        if await auto_scaling_mode.try_assigning_task_to_pending_instances(
+        # try to assign the task to one of the active instances
+        if await auto_scaling_mode.try_assigning_task_to_instances(
             app,
             task,
             active_instance_to_tasks,
@@ -291,7 +292,8 @@ async def _find_needed_instances(
             notify_progress=False,
         ):
             continue
-        if await auto_scaling_mode.try_assigning_task_to_pending_instances(
+        # try to assign teh task to one of the pending instances
+        if await auto_scaling_mode.try_assigning_task_to_instances(
             app,
             task,
             pending_instance_to_tasks,
@@ -299,7 +301,7 @@ async def _find_needed_instances(
             notify_progress=True,
         ):
             continue
-
+        # try to assign the task to one of the new instances we already want
         if auto_scaling_mode.try_assigning_task_to_instance_types(
             task, needed_new_instance_types_for_tasks
         ):
