@@ -147,6 +147,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: list[str] = Field(
+        default_factory=list,
+        description="Prometheus will scrape service placed on these networks",
+    )
+
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
         auto_default_from_env=True
     )
