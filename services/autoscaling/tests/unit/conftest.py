@@ -495,25 +495,25 @@ def mocked_aws_server_envs(
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
-# @pytest.fixture
-# def
+@pytest.fixture(scope="session")
+def aws_allowed_ec2_instance_type_names() -> list[InstanceTypeType]:
+    return [
+        "t2.xlarge",
+        "t2.2xlarge",
+        "g3.4xlarge",
+        "r5n.4xlarge",
+        "r5n.8xlarge",
+    ]
 
 
 @pytest.fixture
 def aws_allowed_ec2_instance_type_names_env(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     changed_envs = {
-        "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-            [
-                "t2.xlarge",
-                "t2.2xlarge",
-                "g3.4xlarge",
-                "r5n.4xlarge",
-                "r5n.8xlarge",
-            ]
-        ),
+        "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
