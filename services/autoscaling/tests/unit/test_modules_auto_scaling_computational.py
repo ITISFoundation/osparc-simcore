@@ -296,10 +296,12 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
 
 @pytest.fixture
 def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
-    def _do(ec2_instance_type: InstanceTypeType | None) -> DaskTaskResources:
+    def _do(
+        ec2_instance_type: InstanceTypeType | None, ram: ByteSize
+    ) -> DaskTaskResources:
         resources = DaskTaskResources(
             {
-                "RAM": int(parse_obj_as(ByteSize, "128GiB")),
+                "RAM": int(ram),
             }
         )
         if ec2_instance_type is not None:
@@ -311,12 +313,25 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
 
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
-    "dask_task_imposed_ec2_type, expected_ec2_type",
+    "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
     [
-        pytest.param(None, "r5n.4xlarge", id="No explicit instance defined"),
-        pytest.param("t2.xlarge", "t2.xlarge", id="Explicitely ask for t2.xlarge"),
         pytest.param(
-            "r5n.8xlarge", "r5n.8xlarge", id="Explicitely ask for r5n.8xlarge"
+            None,
+            parse_obj_as(ByteSize, "128Gib"),
+            "r5n.4xlarge",
+            id="No explicit instance defined",
+        ),
+        pytest.param(
+            "t2.xlarge",
+            parse_obj_as(ByteSize, "4Gib"),
+            "t2.xlarge",
+            id="Explicitely ask for t2.xlarge",
+        ),
+        pytest.param(
+            "r5n.8xlarge",
+            parse_obj_as(ByteSize, "128Gib"),
+            "r5n.8xlarge",
+            id="Explicitely ask for r5n.8xlarge",
         ),
     ],
 )
@@ -336,6 +351,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     dask_spec_local_cluster: distributed.SpecCluster,
     create_dask_task_resources: Callable[..., DaskTaskResources],
     dask_task_imposed_ec2_type: InstanceTypeType | None,
+    dask_ram: ByteSize,
     expected_ec2_type: InstanceTypeType,
 ):
     # we have nothing running now
@@ -343,7 +359,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_task_resources = create_dask_task_resources(dask_task_imposed_ec2_type)
+    dask_task_resources = create_dask_task_resources(
+        dask_task_imposed_ec2_type, dask_ram
+    )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
 
@@ -545,7 +563,9 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_task_resources = create_dask_task_resources(faker.pystr())
+    dask_task_resources = create_dask_task_resources(
+        faker.pystr(), parse_obj_as(ByteSize, "128GiB")
+    )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
 
@@ -579,7 +599,9 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_task_resources = create_dask_task_resources("t2.xlarge")
+    dask_task_resources = create_dask_task_resources(
+        "t2.xlarge", parse_obj_as(ByteSize, "128GiB")
+    )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
 
