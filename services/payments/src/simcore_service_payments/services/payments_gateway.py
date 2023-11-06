@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
+from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -25,7 +26,6 @@ from ..models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
-from ..utils.http_client import AppStateMixin, BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 

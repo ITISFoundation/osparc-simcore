@@ -12,7 +12,7 @@ import pytest
 import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
-from simcore_service_payments.utils.http_client import AppStateMixin, BaseHttpApi
+from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
 
 
 def test_using_app_state_mixin():
