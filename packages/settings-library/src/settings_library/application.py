@@ -1,20 +1,16 @@
-from pydantic import Field, PositiveInt, parse_obj_as
+from typing import Any, ClassVar
+
+from pydantic import Field, PositiveInt
 
 from .base import BaseCustomSettings
-from .basic_types import BuildTargetEnum, VersionTag
+from .basic_types import BuildTargetEnum
 
 
-class AppSettings(BaseCustomSettings):
-    """Base settings of any osparc service's app"""
+class BaseApplicationSettings(BaseCustomSettings):
+    """
+    Environments in image set at build-time
+    """
 
-    # CODE STATICS ---------------------------------------------------------
-    API_VERSION: str = API_VERSION
-    APP_NAME: str = PROJECT_NAME
-    API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
-
-
-class AppImageBuildSettings(BaseCustomSettings):
-    # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
     SC_BUILD_DATE: str | None = None
     SC_BUILD_TARGET: BuildTargetEnum | None = None
@@ -31,3 +27,16 @@ class AppImageBuildSettings(BaseCustomSettings):
     )
     SC_USER_ID: int | None = None
     SC_USER_NAME: str | None = None
+
+    class Config(BaseCustomSettings.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "SC_BUILD_TARGET": "production",
+                    "SC_BOOT_TARGET": "production",
+                    "SC_HEALTHCHECK_TIMEOUT": 3,
+                    "SC_USER_ID": 8004,
+                    "SC_USER_NAME": "scu",
+                }
+            ]
+        }
