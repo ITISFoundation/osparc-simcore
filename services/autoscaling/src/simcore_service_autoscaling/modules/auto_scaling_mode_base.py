@@ -79,8 +79,8 @@ class BaseAutoscaling(ABC):  # pragma: no cover
         ...
 
     @staticmethod
-    @abstracmethod
-    def get_task_defined_instance(task) -> InstanceTypeType:
+    @abstractmethod
+    def get_task_defined_instance(task) -> InstanceTypeType | None:
         ...
 
     @staticmethod

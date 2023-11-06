@@ -2,6 +2,7 @@ import asyncio
 import collections
 import dataclasses
 import datetime
+import functools
 import itertools
 import logging
 from typing import cast
@@ -258,6 +259,12 @@ async def _activate_drained_nodes(
     )
 
 
+def _by_instance_type_name(
+    ec2_type: EC2InstanceType, type_name: InstanceTypeType
+) -> bool:
+    return bool(ec2_type.name == type_name)
+
+
 async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list,
@@ -301,17 +308,20 @@ async def _find_needed_instances(
         try:
             # check if exact instance type is needed first
             if instance_type_name := auto_scaling_mode.get_task_defined_instance(task):
-
-                def _by_instance_type_name(x: EC2InstanceType) -> bool:
-                    return x.name == instance_type_name
-
                 filtered_instances = list(
-                    filter(_by_instance_type_name, available_ec2_types)
+                    filter(
+                        functools.partial(
+                            _by_instance_type_name, type_name=instance_type_name
+                        ),
+                        available_ec2_types,
+                    )
                 )
                 if not filtered_instances:
                     _logger.error(
-                        "Task %s requires an unauthorized EC2 instance type. Please check.",
+                        "Task %s requires an unauthorized EC2 instance type. Asked for %s, authorized are %s Please check.",
                         f"{task}",
+                        instance_type_name,
+                        available_ec2_types,
                     )
                     continue
                 needed_new_instance_types_for_tasks.append(

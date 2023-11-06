@@ -30,7 +30,7 @@ def get_max_resources_from_dask_task(task: DaskTask) -> Resources:
     )
 
 
-def _get_task_instance_restriction(task: DaskTask) -> InstanceTypeType | None:
+def get_task_instance_restriction(task: DaskTask) -> InstanceTypeType | None:
     return task.required_resources.get(DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY)
 
 
@@ -46,7 +46,7 @@ def try_assigning_task_to_node(
     instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
     filtered_list_of_instance_to_tasks = instance_to_tasks
-    task_instance_restriction = _get_task_instance_restriction(pending_task)
+    task_instance_restriction = get_task_instance_restriction(pending_task)
     if task_instance_restriction:
 
         def _by_instance_type(
@@ -84,7 +84,7 @@ async def try_assigning_task_to_pending_instances(
     )
 
     filtered_list_of_instance_to_tasks = iter(list_of_pending_instance_to_tasks)
-    task_instance_restriction = _get_task_instance_restriction(pending_task)
+    task_instance_restriction = get_task_instance_restriction(pending_task)
     if task_instance_restriction:
 
         def _by_instance_type(
@@ -134,7 +134,7 @@ def try_assigning_task_to_instance_types(
     list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[DaskTask]]],
 ) -> bool:
     filtered_list_of_instance_to_tasks = iter(list_of_instance_to_tasks)
-    task_instance_restriction = _get_task_instance_restriction(pending_task)
+    task_instance_restriction = get_task_instance_restriction(pending_task)
     if task_instance_restriction:
 
         def _by_instance_type(

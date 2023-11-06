@@ -7,6 +7,7 @@ from models_library.generated_models.docker_rest_api import Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import (
@@ -100,6 +101,10 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_max_resources_from_task(task) -> Resources:
         return utils.get_max_resources_from_dask_task(task)
+
+    @staticmethod
+    def get_task_defined_instance(task) -> InstanceTypeType | None:
+        return utils.get_task_instance_restriction(task)
 
     @staticmethod
     async def compute_node_used_resources(
