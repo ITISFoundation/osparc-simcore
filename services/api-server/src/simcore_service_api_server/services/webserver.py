@@ -439,7 +439,7 @@ class AuthSession:
     async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
         with _handle_webserver_api_errors():
             response = await self.client.get(
-                f"/wallets/default",
+                "/wallets/default",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
