@@ -171,7 +171,7 @@ def test_services_custom_constraints(
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
-    assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
+    assert isinstance(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS, list)
     assert expected == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
 
 

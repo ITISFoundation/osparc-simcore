@@ -26,6 +26,15 @@ SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
 SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
 
 
+class VFSCacheMode(str, Enum):
+    __slots__ = ()
+
+    OFF = "off"
+    MINIMAL = "minimal"
+    WRITES = "writes"
+    FULL = "full"
+
+
 class EnvoyLogLevel(StrAutoEnum):
     TRACE = auto()
     DEBUG = auto()
@@ -37,122 +46,6 @@ class EnvoyLogLevel(StrAutoEnum):
     def to_log_level(self) -> str:
         lower_log_level: str = self.value.lower()
         return lower_log_level
-
-
-class DynamicSidecarEgressSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
-        "envoyproxy/envoy:v1.25-latest",
-        description="envoy image to use",
-    )
-    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        default=EnvoyLogLevel.ERROR,  # type: ignore
-        description="log level for envoy proxy service",
-    )
-
-    #
-    # DEVELOPMENT ONLY config
-    #
-
-    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Path | None = Field(
-        None,
-        description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
-        example="osparc-simcore/services/dynamic-sidecar",
-    )
-
-    DYNAMIC_SIDECAR_PORT: PortInt = Field(
-        DEFAULT_FASTAPI_PORT,
-        description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]",
-    )
-
-    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
-        default=False,
-        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
-        "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
-        "where 30023 is the host published port",
-    )
-
-    PROXY_EXPOSE_PORT: bool = Field(
-        default=False,
-        description="exposes the proxy on localhost for debuging and testing",
-    )
-
-    DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
-        default=False,
-        description=(
-            "Limits concurrent service saves for a docker node. Guarantees "
-            "that no more than X services use a resource together. "
-            "NOTE: A node can end up with all the services from a single study. "
-            "When the study is closed/opened all the services will try to "
-            "upload/download their data. This causes a lot of disk "
-            "and network stress (especially for low power nodes like in AWS). "
-            "Some nodes collapse under load or behave unexpectedly."
-        ),
-    )
-    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
-        2, description="Amount of slots per resource on a node"
-    )
-    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
-        10,
-        description=(
-            "Lifetime of the lock. Allows the system to recover a lock "
-            "in case of crash, the lock will expire and result as released."
-        ),
-    )
-
-    @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
-    @classmethod
-    def auto_disable_if_production(cls, v, values):
-        if v and values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
-            _logger.warning(
-                "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
-                v,
-            )
-            return None
-        return v
-
-    @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
-    @classmethod
-    def auto_enable_if_development(cls, v, values):
-        if (
-            boot_mode := values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
-        ) and boot_mode.is_devel_mode():
-            # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
-            return True
-        return v
-
-    @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
-    @classmethod
-    def strip_leading_slashes(cls, v: str) -> str:
-        return v.lstrip("/")
-
-    @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
-    @classmethod
-    def validate_log_level(cls, v: str) -> str:
-        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
-        if v not in valid_log_levels:
-            msg = f"Log level must be one of {valid_log_levels} not {v}"
-            raise ValueError(msg)
-        return v
-
-
-class DynamicSidecarProxySettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_CADDY_VERSION: str = Field(
-        "2.6.4-alpine",
-        description="current version of the Caddy image to be pulled and used from dockerhub",
-    )
-    DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
-        default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
-        description="port where to expose the proxy's admin API",
-    )
-
-
-class VFSCacheMode(str, Enum):
-    __slots__ = ()
-
-    OFF = "off"
-    MINIMAL = "minimal"
-    WRITES = "writes"
-    FULL = "full"
 
 
 class RCloneSettings(SettingsLibraryRCloneSettings):
@@ -173,10 +66,32 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
     @classmethod
     def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
-        if v >= dir_cache_time:
+        if not v < dir_cache_time:
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             raise ValueError(msg)
         return v
+
+
+class DynamicSidecarProxySettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_CADDY_VERSION: str = Field(
+        "2.6.4-alpine",
+        description="current version of the Caddy image to be pulled and used from dockerhub",
+    )
+    DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
+        default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
+        description="port where to expose the proxy's admin API",
+    )
+
+
+class DynamicSidecarEgressSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
+        "envoyproxy/envoy:v1.25-latest",
+        description="envoy image to use",
+    )
+    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
+        default=EnvoyLogLevel.ERROR,  # type: ignore
+        description="log level for envoy proxy service",
+    )
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
@@ -230,10 +145,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "Provided by ops, are injected as service labels when starting the dy-sidecar, "
             "and Prometheus identifies the service as to be scraped"
         ),
-    )
-    DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: list[str] = Field(
-        default_factory=list,
-        description="Prometheus requires the service to be present on certain networks in order to get scraped",
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
@@ -334,3 +245,88 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "allow for some time to pass before declaring it failed."
         ),
     )
+
+    #
+    # DEVELOPMENT ONLY config
+    #
+
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Path | None = Field(
+        None,
+        description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
+        example="osparc-simcore/services/dynamic-sidecar",
+    )
+
+    DYNAMIC_SIDECAR_PORT: PortInt = Field(
+        DEFAULT_FASTAPI_PORT,
+        description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]",
+    )
+
+    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
+        default=False,
+        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
+        "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
+        "where 30023 is the host published port",
+    )
+
+    PROXY_EXPOSE_PORT: bool = Field(
+        default=False,
+        description="exposes the proxy on localhost for debuging and testing",
+    )
+
+    DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
+        default=False,
+        description=(
+            "Limits concurrent service saves for a docker node. Guarantees "
+            "that no more than X services use a resource together. "
+            "NOTE: A node can end up with all the services from a single study. "
+            "When the study is closed/opened all the services will try to "
+            "upload/download their data. This causes a lot of disk "
+            "and network stress (especially for low power nodes like in AWS). "
+            "Some nodes collapse under load or behave unexpectedly."
+        ),
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
+        2, description="Amount of slots per resource on a node"
+    )
+    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
+        10,
+        description=(
+            "Lifetime of the lock. Allows the system to recover a lock "
+            "in case of crash, the lock will expire and result as released."
+        ),
+    )
+
+    @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
+    @classmethod
+    def auto_disable_if_production(cls, v, values):
+        if v and values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
+            _logger.warning(
+                "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
+                v,
+            )
+            return None
+        return v
+
+    @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
+    @classmethod
+    def auto_enable_if_development(cls, v, values):
+        if (
+            boot_mode := values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
+        ) and boot_mode.is_devel_mode():
+            # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
+            return True
+        return v
+
+    @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
+    @classmethod
+    def strip_leading_slashes(cls, v: str) -> str:
+        return v.lstrip("/")
+
+    @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
+        if v not in valid_log_levels:
+            msg = f"Log level must be one of {valid_log_levels} not {v}"
+            raise ValueError(msg)
+        return v
