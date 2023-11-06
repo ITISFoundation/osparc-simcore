@@ -495,8 +495,12 @@ def mocked_aws_server_envs(
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
+# @pytest.fixture
+# def
+
+
 @pytest.fixture
-def aws_allowed_ec2_instance_type_names(
+def aws_allowed_ec2_instance_type_names_env(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:

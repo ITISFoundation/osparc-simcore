@@ -206,7 +206,7 @@ def minimal_configuration(
     aws_subnet_id: str,
     aws_security_group_id: str,
     aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names: list[str],
+    aws_allowed_ec2_instance_type_names_env: list[str],
     mocked_redis_server: None,
 ) -> None:
     ...
@@ -259,7 +259,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    aws_allowed_ec2_instance_type_names: list[str],
+    aws_allowed_ec2_instance_type_names_env: list[str],
     mock_rabbitmq_post_message: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mock_find_node_with_name: mock.Mock,
