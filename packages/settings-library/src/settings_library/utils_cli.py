@@ -169,8 +169,8 @@ def create_version_callback(application_version: str) -> Callable:
 
     def version(
         ctx: typer.Context,
-        version: bool
-        | None = (
+        *,
+        version: bool = (
             typer.Option(
                 None,
                 "--version",
@@ -181,6 +181,6 @@ def create_version_callback(application_version: str) -> Callable:
     ):
         """current version"""
         assert ctx  # nosec
-        assert version or not version  # nosec
+        assert version or 1  # nosec
 
     return version
