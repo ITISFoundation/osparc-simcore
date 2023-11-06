@@ -31,7 +31,7 @@ from ..models import (
     EC2InstanceType,
     Resources,
 )
-from ..utils import ec2, utils_docker
+from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
@@ -300,10 +300,10 @@ async def _find_needed_instances(
 
         try:
             # we need a new instance, let's find one
-            best_ec2_instance = ec2.find_best_fitting_ec2_instance(
+            best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
                 available_ec2_types,
                 auto_scaling_mode.get_max_resources_from_task(task),
-                score_type=ec2.closest_instance_policy,
+                score_type=utils_ec2.closest_instance_policy,
             )
             needed_new_instance_types_for_tasks.append((best_ec2_instance, [task]))
         except Ec2InstanceNotFoundError:

@@ -6,7 +6,7 @@ from servicelib.logging_utils import LogLevelInt
 from ..core.settings import get_application_settings
 from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
 from ..utils import dynamic_scaling as utils
-from ..utils import ec2, utils_docker
+from ..utils import utils_docker, utils_ec2
 from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -25,7 +25,7 @@ class DynamicAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_ec2_tags(app: FastAPI) -> dict[str, str]:
         app_settings = get_application_settings(app)
-        return ec2.get_ec2_tags_dynamic(app_settings)
+        return utils_ec2.get_ec2_tags_dynamic(app_settings)
 
     @staticmethod
     def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:

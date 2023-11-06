@@ -17,7 +17,7 @@ from ..models import (
     Resources,
 )
 from ..utils import computational_scaling as utils
-from ..utils import ec2, utils_docker
+from ..utils import utils_docker, utils_ec2
 from . import dask
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -39,7 +39,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_ec2_tags(app: FastAPI) -> dict[str, str]:
         app_settings = get_application_settings(app)
-        return ec2.get_ec2_tags_computational(app_settings)
+        return utils_ec2.get_ec2_tags_computational(app_settings)
 
     @staticmethod
     def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:
