@@ -51,11 +51,14 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")
+@routes.post(
+    f"/{VTAG}/wallets/{{wallet_id}}/payments",
+    name="create_payment",
+)
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def create_payment(request: web.Request):
+async def _create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(CreateWalletPayment, request)
@@ -84,16 +87,20 @@ async def create_payment(request: web.Request):
             osparc_credits=body_params.price_dollars / usd_per_credit,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
+            payment_method_id=None,
         )
 
         return envelope_json_response(payment, web.HTTPCreated)
 
 
-@routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
+@routes.get(
+    f"/{VTAG}/wallets/-/payments",
+    name="list_all_payments",
+)
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def list_all_payments(request: web.Request):
+async def _list_all_payments(request: web.Request):
     """Lists all user's payments to any of his wallets
 
     NOTE that only payments attributed to this user will be listed here
@@ -136,7 +143,7 @@ class PaymentsPathParams(WalletsPathParams):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def cancel_payment(request: web.Request):
+async def _cancel_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
 
@@ -167,7 +174,7 @@ class PaymentMethodsPathParams(WalletsPathParams):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def init_creation_of_payment_method(request: web.Request):
+async def _init_creation_of_payment_method(request: web.Request):
     """Triggers the creation of a new payment method.
     Note that creating a payment-method follows the init-prompt-ack flow
     """
@@ -203,7 +210,7 @@ async def init_creation_of_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def cancel_creation_of_payment_method(request: web.Request):
+async def _cancel_creation_of_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
@@ -228,12 +235,13 @@ async def cancel_creation_of_payment_method(request: web.Request):
 
 
 @routes.get(
-    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods", name="list_payments_methods"
+    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods",
+    name="list_payments_methods",
 )
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def list_payments_methods(request: web.Request):
+async def _list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
@@ -253,7 +261,7 @@ async def list_payments_methods(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def get_payment_method(request: web.Request):
+async def _get_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
@@ -274,7 +282,7 @@ async def get_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def delete_payment_method(request: web.Request):
+async def _delete_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
@@ -288,8 +296,54 @@ async def delete_payment_method(request: web.Request):
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
+@routes.post(
+    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods/{{payment_method_id}}:pay",
+    name="init_payment_with_payment_method",
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def _init_payment_with_payment_method(request: web.Request):
+    """Triggers the creation of a new payment method.
+    Note that creating a payment-method follows the init-prompt-ack flow
+    """
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
+    body_params = await parse_request_body_as(CreateWalletPayment, request)
+
+    wallet_id = path_params.wallet_id
+
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Payment transaction started to %s",
+        f"{wallet_id=}",
+        log_duration=True,
+        extra=get_log_record_extra(user_id=req_ctx.user_id),
+    ):
+        # Conversion
+        usd_per_credit = await get_current_product_credit_price(request)
+        if not usd_per_credit:
+            # '0 or None' should raise
+            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
+
+        payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
+            request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            wallet_id=wallet_id,
+            osparc_credits=body_params.price_dollars / usd_per_credit,
+            comment=body_params.comment,
+            price_dollars=body_params.price_dollars,
+            payment_method_id=path_params.payment_method_id,
+        )
+
+        return envelope_json_response(payment, web.HTTPAccepted)
+
+
 #
 # payment-autorecharge
+#
 
 
 @routes.get(
@@ -299,7 +353,7 @@ async def delete_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def get_wallet_autorecharge(request: web.Request):
+async def _get_wallet_autorecharge(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
@@ -319,7 +373,7 @@ async def get_wallet_autorecharge(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def update_wallet_autorecharge(request: web.Request):
+async def _replace_wallet_autorecharge(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)
