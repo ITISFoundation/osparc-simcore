@@ -4,6 +4,7 @@
 
 import asyncio
 import collections
+import contextlib
 import datetime
 import logging
 import re
@@ -20,11 +21,12 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, ValidationError, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
 from ..models import Resources
@@ -251,6 +253,26 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
             ),
         )
     return Resources(cpus=0, ram=ByteSize(0))
+
+
+DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY: Final[DockerLabelKey] = parse_obj_as(
+    # NOTE: This definition needs to be moved to common location (models-library, docker.py) once this is put to use.
+    DockerLabelKey,
+    "",
+)
+
+
+def get_task_instance_restriction(task: Task) -> InstanceTypeType | None:
+    with contextlib.suppress(ValidationError):
+        return (
+            parse_obj_as(
+                InstanceTypeType,
+                task.Labels.get(DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY),
+            )
+            if task.Labels
+            else None
+        )
+    return None
 
 
 def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
 from servicelib.logging_utils import LogLevelInt
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
@@ -86,6 +87,10 @@ class DynamicAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_max_resources_from_task(task) -> Resources:
         return utils_docker.get_max_resources_from_docker_task(task)
+
+    @staticmethod
+    def get_task_defined_instance(task) -> InstanceTypeType | None:
+        return utils_docker.get_task_instance_restriction(task)
 
     @staticmethod
     async def compute_node_used_resources(
