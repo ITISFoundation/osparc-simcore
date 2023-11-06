@@ -1,9 +1,9 @@
 from datetime import timedelta
 from typing import Any, ClassVar
 
-from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, SecretStr
 
+from ..emails import LowerCaseEmailStr
 from ._base import InputSchema
 
 

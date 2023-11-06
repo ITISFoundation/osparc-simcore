@@ -1,17 +1,14 @@
 from datetime import datetime
 from decimal import Decimal
 
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.resource_tracker import (
-    CreditTransactionStatus,
-    ServiceRunId,
-    ServiceRunStatus,
-)
-from models_library.services import ServiceKey, ServiceVersion
-from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import BaseModel
+
+from ..projects import ProjectID
+from ..projects_nodes_io import NodeID
+from ..resource_tracker import CreditTransactionStatus, ServiceRunId, ServiceRunStatus
+from ..services import ServiceKey, ServiceVersion
+from ..users import UserID
+from ..wallets import WalletID
 
 
 class ServiceRunGet(BaseModel):

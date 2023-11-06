@@ -1,12 +1,14 @@
 import http
 from typing import Any
 
-from models_library.utils.pydantic_tools_extension import NOT_REQUIRED
 from pydantic import BaseModel, Field
+
+from ..basic_types import IDStr
+from ..utils.pydantic_tools_extension import NOT_REQUIRED
 
 
 class DefaultApiError(BaseModel):
-    name: str = Field(
+    name: IDStr = Field(
         ...,
         description="Error identifier as a code or a name. Mostly for machine-machine communication.",
     )
@@ -18,4 +20,7 @@ class DefaultApiError(BaseModel):
     ) -> "DefaultApiError":
         httplib_code = http.HTTPStatus(code)
 
-        return cls(name=httplib_code.phrase, detail=detail or httplib_code.description)
+        return cls(
+            name=f"{code}",
+            detail=detail or httplib_code.description or httplib_code.phrase,
+        )

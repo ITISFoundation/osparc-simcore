@@ -15,7 +15,7 @@ from models_library.api_schemas__common.errors import DefaultApiError
 def test_create_default_api_error_from_status_code(code: int):
 
     error = DefaultApiError.from_status_code(code)
-    assert error.name
+    assert error.name == f"{code}"
     assert error.detail
 
     assert DefaultApiError.from_status_code(code, detail="FOO").detail == "FOO"
