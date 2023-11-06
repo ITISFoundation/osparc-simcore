@@ -9,6 +9,7 @@
 import asyncio
 import base64
 import datetime
+import logging
 from collections.abc import Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from unittest import mock
 import distributed
 import pytest
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
+from faker import Faker
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
@@ -305,6 +307,40 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
         return resources
 
     return _do
+
+
+async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_dask_task_resources: Callable[..., DaskTaskResources],
+    ec2_client: EC2Client,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # create a task that needs more power
+    dask_task_resources = create_dask_task_resources(faker.pystr())
+    dask_future = create_dask_task(dask_task_resources)
+    assert dask_future
+
+    # this should trigger a scaling up as we have no nodes
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+
+    # nothing runs
+    assert not all_instances["Reservations"]
+    # check there is an error in the logs
+    error_messages = [
+        x.message for x in caplog.get_records("call") if x.levelno == logging.ERROR
+    ]
+    assert len(error_messages) == 1
+    assert "requires an unauthorized EC2 instance type." in error_messages[0]
 
 
 @pytest.mark.acceptance_test()
