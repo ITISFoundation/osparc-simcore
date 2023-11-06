@@ -43,11 +43,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from ._dynamic_sidecar_settings import (
-    DynamicSidecarEgressSettings,
-    DynamicSidecarProxySettings,
-    DynamicSidecarSettings,
-)
+from .dynamic_sidecar_settings import DynamicSidecarSettings
 
 MINS = 60
 
@@ -287,12 +283,3 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
-
-
-assert DynamicSidecarEgressSettings  # nosec
-assert DynamicSidecarProxySettings  # nosec
-
-__all__: tuple[str, ...] = (
-    "DynamicSidecarEgressSettings",
-    "DynamicSidecarProxySettings",
-)
