@@ -193,6 +193,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
@@ -265,6 +266,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         ] = get_dynamic_proxy_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             swarm_network_name=swarm_network_name,
