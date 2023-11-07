@@ -26,3 +26,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ...,
         description="network all dynamic services are connected to",
     )
+
+    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
+        "3.8", description="docker-compose spec version used in the compose-specs"
+    )

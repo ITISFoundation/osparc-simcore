@@ -284,7 +284,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
 
     docker_compose_version = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
     )
 
     egress_proxy_settings = (
