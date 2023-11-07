@@ -394,7 +394,7 @@ async def mock_service(
 
 @pytest.mark.parametrize(
     "simcore_services_network_name",
-    ("n", "network", "with_underscore", "with-dash", "with-dash_with_underscore"),
+    ["n", "network", "with_underscore", "with-dash", "with-dash_with_underscore"],
 )
 def test_settings__valid_network_names(
     simcore_services_network_name: str,
