@@ -5,6 +5,7 @@
 import datetime
 import re
 from functools import cached_property
+from typing import Final
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -24,6 +25,7 @@ from pydantic import (
     AnyUrl,
     ConstrainedStr,
     Field,
+    NonNegativeInt,
     PositiveFloat,
     parse_obj_as,
     validator,
@@ -45,7 +47,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 
 from .dynamic_sidecar_settings import DynamicSidecarSettings
 
-MINS = 60
+_MINUTE: Final[NonNegativeInt] = 60
 
 
 class PlacementConstraintStr(ConstrainedStr):
@@ -100,7 +102,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = (
         Field(
-            30 * MINS,
+            30 * _MINUTE,
             description="interval at which cleaning of unused dy-sidecar "
             "docker volume removal services is executed",
         )

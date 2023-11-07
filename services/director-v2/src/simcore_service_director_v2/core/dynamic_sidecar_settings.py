@@ -2,12 +2,13 @@ import logging
 import random
 from enum import Enum, auto
 from pathlib import Path
+from typing import Final
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerGenericTag
 from models_library.projects_networks import DockerNetworkName
 from models_library.utils.enums import StrAutoEnum
-from pydantic import Field, PositiveFloat, PositiveInt, validator
+from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
@@ -16,7 +17,7 @@ from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 _logger = logging.getLogger(__name__)
 
-MINS = 60
+_MINUTE: Final[NonNegativeInt] = 60
 
 
 SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
@@ -44,6 +45,7 @@ class EnvoyLogLevel(StrAutoEnum):
     CRITICAL = auto()
 
     def to_log_level(self) -> str:
+        assert isinstance(self.value, str)  # nosec
         lower_log_level: str = self.value.lower()
         return lower_log_level
 
@@ -180,7 +182,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
-        60 * MINS,
+        60 * _MINUTE,
         description=(
             "After starting the dynamic-sidecar its docker_node_id is required. "
             "This operation can be slow based on system load, sometimes docker "
@@ -190,7 +192,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
-        60.0 * MINS,
+        60.0 * _MINUTE,
         description=(
             "When saving and restoring the state of a dynamic service, depending on the payload "
             "some services take longer or shorter to save and restore. Across the "
@@ -198,7 +200,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
-        1.0 * MINS,
+        1.0 * _MINUTE,
         description=(
             "Restarts all started containers. During this operation, no data "
             "stored in the container will be lost as docker compose restart "
@@ -206,14 +208,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
-        60.0 * MINS,
+        60.0 * _MINUTE,
         description=(
             "When starting container (`docker compose up`), images might "
             "require pulling before containers are started."
         ),
     )
     DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP: PositiveFloat = Field(
-        60.0 * MINS,
+        60.0 * _MINUTE,
         description=(
             "When stopping a service, depending on the amount of data to store, "
             "the operation might be very long. Also all relative created resources: "
@@ -222,13 +224,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
-        3.0 * MINS,
+        3.0 * _MINUTE,
         description=(
             "timeout for attaching/detaching project networks to/from a container"
         ),
     )
     DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S: PositiveFloat = Field(
-        1.0 * MINS,
+        1.0 * _MINUTE,
         description=(
             "time to wait before giving up on removing dynamic-sidecar's volumes"
         ),
@@ -242,7 +244,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
-        1 * MINS,
+        1 * _MINUTE,
         description=(
             "Connectivity between director-v2 and a dy-sidecar can be "
             "temporarily disrupted if network between swarm nodes has "
