@@ -14,3 +14,8 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
         default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
         description="port where to expose the proxy's admin API",
     )
+
+    PROXY_EXPOSE_PORT: bool = Field(
+        default=False,
+        description="exposes the proxy on localhost for debugging and testing",
+    )

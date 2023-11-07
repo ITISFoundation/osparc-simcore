@@ -73,17 +73,16 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    # move to scheduler
+    # move to DynamicServicesSettings
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
         auto_default_from_env=True
     )
 
-    # move to scheduler
+    # move to DynamicServicesSettings
     DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: EgressProxySettings = Field(
         auto_default_from_env=True
     )
 
-    # move to scheduler
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     #
@@ -206,12 +205,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
-    )
-
-    # move to  PROXY at this point
-    PROXY_EXPOSE_PORT: bool = Field(
-        default=False,
-        description="exposes the proxy on localhost for debuging and testing",
     )
 
     # move to scheduler

@@ -60,7 +60,7 @@ def get_dynamic_proxy_spec(
                 "TargetPort": proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
             }
         )
-    if dynamic_sidecar_settings.PROXY_EXPOSE_PORT:
+    if proxy_settings.PROXY_EXPOSE_PORT:
         ports.append({"Protocol": "tcp", "TargetPort": 80})
 
     return {
