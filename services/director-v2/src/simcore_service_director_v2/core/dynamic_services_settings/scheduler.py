@@ -45,3 +45,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
+
+    DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: dict[str, str] = Field(
+        ...,
+        description=(
+            "Provided by ops, are injected as service labels when starting the dy-sidecar, "
+            "and Prometheus identifies the service as to be scraped"
+        ),
+    )

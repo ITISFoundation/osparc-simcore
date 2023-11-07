@@ -74,15 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # move to scheduler
-    DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: dict[str, str] = Field(
-        ...,
-        description=(
-            "Provided by ops, are injected as service labels when starting the dy-sidecar, "
-            "and Prometheus identifies the service as to be scraped"
-        ),
-    )
-
-    # move to scheduler
     DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: list[str] = Field(
         default_factory=list,
         description="Prometheus will scrape service placed on these networks",

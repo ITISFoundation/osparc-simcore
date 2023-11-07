@@ -300,7 +300,7 @@ def get_dynamic_sidecar_spec(
             ): scheduler_data.version,
         }
         | get_prometheus_service_labels(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
             scheduler_data.callbacks_mapping,
         )
         | StandardSimcoreDockerLabels(
