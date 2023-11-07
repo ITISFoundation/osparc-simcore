@@ -9,10 +9,12 @@ from fastapi import FastAPI
 from servicelib.error_codes import create_error_code
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
+from .....core.dynamic_services_settings.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
     SchedulerData,

@@ -1,7 +1,7 @@
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 
-from ..dynamic_sidecar_settings import DynamicSidecarSettings
+from .dynamic_sidecar_settings import DynamicSidecarSettings
 from .scheduler import DynamicServicesSchedulerSettings
 
 

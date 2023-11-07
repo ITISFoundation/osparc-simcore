@@ -10,7 +10,9 @@ from redis.asyncio.lock import Lock
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
-from ..core.dynamic_sidecar_settings import DynamicSidecarSettings
+from ..core.dynamic_services_settings.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from ..core.errors import ConfigurationError, NodeRightsAcquireError
 
 DockerNodeId = str

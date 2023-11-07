@@ -28,7 +28,9 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .....core.dynamic_sidecar_settings import DynamicSidecarSettings
+from .....core.dynamic_services_settings.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (

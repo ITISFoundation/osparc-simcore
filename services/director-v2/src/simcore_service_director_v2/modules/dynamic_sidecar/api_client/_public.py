@@ -25,7 +25,9 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
-from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
+from ....core.dynamic_services_settings.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
