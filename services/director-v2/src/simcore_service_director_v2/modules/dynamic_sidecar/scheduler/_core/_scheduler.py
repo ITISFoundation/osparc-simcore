@@ -38,12 +38,10 @@ from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
-from .....core.dynamic_services_settings.dynamic_sidecar_settings import (
-    DynamicSidecarSettings,
-)
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
+from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label

@@ -17,9 +17,7 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 
 from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
-from ....core.dynamic_services_settings.dynamic_sidecar_settings import (
-    DynamicSidecarSettings,
-)
+from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 
 
 class DockerVersion(str):

@@ -68,7 +68,7 @@ from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from simcore_service_director_v2.core.dynamic_services_settings.dynamic_sidecar_settings import (
+from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     RCloneSettings,
 )
 from simcore_service_director_v2.core.settings import AppSettings

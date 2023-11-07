@@ -13,9 +13,7 @@ from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....core.dynamic_services_settings.dynamic_sidecar_settings import (
-    DynamicSidecarSettings,
-)
+from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace

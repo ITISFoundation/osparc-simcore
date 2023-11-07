@@ -20,10 +20,8 @@ from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
-from .....core.dynamic_services_settings.dynamic_sidecar_settings import (
-    DynamicSidecarSettings,
-)
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
+from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,

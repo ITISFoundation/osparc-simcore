@@ -14,9 +14,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
-from ....core.dynamic_services_settings.dynamic_sidecar_settings import (
-    DynamicSidecarSettings,
-)
+from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ..docker_service_specs.volume_remover import spec_volume_removal_service
 from ._utils import docker_client
 

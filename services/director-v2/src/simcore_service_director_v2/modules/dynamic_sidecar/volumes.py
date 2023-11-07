@@ -9,7 +9,7 @@ from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from settings_library.r_clone import S3Provider
 
-from ...core.dynamic_services_settings.dynamic_sidecar_settings import RCloneSettings
+from ...core.dynamic_services_settings.sidecar import RCloneSettings
 from .errors import DynamicSidecarError
 
 DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
