@@ -19,3 +19,9 @@ class RPCNamespace(ConstrainedStr):
         """
         composed_string = "-".join(f"{k}_{v}" for k, v in sorted(entries.items()))
         return parse_obj_as(cls, composed_string)
+
+
+class RPCMethodName(ConstrainedStr):
+    min_length: int = 1
+    max_length: int = 252
+    regex: re.Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)

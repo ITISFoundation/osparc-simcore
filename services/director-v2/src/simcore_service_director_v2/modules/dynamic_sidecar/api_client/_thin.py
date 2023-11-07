@@ -8,7 +8,7 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
-from ....core.settings import DynamicSidecarSettings
+from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from ._base import BaseThinClient, expect_status, retry_on_errors
 
 
@@ -254,3 +254,12 @@ class ThinSidecarsClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(proxy_endpoint, "/load", no_api_version=True)
         return await self.client.post(url, json=proxy_configuration)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_200_OK)
+    async def get_containers_inactivity(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/inactivity")
+        return await self.client.get(url)

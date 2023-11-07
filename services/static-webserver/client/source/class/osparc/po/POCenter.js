@@ -31,13 +31,19 @@ qx.Class.define("osparc.po.POCenter", {
       barPosition: "left",
       contentPadding: 0
     });
-    tabViews.getChildControl("bar").add(osparc.desktop.credits.UserCenter.createMiniProfileView());
+    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+      paddingRight: 10
+    });
+    tabViews.getChildControl("bar").add(miniProfile);
 
     const invitationsPage = this.__getInvitationsPage();
     tabViews.add(invitationsPage);
 
     const productPage = this.__getProductPage();
     tabViews.add(productPage);
+
+    const msgTemplatesPage = this.__getMsgTemplatesPage();
+    tabViews.add(msgTemplatesPage);
 
     this._add(tabViews);
   },
@@ -62,6 +68,19 @@ qx.Class.define("osparc.po.POCenter", {
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
       const productInfo = new osparc.po.ProductInfo();
+      productInfo.set({
+        margin: 10
+      });
+      page.add(productInfo);
+      return page;
+    },
+
+    __getMsgTemplatesPage: function() {
+      const title = this.tr("Message Templates");
+      const iconSrc = "@FontAwesome5Solid/envelope-open/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
+      const productInfo = new osparc.po.MessageTemplates();
       productInfo.set({
         margin: 10
       });

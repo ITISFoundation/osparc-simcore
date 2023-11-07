@@ -35,6 +35,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.rabbitmq import RabbitMQRPCClient
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -46,7 +47,9 @@ from tenacity.wait import wait_random
 from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
+    ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
+    ConfigurationError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
@@ -83,15 +86,114 @@ from ...utils.dags import (
 from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
+from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
 
 PIPELINE_ABORT_TIMEOUT_S = 10
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+async def _check_pipeline_not_running(
+    comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
+) -> None:
+    pipeline_state = get_pipeline_state_from_task_states(
+        await comp_tasks_repo.list_computational_tasks(computation.project_id)
+    )
+    if is_pipeline_running(pipeline_state):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
+        )
+
+
+async def _check_pipeline_startable(
+    pipeline_dag: nx.DiGraph,
+    computation: ComputationCreate,
+    catalog_client: CatalogClient,
+    clusters_repo: ClustersRepository,
+) -> None:
+    assert computation.product_name  # nosec
+    if deprecated_tasks := await find_deprecated_tasks(
+        computation.user_id,
+        computation.product_name,
+        [
+            ServiceKeyVersion(key=node[1]["key"], version=node[1]["version"])
+            for node in pipeline_dag.nodes.data()
+        ],
+        catalog_client,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
+        )
+    if computation.cluster_id:
+        # check the cluster ID is a valid one
+        try:
+            await clusters_repo.get_cluster(computation.user_id, computation.cluster_id)
+        except ClusterNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
+            ) from exc
+        except ClusterAccessForbiddenError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
+            ) from exc
+
+
+async def _try_start_pipeline(
+    *,
+    computation: ComputationCreate,
+    complete_dag: nx.DiGraph,
+    minimal_dag: nx.DiGraph,
+    scheduler: BaseCompScheduler,
+    project: ProjectAtDB,
+    users_repo: UsersRepository,
+) -> None:
+    if not minimal_dag.nodes():
+        # 2 options here: either we have cycles in the graph or it's really done
+        if find_computational_node_cycles(complete_dag):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Project {computation.project_id} contains cycles with computational services which are currently not supported! Please remove them.",
+            )
+        # there is nothing else to be run here, so we are done
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Project {computation.project_id} has no computational services",
+        )
+
+    # Billing info
+    wallet_id = None
+    wallet_name = None
+    if computation.wallet_info:
+        wallet_id = computation.wallet_info.wallet_id
+        wallet_name = computation.wallet_info.wallet_name
+
+    await scheduler.run_new_pipeline(
+        computation.user_id,
+        computation.project_id,
+        computation.cluster_id or DEFAULT_CLUSTER_ID,
+        RunMetadataDict(
+            node_id_names_map={
+                NodeID(node_idstr): node_data.label
+                for node_idstr, node_data in project.workbench.items()
+            },
+            product_name=computation.product_name,
+            project_name=project.name,
+            simcore_user_agent=computation.simcore_user_agent,
+            user_email=await users_repo.get_user_email(computation.user_id),
+            wallet_id=wallet_id,
+            wallet_name=wallet_name,
+        ),
+        use_on_demand_clusters=computation.use_on_demand_clusters,
+    )
 
 
 @router.post(
@@ -102,7 +204,7 @@ router = APIRouter()
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
-async def create_computation(  # noqa: C901, PLR0912
+async def create_computation(  # noqa: PLR0913
     computation: ComputationCreate,
     request: Request,
     project_repo: Annotated[
@@ -125,8 +227,9 @@ async def create_computation(  # noqa: C901, PLR0912
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
+    rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
 ) -> ComputationGet:
-    log.debug(
+    _logger.debug(
         "User %s is creating a new computation from project %s",
         f"{computation.user_id=}",
         f"{computation.project_id=}",
@@ -135,18 +238,8 @@ async def create_computation(  # noqa: C901, PLR0912
         # get the project
         project: ProjectAtDB = await project_repo.get_project(computation.project_id)
 
-        # FIXME: this could not be valid anymore if the user deletes the project in between right?
-
         # check if current state allow to modify the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
-            computation.project_id
-        )
-        pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
-        if is_pipeline_running(pipeline_state):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
-            )
+        await _check_pipeline_not_running(comp_tasks_repo, computation)
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
@@ -160,36 +253,9 @@ async def create_computation(  # noqa: C901, PLR0912
         )
 
         if computation.start_pipeline:
-            assert computation.product_name  # nosec
-            if deprecated_tasks := await find_deprecated_tasks(
-                computation.user_id,
-                computation.product_name,
-                [
-                    ServiceKeyVersion(key=node[1]["key"], version=node[1]["version"])
-                    for node in minimal_computational_dag.nodes.data()
-                ],
-                catalog_client,
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
-                )
-            if computation.cluster_id:
-                # check the cluster ID is a valid one
-                try:
-                    await clusters_repo.get_cluster(
-                        computation.user_id, computation.cluster_id
-                    )
-                except ClusterNotFoundError as exc:
-                    raise HTTPException(
-                        status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                        detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
-                    ) from exc
-                except ClusterAccessForbiddenError as exc:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
-                    ) from exc
+            await _check_pipeline_startable(
+                minimal_computational_dag, computation, catalog_client, clusters_repo
+            )
 
         # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
@@ -201,62 +267,32 @@ async def create_computation(  # noqa: C901, PLR0912
         min_computation_nodes: list[NodeID] = [
             NodeID(n) for n in minimal_computational_dag.nodes()
         ]
-        inserted_comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
-            project,
-            catalog_client,
-            director_client,
+        comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
+            project=project,
+            catalog_client=catalog_client,
+            director_client=director_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,
             rut_client=rut_client,
             is_wallet=bool(computation.wallet_info),
+            rabbitmq_rpc_client=rpc_client,
         )
 
         if computation.start_pipeline:
-            if not minimal_computational_dag.nodes():
-                # 2 options here: either we have cycles in the graph or it's really done
-                list_of_cycles = find_computational_node_cycles(complete_dag)
-                if list_of_cycles:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=f"Project {computation.project_id} contains cycles with computational services which are currently not supported! Please remove them.",
-                    )
-                # there is nothing else to be run here, so we are done
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Project {computation.project_id} has no computational services",
-                )
-
-            # Billing info
-            wallet_id = None
-            wallet_name = None
-            if computation.wallet_info:
-                wallet_id = computation.wallet_info.wallet_id
-                wallet_name = computation.wallet_info.wallet_name
-
-            await scheduler.run_new_pipeline(
-                computation.user_id,
-                computation.project_id,
-                computation.cluster_id or DEFAULT_CLUSTER_ID,
-                RunMetadataDict(
-                    node_id_names_map={
-                        NodeID(node_idstr): node_data.label
-                        for node_idstr, node_data in project.workbench.items()
-                    },
-                    product_name=computation.product_name,
-                    project_name=project.name,
-                    simcore_user_agent=computation.simcore_user_agent,
-                    user_email=await users_repo.get_user_email(computation.user_id),
-                    wallet_id=wallet_id,
-                    wallet_name=wallet_name,
-                ),
-                use_on_demand_clusters=computation.use_on_demand_clusters,
+            await _try_start_pipeline(
+                computation=computation,
+                complete_dag=complete_dag,
+                minimal_dag=minimal_computational_dag,
+                scheduler=scheduler,
+                project=project,
+                users_repo=users_repo,
             )
 
         # filter the tasks by the effective pipeline
         filtered_tasks = [
             t
-            for t in inserted_comp_tasks
+            for t in comp_tasks
             if f"{t.node_id}" in set(minimal_computational_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
@@ -272,7 +308,7 @@ async def create_computation(  # noqa: C901, PLR0912
             id=computation.project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
-                complete_dag, minimal_computational_dag, inserted_comp_tasks
+                complete_dag, minimal_computational_dag, comp_tasks
             ),
             url=parse_obj_as(
                 AnyHttpUrl,
@@ -288,13 +324,13 @@ async def create_computation(  # noqa: C901, PLR0912
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(
-                minimal_computational_dag, inserted_comp_tasks
+                minimal_computational_dag, comp_tasks
             ),
             stopped=compute_pipeline_stopped_timestamp(
-                minimal_computational_dag, inserted_comp_tasks
+                minimal_computational_dag, comp_tasks
             ),
             submitted=compute_pipeline_submitted_timestamp(
-                minimal_computational_dag, inserted_comp_tasks
+                minimal_computational_dag, comp_tasks
             ),
         )
 
@@ -306,6 +342,12 @@ async def create_computation(  # noqa: C901, PLR0912
         ) from e
     except PricingPlanUnitNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClustersKeeperNotAvailableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}"
+        ) from e
+    except ConfigurationError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
 @router.get(
@@ -331,7 +373,7 @@ async def get_computation(
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
 ) -> ComputationGet:
-    log.debug(
+    _logger.debug(
         "User %s getting computation status for project %s",
         f"{user_id=}",
         f"{project_id=}",
@@ -346,7 +388,7 @@ async def get_computation(
 
     pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
-    log.debug(
+    _logger.debug(
         "Computational task status by %s for %s has %s",
         f"{user_id=}",
         f"{project_id=}",
@@ -406,7 +448,7 @@ async def stop_computation(
     ],
     scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> ComputationGet:
-    log.debug(
+    _logger.debug(
         "User %s stopping computation for project %s",
         computation_stop.user_id,
         project_id,
@@ -499,7 +541,7 @@ async def delete_computation(
             try:
                 await scheduler.stop_pipeline(computation_stop.user_id, project_id)
             except SchedulerError as e:
-                log.warning(
+                _logger.warning(
                     "Project %s could not be stopped properly.\n reason: %s",
                     project_id,
                     e,
@@ -515,7 +557,7 @@ async def delete_computation(
                 retry_error_callback=return_last_value,
                 retry=retry_if_result(lambda result: result is False),
                 reraise=False,
-                before_sleep=before_sleep_log(log, logging.INFO),
+                before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
                 comp_tasks: list[
@@ -528,7 +570,7 @@ async def delete_computation(
 
             # wait for the pipeline to be stopped
             if not await check_pipeline_stopped():
-                log.error(
+                _logger.error(
                     "pipeline %s could not be stopped properly after %ss",
                     project_id,
                     PIPELINE_ABORT_TIMEOUT_S,

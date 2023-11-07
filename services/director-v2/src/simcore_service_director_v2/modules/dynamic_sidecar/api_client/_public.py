@@ -6,6 +6,7 @@ from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -24,7 +25,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
-from ....core.settings import DynamicSidecarSettings
+from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
@@ -442,6 +443,14 @@ class SidecarsClient:
             entrypoint_container_name, service_port
         )
         await self._thin_client.proxy_config_load(proxy_endpoint, proxy_configuration)
+
+    async def get_service_inactivity(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> InactivityResponse:
+        response = await self._thin_client.get_containers_inactivity(
+            dynamic_sidecar_endpoint
+        )
+        return InactivityResponse.parse_obj(response.json())
 
 
 def _get_proxy_configuration(

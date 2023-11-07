@@ -708,6 +708,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/products/{productName}"
+          },
+          updateEmailTemplate: {
+            method: "PUT",
+            url: statics.API + "/products/{productName}/templates/{templateId}"
           }
         }
       },
@@ -735,6 +739,10 @@ qx.Class.define("osparc.data.Resources", {
           cancelPayment: {
             method: "POST",
             url: statics.API + "/wallets/{walletId}/payments/{paymentId}:cancel"
+          },
+          payWithPaymentMethod: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:pay"
           }
         }
       },
@@ -864,9 +872,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/register"
           },
+          postRequestAccount: {
+            method: "POST",
+            url: statics.API + "/auth/request-account"
+          },
           checkInvitation: {
             method: "POST",
             url: statics.API + "/auth/register/invitations:check"
+          },
+          unregister: {
+            method: "POST",
+            url: statics.API + "/auth/unregister"
           },
           verifyPhoneNumber: {
             method: "POST",

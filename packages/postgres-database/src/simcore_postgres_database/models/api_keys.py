@@ -19,26 +19,50 @@ from .users import users
 api_keys = sa.Table(
     "api_keys",
     metadata,
-    sa.Column("id", sa.BigInteger(), nullable=False, primary_key=True),
-    sa.Column("display_name", sa.String(), nullable=False),
+    sa.Column(
+        "id",
+        sa.BigInteger(),
+        nullable=False,
+        primary_key=True,
+        doc="Primary key identifier",
+    ),
+    sa.Column(
+        "display_name",
+        sa.String(),
+        nullable=False,
+        doc="Human readable name. Unique for each user. SEE unique constraint below",
+    ),
     sa.Column(
         "user_id",
         sa.BigInteger(),
         sa.ForeignKey(users.c.id, ondelete="CASCADE"),
         nullable=False,
+        doc="Identified user",
+    ),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_api_keys_product_name",
+        ),
+        nullable=False,
+        doc="Identified product",
     ),
     sa.Column("api_key", sa.String(), nullable=False),
     sa.Column("api_secret", sa.String(), nullable=False),
     sa.Column(
         "created",
         sa.DateTime(),
-        nullable=False,
+        nullable=False,  # WARNING: still not updated to correct utc
         server_default=func.now(),
         doc="Timestamp auto-generated upon creation",
     ),
     sa.Column(
         "expires_at",
-        sa.DateTime(),
+        sa.DateTime(),  # WARNING: still not updated to correct utc
         nullable=True,
         doc="Sets the expiration date for this api-key."
         "If set to NULL then the key does not expire.",

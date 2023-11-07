@@ -72,6 +72,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "user.apikey.*",
             "user.notifications.update",
             "user.notifications.write",
+            "user.profile.delete",
             "user.profile.update",
             "user.tokens.*",
             "wallets.*",
@@ -89,8 +90,8 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
     ),
     UserRole.PRODUCT_OWNER: PermissionDict(
         can=[
-            "product.details.read",
-            "product.invitations",
+            "product.details.*",
+            "product.invitations.create",
         ],
         inherits=[UserRole.TESTER],
     ),

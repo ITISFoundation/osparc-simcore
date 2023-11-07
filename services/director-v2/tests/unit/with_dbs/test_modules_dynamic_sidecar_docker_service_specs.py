@@ -24,7 +24,9 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.core.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
@@ -207,7 +209,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
                         '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
                         ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
-                        '"command": ["ls", "-lah"], "timeout": 1.0}]}'
+                        '"command": ["ls", "-lah"], "timeout": 1.0}], "inactivity": null}'
                     ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",

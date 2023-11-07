@@ -5,7 +5,7 @@ import httpx
 import pytest
 import respx
 from httpx import AsyncClient
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
@@ -22,7 +22,8 @@ async def test_get_wallet(
     client: AsyncClient,
     mocked_webserver_service_api_base,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -42,7 +43,7 @@ async def test_get_wallet(
         return response
 
     respx_mock = respx_mock_from_capture(
-        mocked_webserver_service_api_base,
+        [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture,
         [_get_wallet_side_effect],
     )
@@ -51,7 +52,9 @@ async def test_get_wallet(
     response = await client.get(f"{API_VTAG}/wallets/{wallet_id}", auth=auth)
     if "success" in capture:
         assert response.status_code == 200
-        wallet: WalletGet = parse_obj_as(WalletGet, response.json())
+        wallet: WalletGetWithAvailableCredits = parse_obj_as(
+            WalletGetWithAvailableCredits, response.json()
+        )
         assert wallet.wallet_id == wallet_id
     elif "failure" in capture:
         assert response.status_code == 403

@@ -17,7 +17,7 @@ from yarl import URL
 
 from ._constants import INDEX_RESOURCE_NAME
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
@@ -101,7 +101,7 @@ def create_redirect_to_page_response(
 
     Front-end can then render this data either in an error or a view page
     """
-    log.debug("page: '%s' parameters: '%s'", page, parameters)
+    _logger.debug("page: '%s' parameters: '%s'", page, parameters)
     assert page in ("view", "error")  # nosec
 
     # NOTE: uniform encoding in front-end using url fragments

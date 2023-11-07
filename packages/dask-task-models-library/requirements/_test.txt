@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.5
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
@@ -16,15 +16,15 @@ attrs==23.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-charset-normalizer==3.2.0
+charset-normalizer==3.3.2
     # via aiohttp
-coverage==7.3.1
+coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 exceptiongroup==1.1.3
     # via pytest
-faker==19.6.1
+faker==19.13.0
     # via -r requirements/_test.in
 frozenlist==1.4.0
     # via
@@ -42,7 +42,7 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-packaging==23.1
+packaging==23.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -53,7 +53,7 @@ pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -69,11 +69,11 @@ pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.7
+pytest-icdiff==0.8
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.11.1
+pytest-mock==3.12.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -98,7 +98,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -c requirements/_base.txt
     #   pint

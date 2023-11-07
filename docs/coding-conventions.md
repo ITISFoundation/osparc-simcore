@@ -37,7 +37,34 @@ import os
 # x = "ok"
 ```
 
-### CC3 ...
+### CC3: Naming fixtures that return `Callable`s
+
+- If the callable creates an instance, you can use `_factory` as suffix instead (e.g. the [`tmp_path_factory` fixture](https://docs.pytest.org/en/7.1.x/how-to/tmp_path.html#the-tmp-path-factory-fixture))
+- Use verb as prefix, as seen in the example below
+
+
+```python
+
+@pytest.fixture
+def something() -> Something:
+  return Something("nice")
+
+@pytest.fixture
+def create_something() -> Callable[..., Something]:
+
+  def _create(*args, **kwargs) -> Something:
+
+    # ...
+  return _create
+
+def test_it(something: Something, create_something: Callable[..., Something]):
+
+  new_something = create_something(color="blue")
+  assert new_something != something
+
+```
+
+### CC4: ...
 
 ----
 ## Python

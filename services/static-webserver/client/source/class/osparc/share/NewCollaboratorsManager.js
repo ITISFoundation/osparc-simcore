@@ -37,7 +37,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   },
 
   events: {
-    "addCollaborators": "qx.event.type.Data"
+    "addEditors": "qx.event.type.Data"
   },
 
   members: {
@@ -90,7 +90,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       osparc.store.Store.getInstance().getPotentialCollaborators(false, includeEveryone)
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
-          this.__addCollaborators();
+          this.__addEditors();
         });
     },
 
@@ -108,7 +108,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       return collaboratorButton;
     },
 
-    __addCollaborators: function() {
+    __addEditors: function() {
       const visibleCollaborators = Object.values(this.__visibleCollaborators);
 
       // sort them first
@@ -166,7 +166,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         addCollabs.push(collabId);
       }
       if (addCollabs.length) {
-        this.fireDataEvent("addCollaborators", addCollabs);
+        this.fireDataEvent("addEditors", addCollabs);
       }
       // The parent class will close the window
     }

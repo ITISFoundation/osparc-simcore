@@ -724,75 +724,6 @@
         ]
       }
     },
-    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Get Job",
-        "description": "Gets job of a given solver",
-        "operationId": "get_job",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Key",
-              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "type": "string"
-            },
-            "name": "solver_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
-            "name": "version",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Job Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
-      }
-    },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
       "post": {
         "tags": [
@@ -986,6 +917,75 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job",
+        "description": "Gets job of a given solver",
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
                 }
               }
             }

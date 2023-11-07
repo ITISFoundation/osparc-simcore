@@ -37,57 +37,47 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
     }
   },
 
-  statics: {
-    POLLING_INTERVAL: 10000
-  },
-
   members: {
-    __interval: null,
-
     __currentStudyChanged: function(currentStudy) {
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         if (currentStudy) {
-          this.__startRequesting();
+          const store = osparc.store.Store.getInstance();
+          const contextWallet = store.getContextWallet();
+          if (contextWallet) {
+            this.__fetchUsedCredits();
+            contextWallet.addListener("changeCreditsAvailable", () => this.__fetchUsedCredits());
+          }
         } else {
-          this.__stopRequesting();
+          this.setUsedCredits(null);
         }
-      }
-    },
-
-    __startRequesting: function() {
-      this.setUsedCredits(0);
-
-      this.__interval = setInterval(() => this.__fetchUsedCredits(), this.self().POLLING_INTERVAL);
-      this.__fetchUsedCredits();
-    },
-
-    __stopRequesting: function() {
-      this.setUsedCredits(null);
-
-      if (this.__interval) {
-        clearInterval(this.__interval);
       }
     },
 
     __fetchUsedCredits: function() {
-      const params = {
-        url: {
-          offset: 0,
-          limit: 10
-        }
-      };
-      osparc.data.Resources.fetch("resourceUsage", "getPage", params)
-        .then(data => {
-          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-          const currentTasks = data.filter(d => (d.project_id === currentStudy.getUuid()) && d.service_run_status === "RUNNING");
-          let cost = 0;
-          currentTasks.forEach(currentTask => {
-            if (currentTask["credit_cost"]) {
-              cost += currentTask["credit_cost"];
-            }
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
+      const contextWallet = store.getContextWallet();
+      if (currentStudy && contextWallet) {
+        const walletId = contextWallet.getWalletId();
+        const params = {
+          url: {
+            walletId,
+            offset: 0,
+            limit: 10
+          }
+        };
+        osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params)
+          .then(data => {
+            const currentTasks = data.filter(d => (d.project_id === currentStudy.getUuid()) && d.service_run_status === "RUNNING");
+            let cost = 0;
+            currentTasks.forEach(currentTask => {
+              if (currentTask["credit_cost"]) {
+                cost += currentTask["credit_cost"];
+              }
+            });
+            this.setUsedCredits(cost);
           });
-          this.setUsedCredits(cost);
-        });
+      }
     }
   }
 });

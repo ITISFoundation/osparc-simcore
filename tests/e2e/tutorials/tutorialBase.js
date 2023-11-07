@@ -6,7 +6,7 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, templateName, user, pass, newUser, basicauthuser = "", basicauthpass= "", enableDemoMode = false, parallelUserIdx = null) {
+  constructor(url, templateName, user, pass, newUser, basicauthuser = "", basicauthpass = "", enableDemoMode = false, parallelUserIdx = null) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
     this.__screenshotText = templateName;
@@ -399,6 +399,17 @@ class TutorialBase {
     return await auto.findLogMessage(this.__page, text);
   }
 
+  async checkNodeLogsFunctional() {
+    // NOTE: logs containing [sidecar] are coming from the computational backend,
+    // and are proof of backend --> RabbitMQ --> frontend connectivity
+    const mustHave = "[sidecar]";
+    const found = await auto.findLogMessage(this.__page, mustHave);
+    if (!found) {
+      throw `log message '${mustHave}' is missing from logger!`;
+    }
+    console.log("found logs containing '[sidecar]'");
+  }
+
   async showLogger(show) {
     await auto.showLogger(this.__page, show);
   }
@@ -487,7 +498,7 @@ class TutorialBase {
       console.log("Service data items", itemTexts);
       const items = await this.__page.$$('[osparc-test-id="FolderViewerItem"]');
       let outputsFound = false;
-      for (let i=0; i<items.length; i++) {
+      for (let i = 0; i < items.length; i++) {
         const text = await items[i].evaluate(el => el.textContent);
         if (text.includes("output")) {
           console.log("Opening outputs folder");
@@ -503,7 +514,7 @@ class TutorialBase {
         await this.takeScreenshot("outputs_folder");
       }
       else {
-        throw("outputs folder not found");
+        throw ("outputs folder not found");
       }
     }
     const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
@@ -518,7 +529,7 @@ class TutorialBase {
     else {
       await this.takeScreenshot("checkNodeOutputs_after");
       await this.closeNodeFiles();
-      throw("Number of files is incorrect");
+      throw ("Number of files is incorrect");
     }
   }
 
@@ -582,7 +593,7 @@ class TutorialBase {
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
-          console.log("Study Card unlocked in " + ((waitFor + intervalWait*i)/1000) + "s");
+          console.log("Study Card unlocked in " + ((waitFor + intervalWait * i) / 1000) + "s");
           break;
         }
         console.log(studyId, "study card still locked");
@@ -634,7 +645,7 @@ class TutorialBase {
   async testS4L(s4lNodeId) {
     const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
     if (!splashScreenGone) {
-      throw("S4L Splash Screen Timeout");
+      throw ("S4L Splash Screen Timeout");
     }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
@@ -642,7 +653,7 @@ class TutorialBase {
     await this.takeScreenshot("Modeling");
     const modelTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-model');
     if (modelTrees.length !== 1) {
-      throw("Model tree missing");
+      throw ("Model tree missing");
     }
 
     const children = await utils.getChildrenElements(modelTrees[0]);
@@ -660,7 +671,7 @@ class TutorialBase {
   async testS4LTIPostPro(s4lNodeId) {
     const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
     if (!splashScreenGone) {
-      throw("S4L Splash screen Timeout");
+      throw ("S4L Splash screen Timeout");
     }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
@@ -668,7 +679,7 @@ class TutorialBase {
     await this.takeScreenshot("Postpro");
     const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
     if (algorithmTrees.length < 1) {
-      throw("Post Pro tree missing");
+      throw ("Post Pro tree missing");
     }
 
     const children = await utils.getChildrenElements(algorithmTrees[0]);
@@ -682,14 +693,14 @@ class TutorialBase {
       await this.takeScreenshot('AlgorithmClicked');
     }
     else {
-      throw("Post Pro tree items missing");
+      throw ("Post Pro tree items missing");
     }
   }
 
   async testS4LDipole(s4lNodeId) {
     const splashScreenGone = await this.__s4lSplashScreenOff(s4lNodeId);
     if (!splashScreenGone) {
-      throw("S4L Splash screen Timeout");
+      throw ("S4L Splash screen Timeout");
     }
 
     const s4lIframe = await this.getIframe(s4lNodeId);
@@ -698,7 +709,7 @@ class TutorialBase {
     await this.waitFor(2000, 'Model Mode clicked');
     await this.takeScreenshot("Model");
     const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
-    console.log("N items in model tree:", modelItems.length/2); // there are 2 trees
+    console.log("N items in model tree:", modelItems.length / 2); // there are 2 trees
 
     await this.waitAndClick('mode-button-simulation', s4lIframe);
     await this.waitFor(2000, 'Simulation Mode clicked');
@@ -722,7 +733,7 @@ class TutorialBase {
 
     // HACK: we need to switch modes to trigger the load of the postpro tree item
     const simulationPostproSwitchTries = 100;
-    for (let i=0; i<simulationPostproSwitchTries; i++) {
+    for (let i = 0; i < simulationPostproSwitchTries; i++) {
       await this.waitFor(2000, 'Waiting for results');
       await this.waitAndClick('mode-button-postro', s4lIframe);
       await this.takeScreenshot("Postpro");
@@ -741,12 +752,12 @@ class TutorialBase {
     const checkFrequency = 5000;
     // wait for iframe to be ready, it might take a while in Voila
     let iframe = null;
-    for (let i=0; i<voilaTimeout; i+=checkFrequency) {
+    for (let i = 0; i < voilaTimeout; i += checkFrequency) {
       iframe = await this.getIframe(voilaNodeId);
       if (iframe) {
         break;
       }
-      await this.waitFor(checkFrequency, `iframe not ready yet: ${i/1000}s`);
+      await this.waitFor(checkFrequency, `iframe not ready yet: ${i / 1000}s`);
     }
     return iframe;
   }
@@ -758,12 +769,12 @@ class TutorialBase {
     const voilaRenderTimeout = 120000;
     const checkFrequency = 2000;
     // wait for iframe to be rendered
-    for (let i=0; i<voilaRenderTimeout; i+=checkFrequency) {
+    for (let i = 0; i < voilaRenderTimeout; i += checkFrequency) {
       if (await utils.isElementVisible(iframe, '#rendered_cells')) {
         console.log("Voila rendered")
         return true;
       }
-      await this.waitFor(checkFrequency, `iframe not rendered yet: ${i/1000}s`);
+      await this.waitFor(checkFrequency, `iframe not rendered yet: ${i / 1000}s`);
     }
     return false;
   }

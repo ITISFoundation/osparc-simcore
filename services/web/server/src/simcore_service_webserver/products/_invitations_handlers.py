@@ -33,7 +33,7 @@ class _ProductsRequestContext(RequestParams):
 
 @routes.post(f"/{VTAG}/invitation:generate", name="generate_invitation")
 @login_required
-@permission_required("product.invitations")
+@permission_required("product.invitations.create")
 async def generate_invitation(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
     body = await parse_request_body_as(GenerateInvitation, request)

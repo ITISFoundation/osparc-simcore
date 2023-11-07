@@ -110,6 +110,7 @@ node_modules/
 # IDEs config (except templates)
 .vscode/*
 !.vscode/*.template.json
+.idea/
 
 # manual overrides
 services/docker-compose.override.yml

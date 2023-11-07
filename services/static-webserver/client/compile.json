@@ -56,7 +56,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4llite",
-      "title": "S4L lite",
+      "title": "Sim4Life lite",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -72,7 +72,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4lacad",
-      "title": "S4L Academic",
+      "title": "Sim4Life Academic",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -80,6 +80,38 @@
       ],
       "environment": {
         "product.name": "s4lacad"
+      },
+      "addTimestampsToUrls": true,
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.products.s4l.ThemeDark",
+      "name": "s4ldesktop",
+      "title": "Sim4Life Desktop",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.products.s4l.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "s4ldesktop"
+      },
+      "addTimestampsToUrls": true,
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.products.s4l.ThemeDark",
+      "name": "s4ldesktopacad",
+      "title": "Sim4Life Desktop Academia",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.products.s4l.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "s4ldesktopacad"
       },
       "addTimestampsToUrls": true,
       "bootPath": "source/boot"

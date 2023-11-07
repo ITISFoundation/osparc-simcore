@@ -197,7 +197,7 @@ def mocked_storage_service_api(
 
     # pylint: disable=not-context-manager
     with respx.mock(  # type: ignore
-        base_url=settings.DIRECTOR_V2_STORAGE.endpoint,
+        base_url=settings.DIRECTOR_V2_STORAGE.api_base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:

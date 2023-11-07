@@ -16,6 +16,8 @@ from pydantic import parse_obj_as
 
 from ..resource_usage.api import get_wallet_total_available_credits
 from ..users import api as users_api
+from ..users import preferences_api as user_preferences_api
+from ..users.exceptions import UserDefaultWalletNotFoundError
 from . import _db as db
 from .errors import WalletAccessForbiddenError
 
@@ -79,8 +81,9 @@ async def list_wallets_with_available_credits_for_user(
 
 async def get_wallet_with_available_credits_by_user_and_wallet(
     app: web.Application,
-    wallet_id: WalletID,
+    *,
     user_id: UserID,
+    wallet_id: WalletID,
     product_name: ProductName,
 ) -> WalletGetWithAvailableCredits:
     user_wallet_db: UserWalletDB = await db.get_wallet_for_user(
@@ -101,6 +104,26 @@ async def get_wallet_with_available_credits_by_user_and_wallet(
         created=user_wallet_db.created,
         modified=user_wallet_db.modified,
         available_credits=available_credits.available_osparc_credits,
+    )
+
+
+async def get_user_default_wallet_with_available_credits(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> WalletGetWithAvailableCredits:
+    user_default_wallet_preference = await user_preferences_api.get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=user_preferences_api.PreferredWalletIdFrontendUserPreference,
+    )
+    if user_default_wallet_preference is None:
+        raise UserDefaultWalletNotFoundError(uid=user_id)
+    default_wallet_id = parse_obj_as(WalletID, user_default_wallet_preference.value)
+    return await get_wallet_with_available_credits_by_user_and_wallet(
+        app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name
     )
 
 

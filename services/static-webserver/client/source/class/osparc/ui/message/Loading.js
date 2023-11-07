@@ -131,7 +131,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         padding: 15,
         gap: 20,
         icon: "@FontAwesome5Solid/exclamation-triangle/20",
-        backgroundColor: "warning-yellow-s4l",
+        backgroundColor: "warning-yellow",
         textColor: "black",
         alignX: "center"
       });

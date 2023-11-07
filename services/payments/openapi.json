@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-payments web API",
     "description": " Service that manages creation and validation of registration payments",
-    "version": "1.2.0"
+    "version": "1.3.1"
   },
   "paths": {
     "/": {
@@ -104,7 +104,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
+              "maxLength": 50,
+              "minLength": 1,
               "title": "Payment Id"
             },
             "name": "payment_id",
@@ -161,7 +162,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
+              "maxLength": 50,
+              "minLength": 1,
               "title": "Payment Method Id"
             },
             "name": "payment_method_id",
@@ -223,7 +225,8 @@
             "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
-            "title": "Invoice Url"
+            "title": "Invoice Url",
+            "description": "Link to invoice is required when success=true"
           },
           "saved": {
             "allOf": [
@@ -237,10 +240,17 @@
         },
         "type": "object",
         "required": [
-          "success",
-          "invoice_url"
+          "success"
         ],
-        "title": "AckPayment"
+        "title": "AckPayment",
+        "example": {
+          "success": true,
+          "invoice_url": "https://invoices.com/id=12345",
+          "saved": {
+            "success": true,
+            "payment_method_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          }
+        }
       },
       "AckPaymentMethod": {
         "properties": {
@@ -319,6 +329,15 @@
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version"
           },
+          "released": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
+            "title": "Released",
+            "description": "Maps every route's path tag with a released version"
+          },
           "docs_url": {
             "type": "string",
             "maxLength": 2083,
@@ -352,7 +371,8 @@
           },
           "payment_method_id": {
             "type": "string",
-            "format": "uuid",
+            "maxLength": 50,
+            "minLength": 1,
             "title": "Payment Method Id"
           }
         },

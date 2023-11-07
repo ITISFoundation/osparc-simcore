@@ -3,19 +3,28 @@
 import json
 import logging
 from asyncio import Lock
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
+from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_utils import docker_client
+from ..core.errors import (
+    ContainerExecCommandFailedError,
+    ContainerExecContainerNotFoundError,
+    ContainerExecTimeoutError,
+)
+from ..core.settings import ApplicationSettings
 from ..core.validation import parse_compose_spec
 from ..models.shared_store import SharedStore
-from ._dependencies import get_container_restart_lock, get_shared_store
+from ..modules.container_utils import run_command_in_container
+from ._dependencies import get_container_restart_lock, get_settings, get_shared_store
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _raise_if_container_is_missing(
@@ -23,7 +32,7 @@ def _raise_if_container_is_missing(
 ) -> None:
     if container_id not in container_names:
         message = f"No container '{container_id}' was started. Started containers '{container_names}'"
-        logger.warning(message)
+        _logger.warning(message)
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
@@ -39,17 +48,17 @@ router = APIRouter()
 @cancel_on_disconnect
 async def containers_docker_inspect(
     request: Request,
-    only_status: bool = Query(
-        False, description="if True only show the status of the container"
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+    container_restart_lock: Annotated[Lock, Depends(get_container_restart_lock)],
+    only_status: bool = Query(  # noqa: FBT001
+        default=False, description="if True only show the status of the container"
     ),
-    shared_store: SharedStore = Depends(get_shared_store),
-    container_restart_lock: Lock = Depends(get_container_restart_lock),
 ) -> dict[str, Any]:
     """
     Returns entire docker inspect data, if only_state is True,
     the status of the containers is returned
     """
-    assert request  # nosec
+    _ = request
 
     def _format_result(container_inspect: dict[str, Any]) -> dict[str, Any]:
         if only_status:
@@ -74,6 +83,44 @@ async def containers_docker_inspect(
             results[container] = _format_result(container_inspect)
 
         return results
+
+
+@router.get(
+    "/containers/inactivity",
+)
+@cancel_on_disconnect
+async def get_containers_inactivity(
+    request: Request,
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+) -> InactivityResponse:
+    _ = request
+    inactivity_command = settings.DY_SIDECAR_CALLBACKS_MAPPING.inactivity
+    if inactivity_command is None:
+        return InactivityResponse(seconds_inactive=None)
+
+    container_name = inactivity_command.service
+
+    try:
+        inactivity_response = await run_command_in_container(
+            shared_store.original_to_container_names[inactivity_command.service],
+            command=inactivity_command.command,
+            timeout=inactivity_command.timeout,
+        )
+        return parse_raw_as(InactivityResponse, inactivity_response)
+    except (
+        ContainerExecContainerNotFoundError,
+        ContainerExecCommandFailedError,
+        ContainerExecTimeoutError,
+    ):
+        _logger.warning(
+            "Could not run inactivity command '%s' in container '%s'",
+            inactivity_command.command,
+            container_name,
+            exc_info=True,
+        )
+
+    return InactivityResponse(seconds_inactive=None)
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.
@@ -101,33 +148,33 @@ async def containers_docker_inspect(
 @cancel_on_disconnect
 async def get_container_logs(
     request: Request,
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     container_id: str = PathParam(..., alias="id"),
     since: int = Query(
-        0,
+        default=0,
         title="Timestamp",
         description="Only return logs since this time, as a UNIX timestamp",
     ),
     until: int = Query(
-        0,
+        default=0,
         title="Timestamp",
         description="Only return logs before this time, as a UNIX timestamp",
     ),
-    timestamps: bool = Query(
-        False,
+    timestamps: bool = Query(  # noqa: FBT001
+        default=False,
         title="Display timestamps",
         description="Enabling this parameter will include timestamps in logs",
     ),
-    shared_store: SharedStore = Depends(get_shared_store),
 ) -> list[str]:
     """Returns the logs of a given container if found"""
-    assert request  # nosec
+    _ = request
 
     _raise_if_container_is_missing(container_id, shared_store.container_names)
 
     async with docker_client() as docker:
         container_instance = await docker.containers.get(container_id)
 
-        args = dict(stdout=True, stderr=True, since=since, until=until)
+        args = {"stdout": True, "stderr": True, "since": since, "until": until}
         if timestamps:
             args["timestamps"] = True
 
@@ -149,6 +196,7 @@ async def get_container_logs(
 @cancel_on_disconnect
 async def get_containers_name(
     request: Request,
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     filters: str = Query(
         ...,
         description=(
@@ -156,7 +204,6 @@ async def get_containers_name(
             "allow for dict as type in query parameters"
         ),
     ),
-    shared_store: SharedStore = Depends(get_shared_store),
 ) -> str | dict[str, Any]:
     """
     Searches for the container's name given the network
@@ -168,7 +215,7 @@ async def get_containers_name(
         exclude: matches if contained in the name of the
             container; `will exclude` containers
     """
-    assert request  # nosec
+    _ = request
 
     filters_dict: dict[str, str] = json.loads(filters)
     if not isinstance(filters_dict, dict):
@@ -219,11 +266,11 @@ async def get_containers_name(
 @cancel_on_disconnect
 async def inspect_container(
     request: Request,
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     container_id: str = PathParam(..., alias="id"),
-    shared_store: SharedStore = Depends(get_shared_store),
 ) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
-    assert request  # nosec
+    _ = request
 
     _raise_if_container_is_missing(container_id, shared_store.container_names)
 

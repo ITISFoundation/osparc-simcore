@@ -18,6 +18,10 @@ class WalletAccessForbiddenError(WalletsValueError):
     msg_template = "Wallet access forbidden. {reason}"
 
 
+class WalletNotEnoughCreditsError(WalletsValueError):
+    msg_template = "Wallet does not have enough credits. {reason}"
+
+
 # Wallet groups
 
 

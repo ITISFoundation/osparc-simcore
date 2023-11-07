@@ -100,8 +100,46 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           }
         };
         osparc.data.Resources.fetch("paymentMethods", "init", params)
-          .then(() => this.__fetchPaymentMethods());
+          .then(data => {
+            this.__popUpPaymentGateway(data["paymentMethodId"], data["paymentMethodFormUrl"]);
+            this.__fetchPaymentMethods();
+          });
       }
+    },
+
+    __cancelPaymentMethod: function(paymentMethodId) {
+      // inform backend
+      const params = {
+        url: {
+          walletId: this.getContextWallet().getWalletId(),
+          paymentMethodId
+        }
+      };
+      osparc.data.Resources.fetch("paymentMethods", "cancel", params)
+        .finally(() => this.__fetchPaymentMethods());
+    },
+
+    __windowClosed: function(paymentMethodId) {
+      const msg = this.tr("The window was closed. Try again and follow the instructions inside the opened window.");
+      osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      this.__cancelPaymentMethod(paymentMethodId);
+    },
+
+    __popUpPaymentGateway: function(paymentMethodId, url) {
+      const options = {
+        width: 400,
+        height: 600
+      };
+
+      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
+        url,
+        "Add payment method",
+        options
+      );
+      // listen to "tap" instead of "execute": the "execute" is not propagated
+      pgWindow.getChildControl("close-button").addListener("tap", () => this.__windowClosed(paymentMethodId));
+
+      return pgWindow;
     },
 
     __fetchPaymentMethods: function() {

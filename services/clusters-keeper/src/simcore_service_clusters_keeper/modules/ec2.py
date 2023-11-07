@@ -7,7 +7,8 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
-from pydantic import ByteSize, parse_obj_as
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
+from pydantic import ByteSize
 from servicelib.logging_utils import log_context
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -18,13 +19,19 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
+    ClustersKeeperRuntimeError,
     ConfigurationError,
     Ec2InstanceNotFoundError,
+    Ec2InstanceTypeInvalidError,
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
-from ..core.settings import EC2InstancesSettings, EC2Settings, get_application_settings
-from ..models import EC2InstanceData, EC2InstanceType, EC2Tags
+from ..core.settings import (
+    EC2ClustersKeeperSettings,
+    PrimaryEC2InstancesSettings,
+    get_application_settings,
+)
+from ..models import EC2InstanceData, EC2Tags
 from ..utils.ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)
@@ -37,14 +44,14 @@ class ClustersKeeperEC2:
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    async def create(cls, settings: EC2Settings) -> "ClustersKeeperEC2":
+    async def create(cls, settings: EC2ClustersKeeperSettings) -> "ClustersKeeperEC2":
         session = aioboto3.Session()
         session_client = session.client(
             "ec2",
-            endpoint_url=settings.CLUSTERS_KEEPER_EC2_ENDPOINT,
-            aws_access_key_id=settings.CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY,
-            region_name=settings.CLUSTERS_KEEPER_EC2_REGION_NAME,
+            endpoint_url=settings.EC2_CLUSTERS_KEEPER_ENDPOINT,
+            aws_access_key_id=settings.EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY,
+            region_name=settings.EC2_CLUSTERS_KEEPER_REGION_NAME,
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
@@ -67,27 +74,41 @@ class ClustersKeeperEC2:
         self,
         instance_type_names: set[InstanceTypeType],
     ) -> list[EC2InstanceType]:
-        """instance_type_names must be a set of unique values"""
-        instance_types = await self.client.describe_instance_types(
-            InstanceTypes=list(instance_type_names)
-        )
-        list_instances: list[EC2InstanceType] = []
-        for instance in instance_types.get("InstanceTypes", []):
-            with contextlib.suppress(KeyError):
-                list_instances.append(
-                    EC2InstanceType(
-                        name=instance["InstanceType"],
-                        cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                        ram=parse_obj_as(
-                            ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
-                        ),
+        """returns the ec2 instance types from a list of instance type names
+            NOTE: the order might differ!
+        Arguments:
+            instance_type_names -- the types to filter with
+
+        Raises:
+            Ec2InstanceTypeInvalidError: some invalid types were used as filter
+            ClustersKeeperRuntimeError: unexpected error communicating with EC2
+
+        """
+        try:
+            instance_types = await self.client.describe_instance_types(
+                InstanceTypes=list(instance_type_names)
+            )
+            list_instances: list[EC2InstanceType] = []
+            for instance in instance_types.get("InstanceTypes", []):
+                with contextlib.suppress(KeyError):
+                    list_instances.append(
+                        EC2InstanceType(
+                            name=instance["InstanceType"],
+                            cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                            ram=ByteSize(
+                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
+                            ),
+                        )
                     )
-                )
-        return list_instances
+            return list_instances
+        except botocore.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
+                raise Ec2InstanceTypeInvalidError from exc
+            raise ClustersKeeperRuntimeError from exc  # pragma: no cover
 
     async def start_aws_instance(
         self,
-        instance_settings: EC2InstancesSettings,
+        instance_settings: PrimaryEC2InstancesSettings,
         instance_type: InstanceTypeType,
         tags: EC2Tags,
         startup_script: str,
@@ -102,19 +123,19 @@ class ClustersKeeperEC2:
             current_instances = await self.get_instances(instance_settings, tags=tags)
             if (
                 len(current_instances) + number_of_instances
-                > instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES
+                > instance_settings.PRIMARY_EC2_INSTANCES_MAX_INSTANCES
             ):
                 raise Ec2TooManyInstancesError(
-                    num_instances=instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES
+                    num_instances=instance_settings.PRIMARY_EC2_INSTANCES_MAX_INSTANCES
                 )
 
             instances = await self.client.run_instances(
-                ImageId=instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID,
+                ImageId=instance_settings.PRIMARY_EC2_INSTANCES_AMI_ID,
                 MinCount=number_of_instances,
                 MaxCount=number_of_instances,
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",
-                KeyName=instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME,
+                KeyName=instance_settings.PRIMARY_EC2_INSTANCES_KEY_NAME,
                 TagSpecifications=[
                     {
                         "ResourceType": "instance",
@@ -129,8 +150,8 @@ class ClustersKeeperEC2:
                     {
                         "AssociatePublicIpAddress": True,
                         "DeviceIndex": 0,
-                        "SubnetId": instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID,
-                        "Groups": instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS,
+                        "SubnetId": instance_settings.PRIMARY_EC2_INSTANCES_SUBNET_ID,
+                        "Groups": instance_settings.PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS,
                     }
                 ],
             )
@@ -170,7 +191,7 @@ class ClustersKeeperEC2:
 
     async def get_instances(
         self,
-        instance_settings: EC2InstancesSettings,
+        instance_settings: PrimaryEC2InstancesSettings,
         *,
         tags: EC2Tags,
         state_names: list[InstanceStateNameType] | None = None,
@@ -183,7 +204,7 @@ class ClustersKeeperEC2:
         filters: list[FilterTypeDef] = [
             {
                 "Name": "key-name",
-                "Values": [instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME],
+                "Values": [instance_settings.PRIMARY_EC2_INSTANCES_KEY_NAME],
             },
             {"Name": "instance-state-name", "Values": state_names},
         ]
@@ -264,7 +285,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
 
-        settings: EC2Settings | None = get_application_settings(
+        settings: EC2ClustersKeeperSettings | None = get_application_settings(
             app
         ).CLUSTERS_KEEPER_EC2_ACCESS
 

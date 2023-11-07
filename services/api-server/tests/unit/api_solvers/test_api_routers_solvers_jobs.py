@@ -19,7 +19,6 @@ from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, parse_obj_as
-from pytest_mock.plugin import MockerFixture
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
@@ -69,6 +68,7 @@ def presigned_download_link(
         # Some fake auth, otherwise botocore.exceptions.NoCredentialsError: Unable to locate credentials
         aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
+        region_name="us-east-1",  # don't remove this
     )
     s3_client.create_bucket(Bucket=bucket_name)
 
@@ -206,20 +206,6 @@ async def test_solver_logs(
     pprint(dict(resp.headers))  # noqa: T203
 
 
-@pytest.fixture
-def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
-    from simcore_service_api_server.db.repositories.groups_extra_properties import (
-        GroupsExtraPropertiesRepository,
-    )
-
-    return mocker.patch.object(
-        GroupsExtraPropertiesRepository,
-        "use_on_demand_clusters",
-        autospec=True,
-        return_value=True,
-    )
-
-
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
@@ -264,9 +250,9 @@ async def test_run_solver_job(
     } == set(oas["components"]["schemas"]["ComputationGet"]["properties"].keys())
 
     # CREATE and optionally start
-    mocked_directorv2_service_api.post(
-        path__regex=r"/computations",
-        name="create_computation_v2_computations_post",
+    mocked_directorv2_service_api.get(
+        path__regex=r"^/v2/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+        name="inspect_computation",
     ).respond(
         status.HTTP_201_CREATED,
         json=jsonable_encoder(
@@ -302,6 +288,14 @@ async def test_run_solver_job(
                 }
             )
         ),
+    )
+
+    mocked_webserver_service_api.post(
+        path__regex=r"^/v0/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:start$",
+        name="webserver_start_job",
+    ).respond(
+        status_code=status.HTTP_201_CREATED,
+        json={"data": {"pipeline_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}},
     )
 
     # catalog_client.get_solver
@@ -382,10 +376,7 @@ async def test_run_solver_job(
         params={"cluster_id": 1},
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert mocked_directorv2_service_api[
-        "create_computation_v2_computations_post"
-    ].called
+    assert mocked_directorv2_service_api["inspect_computation"].called
 
     job_status = JobStatus.parse_obj(resp.json())
     assert job_status.progress == 0.0
-    mocked_groups_extra_properties.assert_called_once()

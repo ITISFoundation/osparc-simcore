@@ -21,6 +21,7 @@ from uuid import uuid4
 
 import faker
 from faker import Faker
+from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
@@ -65,7 +66,6 @@ def random_user(**overrides) -> dict[str, Any]:
         "email": FAKE.email().lower(),
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
-        "created_ip": FAKE.ipv4(),
     }
     assert set(data.keys()).issubset({c.name for c in users.columns})  # nosec
 
@@ -231,4 +231,36 @@ def random_payment_transaction(
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
 
     data.update(overrides)
+    return data
+
+
+def random_api_key(product_name: str, user_id: int, **overrides) -> dict[str, Any]:
+    data = {
+        "display_name": FAKE.word(),
+        "product_name": product_name,
+        "user_id": user_id,
+        "api_key": FAKE.password(),
+        "api_secret": FAKE.password(),
+        "expires_at": None,
+    }
+    assert set(data.keys()).issubset({c.name for c in api_keys.columns})  # nosec
+    data.update(**overrides)
+    return data
+
+
+def random_payment_method_data(**overrides) -> dict[str, Any]:
+    # Produces data for GetPaymentMethod
+    data = {
+        "idr": FAKE.uuid4(),
+        "card_holder_name": FAKE.name(),
+        "card_number_masked": f"**** **** **** {FAKE.credit_card_number()[:4]}",
+        "card_type": FAKE.credit_card_provider(),
+        "expiration_month": FAKE.random_int(min=1, max=12),
+        "expiration_year": FAKE.future_date().year,
+        "street_address": FAKE.street_address(),
+        "zipcode": FAKE.zipcode(),
+        "country": FAKE.country(),
+        "created": utcnow(),
+    }
+    data.update(**overrides)
     return data

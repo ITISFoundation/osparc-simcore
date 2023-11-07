@@ -51,7 +51,7 @@ class _ProductsRequestParams(StrictRequestParams):
 
 @routes.get(f"/{VTAG}/products/{{product_name}}", name="get_product")
 @login_required
-@permission_required("product.details.read")
+@permission_required("product.details.*")
 async def _get_product(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProductsRequestParams, request)
@@ -67,5 +67,25 @@ async def _get_product(request: web.Request):
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
     assert GetProduct.Config.extra == Extra.ignore  # nosec
-    data = GetProduct(**product.dict())
+    data = GetProduct(**product.dict(), templates=[])
     return envelope_json_response(data)
+
+
+class _ProductTemplateParams(_ProductsRequestParams):
+    template_id: IDStr
+
+
+@routes.put(
+    f"/{VTAG}/products/{{product_name}}/templates/{{template_id}}",
+    name="update_product_template",
+)
+@login_required
+@permission_required("product.details.*")
+async def update_product_template(request: web.Request):
+    req_ctx = _ProductsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_ProductTemplateParams, request)
+
+    assert req_ctx  # nosec
+    assert path_params  # nosec
+
+    raise NotImplementedError

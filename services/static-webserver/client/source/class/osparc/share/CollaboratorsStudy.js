@@ -19,9 +19,9 @@
  * Widget for modifying Study permissions. This is the way for sharing studies
  * - Creates a copy of study data
  * - It allows changing study's access right, so that the study owners can:
- *   - Share it with Organizations and/or Organization Members (Collaborators)
- *   - Make other Collaborators Owner
- *   - Remove collaborators
+ *   - Share it with Organizations and/or Organization Members (Users)
+ *   - Make other Users Owner
+ *   - Remove users
  */
 
 qx.Class.define("osparc.share.CollaboratorsStudy", {
@@ -38,6 +38,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
       initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
+    }
+    if (studyData.resourceType === "study" || studyData.resourceType === "template") {
+      osparc.data.Roles.createRolesStudyResourceInfo();
     }
 
     this.base(arguments, serializedData, initCollabs);
@@ -134,7 +137,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborators: function(gids, cb) {
+    _addEditors: function(gids, cb) {
       if (gids.length === 0) {
         return;
       }
@@ -151,14 +154,14 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
-          const text = this.tr("Collaborator(s) successfully added.");
+          const text = this.tr("User(s) successfully added.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
 
           this.__checkShareePermissions(gids);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
           console.error(err);
         })
         .finally(() => cb());
@@ -270,12 +273,12 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         .finally(() => item.setEnabled(true));
     },
 
-    _promoteToCollaborator: function(collaborator, item) {
+    _promoteToEditor: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr("Viewer successfully made Collaborator"),
-        this.tr("Something went wrong making Viewer Collaborator"),
+        this.tr(`${osparc.data.Roles.STUDY[1].label} successfully changed ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[1].label} to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     },
@@ -284,20 +287,20 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr("Collaborator successfully made Owner"),
-        this.tr("Something went wrong making Collaborator Owner"),
+        this.tr(`${osparc.data.Roles.STUDY[2].label} successfully changed to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[2].label} to ${osparc.data.Roles.STUDY[3].label}`),
         item
       );
     },
 
-    _demoteToViewer: async function(collaborator, item) {
+    _demoteToUser: async function(collaborator, item) {
       const groupId = collaborator["gid"];
-      const demoteToViewer = (gid, itm) => {
+      const demoteToUser = (gid, itm) => {
         this.__make(
           gid,
           this.self().getViewerAccessRight(),
-          this.tr("Collaborator successfully made Viewer"),
-          this.tr("Something went wrong making Collaborator Viewer"),
+          this.tr(`${osparc.data.Roles.STUDY[2].label} successfully changed to ${osparc.data.Roles.STUDY[1].label}`),
+          this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[2].label} to ${osparc.data.Roles.STUDY[1].label}`),
           itm
         );
       };
@@ -305,7 +308,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
       const isOrganization = (groupData && !("id" in groupData));
       if (isOrganization) {
-        const msg = this.tr("Demoting to Viewer will remove write access to all the members of the Organization. Are you sure?");
+        const msg = this.tr(`Demoting to ${osparc.data.Roles.STUDY[1].label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmAction: "delete",
           confirmText: this.tr("Yes")
@@ -314,20 +317,20 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            demoteToViewer(groupId, item);
+            demoteToUser(groupId, item);
           }
         }, this);
       } else {
-        demoteToViewer(groupId, item);
+        demoteToUser(groupId, item);
       }
     },
 
-    _demoteToCollaborator: function(collaborator, item) {
+    _demoteToEditor: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr("Owner successfully made Collaborator"),
-        this.tr("Something went wrong making Owner Collaborator"),
+        this.tr(`${osparc.data.Roles.STUDY[3].label} successfully changed to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     }

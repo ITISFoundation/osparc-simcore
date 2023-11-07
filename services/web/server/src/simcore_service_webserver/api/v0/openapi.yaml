@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.34.0
+  version: 0.37.0
 servers:
 - url: ''
   description: webserver
@@ -67,6 +67,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.announcements._models.Announcement__'
+  /v0/auth/request-account:
+    post:
+      tags:
+      - auth
+      summary: Request Product Account
+      operationId: request_product_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRequestInfo'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/auth/register/invitations:check:
     post:
       tags:
@@ -107,6 +122,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
+  /v0/auth/unregister:
+    post:
+      tags:
+      - auth
+      summary: Unregister Account
+      operationId: unregister_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnregisterCheck'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Log_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/verify-phone-number:
     post:
       tags:
@@ -1018,7 +1058,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_ComputationStart'
+              $ref: '#/components/schemas/ComputationStart'
         required: true
       responses:
         '200':
@@ -1814,7 +1854,8 @@ paths:
         schema:
           title: Product Name
           anyOf:
-          - minLength: 1
+          - maxLength: 50
+            minLength: 1
             type: string
           - enum:
             - current
@@ -1828,6 +1869,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProduct_'
+  /v0/products/{product_name}/templates/{template_id}:
+    put:
+      tags:
+      - products
+      summary: Update Product Template
+      operationId: update_product_template
+      parameters:
+      - required: true
+        schema:
+          title: Product Name
+          anyOf:
+          - maxLength: 50
+            minLength: 1
+            type: string
+          - enum:
+            - current
+            type: string
+        name: product_name
+        in: path
+      - required: true
+        schema:
+          title: Template Id
+          maxLength: 50
+          minLength: 1
+          type: string
+        name: template_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductTemplate'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/invitation:generate:
     post:
       tags:
@@ -2243,6 +2320,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/projects/{project_id}/inactivity:
+    get:
+      tags:
+      - projects
+      summary: Get Project Inactivity
+      operationId: get_project_inactivity
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -3940,6 +4038,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/default:
+    get:
+      tags:
+      - wallets
+      summary: Get Default Wallet
+      operationId: get_default_wallet
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
   /v0/wallets/{wallet_id}:
     get:
       tags:
@@ -4013,11 +4124,11 @@ paths:
         required: true
       responses:
         '202':
-          description: Successfully initialized
+          description: Payment initialized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletPaymentCreated_'
+                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
   /v0/wallets/-/payments:
     get:
       tags:
@@ -4070,6 +4181,7 @@ paths:
       - required: true
         schema:
           title: Payment Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_id
@@ -4098,7 +4210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodInit_'
+                $ref: '#/components/schemas/Envelope_PaymentMethodInitiated_'
   /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
     post:
       tags:
@@ -4117,6 +4229,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_method_id
@@ -4165,6 +4278,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_method_id
@@ -4193,6 +4307,7 @@ paths:
       - required: true
         schema:
           title: Payment Method Id
+          maxLength: 50
           minLength: 1
           type: string
         name: payment_method_id
@@ -4200,6 +4315,42 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay:
+    post:
+      tags:
+      - wallets
+      summary: Init Payment With Payment Method
+      operationId: init_payment_with_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          maxLength: 50
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletPayment'
+        required: true
+      responses:
+        '202':
+          description: Payment initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
   /v0/wallets/{wallet_id}/auto-recharge:
     get:
       tags:
@@ -4398,6 +4549,15 @@ components:
           type: boolean
           description: gives deletion rights
       additionalProperties: false
+    AccountRequestInfo:
+      title: AccountRequestInfo
+      required:
+      - form
+      type: object
+      properties:
+        form:
+          title: Form
+          type: object
     Activity:
       title: Activity
       required:
@@ -5052,6 +5212,26 @@ components:
         next_url:
           title: Next Url
           type: string
+    ComputationStart:
+      title: ComputationStart
+      type: object
+      properties:
+        force_restart:
+          title: Force Restart
+          type: boolean
+          default: false
+        cluster_id:
+          title: Cluster Id
+          minimum: 0
+          type: integer
+          default: 0
+        subgraph:
+          title: Subgraph
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+          default: []
     ComputationTaskGet:
       title: ComputationTaskGet
       type: object
@@ -5293,6 +5473,14 @@ components:
           $ref: '#/components/schemas/GetProduct'
         error:
           title: Error
+    Envelope_GetProjectInactivityResponse_:
+      title: Envelope[GetProjectInactivityResponse]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetProjectInactivityResponse'
+        error:
+          title: Error
     Envelope_GetWalletAutoRecharge_:
       title: Envelope[GetWalletAutoRecharge]
       type: object
@@ -5373,12 +5561,12 @@ components:
           $ref: '#/components/schemas/PaymentMethodGet'
         error:
           title: Error
-    Envelope_PaymentMethodInit_:
-      title: Envelope[PaymentMethodInit]
+    Envelope_PaymentMethodInitiated_:
+      title: Envelope[PaymentMethodInitiated]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/PaymentMethodInit'
+          $ref: '#/components/schemas/PaymentMethodInitiated'
         error:
           title: Error
     Envelope_PresignedLink_:
@@ -5595,12 +5783,12 @@ components:
           $ref: '#/components/schemas/WalletGroupGet'
         error:
           title: Error
-    Envelope_WalletPaymentCreated_:
-      title: Envelope[WalletPaymentCreated]
+    Envelope_WalletPaymentInitiated_:
+      title: Envelope[WalletPaymentInitiated]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/WalletPaymentCreated'
+          $ref: '#/components/schemas/WalletPaymentInitiated'
         error:
           title: Error
     Envelope_WorkbenchViewApiModel_:
@@ -6367,12 +6555,44 @@ components:
           title: Creditsperusd
           minimum: 0.0
           type: number
+        templates:
+          title: Templates
+          type: array
+          items:
+            $ref: '#/components/schemas/GetProductTemplate'
+          description: List of templates available to this product for communications
+            (e.g. emails, sms, etc)
+    GetProductTemplate:
+      title: GetProductTemplate
+      required:
+      - id
+      - content
+      type: object
+      properties:
+        id:
+          title: Id
+          maxLength: 50
+          minLength: 1
+          type: string
+        content:
+          title: Content
+          type: string
+    GetProjectInactivityResponse:
+      title: GetProjectInactivityResponse
+      required:
+      - is_inactive
+      type: object
+      properties:
+        is_inactive:
+          title: Is Inactive
+          type: boolean
     GetWalletAutoRecharge:
       title: GetWalletAutoRecharge
       required:
       - paymentMethodId
-      - minBalanceInUsd
+      - minBalanceInCredits
       - topUpAmountInUsd
+      - monthlyLimitInUsd
       type: object
       properties:
         enabled:
@@ -6382,26 +6602,28 @@ components:
           default: false
         paymentMethodId:
           title: Paymentmethodid
+          maxLength: 50
           minLength: 1
           type: string
           description: Payment method in the wallet used to perform the auto-recharge
             payments or None if still undefined
-        minBalanceInUsd:
-          title: Minbalanceinusd
+        minBalanceInCredits:
+          title: Minbalanceincredits
           minimum: 0.0
           type: number
-          description: Minimum balance in USD that triggers an auto-recharge
+          description: Minimum balance in credits that triggers an auto-recharge [Read
+            only]
         topUpAmountInUsd:
           title: Topupamountinusd
           minimum: 0.0
           type: number
           description: Amount in USD payed when auto-recharge condition is satisfied
-        topUpCountdown:
-          title: Topupcountdown
-          exclusiveMinimum: true
-          type: integer
-          description: Maximum number of top-ups left or None to denote unlimited
-          minimum: 0
+        monthlyLimitInUsd:
+          title: Monthlylimitinusd
+          minimum: 0.0
+          type: number
+          description: Maximum amount in USD charged within a natural month.None indicates
+            no limit.
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -7343,6 +7565,7 @@ components:
       properties:
         idr:
           title: Idr
+          maxLength: 50
           minLength: 1
           type: string
         walletId:
@@ -7383,8 +7606,8 @@ components:
           type: boolean
           description: If true, this payment-method is used for auto-recharge
           default: false
-    PaymentMethodInit:
-      title: PaymentMethodInit
+    PaymentMethodInitiated:
+      title: PaymentMethodInitiated
       required:
       - walletId
       - paymentMethodId
@@ -7398,6 +7621,7 @@ components:
           minimum: 0
         paymentMethodId:
           title: Paymentmethodid
+          maxLength: 50
           minLength: 1
           type: string
         paymentMethodFormUrl:
@@ -7420,6 +7644,7 @@ components:
       properties:
         paymentId:
           title: Paymentid
+          maxLength: 50
           minLength: 1
           type: string
         priceDollars:
@@ -8434,7 +8659,6 @@ components:
       required:
       - enabled
       - paymentMethodId
-      - minBalanceInUsd
       - topUpAmountInUsd
       type: object
       properties:
@@ -8443,21 +8667,17 @@ components:
           type: boolean
         paymentMethodId:
           title: Paymentmethodid
+          maxLength: 50
           minLength: 1
           type: string
-        minBalanceInUsd:
-          title: Minbalanceinusd
-          minimum: 0.0
-          type: number
         topUpAmountInUsd:
           title: Topupamountinusd
           minimum: 0.0
           type: number
-        topUpCountdown:
-          title: Topupcountdown
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
+        monthlyLimitInUsd:
+          title: Monthlylimitinusd
+          minimum: 0.0
+          type: number
     RepoApiModel:
       title: RepoApiModel
       required:
@@ -9518,6 +9738,31 @@ components:
       example:
         service: github-api-v1
         token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+    UnregisterCheck:
+      title: UnregisterCheck
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          format: email
+        password:
+          title: Password
+          type: string
+          format: password
+          writeOnly: true
+    UpdateProductTemplate:
+      title: UpdateProductTemplate
+      required:
+      - content
+      type: object
+      properties:
+        content:
+          title: Content
+          type: string
     UploadedPart:
       title: UploadedPart
       required:
@@ -9802,15 +10047,15 @@ components:
           title: Modified
           type: string
           format: date-time
-    WalletPaymentCreated:
-      title: WalletPaymentCreated
+    WalletPaymentInitiated:
+      title: WalletPaymentInitiated
       required:
       - paymentId
-      - paymentFormUrl
       type: object
       properties:
         paymentId:
           title: Paymentid
+          maxLength: 50
           minLength: 1
           type: string
         paymentFormUrl:
@@ -9818,7 +10063,8 @@ components:
           maxLength: 2083
           minLength: 1
           type: string
-          description: Link to external site that holds the payment submission form
+          description: Link to external site that holds the payment submission form.None
+            if no prompt step is required (e.g. pre-selected credit card)
           format: uri
     WalletStatus:
       title: WalletStatus
@@ -9947,26 +10193,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/TaskCounts'
           description: task details
-    _ComputationStart:
-      title: _ComputationStart
-      type: object
-      properties:
-        force_restart:
-          title: Force Restart
-          type: boolean
-          default: false
-        cluster_id:
-          title: Cluster Id
-          minimum: 0
-          type: integer
-          default: 0
-        subgraph:
-          title: Subgraph
-          uniqueItems: true
-          type: array
-          items:
-            type: string
-          default: []
     _ComputationStarted:
       title: _ComputationStarted
       required:

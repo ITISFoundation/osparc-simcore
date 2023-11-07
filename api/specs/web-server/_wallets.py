@@ -17,13 +17,13 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodGet,
     PaymentMethodID,
-    PaymentMethodInit,
+    PaymentMethodInitiated,
     PaymentTransaction,
     PutWalletBodyParams,
     ReplaceWalletAutoRecharge,
     WalletGet,
     WalletGetWithAvailableCredits,
-    WalletPaymentCreated,
+    WalletPaymentInitiated,
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -61,6 +61,14 @@ async def list_wallets():
 
 
 @router.get(
+    "/wallets/default",
+    response_model=Envelope[WalletGetWithAvailableCredits],
+)
+async def get_default_wallet():
+    ...
+
+
+@router.get(
     "/wallets/{wallet_id}",
     response_model=Envelope[WalletGetWithAvailableCredits],
 )
@@ -81,8 +89,8 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 
 @router.post(
     "/wallets/{wallet_id}/payments",
-    response_model=Envelope[WalletPaymentCreated],
-    response_description="Successfully initialized",
+    response_model=Envelope[WalletPaymentInitiated],
+    response_description="Payment initialized",
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
@@ -111,7 +119,7 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
 
 @router.post(
     "/wallets/{wallet_id}/payments-methods:init",
-    response_model=Envelope[PaymentMethodInit],
+    response_model=Envelope[PaymentMethodInitiated],
     response_description="Successfully initialized",
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -153,6 +161,18 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
+):
+    ...
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay",
+    response_model=Envelope[WalletPaymentInitiated],
+    response_description="Payment initialized",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def init_payment_with_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID, _body: CreateWalletPayment
 ):
     ...
 

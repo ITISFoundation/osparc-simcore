@@ -10,6 +10,7 @@ import httpx
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
+from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
@@ -19,12 +20,16 @@ from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServicePricingPlanGet,
 )
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletGetWithAvailableCredits,
+)
+from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ValidationError
+from pydantic import PositiveInt, ValidationError
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.error_codes import create_error_code
@@ -127,10 +132,13 @@ class AuthSession:
     session_cookies: dict | None = None
 
     @classmethod
-    def create(cls, app: FastAPI, session_cookies: dict) -> "AuthSession":
+    def create(
+        cls, app: FastAPI, session_cookies: dict, product_header: dict[str, str]
+    ) -> "AuthSession":
         api = WebserverApi.get_instance(app)
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
+        api.client.headers = product_header
         return cls(
             _api=api,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
@@ -210,7 +218,11 @@ class AuthSession:
     async def put(self, path: str, body: dict) -> AnyJson | None:
         url = path.lstrip("/")
         try:
-            resp = await self.client.put(url, json=body, cookies=self.session_cookies)
+            resp = await self.client.put(
+                url,
+                json=body,
+                cookies=self.session_cookies,
+            )
         except Exception as err:
             _logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
@@ -326,7 +338,8 @@ class AuthSession:
 
     async def delete_project(self, project_id: ProjectID) -> None:
         response = await self.client.delete(
-            f"/projects/{project_id}", cookies=self.session_cookies
+            f"/projects/{project_id}",
+            cookies=self.session_cookies,
         )
         data = self._get_data_or_raise(
             response,
@@ -392,16 +405,45 @@ class AuthSession:
             data = Envelope[PricingUnitGet].parse_raw(response.text).data
             return data
 
+    async def connect_pricing_unit_to_project_node(
+        self,
+        project_id: UUID,
+        node_id: UUID,
+        pricing_plan: PositiveInt,
+        pricing_unit: PositiveInt,
+    ) -> None:
+        with _handle_webserver_api_errors():
+            response = await self.client.put(
+                f"/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan}/pricing-unit/{pricing_unit}",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+
+    async def start_project(
+        self, project_id: UUID, cluster_id: ClusterID | None = None
+    ) -> None:
+        with _handle_webserver_api_errors():
+            body_input: dict[str, Any] = {}
+            if cluster_id:
+                body_input["cluster_id"] = cluster_id
+            body: ComputationStart = ComputationStart(**body_input)
+            response = await self.client.post(
+                f"/computations/{project_id}:start",
+                cookies=self.session_cookies,
+                json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
+            )
+            response.raise_for_status()
+
     # WALLETS -------------------------------------------------
 
-    async def get_wallet(self, wallet_id: int) -> WalletGet:
+    async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         with _handle_webserver_api_errors():
             response = await self.client.get(
                 f"/wallets/{wallet_id}",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
-            data = Envelope[WalletGet].parse_raw(response.text).data
+            data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
             assert data  # nosec
             return data
 

@@ -11,6 +11,11 @@ import pytest
 import simcore_service_payments
 import yaml
 from faker import Faker
+from models_library.basic_types import IDStr
+from models_library.products import ProductName
+from models_library.users import UserID
+from models_library.wallets import WalletID
+from pydantic import EmailStr, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.utils_secrets import generate_token_secret_key
@@ -111,3 +116,38 @@ def app_environment(
             "PAYMENTS_PASSWORD": fake_password,
         },
     )
+
+
+#
+# Fakes
+#
+
+
+@pytest.fixture
+def product_name(faker: Faker) -> ProductName:
+    return parse_obj_as(IDStr, f"product-{faker.word()}")
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return parse_obj_as(UserID, faker.pyint())
+
+
+@pytest.fixture
+def user_email(faker: Faker) -> EmailStr:
+    return parse_obj_as(EmailStr, faker.email())
+
+
+@pytest.fixture
+def user_name(user_email: str) -> IDStr:
+    return parse_obj_as(IDStr, user_email.split("@")[0])
+
+
+@pytest.fixture
+def wallet_id(faker: Faker) -> WalletID:
+    return parse_obj_as(WalletID, faker.pyint())
+
+
+@pytest.fixture
+def wallet_name(faker: Faker) -> IDStr:
+    return parse_obj_as(IDStr, f"wallet-{faker.word()}")

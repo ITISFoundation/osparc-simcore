@@ -10,7 +10,7 @@ from settings_library.utils_cli import create_settings_command
 from ..core.settings import AppSettings
 from ..meta import PROJECT_NAME
 from ._close_and_save_service import async_close_and_save_service
-from ._core import async_project_save_state, async_project_state
+from ._core import async_project_save_state, async_project_state, async_service_state
 
 DEFAULT_NODE_SAVE_ATTEMPTS: Final[int] = 3
 DEFAULT_STATE_UPDATE_INTERVAL_S: Final[int] = 5
@@ -48,6 +48,14 @@ def project_state(
     Displays the state of the nodes in the project.
     """
     asyncio.run(async_project_state(project_id, blocking, update_interval))
+
+
+@main.command()
+def service_state(node_id: NodeID):
+    """
+    Prints the state of a services as tracked by director-v2
+    """
+    asyncio.run(async_service_state(node_id))
 
 
 @main.command()

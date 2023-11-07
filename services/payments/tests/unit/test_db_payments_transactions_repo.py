@@ -19,7 +19,6 @@ from simcore_service_payments.models.db import (
 
 pytest_simcore_core_services_selection = [
     "postgres",
-    "rabbit",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -76,6 +75,8 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
         invoice_url=fake.invoice_url,
         state_message="DONE",
     )
+
+    assert transaction_acked.payment_id == payment_id
 
     # list
     total_number_of_items, user_payments = await repo.list_user_payment_transactions(
