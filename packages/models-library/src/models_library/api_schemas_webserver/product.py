@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
-from models_library.products import ProductName
 from pydantic import ConstrainedInt, Field, HttpUrl, PositiveInt
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
+from ..products import ProductName
 from ._base import InputSchema, OutputSchema
 
 
