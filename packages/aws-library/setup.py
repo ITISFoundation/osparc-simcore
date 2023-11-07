@@ -25,9 +25,6 @@ INSTALL_REQUIREMENTS = tuple(
 
 TEST_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
-    | {
-        "simcore-models-library",
-    }
 )  # STRICT requirements
 
 
