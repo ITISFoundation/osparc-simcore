@@ -1,0 +1,7 @@
+#
+# Specifies third-party dependencies for 'dask-task-models-library'
+#
+--constraint ../../../requirements/constraints.txt
+
+aioboto3
+types-aiobotocore[ec2]
