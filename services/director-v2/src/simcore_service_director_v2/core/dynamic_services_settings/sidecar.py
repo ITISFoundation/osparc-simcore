@@ -74,12 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # move to scheduler
-    DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
-        default=False,
-        description="enables support for limiting service's volume size",
-    )
-
-    # move to scheduler
     SWARM_STACK_NAME: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",

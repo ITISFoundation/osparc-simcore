@@ -19,11 +19,11 @@ from models_library.services import RunID
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
-    DynamicServicesSchedulerSettings,
-)
 
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
+from .....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
@@ -193,7 +193,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
-            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+            has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
         )
 
