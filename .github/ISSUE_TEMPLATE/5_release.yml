@@ -140,8 +140,8 @@ body:
         make down-maintenance
         ```
         - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
-        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Check release CI
+        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Check deployed
           - [ ] aws deploy
           - [ ] dalco deploy

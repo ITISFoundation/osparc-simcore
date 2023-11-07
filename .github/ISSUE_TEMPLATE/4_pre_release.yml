@@ -140,8 +140,8 @@ body:
       label: Releasing
       value: |
         - [ ] Release (release draft)
-        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Check Release CI
+        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Check deployed
           - [ ] aws deploy
           - [ ] dalco deploy
