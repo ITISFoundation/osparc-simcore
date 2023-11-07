@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 err_console = Console(stderr=True)
 
-# SEE setup entrypoint 'simcore_service_invitations.cli:app'
+# SEE setup entrypoint 'simcore_service_invitations.cli:main'
 main = typer.Typer(name=PROJECT_NAME)
 main.command()(
     create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
