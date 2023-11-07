@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Final
+from typing import Final, Iterable
 
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
@@ -43,22 +43,9 @@ def _compute_tasks_needed_resources(tasks: list[DaskTask]) -> Resources:
 
 def try_assigning_task_to_node(
     pending_task: DaskTask,
-    instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]],
+    instance_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
-    filtered_list_of_instance_to_tasks = iter(instance_to_tasks)
-    task_instance_restriction = get_task_instance_restriction(pending_task)
-    if task_instance_restriction:
-
-        def _by_instance_type(
-            instance_to_task: tuple[AssociatedInstance, list[DaskTask]]
-        ) -> bool:
-            ass_instance, _ = instance_to_task
-            return bool(ass_instance.ec2_instance.type == task_instance_restriction)
-
-        filtered_list_of_instance_to_tasks = filter(
-            _by_instance_type, instance_to_tasks
-        )
-    for instance, node_assigned_tasks in filtered_list_of_instance_to_tasks:
+    for instance, node_assigned_tasks in instance_to_tasks:
         instance_total_resource = utils_docker.get_node_total_resources(instance.node)
         tasks_needed_resources = _compute_tasks_needed_resources(node_assigned_tasks)
         if (
@@ -72,7 +59,7 @@ def try_assigning_task_to_node(
 async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: DaskTask,
-    list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[DaskTask]]],
+    instances_to_tasks: Iterable[tuple[EC2InstanceData, list[DaskTask]]],
     type_to_instance_map: dict[str, EC2InstanceType],
     *,
     notify_progress: bool,
@@ -82,22 +69,7 @@ async def try_assigning_task_to_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-
-    filtered_list_of_instance_to_tasks = iter(list_of_pending_instance_to_tasks)
-    task_instance_restriction = get_task_instance_restriction(pending_task)
-    if task_instance_restriction:
-
-        def _by_instance_type(
-            instance_to_task: tuple[EC2InstanceData, list[DaskTask]]
-        ) -> bool:
-            instance_data, _ = instance_to_task
-            return bool(instance_data.type == task_instance_restriction)
-
-        filtered_list_of_instance_to_tasks = filter(
-            _by_instance_type, list_of_pending_instance_to_tasks
-        )
-
-    for instance, instance_assigned_tasks in filtered_list_of_instance_to_tasks:
+    for instance, instance_assigned_tasks in instances_to_tasks:
         instance_type = type_to_instance_map[instance.type]
         instance_total_resources = Resources(
             cpus=instance_type.cpus, ram=instance_type.ram
@@ -131,23 +103,9 @@ async def try_assigning_task_to_instances(
 
 def try_assigning_task_to_instance_types(
     pending_task: DaskTask,
-    list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[DaskTask]]],
+    instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[DaskTask]]],
 ) -> bool:
-    filtered_list_of_instance_to_tasks = iter(list_of_instance_to_tasks)
-    task_instance_restriction = get_task_instance_restriction(pending_task)
-    if task_instance_restriction:
-
-        def _by_instance_type(
-            instance_to_task: tuple[EC2InstanceType, list[DaskTask]]
-        ) -> bool:
-            instance_type, _ = instance_to_task
-            return bool(instance_type.name == task_instance_restriction)
-
-        filtered_list_of_instance_to_tasks = filter(
-            _by_instance_type, list_of_instance_to_tasks
-        )
-
-    for instance, instance_assigned_tasks in filtered_list_of_instance_to_tasks:
+    for instance, instance_assigned_tasks in instance_types_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
         tasks_needed_resources = _compute_tasks_needed_resources(
             instance_assigned_tasks

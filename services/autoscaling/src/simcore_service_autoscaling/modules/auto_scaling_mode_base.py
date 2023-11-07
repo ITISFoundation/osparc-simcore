@@ -47,7 +47,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        list_of_pending_instance_to_tasks: Iterable[tuple[EC2InstanceData, list]],
+        instances_to_tasks: Iterable[tuple[EC2InstanceData, list]],
         type_to_instance_map: dict[str, EC2InstanceType],
         *,
         notify_progress: bool
@@ -58,7 +58,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @abstractmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        list_of_instance_to_tasks: Iterable[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
     ) -> bool:
         ...
 

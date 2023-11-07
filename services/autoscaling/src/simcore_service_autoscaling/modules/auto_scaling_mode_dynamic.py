@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
@@ -46,15 +48,15 @@ class DynamicAutoscaling(BaseAutoscaling):
 
     @staticmethod
     def try_assigning_task_to_node(
-        task, instance_to_tasks: list[tuple[AssociatedInstance, list]]
+        task, instances_to_tasks: Iterable[tuple[AssociatedInstance, list]]
     ) -> bool:
-        return utils.try_assigning_task_to_node(task, instance_to_tasks)
+        return utils.try_assigning_task_to_node(task, instances_to_tasks)
 
     @staticmethod
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list]],
+        instances_to_tasks: Iterable[tuple[EC2InstanceData, list]],
         type_to_instance_map: dict[str, EC2InstanceType],
         *,
         notify_progress: bool
@@ -62,7 +64,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         return await utils.try_assigning_task_to_pending_instances(
             app,
             pending_task,
-            list_of_pending_instance_to_tasks,
+            instances_to_tasks,
             type_to_instance_map,
             notify_progress=notify_progress,
         )
@@ -70,10 +72,10 @@ class DynamicAutoscaling(BaseAutoscaling):
     @staticmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        list_of_instance_to_tasks: list[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
     ) -> bool:
         return utils.try_assigning_task_to_instances(
-            pending_task, list_of_instance_to_tasks
+            pending_task, instance_types_to_tasks
         )
 
     @staticmethod
@@ -83,8 +85,10 @@ class DynamicAutoscaling(BaseAutoscaling):
         await log_tasks_message(app, tasks, message, level=level)
 
     @staticmethod
-    async def progress_message_from_tasks(app: FastAPI, tasks: list, progress: float):
-        await progress_tasks_message(app, tasks, progress=1.0)
+    async def progress_message_from_tasks(
+        app: FastAPI, tasks: list, progress: float
+    ) -> None:
+        await progress_tasks_message(app, tasks, progress=progress)
 
     @staticmethod
     def get_max_resources_from_task(task) -> Resources:
