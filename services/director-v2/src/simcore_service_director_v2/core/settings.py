@@ -5,7 +5,6 @@
 import datetime
 import re
 from functools import cached_property
-from typing import Final
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -20,15 +19,7 @@ from models_library.clusters import (
     ClusterAuthentication,
     NoAuthentication,
 )
-from pydantic import (
-    AnyHttpUrl,
-    AnyUrl,
-    ConstrainedStr,
-    Field,
-    NonNegativeInt,
-    parse_obj_as,
-    validator,
-)
+from pydantic import AnyHttpUrl, AnyUrl, ConstrainedStr, Field, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -45,10 +36,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from .dynamic_services.scheduler import DynamicServicesSchedulerSettings
-from .dynamic_sidecar_settings import DynamicSidecarSettings
-
-_MINUTE: Final[NonNegativeInt] = 60
+from .dynamic_services import DynamicServicesSettings
 
 
 class PlacementConstraintStr(ConstrainedStr):
@@ -76,20 +64,6 @@ class DirectorV0Settings(BaseCustomSettings):
             path=f"/{self.DIRECTOR_V0_VTAG}",
         )
         return url
-
-
-class DynamicServicesSettings(BaseCustomSettings):
-    # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module
-    # WARNING: THIS IS NOT the same module as dynamic-sidecar
-    DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
-        default=True, description="Enables/Disables the dynamic_sidecar submodule"
-    )
-
-    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
-
-    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings = Field(
-        auto_default_from_env=True
-    )
 
 
 class ComputationalBackendSettings(BaseCustomSettings):
