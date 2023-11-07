@@ -2,7 +2,6 @@ import asyncio
 import collections
 import dataclasses
 import datetime
-import functools
 import itertools
 import logging
 from typing import cast
@@ -37,6 +36,8 @@ from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
+    filter_by_task_defined_instance,
+    find_selected_instance_type_for_task,
     node_host_name_from_ec2_private_dns,
 )
 from ..utils.rabbitmq import post_autoscaling_status_message
@@ -267,93 +268,6 @@ async def _activate_drained_nodes(
     )
 
 
-def _instance_type_by_type_name(
-    ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
-) -> bool:
-    if type_name is None:
-        return True
-    return bool(ec2_type.name == type_name)
-
-
-def _instance_type_map_by_type_name(
-    mapping: tuple[EC2InstanceType, list], *, type_name: InstanceTypeType | None
-) -> bool:
-    ec2_type, _ = mapping
-    return _instance_type_by_type_name(ec2_type, type_name=type_name)
-
-
-def _instance_data_map_by_type_name(
-    mapping: tuple[EC2InstanceData, list], *, type_name: InstanceTypeType | None
-) -> bool:
-    if type_name is None:
-        return True
-    ec2_data, _ = mapping
-    return bool(ec2_data.type == type_name)
-
-
-def _filter_by_task_defined_instance(
-    instance_type_name: InstanceTypeType | None,
-    active_instances_to_tasks,
-    pending_instances_to_tasks,
-    needed_new_instance_types_for_tasks,
-) -> tuple:
-    return (
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            active_instances_to_tasks,
-        ),
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            pending_instances_to_tasks,
-        ),
-        filter(
-            functools.partial(
-                _instance_type_map_by_type_name, type_name=instance_type_name
-            ),
-            needed_new_instance_types_for_tasks,
-        ),
-    )
-
-
-def _find_selected_instance_type_for_task(
-    instance_type_name: InstanceTypeType,
-    available_ec2_types: list[EC2InstanceType],
-    auto_scaling_mode: BaseAutoscaling,
-    task,
-) -> EC2InstanceType:
-    filtered_instances = list(
-        filter(
-            functools.partial(
-                _instance_type_by_type_name, type_name=instance_type_name
-            ),
-            available_ec2_types,
-        )
-    )
-    if not filtered_instances:
-        msg = (
-            f"Task {task} requires an unauthorized EC2 instance type."
-            f"Asked for {instance_type_name}, authorized are {available_ec2_types}. Please check!"
-        )
-        raise Ec2InstanceInvalidError(msg=msg)
-
-    selected_instance = filtered_instances[0]
-    # check that the assigned resources and the machine resource fit
-    if auto_scaling_mode.get_max_resources_from_task(task) > Resources(
-        cpus=selected_instance.cpus, ram=selected_instance.ram
-    ):
-        msg = (
-            f"Task {task} requires more resources than the selected instance provides."
-            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_max_resources_from_task(task)}. Please check!",
-        )
-        raise Ec2InstanceInvalidError(msg=msg)
-
-    return selected_instance
-
-
 async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list,
@@ -379,7 +293,7 @@ async def _find_needed_instances(
             filtered_active_instance_to_task,
             filtered_pending_instance_to_task,
             filtered_needed_new_instance_types_to_task,
-        ) = _filter_by_task_defined_instance(
+        ) = filter_by_task_defined_instance(
             task_defined_ec2_type,
             active_instances_to_tasks,
             pending_instances_to_tasks,
@@ -412,7 +326,7 @@ async def _find_needed_instances(
         try:
             # check if exact instance type is needed first
             if task_defined_ec2_type:
-                defined_ec2 = _find_selected_instance_type_for_task(
+                defined_ec2 = find_selected_instance_type_for_task(
                     task_defined_ec2_type, available_ec2_types, auto_scaling_mode, task
                 )
                 needed_new_instance_types_for_tasks.append((defined_ec2, [task]))
