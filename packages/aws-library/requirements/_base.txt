@@ -33,12 +33,18 @@ botocore-stubs==1.31.79
     # via types-aiobotocore
 charset-normalizer==3.3.2
     # via aiohttp
+dnspython==2.4.2
+    # via email-validator
+email-validator==2.1.0.post1
+    # via pydantic
 frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
 idna==3.4
-    # via yarl
+    # via
+    #   email-validator
+    #   yarl
 jmespath==1.0.1
     # via
     #   boto3
@@ -47,6 +53,10 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
+pydantic==1.10.13
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 python-dateutil==2.8.2
     # via botocore
 s3transfer==0.7.0
@@ -61,6 +71,7 @@ types-awscrt==0.19.8
     # via botocore-stubs
 typing-extensions==4.8.0
     # via
+    #   pydantic
     #   types-aiobotocore
     #   types-aiobotocore-ec2
 urllib3==2.0.7

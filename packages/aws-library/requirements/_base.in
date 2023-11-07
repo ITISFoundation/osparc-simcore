@@ -4,4 +4,5 @@
 --constraint ../../../requirements/constraints.txt
 
 aioboto3
+pydantic[email]
 types-aiobotocore[ec2]
