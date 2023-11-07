@@ -7,6 +7,7 @@ import os
 
 import pytest
 from faker import Faker
+from models_library.products import ProductName
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
@@ -27,7 +28,10 @@ def test_cli_help_and_version(cli_runner: CliRunner):
 
 
 def test_invite_user_and_check_invitation(
-    cli_runner: CliRunner, faker: Faker, invitation_data: InvitationInputs
+    cli_runner: CliRunner,
+    faker: Faker,
+    invitation_data: InvitationInputs,
+    default_product: ProductName,
 ):
     # invitations-maker generate-key
     result = cli_runner.invoke(main, "generate-key")
@@ -37,7 +41,12 @@ def test_invite_user_and_check_invitation(
     environs = {
         "INVITATIONS_SECRET_KEY": result.stdout.strip(),
         "INVITATIONS_OSPARC_URL": faker.url(),
-        "INVITATIONS_DEFAULT_PRODUCT": "s4llite",
+        "INVITATIONS_DEFAULT_PRODUCT": default_product,
+    }
+
+    expected = {
+        **invitation_data.dict(exclude={"product"}),
+        "product": environs["INVITATIONS_DEFAULT_PRODUCT"],
     }
 
     # invitations-maker invite guest@email.com --issuer=me --trial-account-days=3
@@ -62,7 +71,8 @@ def test_invite_user_and_check_invitation(
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
-    assert invitation_data == InvitationInputs.parse_raw(result.stdout)
+
+    assert expected == InvitationInputs.parse_raw(result.stdout).dict()
 
 
 def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):

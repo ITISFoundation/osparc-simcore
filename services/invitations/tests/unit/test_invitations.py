@@ -84,7 +84,11 @@ def test_create_and_decrypt_invitation(
     )
 
     assert isinstance(invitation, InvitationContent)
-    assert invitation.dict(exclude={"created"}) == invitation_data.dict()
+    assert invitation.product is not None
+
+    expected = invitation_data.dict(exclude_none=True)
+    expected.setdefault("product", default_product)
+    assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
 
 
 #
@@ -105,13 +109,16 @@ def test_valid_invitation_code(
     secret_key: str,
     invitation_code: str,
     invitation_data: InvitationInputs,
+    default_product: ProductName,
 ):
     invitation = decrypt_invitation(
         invitation_code=invitation_code,
         secret_key=secret_key.encode(),
     )
 
-    assert invitation.dict(exclude={"created"}) == invitation_data.dict()
+    expected = invitation_data.dict(exclude_none=True)
+    expected.setdefault("product", default_product)
+    assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
 
 
 def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):

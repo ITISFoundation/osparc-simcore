@@ -119,10 +119,11 @@ def _create_invitation_code(
 
     # builds content
     content = InvitationContent(
-        product=default_product,
         **invitation_data.dict(exclude_none=True),
         created=datetime.now(tz=timezone.utc),
     )
+    if content.product is None:
+        content.product = default_product
 
     content_jsonstr: str = _ContentWithShortNames.serialize(content)
     assert "\n" not in content_jsonstr  # nosec
