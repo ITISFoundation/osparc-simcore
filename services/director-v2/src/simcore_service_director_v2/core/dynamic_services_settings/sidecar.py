@@ -74,12 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # move to scheduler
-    SWARM_STACK_NAME: str = Field(
-        ...,
-        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
-    )
-
-    # move to scheduler
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",

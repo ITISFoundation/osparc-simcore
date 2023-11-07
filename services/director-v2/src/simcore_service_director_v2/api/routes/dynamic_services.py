@@ -140,7 +140,7 @@ async def create_dynamic_service(
 
     #
     if not await is_sidecar_running(
-        service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
+        service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME
     ):
         await scheduler.add_service(
             service=service,

@@ -74,7 +74,11 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def dynamic_services_scheduler_settings() -> DynamicServicesSchedulerSettings:
+def dynamic_services_scheduler_settings(
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict
+) -> DynamicServicesSchedulerSettings:
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     return DynamicServicesSchedulerSettings.create_from_envs()
 
 
@@ -85,8 +89,7 @@ def dynamic_sidecar_settings(
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -181,7 +184,7 @@ def dynamic_sidecar_service_name() -> str:
 @pytest.fixture
 def dynamic_sidecar_service_spec(
     dynamic_sidecar_service_name: str,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     scheduler_data_from_http_request: SchedulerData,
 ) -> dict[str, Any]:
     # "joseluisq/static-web-server" is ~2MB docker image
@@ -196,7 +199,7 @@ def dynamic_sidecar_service_spec(
             f"{to_simcore_runtime_docker_label_key('project_id')}": f"{uuid4()}",
             f"{to_simcore_runtime_docker_label_key('user_id')}": "123",
             f"{to_simcore_runtime_docker_label_key('node_id')}": f"{uuid4()}",
-            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
             f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
             f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
             f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -236,7 +239,7 @@ def dynamic_sidecar_stack_specs(
     node_uuid: UUID,
     user_id: UserID,
     project_id: ProjectID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ) -> list[dict[str, Any]]:
     return [
         {
@@ -248,7 +251,7 @@ def dynamic_sidecar_stack_specs(
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
-                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
                 f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
                 f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
                 f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -263,7 +266,7 @@ def dynamic_sidecar_stack_specs(
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
-                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
                 f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
                 f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
                 f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -399,13 +402,13 @@ async def mock_service(
 def test_settings__valid_network_names(
     simcore_services_network_name: str,
     monkeypatch: pytest.MonkeyPatch,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ) -> None:
-    items = dynamic_sidecar_settings.dict()
+    items = dynamic_services_scheduler_settings.dict()
     items["SIMCORE_SERVICES_NETWORK_NAME"] = simcore_services_network_name
 
     # validate network names
-    DynamicSidecarSettings.parse_obj(items)
+    DynamicServicesSchedulerSettings.parse_obj(items)
 
 
 async def test_failed_docker_client_request(docker_swarm: None):
@@ -469,7 +472,7 @@ async def test_create_service(
 async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: dict[str, Any],
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     cleanup_test_dynamic_sidecar_service: None,
     docker_swarm: None,
 ):
@@ -479,7 +482,7 @@ async def test_services_to_observe_exist(
     assert service_id
 
     dynamic_services = await docker_api.get_dynamic_sidecars_to_observe(
-        dynamic_sidecar_settings
+        dynamic_services_scheduler_settings.SWARM_STACK_NAME
     )
     assert len(dynamic_services) == 1
 
@@ -536,13 +539,13 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
 
 async def test_is_dynamic_sidecar_stack_missing(
     node_uuid: UUID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
     services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
-        node_uuid, dynamic_sidecar_settings
+        node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
     )
     assert services_are_missing is True
 
@@ -552,20 +555,20 @@ async def test_is_dynamic_sidecar_stack_missing(
         assert service_id
 
     services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
-        node_uuid, dynamic_sidecar_settings
+        node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
     )
     assert services_are_missing is False
 
 
 async def test_are_sidecar_and_proxy_services_present(
     node_uuid: UUID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
     services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
-        node_uuid, dynamic_sidecar_settings
+        node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
     )
     assert services_are_missing is False
 
@@ -575,7 +578,7 @@ async def test_are_sidecar_and_proxy_services_present(
         assert service_id
 
     services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
-        node_uuid, dynamic_sidecar_settings
+        node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
     )
     assert services_are_missing is True
 
@@ -586,6 +589,7 @@ async def test_remove_dynamic_sidecar_stack(
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ):
     async def _count_services_in_stack(
         node_uuid: UUID,
@@ -595,7 +599,7 @@ async def test_remove_dynamic_sidecar_stack(
         services = await async_docker_client.services.list(
             filters={
                 "label": [
-                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
                     f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
                 ]
             }
@@ -623,7 +627,9 @@ async def test_remove_dynamic_sidecar_stack(
         == 2
     )
 
-    await docker_api.remove_dynamic_sidecar_stack(node_uuid, dynamic_sidecar_settings)
+    await docker_api.remove_dynamic_sidecar_stack(
+        node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
+    )
 
     assert (
         await _count_services_in_stack(
@@ -659,12 +665,15 @@ async def test_remove_dynamic_sidecar_network_fails(
 async def test_is_sidecar_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
     assert (
-        await docker_api.is_sidecar_running(node_uuid, dynamic_sidecar_settings)
+        await docker_api.is_sidecar_running(
+            node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
+        )
         is False
     )
 
@@ -678,7 +687,7 @@ async def test_is_sidecar_running(
     ):
         with attempt:
             is_sidecar_running = await docker_api.is_sidecar_running(
-                node_uuid, dynamic_sidecar_settings
+                node_uuid, dynamic_services_scheduler_settings.SWARM_STACK_NAME
             )
             print(f"Sidecar for service {node_uuid}: {is_sidecar_running=}")
             assert is_sidecar_running is True
@@ -836,12 +845,13 @@ async def test_remove_volume_from_node_ok(
     project_id: ProjectID,
     node_uuid: NodeID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ):
     for named_volume in named_volumes:
         assert await is_volume_present(async_docker_client, named_volume) is True
 
     volume_removal_result = await docker_api.remove_volumes_from_node(
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         volume_names=named_volumes,
         docker_node_id=target_node_id,
         user_id=user_id,
@@ -863,6 +873,7 @@ async def test_remove_volume_from_node_no_volume_found(
     project_id: ProjectID,
     node_uuid: NodeID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ):
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
     assert await is_volume_present(async_docker_client, missing_volume_name) is False
@@ -871,7 +882,7 @@ async def test_remove_volume_from_node_no_volume_found(
     volumes_to_remove = named_volumes[:1] + [missing_volume_name] + named_volumes[1:]
 
     volume_removal_result = await docker_api.remove_volumes_from_node(
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         volume_names=volumes_to_remove,
         docker_node_id=target_node_id,
         user_id=user_id,
@@ -905,7 +916,7 @@ async def ensure_fake_volume_removal_services(
     project_id: ProjectID,
     node_uuid: NodeID,
     volume_removal_services_names: list[str],
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     service_timeout_s: int,
     docker_swarm: None,
 ) -> AsyncIterator[None]:
@@ -913,7 +924,7 @@ async def ensure_fake_volume_removal_services(
 
     for service_name in volume_removal_services_names:
         service_spec = spec_volume_removal_service(
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
             docker_node_id=target_node_id,
             user_id=user_id,
             project_id=project_id,
@@ -956,7 +967,7 @@ async def test_get_volume_removal_services(
     ensure_fake_volume_removal_services: None,
     async_docker_client: aiodocker.Docker,
     volume_removal_services_names: set[str],
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     service_timeout_s: int,
 ):
     # services will be detected as timed out after 1 second
@@ -970,7 +981,9 @@ async def test_get_volume_removal_services(
     for service_name in pending_service_names:
         assert service_name in volume_removal_services_names
 
-    await docker_api.remove_pending_volume_removal_services(dynamic_sidecar_settings)
+    await docker_api.remove_pending_volume_removal_services(
+        dynamic_services_scheduler_settings.SWARM_STACK_NAME
+    )
 
     # check that timed out services have been removed
     pending_service_names = await _get_pending_services(async_docker_client)

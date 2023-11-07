@@ -13,7 +13,6 @@ from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import DynamicSidecarStatus, SchedulerData
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import (
@@ -65,9 +64,6 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
 
     logger.debug(
         "dynamic-sidecars cleanup pending volume removal services every %s seconds",
@@ -80,7 +76,7 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
         logger.debug("Removing pending volume removal services...")
 
         try:
-            await remove_pending_volume_removal_services(dynamic_sidecar_settings)
+            await remove_pending_volume_removal_services(settings.SWARM_STACK_NAME)
         except asyncio.CancelledError:
             logger.info("Stopped pending volume removal services task")
             raise
@@ -92,11 +88,11 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
 
 async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ignore
     """discover all services which were started before and add them to the scheduler"""
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        scheduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    settings: DynamicServicesSchedulerSettings = (
+        scheduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
     services_to_observe: list[SchedulerData] = await get_dynamic_sidecars_to_observe(
-        dynamic_sidecar_settings
+        settings.SWARM_STACK_NAME
     )
 
     logger.info("The following services need to be observed: %s", services_to_observe)

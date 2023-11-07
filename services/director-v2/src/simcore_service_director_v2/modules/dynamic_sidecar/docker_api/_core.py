@@ -114,15 +114,13 @@ async def create_service_and_get_id(
     return service_id
 
 
-async def get_dynamic_sidecars_to_observe(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> list[SchedulerData]:
+async def get_dynamic_sidecars_to_observe(swarm_stack_name: str) -> list[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
         running_dynamic_sidecar_services = await _list_docker_services(
             client,
             node_id=None,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=swarm_stack_name,
             return_only_sidecars=True,
         )
     return [
@@ -207,14 +205,14 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
 
 
 async def is_dynamic_sidecar_stack_missing(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+    node_uuid: NodeID, swarm_stack_name: str
 ) -> bool:
     """Check if the proxy and the dynamic-sidecar are absent"""
     async with docker_client() as client:
         stack_services = await _list_docker_services(
             client,
             node_id=node_uuid,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=swarm_stack_name,
             return_only_sidecars=False,
         )
     return len(stack_services) == 0
@@ -224,7 +222,7 @@ _NUM_SIDECAR_STACK_SERVICES: Final[int] = 2
 
 
 async def are_sidecar_and_proxy_services_present(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+    node_uuid: NodeID, swarm_stack_name: str
 ) -> bool:
     """
     The dynamic-sidecar stack always expects to have 2 running services
@@ -233,7 +231,7 @@ async def are_sidecar_and_proxy_services_present(
         stack_services = await _list_docker_services(
             client,
             node_id=node_uuid,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=swarm_stack_name,
             return_only_sidecars=False,
         )
     if len(stack_services) != _NUM_SIDECAR_STACK_SERVICES:
@@ -272,14 +270,14 @@ async def _list_docker_services(
 
 
 async def remove_dynamic_sidecar_stack(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
+    node_uuid: NodeID, swarm_stack_name: str
 ) -> None:
     """Removes all services from the stack, in theory there should only be 2 services"""
     async with docker_client() as client:
         services_to_remove = await _list_docker_services(
             client,
             node_id=node_uuid,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=swarm_stack_name,
             return_only_sidecars=False,
         )
 
@@ -308,14 +306,12 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def is_sidecar_running(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> bool:
+async def is_sidecar_running(node_uuid: NodeID, swarm_stack_name: str) -> bool:
     async with docker_client() as client:
         sidecar_service_list = await _list_docker_services(
             client,
             node_id=node_uuid,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=swarm_stack_name,
             return_only_sidecars=True,
         )
         if len(sidecar_service_list) != 1:

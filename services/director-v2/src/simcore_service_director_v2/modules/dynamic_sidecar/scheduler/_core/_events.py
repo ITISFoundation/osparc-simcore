@@ -95,9 +95,12 @@ class CreateSidecars(DynamicSchedulerEvent):
         if scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started:
             return False
 
+        settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        )
         return await is_dynamic_sidecar_stack_missing(
             node_uuid=scheduler_data.node_uuid,
-            dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
+            swarm_stack_name=settings.SWARM_STACK_NAME,
         )
 
     @classmethod

@@ -28,6 +28,9 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from .....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings
@@ -171,7 +174,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     task_progress: TaskProgress,
     app: FastAPI,
     node_uuid: NodeID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    swarm_stack_name: str,
     set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
@@ -183,7 +186,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     task_progress.update(message="removing dynamic sidecar stack", percent=0.1)
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        swarm_stack_name=swarm_stack_name,
     )
     # remove network
     task_progress.update(message="removing network", percent=0.2)
@@ -215,7 +218,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 logger, logging.DEBUG, f"removing volumes via service for {node_uuid}"
             ):
                 await remove_volumes_from_node(
-                    dynamic_sidecar_settings=dynamic_sidecar_settings,
+                    swarm_stack_name=swarm_stack_name,
                     volume_names=unique_volume_names,
                     docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
                     user_id=scheduler_data.user_id,
@@ -255,8 +258,8 @@ async def attempt_pod_removal_and_data_saving(
 ) -> None:
     # invoke container cleanup at this point
     app_settings: AppSettings = app.state.settings
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    settings: DynamicServicesSchedulerSettings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
 
     async def _remove_containers_save_state_and_outputs() -> None:
@@ -343,7 +346,7 @@ async def attempt_pod_removal_and_data_saving(
         await _remove_containers_save_state_and_outputs()
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
-        TaskProgress.create(), app, scheduler_data.node_uuid, dynamic_sidecar_settings
+        TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
     )
 
     # remove sidecar's api client

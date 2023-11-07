@@ -35,3 +35,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         default=False,
         description="enables support for limiting service's volume size",
     )
+
+    SWARM_STACK_NAME: str = Field(
+        ...,
+        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+    )
