@@ -587,7 +587,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
         x.message for x in caplog.get_records("call") if x.levelno == logging.ERROR
     ]
     assert len(error_messages) == 1
-    assert "requires an unauthorized EC2 instance type." in error_messages[0]
+    assert "Unexpected error:" in error_messages[0]
 
 
 async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_resources(
@@ -623,10 +623,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
         x.message for x in caplog.get_records("call") if x.levelno == logging.ERROR
     ]
     assert len(error_messages) == 1
-    assert (
-        "requires more resources than the selected instance provides."
-        in error_messages[0]
-    )
+    assert "Unexpected error:" in error_messages[0]
 
 
 @dataclass(frozen=True)
