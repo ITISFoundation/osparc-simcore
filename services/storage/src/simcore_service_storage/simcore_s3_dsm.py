@@ -142,8 +142,6 @@ class SimcoreS3DataManager(BaseDataManager):
 
         data: list[FileMetaData] = []
         accessible_projects_ids = []
-        delayed_expands: list[Coroutine] = []
-
         async with self.engine.acquire() as conn, conn.begin():
             accessible_projects_ids = await get_readable_project_ids(conn, user_id)
             file_and_directory_meta_data: list[
@@ -169,31 +167,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     data.append(convert_db_to_model(metadata))
                     continue
                 with suppress(S3KeyNotFoundError):
-                    # 1. this was uploaded using the legacy file upload that relied on
-                    # a background task checking the S3 backend unreliably, the file eventually
-                    # will be uploaded and this will lazily update the database
-                    # 2. this is still in upload and the file is missing and it will raise
                     updated_fmd = await self._update_database_from_storage(
                         conn, metadata
                     )
                     data.append(convert_db_to_model(updated_fmd))
-
-            # try to expand directories the max number of files to return was not reached
-            for metadata in file_and_directory_meta_data:
-                if (
-                    expand_dirs
-                    and metadata.is_directory
-                    and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
-                ):
-                    max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
-                    delayed_expands.append(
-                        expand_directory(
-                            self.app,
-                            self.simcore_bucket_name,
-                            metadata,
-                            max_items_to_include,
-                        )
-                    )
 
             # now parse the project to search for node/project names
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
@@ -205,9 +182,25 @@ class SimcoreS3DataManager(BaseDataManager):
                     for node_id, node_data in proj_data.workbench.items()
                 }
 
-        # expanding directories
-        for entry in delayed_expands:
-            data.extend(await entry)
+        # expand directories until the max number of files to return is not reached
+        directory_expands: list[Coroutine] = []
+        for metadata in file_and_directory_meta_data:
+            if (
+                expand_dirs
+                and metadata.is_directory
+                and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
+            ):
+                max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
+                directory_expands.append(
+                    expand_directory(
+                        self.app,
+                        self.simcore_bucket_name,
+                        metadata,
+                        max_items_to_include,
+                    )
+                )
+        for files_in_directory in await logged_gather(*directory_expands):
+            data.extend(files_in_directory)
 
         # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
         #        with information from the projects table!
