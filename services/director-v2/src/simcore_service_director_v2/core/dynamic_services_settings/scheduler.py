@@ -53,3 +53,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "and Prometheus identifies the service as to be scraped"
         ),
     )
+
+    DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: list[str] = Field(
+        default_factory=list,
+        description="Prometheus will scrape service placed on these networks",
+    )

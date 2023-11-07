@@ -317,7 +317,7 @@ def get_dynamic_sidecar_spec(
         "networks": [
             {"Target": swarm_network_id},
             *get_prometheus_monitoring_networks(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
                 scheduler_data.callbacks_mapping,
             ),
         ],
