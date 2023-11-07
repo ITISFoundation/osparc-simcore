@@ -9,10 +9,8 @@ from models_library.services_resources import (
 )
 from pydantic import ByteSize
 
-from ....core.dynamic_sidecar_settings import (
-    DynamicSidecarProxySettings,
-    DynamicSidecarSettings,
-)
+from ....core.dynamic_services.proxy import DynamicSidecarProxySettings
+from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 

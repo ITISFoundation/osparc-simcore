@@ -1,5 +1,4 @@
 import logging
-import random
 from enum import Enum
 from pathlib import Path
 from typing import Final
@@ -14,6 +13,7 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 from .dynamic_services.egress_proxy import EgressProxySettings
+from .dynamic_services.proxy import DynamicSidecarProxySettings
 
 _logger = logging.getLogger(__name__)
 
@@ -58,17 +58,6 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             raise ValueError(msg)
         return v
-
-
-class DynamicSidecarProxySettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_CADDY_VERSION: str = Field(
-        "2.6.4-alpine",
-        description="current version of the Caddy image to be pulled and used from dockerhub",
-    )
-    DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
-        default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
-        description="port where to expose the proxy's admin API",
-    )
 
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
