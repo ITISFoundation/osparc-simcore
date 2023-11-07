@@ -62,9 +62,9 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def try_assigning_task_to_node(
         task: DaskTask,
-        instance_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
+        instances_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
     ) -> bool:
-        return utils.try_assigning_task_to_node(task, instance_to_tasks)
+        return utils.try_assigning_task_to_node(task, instances_to_tasks)
 
     @staticmethod
     async def try_assigning_task_to_instances(

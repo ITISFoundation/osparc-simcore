@@ -38,7 +38,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @staticmethod
     @abstractmethod
     def try_assigning_task_to_node(
-        task, instance_to_tasks: list[tuple[AssociatedInstance, list]]
+        task, instances_to_tasks: list[tuple[AssociatedInstance, list]]
     ) -> bool:
         ...
 
