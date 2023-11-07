@@ -9,6 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
+from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from servicelib.json_serialization import json_dumps
@@ -37,23 +38,24 @@ NO_PENDING_OVERWRITE = {
     ServiceState.RUNNING,
 }
 
-
 log = logging.getLogger(__name__)
 
 
-async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> dict:
+async def get_swarm_network(simcore_services_network_name: DockerNetworkName) -> dict:
     async with docker_client() as client:
         all_networks = await client.networks.list()
 
-    network_name = "_default"
-    if dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME:
-        network_name = dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
     # try to find the network name (usually named STACKNAME_default)
     networks: list[dict] = [
-        x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
+        x
+        for x in all_networks
+        if "swarm" in x["Scope"] and simcore_services_network_name in x["Name"]
     ]
     if not networks or len(networks) > 1:
-        msg = f"Swarm network name (searching for '*{network_name}*') is not configured.Found following networks: {networks}"
+        msg = (
+            f"Swarm network name (searching for '*{simcore_services_network_name}*') "
+            f"is not configured.Found following networks: {networks}"
+        )
         raise DynamicSidecarError(msg)
     return networks[0]
 
@@ -141,7 +143,9 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             # previous might have died out.
             # Only interested in the latest task as only one task per
             # service will be running.
-            sorted_tasks = sorted(service_associated_tasks, key=lambda task: task["UpdatedAt"])  # type: ignore
+            sorted_tasks = sorted(
+                service_associated_tasks, key=lambda task: task["UpdatedAt"]
+            )  # type: ignore
 
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task

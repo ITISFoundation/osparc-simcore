@@ -168,7 +168,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # attach the service to the swarm network dedicated to services
         swarm_network: dict[str, Any] = await get_swarm_network(
-            dynamic_sidecar_settings
+            dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
         )
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]

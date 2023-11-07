@@ -418,7 +418,9 @@ async def test_get_swarm_network_ok(
     ensure_swarm_network: None,
     docker_swarm: None,
 ):
-    swarm_network = await docker_api.get_swarm_network(dynamic_sidecar_settings)
+    swarm_network = await docker_api.get_swarm_network(
+        dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
+    )
     assert swarm_network["Name"] == simcore_services_network_name
 
 
@@ -426,7 +428,9 @@ async def test_get_swarm_network_missing_network(
     dynamic_sidecar_settings: DynamicSidecarSettings, docker_swarm: None
 ):
     with pytest.raises(DynamicSidecarError) as excinfo:
-        await docker_api.get_swarm_network(dynamic_sidecar_settings)
+        await docker_api.get_swarm_network(
+            dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
+        )
 
     assert str(excinfo.value) == (
         "Swarm network name (searching for '*test_network_name*') is not configured."
