@@ -741,7 +741,6 @@ async def test__deactivate_empty_nodes(
     )
 
 
-@pytest.mark.testit
 async def test__deactivate_empty_nodes_with_finished_tasks_should_not_deactivate_until_tasks_are_retrieved(
     minimal_configuration: None,
     initialized_app: FastAPI,
