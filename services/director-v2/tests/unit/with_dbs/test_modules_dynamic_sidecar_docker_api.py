@@ -29,7 +29,9 @@ from simcore_service_director_v2.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.core.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     SchedulerData,

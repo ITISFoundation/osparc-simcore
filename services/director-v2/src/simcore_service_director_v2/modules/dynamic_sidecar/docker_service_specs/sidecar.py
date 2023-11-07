@@ -13,7 +13,8 @@ from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....core.settings import AppSettings, DynamicSidecarSettings
+from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
+from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -115,6 +116,16 @@ def get_prometheus_service_labels(
     # these labels instruct prometheus to scrape it.
     enable_prometheus_scraping = callbacks_mapping.metrics is not None
     return prometheus_service_labels if enable_prometheus_scraping else {}
+
+
+def get_prometheus_monitoring_networks(
+    prometheus_networks: list[str], callbacks_mapping: CallbacksMapping
+) -> list[dict[str, str]]:
+    return (
+        []
+        if callbacks_mapping.metrics is None
+        else [{"Target": network_name} for network_name in prometheus_networks]
+    )
 
 
 def get_dynamic_sidecar_spec(
@@ -299,7 +310,13 @@ def get_dynamic_sidecar_spec(
             cpu_limit=0,  # this should get overwritten
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.service_name,
-        "networks": [{"Target": swarm_network_id}],
+        "networks": [
+            {"Target": swarm_network_id},
+            *get_prometheus_monitoring_networks(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                scheduler_data.callbacks_mapping,
+            ),
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
