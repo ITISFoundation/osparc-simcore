@@ -11,6 +11,7 @@ from models_library.utils.enums import StrAutoEnum
 from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
+from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
@@ -96,7 +97,7 @@ class EgressProxySettings(BaseCustomSettings):
     )
 
 
-class DynamicSidecarSettings(BaseCustomSettings):
+class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
         description="Boot mode used for the dynamic-sidecar services"
@@ -331,9 +332,5 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
     @classmethod
-    def validate_log_level(cls, v: str) -> str:
-        valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
-        if v not in valid_log_levels:
-            msg = f"Log level must be one of {valid_log_levels} not {v}"
-            raise ValueError(msg)
-        return v
+    def _validate_log_level(cls, value) -> str:
+        return cls.validate_log_level(value)
