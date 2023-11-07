@@ -19,13 +19,18 @@ class InvitationInputs(BaseModel):
         description="Invitee's email. Note that the registration can ONLY be used with this email",
     )
     trial_account_days: PositiveInt | None = Field(
-        None,
+        default=None,
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
     )
     extra_credits_in_usd: PositiveInt | None = Field(
-        None,
+        default=None,
         description="If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
+    )
+    product: str | None = Field(
+        default=None,
+        description="This invitations can only be used for this product."
+        "If None, it will use INVITATIONS_DEFAULT_PRODUCT",
     )
 
     @validator("issuer", pre=True)
