@@ -89,8 +89,10 @@ class DynamicAutoscaling(BaseAutoscaling):
         return utils_docker.get_max_resources_from_docker_task(task)
 
     @staticmethod
-    def get_task_defined_instance(task) -> InstanceTypeType | None:
-        return utils_docker.get_task_instance_restriction(task)
+    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
+        return await utils_docker.get_task_instance_restriction(
+            get_docker_client(app), task
+        )
 
     @staticmethod
     async def compute_node_used_resources(

@@ -103,7 +103,8 @@ class ComputationalAutoscaling(BaseAutoscaling):
         return utils.get_max_resources_from_dask_task(task)
 
     @staticmethod
-    def get_task_defined_instance(task) -> InstanceTypeType | None:
+    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
+        assert app  # nosec
         return utils.get_task_instance_restriction(task)
 
     @staticmethod

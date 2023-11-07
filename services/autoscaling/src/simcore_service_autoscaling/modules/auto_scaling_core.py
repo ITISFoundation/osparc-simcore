@@ -309,7 +309,9 @@ async def _find_needed_instances(
 
         try:
             # check if exact instance type is needed first
-            if instance_type_name := auto_scaling_mode.get_task_defined_instance(task):
+            if instance_type_name := await auto_scaling_mode.get_task_defined_instance(
+                app, task
+            ):
                 filtered_instances = list(
                     filter(
                         functools.partial(

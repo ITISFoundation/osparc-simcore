@@ -80,7 +80,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def get_task_defined_instance(task) -> InstanceTypeType | None:
+    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
         ...
 
     @staticmethod

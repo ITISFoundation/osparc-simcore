@@ -55,6 +55,7 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
+_NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
 
 
 async def get_monitored_nodes(
@@ -116,7 +117,10 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
     return (
         task.Status.State == TaskState.pending
         and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
-        and _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+        and (
+            _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+            or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.Status.Err
+        )
     )
 
 
@@ -259,16 +263,35 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
     return Resources(cpus=0, ram=ByteSize(0))
 
 
-def get_task_instance_restriction(task: Task) -> InstanceTypeType | None:
+async def get_task_instance_restriction(
+    docker_client: AutoscalingDocker, task: Task
+) -> InstanceTypeType | None:
     with contextlib.suppress(ValidationError):
-        return (
-            parse_obj_as(
-                InstanceTypeType,
-                task.Labels.get(DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY),
-            )
-            if task.Labels
-            else None
+        assert task.ServiceID  # nosec
+        service_inspect = parse_obj_as(
+            Service, await docker_client.services.inspect(task.ServiceID)
         )
+        assert service_inspect.Spec  # nosec
+        assert service_inspect.Spec.TaskTemplate  # nosec
+
+        if (
+            not service_inspect.Spec.TaskTemplate.Placement
+            or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+        ):
+            return None
+        # parse the placement contraints
+        service_placement_constraints = (
+            service_inspect.Spec.TaskTemplate.Placement.Constraints
+        )
+        # should be node.labels.{}
+        node_label_to_find = f"node.labels.{DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY}=="
+        for constraint in service_placement_constraints:
+            if constraint.startswith(node_label_to_find):
+                return parse_obj_as(
+                    InstanceTypeType, constraint.removeprefix(node_label_to_find)
+                )
+
+        return None
     return None
 
 
