@@ -47,8 +47,6 @@
     "./services/web/server/src",
     "./services/web/server/tests/unit/with_dbs"
   ],
-  "python.linting.pylintEnabled": true,
-  "python.linting.enabled": true,
   "[python]": {
     "editor.detectIndentation": false,
     "editor.tabSize": 4
@@ -72,7 +70,7 @@
   ],
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
-  "ruff.args": [
+  "ruff.lint.args": [
     "--config=${workspaceFolder}/.ruff.toml"
   ],
   "ruff.path": [

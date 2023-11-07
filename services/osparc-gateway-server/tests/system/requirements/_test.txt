@@ -6,7 +6,7 @@
 #
 aiodocker==0.21.0
     # via -r requirements/_test.in
-aiohttp==3.8.5
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../../../requirements/constraints.txt
     #   aiodocker
@@ -21,7 +21,7 @@ certifi==2023.7.22
     # via
     #   -c requirements/../../../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.2
     # via
     #   aiohttp
     #   requests
@@ -36,14 +36,14 @@ cloudpickle==2.2.1
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==7.3.1
+coverage==7.3.2
     # via pytest-cov
 dask==2023.3.2
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-dask-gateway==2023.1.1
+dask-gateway==2023.9.0
     # via -r requirements/_test.in
 distributed==2023.3.2
     # via
@@ -53,7 +53,7 @@ docker==6.1.3
     # via -r requirements/_test.in
 exceptiongroup==1.1.3
     # via pytest
-faker==19.6.1
+faker==19.13.0
     # via -r requirements/_test.in
 frozenlist==1.4.0
     # via
@@ -125,7 +125,7 @@ psutil==5.9.5
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -138,11 +138,11 @@ pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.7
+pytest-icdiff==0.8
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.11.1
+pytest-mock==3.12.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -188,7 +188,7 @@ tornado==6.3.3
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via aiodocker
 urllib3==1.26.16
     # via
@@ -197,7 +197,7 @@ urllib3==1.26.16
     #   distributed
     #   docker
     #   requests
-websocket-client==1.6.3
+websocket-client==1.6.4
     # via docker
 yarl==1.9.2
     # via aiohttp

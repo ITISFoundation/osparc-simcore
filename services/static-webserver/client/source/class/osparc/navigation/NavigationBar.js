@@ -52,14 +52,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       height: this.self().HEIGHT,
       backgroundColor: "background-main-1"
     });
-
-    osparc.data.Resources.get("notifications")
-      .then(notifications => {
-        osparc.notification.Notifications.getInstance().addNotifications(notifications);
-        this.buildLayout();
-        this.setPageContext("dashboard");
-        osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
-      });
   },
 
   events: {
@@ -103,21 +95,27 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   members: {
     __tabButtons: null,
 
-    buildLayout: function() {
+    populateLayout: function() {
+      return new Promise(resolve => {
+        osparc.data.Resources.get("notifications")
+          .then(notifications => {
+            osparc.notification.Notifications.getInstance().addNotifications(notifications);
+            this.__buildLayout();
+            this.setPageContext("dashboard");
+            osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
+            resolve();
+          })
+          .catch(err => console.error(err));
+      });
+    },
+
+    __buildLayout: function() {
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
 
       // left-items
-      const logo = this.getChildControl("logo");
-      logo.getChildControl("off-logo").set({
-        width: 100,
-        height: 35
-      });
-      logo.getChildControl("on-logo").setSize({
-        width: 100,
-        height: 50
-      });
+      this.getChildControl("logo");
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("logo-powered");
       }
@@ -129,18 +127,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      const walletsViewer = this.getChildControl("wallets-viewer");
-      walletsViewer.exclude();
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      if (walletsEnabled) {
-        walletsViewer.show();
-      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
-      this.getChildControl("manual");
-      this.getChildControl("feedback");
-      this.getChildControl("theme-switch");
+      this.getChildControl("help");
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        this.getChildControl("credits-menu-button");
+      }
       this.getChildControl("log-in-button");
       this.getChildControl("user-menu");
     },
@@ -175,13 +168,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control = osparc.navigation.LogoOnOff.getInstance().set({
             alignY: "middle"
           });
+          control.getChildControl("off-logo").set({
+            width: 100,
+            height: 35
+          });
+          control.getChildControl("on-logo").setSize({
+            width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
+            height: osparc.navigation.NavigationBar.HEIGHT
+          });
           this.getChildControl("left-items").add(control);
           break;
         case "logo-powered":
           control = new osparc.ui.basic.PoweredByOsparc().set({
             padding: 3,
-            paddingTop: 1,
-            maxHeight: this.self().HEIGHT - 2
+            paddingTop: 2,
+            maxHeight: this.self().HEIGHT - 5
           });
           this.getChildControl("left-items").add(control);
           break;
@@ -225,6 +226,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
+        case "credits-menu-button": {
+          const currentUsage = new osparc.desktop.credits.CurrentUsage();
+          control = new osparc.navigation.CreditsMenuButton().set({
+            currentUsage,
+            maxHeight: this.self().HEIGHT
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        }
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
             maxHeight: this.self().HEIGHT
@@ -245,7 +255,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             textColor: "danger-red",
             cursor: "pointer"
           });
-          control.addListener("tap", () => osparc.desktop.credits.UserCenterWindow.openWindow(), this);
+          control.addListener("tap", () => osparc.desktop.credits.MyAccountWindow.openWindow(), this);
           const authData = osparc.auth.Data.getInstance();
           authData.bind("expirationDate", control, "visibility", {
             converter: expirationDay => {
@@ -265,20 +275,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         }
-        case "manual":
-          control = this.__createManualMenuBtn();
-          control.set(this.self().BUTTON_OPTIONS);
-          this.getChildControl("right-items").add(control);
-          break;
-        case "feedback":
-          control = this.__createFeedbackMenuBtn();
-          control.set(this.self().BUTTON_OPTIONS);
-          this.getChildControl("right-items").add(control);
-          break;
-        case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
-            toolTipText: this.tr("Switch theme")
-          });
+        case "help":
+          control = this.__createHelpMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
@@ -334,33 +332,25 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }
     },
 
-    __createManualMenuBtn: function() {
+    __createHelpMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
-        font: "text-14"
+        position: "top-right"
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
-        toolTipText: this.tr("Manuals"),
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
         backgroundColor: "transparent"
       });
+
+      // menus
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addGuidedToursToMenu(menu);
       osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
-      osparc.utils.Utils.setIdToWidget(menuButton, "manualsButton");
-      osparc.utils.Utils.setIdToWidget(menu, "manualsMenu");
-      return menuButton;
-    },
+      menu.addSeparator();
 
-    __createFeedbackMenuBtn: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
-        toolTipText: this.tr("Support"),
-        backgroundColor: "transparent"
-      });
+      // feedback
       osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
-      osparc.utils.Utils.setIdToWidget(menuButton, "feedbackButton");
-      osparc.utils.Utils.setIdToWidget(menu, "feedbackMenu");
+
+      osparc.utils.Utils.prettifyMenu(menu);
+
       return menuButton;
     },
 
@@ -392,37 +382,45 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }
       if (osparc.WindowSizeTracker.getInstance().isCompactVersion()) {
         // left-items
+        this.getChildControl("logo").getChildControl("on-logo").setSize({
+          width: 100,
+          height: osparc.navigation.NavigationBar.HEIGHT
+        });
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").exclude();
         }
+
         // center-items
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("icon").show();
           tabButton.getChildControl("label").exclude();
           tabButton.setToolTipText(tabButton.ttt);
         });
+
         // right-items
         this.getChildControl("user-menu").exclude();
-        this.getChildControl("manual").exclude();
-        this.getChildControl("feedback").exclude();
-        this.getChildControl("theme-switch").exclude();
+        this.getChildControl("help").exclude();
         this.getChildControl("user-menu-compact").show();
       } else {
         // left-items
+        this.getChildControl("logo").getChildControl("on-logo").setSize({
+          width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
+          height: osparc.navigation.NavigationBar.HEIGHT
+        });
         if (!osparc.product.Utils.isProduct("osparc")) {
           this.getChildControl("logo-powered").show();
         }
+
         // center-items
         tabButtons.forEach(tabButton => {
           tabButton.getChildControl("label").show();
           tabButton.getChildControl("icon").exclude();
           tabButton.resetToolTipText();
         });
+
         // right-items
         this.getChildControl("user-menu-compact").exclude();
-        this.getChildControl("manual").show();
-        this.getChildControl("feedback").show();
-        this.getChildControl("theme-switch").show();
+        this.getChildControl("help").show();
         this.getChildControl("user-menu").show();
       }
     }

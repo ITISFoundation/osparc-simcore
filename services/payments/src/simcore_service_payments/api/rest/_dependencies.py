@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._meta import API_VTAG
 from ...core.settings import ApplicationSettings
-from ...db.payments_transactions_repo import BaseRepository
+from ...db.base import BaseRepository
 from ...models.auth import SessionData
 from ...services.auth import get_session_data
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi

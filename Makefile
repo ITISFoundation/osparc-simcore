@@ -46,6 +46,7 @@ SERVICES_NAMES_TO_BUILD := \
 	osparc-gateway-server \
 	payments \
 	resource-usage-tracker \
+	dynamic-scheduler \
   service-integration \
   static-webserver \
   storage \
@@ -70,6 +71,7 @@ export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERS
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
+export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
@@ -395,9 +397,11 @@ down: ## Stops and removes stack
 	# Removing client containers (if any)
 	-@$(MAKE_C) services/static-webserver/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
+ifneq ($(wildcard .stack-*), )
 	-@rm $(wildcard .stack-*)
+endif
 	# Removing local registry if any
-	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
+	-@docker ps --all --quiet --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs --no-run-if-empty docker rm
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -569,6 +573,7 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/payments $@
+	@$(MAKE_C) services/dynamic-scheduler $@
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/web/server $@
 

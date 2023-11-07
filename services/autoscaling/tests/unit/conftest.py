@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Final, cast
 
 import aiodocker
+import distributed
 import httpx
 import psutil
 import pytest
@@ -41,7 +42,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
-from simcore_service_autoscaling.models import Cluster
+from simcore_service_autoscaling.models import Cluster, DaskTaskResources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry
@@ -53,6 +54,7 @@ from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
@@ -136,6 +138,20 @@ def enabled_dynamic_mode(
             "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
                 ["pytest.fake-new-node-label"]
             ),
+        },
+    )
+
+
+@pytest.fixture
+def enabled_computational_mode(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "DASK_MONITORING_URL": faker.url(),
+            "DASK_MONITORING_USER_NAME": faker.user_name(),
+            "DASK_MONITORING_PASSWORD": faker.password(),
         },
     )
 
@@ -652,7 +668,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
                 {
                     "launch_time": faker.date_time(tzinfo=timezone.utc),
                     "id": faker.uuid4(),
-                    "aws_private_dns": faker.name(),
+                    "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
                     "type": faker.pystr(),
                     "state": faker.pystr(),
                 }
@@ -661,6 +677,15 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
         )
 
     return _creator
+
+
+@pytest.fixture
+def fake_localhost_ec2_instance_data(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData]
+) -> EC2InstanceData:
+    local_ip = get_localhost_ip()
+    fake_local_ec2_private_dns = f"ip-{local_ip.replace('.', '-')}.ec2.internal"
+    return fake_ec2_instance_data(aws_private_dns=fake_local_ec2_private_dns)
 
 
 @pytest.fixture
@@ -683,5 +708,23 @@ def cluster() -> Callable[..., Cluster]:
             ),
             **cluter_overrides,
         )
+
+    return _creator
+
+
+@pytest.fixture
+async def create_dask_task(
+    dask_spec_cluster_client: distributed.Client,
+) -> Callable[[DaskTaskResources], distributed.Future]:
+    def _remote_pytest_fct(x: int, y: int) -> int:
+        return x + y
+
+    def _creator(required_resources: DaskTaskResources) -> distributed.Future:
+        # NOTE: pure will ensure dask does not re-use the task results if we run it several times
+        future = dask_spec_cluster_client.submit(
+            _remote_pytest_fct, 23, 43, resources=required_resources, pure=False
+        )
+        assert future
+        return future
 
     return _creator

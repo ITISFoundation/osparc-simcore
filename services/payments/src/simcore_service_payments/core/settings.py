@@ -81,17 +81,18 @@ class ApplicationSettings(_BaseApplicationSettings):
         ..., description="Base url to the payment gateway"
     )
 
-    PAYMENTS_GATEWAY_API_KEY: SecretStr | None = None
-    PAYMENTS_GATEWAY_API_SECRET: SecretStr
+    PAYMENTS_GATEWAY_API_SECRET: SecretStr = Field(
+        ..., description="Credentials for payments-gateway api"
+    )
 
     PAYMENTS_USERNAME: str = Field(
         ...,
-        description="Username for HTTP Basic Auth. Required if started as a web app.",
+        description="Username for Auth. Required if started as a web app.",
         min_length=3,
     )
     PAYMENTS_PASSWORD: SecretStr = Field(
         ...,
-        description="Password for HTTP Basic Auth. Required if started as a web app.",
+        description="Password for Auth. Required if started as a web app.",
         min_length=10,
     )
 

@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-coverage==7.3.1
+coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -16,7 +16,7 @@ iniconfig==2.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-packaging==23.1
+packaging==23.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -25,7 +25,7 @@ pluggy==1.3.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

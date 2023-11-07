@@ -43,11 +43,7 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-def is_rabbitmq_enabled(app: FastAPI) -> bool:
-    return app.state.rabbitmq_client is not None
-
-
-def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
     assert app.state.rabbitmq_rpc_server  # nosec
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
 

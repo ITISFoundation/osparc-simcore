@@ -22,8 +22,8 @@ from pytest_simcore.helpers.utils_projects import (
     empty_project_data,
 )
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings
-from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application import (
     setup_exporter,

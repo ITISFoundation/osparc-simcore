@@ -94,7 +94,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       // buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
+      const submitBtn = this.__submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit")).set({
         center: true,
         appearance: "strong-button"
       });
@@ -118,7 +118,7 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
               password: password1.getValue(),
               confirm: password2.getValue(),
               invitation: invitationToken ? invitationToken : ""
-            });
+            }, submitBtn);
           }
         }
       }, this);
@@ -128,7 +128,8 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       this.add(grp);
     },
 
-    __submit: function(userData) {
+    __submit: function(userData, submitButton) {
+      submitButton.setFetching(true);
       osparc.auth.Manager.getInstance().register(userData)
         .then(log => {
           this.fireDataEvent("done", log.message);
@@ -137,7 +138,8 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
         .catch(err => {
           const msg = err.message || this.tr("Cannot register user");
           osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
+        })
+        .finally(() => submitButton.setFetching(false));
     },
 
     _onAppear: function() {

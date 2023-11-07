@@ -6,10 +6,11 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
-from ._client import payments_service_api_cleanup_ctx
+from ._rpc import rabbitmq_rpc_client_lifespan
 from ._tasks import create_background_task_to_fake_payment_completion
 
 _logger = logging.getLogger(__name__)
@@ -25,8 +26,9 @@ def setup_payments(app: web.Application):
     settings = app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS
 
     setup_db(app)
+    setup_rabbitmq(app)
 
-    app.cleanup_ctx.append(payments_service_api_cleanup_ctx)
+    app.cleanup_ctx.append(rabbitmq_rpc_client_lifespan)
 
     if settings.PAYMENTS_FAKE_COMPLETION:
         _logger.warning(

@@ -1,6 +1,7 @@
 import logging
 import mimetypes
 import re
+from collections.abc import Mapping
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -8,7 +9,7 @@ from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Mapping, NamedTuple, TypedDict, Union
+from typing import Any, NamedTuple, TypedDict, Union
 
 import aiosmtplib
 from aiohttp import web
@@ -17,26 +18,28 @@ from settings_library.email import EmailProtocol, SMTPSettings
 
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
-    smtp_args = dict(
-        hostname=settings.SMTP_HOST,
-        port=settings.SMTP_PORT,
-        use_tls=settings.SMTP_PROTOCOL == EmailProtocol.TLS,
-        start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
-    )
-    logger.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
+    smtp_args = {
+        "hostname": settings.SMTP_HOST,
+        "port": settings.SMTP_PORT,
+        "use_tls": settings.SMTP_PROTOCOL == EmailProtocol.TLS,
+        "start_tls": settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
+    }
+    _logger.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
     return aiosmtplib.SMTP(**smtp_args)
 
 
 async def _do_send_mail(
     *, message: MIMEText | MIMEMultipart, settings: SMTPSettings
 ) -> None:
-    # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
+    """
+    WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
+    """
 
-    logger.debug("Email configuration %s", settings.json(indent=1))
+    _logger.debug("Email configuration %s", settings.json(indent=1))
 
     if settings.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround
@@ -44,20 +47,20 @@ async def _do_send_mail(
             smtp = _create_smtp_client(settings)
 
             if settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS:
-                logger.info("Unencrypted connection attempt to mailserver ...")
+                _logger.info("Unencrypted connection attempt to mailserver ...")
                 await smtp.connect(use_tls=False, port=settings.SMTP_PORT)
-                logger.info("Starting STARTTLS ...")
+                _logger.info("Starting STARTTLS ...")
                 await smtp.starttls()
 
             elif settings.SMTP_PROTOCOL == EmailProtocol.TLS:
                 await smtp.connect(use_tls=True, port=settings.SMTP_PORT)
 
             elif settings.SMTP_PROTOCOL == EmailProtocol.UNENCRYPTED:
-                logger.info("Unencrypted connection attempt to mailserver ...")
+                _logger.info("Unencrypted connection attempt to mailserver ...")
                 await smtp.connect(use_tls=False, port=settings.SMTP_PORT)
 
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
-                logger.info("Attempting a login into the email server ...")
+                _logger.info("Attempting a login into the email server ...")
                 await smtp.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
@@ -68,7 +71,7 @@ async def _do_send_mail(
     else:
         async with _create_smtp_client(settings) as smtp:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
-                logger.info("Login email server ...")
+                _logger.info("Login email server ...")
                 await smtp.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
@@ -112,7 +115,7 @@ async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServe
         )
 
 
-async def send_email(
+async def _send_email(
     *,
     settings: SMTPSettings,
     sender: str,
@@ -140,7 +143,7 @@ class AttachmentTuple(NamedTuple):
     payload: bytearray
 
 
-async def send_email_with_attachements(
+async def _send_email_with_attachements(
     *,
     settings: SMTPSettings,
     sender: str,
@@ -228,7 +231,7 @@ async def send_email_from_template(
     subject, body = _render_template(request, template, context)
 
     if attachments:
-        return await send_email_with_attachements(
+        return await _send_email_with_attachements(
             settings=settings,
             sender=from_,
             recipient=to,
@@ -237,7 +240,7 @@ async def send_email_from_template(
             attachments=attachments,
         )
 
-    return await send_email(
+    return await _send_email(
         settings=settings,
         sender=from_,
         recipient=to,

@@ -1,0 +1,55 @@
+[
+  {
+    "name": "GET /projects/87643648-3a38-44e2-9cfe-d86ab3d50620",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/87643648-3a38-44e2-9cfe-d86ab3d50620')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in_": "path",
+          "name": "project_id",
+          "required": true,
+          "schema_": {
+            "title": "Project Id",
+            "type_": "str",
+            "pattern": null,
+            "format_": "uuid",
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": null,
+      "error": {
+        "logs": [
+          {
+            "message": "Project 87643648-3a38-44e2-9cfe-d86ab3d50620 not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ],
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Project 87643648-3a38-44e2-9cfe-d86ab3d50620 not found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "status": 404,
+        "message": "Project 87643648-3a38-44e2-9cfe-d86ab3d50620 not found"
+      }
+    },
+    "status_code": 404
+  }
+]

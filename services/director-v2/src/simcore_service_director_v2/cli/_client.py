@@ -60,3 +60,8 @@ class ThinDV2LocalhostClient(BaseThinClient):
         return await self.client.delete(
             self._get_url(f"/services/{node_uuid}/docker-resources")
         )
+
+    @retry_on_errors
+    @expect_status(status.HTTP_200_OK)
+    async def get_service_state(self, node_uuid: str) -> Response:
+        return await self.client.get(self._get_url(f"/services/{node_uuid}/state"))

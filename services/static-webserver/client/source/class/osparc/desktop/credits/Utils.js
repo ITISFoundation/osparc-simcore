@@ -19,19 +19,57 @@ qx.Class.define("osparc.desktop.credits.Utils", {
   type: "static",
 
   statics: {
+    DANGER_ZONE: 25, // one hour consumption
+
     areWalletsEnabled: function() {
       const statics = osparc.store.Store.getInstance().get("statics");
       return Boolean(statics && statics["isPaymentEnabled"]);
     },
 
+    getNoWriteAccessInformationLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this information"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
+    getNoWriteAccessOperationsLabel: function() {
+      return new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("You can't access this operations"),
+        font: "text-14",
+        allowGrowX: true
+      });
+    },
+
+    creditsToColor: function(credits, defaultColor = "text") {
+      const preferencesSettings = osparc.Preferences.getInstance();
+      let color = defaultColor;
+      const dangerZone = this.DANGER_ZONE;
+      if (credits <= dangerZone) {
+        color = "danger-red";
+      } else if (credits <= preferencesSettings.getCreditsWarningThreshold()) {
+        color = "warning-yellow";
+      }
+      return color;
+    },
+
+    normalizeCredits: function(credits) {
+      const logBase = (n, base) => Math.log(n) / Math.log(base);
+
+      let normalized = logBase(credits, 10000) + 0.01;
+      normalized = Math.min(Math.max(normalized, 0), 1);
+      return normalized * 100;
+    },
+
     creditsToFixed: function(credits) {
-      if (credits < 100) {
+      if (credits < 10) {
         return (credits).toFixed(1);
       }
       return parseInt(credits);
     },
 
-    createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
+    createWalletSelector: function(accessRight = "read") {
       const store = osparc.store.Store.getInstance();
 
       const walletSelector = new qx.ui.form.SelectBox();
@@ -40,15 +78,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         selectBox.removeAll();
 
         const wallets = store.getWallets();
-        if (emptySelection) {
-          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Credit Account"));
-          sbItem.walletId = null;
-          selectBox.add(sbItem);
-        }
         wallets.forEach(wallet => {
-          if (onlyActive && wallet.getStatus() !== "ACTIVE") {
-            return;
-          }
           const found = wallet.getMyAccessRights();
           if (found && found[accessRight]) {
             const sbItem = new qx.ui.form.ListItem(wallet.getName());
@@ -62,6 +92,24 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       store.addListener("changeWallets", () => populateSelectBox(walletSelector));
 
       return walletSelector;
+    },
+
+    createWalletSelectorLayout: function(accessRight = "read") {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Select Credit Account"));
+      layout.add(label);
+
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector(accessRight);
+      layout.add(walletSelector);
+
+      if (osparc.desktop.credits.Utils.areWalletsEnabled() && walletSelector.getSelectables().length > 1) {
+        layout.show();
+      } else {
+        layout.exclude();
+      }
+
+      return layout;
     },
 
     autoSelectActiveWallet: function(walletSelector) {
@@ -79,6 +127,23 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return false;
     },
 
+    populatePaymentMethodSelector: function(wallet, paymentMethodSB) {
+      paymentMethodSB.removeAll();
+      return new Promise(resolve => {
+        osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
+          .then(paymentMethods => {
+            paymentMethods.forEach(paymentMethod => {
+              let label = paymentMethod.cardHolderName;
+              label += " ";
+              label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
+              const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
+              paymentMethodSB.add(lItem);
+            });
+          })
+          .finally(() => resolve());
+      });
+    },
+
     getWallet: function(walletId) {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
@@ -89,14 +154,14 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return null;
     },
 
-    getPreferredWallet: function() {
+    getMyWallets: function() {
       const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
-      const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
-      if (favouriteWallet) {
-        return favouriteWallet;
+      const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+      if (myWallets) {
+        return myWallets;
       }
-      return null;
+      return [];
     },
 
     getPaymentMethods: function(walletId) {
@@ -110,8 +175,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
           };
           promises.push(osparc.data.Resources.fetch("paymentMethods", "get", params));
         } else {
-          const wallets = osparc.store.Store.getInstance().getWallets();
-          const myWallets = wallets.filter(wallet => wallet.getMyAccessRights()["write"]);
+          const myWallets = this.getMyWallets();
           myWallets.forEach(myWallet => {
             const params = {
               url: {

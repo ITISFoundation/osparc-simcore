@@ -115,19 +115,42 @@ qx.Class.define("osparc.store.Store", {
     wallets: {
       check: "Array",
       init: [],
-      event: "changeWallets"
+      event: "changeWallets",
+      apply: "__applyWallets"
     },
+    // If a study with a wallet is opened, this wallet will be the active one
     activeWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: true,
-      event: "changeActiveWallet"
+      event: "changeActiveWallet",
+      apply: "__applyActiveWallet"
+    },
+    // User's default or primary wallet
+    preferredWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: true,
+      event: "changePreferredWallet",
+      apply: "__applyPreferredWallet"
+    },
+    // activeWallet, preferredWallet or null (in a product with wallets enabled there shouldn't be a null context wallet)
+    contextWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: true,
+      event: "changeContextWallet"
     },
     creditPrice: {
       check: "Number",
       init: null,
       nullable: true,
       event: "changeCreditPrice"
+    },
+    productMetadata: {
+      check: "Object",
+      init: {},
+      nullable: true
     },
     permissions: {
       check: "Array",
@@ -192,6 +215,12 @@ qx.Class.define("osparc.store.Store", {
   },
 
   members: {
+    // fetch resources that do not require log in
+    preloadCalls: async function() {
+      await osparc.data.Resources.get("config");
+      await osparc.data.Resources.get("statics");
+    },
+
     /**
      * Updates an element or a set of elements in the store.
      * @param {String} resource Name of the resource property. If used with {osparc.data.Resources}, it has to be the same there.
@@ -281,19 +310,65 @@ qx.Class.define("osparc.store.Store", {
       if (typeof resources === "string" || resources instanceof String) {
         this.reset(resources);
       } else {
-        let propertyArray;
+        let propertyKeys;
         if (resources == null) {
-          propertyArray = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
+          propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.store.Store));
         } else if (Array.isArray(resources)) {
-          propertyArray = resources;
+          propertyKeys = resources;
         }
-        propertyArray.forEach(propName => {
+        propertyKeys.forEach(propName => {
+          // do not reset these resources
+          if (["statics", "config"].includes(propName)) {
+            return;
+          }
           this.reset(propName);
           // Not sure reset actually works
           const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
           qx.util.PropertyUtil.getUserValue(this, propName, initVal);
         });
       }
+    },
+
+    __applyWallets: function(wallets) {
+      const preferenceSettings = osparc.Preferences.getInstance();
+      const preferenceWalletId = preferenceSettings.getPreferredWalletId();
+      if (
+        (preferenceWalletId === null || osparc.desktop.credits.Utils.getWallet(preferenceWalletId) === null) &&
+        wallets.length === 1
+      ) {
+        // If there is only one wallet available, make it default
+        preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+      } else if (preferenceWalletId) {
+        const walletFound = wallets.find(wallet => wallet.getWalletId() === preferenceWalletId);
+        if (walletFound) {
+          this.setPreferredWallet(walletFound);
+        }
+      }
+    },
+
+    __applyActiveWallet: function(activeWallet) {
+      if (activeWallet) {
+        this.setContextWallet(activeWallet);
+      } else {
+        const preferredWallet = this.getPreferredWallet();
+        this.setContextWallet(preferredWallet);
+      }
+    },
+
+    __applyPreferredWallet: function(preferredWallet) {
+      const activeWallet = this.getActiveWallet();
+      if (activeWallet === null) {
+        this.setContextWallet(preferredWallet);
+      }
+    },
+
+    getPreferredWallet: function() {
+      const wallets = this.getWallets();
+      const favouriteWallet = wallets.find(wallet => wallet.isPreferredWallet());
+      if (favouriteWallet) {
+        return favouriteWallet;
+      }
+      return null;
     },
 
     getStudyState: function(studyId) {
@@ -632,36 +707,65 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    reloadWallets: function() {
-      const store = osparc.store.Store.getInstance();
-      store.setWallets([]);
+    sortWallets: function(a, b) {
+      const aAccessRights = a.getAccessRights();
+      const bAccessRights = b.getAccessRights();
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (
+        aAccessRights &&
+        bAccessRights &&
+        aAccessRights.find(ar => ar["gid"] === myGid) &&
+        bAccessRights.find(ar => ar["gid"] === myGid)
+      ) {
+        const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
+        const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
+        const sorted = osparc.share.Collaborators.sortByAccessRights(aAr, bAr);
+        if (sorted !== 0) {
+          return sorted;
+        }
+        if (("getName" in a) && ("getName" in b)) {
+          return a.getName().localeCompare(b.getName());
+        }
+        return 0;
+      }
+      return 0;
+    },
 
+    reloadWallets: function() {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("wallets", "get")
           .then(walletsData => {
             const wallets = [];
-            const promises = [];
             walletsData.forEach(walletReducedData => {
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
-              promises.push(this.reloadWalletAccessRights(wallet));
-              promises.push(this.reloadWalletAutoRecharge(wallet));
             });
-            store.setWallets(wallets);
+            this.setWallets(wallets);
 
-            const socket = osparc.wrapper.WebSocket.getInstance();
-            const slotName = "walletOsparcCreditsUpdated";
-            socket.removeSlot(slotName);
-            socket.on(slotName, jsonString => {
-              const data = JSON.parse(jsonString);
-              const walletFound = wallets.find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
-              if (walletFound) {
-                walletFound.setCreditsAvailable(parseFloat(data["osparc_credits"]));
-              }
-            }, this);
+            // 1) fetch the access rights
+            const accessRightPromises = [];
+            this.getWallets().forEach(wallet => {
+              accessRightPromises.push(this.reloadWalletAccessRights(wallet));
+            });
 
-            Promise.all(promises)
-              .then(() => resolve())
+            Promise.all(accessRightPromises)
+              .then(() => {
+                wallets.sort(this.sortWallets);
+                // 2) depending on the access rights, fetch the auto recharge
+                const autoRechargePromises = [];
+                this.getWallets().forEach(wallet => {
+                  if (wallet.getMyAccessRights() && wallet.getMyAccessRights()["write"]) {
+                    autoRechargePromises.push(this.reloadWalletAutoRecharge(wallet));
+                  }
+                });
+
+                Promise.all(autoRechargePromises)
+                  .then(() => resolve())
+                  .catch(err => {
+                    console.error(err);
+                    reject();
+                  });
+              })
               .catch(err => {
                 console.error(err);
                 reject();

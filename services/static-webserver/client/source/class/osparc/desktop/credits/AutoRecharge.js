@@ -36,8 +36,15 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     }
   },
 
+  events: {
+    "addNewPaymentMethod": "qx.event.type.Event"
+  },
+
   members: {
-    __form: null,
+    __topUpAmountField: null,
+    __monthlyLimitField: null,
+    __paymentMethodField: null,
+    __topUpAmountHelper: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -104,21 +111,10 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       this.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
     },
 
-    __requestData: function() {
+    __requestData: async function() {
       const wallet = this.getWallet();
-      // populate the payment methods
-      osparc.desktop.credits.Utils.getPaymentMethods(wallet.getWalletId())
-        .then(paymentMethods => {
-          const paymentMethodSB = this.__form.getItem("paymentMethod");
-          paymentMethodSB.removeAll();
-          paymentMethods.forEach(paymentMethod => {
-            let label = paymentMethod.cardHolderName;
-            label += " ";
-            label += paymentMethod.cardNumberMasked.substr(paymentMethod.cardNumberMasked.length - 9);
-            const lItem = new qx.ui.form.ListItem(label, null, paymentMethod.idr);
-            paymentMethodSB.add(lItem);
-          });
-        });
+      const paymentMethodSB = this.__paymentMethodField;
+      await osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB);
 
       // populate the form
       const params = {
@@ -126,16 +122,20 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           walletId: wallet.getWalletId()
         }
       };
-      osparc.data.Resources.fetch("auto-recharge", "get", params)
+      osparc.data.Resources.fetch("autoRecharge", "get", params)
         .then(arData => this.__populateForm(arData))
         .catch(err => console.error(err.message));
     },
 
     __populateForm: function(arData) {
-      this.__form.getItem("minBalanceInUsd").setValue(arData["minBalanceInUsd"]);
-      this.__form.getItem("topUpAmountInUsd").setValue(arData["topUpAmountInUsd"]);
-      this.__form.getItem("topUpCountdown").setValue(arData["topUpCountdown"] ? arData["topUpCountdown"] : -1);
-      const paymentMethodSB = this.__form.getItem("paymentMethod");
+      this.__topUpAmountField.setValue(arData["topUpAmountInUsd"]);
+      this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} credits, it gets recharged by this amount`));
+      if (arData["monthlyLimitInUsd"]) {
+        this.__monthlyLimitField.setValue(arData["monthlyLimitInUsd"] > 0 ? arData["monthlyLimitInUsd"] : 0);
+      } else {
+        this.__monthlyLimitField.setValue(arData["topUpCountdown"] > 0 ? arData["topUpCountdown"]*arData["topUpAmountInUsd"] : 0);
+      }
+      const paymentMethodSB = this.__paymentMethodField;
       const paymentMethodFound = paymentMethodSB.getSelectables().find(selectable => selectable.getModel() === arData["paymentMethodId"]);
       if (paymentMethodFound) {
         paymentMethodSB.setSelection([paymentMethodFound]);
@@ -153,74 +153,105 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __getAutoRechargeForm: function() {
-      const form = this.__form = new qx.ui.form.Form();
+      const autoRechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const lowerThresholdLabel = new qx.ui.basic.Label().set({
-        value: this.tr("When balance goes below (US$):"),
+      const topUpAmountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const topUpAmountTitleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const topUpAmountTitle = new qx.ui.basic.Label().set({
+        value: this.tr("RECHARGING AMOUNT (US$)"),
         font: "text-14"
       });
-      layout.add(lowerThresholdLabel);
-
-      const lowerThresholdField = new qx.ui.form.Spinner().set({
-        minimum: 0,
+      topUpAmountTitleLayout.add(topUpAmountTitle);
+      const topUpAmountInfo = new osparc.ui.hint.InfoHint("Amount in US$ payed when auto-recharge condition is satisfied.");
+      topUpAmountTitleLayout.add(topUpAmountInfo);
+      topUpAmountLayout.add(topUpAmountTitleLayout);
+      const topUpAmountField = this.__topUpAmountField = new qx.ui.form.Spinner().set({
+        minimum: 10,
         maximum: 10000,
         maxWidth: 200
       });
-      form.add(lowerThresholdField, null, null, "minBalanceInUsd");
-      layout.add(lowerThresholdField);
+      topUpAmountLayout.add(topUpAmountField);
+      const topUpAmountHelper = this.__topUpAmountHelper = new qx.ui.basic.Label().set({
+        font: "text-12",
+        rich: true,
+        wrap: true
+      });
+      topUpAmountLayout.add(topUpAmountHelper);
+      autoRechargeLayout.add(topUpAmountLayout);
 
-      const balanceBackLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Top up with (US$):"),
+      const monthlyLimitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const monthlyLimitTitleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const monthlyLimitTitle = new qx.ui.basic.Label().set({
+        value: this.tr("MONTHLY LIMIT (US$)"),
         font: "text-14"
       });
-      layout.add(balanceBackLabel);
-
-      const paymentAmountField = new qx.ui.form.Spinner().set({
+      monthlyLimitTitleLayout.add(monthlyLimitTitle);
+      const monthlyLimitTitleInfo = new osparc.ui.hint.InfoHint(this.tr("Maximum amount in US$ charged within a natural month."));
+      monthlyLimitTitleLayout.add(monthlyLimitTitleInfo);
+      monthlyLimitLayout.add(monthlyLimitTitleLayout);
+      const monthlyLimitField = this.__monthlyLimitField = new qx.ui.form.Spinner().set({
         minimum: 0,
-        maximum: 10000,
+        maximum: 100000,
         maxWidth: 200
       });
-      form.add(paymentAmountField, null, null, "topUpAmountInUsd");
-      layout.add(paymentAmountField);
+      monthlyLimitLayout.add(monthlyLimitField);
+      const monthlyLimitHelper = new qx.ui.basic.Label().set({
+        value: this.tr("To disable spending limit, clear input field"),
+        font: "text-12",
+        rich: true,
+        wrap: true
+      });
+      monthlyLimitLayout.add(monthlyLimitHelper);
+      autoRechargeLayout.add(monthlyLimitLayout);
 
-      const nTopUpsLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Number of Top ups left (-1 unlimited):"),
+      const paymentMethodLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const paymentMethodTitle = new qx.ui.basic.Label().set({
+        value: this.tr("PAY WITH"),
         font: "text-14"
       });
-      layout.add(nTopUpsLabel);
-
-      const nTopUpsField = new qx.ui.form.Spinner().set({
-        minimum: -1,
-        maximum: 100,
+      paymentMethodLayout.add(paymentMethodTitle);
+      const paymentMethodField = this.__paymentMethodField = new qx.ui.form.SelectBox().set({
+        minWidth: 200,
         maxWidth: 200
       });
-      form.add(nTopUpsField, null, null, "topUpCountdown");
-      layout.add(nTopUpsField);
-
-      const label = new qx.ui.basic.Label().set({
-        value: this.tr("Payment Method:"),
-        font: "text-14"
+      paymentMethodLayout.add(paymentMethodField);
+      const addNewPaymentMethod = new qx.ui.basic.Label(this.tr("Add Payment Method")).set({
+        padding: 0,
+        cursor: "pointer",
+        font: "link-label-12"
       });
-      layout.add(label);
+      addNewPaymentMethod.addListener("tap", () => this.fireEvent("addNewPaymentMethod"));
+      paymentMethodLayout.add(addNewPaymentMethod);
+      autoRechargeLayout.add(paymentMethodLayout);
 
-      const paymentMethods = new qx.ui.form.SelectBox().set({
-        maxWidth: 200
-      });
-      form.add(paymentMethods, null, null, "paymentMethod");
-      layout.add(paymentMethods);
-
-      return layout;
+      return autoRechargeLayout;
     },
 
     __getFieldsData: function() {
       return {
-        minBalanceInUsd: this.__form.getItem("minBalanceInUsd").getValue(),
-        topUpAmountInUsd: this.__form.getItem("topUpAmountInUsd").getValue(),
-        topUpCountdown: this.__form.getItem("topUpCountdown").getValue(),
-        paymentMethodId: this.__form.getItem("paymentMethod").getSelection()[0].getModel()
+        topUpAmountInUsd: this.__topUpAmountField.getValue(),
+        monthlyLimitInUsd: this.__monthlyLimitField.getValue(),
+        paymentMethodId: this.__paymentMethodField.getSelection()[0].getModel()
       };
+    },
+
+    __updateAutoRecharge: function(enabled, fetchButton, successfulMsg) {
+      const wallet = this.getWallet();
+      fetchButton.setFetching(true);
+      const params = {
+        url: {
+          walletId: wallet.getWalletId()
+        },
+        data: this.__getFieldsData()
+      };
+      params.data["enabled"] = enabled;
+      osparc.data.Resources.fetch("autoRecharge", "put", params)
+        .then(arData => {
+          this.__populateForm(arData);
+          wallet.setAutoRecharge(arData);
+          osparc.FlashMessenger.getInstance().logAs(successfulMsg, "INFO");
+        })
+        .finally(() => fetchButton.setFetching(false));
     },
 
     __getEnableAutoRechargeButton: function() {
@@ -231,23 +262,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      enableAutoRechargeBtn.addListener("execute", () => {
-        enableAutoRechargeBtn.setFetching(true);
-        const params = {
-          url: {
-            walletId: this.getWallet().getWalletId()
-          },
-          data: this.__getFieldsData()
-        };
-        params.data["enabled"] = true;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(arData => {
-            this.__populateForm(arData);
-            const msg = this.tr("Auto recharge was successfully enabled");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          })
-          .finally(() => enableAutoRechargeBtn.setFetching(false));
-      });
+      const successfulMsg = this.tr("Auto recharge was successfully enabled. Coming soon.");
+      enableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, enableAutoRechargeBtn, successfulMsg));
       return enableAutoRechargeBtn;
     },
 
@@ -259,23 +275,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      saveAutoRechargeBtn.addListener("execute", () => {
-        saveAutoRechargeBtn.setFetching(true);
-        const params = {
-          url: {
-            walletId: this.getWallet().getWalletId()
-          },
-          data: this.__getFieldsData()
-        };
-        params.data["enabled"] = true;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(arData => {
-            this.__populateForm(arData);
-            const msg = this.tr("Changes on the Auto recharge were successfully saved");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          })
-          .finally(() => saveAutoRechargeBtn.setFetching(false));
-      });
+      const successfulMsg = this.tr("Changes on the Auto recharge were successfully saved");
+      saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, saveAutoRechargeBtn, successfulMsg));
       return saveAutoRechargeBtn;
     },
 
@@ -287,23 +288,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         maxWidth: 200,
         center: true
       });
-      disableAutoRechargeBtn.addListener("execute", () => {
-        disableAutoRechargeBtn.setFetching(true);
-        const params = {
-          url: {
-            walletId: this.getWallet().getWalletId()
-          },
-          data: this.__getFieldsData()
-        };
-        params.data["enabled"] = false;
-        osparc.data.Resources.fetch("auto-recharge", "put", params)
-          .then(arData => {
-            this.__populateForm(arData);
-            const msg = this.tr("Auto recharge was successfully disabled");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          })
-          .finally(() => disableAutoRechargeBtn.setFetching(false));
-      });
+      const successfulMsg = this.tr("Auto recharge was successfully disabled");
+      disableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(false, disableAutoRechargeBtn, successfulMsg));
       return disableAutoRechargeBtn;
     }
   }

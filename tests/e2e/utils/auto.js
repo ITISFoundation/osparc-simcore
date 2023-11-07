@@ -182,7 +182,7 @@ async function dashboardOpenService(page, serviceName) {
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="servicesList"]');
   if (children.length) {
     let idx = 0;
-    for (let i=0; i<children.length; i++) {
+    for (let i = 0; i < children.length; i++) {
       const childId = '[osparc-test-id="' + children[i] + '"]';
       const cardLabel = await utils.getDashboardCardLabel(page, childId);
       if (cardLabel === serviceName) {
@@ -227,7 +227,7 @@ async function __filterServicesByText(page, serviceName) {
 }
 
 async function __typeInSearchBarFilter(page, resource, text) {
-  const fieldSelector = '[osparc-test-id="searchBarFilter-textField-'+resource+'"]';
+  const fieldSelector = '[osparc-test-id="searchBarFilter-textField-' + resource + '"]';
   await __typeInFilter(page, fieldSelector, text);
 }
 
@@ -249,15 +249,17 @@ async function showLogger(page, show = true) {
 }
 
 async function findLogMessage(page, text) {
-  console.log("Finding Log Message");
+  console.log("Finding Log Message containing '" + text + "'");
   await this.showLogger(page, true);
 
   await utils.waitAndClick(page, '[osparc-test-id="logsFilterField"]');
   await utils.clearInput(page, '[osparc-test-id="logsFilterField"]');
+  await utils.takeScreenshot(page, 'findLogMessage_' + text + "_before");
   await page.type('[osparc-test-id="logsFilterField"]', text);
+  await utils.sleep(2000);
 
   const found1 = await page.evaluate((text) => window.find(text), text);
-  await utils.takeScreenshot(page, 'find_' + text);
+  await utils.takeScreenshot(page, 'findLogMessage_' + text + "_after");
   return found1;
 }
 

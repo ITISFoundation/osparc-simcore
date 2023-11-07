@@ -61,7 +61,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         case "logo-w-platform":
           control = new osparc.ui.basic.LogoWPlatform();
           control.setSize({
-            width: 240,
+            width: 300,
             height: 120
           });
           control.setFont("text-18");
@@ -166,7 +166,7 @@ qx.Class.define("osparc.auth.LoginPage", {
           osparc.product.Utils.isProduct("s4l") ||
           osparc.product.Utils.isProduct("s4lacad") ||
           osparc.product.Utils.isProduct("s4ldesktop") ||
-          osparc.product.Utils.isProduct("s4ldektopacad")
+          osparc.product.Utils.isProduct("s4ldesktopacad")
         )
       ) {
         requestAccount = this.getChildControl("request-account");

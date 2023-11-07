@@ -5,13 +5,23 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+
 import httpx
 import pytest
 from faker import Faker
 from fastapi import status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_payments.models.schemas.acknowledgements import AckPayment
+from simcore_service_payments.core.errors import (
+    PaymentMethodNotFoundError,
+    PaymentNotFoundError,
+)
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPayment,
+    AckPaymentMethod,
+)
+from simcore_service_payments.models.schemas.errors import DefaultApiError
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -26,9 +36,10 @@ pytest_simcore_ops_services_selection = [
 def app_environment(
     app_environment: EnvVarsDict,
     postgres_env_vars_dict: EnvVarsDict,
+    external_environment: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
     monkeypatch: pytest.MonkeyPatch,
-):
+) -> EnvVarsDict:
     # set environs
     monkeypatch.delenv("PAYMENTS_POSTGRES", raising=False)
 
@@ -37,9 +48,32 @@ def app_environment(
         {
             **app_environment,
             **postgres_env_vars_dict,
+            **external_environment,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )
+
+
+@pytest.fixture
+async def client(
+    client: httpx.AsyncClient, external_environment: EnvVarsDict
+) -> AsyncIterator[httpx.AsyncClient]:
+    # EITHER tests against external payments API
+    if external_base_url := external_environment.get("PAYMENTS_SERVICE_API_BASE_URL"):
+        # If there are external secrets, build a new client and point to `external_base_url`
+        print(
+            "🚨 EXTERNAL: tests running against external payment API at",
+            external_base_url,
+        )
+        async with httpx.AsyncClient(
+            app=None,
+            base_url=external_base_url,
+            headers={"Content-Type": "application/json"},
+        ) as new_client:
+            yield new_client
+    # OR tests against app
+    else:
+        yield client
 
 
 async def test_payments_api_authentication(
@@ -63,7 +97,38 @@ async def test_payments_api_authentication(
         f"/v1/payments/{payments_id}:ack", json=payment_ack, headers=auth_headers
     )
 
-    print(response.json())
-
-    # NOTE: for the moment this entry is not implemented
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
+    error = DefaultApiError.parse_obj(response.json())
+    assert PaymentNotFoundError.msg_template.format(payment_id=payments_id) == str(
+        error.detail
+    )
+
+
+async def test_payments_methods_api_authentication(
+    with_disabled_rabbitmq_and_rpc: None,
+    client: httpx.AsyncClient,
+    faker: Faker,
+    auth_headers: dict[str, str],
+):
+    payment_method_id = faker.uuid4()
+    payment_method_ack = AckPaymentMethod(success=True, message=faker.word()).dict()
+
+    # w/o header
+    response = await client.post(
+        f"/v1/payments-methods/{payment_method_id}:ack",
+        json=payment_method_ack,
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.json()
+
+    # same but w/ header
+    response = await client.post(
+        response.request.url.path,
+        content=response.request.content,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
+    error = DefaultApiError.parse_obj(response.json())
+    assert PaymentMethodNotFoundError.msg_template.format(
+        payment_method_id=payment_method_id
+    ) == str(error.detail)

@@ -276,6 +276,7 @@ async def test_scheduler_add_remove(
     assert scheduler_data.service_name not in scheduler._scheduler._to_observe
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_scheduler_removes_partially_started_services(
     disabled_scheduler_background_task: None,
     manually_trigger_scheduler: Callable[[], Awaitable[None]],

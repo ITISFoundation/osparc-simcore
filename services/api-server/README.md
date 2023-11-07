@@ -1,40 +1,14 @@
 # api-server
 
-[![image-size]](https://microbadger.com/images/itisfoundation/api-server. "More on itisfoundation/api-server.:staging-latest image")
-[![image-badge]](https://microbadger.com/images/itisfoundation/api-server "More on Public API Server image in registry")
-[![image-version]](https://microbadger.com/images/itisfoundation/api-server "More on Public API Server image in registry")
-[![image-commit]](https://microbadger.com/images/itisfoundation/api-server "More on Public API Server image in registry")
-
 Platform's public API server
-
-<!-- Add badges urls here-->
-[image-size]:https://img.shields.io/microbadger/image-size/itisfoundation/api-server./staging-latest.svg?label=api-server.&style=flat
-[image-badge]:https://images.microbadger.com/badges/image/itisfoundation/api-server.svg
-[image-version]https://images.microbadger.com/badges/version/itisfoundation/api-server.svg
-[image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/api-server.svg
-<!------------------------->
 
 ## Development
 
-Setup environment
+Since the API server communicates with (almost) all other services, running it requires running the entire osparc (see the section [development build](../../README.md#development-build) of the main README)
 
-```cmd
-make devenv
-source .venv/bin/activate
-cd services/api-server
-make install-dev
-```
+Open the following sites and use the test credentials user=key, password=secret to manually test the API:
 
-Then
-
-```cmd
-make run-devel
-```
-
-will start the api-server in development-mode together with a postgres db initialized with test data. Open the following sites and use the test credentials ``user=key, password=secret`` to manually test the API:
-
-- http://127.0.0.1:8000/docs: redoc documentation
-- http://127.0.0.1:8000/dev/docs: swagger type of documentation
+    http://127.0.0.1.nip.io:8006/dev/doc: swagger type of documentation
 
 ### Profiling requests to the api server
 When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENABLED` is =1 in the running container) one can profile calls to the API server directly from the client side. On the server, the profiling is done using [Pyinstrument](https://github.com/joerick/pyinstrument). If we have our request in the form of a curl command, one simply adds the custom header `x-profile-api-server:true` to the command, in which case the profile is received under the `profile` key of the response body. This makes it easy to visualise the profiling report directly in bash:

@@ -15,11 +15,12 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.errors import (
     ConfigurationError,
     Ec2InstanceNotFoundError,
+    Ec2InstanceTypeInvalidError,
     Ec2TooManyInstancesError,
 )
 from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
-    EC2Settings,
+    EC2ClustersKeeperSettings,
 )
 from simcore_service_clusters_keeper.modules.ec2 import (
     ClustersKeeperEC2,
@@ -33,8 +34,8 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 @pytest.fixture
 def ec2_settings(
     app_environment: EnvVarsDict,
-) -> EC2Settings:
-    return EC2Settings.create_from_envs()
+) -> EC2ClustersKeeperSettings:
+    return EC2ClustersKeeperSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -44,7 +45,7 @@ def app_settings(
     return ApplicationSettings.create_from_envs()
 
 
-async def test_ec2_client_lifespan(ec2_settings: EC2Settings):
+async def test_ec2_client_lifespan(ec2_settings: EC2ClustersKeeperSettings):
     ec2 = await ClustersKeeperEC2.create(settings=ec2_settings)
     assert ec2
     assert ec2.client
@@ -117,35 +118,54 @@ async def test_get_ec2_instance_capabilities(
     app_settings: ApplicationSettings,
     clusters_keeper_ec2: ClustersKeeperEC2,
 ):
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     assert (
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
     )
     instance_types = await clusters_keeper_ec2.get_ec2_instance_capabilities(
         cast(
             set[InstanceTypeType],
             set(
-                app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+                app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
             ),
         )
     )
     assert instance_types
     assert len(instance_types) == len(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
     )
 
     # all the instance names are found and valid
     assert all(
         i.name
-        in app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        in app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
         for i in instance_types
     )
     for (
         instance_type_name
     ) in (
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES
     ):
         assert any(i.name == instance_type_name for i in instance_types)
+
+
+async def test_get_ec2_instance_capabilities_with_empty_set_returns_all_options(
+    mocked_aws_server_envs: None,
+    clusters_keeper_ec2: ClustersKeeperEC2,
+):
+    instance_types = await clusters_keeper_ec2.get_ec2_instance_capabilities(set())
+    assert instance_types
+    # NOTE: this might need adaptation when moto is updated
+    assert 700 < len(instance_types) < 800
+
+
+async def test_get_ec2_instance_capabilities_with_invalid_names(
+    mocked_aws_server_envs: None, clusters_keeper_ec2: ClustersKeeperEC2, faker: Faker
+):
+    with pytest.raises(Ec2InstanceTypeInvalidError):
+        await clusters_keeper_ec2.get_ec2_instance_capabilities(
+            faker.pyset(allowed_types=(str,))
+        )
 
 
 async def test_start_aws_instance(
@@ -161,7 +181,7 @@ async def test_start_aws_instance(
     mocker: MockerFixture,
 ):
     assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -170,7 +190,7 @@ async def test_start_aws_instance(
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     await clusters_keeper_ec2.start_aws_instance(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
@@ -205,7 +225,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     mocker: MockerFixture,
 ):
     assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -214,10 +234,10 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     for _ in range(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_INSTANCES
     ):
         await clusters_keeper_ec2.start_aws_instance(
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
             faker.pystr(),
             tags=tags,
             startup_script=startup_script,
@@ -227,7 +247,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     # now creating one more shall fail
     with pytest.raises(Ec2TooManyInstancesError):
         await clusters_keeper_ec2.start_aws_instance(
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
             faker.pystr(),
             tags=tags,
             startup_script=startup_script,
@@ -247,13 +267,13 @@ async def test_get_instances(
     faker: Faker,
     mocker: MockerFixture,
 ):
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     assert (
         await clusters_keeper_ec2.get_instances(
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES, tags={}
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES, tags={}
         )
         == []
     )
@@ -263,7 +283,7 @@ async def test_get_instances(
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     created_instances = await clusters_keeper_ec2.start_aws_instance(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
@@ -272,7 +292,7 @@ async def test_get_instances(
     assert len(created_instances) == 1
 
     instance_received = await clusters_keeper_ec2.get_instances(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         tags=tags,
     )
     assert created_instances == instance_received
@@ -290,7 +310,7 @@ async def test_terminate_instance(
     faker: Faker,
     mocker: MockerFixture,
 ):
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -299,7 +319,7 @@ async def test_terminate_instance(
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     created_instances = await clusters_keeper_ec2.start_aws_instance(
-        app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
@@ -324,7 +344,7 @@ async def test_terminate_instance_not_existing_raises(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]

@@ -28,7 +28,6 @@ qx.Class.define("osparc.About", {
       contentPadding: this.self().PADDING,
       showMaximize: false,
       showMinimize: false,
-      resizable: false,
       centerOnAppear: true,
       clickAwayClose: true,
       modal: true

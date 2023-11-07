@@ -29,6 +29,7 @@ from ..modules.director_v0 import DirectorV0Client
 from ..modules.dynamic_sidecar import api_client
 from ..modules.projects_networks import requires_dynamic_sidecar
 from ..utils.db import get_repository
+from ._client import ThinDV2LocalhostClient
 
 
 @asynccontextmanager
@@ -273,3 +274,9 @@ async def async_project_state(
         await _display(
             app, project_id, update_interval=update_interval, blocking=blocking
         )
+
+
+async def async_service_state(node_id: NodeID) -> None:
+    thin_dv2_localhost_client = ThinDV2LocalhostClient()
+    result = await thin_dv2_localhost_client.get_service_state(node_id)
+    typer.echo(f"Service state: {result.text}")

@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from enum import auto
 from typing import Any, ClassVar, TypeAlias
 
@@ -24,7 +25,11 @@ class WalletInfo(BaseModel):
         }
 
 
-### DB
+ZERO_CREDITS = Decimal(0)
+
+#
+# DB
+#
 
 
 class WalletDB(BaseModel):

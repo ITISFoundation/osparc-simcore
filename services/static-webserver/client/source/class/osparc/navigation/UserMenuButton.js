@@ -23,51 +23,53 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     const authData = osparc.auth.Data.getInstance();
 
-    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
-    const menu = new qx.ui.menu.Menu().set({
-      font: "text-14"
-    });
+    const menu = new osparc.navigation.UserMenu();
     osparc.utils.Utils.setIdToWidget(menu, "userMenuMenu");
     this.set({
+      width: 40,
+      height: 40,
       font: "text-14",
-      icon: osparc.utils.Avatar.getUrl(userEmail, 32),
-      label: "bizzy",
+      allowShrinkX: false,
+      allowShrinkY: false,
+      allowGrowX: false,
+      allowGrowY: false,
       menu
     });
-    authData.bind("firstName", this, "label");
-    authData.bind("role", this, "label", {
-      converter: role => {
-        if (role === "anonymous") {
-          return "Anonymous";
-        }
-        if (role === "guest") {
-          return "Guest";
-        }
-        return authData.getFirstName();
-      }
+
+    this.getContentElement().setStyles({
+      "border-radius": "20px"
+    });
+    this.getChildControl("icon").getContentElement().setStyles({
+      "border-radius": "16px"
     });
     osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
 
-    this.getChildControl("icon").getContentElement().setStyles({
-      "border-radius": "16px"
+    const store = osparc.store.Store.getInstance();
+    this.__bindWalletToHalo();
+    store.addListener("changeContextWallet", () => this.__bindWalletToHalo());
+
+    const preferencesSettings = osparc.Preferences.getInstance();
+    preferencesSettings.addListener("changeCreditsWarningThreshold", () => this.__updateHalloCredits());
+
+    const userEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
+    const icon = this.getChildControl("icon");
+    authData.bind("role", this, "icon", {
+      converter: role => {
+        if (["anonymous", "guest"].includes(role)) {
+          icon.getContentElement().setStyles({
+            "margin-left": "0px"
+          });
+          return "@FontAwesome5Solid/user-secret/28";
+        }
+        icon.getContentElement().setStyles({
+          "margin-left": "-4px"
+        });
+        return osparc.utils.Avatar.getUrl(userEmail, 32);
+      }
     });
   },
 
   statics: {
-    openActivityManager: function() {
-      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", qx.locale.Manager.tr("Activity manager")).set({
-        height: 600,
-        width: 800,
-        layout: new qx.ui.layout.Grow(),
-        appearance: "service-window",
-        showMinimize: false,
-        contentPadding: 0
-      });
-      activityWindow.add(new osparc.activityManager.ActivityManager());
-      activityWindow.center();
-      activityWindow.open();
-    },
-
     openPreferences: function() {
       const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
       return preferencesWindow;
@@ -75,178 +77,41 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "theme-switcher":
-          control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
-          this.getMenu().add(control);
-          break;
-        case "log-in":
-          control = new qx.ui.menu.Button(this.tr("Log in"));
-          control.addListener("execute", () => window.open(window.location.href, "_blank"));
-          this.getMenu().add(control);
-          break;
-        case "user-center":
-          control = new qx.ui.menu.Button(this.tr("User Center"));
-          control.addListener("execute", () => {
-            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-            const userCenterWindow = osparc.desktop.credits.UserCenterWindow.openWindow(walletsEnabled);
-            if (walletsEnabled) {
-              userCenterWindow.openOverview();
-            }
-          }, this);
-          this.getMenu().add(control);
-          break;
-        case "po-center":
-          control = new qx.ui.menu.Button(this.tr("PO Center"));
-          control.addListener("execute", () => {
-            const poCenterWindow = osparc.po.POCenterWindow.openWindow();
-            poCenterWindow.openInvitations();
-          }, this);
-          this.getMenu().add(control);
-          break;
-        case "preferences":
-          control = new qx.ui.menu.Button(this.tr("Preferences"));
-          control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
-          osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
-          this.getMenu().add(control);
-          break;
-        case "organizations":
-          control = new qx.ui.menu.Button(this.tr("Organizations"));
-          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
-          control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-          this.getMenu().add(control);
-          break;
-        case "clusters":
-          control = new qx.ui.menu.Button(this.tr("Clusters"));
-          control.exclude();
-          if (osparc.product.Utils.showClusters()) {
-            const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
-            if (isDisabled === false) {
-              control.show();
-            }
-          }
-          control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
-          this.getMenu().add(control);
-          break;
-        case "license":
-          control = new qx.ui.menu.Button(this.tr("License"));
-          osparc.store.Support.getLicenseURL()
-            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
-          this.getMenu().add(control);
-          break;
-        case "about":
-          control = new qx.ui.menu.Button(this.tr("About oSPARC"));
-          control.addListener("execute", () => osparc.About.getInstance().open());
-          osparc.utils.Utils.setIdToWidget(control, "userMenuAboutBtn");
-          this.getMenu().add(control);
-          break;
-        case "about-product": {
-          control = new qx.ui.menu.Button(this.tr("About Product"));
-          const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
-          control.getChildControl("label").setRich(true);
-          control.setLabel(this.tr("About ") + displayName);
-          control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
-          this.getMenu().add(control);
-          break;
-        }
-        case "log-out": {
-          const authData = osparc.auth.Data.getInstance();
-          control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
-          control.addListener("execute", () => qx.core.Init.getApplication().logout());
-          osparc.utils.Utils.setIdToWidget(control, "userMenuLogoutBtn");
-          this.getMenu().add(control);
-          break;
+    __bindWalletToHalo: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (contextWallet) {
+        this.__updateHalloCredits();
+        contextWallet.addListener("changeCreditsAvailable", () => this.__updateHalloCredits());
+      }
+    },
+
+    __updateHalloCredits: function() {
+      const store = osparc.store.Store.getInstance();
+      const contextWallet = store.getContextWallet();
+      if (contextWallet) {
+        const credits = contextWallet.getCreditsAvailable();
+        if (credits !== null) {
+          const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make hallo red
+          const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
+          const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
+          const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+          const arr = qx.util.ColorUtil.stringToRgb(textColor);
+          arr[3] = 0.5;
+          const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
+          this.getContentElement().setStyles({
+            "background": `radial-gradient(closest-side, white 79%, transparent 80% 100%), conic-gradient(${color1} ${progress}%, ${color2} 0)`
+          });
         }
       }
-      return control || this.base(arguments, id);
     },
 
     populateMenu: function() {
-      this.getMenu().removeAll();
-      if (osparc.auth.Data.getInstance().isGuest()) {
-        this.getChildControl("log-in");
-      } else {
-        this.getChildControl("user-center");
-        if (osparc.data.Permissions.getInstance().isProductOwner()) {
-          this.getChildControl("po-center");
-        }
-        this.getChildControl("preferences");
-        this.getChildControl("organizations");
-        this.getChildControl("clusters");
-      }
-      if (osparc.product.quickStart.Utils.getQuickStart()) {
-        this.getMenu().addSeparator();
-        osparc.store.Support.addQuickStartToMenu(this.getMenu());
-      }
-      osparc.store.Support.addGuidedToursToMenu(this.getMenu());
-      this.getMenu().addSeparator();
-      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
-      }
-      this.getChildControl("about");
-      if (osparc.product.Utils.showAboutProduct()) {
-        this.getChildControl("about-product");
-      }
-      this.getChildControl("license");
-      this.getMenu().addSeparator();
-      this.getChildControl("log-out");
+      this.getMenu().populateMenu();
     },
 
     populateMenuCompact: function() {
-      this.getMenu().removeAll();
-      const authData = osparc.auth.Data.getInstance();
-      if (authData.isGuest()) {
-        this.getChildControl("log-in");
-      } else {
-        this.getChildControl("user-center");
-        if (osparc.data.Permissions.getInstance().isProductOwner()) {
-          this.getChildControl("po-center");
-        }
-        this.getChildControl("preferences");
-        this.getChildControl("organizations");
-        this.getChildControl("clusters");
-      }
-      this.getMenu().addSeparator();
-
-      // this part gets injected
-      this.__addQuickStartToMenu();
-      this.__addManualsToMenu();
-      this.getMenu().addSeparator();
-      this.__addFeedbacksToMenu();
-      this.getMenu().addSeparator();
-      this.getChildControl("theme-switcher");
-
-      this.getMenu().addSeparator();
-      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
-      }
-      this.getChildControl("about");
-      if (!osparc.product.Utils.isProduct("osparc")) {
-        this.getChildControl("about-product");
-      }
-      this.getChildControl("license");
-      this.getMenu().addSeparator();
-      this.getChildControl("log-out");
-    },
-
-    __addQuickStartToMenu: function() {
-      const menu = this.getMenu();
-      osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addGuidedToursToMenu(menu);
-    },
-
-    __addManualsToMenu: function() {
-      const menu = this.getMenu();
-      osparc.store.Support.addManualButtonsToMenu(menu);
-    },
-
-    __addFeedbacksToMenu: function() {
-      const menu = this.getMenu();
-      osparc.store.Support.addSupportButtonsToMenu(menu);
+      this.getMenu().populateMenuCompact();
     }
   }
 });

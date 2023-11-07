@@ -100,7 +100,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
                     if (resourceKey === "RAM") {
                       value = osparc.utils.Utils.bytesToGB(value);
                     }
-                    const spinner = new qx.ui.form.Spinner(0, value, 200).set({
+                    const spinner = new qx.ui.form.Spinner(0, value, 512).set({
                       singleStep: 0.1
                     });
                     const nf = new qx.util.format.NumberFormat();

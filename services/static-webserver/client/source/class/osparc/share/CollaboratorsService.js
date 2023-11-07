@@ -19,9 +19,9 @@
  * Widget for modifying Service permissions. This is the way for sharing studies
  * - Creates a copy of service data
  * - It allows changing study's access right, so that the study owners can:
- *   - Share it with Organizations and/or Organization Members (Collaborators)
- *   - Make other Collaborators Owner
- *   - Remove Collaborators
+ *   - Share it with Organizations and/or Organization Members (Editors)
+ *   - Make other Editors Owner
+ *   - Remove Editors
  */
 
 qx.Class.define("osparc.share.CollaboratorsService", {
@@ -33,6 +33,10 @@ qx.Class.define("osparc.share.CollaboratorsService", {
   construct: function(serviceData) {
     this._resourceType = "service";
     const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
+
+    if (serviceData.resourceType === "service") {
+      osparc.data.Roles.createServicesRolesResourceInfo();
+    }
 
     const initCollabs = this.self().getEveryoneObj();
 
@@ -88,7 +92,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       return osparc.service.Utils.canIWrite(this._serializedData["accessRights"]);
     },
 
-    _addCollaborators: function(gids, cb) {
+    _addEditors: function(gids, cb) {
       if (gids.length === 0) {
         return;
       }
@@ -105,14 +109,14 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          let text = this.tr("Collaborator(s) successfully added.");
+          let text = this.tr("Editor(s) successfully added.");
           text += "<br>";
           text += this.tr("The user will not get notified.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding editor(s)"), "ERROR");
           console.error(err);
         })
         .finally(() => cb());
@@ -177,12 +181,12 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         .finally(() => item.setEnabled(true));
     },
 
-    _promoteToCollaborator: function(collaborator, item) {
+    _promoteToEditor: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr("Viewer successfully made Collaborator"),
-        this.tr("Something went wrong making Viewer Collaborator"),
+        this.tr("Viewer successfully made Editor"),
+        this.tr("Something went wrong making Viewer Editor"),
         item
       );
     },
@@ -191,17 +195,17 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
-    _demoteToViewer: function(collaborator, item) {
+    _demoteToUser: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr("Collaborator successfully made Viewer"),
-        this.tr("Something went wrong making Collaborator Viewer"),
+        this.tr("Editor successfully made Viewer"),
+        this.tr("Something went wrong making Editor Viewer"),
         item
       );
     },
 
-    _demoteToCollaborator: function(collaborator, item) {
+    _demoteToEditor: function(collaborator, item) {
       osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }

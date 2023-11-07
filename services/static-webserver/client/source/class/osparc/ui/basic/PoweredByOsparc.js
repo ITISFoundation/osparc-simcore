@@ -57,8 +57,8 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
           break;
         case "logo": {
           control = new qx.ui.basic.Image().set({
-            width: 42,
-            height: 33,
+            width: 32,
+            height: 24,
             scale: true
           });
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({

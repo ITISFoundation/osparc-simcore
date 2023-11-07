@@ -305,36 +305,55 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _startStudyById: function(studyId, openCB, cancelCB) {
+    _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      if (walletsEnabled) {
-        const resourceSelector = new osparc.study.StudyOptions(studyId);
-        const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
-        resourceSelector.addListener("startStudy", () => {
-          win.close();
-          if (openCB) {
-            openCB();
-          }
-          osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
-        });
-        resourceSelector.addListener("cancel", () => {
-          win.close();
-          if (cancelCB) {
-            cancelCB();
-          }
-        });
-        win.getChildControl("close-button").addListener("execute", () => {
-          cancelCB();
-        });
-      } else {
+      const openStudy = () => {
         if (openCB) {
           openCB();
         }
         osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      };
+
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        const params = {
+          url: {
+            studyId
+          }
+        };
+        osparc.data.Resources.fetch("studies", "getWallet", params)
+          .then(wallet => {
+            if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
+              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
+              const resourceSelector = new osparc.study.StudyOptions(studyId);
+              const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
+              resourceSelector.addListener("startStudy", () => {
+                win.close();
+                openStudy();
+              });
+              resourceSelector.addListener("cancel", () => {
+                win.close();
+                if (cancelCB) {
+                  cancelCB();
+                }
+              });
+              // listen to "tap" instead of "execute": the "execute" is not propagated
+              win.getChildControl("close-button").addListener("tap", () => {
+                cancelCB();
+              });
+            } else {
+              openStudy();
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          });
+      } else {
+        openStudy();
       }
     },
 

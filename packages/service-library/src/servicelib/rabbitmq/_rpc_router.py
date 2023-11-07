@@ -5,11 +5,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
+from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import SecretStr
 
 from ..logging_utils import log_context
 from ._errors import RPCServerError
-from ._models import RPCMethodName
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 

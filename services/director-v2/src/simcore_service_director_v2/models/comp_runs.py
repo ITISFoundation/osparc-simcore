@@ -21,9 +21,6 @@ class RunMetadataDict(TypedDict, total=False):
     user_email: str
     wallet_id: int | None
     wallet_name: str | None
-    pricing_plan_id: int | None
-    pricing_unit_id: int | None
-    pricing_unit_cost_id: int | None
 
 
 class CompRunsAtDB(BaseModel):

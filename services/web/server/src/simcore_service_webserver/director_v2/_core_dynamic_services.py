@@ -82,7 +82,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
     return service_state
 
 
-async def run_dynamic_service(
+async def run_dynamic_service(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     app: web.Application,
     product_name: str,
@@ -311,3 +311,20 @@ async def update_dynamic_service_networks_in_project(
     await request_director_v2(
         app, "PATCH", backend_url, expected_status=web.HTTPNoContent
     )
+
+
+@log_decorator(logger=_log)
+async def get_project_inactivity(
+    app: web.Application,
+    project_id: ProjectID,
+    max_inactivity_seconds: NonNegativeFloat,
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    backend_url = (
+        URL(settings.base_url) / f"dynamic_services/projects/{project_id}/inactivity"
+    ).update_query(max_inactivity_seconds=max_inactivity_seconds)
+    result = await request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+    assert isinstance(result, dict)  # nosec
+    return result

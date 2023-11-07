@@ -37,6 +37,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
     this.add(this.__createProfileUser());
     this.add(this.__createPasswordSection());
+    this.add(this.__createDeleteAccount());
   },
 
   members: {
@@ -51,11 +52,6 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         maxWidth: 500
       });
 
-      const email = new qx.ui.form.TextField().set({
-        tabIndex: 1,
-        placeholder: this.tr("Email")
-      });
-
       const firstName = new qx.ui.form.TextField().set({
         tabIndex: 2,
         placeholder: this.tr("First Name")
@@ -66,10 +62,15 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         placeholder: this.tr("Last Name")
       });
 
+      const email = new qx.ui.form.TextField().set({
+        tabIndex: 1,
+        placeholder: this.tr("Email")
+      });
+
       const form = new qx.ui.form.Form();
-      form.add(email, "Email", null, "email");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
+      form.add(email, "Email", null, "email");
       box.add(new qx.ui.form.renderer.Single(form));
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
@@ -124,13 +125,6 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
           return "";
         }
       });
-      /*
-      controller.addTarget(img, "source", "email", false, {
-        converter: function(data) {
-          return osparc.utils.Avatar.getUrl(email.getValue(), 150);
-        }
-      });
-      */
 
       // validation
       const emailValidator = new qx.ui.form.validation.Manager();
@@ -231,6 +225,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
     __resetDataToModel: function() {
       this.__setDataToModel(this.__userProfileData);
     },
+
     __createPasswordSection: function() {
       // layout
       const box = this._createSectionBox(this.tr("Password"));
@@ -300,6 +295,28 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
             });
         }
       });
+
+      return box;
+    },
+
+    __createDeleteAccount: function() {
+      // layout
+      const box = this._createSectionBox(this.tr("Danger Zone")).set({
+        alignX: "left",
+        maxWidth: 500
+      });
+
+      const deleteBtn = new qx.ui.form.Button(this.tr("Delete Account")).set({
+        appearance: "danger-button",
+        allowGrowX: false
+      });
+      deleteBtn.addListener("execute", () => {
+        const deleteAccount = new osparc.desktop.credits.DeleteAccount();
+        const win = osparc.ui.window.Window.popUpInWindow(deleteAccount, qx.locale.Manager.tr("Delete Account"), 430, null);
+        deleteAccount.addListener("cancel", () => win.close());
+        deleteAccount.addListener("deleted", () => win.close());
+      });
+      box.add(deleteBtn);
 
       return box;
     }

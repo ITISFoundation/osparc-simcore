@@ -42,7 +42,7 @@ cloudpickle==2.2.1
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==7.3.1
+coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -51,7 +51,7 @@ dask==2023.3.2
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-dask-gateway==2023.1.1
+dask-gateway==2023.9.0
     # via -r requirements/_test.in
 debugpy==1.8.0
     # via -r requirements/_test.in
@@ -65,7 +65,7 @@ exceptiongroup==1.1.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-faker==19.6.1
+faker==19.13.0
     # via -r requirements/_test.in
 frozenlist==1.4.0
     # via
@@ -116,7 +116,7 @@ multidict==6.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.5.1
+mypy==1.6.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -140,7 +140,7 @@ psutil==5.9.5
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -153,11 +153,11 @@ pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-icdiff==0.7
+pytest-icdiff==0.8
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.11.1
+pytest-mock==3.12.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.7
     # via -r requirements/_test.in
@@ -183,7 +183,7 @@ sqlalchemy==1.4.49
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-sqlalchemy2-stubs==0.0.2a35
+sqlalchemy2-stubs==0.0.2a36
     # via sqlalchemy
 tblib==2.0.0
     # via
@@ -221,7 +221,7 @@ urllib3==1.26.16
     #   distributed
     #   docker
     #   requests
-websocket-client==1.6.3
+websocket-client==1.6.4
     # via docker
 yarl==1.9.2
     # via

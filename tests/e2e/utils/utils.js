@@ -529,7 +529,7 @@ function createScreenshotsDir() {
 
 async function takeScreenshot(page, captureName = "") {
   const event = new Date();
-  const time = event.toLocaleTimeString('de-CH');
+  const time = event.toLocaleTimeString('de-CH') + `.${event.getMilliseconds()}`;
   let filename = time + "_" + captureName;
   filename = filename.split(":").join("-")
   filename = filename + ".jpg";

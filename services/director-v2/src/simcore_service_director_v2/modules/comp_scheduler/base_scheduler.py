@@ -33,8 +33,8 @@ from servicelib.utils import logged_gather
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
+    ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
     InvalidPipelineError,
@@ -380,9 +380,15 @@ class BaseCompScheduler(ABC):
                     ),
                     wallet_id=run_metadata.get("wallet_id"),
                     wallet_name=run_metadata.get("wallet_name"),
-                    pricing_plan_id=run_metadata.get("pricing_plan_id"),
-                    pricing_unit_id=run_metadata.get("pricing_unit_id"),
-                    pricing_unit_cost_id=run_metadata.get("pricing_unit_cost_id"),
+                    pricing_plan_id=t.pricing_info.get("pricing_plan_id")
+                    if t.pricing_info
+                    else None,
+                    pricing_unit_id=t.pricing_info.get("pricing_unit_id")
+                    if t.pricing_info
+                    else None,
+                    pricing_unit_cost_id=t.pricing_info.get("pricing_unit_cost_id")
+                    if t.pricing_info
+                    else None,
                     product_name=run_metadata.get(
                         "product_name", UNDEFINED_STR_METADATA
                     ),
@@ -752,7 +758,7 @@ class BaseCompScheduler(ABC):
             )
             for task in comp_tasks.values():
                 task.state = RunningState.WAITING_FOR_CLUSTER
-        except ComputationalBackendOnDemandClustersKeeperNotReadyError:
+        except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(
                 self.rabbitmq_client,

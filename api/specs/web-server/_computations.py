@@ -1,10 +1,10 @@
 from fastapi import APIRouter, status
+from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.director_v2._handlers import (
     ComputationTaskGet,
-    _ComputationStart,
     _ComputationStarted,
 )
 
@@ -29,7 +29,7 @@ async def get_computation(project_id: ProjectID):
     "/computations/{project_id}:start",
     response_model=Envelope[_ComputationStarted],
 )
-async def start_computation(project_id: ProjectID, _start: _ComputationStart):
+async def start_computation(project_id: ProjectID, _start: ComputationStart):
     ...
 
 
