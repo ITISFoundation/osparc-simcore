@@ -40,3 +40,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
+
+    TRAEFIK_SIMCORE_ZONE: str = Field(
+        ...,
+        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
+    )

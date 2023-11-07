@@ -166,7 +166,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             "Name": scheduler_data.dynamic_sidecar_network_name,
             "Driver": "overlay",
             "Labels": {
-                "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
+                "io.simcore.zone": f"{dynamic_services_scheduler_settings.TRAEFIK_SIMCORE_ZONE}",
                 "com.simcore.description": f"interactive for node: {scheduler_data.node_uuid}",
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },

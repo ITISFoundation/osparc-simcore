@@ -74,12 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # move to scheduler
-    TRAEFIK_SIMCORE_ZONE: str = Field(
-        ...,
-        description="Names the traefik zone for services that must be accessible from platform http entrypoint",
-    )
-
-    # move to scheduler
     DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: dict[str, str] = Field(
         ...,
         description=(
