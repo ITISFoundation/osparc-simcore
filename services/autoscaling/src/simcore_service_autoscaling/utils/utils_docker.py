@@ -13,7 +13,11 @@ from pathlib import Path
 from typing import Final, cast
 
 import yaml
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import (
+    DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY,
+    DockerGenericTag,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
@@ -253,13 +257,6 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
             ),
         )
     return Resources(cpus=0, ram=ByteSize(0))
-
-
-DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY: Final[DockerLabelKey] = parse_obj_as(
-    # NOTE: This definition needs to be moved to common location (models-library, docker.py) once this is put to use.
-    DockerLabelKey,
-    "",
-)
 
 
 def get_task_instance_restriction(task: Task) -> InstanceTypeType | None:
