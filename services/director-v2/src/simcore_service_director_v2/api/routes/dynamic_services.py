@@ -35,7 +35,7 @@ from tenacity.wait import wait_fixed
 
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client
-from ...core.dynamic_services import DynamicServicesSettings
+from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_sidecar_settings import DynamicSidecarSettings
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository

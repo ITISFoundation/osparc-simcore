@@ -36,7 +36,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from .dynamic_services import DynamicServicesSettings
+from .dynamic_services_settings import DynamicServicesSettings
 
 
 class PlacementConstraintStr(ConstrainedStr):

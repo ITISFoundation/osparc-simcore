@@ -12,8 +12,8 @@ from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
-from .dynamic_services.egress_proxy import EgressProxySettings
-from .dynamic_services.proxy import DynamicSidecarProxySettings
+from .dynamic_services_settings.egress_proxy import EgressProxySettings
+from .dynamic_services_settings.proxy import DynamicSidecarProxySettings
 
 _logger = logging.getLogger(__name__)
 

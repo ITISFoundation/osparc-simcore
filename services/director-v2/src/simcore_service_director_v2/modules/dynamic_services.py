@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI, Response
 
-from ..core.dynamic_services import DynamicServicesSettings
+from ..core.dynamic_services_settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)

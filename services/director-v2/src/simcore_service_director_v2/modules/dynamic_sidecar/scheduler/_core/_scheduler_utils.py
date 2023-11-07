@@ -10,7 +10,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceBootType, ServiceState
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 
-from .....core.dynamic_services.scheduler import DynamicServicesSchedulerSettings
+from .....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from .....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import DynamicSidecarStatus, SchedulerData
 from ...api_client import SidecarsClient, get_sidecars_client
