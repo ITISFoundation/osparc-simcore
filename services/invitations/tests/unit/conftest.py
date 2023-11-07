@@ -9,6 +9,7 @@ import pytest
 import simcore_service_invitations
 from cryptography.fernet import Fernet
 from faker import Faker
+from models_library.products import ProductName
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -65,19 +66,18 @@ def app_environment(
     secret_key: str,
     fake_user_name: str,
     fake_password: str,
+    default_product: ProductName,
 ) -> EnvVarsDict:
-
-    envs = setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
         {
             "INVITATIONS_SECRET_KEY": secret_key,
             "INVITATIONS_OSPARC_URL": "https://myosparc.org",
+            "INVITATIONS_DEFAULT_PRODUCT": default_product,
             "INVITATIONS_USERNAME": fake_user_name,
             "INVITATIONS_PASSWORD": fake_password,
         },
     )
-
-    return envs
 
 
 @pytest.fixture(params=[True, False])
@@ -86,9 +86,28 @@ def is_trial_account(request: FixtureRequest) -> bool:
 
 
 @pytest.fixture
-def invitation_data(is_trial_account: bool, faker: Faker) -> InvitationInputs:
-    return InvitationInputs(
-        issuer="LicenseRequestID=123456789",
-        guest=faker.email(),
-        trial_account_days=faker.pyint(min_value=1) if is_trial_account else None,
-    )
+def default_product() -> ProductName:
+    return "s4llite"
+
+
+@pytest.fixture(params=[None, "osparc", "s4llite", "s4laca"])
+def product(request: FixtureRequest) -> ProductName | None:
+    # NOTE: INVITATIONS_DEFAULT_PRODUCT includes the default product field is not defined
+    return request.param
+
+
+@pytest.fixture
+def invitation_data(
+    is_trial_account: bool, faker: Faker, product: ProductName | None
+) -> InvitationInputs:
+    # first version
+    kwargs = {
+        "issuer": "LicenseRequestID=123456789",
+        "guest": faker.email(),
+        "trial_account_days": faker.pyint(min_value=1) if is_trial_account else None,
+    }
+    # next version, can include product
+    if product:
+        kwargs["product"] = product
+
+    return InvitationInputs.parse_obj(kwargs)

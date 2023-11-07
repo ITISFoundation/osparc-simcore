@@ -11,6 +11,7 @@ import cryptography.fernet
 import pytest
 from faker import Faker
 from models_library.invitations import InvitationContent, InvitationInputs
+from models_library.products import ProductName
 from pydantic import BaseModel, ValidationError
 from simcore_service_invitations.invitations import (
     InvalidInvitationCodeError,
@@ -60,10 +61,16 @@ def test_export_by_alias_produces_smaller_strings(
 
 
 def test_create_and_decrypt_invitation(
-    invitation_data: InvitationInputs, faker: Faker, secret_key: str
+    invitation_data: InvitationInputs,
+    faker: Faker,
+    secret_key: str,
+    default_product: ProductName,
 ):
     invitation_link = create_invitation_link(
-        invitation_data, secret_key=secret_key.encode(), base_url=faker.url()
+        invitation_data,
+        secret_key=secret_key.encode(),
+        base_url=faker.url(),
+        default_product=default_product,
     )
 
     print(invitation_link)
@@ -86,9 +93,11 @@ def test_create_and_decrypt_invitation(
 
 
 @pytest.fixture
-def invitation_code(invitation_data: InvitationInputs, secret_key: str) -> str:
+def invitation_code(
+    invitation_data: InvitationInputs, secret_key: str, default_product: ProductName
+) -> str:
     return _create_invitation_code(
-        invitation_data, secret_key=secret_key.encode()
+        invitation_data, secret_key=secret_key.encode(), default_product=default_product
     ).decode()
 
 
