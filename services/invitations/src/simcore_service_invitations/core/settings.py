@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import cast
 
+from models_library.products import ProductName
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
@@ -79,7 +80,7 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     )
 
     INVITATIONS_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
-    INVITATIONS_DEFAULT_PRODUCT: str = Field(
+    INVITATIONS_DEFAULT_PRODUCT: ProductName = Field(
         ...,
         description="Default product if not specified in the request. "
         "WARNING: this product must be defined in INVITATIONS_OSPARC_URL",
