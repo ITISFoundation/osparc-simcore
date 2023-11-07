@@ -41,6 +41,7 @@ from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
     ResourceUsageTrackerSettings,
 )
+from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -55,22 +56,6 @@ class PlacementConstraintStr(ConstrainedStr):
     regex = re.compile(
         r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
     )
-
-
-class StorageSettings(BaseCustomSettings):
-    STORAGE_HOST: str = "storage"
-    STORAGE_PORT: int = 8080
-    STORAGE_VTAG: str = "v0"
-
-    @cached_property
-    def endpoint(self) -> str:
-        url: str = AnyHttpUrl.build(
-            scheme="http",
-            host=self.STORAGE_HOST,
-            path=f"/{self.STORAGE_VTAG}",
-            port=f"{self.STORAGE_PORT}",
-        )
-        return url
 
 
 class DirectorV0Settings(BaseCustomSettings):
