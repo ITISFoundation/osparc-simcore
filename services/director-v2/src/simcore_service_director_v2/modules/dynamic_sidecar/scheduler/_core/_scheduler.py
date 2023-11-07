@@ -41,7 +41,6 @@ from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
@@ -348,17 +347,12 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 return
 
             # recreate new observation
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
             dynamic_scheduler: DynamicServicesSchedulerSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
             )
             self._service_observation_task[
                 service_name
-            ] = self.__create_observation_task(
-                dynamic_sidecar_settings, dynamic_scheduler, service_name
-            )
+            ] = self.__create_observation_task(dynamic_scheduler, service_name)
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
