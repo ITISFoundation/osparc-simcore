@@ -19,7 +19,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import (
-    DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY,
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
 )
 from models_library.generated_models.docker_rest_api import (
@@ -482,7 +482,7 @@ async def test_cluster_scaling_up_and_down(
         service_monitored_labels,
         "pending",
         [
-            f"node.labels.{DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY}=={ docker_service_imposed_ec2_type}"
+            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ docker_service_imposed_ec2_type}"
         ]
         if docker_service_imposed_ec2_type
         else [],

@@ -14,7 +14,7 @@ from typing import Final, cast
 
 import yaml
 from models_library.docker import (
-    DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY,
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -284,7 +284,9 @@ async def get_task_instance_restriction(
             service_inspect.Spec.TaskTemplate.Placement.Constraints
         )
         # should be node.labels.{}
-        node_label_to_find = f"node.labels.{DOCKER_TASK_EC2_RESOURCE_RESTRICTION_KEY}=="
+        node_label_to_find = (
+            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=="
+        )
         for constraint in service_placement_constraints:
             if constraint.startswith(node_label_to_find):
                 return parse_obj_as(
