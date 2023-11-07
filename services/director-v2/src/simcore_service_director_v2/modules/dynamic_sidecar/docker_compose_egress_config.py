@@ -14,7 +14,7 @@ from models_library.service_settings_nat_rule import NATRule
 from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
-from ...core.settings import DynamicSidecarEgressSettings
+from ...core.dynamic_sidecar_settings import EgressProxySettings
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
 
@@ -172,7 +172,7 @@ def _add_egress_proxy_network(
 def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
     network_with_internet: str,
-    egress_proxy_settings: DynamicSidecarEgressSettings,
+    egress_proxy_settings: EgressProxySettings,
     egress_proxy_name: str,
 ) -> dict[str, Any]:
     network_aliases: set[str] = {x[0].hostname for x in egress_proxy_rules}
@@ -262,7 +262,7 @@ def _allow_outgoing_internet(
 def add_egress_configuration(
     service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
-    egress_proxy_settings: DynamicSidecarEgressSettings,
+    egress_proxy_settings: EgressProxySettings,
 ) -> None:
     """
     Each service defines rules to allow certain containers to gain access
