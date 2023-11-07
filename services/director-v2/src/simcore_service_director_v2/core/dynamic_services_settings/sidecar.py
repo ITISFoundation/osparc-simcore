@@ -20,13 +20,6 @@ _logger = logging.getLogger(__name__)
 _MINUTE: Final[NonNegativeInt] = 60
 
 
-SERVICE_RUNTIME_SETTINGS: str = "simcore.service.settings"
-SERVICE_REVERSE_PROXY_SETTINGS: str = "simcore.service.reverse-proxy-settings"
-SERVICE_RUNTIME_BOOTSETTINGS: str = "simcore.service.bootsettings"
-
-SUPPORTED_TRAEFIK_LOG_LEVELS: set[str] = {"info", "debug", "warn", "error"}
-
-
 class VFSCacheMode(str, Enum):
     __slots__ = ()
 
