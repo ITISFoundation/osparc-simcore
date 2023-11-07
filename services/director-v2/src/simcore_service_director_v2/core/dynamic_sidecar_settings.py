@@ -1,13 +1,11 @@
 import logging
 import random
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerGenericTag
 from models_library.projects_networks import DockerNetworkName
-from models_library.utils.enums import StrAutoEnum
 from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -15,6 +13,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+from .dynamic_services.egress_proxy import EgressProxySettings
 
 _logger = logging.getLogger(__name__)
 
@@ -35,20 +34,6 @@ class VFSCacheMode(str, Enum):
     MINIMAL = "minimal"
     WRITES = "writes"
     FULL = "full"
-
-
-class EnvoyLogLevel(StrAutoEnum):
-    TRACE = auto()
-    DEBUG = auto()
-    INFO = auto()
-    WARNING = auto()
-    ERROR = auto()
-    CRITICAL = auto()
-
-    def to_log_level(self) -> str:
-        assert isinstance(self.value, str)  # nosec
-        lower_log_level: str = self.value.lower()
-        return lower_log_level
 
 
 class RCloneSettings(SettingsLibraryRCloneSettings):
@@ -83,17 +68,6 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
         default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
         description="port where to expose the proxy's admin API",
-    )
-
-
-class EgressProxySettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
-        "envoyproxy/envoy:v1.25-latest",
-        description="envoy image to use",
-    )
-    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        default=EnvoyLogLevel.ERROR,  # type: ignore
-        description="log level for envoy proxy service",
     )
 
 

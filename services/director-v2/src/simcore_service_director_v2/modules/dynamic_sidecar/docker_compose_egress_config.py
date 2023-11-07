@@ -14,7 +14,7 @@ from models_library.service_settings_nat_rule import NATRule
 from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
-from ...core.dynamic_sidecar_settings import EgressProxySettings
+from ...core.dynamic_services.egress_proxy import EgressProxySettings
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
 
