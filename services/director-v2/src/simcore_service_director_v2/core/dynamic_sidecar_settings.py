@@ -85,7 +85,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
     )
 
 
-class DynamicSidecarEgressSettings(BaseCustomSettings):
+class EgressProxySettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
         "envoyproxy/envoy:v1.25-latest",
         description="envoy image to use",
@@ -158,7 +158,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         auto_default_from_env=True
     )
 
-    DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: DynamicSidecarEgressSettings = Field(
+    DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: EgressProxySettings = Field(
         auto_default_from_env=True
     )
 
