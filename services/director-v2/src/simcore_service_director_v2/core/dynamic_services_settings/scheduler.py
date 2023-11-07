@@ -1,5 +1,6 @@
 from typing import Final
 
+from models_library.projects_networks import DockerNetworkName
 from pydantic import Field, NonNegativeInt, PositiveFloat
 from settings_library.base import BaseCustomSettings
 
@@ -19,4 +20,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             description="interval at which cleaning of unused dy-sidecar "
             "docker volume removal services is executed",
         )
+    )
+
+    SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
+        ...,
+        description="network all dynamic services are connected to",
     )

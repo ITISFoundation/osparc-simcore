@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.projects_networks import DockerNetworkName
 from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -72,12 +71,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         ...,
         regex=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
-    )
-
-    # move to scheduler
-    SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
-        ...,
-        description="network all dynamic services are connected to",
     )
 
     # move to scheduler

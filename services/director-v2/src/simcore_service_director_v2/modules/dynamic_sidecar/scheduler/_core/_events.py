@@ -19,6 +19,9 @@ from models_library.services import RunID
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
 from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
@@ -117,6 +120,9 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
+        dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        )
         # the dynamic-sidecar should merge all the settings, especially:
         # resources and placement derived from all the images in
         # the provided docker-compose spec
@@ -168,7 +174,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # attach the service to the swarm network dedicated to services
         swarm_network: dict[str, Any] = await get_swarm_network(
-            dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
+            dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
         )
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]

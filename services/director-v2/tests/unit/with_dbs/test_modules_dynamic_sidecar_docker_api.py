@@ -29,6 +29,9 @@ from simcore_service_director_v2.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
+from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
 )
@@ -68,6 +71,11 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
+
+
+@pytest.fixture
+def dynamic_services_scheduler_settings() -> DynamicServicesSchedulerSettings:
+    return DynamicServicesSchedulerSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -413,23 +421,24 @@ async def test_failed_docker_client_request(docker_swarm: None):
 
 
 async def test_get_swarm_network_ok(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     simcore_services_network_name: str,
     ensure_swarm_network: None,
     docker_swarm: None,
 ):
     swarm_network = await docker_api.get_swarm_network(
-        dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
+        dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
     )
     assert swarm_network["Name"] == simcore_services_network_name
 
 
 async def test_get_swarm_network_missing_network(
-    dynamic_sidecar_settings: DynamicSidecarSettings, docker_swarm: None
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    docker_swarm: None,
 ):
     with pytest.raises(DynamicSidecarError) as excinfo:
         await docker_api.get_swarm_network(
-            dynamic_sidecar_settings.SIMCORE_SERVICES_NETWORK_NAME
+            dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
         )
 
     assert str(excinfo.value) == (
