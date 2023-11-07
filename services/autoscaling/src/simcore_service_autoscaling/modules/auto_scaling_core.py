@@ -259,10 +259,28 @@ async def _activate_drained_nodes(
     )
 
 
-def _by_instance_type_name(
-    ec2_type: EC2InstanceType, type_name: InstanceTypeType
+def _instance_type_by_type_name(
+    ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
+    if type_name is None:
+        return True
     return bool(ec2_type.name == type_name)
+
+
+def _instance_type_map_by_type_name(
+    mapping: tuple[EC2InstanceType, list], *, type_name: InstanceTypeType | None
+) -> bool:
+    ec2_type, _ = mapping
+    return _instance_type_by_type_name(ec2_type, type_name=type_name)
+
+
+def _instance_data_map_by_type_name(
+    mapping: tuple[EC2InstanceData, list], *, type_name: InstanceTypeType | None
+) -> bool:
+    if type_name is None:
+        return True
+    ec2_data, _ = mapping
+    return bool(ec2_data.type == type_name)
 
 
 async def _find_needed_instances(
@@ -283,11 +301,33 @@ async def _find_needed_instances(
     ]
     needed_new_instance_types_for_tasks: list[tuple[EC2InstanceType, list]] = []
     for task in pending_tasks:
+        task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
+            app, task
+        )
+        filtered_active_instance_to_task = filter(
+            functools.partial(
+                _instance_data_map_by_type_name, type_name=task_defined_ec2_type
+            ),
+            active_instance_to_tasks,
+        )
+        filtered_pending_instance_to_task = filter(
+            functools.partial(
+                _instance_data_map_by_type_name, type_name=task_defined_ec2_type
+            ),
+            pending_instance_to_tasks,
+        )
+        filtered_needed_new_instance_types_to_task = filter(
+            functools.partial(
+                _instance_type_map_by_type_name, type_name=task_defined_ec2_type
+            ),
+            needed_new_instance_types_for_tasks,
+        )
+
         # try to assign the task to one of the active instances
         if await auto_scaling_mode.try_assigning_task_to_instances(
             app,
             task,
-            active_instance_to_tasks,
+            filtered_active_instance_to_task,
             type_to_instance_map,
             notify_progress=False,
         ):
@@ -296,26 +336,24 @@ async def _find_needed_instances(
         if await auto_scaling_mode.try_assigning_task_to_instances(
             app,
             task,
-            pending_instance_to_tasks,
+            filtered_pending_instance_to_task,
             type_to_instance_map,
             notify_progress=True,
         ):
             continue
         # try to assign the task to one of the new instances we already want
         if auto_scaling_mode.try_assigning_task_to_instance_types(
-            task, needed_new_instance_types_for_tasks
+            task, filtered_needed_new_instance_types_to_task
         ):
             continue
 
         try:
             # check if exact instance type is needed first
-            if instance_type_name := await auto_scaling_mode.get_task_defined_instance(
-                app, task
-            ):
+            if task_defined_ec2_type:
                 filtered_instances = list(
                     filter(
                         functools.partial(
-                            _by_instance_type_name, type_name=instance_type_name
+                            _instance_type_by_type_name, type_name=task_defined_ec2_type
                         ),
                         available_ec2_types,
                     )
@@ -325,7 +363,7 @@ async def _find_needed_instances(
                         "Task %s requires an unauthorized EC2 instance type. "
                         "Asked for %s, authorized are %s. Please check!",
                         f"{task}",
-                        instance_type_name,
+                        task_defined_ec2_type,
                         available_ec2_types,
                     )
                     continue

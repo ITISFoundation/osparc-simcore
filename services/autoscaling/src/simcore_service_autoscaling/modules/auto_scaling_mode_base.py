@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from fastapi import FastAPI
@@ -46,7 +47,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list]],
+        list_of_pending_instance_to_tasks: Iterable[tuple[EC2InstanceData, list]],
         type_to_instance_map: dict[str, EC2InstanceType],
         *,
         notify_progress: bool
@@ -57,7 +58,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @abstractmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        list_of_instance_to_tasks: list[tuple[EC2InstanceType, list]],
+        list_of_instance_to_tasks: Iterable[tuple[EC2InstanceType, list]],
     ) -> bool:
         ...
 
