@@ -10,7 +10,8 @@ from ..utils.pydantic_tools_extension import NOT_REQUIRED
 class DefaultApiError(BaseModel):
     name: IDStr = Field(
         ...,
-        description="Error identifier as a code or a name. Mostly for machine-machine communication.",
+        description="Error identifier as a code or a name. "
+        "Mainly for machine-machine communication purposes.",
     )
     detail: Any | None = Field(NOT_REQUIRED, description="Human readable error message")
 
