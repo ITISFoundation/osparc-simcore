@@ -31,7 +31,9 @@ from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.core.dynamic_sidecar_settings import (
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
@@ -228,12 +230,12 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
     # pylint: disable=protected-access
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    service_name = scheduler._scheduler._inverse_search_mapping[  # noqa: SLF001
+    service_name = scheduler._scheduler._inverse_search_mapping[
         NodeID(node_uuid)
-    ]
-    scheduler_data: SchedulerData = scheduler._scheduler._to_observe[  # noqa: SLF001
+    ]  # noqa: SLF001
+    scheduler_data: SchedulerData = scheduler._scheduler._to_observe[
         service_name
-    ]
+    ]  # noqa: SLF001
 
     sidecar_settings: DynamicSidecarSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
