@@ -495,8 +495,9 @@ async def _deactivate_empty_nodes(
             )
             if node_used_resources == Resources.create_as_empty():
                 active_empty_nodes.append(instance)
-                continue
-        except DaskWorkerNotFoundError:
+            else:
+                active_non_empty_nodes.append(instance)
+        except DaskWorkerNotFoundError:  # noqa: PERF203
             _logger.exception(
                 "EC2 node instance is not registered to dask-scheduler! TIP: Needs investigation"
             )
