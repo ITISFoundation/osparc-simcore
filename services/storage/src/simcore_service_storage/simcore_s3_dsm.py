@@ -182,7 +182,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     for node_id, node_data in proj_data.workbench.items()
                 }
 
-        # expand directories until the max number of files to return is not reached
+        # expand directories until the max number of files to return is reached
         directory_expands: list[Coroutine] = []
         for metadata in file_and_directory_meta_data:
             if (
@@ -199,13 +199,14 @@ class SimcoreS3DataManager(BaseDataManager):
                         max_items_to_include,
                     )
                 )
-        for files_in_directory in await logged_gather(*directory_expands):
+        for files_in_directory in await logged_gather(
+            *directory_expands, max_concurrency=_MAX_PARALLEL_S3_CALLS
+        ):
             data.extend(files_in_directory)
 
-        # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
-        #        with information from the projects table!
-        # also all this stuff with projects should be done in the client code not here
-        # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
+        # artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+        #   with information from the projects table!
+        # NOTE: This part with the projects, should be done in the client code not here!
         clean_data: list[FileMetaData] = []
         for d in data:
             if d.project_id not in prj_names_mapping:
