@@ -60,8 +60,8 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
         description="time to wait between polling for changes",
     )
     R_CLONE_VFS_CACHE_MODE: VFSCacheMode = Field(
-        VFSCacheMode.MINIMAL,
-        description="used primarly for easy testing without requiring requiring code changes",
+        VFSCacheMode.MINIMAL,  # SEE https://rclone.org/commands/rclone_mount/#vfs-file-caching
+        description="VFS operation mode, defines how and when the disk cache is synced",
     )
 
     @validator("R_CLONE_POLL_INTERVAL_SECONDS")
