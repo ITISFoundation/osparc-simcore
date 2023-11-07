@@ -134,13 +134,13 @@ async def _try_attach_pending_ec2s(
                 new_node = await utils_docker.tag_node(
                     get_docker_client(app),
                     new_node,
-                    tags=auto_scaling_mode.get_new_node_docker_tags(app),
+                    tags=auto_scaling_mode.get_new_node_docker_tags(app, instance_data),
                     available=False,
                 )
                 new_found_instances.append(AssociatedInstance(new_node, instance_data))
             else:
                 still_pending_ec2s.append(instance_data)
-        except Ec2InvalidDnsNameError:
+        except Ec2InvalidDnsNameError:  # noqa: PERF203
             _logger.exception("Unexpected EC2 private dns")
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = (

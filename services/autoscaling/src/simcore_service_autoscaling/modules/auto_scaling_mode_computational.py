@@ -2,7 +2,10 @@ import collections
 import logging
 
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
@@ -43,9 +46,13 @@ class ComputationalAutoscaling(BaseAutoscaling):
         return utils_ec2.get_ec2_tags_computational(app_settings)
 
     @staticmethod
-    def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(
+        app: FastAPI, ec2_instance_data: EC2InstanceData
+    ) -> dict[DockerLabelKey, str]:
         assert app  # nosec
-        return {}
+        return {
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance_data.type
+        }
 
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[DaskTask]:

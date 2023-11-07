@@ -24,7 +24,9 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(
+        app: FastAPI, ec2_instance_data: EC2InstanceData
+    ) -> dict[DockerLabelKey, str]:
         ...
 
     @staticmethod

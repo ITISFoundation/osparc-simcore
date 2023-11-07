@@ -21,6 +21,7 @@ import pytest
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
@@ -413,7 +414,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # the node is tagged and made active right away since we still have the pending task
     mock_find_node_with_name.assert_called_once()
     mock_find_node_with_name.reset_mock()
-    expected_docker_node_tags = {}
+    expected_docker_node_tags = {
+        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
+    }
     mock_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_node,

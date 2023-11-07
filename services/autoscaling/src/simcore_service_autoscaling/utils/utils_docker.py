@@ -33,7 +33,7 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
-from ..models import Resources
+from ..models import EC2InstanceData, Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -515,12 +515,18 @@ async def set_node_availability(
     )
 
 
-def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, str]:
+def get__new_node_docker_tags(
+    app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
+) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    return {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-    } | {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-    }
+    return (
+        {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        }
+        | {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        }
+        | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+    )

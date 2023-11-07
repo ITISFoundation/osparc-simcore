@@ -547,7 +547,7 @@ async def test_cluster_scaling_up_and_down(
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
             + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
         )
-    }
+    } | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type}
     mock_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_node,
