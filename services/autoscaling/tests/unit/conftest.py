@@ -323,17 +323,24 @@ async def create_service(
         task_template: dict[str, Any],
         labels: dict[DockerLabelKey, str] | None = None,
         wait_for_service_state="running",
+        placement_constraints: list[str] | None = None,
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
-        if labels:
-            task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
-                "Labels", {}
+        base_labels = {}
+        task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
+            "Labels", base_labels
+        )
+        if placement_constraints:
+            task_template.setdefault("Placement", {}).setdefault(
+                "Constraints", placement_constraints
             )
+        if labels:
             task_labels |= labels
+            base_labels |= labels
         service = await async_docker_client.services.create(
             task_template=task_template,
             name=service_name,
-            labels=labels or {},  # type: ignore
+            labels=base_labels,
         )
         assert service
         service = parse_obj_as(
@@ -341,7 +348,7 @@ async def create_service(
         )
         assert service.Spec
         print(f"--> created docker service {service.ID} with {service.Spec.Name}")
-        assert service.Spec.Labels == (labels or {})
+        assert service.Spec.Labels == base_labels
 
         created_services.append(service)
         # get more info on that service
@@ -352,6 +359,8 @@ async def create_service(
             "Runtime",
             "root['ContainerSpec']['Isolation']",
         }
+        if not base_labels:
+            excluded_paths.add("root['ContainerSpec']['Labels']")
         for reservation in ["MemoryBytes", "NanoCPUs"]:
             if (
                 task_template.get("Resources", {})
@@ -370,7 +379,7 @@ async def create_service(
             exclude_paths=excluded_paths,
         )
         assert not diff, f"{diff}"
-        assert service.Spec.Labels == (labels or {})
+        assert service.Spec.Labels == base_labels
         await assert_for_service_state(
             async_docker_client, service, [wait_for_service_state]
         )
@@ -379,7 +388,8 @@ async def create_service(
     yield _creator
 
     await asyncio.gather(
-        *(async_docker_client.services.delete(s.ID) for s in created_services)
+        *(async_docker_client.services.delete(s.ID) for s in created_services),
+        return_exceptions=True,
     )
 
     # wait until all tasks are gone

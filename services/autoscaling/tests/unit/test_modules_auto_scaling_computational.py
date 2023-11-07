@@ -425,6 +425,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         get_docker_client(initialized_app), fake_node, available=True
     )
     mock_set_node_availability.reset_mock()
+
     # in this case there is no message sent since the worker was not started yet
     mock_rabbitmq_post_message.assert_not_called()
 
@@ -464,7 +465,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # NOTE: we currently have no real dask-worker here
     mock_rabbitmq_post_message.assert_not_called()
 
-    # now scaling down, as we deleted all the tasks
+    #
+    # 4. now scaling down, as we deleted all the tasks
+    #
     del dask_future
     # the worker will not be found since there is none in this testing environment, but it should not raise
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
