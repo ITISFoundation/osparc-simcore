@@ -2,6 +2,7 @@ from enum import auto
 from typing import Any, ClassVar
 
 from models_library.emails import LowerCaseEmailStr
+from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field, validator
 
@@ -28,6 +29,7 @@ class UserRoleEnum(StrAutoEnum):
 
 
 class Profile(ProfileCommon):
+    id_: UserID = Field(alias="id")
     login: LowerCaseEmailStr
     role: UserRoleEnum
     groups: Groups | None = None
@@ -47,6 +49,7 @@ class Profile(ProfileCommon):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
+                "id": "20",
                 "first_name": "James",
                 "last_name": "Maxwell",
                 "login": "james-maxwell@itis.swiss",
