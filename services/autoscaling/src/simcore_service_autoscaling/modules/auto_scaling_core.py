@@ -192,18 +192,16 @@ async def _activate_and_notify(
     tasks: list,
 ) -> list:
     await asyncio.gather(
-        *(
-            utils_docker.set_node_availability(
-                get_docker_client(app), drained_node.node, available=True
-            ),
-            auto_scaling_mode.log_message_from_tasks(
-                app,
-                tasks,
-                "cluster adjusted, service should start shortly...",
-                level=logging.INFO,
-            ),
-            auto_scaling_mode.progress_message_from_tasks(app, tasks, progress=1.0),
-        )
+        utils_docker.set_node_availability(
+            get_docker_client(app), drained_node.node, available=True
+        ),
+        auto_scaling_mode.log_message_from_tasks(
+            app,
+            tasks,
+            "cluster adjusted, service should start shortly...",
+            level=logging.INFO,
+        ),
+        auto_scaling_mode.progress_message_from_tasks(app, tasks, progress=1.0),
     )
     return tasks
 
