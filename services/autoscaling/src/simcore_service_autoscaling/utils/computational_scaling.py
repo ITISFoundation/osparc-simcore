@@ -1,9 +1,11 @@
 import datetime
 import logging
-from typing import Final
+from typing import Final, Iterable
 
+from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
 from servicelib.utils_formatting import timedelta_as_minute_second
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import (
@@ -28,6 +30,10 @@ def get_max_resources_from_dask_task(task: DaskTask) -> Resources:
     )
 
 
+def get_task_instance_restriction(task: DaskTask) -> InstanceTypeType | None:
+    return task.required_resources.get(DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY)
+
+
 def _compute_tasks_needed_resources(tasks: list[DaskTask]) -> Resources:
     total = Resources.create_as_empty()
     for t in tasks:
@@ -37,7 +43,7 @@ def _compute_tasks_needed_resources(tasks: list[DaskTask]) -> Resources:
 
 def try_assigning_task_to_node(
     pending_task: DaskTask,
-    instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]],
+    instance_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
     for instance, node_assigned_tasks in instance_to_tasks:
         instance_total_resource = utils_docker.get_node_total_resources(instance.node)
@@ -50,10 +56,10 @@ def try_assigning_task_to_node(
     return False
 
 
-async def try_assigning_task_to_pending_instances(
+async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: DaskTask,
-    list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[DaskTask]]],
+    instances_to_tasks: Iterable[tuple[EC2InstanceData, list[DaskTask]]],
     type_to_instance_map: dict[str, EC2InstanceType],
     *,
     notify_progress: bool,
@@ -63,7 +69,7 @@ async def try_assigning_task_to_pending_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
+    for instance, instance_assigned_tasks in instances_to_tasks:
         instance_type = type_to_instance_map[instance.type]
         instance_total_resources = Resources(
             cpus=instance_type.cpus, ram=instance_type.ram
@@ -97,9 +103,9 @@ async def try_assigning_task_to_pending_instances(
 
 def try_assigning_task_to_instance_types(
     pending_task: DaskTask,
-    list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[DaskTask]]],
+    instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[DaskTask]]],
 ) -> bool:
-    for instance, instance_assigned_tasks in list_of_instance_to_tasks:
+    for instance, instance_assigned_tasks in instance_types_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
         tasks_needed_resources = _compute_tasks_needed_resources(
             instance_assigned_tasks

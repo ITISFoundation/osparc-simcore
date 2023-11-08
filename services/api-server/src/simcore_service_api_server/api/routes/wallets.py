@@ -13,6 +13,17 @@ router = APIRouter()
 
 
 @router.get(
+    "/default",
+    response_model=WalletGetWithAvailableCredits,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_default_wallet(
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    return await webserver_api.get_default_wallet()
+
+
+@router.get(
     "/{wallet_id}",
     response_model=WalletGetWithAvailableCredits,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
