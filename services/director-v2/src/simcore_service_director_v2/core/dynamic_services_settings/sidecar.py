@@ -74,15 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S: PositiveFloat = Field(
-        1.0,
-        description=(
-            "when requesting the status of a service this is the "
-            "maximum amount of time the request can last"
-        ),
-    )
-
-    # move to scheduler
     DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
         1 * _MINUTE,
         description=(
