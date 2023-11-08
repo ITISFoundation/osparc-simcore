@@ -74,13 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
-        3.0 * _MINUTE,
-        description=(
-            "timeout for attaching/detaching project networks to/from a container"
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S: PositiveFloat = Field(
         1.0 * _MINUTE,
         description=(

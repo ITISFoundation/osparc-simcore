@@ -122,3 +122,10 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "services, containsers, volumes and networks need to be removed. "
         ),
     )
+
+    DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
+        3.0 * _MINUTE,
+        description=(
+            "timeout for attaching/detaching project networks to/from a container"
+        ),
+    )

@@ -41,7 +41,7 @@ class ThinSidecarsClient(BaseThinClient):
             connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._attach_detach_network_timeout = Timeout(
-            settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
+            scheduler_settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
             connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
