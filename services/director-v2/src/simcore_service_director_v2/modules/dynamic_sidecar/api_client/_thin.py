@@ -8,7 +8,9 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
-from ....core.dynamic_services_settings import DynamicServicesSchedulerSettings
+from ....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from ._base import BaseThinClient, expect_status, retry_on_errors
 
 
