@@ -179,7 +179,7 @@ def find_selected_instance_type_for_task(
     ):
         msg = (
             f"Task {task} requires more resources than the selected instance provides."
-            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_max_resources_from_task(task)}. Please check!",
+            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_max_resources_from_task(task)}. Please check!"
         )
         raise Ec2InstanceInvalidError(msg=msg)
 
