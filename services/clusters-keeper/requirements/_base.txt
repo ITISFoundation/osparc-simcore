@@ -4,14 +4,16 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aio-pika==9.2.2
+aio-pika==9.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aioboto3==11.3.0
+aioboto3==12.0.0
     # via -r requirements/_base.in
-aiobotocore==2.6.0
-    # via aioboto3
+aiobotocore==2.7.0
+    # via
+    #   aioboto3
+    #   aiobotocore
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -24,7 +26,7 @@ aiofiles==23.2.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aiohttp==3.8.5
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -43,11 +45,11 @@ aiormq==6.7.7
     # via aio-pika
 aiosignal==1.3.1
     # via aiohttp
-anyio==3.7.1
+anyio==4.0.0
     # via
-    #   httpcore
+    #   httpx
     #   starlette
-arrow==1.2.3
+arrow==1.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -63,14 +65,14 @@ attrs==23.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.28.17
+boto3==1.28.64
     # via aiobotocore
-botocore==1.31.17
+botocore==1.31.64
     # via
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.31.36
+botocore-stubs==1.31.80
     # via types-aiobotocore
 certifi==2023.7.22
     # via
@@ -85,7 +87,7 @@ certifi==2023.7.22
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
-charset-normalizer==3.2.0
+charset-normalizer==3.3.2
     # via aiohttp
 click==8.1.7
     # via
@@ -110,7 +112,7 @@ distributed==2023.3.2
     #   dask
 dnspython==2.4.2
     # via email-validator
-email-validator==2.0.0.post2
+email-validator==2.1.0.post1
     # via pydantic
 exceptiongroup==1.1.3
     # via anyio
@@ -139,9 +141,9 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.17.3
+httpcore==1.0.1
     # via httpx
-httpx==0.24.1
+httpx==0.25.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -153,6 +155,7 @@ httpx==0.24.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   respx
 idna==3.4
     # via
     #   anyio
@@ -180,7 +183,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsonschema==4.19.0
+jsonschema==4.19.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -208,7 +211,7 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-orjson==3.9.5
+orjson==3.9.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -229,7 +232,7 @@ psutil==5.9.5
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-pydantic==1.10.12
+pydantic==1.10.13
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -251,7 +254,7 @@ pydantic==1.10.12
     #   fastapi
 pygments==2.16.1
     # via rich
-pyinstrument==4.5.1
+pyinstrument==4.6.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -275,7 +278,7 @@ pyyaml==6.0.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   dask
     #   distributed
-redis==5.0.0
+redis==5.0.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -294,23 +297,24 @@ referencing==0.29.3
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-rich==13.5.2
+respx==0.20.2
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+rich==13.6.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-rpds-py==0.10.0
+rpds-py==0.12.0
     # via
     #   jsonschema
     #   referencing
-s3transfer==0.6.2
+s3transfer==0.7.0
     # via boto3
 six==1.16.0
     # via python-dateutil
 sniffio==1.3.0
     # via
     #   anyio
-    #   httpcore
     #   httpx
 sortedcontainers==2.4.0
     # via
@@ -357,19 +361,23 @@ typer==0.9.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.6.0
+types-aiobotocore==2.7.0
     # via -r requirements/_base.in
-types-aiobotocore-ec2==2.6.0
+types-aiobotocore-ec2==2.7.0
     # via types-aiobotocore
-types-awscrt==0.19.1
+types-awscrt==0.19.8
     # via botocore-stubs
-typing-extensions==4.7.1
+types-python-dateutil==2.8.19.14
+    # via arrow
+typing-extensions==4.8.0
     # via
     #   aiodebug
     #   aiodocker
     #   fastapi
     #   pydantic
     #   typer
+    #   types-aiobotocore
+    #   types-aiobotocore-ec2
     #   uvicorn
 urllib3==1.26.16
     # via
@@ -385,7 +393,7 @@ urllib3==1.26.16
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   botocore
     #   distributed
-uvicorn==0.23.2
+uvicorn==0.24.0.post1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 wrapt==1.15.0
     # via aiobotocore
