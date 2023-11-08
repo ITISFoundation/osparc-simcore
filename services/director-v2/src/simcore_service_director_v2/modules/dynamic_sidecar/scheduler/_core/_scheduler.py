@@ -192,14 +192,14 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     async def remove_service_sidecar_proxy_docker_networks_and_volumes(
         self, task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
-        dynamic_sidecar_settings: DynamicServicesSchedulerSettings = (
+        dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         await service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress=task_progress,
             app=self.app,
             node_uuid=node_uuid,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         )
 
     async def save_service_state(

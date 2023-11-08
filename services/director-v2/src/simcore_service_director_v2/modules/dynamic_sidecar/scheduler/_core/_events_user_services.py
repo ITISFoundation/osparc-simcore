@@ -101,7 +101,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         project_id=scheduler_data.project_id,
         node_id=scheduler_data.node_uuid,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
-        swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
     )
 
     _logger.debug(
