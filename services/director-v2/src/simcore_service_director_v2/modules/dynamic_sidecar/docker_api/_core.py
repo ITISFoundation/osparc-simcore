@@ -142,8 +142,9 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             # Only interested in the latest task as only one task per
             # service will be running.
             sorted_tasks = sorted(
-                service_associated_tasks, key=lambda task: task["UpdatedAt"]
-            )  # type: ignore
+                service_associated_tasks,
+                key=lambda task: task["UpdatedAt"],  # type:ignore
+            )
 
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
