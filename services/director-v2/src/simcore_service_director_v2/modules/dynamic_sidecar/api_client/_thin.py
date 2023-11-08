@@ -8,6 +8,7 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
+from ....core.dynamic_services_settings import DynamicServicesSchedulerSettings
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ._base import BaseThinClient, expect_status, retry_on_errors
 
@@ -24,6 +25,9 @@ class ThinSidecarsClient(BaseThinClient):
     def __init__(self, app: FastAPI):
         settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
         # timeouts
@@ -44,7 +48,7 @@ class ThinSidecarsClient(BaseThinClient):
         super().__init__(
             request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
             timeout=Timeout(
-                settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+                scheduler_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
                 connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             ),
         )

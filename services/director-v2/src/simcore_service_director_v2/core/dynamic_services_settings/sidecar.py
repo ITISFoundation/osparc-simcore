@@ -73,18 +73,8 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
-    #
-    # TIMEOUTS AND RETRY dark worlds
-    #
-
     # move to scheduler
-    DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveFloat = Field(
-        15.0,
-        description=(
-            "the default timeout each request to the dynamic-sidecar API in seconds; as per "
-            "design, all requests should answer quite quickly, in theory a few seconds or less"
-        ),
-    )
+
     # move to scheduler
     DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
         5.0,
