@@ -170,7 +170,9 @@ def find_selected_instance_type_for_task(
         )
         raise Ec2InstanceInvalidError(msg=msg)
 
+    assert len(filtered_instances) == 1  # nosec
     selected_instance = filtered_instances[0]
+
     # check that the assigned resources and the machine resource fit
     if auto_scaling_mode.get_max_resources_from_task(task) > Resources(
         cpus=selected_instance.cpus, ram=selected_instance.ram
