@@ -2,10 +2,9 @@ import logging
 from asyncio import CancelledError
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import aiofiles
-from aiohttp import ClientSession
+from aiohttp import ClientSession, web
 from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
@@ -22,7 +21,7 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
-from tenacity import retry
+from tenacity import AsyncRetrying
 from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -34,6 +33,7 @@ from ..node_ports_common.client_session_manager import ClientSessionContextManag
 from . import exceptions, r_clone, storage_client
 from ._filemanager import _abort_upload, _complete_upload, _resolve_location_id
 from .file_io_utils import (
+    ExtendedClientResponseError,
     LogRedirectCB,
     UploadableFileObject,
     download_link_to_file,
@@ -269,6 +269,21 @@ async def _generate_checksum(
     return checksum
 
 
+def _check_for_400_request_timeout(exc: BaseException) -> bool:
+    """returns: True if it should retry when http exception is detected"""
+    if not isinstance(exc, ExtendedClientResponseError):
+        return False
+
+    # Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
+    # reason in the body will be received. This also needs retrying,
+    # for more information see:
+    # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+    if exc.status == web.HTTPBadRequest.status_code and "RequestTimeout" in exc.body:
+        return True
+
+    return False
+
+
 async def upload_path(
     *,
     user_id: UserID,
@@ -316,20 +331,31 @@ async def upload_path(
     async with ClientSessionContextManager(client_session) as session:
         upload_links: FileUploadSchema | None = None
         try:
-            store_id, e_tag, upload_links = await _upload_to_s3(
-                user_id=user_id,
-                store_id=store_id,
-                store_name=store_name,
-                s3_object=s3_object,
-                path_to_upload=path_to_upload,
-                io_log_redirect_cb=io_log_redirect_cb,
-                r_clone_settings=r_clone_settings,
-                progress_bar=progress_bar,
-                is_directory=is_directory,
-                session=session,
-                exclude_patterns=exclude_patterns,
-                sha256_checksum=checksum,
-            )
+            async for attempt in AsyncRetrying(
+                reraise=True,
+                wait=wait_random_exponential(),
+                stop=stop_after_attempt(
+                    NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
+                ),
+                retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
+                before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+                after=after_log(_logger, log_level=logging.ERROR),
+            ):
+                with attempt:
+                    store_id, e_tag, upload_links = await _upload_to_s3(
+                        user_id=user_id,
+                        store_id=store_id,
+                        store_name=store_name,
+                        s3_object=s3_object,
+                        path_to_upload=path_to_upload,
+                        io_log_redirect_cb=io_log_redirect_cb,
+                        r_clone_settings=r_clone_settings,
+                        progress_bar=progress_bar,
+                        is_directory=is_directory,
+                        session=session,
+                        exclude_patterns=exclude_patterns,
+                        sha256_checksum=checksum,
+                    )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
@@ -348,22 +374,6 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
-class DeferredTimeoutAttempts(int):
-    # NOTE: when the class is loaded this env var does not exist
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG002
-        return (
-            NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
-        )
-
-
-@retry(
-    reraise=True,
-    wait=wait_random_exponential(),
-    stop=stop_after_attempt(DeferredTimeoutAttempts()),
-    retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
-    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
-    after=after_log(_logger, log_level=logging.ERROR),
-)
 async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     user_id: UserID,
