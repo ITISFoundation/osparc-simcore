@@ -33,7 +33,7 @@ class ThinSidecarsClient(BaseThinClient):
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
         self._save_restore_timeout = Timeout(
-            settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._restart_containers_timeout = Timeout(

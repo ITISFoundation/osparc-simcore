@@ -74,15 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
-        60.0 * _MINUTE,
-        description=(
-            "When saving and restoring the state of a dynamic service, depending on the payload "
-            "some services take longer or shorter to save and restore. Across the "
-            "platform this value is set to 1 hour."
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
         1.0 * _MINUTE,
         description=(

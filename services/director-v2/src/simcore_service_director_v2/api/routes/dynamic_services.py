@@ -275,14 +275,11 @@ async def service_retrieve_data_on_ports(
             node_uuid, director_v0_client
         )
 
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            dynamic_services_settings.DYNAMIC_SIDECAR
-        )
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             dynamic_services_settings.DYNAMIC_SCHEDULER
         )
         timeout = httpx.Timeout(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
