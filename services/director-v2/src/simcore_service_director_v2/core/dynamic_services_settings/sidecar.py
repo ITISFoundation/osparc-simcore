@@ -74,13 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_VOLUMES_REMOVAL_TIMEOUT_S: PositiveFloat = Field(
-        1.0 * _MINUTE,
-        description=(
-            "time to wait before giving up on removing dynamic-sidecar's volumes"
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S: PositiveFloat = Field(
         1.0,
         description=(
