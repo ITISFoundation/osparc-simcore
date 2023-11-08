@@ -44,6 +44,9 @@ from settings_library.resource_usage_tracker import (
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
+from simcore_sdk.node_ports_common.settings import (
+    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
+)
 from simcore_sdk.node_ports_v2 import FileLinkType
 
 from .dynamic_sidecar_settings import DynamicSidecarSettings
@@ -217,6 +220,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     SIMCORE_SERVICES_PREFIX: str | None = Field(
         "simcore/services",
         description="useful when developing with an alternative registry namespace",
+    )
+
+    DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: NonNegativeInt = Field(
+        default=NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
+        description="forwarded to sidecars which use nodeports",
     )
 
     # monitoring
