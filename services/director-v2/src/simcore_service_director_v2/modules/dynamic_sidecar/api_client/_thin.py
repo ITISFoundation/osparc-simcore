@@ -34,22 +34,22 @@ class ThinSidecarsClient(BaseThinClient):
         self._health_request_timeout = Timeout(1.0, connect=1.0)
         self._save_restore_timeout = Timeout(
             settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._restart_containers_timeout = Timeout(
             settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
-            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._attach_detach_network_timeout = Timeout(
             settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
-            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
         super().__init__(
             request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
             timeout=Timeout(
                 scheduler_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+                connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             ),
         )
 

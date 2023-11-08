@@ -74,15 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-
-    # move to scheduler
-    DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
-        5.0,
-        description=(
-            "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
         60 * _MINUTE,
         description=(

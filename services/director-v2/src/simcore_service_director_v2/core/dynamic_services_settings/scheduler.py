@@ -69,3 +69,10 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "design, all requests should answer quite quickly, in theory a few seconds or less"
         ),
     )
+
+    DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
+        5.0,
+        description=(
+            "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
+        ),
+    )

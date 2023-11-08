@@ -25,6 +25,9 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -275,9 +278,12 @@ async def service_retrieve_data_on_ports(
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             dynamic_services_settings.DYNAMIC_SIDECAR
         )
+        dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+            dynamic_services_settings.DYNAMIC_SCHEDULER
+        )
         timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            connect=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
         # this call waits for the service to download data
