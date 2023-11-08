@@ -152,7 +152,7 @@ def enabled_rabbitmq(
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     app = create_app(settings)
-    async with LifespanManager(app):
+    async with LifespanManager(app, shutdown_timeout=20):
         yield app
 
 
