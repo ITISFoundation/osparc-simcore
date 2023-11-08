@@ -37,7 +37,7 @@ class ThinSidecarsClient(BaseThinClient):
             connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._restart_containers_timeout = Timeout(
-            settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+            scheduler_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._attach_detach_network_timeout = Timeout(

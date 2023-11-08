@@ -74,15 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
-        1.0 * _MINUTE,
-        description=(
-            "Restarts all started containers. During this operation, no data "
-            "stored in the container will be lost as docker compose restart "
-            "will not alter the state of the files on the disk nor its environment."
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
         60.0 * _MINUTE,
         description=(

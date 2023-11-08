@@ -425,7 +425,7 @@ class SidecarsClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             _debug_progress_callback,
         )
 

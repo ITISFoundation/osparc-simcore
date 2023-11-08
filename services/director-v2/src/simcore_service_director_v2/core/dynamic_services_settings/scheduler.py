@@ -96,3 +96,12 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "platform this value is set to 1 hour."
         ),
     )
+
+    DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
+        1.0 * _MINUTE,
+        description=(
+            "Restarts all started containers. During this operation, no data "
+            "stored in the container will be lost as docker compose restart "
+            "will not alter the state of the files on the disk nor its environment."
+        ),
+    )
