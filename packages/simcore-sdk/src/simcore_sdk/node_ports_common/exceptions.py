@@ -72,6 +72,13 @@ class S3TransferError(NodeportsException):
         super().__init__(msg or "Error while transferring to/from S3 storage")
 
 
+class AWSS3400RequestTimeOutError(NodeportsException):
+    """S3 transfer error"""
+
+    def __init__(self, body: str):
+        super().__init__(f"S3 replied with 400 RequestTimeout: {body=}")
+
+
 class S3InvalidPathError(NodeportsException):
     """S3 transfer error"""
 
