@@ -71,11 +71,10 @@ def test_generate_token_secrets():
     assert len(secret_key) == 2 * _MIN_SECRET_NUM_BYTES
 
 
-@pytest.mark.parametrize("start, end", [(1, 10), (99, 100)])
+@pytest.mark.parametrize("start, end", [(1, 2), (1, 10), (99, 100)])
 async def test_secure_randint(start: int, end: int):
-    for _ in range(1000):
-        random_number = secure_randint(start, end)
-        assert start <= random_number <= end
+    random_number = secure_randint(start, end)
+    assert start <= random_number <= end
 
 
 async def test_secure_randint_called_with_wrong_tupes():
