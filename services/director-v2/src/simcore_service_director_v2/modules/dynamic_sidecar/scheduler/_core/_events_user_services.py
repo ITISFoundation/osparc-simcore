@@ -16,7 +16,6 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import SchedulerData
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
@@ -36,9 +35,6 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         "Getting docker compose spec for service %s", scheduler_data.service_name
     )
 
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
     sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
@@ -177,7 +173,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
 
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
         ),
         wait=wait_fixed(1),
         retry_error_cls=EntrypointContainerNotFoundError,

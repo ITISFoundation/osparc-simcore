@@ -105,3 +105,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "will not alter the state of the files on the disk nor its environment."
         ),
     )
+
+    DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
+        60.0 * _MINUTE,
+        description=(
+            "When starting container (`docker compose up`), images might "
+            "require pulling before containers are started."
+        ),
+    )

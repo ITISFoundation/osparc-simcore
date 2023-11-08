@@ -74,14 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
-        60.0 * _MINUTE,
-        description=(
-            "When starting container (`docker compose up`), images might "
-            "require pulling before containers are started."
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP: PositiveFloat = Field(
         60.0 * _MINUTE,
         description=(

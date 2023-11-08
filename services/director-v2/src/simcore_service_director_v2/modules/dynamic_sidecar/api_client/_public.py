@@ -313,7 +313,7 @@ class SidecarsClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
             progress_callback,
         )
 
