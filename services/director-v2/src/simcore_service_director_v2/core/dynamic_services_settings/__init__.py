@@ -1,6 +1,7 @@
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 
+from .egress_proxy import EgressProxySettings
 from .proxy import DynamicSidecarProxySettings
 from .scheduler import DynamicServicesSchedulerSettings
 from .sidecar import DynamicSidecarSettings
@@ -18,5 +19,9 @@ class DynamicServicesSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
+
+    DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: EgressProxySettings = Field(
         auto_default_from_env=True
     )
