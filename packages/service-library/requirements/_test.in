@@ -29,3 +29,4 @@ pytest-runner
 pytest-sugar
 pytest-xdist
 python-dotenv
+respx
