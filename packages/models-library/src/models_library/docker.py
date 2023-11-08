@@ -51,6 +51,11 @@ _UNDEFINED_LABEL_VALUE_STR: Final[str] = "undefined"
 _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 
+DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[
+    DockerLabelKey
+] = parse_obj_as(DockerLabelKey, "ec2-instance-type")
+
+
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
     return DockerLabelKey(
         f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}"

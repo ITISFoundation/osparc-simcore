@@ -48,6 +48,32 @@ from ._handlers import (
 _logger = logging.getLogger(__name__)
 
 
+async def _init_creation_of_payments(
+    request: web.Request,
+    user_id,
+    product_name,
+    wallet_id,
+    payment_method_id,
+    init: CreateWalletPayment,
+) -> WalletPaymentInitiated:
+    # Conversion
+    usd_per_credit = await get_current_product_credit_price(request)
+    if not usd_per_credit:
+        # '0 or None' should raise
+        raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
+
+    return await init_creation_of_wallet_payment(
+        request.app,
+        user_id=user_id,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        osparc_credits=init.price_dollars / usd_per_credit,
+        comment=init.comment,
+        price_dollars=init.price_dollars,
+        payment_method_id=payment_method_id,
+    )
+
+
 routes = web.RouteTableDef()
 
 
@@ -73,21 +99,14 @@ async def _create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # Conversion
-        usd_per_credit = await get_current_product_credit_price(request)
-        if not usd_per_credit:
-            # '0 or None' should raise
-            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-        payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
-            request.app,
+        payment: WalletPaymentInitiated = await _init_creation_of_payments(
+            request,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=body_params.price_dollars / usd_per_credit,
-            comment=body_params.comment,
-            price_dollars=body_params.price_dollars,
             payment_method_id=None,
+            init=body_params,
         )
 
         return envelope_json_response(payment, web.HTTPCreated)
@@ -321,21 +340,14 @@ async def _init_payment_with_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # Conversion
-        usd_per_credit = await get_current_product_credit_price(request)
-        if not usd_per_credit:
-            # '0 or None' should raise
-            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-        payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
-            request.app,
+        payment: WalletPaymentInitiated = await _init_creation_of_payments(
+            request,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=body_params.price_dollars / usd_per_credit,
-            comment=body_params.comment,
-            price_dollars=body_params.price_dollars,
             payment_method_id=path_params.payment_method_id,
+            init=body_params,
         )
 
         return envelope_json_response(payment, web.HTTPAccepted)

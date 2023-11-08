@@ -4,6 +4,7 @@
 
 import asyncio
 import collections
+import contextlib
 import datetime
 import logging
 import re
@@ -12,7 +13,11 @@ from pathlib import Path
 from typing import Final, cast
 
 import yaml
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerGenericTag,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
@@ -20,14 +25,15 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, ValidationError, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
-from ..models import Resources
+from ..models import EC2InstanceData, Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -49,6 +55,7 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
+_NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
 
 
 async def get_monitored_nodes(
@@ -110,7 +117,10 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
     return (
         task.Status.State == TaskState.pending
         and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
-        and _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+        and (
+            _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+            or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.Status.Err
+        )
     )
 
 
@@ -251,6 +261,40 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
             ),
         )
     return Resources(cpus=0, ram=ByteSize(0))
+
+
+async def get_task_instance_restriction(
+    docker_client: AutoscalingDocker, task: Task
+) -> InstanceTypeType | None:
+    with contextlib.suppress(ValidationError):
+        assert task.ServiceID  # nosec
+        service_inspect = parse_obj_as(
+            Service, await docker_client.services.inspect(task.ServiceID)
+        )
+        assert service_inspect.Spec  # nosec
+        assert service_inspect.Spec.TaskTemplate  # nosec
+
+        if (
+            not service_inspect.Spec.TaskTemplate.Placement
+            or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+        ):
+            return None
+        # parse the placement contraints
+        service_placement_constraints = (
+            service_inspect.Spec.TaskTemplate.Placement.Constraints
+        )
+        # should be node.labels.{}
+        node_label_to_find = (
+            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=="
+        )
+        for constraint in service_placement_constraints:
+            if constraint.startswith(node_label_to_find):
+                return parse_obj_as(
+                    InstanceTypeType, constraint.removeprefix(node_label_to_find)
+                )
+
+        return None
+    return None
 
 
 def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:
@@ -471,12 +515,18 @@ async def set_node_availability(
     )
 
 
-def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, str]:
+def get__new_node_docker_tags(
+    app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
+) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    return {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-    } | {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-    }
+    return (
+        {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        }
+        | {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        }
+        | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+    )

@@ -2,14 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from models_library.resource_tracker import (
+from pydantic import BaseModel
+
+from ..resource_tracker import (
     HardwareInfo,
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitCostId,
     PricingUnitId,
 )
-from pydantic import BaseModel
 
 
 class PricingUnitGet(BaseModel):

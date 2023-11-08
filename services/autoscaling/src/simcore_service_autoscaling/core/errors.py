@@ -17,6 +17,10 @@ class Ec2InstanceNotFoundError(AutoscalingRuntimeError):
     msg_template: str = "EC2 instance was not found"
 
 
+class Ec2InstanceInvalidError(AutoscalingRuntimeError):
+    msg_template: str = "Invalid EC2 defined: {msg}"
+
+
 class Ec2TooManyInstancesError(AutoscalingRuntimeError):
     msg_template: str = (
         "The maximum amount of instances {num_instances} is already reached!"

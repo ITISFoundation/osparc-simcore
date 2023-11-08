@@ -1,8 +1,11 @@
 from fastapi import APIRouter, FastAPI, HTTPException
+from servicelib.fastapi.exceptions_utils import (
+    handle_errors_as_500,
+    http_exception_as_json_response,
+)
 
 from ..._meta import API_VTAG
 from . import _acknowledgements, _auth, _health, _meta
-from ._exceptions import handle_errors_as_500, http_exception_as_json_response
 
 
 def setup_rest_api(app: FastAPI):
