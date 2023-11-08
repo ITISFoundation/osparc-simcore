@@ -110,7 +110,7 @@ class NodeRightsManager:
                 redis_settings.build_redis_dsn(RedisDatabase.LOCKS)
             ),
             is_enabled=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
-            concurrent_resource_slots=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
+            concurrent_resource_slots=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
             lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
         )
 

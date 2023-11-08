@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.projects_networks import DockerNetworkName
-from pydantic import Field, NonNegativeInt, PositiveFloat
+from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt
 from settings_library.base import BaseCustomSettings
 
 _MINUTE: Final[NonNegativeInt] = 60
@@ -155,4 +155,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "and network stress (especially for low power nodes like in AWS). "
             "Some nodes collapse under load or behave unexpectedly."
         ),
+    )
+
+    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
+        2, description="Amount of slots per resource on a node"
     )
