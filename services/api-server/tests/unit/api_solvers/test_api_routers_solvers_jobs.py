@@ -206,7 +206,6 @@ async def test_solver_logs(
     pprint(dict(resp.headers))  # noqa: T203
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )

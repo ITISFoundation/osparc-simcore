@@ -10,8 +10,8 @@ from redis.asyncio.lock import Lock
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from ..core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
 from ..core.errors import ConfigurationError, NodeRightsAcquireError
-from ..core.settings import DynamicSidecarSettings
 
 DockerNodeId = str
 ResourceName = str
@@ -21,10 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 def node_resource_limits_enabled(app: FastAPI) -> bool:
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    dynamic_sidecars_scheduler_settings: DynamicServicesSchedulerSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
-    return dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED
+    enabled: bool = (
+        dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED
+    )
+    return enabled
 
 
 def setup(app: FastAPI):
@@ -94,17 +97,17 @@ class NodeRightsManager:
     @classmethod
     async def create(cls, app: FastAPI) -> "NodeRightsManager":
         redis_settings: RedisSettings = app.state.settings.REDIS
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        dynamic_sidecars_scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         return cls(
             app=app,
             redis_client_sdk=RedisClientSDK(
                 redis_settings.build_redis_dsn(RedisDatabase.LOCKS)
             ),
-            is_enabled=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
-            concurrent_resource_slots=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
-            lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
+            is_enabled=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
+            concurrent_resource_slots=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
+            lock_timeout_s=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
         )
 
     @classmethod

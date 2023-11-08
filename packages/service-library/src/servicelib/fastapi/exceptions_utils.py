@@ -3,8 +3,7 @@ import logging
 from fastapi import HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-
-from ...models.schemas.errors import DefaultApiError
+from models_library.api_schemas__common.errors import DefaultApiError
 
 _logger = logging.getLogger(__name__)
 

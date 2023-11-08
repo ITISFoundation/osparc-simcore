@@ -1,20 +1,20 @@
 from datetime import datetime
 from decimal import Decimal
 
-from models_library.resource_tracker import (
-    PricingPlanClassification,
-    PricingPlanId,
-    ServiceRunId,
-    ServiceRunStatus,
-)
-from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import BaseModel
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
-from ..resource_tracker import PricingUnitId, ServiceRunStatus
+from ..resource_tracker import (
+    PricingPlanClassification,
+    PricingPlanId,
+    PricingUnitId,
+    ServiceRunId,
+    ServiceRunStatus,
+)
 from ..services import ServiceKey, ServiceVersion
+from ..users import UserID
+from ..wallets import WalletID
 from ._base import OutputSchema
 
 # Frontend API

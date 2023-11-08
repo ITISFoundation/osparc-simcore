@@ -1,12 +1,15 @@
+import functools
 import logging
 import re
 from typing import Final
 
 from models_library.generated_models.docker_rest_api import Node
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..core.errors import Ec2InvalidDnsNameError
+from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import AssociatedInstance, EC2InstanceData
+from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
 _EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+).*$")
@@ -92,3 +95,92 @@ async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
             )
 
     return " && ".join(startup_commands)
+
+
+def _instance_type_by_type_name(
+    ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
+) -> bool:
+    if type_name is None:
+        return True
+    return bool(ec2_type.name == type_name)
+
+
+def _instance_type_map_by_type_name(
+    mapping: tuple[EC2InstanceType, list], *, type_name: InstanceTypeType | None
+) -> bool:
+    ec2_type, _ = mapping
+    return _instance_type_by_type_name(ec2_type, type_name=type_name)
+
+
+def _instance_data_map_by_type_name(
+    mapping: tuple[EC2InstanceData, list], *, type_name: InstanceTypeType | None
+) -> bool:
+    if type_name is None:
+        return True
+    ec2_data, _ = mapping
+    return bool(ec2_data.type == type_name)
+
+
+def filter_by_task_defined_instance(
+    instance_type_name: InstanceTypeType | None,
+    active_instances_to_tasks,
+    pending_instances_to_tasks,
+    needed_new_instance_types_for_tasks,
+) -> tuple:
+    return (
+        filter(
+            functools.partial(
+                _instance_data_map_by_type_name, type_name=instance_type_name
+            ),
+            active_instances_to_tasks,
+        ),
+        filter(
+            functools.partial(
+                _instance_data_map_by_type_name, type_name=instance_type_name
+            ),
+            pending_instances_to_tasks,
+        ),
+        filter(
+            functools.partial(
+                _instance_type_map_by_type_name, type_name=instance_type_name
+            ),
+            needed_new_instance_types_for_tasks,
+        ),
+    )
+
+
+def find_selected_instance_type_for_task(
+    instance_type_name: InstanceTypeType,
+    available_ec2_types: list[EC2InstanceType],
+    auto_scaling_mode: BaseAutoscaling,
+    task,
+) -> EC2InstanceType:
+    filtered_instances = list(
+        filter(
+            functools.partial(
+                _instance_type_by_type_name, type_name=instance_type_name
+            ),
+            available_ec2_types,
+        )
+    )
+    if not filtered_instances:
+        msg = (
+            f"Task {task} requires an unauthorized EC2 instance type."
+            f"Asked for {instance_type_name}, authorized are {available_ec2_types}. Please check!"
+        )
+        raise Ec2InstanceInvalidError(msg=msg)
+
+    assert len(filtered_instances) == 1  # nosec
+    selected_instance = filtered_instances[0]
+
+    # check that the assigned resources and the machine resource fit
+    if auto_scaling_mode.get_max_resources_from_task(task) > Resources(
+        cpus=selected_instance.cpus, ram=selected_instance.ram
+    ):
+        msg = (
+            f"Task {task} requires more resources than the selected instance provides."
+            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_max_resources_from_task(task)}. Please check!"
+        )
+        raise Ec2InstanceInvalidError(msg=msg)
+
+    return selected_instance

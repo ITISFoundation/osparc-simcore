@@ -102,7 +102,15 @@ class ApplicationSettings(MinimalApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=15),
-        description="Interval to evaluate the resource usage (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED: bool = Field(
+        default=True,
+        description="Possibility to disable RUT background task for checking heartbeats.",
+    )
+    RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=5),
+        description="Interval to check heartbeat of running services. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+    RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL: int = Field(
+        default=6,
+        description="Heartbeat couter limit when RUT considers service as unhealthy.",
     )

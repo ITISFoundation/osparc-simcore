@@ -51,6 +51,7 @@ httpx==0.25.0
     #   -c requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../requirements/constraints.txt
     #   -r requirements/_fastapi.in
+    #   respx
 idna==3.4
     # via
     #   anyio
@@ -84,6 +85,8 @@ referencing==0.29.3
     #   -c requirements/././constraints.txt
     #   jsonschema
     #   jsonschema-specifications
+respx==0.20.2
+    # via -r requirements/_fastapi.in
 rich==13.6.0
     # via -r requirements/./../../../packages/settings-library/requirements/_base.in
 rpds-py==0.10.6

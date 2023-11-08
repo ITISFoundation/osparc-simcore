@@ -1,12 +1,17 @@
 import collections
 import logging
+from collections.abc import Iterable
 
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import (
@@ -17,7 +22,7 @@ from ..models import (
     Resources,
 )
 from ..utils import computational_scaling as utils
-from ..utils import ec2, utils_docker
+from ..utils import utils_docker, utils_ec2
 from . import dask
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -39,12 +44,16 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_ec2_tags(app: FastAPI) -> dict[str, str]:
         app_settings = get_application_settings(app)
-        return ec2.get_ec2_tags_computational(app_settings)
+        return utils_ec2.get_ec2_tags_computational(app_settings)
 
     @staticmethod
-    def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(
+        app: FastAPI, ec2_instance_data: EC2InstanceData
+    ) -> dict[DockerLabelKey, str]:
         assert app  # nosec
-        return {}
+        return {
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance_data.type
+        }
 
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[DaskTask]:
@@ -53,23 +62,23 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def try_assigning_task_to_node(
         task: DaskTask,
-        instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]],
+        instances_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
     ) -> bool:
-        return utils.try_assigning_task_to_node(task, instance_to_tasks)
+        return utils.try_assigning_task_to_node(task, instances_to_tasks)
 
     @staticmethod
-    async def try_assigning_task_to_pending_instances(
+    async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list]],
+        instances_to_tasks: Iterable[tuple[EC2InstanceData, list]],
         type_to_instance_map: dict[str, EC2InstanceType],
         *,
         notify_progress: bool
     ) -> bool:
-        return await utils.try_assigning_task_to_pending_instances(
+        return await utils.try_assigning_task_to_instances(
             app,
             pending_task,
-            list_of_pending_instance_to_tasks,
+            instances_to_tasks,
             type_to_instance_map,
             notify_progress=notify_progress,
         )
@@ -77,10 +86,10 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        list_of_instance_to_tasks: list[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
     ) -> bool:
         return utils.try_assigning_task_to_instance_types(
-            pending_task, list_of_instance_to_tasks
+            pending_task, instance_types_to_tasks
         )
 
     @staticmethod
@@ -100,6 +109,11 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_max_resources_from_task(task) -> Resources:
         return utils.get_max_resources_from_dask_task(task)
+
+    @staticmethod
+    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
+        assert app  # nosec
+        return utils.get_task_instance_restriction(task)
 
     @staticmethod
     async def compute_node_used_resources(

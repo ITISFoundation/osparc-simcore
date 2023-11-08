@@ -31,7 +31,12 @@ from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.core.dynamic_services_settings.proxy import (
+    DynamicSidecarProxySettings,
+)
+from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
@@ -238,6 +243,9 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     sidecar_settings: DynamicSidecarSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
+    dynamic_sidecar_proxy_settings: DynamicSidecarProxySettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
+    )
 
     async with _disable_create_user_services(scheduler_data):
         sidecar_service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
@@ -253,7 +261,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
         proxy_published_port = await _get_service_published_port(
             proxy_service_name,
-            target_port=sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
+            target_port=dynamic_sidecar_proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
         )
         assert proxy_published_port is not None, f"{sidecar_settings.json()=}"
 

@@ -8,7 +8,9 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
-from ....core.settings import DynamicSidecarSettings
+from ....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from ._base import BaseThinClient, expect_status, retry_on_errors
 
 
@@ -22,30 +24,30 @@ class ThinSidecarsClient(BaseThinClient):
     API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):
-        settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
         self._save_restore_timeout = Timeout(
-            settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
-            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._restart_containers_timeout = Timeout(
-            settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
-            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            scheduler_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+            connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._attach_detach_network_timeout = Timeout(
-            settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
-            connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            scheduler_settings.DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S,
+            connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
         super().__init__(
-            request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
+            request_timeout=scheduler_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
             timeout=Timeout(
-                settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-                connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+                scheduler_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+                connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             ),
         )
 

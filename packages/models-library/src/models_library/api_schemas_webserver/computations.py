@@ -1,5 +1,6 @@
-from models_library.clusters import ClusterID
 from pydantic import BaseModel
+
+from ..clusters import ClusterID
 
 
 class ComputationStart(BaseModel):

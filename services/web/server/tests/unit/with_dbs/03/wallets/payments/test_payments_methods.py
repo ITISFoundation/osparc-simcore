@@ -4,23 +4,36 @@
 # pylint: disable=too-many-arguments
 
 
+from decimal import Decimal
+from unittest.mock import MagicMock
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentTransaction,
     WalletGet,
+    WalletPaymentInitiated,
 )
+from models_library.rest_pagination import Page
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
+)
+from simcore_service_webserver.payments._onetime_api import (
+    _ack_creation_of_wallet_payment,
 )
 from simcore_service_webserver.payments.settings import PaymentsSettings
 from simcore_service_webserver.payments.settings import (
@@ -35,6 +48,7 @@ async def test_payment_method_worfklow(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     # preamble
     assert client.app
@@ -59,12 +73,14 @@ async def test_payment_method_worfklow(
     assert inited.payment_method_id
     assert inited.payment_method_form_url.query
     assert inited.payment_method_form_url.query.endswith(inited.payment_method_id)
+    assert mock_rpc_payments_service_api["init_creation_of_payment_method"].called
 
     # Get: if I try to get the payment method here, it should fail since the flow is NOT acked!
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
     await assert_status(response, web.HTTPNotFound)
+    assert mock_rpc_payments_service_api["get_payment_method"].called
 
     # Ack
     await _ack_creation_of_wallet_payment_method(
@@ -88,6 +104,7 @@ async def test_payment_method_worfklow(
     # List
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
     data, _ = await assert_status(response, web.HTTPOk)
+    assert mock_rpc_payments_service_api["list_payment_methods"].called
 
     wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
     assert wallet_payments_methods == [payment_method]
@@ -97,22 +114,26 @@ async def test_payment_method_worfklow(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
     await assert_status(response, web.HTTPNoContent)
+    assert mock_rpc_payments_service_api["delete_payment_method"].called
 
     # Get -> NOT FOUND
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
     data, _ = await assert_status(response, web.HTTPNotFound)
+    assert mock_rpc_payments_service_api["get_payment_method"].call_count == 3
 
     # List -> empty
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data
+    assert mock_rpc_payments_service_api["list_payment_methods"].call_count == 2
 
 
 async def test_init_and_cancel_payment_method(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     wallet = logged_user_wallet
 
@@ -129,6 +150,7 @@ async def test_init_and_cancel_payment_method(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}:cancel",
     )
     await assert_status(response, web.HTTPNoContent)
+    assert mock_rpc_payments_service_api["cancel_creation_of_payment_method"].called
 
     # Get -> not found
     response = await client.get(
@@ -163,6 +185,7 @@ async def _add_payment_method(
 async def test_wallet_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     settings = get_payments_plugin_settings(client.app)
@@ -250,6 +273,7 @@ async def test_wallet_autorecharge(
 async def test_delete_primary_payment_method_in_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
 
@@ -299,3 +323,94 @@ async def test_delete_primary_payment_method_in_autorecharge(
     auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert auto_recharge.payment_method_id == new_payment_method_id
     assert auto_recharge.enabled is False
+
+
+@pytest.fixture
+async def wallet_payment_method_id(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
+):
+    return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
+
+
+@pytest.mark.testit
+async def test_one_time_payment_with_payment_method(
+    latest_osparc_price: Decimal,
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
+    wallet_payment_method_id: PaymentMethodID,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    assert client.app
+
+    send_message = mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
+    mock_rut_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        autospec=True,
+    )
+
+    assert (
+        client.app.router["init_payment_with_payment_method"]
+        .url_for(
+            wallet_id=f"{logged_user_wallet.wallet_id}",
+            payment_method_id=wallet_payment_method_id,
+        )
+        .path
+        == f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay"
+    )
+
+    # TEST add payment to wallet
+    response = await client.post(
+        f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay",
+        json={
+            "priceDollars": 26,
+        },
+    )
+    data, error = await assert_status(response, web.HTTPAccepted)
+    assert error is None
+    payment = WalletPaymentInitiated.parse_obj(data)
+    assert mock_rpc_payments_service_api["init_payment_with_payment_method"].called
+
+    assert payment.payment_id
+    assert payment.payment_form_url
+    assert payment.payment_form_url.host == "some-fake-gateway.com"
+    assert payment.payment_form_url.query
+    assert payment.payment_form_url.query.endswith(payment.payment_id)
+
+    # Complete
+    await _ack_creation_of_wallet_payment(
+        client.app,
+        payment_id=payment.payment_id,
+        completion_state=PaymentTransactionState.SUCCESS,
+        invoice_url=faker.url(),
+    )
+    # check notification to RUT (fake)
+    assert mock_rut_add_credits_to_wallet.called
+    mock_rut_add_credits_to_wallet.assert_called_once()
+
+    # check notification (fake)
+    assert send_message.called
+    send_message.assert_called_once()
+
+    # list all payment transactions in all my wallets
+    response = await client.get("/v0/wallets/-/payments")
+    data, error = await assert_status(response, web.HTTPOk)
+
+    page = parse_obj_as(Page[PaymentTransaction], data)
+
+    assert page.data
+    assert page.meta.total == 1
+    assert page.meta.offset == 0
+
+    transaction = page.data[0]
+    assert transaction.payment_id == payment.payment_id
+
+    # payment was completed successfully
+    assert transaction.completed_at is not None
+    assert transaction.created_at < transaction.completed_at
+    assert transaction.invoice_url is not None

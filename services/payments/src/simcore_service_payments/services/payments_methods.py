@@ -154,7 +154,7 @@ async def list_payments_methods(
     *,
     user_id: UserID,
     wallet_id: WalletID,
-):
+) -> list[PaymentMethodGet]:
     acked_many = await repo.list_user_payment_methods(
         user_id=user_id, wallet_id=wallet_id
     )
