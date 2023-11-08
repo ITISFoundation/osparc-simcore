@@ -10,8 +10,8 @@ from redis.asyncio.lock import Lock
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from ..core.dynamic_sidecar_settings import DynamicSidecarSettings
 from ..core.errors import ConfigurationError, NodeRightsAcquireError
-from ..core.settings import DynamicSidecarSettings
 
 DockerNodeId = str
 ResourceName = str
@@ -24,7 +24,10 @@ def node_resource_limits_enabled(app: FastAPI) -> bool:
     dynamic_sidecar_settings: DynamicSidecarSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
-    return dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED
+    enabled: bool = (
+        dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED
+    )
+    return enabled
 
 
 def setup(app: FastAPI):

@@ -6,6 +6,7 @@ import itertools
 import logging
 from typing import cast
 
+import arrow
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -17,6 +18,8 @@ from servicelib.logging_utils import log_catch
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
+    DaskWorkerNotFoundError,
+    Ec2InstanceInvalidError,
     Ec2InstanceNotFoundError,
     Ec2InvalidDnsNameError,
     Ec2TooManyInstancesError,
@@ -29,10 +32,12 @@ from ..models import (
     EC2InstanceType,
     Resources,
 )
-from ..utils import ec2, utils_docker
+from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
+    filter_by_task_defined_instance,
+    find_selected_instance_type_for_task,
     node_host_name_from_ec2_private_dns,
 )
 from ..utils.rabbitmq import post_autoscaling_status_message
@@ -106,7 +111,10 @@ async def _analyze_current_cluster(
 
 
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
-    await utils_docker.remove_nodes(get_docker_client(app), cluster.disconnected_nodes)
+    if cluster.disconnected_nodes:
+        await utils_docker.remove_nodes(
+            get_docker_client(app), cluster.disconnected_nodes
+        )
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
@@ -128,13 +136,13 @@ async def _try_attach_pending_ec2s(
                 new_node = await utils_docker.tag_node(
                     get_docker_client(app),
                     new_node,
-                    tags=auto_scaling_mode.get_new_node_docker_tags(app),
+                    tags=auto_scaling_mode.get_new_node_docker_tags(app, instance_data),
                     available=False,
                 )
                 new_found_instances.append(AssociatedInstance(new_node, instance_data))
             else:
                 still_pending_ec2s.append(instance_data)
-        except Ec2InvalidDnsNameError:
+        except Ec2InvalidDnsNameError:  # noqa: PERF203
             _logger.exception("Unexpected EC2 private dns")
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = (
@@ -177,6 +185,27 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     return allowed_instance_types
 
 
+async def _activate_and_notify(
+    app: FastAPI,
+    auto_scaling_mode: BaseAutoscaling,
+    drained_node: AssociatedInstance,
+    tasks: list,
+) -> list:
+    await asyncio.gather(
+        utils_docker.set_node_availability(
+            get_docker_client(app), drained_node.node, available=True
+        ),
+        auto_scaling_mode.log_message_from_tasks(
+            app,
+            tasks,
+            "cluster adjusted, service should start shortly...",
+            level=logging.INFO,
+        ),
+        auto_scaling_mode.progress_message_from_tasks(app, tasks, progress=1.0),
+    )
+    return tasks
+
+
 async def _activate_drained_nodes(
     app: FastAPI,
     cluster: Cluster,
@@ -210,28 +239,12 @@ async def _activate_drained_nodes(
         if assigned_tasks
     ]
 
-    async def _activate_and_notify(
-        drained_node: AssociatedInstance, tasks: list
-    ) -> list:
-        await asyncio.gather(
-            *(
-                utils_docker.set_node_availability(
-                    get_docker_client(app), drained_node.node, available=True
-                ),
-                auto_scaling_mode.log_message_from_tasks(
-                    app,
-                    tasks,
-                    "cluster adjusted, service should start shortly...",
-                    level=logging.INFO,
-                ),
-                auto_scaling_mode.progress_message_from_tasks(app, tasks, progress=1.0),
-            )
-        )
-        return tasks
-
     # activate these nodes now
     await asyncio.gather(
-        *(_activate_and_notify(node, tasks) for node, tasks in nodes_to_activate)
+        *(
+            _activate_and_notify(app, auto_scaling_mode, node, tasks)
+            for node, tasks in nodes_to_activate
+        )
     )
     new_active_nodes = [node for node, _ in nodes_to_activate]
     new_active_node_ids = {node.ec2_instance.id for node in new_active_nodes}
@@ -263,50 +276,74 @@ async def _find_needed_instances(
     type_to_instance_map = {t.name: t for t in available_ec2_types}
 
     # 1. check first the pending task needs
-    active_instance_to_tasks: list[tuple[EC2InstanceData, list]] = [
+    active_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
         (i.ec2_instance, []) for i in cluster.active_nodes
     ]
-    pending_instance_to_tasks: list[tuple[EC2InstanceData, list]] = [
+    pending_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
         (i, []) for i in cluster.pending_ec2s
     ]
     needed_new_instance_types_for_tasks: list[tuple[EC2InstanceType, list]] = []
     for task in pending_tasks:
-        if await auto_scaling_mode.try_assigning_task_to_pending_instances(
-            app,
-            task,
-            active_instance_to_tasks,
-            type_to_instance_map,
-            notify_progress=False,
-        ):
-            continue
-        if await auto_scaling_mode.try_assigning_task_to_pending_instances(
-            app,
-            task,
-            pending_instance_to_tasks,
-            type_to_instance_map,
-            notify_progress=True,
-        ):
-            continue
+        task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
+            app, task
+        )
+        (
+            filtered_active_instance_to_task,
+            filtered_pending_instance_to_task,
+            filtered_needed_new_instance_types_to_task,
+        ) = filter_by_task_defined_instance(
+            task_defined_ec2_type,
+            active_instances_to_tasks,
+            pending_instances_to_tasks,
+            needed_new_instance_types_for_tasks,
+        )
 
-        if auto_scaling_mode.try_assigning_task_to_instance_types(
-            task, needed_new_instance_types_for_tasks
-        ):
-            continue
-
-        try:
-            # we need a new instance, let's find one
-            best_ec2_instance = ec2.find_best_fitting_ec2_instance(
-                available_ec2_types,
-                auto_scaling_mode.get_max_resources_from_task(task),
-                score_type=ec2.closest_instance_policy,
+        # try to assign the task to one of the active, pending or net created instances
+        if (
+            await auto_scaling_mode.try_assigning_task_to_instances(
+                app,
+                task,
+                filtered_active_instance_to_task,
+                type_to_instance_map,
+                notify_progress=False,
             )
-            needed_new_instance_types_for_tasks.append((best_ec2_instance, [task]))
+            or await auto_scaling_mode.try_assigning_task_to_instances(
+                app,
+                task,
+                filtered_pending_instance_to_task,
+                type_to_instance_map,
+                notify_progress=True,
+            )
+            or auto_scaling_mode.try_assigning_task_to_instance_types(
+                task, filtered_needed_new_instance_types_to_task
+            )
+        ):
+            continue
+
+        # so we need to find what we can create now
+        try:
+            # check if exact instance type is needed first
+            if task_defined_ec2_type:
+                defined_ec2 = find_selected_instance_type_for_task(
+                    task_defined_ec2_type, available_ec2_types, auto_scaling_mode, task
+                )
+                needed_new_instance_types_for_tasks.append((defined_ec2, [task]))
+            else:
+                # we go for best fitting type
+                best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
+                    available_ec2_types,
+                    auto_scaling_mode.get_max_resources_from_task(task),
+                    score_type=utils_ec2.closest_instance_policy,
+                )
+                needed_new_instance_types_for_tasks.append((best_ec2_instance, [task]))
         except Ec2InstanceNotFoundError:
             _logger.exception(
                 "Task %s needs more resources than any EC2 instance "
-                "can provide with the current configuration. Please check.",
+                "can provide with the current configuration. Please check!",
                 f"{task}",
             )
+        except Ec2InstanceInvalidError:
+            _logger.exception("Unexpected error:")
 
     num_instances_per_type = collections.defaultdict(
         int, collections.Counter(t for t, _ in needed_new_instance_types_for_tasks)
@@ -324,7 +361,7 @@ async def _find_needed_instances(
         # check if some are already pending
         remaining_pending_instances = [
             instance
-            for instance, assigned_tasks in pending_instance_to_tasks
+            for instance, assigned_tasks in pending_instances_to_tasks
             if not assigned_tasks
         ]
         if len(remaining_pending_instances) < (
@@ -438,16 +475,19 @@ async def _deactivate_empty_nodes(
     active_empty_nodes: list[AssociatedInstance] = []
     active_non_empty_nodes: list[AssociatedInstance] = []
     for instance in cluster.active_nodes:
-        if (
-            await auto_scaling_mode.compute_node_used_resources(
+        try:
+            node_used_resources = await auto_scaling_mode.compute_node_used_resources(
                 app,
                 instance,
             )
-            == Resources.create_as_empty()
-        ):
-            active_empty_nodes.append(instance)
-        else:
-            active_non_empty_nodes.append(instance)
+            if node_used_resources == Resources.create_as_empty():
+                active_empty_nodes.append(instance)
+            else:
+                active_non_empty_nodes.append(instance)
+        except DaskWorkerNotFoundError:  # noqa: PERF203
+            _logger.exception(
+                "EC2 node instance is not registered to dask-scheduler! TIP: Needs investigation"
+            )
 
     # drain this empty nodes
     await asyncio.gather(
@@ -462,7 +502,7 @@ async def _deactivate_empty_nodes(
     )
     if active_empty_nodes:
         _logger.info(
-            "The following nodes set to drain: '%s'",
+            "following nodes set to drain: '%s'",
             f"{[node.node.Description.Hostname for node in active_empty_nodes if node.node.Description]}",
         )
     return dataclasses.replace(
@@ -486,17 +526,14 @@ async def _find_terminateable_instances(
     terminateable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.drained_nodes:
-        # NOTE: AWS price is hourly based (e.g. same price for a machine used 2 minutes or 1 hour, so we wait until 55 minutes)
-        elapsed_time_since_launched = (
-            datetime.datetime.now(datetime.timezone.utc)
-            - instance.ec2_instance.launch_time
-        )
-        elapsed_time_since_full_hour = elapsed_time_since_launched % datetime.timedelta(
-            hours=1
+        assert instance.node.UpdatedAt  # nosec
+        node_last_updated = arrow.get(instance.node.UpdatedAt).datetime
+        elapsed_time_since_drained = (
+            datetime.datetime.now(datetime.timezone.utc) - node_last_updated
         )
         if (
-            elapsed_time_since_full_hour
-            >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+            elapsed_time_since_drained
+            > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         ):
             # let's terminate that one
             terminateable_nodes.append(instance)
@@ -522,6 +559,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
             f"{[i.node.Description.Hostname for i in terminateable_instances if i.node.Description]}",
         )
         # since these nodes are being terminated, remove them from the swarm
+
         await utils_docker.remove_nodes(
             get_docker_client(app),
             [i.node for i in terminateable_instances],

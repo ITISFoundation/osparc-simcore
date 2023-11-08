@@ -436,6 +436,17 @@ class AuthSession:
 
     # WALLETS -------------------------------------------------
 
+    async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                "/wallets/default",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+            assert data  # nosec
+            return data
+
     async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         with _handle_webserver_api_errors():
             response = await self.client.get(

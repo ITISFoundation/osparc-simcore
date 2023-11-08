@@ -1,8 +1,8 @@
 from typing import Any, ClassVar, TypeAlias
 
-from models_library.resource_tracker import HardwareInfo, PricingInfo
 from pydantic import BaseModel, ByteSize, Field
 
+from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
 from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
 from ..wallets import WalletInfo

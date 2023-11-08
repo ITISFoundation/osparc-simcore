@@ -11,7 +11,8 @@ How these tests works:
 
 import asyncio
 import json
-from typing import AsyncIterator, Awaitable, Callable, Final
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Final
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -76,18 +77,13 @@ def server_routes() -> APIRouter:
 
 @pytest.fixture
 async def app(server_routes: APIRouter) -> AsyncIterator[FastAPI]:
+    # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
     long_running_tasks.server.setup(app)
     long_running_tasks.client.setup(app)
     async with LifespanManager(app):
         yield app
-
-
-@pytest.fixture
-async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        yield client
 
 
 @pytest.fixture
@@ -133,6 +129,7 @@ def wait_for_task() -> Callable[
                 assert task_status.done
 
     return _waiter
+
 
 async def test_workflow(
     app: FastAPI,
@@ -232,6 +229,7 @@ async def test_failing_task_returns_error(
     # assert len(task_result.error["errors"]) == 1
     # assert task_result.error["errors"][0]["code"] == "RuntimeError"
     # assert task_result.error["errors"][0]["message"] == "We were asked to fail!!"
+
 
 async def test_get_results_before_tasks_finishes_returns_404(
     app: FastAPI,

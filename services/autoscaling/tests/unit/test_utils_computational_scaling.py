@@ -25,8 +25,8 @@ from simcore_service_autoscaling.utils.computational_scaling import (
     _DEFAULT_MAX_RAM,
     get_max_resources_from_dask_task,
     try_assigning_task_to_instance_types,
+    try_assigning_task_to_instances,
     try_assigning_task_to_node,
-    try_assigning_task_to_pending_instances,
 )
 
 
@@ -140,7 +140,7 @@ async def test_try_assigning_task_to_pending_instances_with_no_instances(
 ):
     task = fake_task()
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app, task, [], {}, notify_progress=True
         )
         is False
@@ -164,7 +164,7 @@ async def test_try_assigning_task_to_pending_instances(
     }
     # calling once should allow to add that task to the instance
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app,
             task,
             pending_instance_to_tasks,
@@ -176,7 +176,7 @@ async def test_try_assigning_task_to_pending_instances(
     assert pending_instance_to_tasks[0][1] == [task]
     # calling a second time as well should allow to add that task to the instance
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app,
             task,
             pending_instance_to_tasks,
@@ -188,7 +188,7 @@ async def test_try_assigning_task_to_pending_instances(
     assert pending_instance_to_tasks[0][1] == [task, task]
     # calling a third time should fail
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app,
             task,
             pending_instance_to_tasks,

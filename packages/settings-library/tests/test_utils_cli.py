@@ -4,12 +4,14 @@
 
 import json
 import logging
+from collections.abc import Callable
 from io import StringIO
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 import typer
 from dotenv import dotenv_values
+from pydantic import Field, SecretStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings
@@ -17,6 +19,8 @@ from settings_library.utils_cli import (
     create_json_encoder_wo_secrets,
     create_settings_command,
     create_version_callback,
+    print_as_envfile,
+    print_as_json,
 )
 from typer.testing import CliRunner
 
@@ -415,3 +419,32 @@ def test_cli_settings_exclude_unset_as_json(
             "POSTGRES_MAXSIZE": 20,
         },
     }
+
+
+def test_print_as(capsys: pytest.CaptureFixture):
+    class FakeSettings(BaseCustomSettings):
+        INTEGER: int = Field(..., description="Some info")
+        SECRET: SecretStr
+
+    settings_obj = FakeSettings(INTEGER=1, SECRET="secret")  # type: ignore
+
+    print_as_envfile(settings_obj, compact=True, verbose=True, show_secrets=True)
+    captured = capsys.readouterr()
+    assert "secret" in captured.out
+    assert "Some info" in captured.out
+
+    print_as_envfile(settings_obj, compact=True, verbose=False, show_secrets=True)
+    captured = capsys.readouterr()
+    assert "secret" in captured.out
+    assert "Some info" not in captured.out
+
+    print_as_envfile(settings_obj, compact=True, verbose=False, show_secrets=False)
+    captured = capsys.readouterr()
+    assert "secret" not in captured.out
+    assert "Some info" not in captured.out
+
+    print_as_json(settings_obj, compact=True)
+    captured = capsys.readouterr()
+    assert "secret" not in captured.out
+    assert "**" in captured.out
+    assert "Some info" not in captured.out

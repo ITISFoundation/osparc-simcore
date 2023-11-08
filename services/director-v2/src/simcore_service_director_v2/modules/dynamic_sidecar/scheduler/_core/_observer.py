@@ -8,11 +8,8 @@ from math import floor
 from fastapi import FastAPI
 from servicelib.error_codes import create_error_code
 
-from .....core.settings import (
-    DynamicServicesSchedulerSettings,
-    DynamicServicesSettings,
-    DynamicSidecarSettings,
-)
+from .....core.dynamic_sidecar_settings import DynamicSidecarSettings
+from .....core.settings import DynamicServicesSchedulerSettings, DynamicServicesSettings
 from .....models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
     SchedulerData,
@@ -31,7 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 async def _apply_observation_cycle(
-    scheduler: "DynamicSidecarsScheduler", scheduler_data: SchedulerData  # type: ignore
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore  # noqa: F821
+    scheduler_data: SchedulerData,
 ) -> None:
     """
     fetches status for service and then processes all the registered events

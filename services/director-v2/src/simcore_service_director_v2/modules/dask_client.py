@@ -19,6 +19,7 @@ from http.client import HTTPException
 from typing import Any
 
 import distributed
+from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
@@ -264,7 +265,7 @@ class DaskClient:
             )
             if hardware_info.aws_ec2_instances:
                 dask_resources[
-                    f"EC2-INSTANCE-TYPE:{hardware_info.aws_ec2_instances[0]}"
+                    f"{DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY}:{hardware_info.aws_ec2_instances[0]}"
                 ] = 1
 
             check_scheduler_is_still_the_same(

@@ -96,7 +96,7 @@ async def test_ec2_client_when_ec2_server_goes_up_and_down(
 async def test_ping(
     mocked_aws_server: ThreadedMotoServer,
     mocked_aws_server_envs: None,
-    aws_allowed_ec2_instance_type_names: list[str],
+    aws_allowed_ec2_instance_type_names_env: list[str],
     app_settings: ApplicationSettings,
     autoscaling_ec2: AutoscalingEC2,
 ):
@@ -109,7 +109,7 @@ async def test_ping(
 
 async def test_get_ec2_instance_capabilities(
     mocked_aws_server_envs: None,
-    aws_allowed_ec2_instance_type_names: list[str],
+    aws_allowed_ec2_instance_type_names_env: list[str],
     app_settings: ApplicationSettings,
     autoscaling_ec2: AutoscalingEC2,
 ):
