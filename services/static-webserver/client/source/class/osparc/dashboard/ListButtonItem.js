@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
   },
 
   statics: {
-    MENU_BTN_WIDTH: 25
+    MENU_BTN_DIMENSIONS: 25
   },
 
   members: {
@@ -41,6 +41,15 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       let control;
       switch (id) {
         case "lock-status":
+          control = new osparc.ui.basic.Thumbnail().set({
+            minWidth: 40
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
+          });
+          break;
+        case "project-state":
           control = new osparc.ui.basic.Thumbnail().set({
             minWidth: 40
           });
@@ -141,8 +150,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
-            minWidth: this.self().MENU_BTN_WIDTH,
-            minHeight: this.self().MENU_BTN_WIDTH,
+            minWidth: this.self().MENU_BTN_DIMENSIONS,
+            minHeight: this.self().MENU_BTN_DIMENSIONS,
             alignY: "middle"
           });
           this._add(control, {
@@ -165,14 +174,14 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         case "menu-button": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.form.MenuButton().set({
-            width: this.self().MENU_BTN_WIDTH,
-            height: this.self().MENU_BTN_WIDTH,
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
           control.getContentElement().setStyles({
-            "border-radius": parseInt(this.self().MENU_BTN_WIDTH/2) + "px"
+            "border-radius": parseInt(this.self().MENU_BTN_DIMENSIONS/2) + "px"
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           menuSelectionStack.addAt(control, 0);

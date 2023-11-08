@@ -43,8 +43,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     grid.setRowMaxHeight(0, this.self().TITLE_MAX_HEIGHT);
 
     const mainLayout = this._mainLayout = new qx.ui.container.Composite().set({
-      maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
-      maxHeight: this.self().ITEM_HEIGHT - 2*this.self().PADDING
+      maxWidth: this.self().ITEM_WIDTH,
+      maxHeight: this.self().ITEM_HEIGHT
     });
     mainLayout.setLayout(grid);
 
@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_HEIGHT: 220,
     PADDING: 10,
     SPACING_IN: 5,
-    SPACING: 15,
+    SPACING: 10,
     // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
     TITLE_MAX_HEIGHT: 38, // two lines in Manrope
     POS: {
@@ -72,7 +72,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         colSpan: 3
       },
       SUBTITLE: {
-        row: 1,
+        row: 3,
         column: 0,
         rowSpan: 1,
         colSpan: 3
@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         colSpan: 3
       },
       TAGS: {
-        row: 3,
+        row: 1,
         column: 0
       },
       TSR: {
@@ -166,26 +166,38 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           this._mainLayout.add(control, this.self().POS.THUMBNAIL);
           break;
         }
+        case "background-image": {
+          break;
+        }
       }
       return control || this.base(arguments, id);
+    },
+
+    _applyBackground: function(value, old) {
+      this.getContentElement().setStyles({
+        "background-image": `url(${value})`,
+        "background-repeat": "no-repeat",
+        "background-size": "cover", // auto width, 85% height
+        "background-position": "center center"
+      });
     },
 
     // overridden
     _applyIcon: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
         value += "50";
-      }
-      const image = this.getChildControl("icon").getChildControl("image");
-      image.set({
-        source: value
-      });
+        const image = this.getChildControl("icon").getChildControl("image");
+        image.set({
+          source: value
+        });
 
-      [
-        "appear",
-        "loaded"
-      ].forEach(eventName => {
-        image.addListener(eventName, () => this.__fitIconHeight(), this);
-      });
+        [
+          "appear",
+          "loaded"
+        ].forEach(eventName => {
+          image.addListener(eventName, () => this.__fitIconHeight(), this);
+        });
+      }
     },
 
     // overridden
