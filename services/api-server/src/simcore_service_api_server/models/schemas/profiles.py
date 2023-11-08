@@ -49,6 +49,7 @@ class Profile(ProfileCommon):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
+                "id": "20",
                 "first_name": "James",
                 "last_name": "Maxwell",
                 "login": "james-maxwell@itis.swiss",
