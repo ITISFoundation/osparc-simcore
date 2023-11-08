@@ -11,7 +11,6 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..core.dynamic_services_settings import DynamicServicesSchedulerSettings
-from ..core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ..core.errors import ConfigurationError, NodeRightsAcquireError
 
 DockerNodeId = str
@@ -98,9 +97,6 @@ class NodeRightsManager:
     @classmethod
     async def create(cls, app: FastAPI) -> "NodeRightsManager":
         redis_settings: RedisSettings = app.state.settings.REDIS
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
         dynamic_sidecars_scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
@@ -111,7 +107,7 @@ class NodeRightsManager:
             ),
             is_enabled=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED,
             concurrent_resource_slots=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS,
-            lock_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
+            lock_timeout_s=dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S,
         )
 
     @classmethod

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, PortInt
-from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt, validator
+from pydantic import Field, NonNegativeInt, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -93,15 +93,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
-    )
-
-    # move to scheduler
-    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
-        10,
-        description=(
-            "Lifetime of the lock. Allows the system to recover a lock "
-            "in case of crash, the lock will expire and result as released."
-        ),
     )
 
     @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
