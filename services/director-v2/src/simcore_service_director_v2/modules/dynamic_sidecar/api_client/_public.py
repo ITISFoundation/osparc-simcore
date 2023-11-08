@@ -26,7 +26,6 @@ from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
 from ....core.dynamic_services_settings import DynamicServicesSchedulerSettings
-from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
@@ -58,13 +57,6 @@ class SidecarsClient:
     @cached_property
     def _async_client(self) -> AsyncClient:
         return self._thin_client.client
-
-    @cached_property
-    def _dynamic_sidecar_settings(self) -> DynamicSidecarSettings:
-        settings: DynamicSidecarSettings = (
-            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-        return settings
 
     @cached_property
     def _dynamic_services_scheduler_settings(self) -> DynamicServicesSchedulerSettings:
@@ -330,7 +322,7 @@ class SidecarsClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP,
             progress_callback,
         )
 

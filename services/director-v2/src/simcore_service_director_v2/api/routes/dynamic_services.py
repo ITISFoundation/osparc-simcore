@@ -39,7 +39,6 @@ from tenacity.wait import wait_fixed
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client
 from ...core.dynamic_services_settings import DynamicServicesSettings
-from ...core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
@@ -219,8 +218,8 @@ async def stop_dynamic_service(
     # take care of stopping cleaning up all allocated resources:
     # services, containers, volumes and networks.
     # Once the service is no longer being tracked this can return
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        dynamic_services_settings.DYNAMIC_SIDECAR
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+        dynamic_services_settings.DYNAMIC_SCHEDULER
     )
 
     def _log_error(retry_state: RetryCallState):
@@ -233,7 +232,7 @@ async def stop_dynamic_service(
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1.0),
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
         ),
         before_sleep=before_sleep_log(logger=logger, log_level=logging.INFO),
         reraise=False,

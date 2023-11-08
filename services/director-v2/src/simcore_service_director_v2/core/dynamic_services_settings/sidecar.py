@@ -74,16 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP: PositiveFloat = Field(
-        60.0 * _MINUTE,
-        description=(
-            "When stopping a service, depending on the amount of data to store, "
-            "the operation might be very long. Also all relative created resources: "
-            "services, containsers, volumes and networks need to be removed. "
-        ),
-    )
-
-    # move to scheduler
     DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
         3.0 * _MINUTE,
         description=(
