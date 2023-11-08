@@ -20,10 +20,12 @@ from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
-from .....core.dynamic_sidecar_settings import (
-    DynamicSidecarProxySettings,
-    DynamicSidecarSettings,
+from .....core.dynamic_services_settings import DynamicServicesSettings
+from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
+from .....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
 )
+from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
@@ -94,9 +96,12 @@ class CreateSidecars(DynamicSchedulerEvent):
         if scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started:
             return False
 
+        settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        )
         return await is_dynamic_sidecar_stack_missing(
             node_uuid=scheduler_data.node_uuid,
-            dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
+            swarm_stack_name=settings.SWARM_STACK_NAME,
         )
 
     @classmethod
@@ -118,6 +123,9 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         # the dynamic-sidecar should merge all the settings, especially:
         # resources and placement derived from all the images in
@@ -159,7 +167,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             "Name": scheduler_data.dynamic_sidecar_network_name,
             "Driver": "overlay",
             "Labels": {
-                "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
+                "io.simcore.zone": f"{dynamic_services_scheduler_settings.TRAEFIK_SIMCORE_ZONE}",
                 "com.simcore.description": f"interactive for node: {scheduler_data.node_uuid}",
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },
@@ -170,7 +178,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # attach the service to the swarm network dedicated to services
         swarm_network: dict[str, Any] = await get_swarm_network(
-            dynamic_sidecar_settings
+            dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
         )
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
@@ -186,10 +194,11 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
-            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+            has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
         )
 
@@ -225,7 +234,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # constrain service to the same node
         scheduler_data.dynamic_sidecar.docker_node_id = (
             await get_dynamic_sidecar_placement(
-                dynamic_sidecar_id, dynamic_sidecar_settings
+                dynamic_sidecar_id, dynamic_services_scheduler_settings
             )
         )
         rabbit_message = ProgressRabbitMessageNode(
@@ -247,17 +256,21 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.service_port = extract_service_port_service_settings(settings)
 
         proxy_settings: DynamicSidecarProxySettings = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
         )
         scheduler_data.proxy_admin_api_port = (
             proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT
+        )
+
+        dynamic_services_settings: DynamicServicesSettings = (
+            app.state.settings.DYNAMIC_SERVICES
         )
 
         dynamic_sidecar_proxy_create_service_params: dict[
             str, Any
         ] = get_dynamic_proxy_spec(
             scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_services_settings=dynamic_services_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             swarm_network_name=swarm_network_name,
@@ -334,11 +347,11 @@ class GetStatus(DynamicSchedulerEvent):
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        dynamic_sidecars_scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         scheduler_data.dynamic_sidecar.inspect_error_handler.delay_for = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
+            dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
         )
 
         try:

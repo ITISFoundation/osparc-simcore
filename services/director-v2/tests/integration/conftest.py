@@ -138,7 +138,8 @@ async def wait_for_catalog_service(
         @retry(
             wait=wait_fixed(1),
             stop=stop_after_delay(60),
-            retry=retry_if_exception_type(AssertionError),
+            retry=retry_if_exception_type(AssertionError)
+            | retry_if_exception_type(httpx.HTTPError),
         )
         async def _ensure_catalog_services_answers() -> None:
             print("--> checking catalog is up and ready...")
@@ -146,6 +147,7 @@ async def wait_for_catalog_service(
                 f"{catalog_endpoint}/v0/services",
                 params={"details": False, "user_id": user_id},
                 headers={"x-simcore-products-name": product_name},
+                timeout=1,
             )
             assert (
                 response.status_code == status.HTTP_200_OK
