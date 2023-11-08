@@ -44,3 +44,13 @@ def generate_passcode(number_of_digits: int = MIN_PASSCODE_LENGTH) -> str:
 def are_secrets_equal(got: str, expected: str) -> bool:
     """Constant-time evaluation of 'got == expected'"""
     return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))
+
+
+def secure_randint(start: int, end: int) -> int:
+    """Generate a random integer between start (inclusive) and end (exclusive)."""
+    if start >= end:
+        msg = f"{start=} must be less than {end=}"
+        raise ValueError(msg)
+
+    diff = end - start
+    return secrets.randbelow(diff) + start

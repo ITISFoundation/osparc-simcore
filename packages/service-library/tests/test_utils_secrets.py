@@ -4,6 +4,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
+import pytest
 from servicelib.utils_secrets import (
     _MIN_SECRET_NUM_BYTES,
     MIN_PASSCODE_LENGTH,
@@ -12,6 +14,7 @@ from servicelib.utils_secrets import (
     generate_passcode,
     generate_password,
     generate_token_secret_key,
+    secure_randint,
 )
 
 
@@ -65,3 +68,10 @@ def test_compare_secrets():
 def test_generate_token_secrets():
     secret_key = generate_token_secret_key()
     assert len(secret_key) == 2 * _MIN_SECRET_NUM_BYTES
+
+
+@pytest.mark.parametrize("start, end", [(1, 10), (99, 100)])
+async def test_secure_randint(start: int, end: int):
+    for _ in range(1000):
+        random_number = secure_randint(start, end)
+        assert start <= random_number <= end
