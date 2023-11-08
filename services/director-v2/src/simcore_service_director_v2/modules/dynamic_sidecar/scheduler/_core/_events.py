@@ -256,7 +256,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.service_port = extract_service_port_service_settings(settings)
 
         proxy_settings: DynamicSidecarProxySettings = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
         )
         scheduler_data.proxy_admin_api_port = (
             proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT
