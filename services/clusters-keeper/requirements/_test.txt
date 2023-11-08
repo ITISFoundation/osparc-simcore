@@ -264,9 +264,7 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
     # via -r requirements/_test.in
 python-jose==3.3.0
-    # via
-    #   moto
-    #   python-jose
+    # via moto
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -297,9 +295,7 @@ requests==2.31.0
 responses==0.24.0
     # via moto
 respx==0.20.2
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.12.0
