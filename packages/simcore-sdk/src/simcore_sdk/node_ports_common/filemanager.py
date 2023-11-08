@@ -21,6 +21,12 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
+from tenacity import retry
+from tenacity.after import after_log
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
@@ -341,6 +347,16 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
+@retry(
+    reraise=True,
+    wait=wait_random_exponential(),
+    stop=stop_after_attempt(
+        NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
+    ),
+    retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
+    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+    after=after_log(_logger, log_level=logging.ERROR),
+)
 async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     user_id: UserID,
@@ -385,7 +401,6 @@ async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
             exclude_patterns=exclude_patterns,
         )
     else:
-        # uploading a file
         uploaded_parts = await upload_file_to_presigned_links(
             session,
             upload_links,
