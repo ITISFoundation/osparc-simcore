@@ -26,7 +26,7 @@ from settings_library.catalog import CatalogSettings
 from yarl import URL
 
 from .._meta import api_version_prefix
-from ._constants import MSG_CATALOG_SERVICE_UNAVAILABLE
+from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
 
     except ClientResponseError as err:
         if err.status == 404:
-            raise web.HTTPNotFound(reason=f"{err.message}")
+            raise web.HTTPNotFound(reason=MSG_CATALOG_SERVICE_NOT_FOUND)
         raise web.HTTPServiceUnavailable(
             reason=MSG_CATALOG_SERVICE_UNAVAILABLE
         ) from err
