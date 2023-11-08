@@ -17,6 +17,7 @@ coverage
 docker
 faker
 flaky
+respx
 openapi-spec-validator
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
@@ -29,4 +30,3 @@ pytest-runner
 pytest-sugar
 pytest-xdist
 python-dotenv
-respx
