@@ -61,17 +61,16 @@ def test_invite_user_and_check_invitation(
     )
     assert result.exit_code == os.EX_OK, result.output
 
-    invitation_url = result.stdout
-    print(invitation_url)
+    # NOTE: for some reason, when running from CLI the outputs get folded!
+    invitation_url = result.stdout.replace("\n", "")
 
     # invitations-maker extrac https://foo#invitation=123
     result = cli_runner.invoke(
         main,
-        f"extract {invitation_url}",
+        f'extract "{invitation_url}"',
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
-
     assert expected == InvitationInputs.parse_raw(result.stdout).dict()
 
 
