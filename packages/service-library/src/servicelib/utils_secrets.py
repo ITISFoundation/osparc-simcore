@@ -2,6 +2,8 @@ import secrets
 import string
 from typing import Final
 
+from pydantic import StrictInt, validate_arguments
+
 MIN_PASSWORD_LENGTH = 30
 _SAFE_SYMBOLS = "!$%*+,-.:=?@^_~"  # avoid issues with parsing, espapes etc
 _ALPHABET: Final = string.digits + _SAFE_SYMBOLS + string.ascii_letters
@@ -46,7 +48,8 @@ def are_secrets_equal(got: str, expected: str) -> bool:
     return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))
 
 
-def secure_randint(start: int, end: int) -> int:
+@validate_arguments
+def secure_randint(start: StrictInt, end: StrictInt) -> int:
     """Generate a random integer between start (inclusive) and end (exclusive)."""
     if start >= end:
         msg = f"{start=} must be less than {end=}"

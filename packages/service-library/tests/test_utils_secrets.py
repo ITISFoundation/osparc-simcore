@@ -6,6 +6,7 @@
 
 
 import pytest
+from pydantic import ValidationError
 from servicelib.utils_secrets import (
     _MIN_SECRET_NUM_BYTES,
     MIN_PASSCODE_LENGTH,
@@ -75,3 +76,8 @@ async def test_secure_randint(start: int, end: int):
     for _ in range(1000):
         random_number = secure_randint(start, end)
         assert start <= random_number <= end
+
+
+async def test_secure_randint_called_with_wrong_tupes():
+    with pytest.raises(ValidationError):
+        secure_randint(1.1, 2)
