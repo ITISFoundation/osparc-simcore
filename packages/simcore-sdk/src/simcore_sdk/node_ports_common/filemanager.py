@@ -2,6 +2,7 @@ import logging
 from asyncio import CancelledError
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import aiofiles
 from aiohttp import ClientSession
@@ -347,12 +348,18 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
+class DeferredTimeoutAttempts(int):
+    # NOTE: when the class is loaded this env var does not exist
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG002
+        return (
+            NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
+        )
+
+
 @retry(
     reraise=True,
     wait=wait_random_exponential(),
-    stop=stop_after_attempt(
-        NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
-    ),
+    stop=stop_after_attempt(DeferredTimeoutAttempts()),
     retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
     before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
     after=after_log(_logger, log_level=logging.ERROR),
