@@ -28,8 +28,9 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from .....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from .....core.errors import NodeRightsAcquireError
-from .....core.settings import AppSettings, DynamicSidecarSettings
+from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
@@ -241,8 +242,10 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     # pylint: disable=protected-access
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
-    await app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(
-        scheduler_data.node_uuid
+    await (
+        app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(
+            scheduler_data.node_uuid
+        )
     )
     task_progress.update(message="finished removing resources", percent=1)
 
