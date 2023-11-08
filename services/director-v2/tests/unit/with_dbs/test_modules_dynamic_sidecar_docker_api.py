@@ -491,7 +491,7 @@ async def test_services_to_observe_exist(
 
 async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     dynamic_sidecar_service_spec: dict[str, Any],
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     cleanup_test_dynamic_sidecar_service: None,
     docker_swarm: None,
 ):
@@ -501,7 +501,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     assert service_id
 
     node_id = await docker_api.get_dynamic_sidecar_placement(
-        service_id, dynamic_sidecar_settings
+        service_id, dynamic_services_scheduler_settings
     )
     assert node_id
 

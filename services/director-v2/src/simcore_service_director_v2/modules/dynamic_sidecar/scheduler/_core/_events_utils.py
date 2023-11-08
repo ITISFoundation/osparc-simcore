@@ -31,7 +31,6 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
@@ -401,13 +400,13 @@ async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -
 
 
 async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> None:
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
 
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
         ),
         wait=wait_fixed(1),
         retry_error_cls=EntrypointContainerNotFoundError,

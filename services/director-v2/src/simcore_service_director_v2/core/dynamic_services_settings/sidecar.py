@@ -74,17 +74,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     # move to scheduler
-    DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
-        60 * _MINUTE,
-        description=(
-            "After starting the dynamic-sidecar its docker_node_id is required. "
-            "This operation can be slow based on system load, sometimes docker "
-            "swarm takes more than seconds to assign the node."
-            "Autoscaling of nodes takes time, it is required to wait longer"
-            "for nodes to be assigned."
-        ),
-    )
-    # move to scheduler
     DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
         60.0 * _MINUTE,
         description=(

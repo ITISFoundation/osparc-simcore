@@ -234,7 +234,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # constrain service to the same node
         scheduler_data.dynamic_sidecar.docker_node_id = (
             await get_dynamic_sidecar_placement(
-                dynamic_sidecar_id, dynamic_sidecar_settings
+                dynamic_sidecar_id, dynamic_services_scheduler_settings
             )
         )
         rabbit_message = ProgressRabbitMessageNode(

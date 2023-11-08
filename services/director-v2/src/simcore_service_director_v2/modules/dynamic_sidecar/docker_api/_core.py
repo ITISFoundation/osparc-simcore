@@ -25,7 +25,7 @@ from ....constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
+from ....core.dynamic_services_settings import DynamicServicesSchedulerSettings
 from ....models.dynamic_services_scheduler import NetworkId, SchedulerData, ServiceId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
@@ -155,7 +155,8 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
 
 
 async def get_dynamic_sidecar_placement(
-    service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
+    service_id: str,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ) -> str:
     """
     Waits until the service has a task in `running` state and
@@ -174,7 +175,7 @@ async def get_dynamic_sidecar_placement(
     @retry(
         wait=wait_random_exponential(multiplier=2, min=1, max=20),
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
         ),
     )
     async def _get_task_data_when_service_running(service_id: str) -> Mapping[str, Any]:

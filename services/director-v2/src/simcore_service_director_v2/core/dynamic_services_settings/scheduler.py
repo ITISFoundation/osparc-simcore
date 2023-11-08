@@ -76,3 +76,14 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
         ),
     )
+
+    DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
+        60 * _MINUTE,
+        description=(
+            "After starting the dynamic-sidecar its docker_node_id is required. "
+            "This operation can be slow based on system load, sometimes docker "
+            "swarm takes more than seconds to assign the node."
+            "Autoscaling of nodes takes time, it is required to wait longer"
+            "for nodes to be assigned."
+        ),
+    )
