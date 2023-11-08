@@ -126,15 +126,22 @@ def payments_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
         con.execute(payments_transactions.delete())
 
 
+#
+MAX_TIME_FOR_APP_TO_STARTUP = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+
+
 @pytest.fixture
-async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
-    test_app = create_app()
+async def app(
+    app_environment: EnvVarsDict, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
+    the_test_app = create_app()
     async with LifespanManager(
-        test_app,
-        startup_timeout=None,  # for debugging
-        shutdown_timeout=10,
+        the_test_app,
+        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
-        yield test_app
+        yield the_test_app
 
 
 #
@@ -332,7 +339,6 @@ def mock_payments_gateway_service_or_none(
     mock_payments_methods_routes: Callable,
     external_environment: EnvVarsDict,
 ) -> MockRouter | None:
-
     # EITHER tests against external payments-gateway
     if payments_gateway_url := external_environment.get("PAYMENTS_GATEWAY_URL"):
         print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
