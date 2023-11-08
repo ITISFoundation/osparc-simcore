@@ -19,7 +19,6 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -394,16 +393,11 @@ def test_get_dynamic_proxy_spec(
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
 
-    def _dict(model: BaseModel) -> dict[str, Any]:
-        dict_data = model.dict()
-        proxy_settings: dict[str, Any] = dict_data["DYNAMIC_SIDECAR_PROXY_SETTINGS"]
-        # remove key which always changes
-        del proxy_settings["DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT"]
-        return dict_data
-
-    assert _dict(dynamic_sidecar_settings) == _dict(
-        minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    assert (
+        dynamic_sidecar_settings
+        == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
+
     expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.parse_obj(
         expected_dynamic_sidecar_spec
     )

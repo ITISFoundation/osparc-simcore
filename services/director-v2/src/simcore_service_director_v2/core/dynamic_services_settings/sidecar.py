@@ -12,7 +12,6 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ...constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 from .egress_proxy import EgressProxySettings
-from .proxy import DynamicSidecarProxySettings
 
 _logger = logging.getLogger(__name__)
 
@@ -71,11 +70,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         ...,
         regex=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
-    )
-
-    # move to DynamicServicesSettings
-    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
-        auto_default_from_env=True
     )
 
     # move to DynamicServicesSettings

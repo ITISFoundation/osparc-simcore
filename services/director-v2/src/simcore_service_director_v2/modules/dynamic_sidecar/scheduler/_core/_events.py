@@ -20,6 +20,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
+from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -261,12 +262,15 @@ class CreateSidecars(DynamicSchedulerEvent):
             proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT
         )
 
+        dynamic_services_settings: DynamicServicesSettings = (
+            app.state.settings.DYNAMIC_SERVICES
+        )
+
         dynamic_sidecar_proxy_create_service_params: dict[
             str, Any
         ] = get_dynamic_proxy_spec(
             scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
+            dynamic_services_settings=dynamic_services_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             swarm_network_name=swarm_network_name,
