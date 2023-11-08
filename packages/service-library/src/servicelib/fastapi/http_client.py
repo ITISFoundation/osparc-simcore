@@ -1,10 +1,38 @@
 import contextlib
 import logging
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import TypeAlias
 
 import httpx
 from fastapi import FastAPI
 
 _logger = logging.getLogger(__name__)
+
+#
+# Healthchecks: liveness probes and readiness probes
+#
+# SEE https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1fcf6e858e
+# SEE https://docs.docker.com/engine/reference/builder/#healthcheck
+
+
+@dataclass
+class ServiceIsAlive:
+    elapsed: timedelta
+
+    def __bool__(self) -> bool:
+        return True
+
+
+@dataclass
+class ServiceIsDead:
+    reason: str
+
+    def __bool__(self) -> bool:
+        return False
+
+
+LivenessResult: TypeAlias = ServiceIsAlive | ServiceIsDead
 
 
 class BaseHttpApi:
@@ -50,6 +78,13 @@ class BaseHttpApi:
             return True
         except httpx.HTTPError:
             return False
+
+    async def check_liveness(self) -> LivenessResult:
+        try:
+            response = await self.client.get("/")
+            return ServiceIsAlive(elapsed=response.elapsed)
+        except httpx.RequestError as err:
+            return ServiceIsDead(reason=f"{err}")
 
 
 class AppStateMixin:
