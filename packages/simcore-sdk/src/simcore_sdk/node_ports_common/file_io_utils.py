@@ -398,7 +398,12 @@ async def upload_file_to_presigned_links(
 
                 for i, e_tag in upload_results:
                     results.append(UploadedPart(number=i + 1, e_tag=e_tag))
-
+            except ExtendedClientResponseError as e:
+                if (
+                    e.status == web.HTTPBadRequest.status_code
+                    and "RequestTimeout" in e.body
+                ):
+                    raise exceptions.AWSS3400RequestTimeOutError(e.body) from e
             except ClientError as exc:  # noqa: PERF203
                 msg = (
                     f"Could not upload file {file_name} ({file_size=}, "

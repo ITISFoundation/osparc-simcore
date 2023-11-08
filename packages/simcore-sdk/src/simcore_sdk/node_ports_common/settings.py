@@ -12,3 +12,4 @@ class NodePortsSettings(BaseCustomSettings):
 
     NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = 5 * MINUTE
     NODE_PORTS_IO_NUM_RETRY_ATTEMPTS: PositiveInt = 5
+    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: PositiveInt = 3

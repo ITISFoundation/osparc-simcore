@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncIterable, AsyncIterator, Awaitable, Callable
+from unittest.mock import AsyncMock
 
 import pytest
 from aiobotocore.session import AioBaseClient, get_session
@@ -19,7 +20,9 @@ from models_library.api_schemas_storage import (
 )
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.exceptions import AWSS3400RequestTimeOutError
 from simcore_sdk.node_ports_common.file_io_utils import (
     ExtendedClientResponseError,
     _check_for_aws_http_errors,
@@ -93,6 +96,31 @@ async def test_check_for_aws_http_errors(
             await _raise_for_status(resp)
         except ExtendedClientResponseError as exception:
             assert _check_for_aws_http_errors(exception) is test_params.will_retry
+
+
+async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out_error(
+    mocker: MockerFixture,
+    create_upload_links: Callable[[int, ByteSize], Awaitable[FileUploadSchema]],
+    create_file_of_size: Callable[[ByteSize], Path],
+):
+    file_size = ByteSize(1)
+    upload_links = await create_upload_links(1, file_size)
+
+    mocker.patch(
+        "simcore_sdk.node_ports_common.file_io_utils._upload_file_part",
+        side_effect=AWSS3400RequestTimeOutError(body="nothing"),
+    )
+
+    async with ProgressBarData(steps=1) as progress_bar:
+        with pytest.raises(AWSS3400RequestTimeOutError):
+            await upload_file_to_presigned_links(
+                session=AsyncMock(),
+                file_upload_links=upload_links,
+                file_to_upload=create_file_of_size(file_size),
+                num_retries=0,
+                io_log_redirect_cb=None,
+                progress_bar=progress_bar,
+            )
 
 
 @pytest.fixture
