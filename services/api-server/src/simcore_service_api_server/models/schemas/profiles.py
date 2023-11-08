@@ -1,8 +1,8 @@
 from enum import auto
 from typing import Any, ClassVar
 
-from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
+from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field, validator
 
@@ -29,7 +29,7 @@ class UserRoleEnum(StrAutoEnum):
 
 
 class Profile(ProfileCommon):
-    id_: IdInt = Field(alias="id")
+    id_: UserID = Field(alias="id")
     login: LowerCaseEmailStr
     role: UserRoleEnum
     groups: Groups | None = None
