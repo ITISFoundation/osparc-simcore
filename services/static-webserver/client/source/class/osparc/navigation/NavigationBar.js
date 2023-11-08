@@ -50,7 +50,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
-      backgroundColor: "background-main-1"
+      backgroundColor: "background-main-2"
+    });
+    this.getContentElement().setStyle({
+      "box-shadow": "0 0 3px white"
     });
   },
 

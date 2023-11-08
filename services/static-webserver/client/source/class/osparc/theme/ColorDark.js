@@ -30,6 +30,20 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-main-4": "c05",
     "background-main-5": "c06",
 
+    "modal-backdrop": "rgba(8, 9, 13, 1)",
+    "fab_background": "rgba(47, 50, 69, 1)",
+    "input_background": "rgba(46, 51, 55, 1)",
+    "window-popup-background": "rgba(74, 79, 84, 1)",
+
+    "default-button": "rgba(10, 182, 255, 1)",
+    "default-button-hover": "rgba(4, 73, 102, 1)",
+    "default-button-active": "rgba(9, 89, 122, 1)",
+    "default-button-focus": "rgba(10, 182, 255, 1)",
+    "default-button-focus-border": "rgba(254, 233, 86, 1)",
+
+    // Opacity < 1
+    "background-card-header": "rgba(1, 18, 26, 0.8)",
+
     // text
     "text": "c13",
     "text-disabled": "c07",

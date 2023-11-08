@@ -23,12 +23,12 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
     // main
-    "background-main": "c01",
-    "background-main-1": "c02",
-    "background-main-2": "c03",
-    "background-main-3": "c04",
-    "background-main-4": "c05",
-    "background-main-5": "c06",
+    "background-main": "#fafafa", // Is manipulated
+    "background-main-1": "#fafafa", // #fafafa
+    "background-main-2": "#fff", // #fff
+    "background-main-3": "rgba(255,255,255,0.5)", // #fafafa ?
+    "background-main-4": "blue",
+    "background-main-5": "purple",
 
     // text
     "text": "c13",
