@@ -10,11 +10,11 @@ from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
 from servicelib.logging_utils import log_decorator
 from settings_library.s3 import S3Settings
+from settings_library.storage import StorageSettings
 
 # Module's business logic ---------------------------------------------
 from starlette import status
 
-from ..core.settings import StorageSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
@@ -31,11 +31,11 @@ def setup(app: FastAPI, settings: StorageSettings):
         StorageClient.create(
             app,
             client=httpx.AsyncClient(
-                base_url=f"{settings.endpoint}",
+                base_url=f"{settings.api_base_url}",
                 timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
             ),
         )
-        logger.debug("created client for storage: %s", settings.endpoint)
+        logger.debug("created client for storage: %s", settings.api_base_url)
 
     async def on_shutdown() -> None:
         client = StorageClient.instance(app).client

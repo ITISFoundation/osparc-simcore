@@ -1,5 +1,6 @@
 import datetime
 import logging
+from collections.abc import Iterable
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Task
@@ -14,9 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 def try_assigning_task_to_node(
-    pending_task: Task, instance_to_tasks: list[tuple[AssociatedInstance, list[Task]]]
+    pending_task: Task,
+    instances_to_tasks: Iterable[tuple[AssociatedInstance, list[Task]]],
 ) -> bool:
-    for instance, node_assigned_tasks in instance_to_tasks:
+    for instance, node_assigned_tasks in instances_to_tasks:
         instance_total_resource = utils_docker.get_node_total_resources(instance.node)
         tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
             node_assigned_tasks
@@ -31,9 +33,9 @@ def try_assigning_task_to_node(
 
 def try_assigning_task_to_instances(
     pending_task: Task,
-    list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[Task]]],
+    instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[Task]]],
 ) -> bool:
-    for instance, instance_assigned_tasks in list_of_instance_to_tasks:
+    for instance, instance_assigned_tasks in instance_types_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
         tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
             instance_assigned_tasks
@@ -49,7 +51,7 @@ def try_assigning_task_to_instances(
 async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
-    list_of_instances_to_tasks: list[tuple[EC2InstanceData, list[Task]]],
+    instances_to_tasks: Iterable[tuple[EC2InstanceData, list[Task]]],
     type_to_instance_map: dict[str, EC2InstanceType],
     *,
     notify_progress: bool,
@@ -59,7 +61,7 @@ async def try_assigning_task_to_pending_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    for instance, instance_assigned_tasks in list_of_instances_to_tasks:
+    for instance, instance_assigned_tasks in instances_to_tasks:
         instance_type = type_to_instance_map[instance.type]
         instance_total_resources = Resources(
             cpus=instance_type.cpus, ram=instance_type.ram

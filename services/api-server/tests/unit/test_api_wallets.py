@@ -4,6 +4,7 @@ from typing import Any, Callable
 import httpx
 import pytest
 import respx
+from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from pydantic import parse_obj_as
@@ -59,3 +60,25 @@ async def test_get_wallet(
     elif "failure" in capture:
         assert response.status_code == 403
         assert response.json().get("errors") is not None
+
+
+async def test_get_default_wallet(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_webserver_service_api_base],
+        project_tests_dir / "mocks" / "get_default_wallet.json",
+        [],
+    )
+
+    response = await client.get(f"{API_VTAG}/wallets/default", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    _ = parse_obj_as(WalletGetWithAvailableCredits, response.json())

@@ -267,7 +267,12 @@ async def task_runs_docker_compose_down(
                         "Containers killed to to OOMKiller: %s", container_states
                     )
                 else:
-                    simcore_platform_status = SimcorePlatformStatus.BAD
+                    # NOTE: MD/ANE discussed: Initial thought was to use SimcorePlatformStatus to
+                    # inform RUT that there was some problem on Simcore side and therefore we will
+                    # not bill the user for running the service. This needs to be discussed
+                    # therefore we will always consider it as OK for now.
+                    # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/4952
+                    simcore_platform_status = SimcorePlatformStatus.OK
 
             await send_service_stopped(app, simcore_platform_status)
 
@@ -293,7 +298,8 @@ async def task_runs_docker_compose_down(
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
     except Exception:
-        await _send_resource_tracking_stop(SimcorePlatformStatus.BAD)
+        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/4952
+        await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)

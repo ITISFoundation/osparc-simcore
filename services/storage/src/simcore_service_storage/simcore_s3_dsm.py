@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Coroutine, Final, cast
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -167,31 +167,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     data.append(convert_db_to_model(metadata))
                     continue
                 with suppress(S3KeyNotFoundError):
-                    # 1. this was uploaded using the legacy file upload that relied on
-                    # a background task checking the S3 backend unreliably, the file eventually
-                    # will be uploaded and this will lazily update the database
-                    # 2. this is still in upload and the file is missing and it will raise
                     updated_fmd = await self._update_database_from_storage(
                         conn, metadata
                     )
                     data.append(convert_db_to_model(updated_fmd))
-
-            # try to expand directories the max number of files to return was not reached
-            for metadata in file_and_directory_meta_data:
-                if (
-                    expand_dirs
-                    and metadata.is_directory
-                    and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
-                ):
-                    max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
-                    data.extend(
-                        await expand_directory(
-                            self.app,
-                            self.simcore_bucket_name,
-                            metadata,
-                            max_items_to_include,
-                        )
-                    )
 
             # now parse the project to search for node/project names
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
@@ -203,10 +182,31 @@ class SimcoreS3DataManager(BaseDataManager):
                     for node_id, node_data in proj_data.workbench.items()
                 }
 
-        # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
-        #        with information from the projects table!
-        # also all this stuff with projects should be done in the client code not here
-        # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
+        # expand directories until the max number of files to return is reached
+        directory_expands: list[Coroutine] = []
+        for metadata in file_and_directory_meta_data:
+            if (
+                expand_dirs
+                and metadata.is_directory
+                and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
+            ):
+                max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
+                directory_expands.append(
+                    expand_directory(
+                        self.app,
+                        self.simcore_bucket_name,
+                        metadata,
+                        max_items_to_include,
+                    )
+                )
+        for files_in_directory in await logged_gather(
+            *directory_expands, max_concurrency=_MAX_PARALLEL_S3_CALLS
+        ):
+            data.extend(files_in_directory)
+
+        # artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+        #   with information from the projects table!
+        # NOTE: This part with the projects, should be done in the client code not here!
         clean_data: list[FileMetaData] = []
         for d in data:
             if d.project_id not in prj_names_mapping:

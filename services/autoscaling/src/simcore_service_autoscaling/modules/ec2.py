@@ -25,7 +25,7 @@ from ..core.errors import (
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings
 from ..models import EC2InstanceData, EC2InstanceType
-from ..utils.ec2 import compose_user_data
+from ..utils.utils_ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)
 

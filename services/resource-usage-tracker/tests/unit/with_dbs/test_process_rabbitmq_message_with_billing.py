@@ -190,10 +190,10 @@ async def test_process_event_functions(
         pricing_unit_id=1,
         pricing_unit_cost_id=1,
     )
-    resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
+    resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=engine
     )
-    await _process_start_event(resource_tacker_repo, msg, publisher)
+    await _process_start_event(resource_tracker_repo, msg, publisher)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "PENDING"
@@ -205,7 +205,7 @@ async def test_process_event_functions(
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
     )
-    await _process_heartbeat_event(resource_tacker_repo, heartbeat_msg, publisher)
+    await _process_heartbeat_event(resource_tracker_repo, heartbeat_msg, publisher)
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
@@ -223,7 +223,7 @@ async def test_process_event_functions(
         created_at=datetime.now(tz=timezone.utc),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await _process_stop_event(resource_tacker_repo, stopped_msg, publisher)
+    await _process_stop_event(resource_tracker_repo, stopped_msg, publisher)
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )

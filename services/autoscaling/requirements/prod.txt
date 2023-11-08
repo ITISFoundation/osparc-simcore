@@ -13,5 +13,6 @@
 ../../packages/models-library
 ../../packages/service-library[fastapi]
 ../../packages/settings-library
+../../packages/dask-task-models-library
 # installs current package
 .

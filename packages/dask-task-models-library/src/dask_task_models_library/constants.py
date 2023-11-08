@@ -1,0 +1,3 @@
+from typing import Final
+
+DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY: Final[str] = "EC2-INSTANCE-TYPE"

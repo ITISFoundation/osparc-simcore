@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime
 from decimal import Decimal
 
 from fastapi import FastAPI
@@ -36,6 +35,7 @@ from .models.resource_tracker_service_runs import (
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
 from .resource_tracker_utils import (
+    compute_service_run_credit_costs,
     make_negative,
     publish_to_rabbitmq_wallet_credits_limit_reached,
     sum_credit_transactions_and_publish_to_rabbitmq,
@@ -47,13 +47,13 @@ _logger = logging.getLogger(__name__)
 async def process_message(app: FastAPI, data: bytes) -> bool:
     rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
     _logger.info("Process msg service_run_id: %s", rabbit_message.service_run_id)
-    resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
+    resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=app.state.engine
     )
     rabbitmq_client = get_rabbitmq_client(app)
 
     await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
-        resource_tacker_repo, rabbit_message, rabbitmq_client
+        resource_tracker_repo, rabbit_message, rabbitmq_client
     )
     return True
 
@@ -147,7 +147,7 @@ async def _process_heartbeat_event(
 
     if running_service.wallet_id and running_service.pricing_unit_cost:
         # Compute currently used credits
-        computed_credits = await _compute_service_run_credit_costs(
+        computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,
             msg.created_at,
             running_service.pricing_unit_cost,
@@ -184,12 +184,17 @@ async def _process_stop_event(
     msg: RabbitResourceTrackingStoppedMessage,
     rabbitmq_client: RabbitMQClient,
 ):
+    _run_status, _run_status_msg = ServiceRunStatus.SUCCESS, None
+    if msg.simcore_platform_status is SimcorePlatformStatus.BAD:
+        _run_status, _run_status_msg = (
+            ServiceRunStatus.ERROR,
+            "Director-v2 or Sidecar consideres service as unhealthy",
+        )
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=msg.service_run_id,
         stopped_at=msg.created_at,
-        service_run_status=ServiceRunStatus.SUCCESS
-        if msg.simcore_platform_status == SimcorePlatformStatus.OK
-        else ServiceRunStatus.ERROR,
+        service_run_status=_run_status,
+        service_run_status_msg=_run_status_msg,
     )
 
     running_service = await resource_tracker_repo.update_service_run_stopped_at(
@@ -202,7 +207,7 @@ async def _process_stop_event(
 
     if running_service.wallet_id and running_service.pricing_unit_cost:
         # Compute currently used credits
-        computed_credits = await _compute_service_run_credit_costs(
+        computed_credits = await compute_service_run_credit_costs(
             running_service.started_at,
             msg.created_at,
             running_service.pricing_unit_cost,
@@ -210,7 +215,7 @@ async def _process_stop_event(
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
-            osparc_credits=-computed_credits,  # negative(computed_credits)
+            osparc_credits=make_negative(computed_credits),
             transaction_status=CreditTransactionStatus.BILLED
             if msg.simcore_platform_status == SimcorePlatformStatus.OK
             else CreditTransactionStatus.NOT_BILLED,
@@ -232,13 +237,3 @@ RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] =
     RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT: _process_heartbeat_event,
     RabbitResourceTrackingMessageType.TRACKING_STOPPED: _process_stop_event,
 }
-
-
-async def _compute_service_run_credit_costs(
-    start: datetime, stop: datetime, cost_per_unit: Decimal
-) -> Decimal:
-    if start <= stop:
-        time_delta = stop - start
-        return round(Decimal(time_delta.seconds / 3600) * cost_per_unit, 2)
-    msg = f"Stop {stop} is smaller then {start} this should not happen. Investigate."
-    raise ValueError(msg)

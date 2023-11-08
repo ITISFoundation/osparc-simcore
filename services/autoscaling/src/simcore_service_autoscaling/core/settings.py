@@ -105,7 +105,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)"
+        description="Time after which an EC2 instance may be terminated (0<=T<=59 minutes, is automatically capped)"
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
