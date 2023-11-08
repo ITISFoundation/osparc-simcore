@@ -327,6 +327,25 @@ async def _upload_file_part(
     raise exceptions.S3TransferError(msg)
 
 
+def _get_file_size_and_name(
+    file_to_upload: Path | UploadableFileObject,
+) -> tuple[int, str]:
+    if isinstance(file_to_upload, Path):
+        file_size = file_to_upload.stat().st_size
+        file_name = file_to_upload.as_posix()
+    else:
+        file_size = file_to_upload.file_size
+        file_name = file_to_upload.file_name
+
+    return file_size, file_name
+
+
+def _get_max_concurrency(file_to_upload: Path | UploadableFileObject) -> int:
+    # NOTE: when the file object is already created it cannot be duplicated so
+    # no concurrency is allowed in that case
+    return 4 if isinstance(file_to_upload, Path) else 1
+
+
 async def upload_file_to_presigned_links(
     session: ClientSession,
     file_upload_links: FileUploadSchema,
@@ -336,22 +355,14 @@ async def upload_file_to_presigned_links(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> list[UploadedPart]:
-    file_size = 0
-    file_name = ""
-    if isinstance(file_to_upload, Path):
-        file_size = file_to_upload.stat().st_size
-        file_name = file_to_upload.as_posix()
-    else:
-        file_size = file_to_upload.file_size
-        file_name = file_to_upload.file_name
-
-    # NOTE: when the file object is already created it cannot be duplicated so
-    # no concurrency is allowed in that case
-    max_concurrency = 4 if isinstance(file_to_upload, Path) else 1
+    file_size: int
+    file_name: str
+    file_size, file_name = _get_file_size_and_name(file_to_upload)
+    max_concurrency: int = _get_max_concurrency(file_to_upload)
 
     file_chunk_size = int(file_upload_links.chunk_size)
-    num_urls = len(file_upload_links.urls)
-    last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
+    num_urls: int = len(file_upload_links.urls)
+    last_chunk_size: int = file_size - file_chunk_size * (num_urls - 1)
 
     results: list[UploadedPart] = []
     async with AsyncExitStack() as stack:
