@@ -347,11 +347,11 @@ class GetStatus(DynamicSchedulerEvent):
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        dynamic_sidecars_scheduler_settings: DynamicServicesSchedulerSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         scheduler_data.dynamic_sidecar.inspect_error_handler.delay_for = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
+            dynamic_sidecars_scheduler_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
         )
 
         try:

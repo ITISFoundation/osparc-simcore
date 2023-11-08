@@ -73,17 +73,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
-    # move to scheduler
-    DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
-        1 * _MINUTE,
-        description=(
-            "Connectivity between director-v2 and a dy-sidecar can be "
-            "temporarily disrupted if network between swarm nodes has "
-            "issues. To avoid the sidecar being marked as failed, "
-            "allow for some time to pass before declaring it failed."
-        ),
-    )
-
     #
     # DEVELOPMENT ONLY config
     #
