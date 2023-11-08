@@ -225,12 +225,6 @@ def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
 
 
 @pytest.fixture
-def mock_max_status_api_duration(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    monkeypatch.setenv("DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S", "0.0001")
-    yield
-
-
-@pytest.fixture
 def disabled_scheduler_background_task(mocker: MockerFixture):
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler.start",
@@ -311,7 +305,6 @@ async def test_scheduler_health_timing_out(
     manually_trigger_scheduler: Callable[[], Awaitable[None]],
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
-    mock_max_status_api_duration: None,
     mocked_dynamic_scheduler_events: None,
 ):
     await manually_trigger_scheduler()

@@ -13,7 +13,10 @@ from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
+from ....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
+from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
@@ -132,6 +135,7 @@ def get_prometheus_monitoring_networks(
 def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
@@ -157,7 +161,7 @@ def get_dynamic_sidecar_spec(
             "Type": "bind",
         },
         DynamicSidecarVolumesPathsResolver.mount_shared_store(
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
             node_uuid=scheduler_data.node_uuid,
             run_id=scheduler_data.run_id,
             project_id=scheduler_data.project_id,
@@ -188,7 +192,7 @@ def get_dynamic_sidecar_spec(
     ]:
         mounts.append(  # noqa: PERF401
             DynamicSidecarVolumesPathsResolver.mount_entry(
-                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                 path=path_to_mount,
                 node_uuid=scheduler_data.node_uuid,
                 run_id=scheduler_data.run_id,
@@ -203,7 +207,7 @@ def get_dynamic_sidecar_spec(
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_r_clone(
-                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
                     run_id=scheduler_data.run_id,
@@ -215,7 +219,7 @@ def get_dynamic_sidecar_spec(
         else:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(
-                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                     path=path_to_mount,
                     node_uuid=scheduler_data.node_uuid,
                     run_id=scheduler_data.run_id,
@@ -257,7 +261,7 @@ def get_dynamic_sidecar_spec(
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_user_preferences(
                 user_preferences_path=scheduler_data.user_preferences_path,
-                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                 node_uuid=scheduler_data.node_uuid,
                 run_id=scheduler_data.run_id,
                 project_id=scheduler_data.project_id,
@@ -297,7 +301,7 @@ def get_dynamic_sidecar_spec(
             ): scheduler_data.version,
         }
         | get_prometheus_service_labels(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
             scheduler_data.callbacks_mapping,
         )
         | StandardSimcoreDockerLabels(
@@ -306,7 +310,7 @@ def get_dynamic_sidecar_spec(
             node_id=scheduler_data.node_uuid,
             product_name=scheduler_data.product_name,
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
             memory_limit=ByteSize(0),  # this should get overwritten
             cpu_limit=0,  # this should get overwritten
         ).to_simcore_runtime_docker_labels(),
@@ -314,7 +318,7 @@ def get_dynamic_sidecar_spec(
         "networks": [
             {"Target": swarm_network_id},
             *get_prometheus_monitoring_networks(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
                 scheduler_data.callbacks_mapping,
             ),
         ],
@@ -338,7 +342,7 @@ def get_dynamic_sidecar_spec(
                     node_id=scheduler_data.node_uuid,
                     product_name=scheduler_data.product_name,
                     simcore_user_agent=scheduler_data.request_simcore_user_agent,
-                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                     memory_limit=ByteSize(0),  # this should get overwritten
                     cpu_limit=0,  # this should get overwritten
                 ).to_simcore_runtime_docker_labels(),
