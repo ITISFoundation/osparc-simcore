@@ -1,7 +1,6 @@
 import getpass
 import logging
 
-import rich
 import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
@@ -130,7 +129,7 @@ def invite(
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
-    rich.print(invitation_link)
+    print(invitation_link)  # noqa: T201
 
 
 @main.command()
