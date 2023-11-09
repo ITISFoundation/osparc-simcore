@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from models_library.products import ProductName
 from pydantic import BaseModel, Field, PositiveInt, validator
 
 from .emails import LowerCaseEmailStr
@@ -27,7 +28,7 @@ class InvitationInputs(BaseModel):
         default=None,
         description="If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
     )
-    product: str | None = Field(
+    product: ProductName | None = Field(
         default=None,
         description="This invitations can only be used for this product."
         "If None, it will use INVITATIONS_DEFAULT_PRODUCT",
