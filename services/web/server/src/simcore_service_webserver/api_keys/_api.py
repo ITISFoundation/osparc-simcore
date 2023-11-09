@@ -62,6 +62,15 @@ async def create_api_key(
     )
 
 
+async def exists(
+    app: web.Application, *, name: str, user_id: UserID, product_name: ProductName
+) -> bool:
+    repo = ApiKeyRepo.create_from_app(app)
+    return await repo.exists(
+        display_name=name, user_id=user_id, product_name=product_name
+    )
+
+
 async def delete_api_key(
     app: web.Application,
     *,

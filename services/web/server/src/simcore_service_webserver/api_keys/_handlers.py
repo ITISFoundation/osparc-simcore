@@ -4,8 +4,12 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.users import UserID
-from pydantic import Field
-from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
+from pydantic import BaseModel, Field
+from servicelib.aiohttp.requests_validation import (
+    RequestParams,
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
 from simcore_service_webserver.security.decorators import permission_required
@@ -20,6 +24,10 @@ _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
+
+
+class _RequestParams(BaseModel):
+    name: str
 
 
 class _RequestContext(RequestParams):
@@ -38,6 +46,21 @@ async def list_api_keys(request: web.Request):
         product_name=req_ctx.product_name,
     )
     return envelope_json_response(api_keys_names)
+
+
+@routes.post(f"/{API_VTAG}/auth/api-keys/{{name}}:exists", name="api_key_exists")
+@login_required
+@permission_required("user.apikey.*")
+async def api_key_exists(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_RequestParams, request)
+    key_exists = await _api.exists(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        name=path_params.name,
+    )
+    return envelope_json_response(key_exists)
 
 
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")

@@ -445,13 +445,6 @@ paths:
       summary: List Api Keys
       description: lists display names of API keys by this user
       operationId: list_api_keys
-      parameters:
-      - required: true
-        schema:
-          title: Code
-          type: string
-        name: code
-        in: query
       responses:
         '200':
           description: returns the display names of API keys
@@ -512,6 +505,34 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
+  /v0/auth/api-keys/{name}:exists:
+    post:
+      tags:
+      - auth
+      summary: Api Key Exists
+      description: returns if a key exists or not
+      operationId: api_key_exists
+      parameters:
+      - required: true
+        schema:
+          title: Name
+          type: string
+        name: name
+        in: path
+      responses:
+        '200':
+          description: returns if the key exist or not in the platform
+          content:
+            application/json:
+              schema:
+                title: Response 200 Api Key Exists
+                type: boolean
+        '400':
+          description: key name requested is invalid
+        '401':
+          description: requires login to check key existence
+        '403':
+          description: not enough permissions to check key existence
   /v0/catalog/services:
     get:
       tags:

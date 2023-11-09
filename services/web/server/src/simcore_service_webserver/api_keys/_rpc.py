@@ -31,10 +31,21 @@ async def delete_api_keys(
     product_name: ProductName,
     user_id: UserID,
     name: str,
-):
-    return await _api.delete_api_key(
+) -> None:
+    await _api.delete_api_key(
         app, name=name, user_id=user_id, product_name=product_name
     )
+
+
+@router.expose()
+async def api_key_exists(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    name: str,
+) -> bool:
+    return await _api.exists(app, name=name, user_id=user_id, product_name=product_name)
 
 
 async def register_rpc_routes_on_startup(app: web.Application):

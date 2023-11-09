@@ -80,20 +80,43 @@ async def test_create_api_keys(
     expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
-    resp = await client.post("/v0/auth/api-keys", json={"display_name": "foo"})
+    display_name = "foo"
+    resp = await client.post("/v0/auth/api-keys", json={"display_name": display_name})
 
     data, errors = await assert_status(resp, expected)
 
     if not errors:
-        assert data["display_name"] == "foo"
+        assert data["display_name"] == display_name
         assert "api_key" in data
         assert "api_secret" in data
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
         assert sorted(data) == [
-            "foo",
+            display_name,
         ]
+
+    # check key existence
+    resp = await client.post(f"/v0/auth/api-keys/{display_name}:exists")
+    data, errors = await assert_status(resp, expected)
+
+    if not errors:
+        assert data is True
+
+
+@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
+async def test_api_key_does_not_exists(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected: type[web.HTTPException],
+    disable_gc_manual_guest_users: None,
+):
+    resp = await client.post("/v0/auth/api-keys/missing_key:exists")
+    data, errors = await assert_status(resp, expected)
+
+    if not errors:
+        assert data is False
 
 
 @pytest.mark.parametrize(

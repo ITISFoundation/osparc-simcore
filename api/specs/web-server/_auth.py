@@ -266,8 +266,31 @@ async def email_confirmation(code: str):
         },
     },
 )
-async def list_api_keys(code: str):
+async def list_api_keys():
     """lists display names of API keys by this user"""
+
+
+@router.post(
+    "/auth/api-keys/{name}:exists",
+    operation_id="api_key_exists",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "returns if the key exist or not in the platform",
+            "model": bool,
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "key name requested is invalid",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "requires login to check key existence",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "not enough permissions to check key existence",
+        },
+    },
+)
+async def api_key_exists(name: str):
+    """returns if a key exists or not"""
 
 
 @router.post(

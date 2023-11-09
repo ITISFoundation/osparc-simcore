@@ -64,9 +64,23 @@ class ApiKeyRepo:
             rows = await result.fetchall() or []
             return [r.id for r in rows]
 
+    async def exists(
+        self, *, display_name: str, user_id: UserID, product_name: ProductName
+    ) -> bool:
+        async with self.engine.acquire() as conn:
+            stmt = sa.select(api_keys.c.display_name,).where(
+                (api_keys.c.user_id == user_id)
+                & (api_keys.c.display_name == display_name)
+                & (api_keys.c.product_name == product_name)
+            )
+
+            result: ResultProxy = await conn.execute(stmt)
+            rows = await result.fetchall() or []
+            return len([r.display_name for r in rows]) > 0
+
     async def delete_by_name(
         self, *, display_name: str, user_id: UserID, product_name: ProductName
-    ):
+    ) -> None:
         async with self.engine.acquire() as conn:
             stmt = api_keys.delete().where(
                 (api_keys.c.user_id == user_id)
@@ -77,7 +91,7 @@ class ApiKeyRepo:
 
     async def delete_by_key(
         self, *, api_key: str, user_id: UserID, product_name: ProductName
-    ):
+    ) -> None:
         async with self.engine.acquire() as conn:
             stmt = api_keys.delete().where(
                 (api_keys.c.user_id == user_id)
