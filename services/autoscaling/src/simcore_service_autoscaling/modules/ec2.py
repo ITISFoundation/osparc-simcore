@@ -24,7 +24,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings
-from ..models import EC2InstanceData, EC2InstanceType
+from ..models import EC2InstanceData, EC2InstanceType, Resources
 from ..utils.utils_ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class AutoscalingEC2:
     async def start_aws_instance(
         self,
         instance_settings: EC2InstancesSettings,
-        instance_type: InstanceTypeType,
+        instance_type: EC2InstanceType,
         tags: dict[str, str],
         startup_script: str,
         number_of_instances: int,
@@ -96,7 +96,7 @@ class AutoscalingEC2:
         with log_context(
             logger,
             logging.INFO,
-            msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
+            msg=f"launching {number_of_instances} AWS instance(s) {instance_type.name} with {tags=}",
         ):
             # first check the max amount is not already reached
             current_instances = await self.get_instances(instance_settings, tags)
@@ -112,7 +112,7 @@ class AutoscalingEC2:
                 ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
                 MinCount=number_of_instances,
                 MaxCount=number_of_instances,
-                InstanceType=instance_type,
+                InstanceType=instance_type.name,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
                 SubnetId=instance_settings.EC2_INSTANCES_SUBNET_ID,
@@ -149,6 +149,7 @@ class AutoscalingEC2:
                     aws_private_dns=instance["PrivateDnsName"],
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
+                    resources=Resources(cpus=instance_type.cpus, ram=instance_type.ram),
                 )
                 for instance in instances["Reservations"][0]["Instances"]
             ]
