@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import Final, Iterable
+from collections.abc import Iterable
+from typing import Final
 
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
