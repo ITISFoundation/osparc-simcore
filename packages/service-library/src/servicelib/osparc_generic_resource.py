@@ -69,12 +69,14 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
         if not is_present:
             return False
 
-        with log_context(_logger, logging.WARNING, f"Removing {identifier}"), log_catch(
-            _logger, reraise=False
-        ):
+        with log_context(
+            _logger, logging.WARNING, f"{self.__class__}: removing {identifier}"
+        ), log_catch(_logger, reraise=False):
             await self.destroy(identifier, **extra_kwargs)
 
         was_removed = await self.is_present(identifier, **extra_kwargs) is False
         if not was_removed:
-            _logger.warning("Resource %s could not be removed", identifier)
+            _logger.warning(
+                "%s: resource %s could not be removed", self.__class__, identifier
+            )
         return was_removed

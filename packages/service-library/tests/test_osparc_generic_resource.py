@@ -113,3 +113,4 @@ async def test_safe_remove_api_raises_error(
     # report failed to remove and log
     assert await manager.safe_remove(identifier) is False
     assert error_message in caplog.text
+    assert "could not be removed" in caplog.text
