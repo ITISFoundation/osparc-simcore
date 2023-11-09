@@ -1,7 +1,6 @@
 import base64
 import binascii
 import logging
-from datetime import datetime, timezone
 from typing import Any, ClassVar, cast
 from urllib import parse
 
@@ -104,20 +103,11 @@ def _fernet_encrypt_as_urlsafe_code(
 
 
 def _create_invitation_code(
-    invitation_data: InvitationInputs,
+    content: InvitationContent,
     secret_key: bytes,
-    default_product: ProductName,
 ) -> bytes:
     """Produces url-safe invitation code in bytes"""
-
-    # builds content
-    content = InvitationContent(
-        **invitation_data.dict(exclude_none=True),
-        created=datetime.now(tz=timezone.utc),
-    )
-    if content.product is None:
-        content.product = default_product
-
+    # shorten names
     content_jsonstr: str = _ContentWithShortNames.serialize(content)
     assert "\n" not in content_jsonstr  # nosec
 
@@ -138,17 +128,15 @@ def create_invitation_link(
     secret_key: bytes,
     base_url: HttpUrl,
     default_product: ProductName,
-) -> HttpUrl:
-    invitation_code = _create_invitation_code(
-        invitation_data=invitation_data,
-        secret_key=secret_key,
-        default_product=default_product,
-    )
+) -> tuple[HttpUrl, InvitationContent]:
+    content = InvitationContent.create_from_inputs(invitation_data, default_product)
+    code = _create_invitation_code(content, secret_key)
     # Adds message as the invitation in query
-    return _build_link(
+    link = _build_link(
         base_url=base_url,
-        code_url_safe=invitation_code.decode(),
+        code_url_safe=code.decode(),
     )
+    return link, content
 
 
 def extract_invitation_code_from(invitation_url: HttpUrl) -> str:

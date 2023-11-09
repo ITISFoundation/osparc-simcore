@@ -7,6 +7,8 @@
 import httpx
 from fastapi import status
 from fastapi.testclient import TestClient
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContentAndLink,
 )
@@ -20,26 +22,28 @@ from simcore_service_invitations.invitations import (
 )
 
 
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@given(invitation_input=st.builds(InvitationInputs))
 def test_create_invitation(
+    invitation_input: InvitationInputs,
     client: TestClient,
     basic_auth: httpx.BasicAuth,
-    invitation_data: InvitationInputs,
 ):
     response = client.post(
         f"/{API_VTAG}/invitations",
-        json={
-            "issuer": invitation_data.issuer,
-            "guest": invitation_data.guest,
-            "trial_account_days": invitation_data.trial_account_days,
-        },
+        json=invitation_input.dict(exclude_none=True),
         auth=basic_auth,
     )
     assert response.status_code == status.HTTP_200_OK, f"{response.json()=}"
 
     invitation = ApiInvitationContentAndLink(**response.json())
-    assert invitation.issuer == invitation_data.issuer
-    assert invitation.guest == invitation_data.guest
-    assert invitation.trial_account_days == invitation_data.trial_account_days
+    assert invitation.issuer == invitation_input.issuer
+    assert invitation.guest == invitation_input.guest
+    assert invitation.trial_account_days == invitation_input.trial_account_days
+
+    assert invitation.product
+    if invitation_input.product:
+        assert invitation.product == invitation_input.product
 
 
 def test_check_invitation(
@@ -86,7 +90,7 @@ def test_check_valid_invitation(
     secret_key: str,
     default_product: ProductName,
 ):
-    invitation_url = create_invitation_link(
+    invitation_url, _ = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=secret_key.encode(),
         base_url=f"{client.base_url}",
@@ -116,7 +120,7 @@ def test_check_invalid_invitation_with_different_secret(
     another_secret_key: str,
     default_product: ProductName,
 ):
-    invitation_url = create_invitation_link(
+    invitation_url, _ = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",
@@ -162,7 +166,7 @@ def test_check_invalid_invitation_with_wrong_code(
     another_secret_key: str,
     default_product: ProductName,
 ):
-    invitation_url = create_invitation_link(
+    invitation_url, _ = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",

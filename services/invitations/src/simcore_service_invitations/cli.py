@@ -120,7 +120,7 @@ def invite(
         extra_credits_in_usd=None,
     )
 
-    invitation_link = create_invitation_link(
+    invitation_link, _ = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,

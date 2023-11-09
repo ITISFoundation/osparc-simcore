@@ -66,21 +66,20 @@ def test_create_and_decrypt_invitation(
     secret_key: str,
     default_product: ProductName,
 ):
-    invitation_link = create_invitation_link(
+    invitation_link, _ = create_invitation_link(
         invitation_data,
         secret_key=secret_key.encode(),
         base_url=faker.url(),
         default_product=default_product,
     )
-
-    print(invitation_link)
-
+    assert invitation_link.fragment
     query_params = dict(parse.parse_qsl(URL(invitation_link.fragment).query))
 
     # will raise TokenError or ValidationError
     invitation = decrypt_invitation(
         invitation_code=query_params["invitation"],
         secret_key=secret_key.encode(),
+        default_product=default_product,
     )
 
     assert isinstance(invitation, InvitationContent)
@@ -100,9 +99,10 @@ def test_create_and_decrypt_invitation(
 def invitation_code(
     invitation_data: InvitationInputs, secret_key: str, default_product: ProductName
 ) -> str:
-    return _create_invitation_code(
+    code, _ = _create_invitation_code(
         invitation_data, secret_key=secret_key.encode(), default_product=default_product
-    ).decode()
+    )
+    return code.decode()
 
 
 def test_valid_invitation_code(

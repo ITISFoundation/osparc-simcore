@@ -1,9 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from models_library.products import ProductName
-from pydantic import BaseModel, Field, PositiveInt, validator
-
-from .emails import LowerCaseEmailStr
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
 
 
 class InvitationInputs(BaseModel):
@@ -15,7 +13,7 @@ class InvitationInputs(BaseModel):
         min_length=1,
         max_length=30,
     )
-    guest: LowerCaseEmailStr = Field(
+    guest: EmailStr = Field(
         ...,
         description="Invitee's email. Note that the registration can ONLY be used with this email",
     )
@@ -49,3 +47,15 @@ class InvitationContent(InvitationInputs):
 
     def as_invitation_inputs(self) -> InvitationInputs:
         return self.copy(exclude={"created"})
+
+    @classmethod
+    def create_from_inputs(
+        cls, invitation_inputs: InvitationInputs, default_product: ProductName
+    ) -> "InvitationContent":
+
+        kwargs = invitation_inputs.dict(exclude_none=True)
+        kwargs.setdefault("product", default_product)
+        return cls(
+            created=datetime.now(tz=timezone.utc),
+            **kwargs,
+        )
