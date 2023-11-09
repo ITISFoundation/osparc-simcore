@@ -40,8 +40,7 @@ class ApiInvitationContentAndLink(ApiInvitationContent):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                **_INPUTS_EXAMPLE,
-                "created": "2023-01-11 12:11:47.293595",
+                **ApiInvitationContent.Config.schema_extra["example"],
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
         }

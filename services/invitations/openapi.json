@@ -191,7 +191,7 @@
           "product": {
             "type": "string",
             "title": "Product",
-            "description": "This invitations can only be used for this product.If None, it will use INVITATIONS_DEFAULT_PRODUCT"
+            "description": "This invitations can only be used for this product."
           },
           "created": {
             "type": "string",
@@ -204,6 +204,7 @@
         "required": [
           "issuer",
           "guest",
+          "product",
           "created"
         ],
         "title": "ApiInvitationContent",
@@ -212,6 +213,7 @@
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
+          "product": "osparc",
           "created": "2023-01-11 13:11:47.293595"
         }
       },
@@ -247,7 +249,7 @@
           "product": {
             "type": "string",
             "title": "Product",
-            "description": "This invitations can only be used for this product.If None, it will use INVITATIONS_DEFAULT_PRODUCT"
+            "description": "This invitations can only be used for this product."
           },
           "created": {
             "type": "string",
@@ -268,6 +270,7 @@
         "required": [
           "issuer",
           "guest",
+          "product",
           "created",
           "invitation_url"
         ],
@@ -277,7 +280,8 @@
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
-          "created": "2023-01-11 12:11:47.293595",
+          "product": "osparc",
+          "created": "2023-01-11 13:11:47.293595",
           "invitation_url": "https://foo.com/#/registration?invitation=1234"
         }
       },
@@ -313,7 +317,7 @@
           "product": {
             "type": "string",
             "title": "Product",
-            "description": "This invitations can only be used for this product.If None, it will use INVITATIONS_DEFAULT_PRODUCT"
+            "description": "If None, it will use INVITATIONS_DEFAULT_PRODUCT"
           }
         },
         "type": "object",
