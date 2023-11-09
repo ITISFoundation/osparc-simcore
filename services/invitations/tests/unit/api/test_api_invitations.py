@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContentAndLink,
 )
+from models_library.products import ProductName
 from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._invitations import INVALID_INVITATION_URL_MSG
 from simcore_service_invitations.invitations import (
@@ -83,11 +84,13 @@ def test_check_valid_invitation(
     basic_auth: httpx.BasicAuth,
     invitation_data: InvitationInputs,
     secret_key: str,
+    default_product: ProductName,
 ):
     invitation_url = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=secret_key.encode(),
         base_url=f"{client.base_url}",
+        default_product=default_product,
     )
 
     # check invitation_url
@@ -111,11 +114,13 @@ def test_check_invalid_invitation_with_different_secret(
     basic_auth: httpx.BasicAuth,
     invitation_data: InvitationInputs,
     another_secret_key: str,
+    default_product: ProductName,
 ):
     invitation_url = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",
+        default_product=default_product,
     )
 
     # check invitation_url
@@ -128,7 +133,7 @@ def test_check_invalid_invitation_with_different_secret(
         response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     ), f"{response.json()=}"
 
-    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+    assert response.json()["detail"] == INVALID_INVITATION_URL_MSG
 
 
 def test_check_invalid_invitation_with_wrong_fragment(
@@ -147,7 +152,7 @@ def test_check_invalid_invitation_with_wrong_fragment(
         response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     ), f"{response.json()=}"
 
-    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+    assert response.json()["detail"] == INVALID_INVITATION_URL_MSG
 
 
 def test_check_invalid_invitation_with_wrong_code(
@@ -155,11 +160,13 @@ def test_check_invalid_invitation_with_wrong_code(
     basic_auth: httpx.BasicAuth,
     invitation_data: InvitationInputs,
     another_secret_key: str,
+    default_product: ProductName,
 ):
     invitation_url = create_invitation_link(
         invitation_data=invitation_data,
         secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",
+        default_product=default_product,
     )
 
     invitation_url_with_invalid_code = invitation_url[:-3]
@@ -174,4 +181,4 @@ def test_check_invalid_invitation_with_wrong_code(
         response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     ), f"{response.json()=}"
 
-    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+    assert response.json()["detail"] == INVALID_INVITATION_URL_MSG

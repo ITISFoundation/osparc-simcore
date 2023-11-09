@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import cast
 
+from models_library.products import ProductName
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
@@ -41,7 +42,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -67,14 +68,23 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     are not related to the web server.
     """
 
+    INVITATIONS_SWAGGER_API_DOC_ENABLED: bool = Field(
+        default=True, description="If true, it displays swagger doc at /doc"
+    )
+
     INVITATIONS_SECRET_KEY: SecretStr = Field(
         ...,
-        description="Secret key to generate invitations"
-        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+        description="Secret key to generate invitations. "
+        "TIP: simcore-service-invitations generate-key",
         min_length=44,
     )
 
     INVITATIONS_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
+    INVITATIONS_DEFAULT_PRODUCT: ProductName = Field(
+        ...,
+        description="Default product if not specified in the request. "
+        "WARNING: this product must be defined in INVITATIONS_OSPARC_URL",
+    )
 
 
 class ApplicationSettings(MinimalApplicationSettings):
