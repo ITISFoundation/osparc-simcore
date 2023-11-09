@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
-      padding: this.self().PADDING,
+      padding: 0,
       allowGrowX: false
     });
 
@@ -72,7 +72,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         colSpan: 3
       },
       SUBTITLE: {
-        row: 3,
+        row: 1,
         column: 0,
         rowSpan: 1,
         colSpan: 3
@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         colSpan: 3
       },
       TAGS: {
-        row: 1,
+        row: 3,
         column: 0
       },
       TSR: {
@@ -116,18 +116,39 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _createChildControlImpl: function(id) {
+      let layout;
       let control;
       switch (id) {
+        case "header":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            anonymous: true,
+            allowGrowX: true,
+            alignY: "middle",
+            padding: this.self().PADDING
+          });
+          this._mainLayout.add(control, this.self().POS.TITLE);
+          break;
+        case "body":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            decorator: "main",
+            backgroundColor: "yellow",
+            height: 300,
+            allowGrowY: false
+          });
+          this._mainLayout.add(control, this.self().POS.THUMBNAIL);
+          break;
         case "title":
           control = new qx.ui.basic.Label().set({
-            marginTop: 3,
             font: "text-14",
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
             maxHeight: this.self().TITLE_MAX_HEIGHT,
             rich: true,
             wrap: true
           });
-          this._mainLayout.add(control, this.self().POS.TITLE);
+          const titleLayout = this.getChildControl("header");
+          titleLayout.addAt(control, 0, {
+            flex: 1
+          });
           break;
         case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
@@ -148,7 +169,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             alignY: "middle",
             rich: true,
             anonymous: true,
-            font: "text-13",
+            font: "text-12",
             allowGrowY: false
           });
           const subtitleLayout = this.getChildControl("subtitle");
@@ -158,28 +179,21 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         }
         case "icon": {
-          const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
+          const bodyLayout = this.getChildControl("body");
+          const maxWidth = this.self().ITEM_WIDTH;
           control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
           control.getChildControl("image").set({
-            anonymous: true
+            anonymous: true,
+            alignY: "middle",
+            alignX: "center",
+            allowGrowX: true,
+            allowGrowY: true
           });
-          this._mainLayout.add(control, this.self().POS.THUMBNAIL);
-          break;
-        }
-        case "background-image": {
+          bodyLayout.add(control, {flex: 1});
           break;
         }
       }
       return control || this.base(arguments, id);
-    },
-
-    _applyBackground: function(value, old) {
-      this.getContentElement().setStyles({
-        "background-image": `url(${value})`,
-        "background-repeat": "no-repeat",
-        "background-size": "cover", // auto width, 85% height
-        "background-position": "center center"
-      });
     },
 
     // overridden
@@ -196,6 +210,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           "loaded"
         ].forEach(eventName => {
           image.addListener(eventName, () => this.__fitIconHeight(), this);
+        });
+      } else {
+        const container = this.getChildControl("body").getContentElement();
+        container.setStyles({
+          "background-image": `url(${value})`,
+          "background-repeat": "no-repeat",
+          "background-size": "cover", // auto width, 85% height
+          "background-position": "center center",
+          "background-origin": "content-box",
+          "background-color": "pink"
         });
       }
     },

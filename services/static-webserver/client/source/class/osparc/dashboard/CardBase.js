@@ -55,11 +55,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    STUDY_ICON: "@FontAwesome5Solid/file-alt/",
-    TEMPLATE_ICON: "@FontAwesome5Solid/copy/",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/",
-    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
-    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
+    STUDY_ICON: "https://github.com/ZurichMedTech/s4l-assets/blob/main/app/thumbnails/huygens_MRI.png?raw=true",
+    TEMPLATE_ICON: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
+    SERVICE_ICON: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLw7j07Ch4UVslMIMcG-RilEpc8aM8vrueZBDlmICFfHxAxlZChvvZp24Oaj-WX3SJYQc&usqp=CAU",
+    COMP_SERVICE_ICON: "https://zmt.swiss/assets/images/sim4life/physics_models/flow01b.jpg",
+    DYNAMIC_SERVICE_ICON: "https://zmt.swiss/assets/Visuals/vip/_resampled/ResizedImageWzY1MCwzNzVd/visual-neurorat-mm.png",
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -239,10 +239,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyHits"
     },
 
+    // backgroundImage: {
+    //   check: "String",
+    //   apply: "_applyBackground",
+    //   nullable: true
+    // },
+
     state: {
       check: "Object",
       nullable: false,
       apply: "_applyState"
+    },
+
+    projectState: {
+      check: ["STARTED", "SUCCESS", "FAILED", "UNKNOWN", "NOT_STARTED"],
+      nullable: false,
+      init: "UNKNOWN",
+      apply: "_applyProjectState"
     },
 
     locked: {
@@ -335,6 +348,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         icon: resourceData.thumbnail || defaultThumbnail,
+        // backgroundImage: resourceData.thumbnail || defaultThumbnail,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
@@ -353,6 +367,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _applyIcon: function(value, old) {
       throw new Error("Abstract method called!");
     },
+
+    // _applyBackground: function(value, old) {
+    //   throw new Error("Abstract method called!");
+    // },
 
     _applyTitle: function(value, old) {
       throw new Error("Abstract method called!");
@@ -498,12 +516,55 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
+    _applyProjectState: function(state) {
+      this.__enableCard(!state);
+      this.getChildControl("project-state").set({
+        opacity: 1.0,
+        visibility: state ? "visible" : "excluded"
+      });
+    },
+
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      const projectState = ("state" in state) ? state["state"]["value"] : "UNKNOWN";
       if (locked) {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
+      if (projectState !== "UNKNOWN") {
+        this.__showCardFromProjectState(state["state"]);
+      }
+      this.setProjectState(projectState);
       this.setLocked(locked);
+    },
+
+    __showCardFromProjectState: function(projectStatus) {
+      const status = projectStatus["value"];
+      let image = null;
+      switch (status) {
+        case "STARTED":
+          image = "@FontAwesome5Solid/sync-alt/";
+          break;
+        case "SUCCESS":
+          image = "@FontAwesome5Solid/flag-checkered/";
+          break;
+        case "FAILED":
+          image = "@FontAwesome5Solid/exclamation/";
+          break;
+        default:
+          image = null;
+          break;
+      }
+      this.__showProjectStateImage(image);
+    },
+
+    __showProjectStateImage: function(stateImageSrc) {
+      this.getChildControl("project-state").set({
+        opacity: 1.0,
+        visibility: "visible"
+      });
+      const stateImage = this.getChildControl("project-state").getChildControl("image");
+      stateImageSrc += this.classname.includes("Grid") ? "32" : "22";
+      stateImage.setSource(stateImageSrc);
     },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
@@ -545,7 +606,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         visibility: "visible"
       });
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
+      lockImageSrc += this.classname.includes("Grid") ? "32" : "22";
       lockImage.setSource(lockImageSrc);
       if (toolTipText) {
         this.set({

@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-button":
-          this.getChildControl("title").set({
+          this.getChildControl("header").set({
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_DIMENSIONS
           });
           control = new qx.ui.form.MenuButton().set({
@@ -97,8 +97,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: -2,
-            right: -2
+            top: 5,
+            right: 5
           });
           break;
         case "tick-unselected":
