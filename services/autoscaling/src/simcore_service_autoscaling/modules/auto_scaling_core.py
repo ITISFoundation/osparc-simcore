@@ -506,7 +506,7 @@ async def _deactivate_empty_nodes(
             )
 
     # drain this empty nodes
-    await asyncio.gather(
+    updated_nodes = await asyncio.gather(
         *(
             utils_docker.set_node_availability(
                 docker_client,
@@ -516,15 +516,15 @@ async def _deactivate_empty_nodes(
             for node in active_empty_nodes
         )
     )
-    if active_empty_nodes:
+    if updated_nodes:
         _logger.info(
             "following nodes set to drain: '%s'",
-            f"{[node.node.Description.Hostname for node in active_empty_nodes if node.node.Description]}",
+            f"{[node.node.Description.Hostname for node in updated_nodes if node.node.Description]}",
         )
     return dataclasses.replace(
         cluster,
         active_nodes=active_non_empty_nodes,
-        drained_nodes=cluster.drained_nodes + active_empty_nodes,
+        drained_nodes=cluster.drained_nodes + updated_nodes,
     )
 
 
