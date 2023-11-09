@@ -282,6 +282,9 @@ async def _find_needed_instances(
     pending_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
         (i, []) for i in cluster.pending_ec2s
     ]
+    drained_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
+        (i.ec2_instance, []) for i in cluster.drained_nodes
+    ]
     needed_new_instance_types_for_tasks: list[tuple[EC2InstanceType, list]] = []
     for task in pending_tasks:
         task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
@@ -290,11 +293,13 @@ async def _find_needed_instances(
         (
             filtered_active_instance_to_task,
             filtered_pending_instance_to_task,
+            filtered_drained_instances_to_task,
             filtered_needed_new_instance_types_to_task,
         ) = filter_by_task_defined_instance(
             task_defined_ec2_type,
             active_instances_to_tasks,
             pending_instances_to_tasks,
+            drained_instances_to_tasks,
             needed_new_instance_types_for_tasks,
         )
 
@@ -318,6 +323,13 @@ async def _find_needed_instances(
                 filtered_pending_instance_to_task,
                 type_to_instance_map,
                 notify_progress=True,
+            )
+            or await auto_scaling_mode.try_assigning_task_to_instances(
+                app,
+                task,
+                filtered_drained_instances_to_task,
+                type_to_instance_map,
+                notify_progress=False,
             )
             or auto_scaling_mode.try_assigning_task_to_instance_types(
                 task, filtered_needed_new_instance_types_to_task
