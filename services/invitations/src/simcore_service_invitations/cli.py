@@ -18,7 +18,7 @@ from settings_library.utils_cli import (
 from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
-from .invitations import (
+from .services.invitations import (
     InvalidInvitationCodeError,
     create_invitation_link,
     extract_invitation_code_from,

@@ -11,7 +11,7 @@ from models_library.api_schemas_invitations.invitations import (
 )
 
 from ..core.settings import ApplicationSettings
-from ..invitations import (
+from ..services.invitations import (
     InvalidInvitationCodeError,
     create_invitation_link,
     extract_invitation_code_from,

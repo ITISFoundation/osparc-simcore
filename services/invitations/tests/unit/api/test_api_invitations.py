@@ -15,7 +15,7 @@ from models_library.api_schemas_invitations.invitations import (
 from models_library.products import ProductName
 from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._invitations import INVALID_INVITATION_URL_MSG
-from simcore_service_invitations.invitations import (
+from simcore_service_invitations.services.invitations import (
     InvitationContent,
     InvitationInputs,
     create_invitation_link,

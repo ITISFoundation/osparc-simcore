@@ -13,7 +13,7 @@ from faker import Faker
 from models_library.invitations import InvitationContent, InvitationInputs
 from models_library.products import ProductName
 from pydantic import BaseModel, ValidationError
-from simcore_service_invitations.invitations import (
+from simcore_service_invitations.services.invitations import (
     InvalidInvitationCodeError,
     _ContentWithShortNames,
     _create_invitation_code,

@@ -1,5 +1,6 @@
 from typing import Any, ClassVar
 
+from models_library.products import ProductName
 from pydantic import BaseModel, Field, HttpUrl
 
 from ..invitations import InvitationContent, InvitationInputs
@@ -17,10 +18,17 @@ class ApiInvitationInputs(InvitationInputs):
 
 
 class ApiInvitationContent(InvitationContent):
+
+    # here product is required
+    product: ProductName = Field(
+        ..., description="This invitations can only be used for this product."
+    )
+
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 **_INPUTS_EXAMPLE,
+                "product": "osparc",
                 "created": "2023-01-11 13:11:47.293595",
             }
         }
@@ -32,8 +40,7 @@ class ApiInvitationContentAndLink(ApiInvitationContent):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                **_INPUTS_EXAMPLE,
-                "created": "2023-01-11 12:11:47.293595",
+                **ApiInvitationContent.Config.schema_extra["example"],
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
         }
