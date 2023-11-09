@@ -306,7 +306,7 @@ async def upload_path(
     :raises exceptions.NodeportsException
     :return: stored id, S3 entity_tag
     """
-    async for attempt in AsyncRetrying(  # noqa: RET503
+    async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_random_exponential(),
         stop=stop_after_attempt(
@@ -317,7 +317,7 @@ async def upload_path(
         after=after_log(_logger, log_level=logging.ERROR),
     ):
         with attempt:
-            return await _upload_path(
+            result = await _upload_path(
                 user_id=user_id,
                 store_id=store_id,
                 store_name=store_name,
@@ -329,6 +329,7 @@ async def upload_path(
                 progress_bar=progress_bar,
                 exclude_patterns=exclude_patterns,
             )
+    return result
 
 
 async def _upload_path(
