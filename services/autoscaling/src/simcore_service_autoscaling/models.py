@@ -59,6 +59,7 @@ class EC2InstanceData:
     aws_private_dns: InstancePrivateDNSName
     type: InstanceTypeType
     state: InstanceStateNameType
+    resources: Resources
 
 
 @dataclass(frozen=True)
