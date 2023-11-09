@@ -21,51 +21,57 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
     """
 
     @abstractmethod
-    async def is_present(self, identifier: T) -> bool:
+    async def is_present(self, identifier: T, **extra_kwargs) -> bool:
         """Checks if a resource exists
 
         Arguments:
             identifier -- user chosen identifier for the resource
+            **extra_kwargs -- can be overloaded by the user
 
         Returns:
             True if the resource exists otherwise False
         """
 
     @abstractmethod
-    async def create(self, **kwargs) -> T:
+    async def create(self, **extra_kwargs) -> T:
         """Used for creating the resources
 
         Arguments:
-            **kwargs -- overloaded with required arguments to create the resource
+            **extra_kwargs -- can be overloaded by the user
 
         Returns:
             user chosen identifier for the resource
         """
 
     @abstractmethod
-    async def destroy(self, identifier: T) -> None:
+    async def destroy(self, identifier: T, **extra_kwargs) -> None:
         """Used to destroy an existing resource
 
         Usually ``is_present`` will be called before attempting a removal.
 
         Arguments:
             identifier -- user chosen identifier for the resource
+            **extra_kwargs -- can be overloaded by the user
         """
 
-    async def safe_remove(self, identifier: T) -> bool:
+    async def safe_remove(self, identifier: T, **extra_kwargs) -> bool:
         """Removes the resource if is present.
         Logs errors, without re-raising.
 
         Arguments:
             identifier -- user chosen identifier for the resource
+            **extra_kwargs -- can be overloaded by the user
 
         Returns:
             True if the resource was removed successfully otherwise false
         """
-        if await self.is_present(identifier):
-            with log_context(
-                _logger, logging.WARNING, f"Removing {identifier}"
-            ), log_catch(_logger, reraise=False):
-                await self.destroy(identifier)
-                return True
-        return False
+        is_present = await self.is_present(identifier, **extra_kwargs)
+        if not is_present:
+            return False
+
+        with log_context(_logger, logging.WARNING, f"Removing {identifier}"), log_catch(
+            _logger, reraise=False
+        ):
+            await self.destroy(identifier, **extra_kwargs)
+
+        return await self.is_present(identifier, **extra_kwargs) is False

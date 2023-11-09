@@ -36,17 +36,15 @@ class RandomTextAPI:
 # NOTE: note that the generic uses `UserDefinedID` which enforces typing constraints
 # on the overloaded abstract methods
 class RandomTextResoruceManager(BaseOsparcGenericResourceManager[UserDefinedID]):
+    # pylint:disable=arguments-differ
+
     def __init__(self) -> None:
         self._api = RandomTextAPI()
 
     async def is_present(self, identifier: UserDefinedID) -> bool:
         return self._api.already_exists(identifier)
 
-    # NOTE: pylint will complain but this is the way to go
-    #  in order to have typed resource creation methods
-    async def create(
-        self, length: int
-    ) -> UserDefinedID:  # pylint:disable=arguments-differ
+    async def create(self, length: int) -> UserDefinedID:
         return self._api.create(length)
 
     async def destroy(self, identifier: UserDefinedID) -> None:
