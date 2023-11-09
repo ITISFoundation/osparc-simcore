@@ -114,7 +114,7 @@ def _create_invitation_code(
 #
 
 
-def create_invitation_link(
+def create_invitation_link_and_content(
     invitation_data: InvitationInputs,
     secret_key: bytes,
     base_url: HttpUrl,

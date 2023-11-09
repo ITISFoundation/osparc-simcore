@@ -19,7 +19,7 @@ from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .services.invitations import (
     InvalidInvitationCodeError,
-    create_invitation_link,
+    create_invitation_link_and_content,
     extract_invitation_code_from,
     extract_invitation_content,
 )
@@ -123,7 +123,7 @@ def invite(
         product=product,
     )
 
-    invitation_link, _ = create_invitation_link(
+    invitation_link, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,
