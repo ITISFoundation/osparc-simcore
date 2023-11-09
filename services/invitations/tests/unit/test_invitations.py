@@ -66,21 +66,20 @@ def test_create_and_decrypt_invitation(
     secret_key: str,
     default_product: ProductName,
 ):
-    invitation_link = create_invitation_link(
+    invitation_link, _ = create_invitation_link(
         invitation_data,
         secret_key=secret_key.encode(),
         base_url=faker.url(),
         default_product=default_product,
     )
-
-    print(invitation_link)
-
+    assert invitation_link.fragment
     query_params = dict(parse.parse_qsl(URL(invitation_link.fragment).query))
 
     # will raise TokenError or ValidationError
     invitation = decrypt_invitation(
         invitation_code=query_params["invitation"],
         secret_key=secret_key.encode(),
+        default_product=default_product,
     )
 
     assert isinstance(invitation, InvitationContent)
@@ -100,9 +99,9 @@ def test_create_and_decrypt_invitation(
 def invitation_code(
     invitation_data: InvitationInputs, secret_key: str, default_product: ProductName
 ) -> str:
-    return _create_invitation_code(
-        invitation_data, secret_key=secret_key.encode(), default_product=default_product
-    ).decode()
+    content = InvitationContent.create_from_inputs(invitation_data, default_product)
+    code = _create_invitation_code(content, secret_key.encode())
+    return code.decode()
 
 
 def test_valid_invitation_code(
@@ -114,6 +113,7 @@ def test_valid_invitation_code(
     invitation = decrypt_invitation(
         invitation_code=invitation_code,
         secret_key=secret_key.encode(),
+        default_product=default_product,
     )
 
     expected = invitation_data.dict(exclude_none=True)
@@ -121,7 +121,11 @@ def test_valid_invitation_code(
     assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
 
 
-def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
+def test_invalid_invitation_encoding(
+    secret_key: str,
+    invitation_code: str,
+    default_product: ProductName,
+):
     my_invitation_code = invitation_code[:-1]  # strip last (wrong code!)
     my_secret_key = secret_key.encode()
 
@@ -129,6 +133,7 @@ def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
         decrypt_invitation(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
     assert f"{error_info.value}" == "Incorrect padding"
@@ -137,10 +142,15 @@ def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
 
-def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str):
+def test_invalid_invitation_secret(
+    another_secret_key: str,
+    invitation_code: str,
+    default_product: ProductName,
+):
     my_invitation_code = invitation_code
     my_secret_key = another_secret_key.encode()
 
@@ -148,33 +158,37 @@ def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str
         decrypt_invitation(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
     with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
 
-def test_invalid_invitation_data(secret_key: str):
+def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
     # encrypts contents
-    class OtherData(BaseModel):
+    class OtherModel(BaseModel):
         foo: int = 123
 
-    my_secret_key = secret_key.encode()
-    my_invitation_code = _fernet_encrypt_as_urlsafe_code(
-        data=OtherData().json().encode(), secret_key=my_secret_key
+    secret = secret_key.encode()
+    other_code = _fernet_encrypt_as_urlsafe_code(
+        data=OtherModel().json().encode(), secret_key=secret
     )
 
     with pytest.raises(ValidationError):
         decrypt_invitation(
-            invitation_code=my_invitation_code,
-            secret_key=my_secret_key,
+            invitation_code=other_code.decode(),
+            secret_key=secret,
+            default_product=default_product,
         )
 
     with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
-            invitation_code=my_invitation_code,
-            secret_key=my_secret_key,
+            invitation_code=other_code.decode(),
+            secret_key=secret,
+            default_product=default_product,
         )

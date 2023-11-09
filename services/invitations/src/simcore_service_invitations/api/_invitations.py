@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -42,16 +41,15 @@ async def create_invitation(
 ):
     """Generates a new invitation code and returns its content and an invitation link"""
 
-    invitation_link = create_invitation_link(
+    invitation_link, invitation_content = create_invitation_link(
         invitation_inputs,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
     invitation = ApiInvitationContentAndLink(
+        **invitation_content.dict(),
         invitation_url=invitation_link,
-        created=datetime.now(tz=timezone.utc),
-        **invitation_inputs.dict(),
     )
 
     _logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
@@ -77,6 +75,7 @@ async def extracts_invitation_from_code(
         invitation = extract_invitation_content(
             invitation_code=extract_invitation_code_from(encrypted.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+            default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )
     except InvalidInvitationCodeError as err:
         raise HTTPException(
