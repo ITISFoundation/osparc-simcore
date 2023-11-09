@@ -30,8 +30,7 @@ class InvitationInputs(BaseModel):
     )
     product: ProductName | None = Field(
         default=None,
-        description="This invitations can only be used for this product."
-        "If None, it will use INVITATIONS_DEFAULT_PRODUCT",
+        description="If None, it will use INVITATIONS_DEFAULT_PRODUCT",
     )
 
     @validator("issuer", pre=True)

@@ -77,6 +77,7 @@ async def extracts_invitation_from_code(
         invitation = extract_invitation_content(
             invitation_code=extract_invitation_code_from(encrypted.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+            default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )
     except InvalidInvitationCodeError as err:
         raise HTTPException(

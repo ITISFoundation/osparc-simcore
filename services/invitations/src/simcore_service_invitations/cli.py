@@ -142,7 +142,9 @@ def extract(ctx: typer.Context, invitation_url: str):
                 parse_obj_as(HttpUrl, invitation_url)
             ),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+            default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )
+        assert invitation.product is not None  # nosec
 
         print(invitation.json(indent=1))  # noqa: T201
 
