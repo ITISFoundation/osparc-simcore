@@ -22,7 +22,7 @@ from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
-from simcore_sdk.node_ports_common.exceptions import AWSS3400RequestTimeOutError
+from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeoutError
 from simcore_sdk.node_ports_common.file_io_utils import (
     ExtendedClientResponseError,
     _check_for_aws_http_errors,
@@ -110,11 +110,11 @@ async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out
 
     mocker.patch(
         "simcore_sdk.node_ports_common.file_io_utils._upload_file_part",
-        side_effect=AWSS3400RequestTimeOutError(body="nothing"),
+        side_effect=AwsS3BadRequestRequestTimeoutError(body="nothing"),
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        with pytest.raises(AWSS3400RequestTimeOutError):
+        with pytest.raises(AwsS3BadRequestRequestTimeoutError):
             await upload_file_to_presigned_links(
                 session=AsyncMock(),
                 file_upload_links=upload_links,

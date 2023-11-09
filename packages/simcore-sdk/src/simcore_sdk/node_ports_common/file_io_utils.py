@@ -352,7 +352,7 @@ async def _process_batch(
             results.append(UploadedPart(number=i + 1, e_tag=e_tag))
     except ExtendedClientResponseError as e:
         if e.status == web.HTTPBadRequest.status_code and "RequestTimeout" in e.body:
-            raise exceptions.AWSS3400RequestTimeOutError(e.body) from e
+            raise exceptions.AwsS3BadRequestRequestTimeoutError(e.body) from e
     except ClientError as exc:
         msg = (
             f"Could not upload file {file_name} ({file_size=}, "

@@ -72,7 +72,7 @@ class S3TransferError(NodeportsException):
         super().__init__(msg or "Error while transferring to/from S3 storage")
 
 
-class AWSS3400RequestTimeOutError(NodeportsException):
+class AwsS3BadRequestRequestTimeoutError(NodeportsException):
     """Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
     reason in the body will be received. For details regarding the error
     see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html

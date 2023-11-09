@@ -296,7 +296,7 @@ async def upload_path(
         stop=stop_after_attempt(
             NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
         ),
-        retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
+        retry=retry_if_exception_type(exceptions.AwsS3BadRequestRequestTimeoutError),
         before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
         after=after_log(_logger, log_level=logging.ERROR),
     ):
