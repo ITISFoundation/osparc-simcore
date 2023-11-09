@@ -371,6 +371,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
                     "type": faker.pystr(),
                     "state": faker.pystr(),
                     "tags": faker.pydict(allowed_types=(str,)),
+                    "resources": {"cpus": 4.0, "ram": 1024 * 1024},
                 }
                 | overrides
             )

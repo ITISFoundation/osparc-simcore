@@ -43,7 +43,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
-from simcore_service_autoscaling.models import Cluster, DaskTaskResources
+from simcore_service_autoscaling.models import Cluster, DaskTaskResources, Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry
@@ -687,6 +687,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
                     "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
                     "type": faker.pystr(),
                     "state": faker.pystr(),
+                    "resources": Resources(cpus=4.0, ram=ByteSize(1024 * 1024)),
                 }
                 | overrides
             )

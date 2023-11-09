@@ -44,7 +44,7 @@ class Resources(BaseModel):
 
 @dataclass(frozen=True)
 class EC2InstanceType:
-    name: str
+    name: InstanceTypeType
     cpus: PositiveInt
     ram: ByteSize
 

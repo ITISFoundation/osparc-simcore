@@ -6,6 +6,7 @@ from typing import cast
 import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
+from aiocache import cached
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
@@ -63,6 +64,7 @@ class AutoscalingEC2:
         except Exception:  # pylint: disable=broad-except
             return False
 
+    @cached(noself=True)
     async def get_ec2_instance_capabilities(
         self,
         instance_type_names: set[InstanceTypeType],
@@ -193,6 +195,10 @@ class AutoscalingEC2:
                 assert "InstanceType" in instance  # nosec
                 assert "State" in instance  # nosec
                 assert "Name" in instance["State"]  # nosec
+                ec2_instance_types = await self.get_ec2_instance_capabilities(
+                    {instance["InstanceType"]}
+                )
+                assert len(ec2_instance_types) == 1  # nosec
                 all_instances.append(
                     EC2InstanceData(
                         launch_time=instance["LaunchTime"],
@@ -200,6 +206,10 @@ class AutoscalingEC2:
                         aws_private_dns=instance["PrivateDnsName"],
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
+                        resources=Resources(
+                            cpus=ec2_instance_types[0].cpus,
+                            ram=ec2_instance_types[0].ram,
+                        ),
                     )
                 )
         logger.debug("received: %s", f"{all_instances=}")

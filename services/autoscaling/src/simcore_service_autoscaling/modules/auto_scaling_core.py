@@ -13,7 +13,6 @@ from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
 )
-from pydantic import parse_obj_as
 from servicelib.logging_utils import log_catch
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -407,12 +406,12 @@ async def _start_instances(
         *[
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
-                instance_type=parse_obj_as(InstanceTypeType, instance.name),
+                instance_type=instance_type,
                 tags=instance_tags,
                 startup_script=instance_startup_script,
                 number_of_instances=instance_num,
             )
-            for instance, instance_num in needed_instances.items()
+            for instance_type, instance_num in needed_instances.items()
         ],
         return_exceptions=True,
     )

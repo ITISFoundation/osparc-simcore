@@ -140,9 +140,7 @@ async def test_try_assigning_task_to_pending_instances_with_no_instances(
 ):
     task = fake_task()
     assert (
-        await try_assigning_task_to_instances(
-            fake_app, task, [], {}, notify_progress=True
-        )
+        await try_assigning_task_to_instances(fake_app, task, [], notify_progress=True)
         is False
     )
 
@@ -157,18 +155,13 @@ async def test_try_assigning_task_to_pending_instances(
     pending_instance_to_tasks: list[tuple[EC2InstanceData, list[DaskTask]]] = [
         (ec2_instance, [])
     ]
-    type_to_instance_map = {
-        ec2_instance.type: EC2InstanceType(
-            name=ec2_instance.type, cpus=4, ram=ByteSize(1024 * 1024)
-        )
-    }
+
     # calling once should allow to add that task to the instance
     assert (
         await try_assigning_task_to_instances(
             fake_app,
             task,
             pending_instance_to_tasks,
-            type_to_instance_map,
             notify_progress=True,
         )
         is True
@@ -180,7 +173,6 @@ async def test_try_assigning_task_to_pending_instances(
             fake_app,
             task,
             pending_instance_to_tasks,
-            type_to_instance_map,
             notify_progress=True,
         )
         is True
@@ -192,7 +184,6 @@ async def test_try_assigning_task_to_pending_instances(
             fake_app,
             task,
             pending_instance_to_tasks,
-            type_to_instance_map,
             notify_progress=True,
         )
         is False
