@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import aiofiles
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession
 from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
@@ -33,7 +33,6 @@ from ..node_ports_common.client_session_manager import ClientSessionContextManag
 from . import exceptions, r_clone, storage_client
 from ._filemanager import _abort_upload, _complete_upload, _resolve_location_id
 from .file_io_utils import (
-    ExtendedClientResponseError,
     LogRedirectCB,
     UploadableFileObject,
     download_link_to_file,
@@ -267,21 +266,6 @@ async def _generate_checksum(
     elif isinstance(path_to_upload, UploadableFileObject):
         checksum = path_to_upload.sha256_checksum
     return checksum
-
-
-def _check_for_400_request_timeout(exc: BaseException) -> bool:
-    """returns: True if it should retry when http exception is detected"""
-    if not isinstance(exc, ExtendedClientResponseError):
-        return False
-
-    # Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
-    # reason in the body will be received. This also needs retrying,
-    # for more information see:
-    # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
-    if exc.status == web.HTTPBadRequest.status_code and "RequestTimeout" in exc.body:
-        return True
-
-    return False
 
 
 async def upload_path(
