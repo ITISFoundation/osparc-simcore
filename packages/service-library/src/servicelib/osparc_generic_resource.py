@@ -70,7 +70,7 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
             return False
 
         with log_context(
-            _logger, logging.WARNING, f"{self.__class__}: removing {identifier}"
+            _logger, logging.DEBUG, f"{self.__class__}: removing {identifier}"
         ), log_catch(_logger, reraise=False):
             await self.destroy(identifier, **extra_kwargs)
 
