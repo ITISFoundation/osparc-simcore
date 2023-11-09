@@ -122,7 +122,6 @@ def invite(
 
     invitation_link = create_invitation_link(
         invitation_data=invitation_data,
-        product=settings.INVITATIONS_DEFAULT_PRODUCT,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,

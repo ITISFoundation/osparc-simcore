@@ -45,11 +45,6 @@ class InvitationInputs(BaseModel):
 class InvitationContent(InvitationInputs):
     """Data in an invitation"""
 
-    product: str | None = Field(
-        None,
-        description="This invitations can only be used for this product."
-        "If None, it will use INVITATIONS_DEFAULT_PRODUCT",
-    )
     # avoid using default to mark exactly the time
     created: datetime = Field(..., description="Timestamp for creation")
 
