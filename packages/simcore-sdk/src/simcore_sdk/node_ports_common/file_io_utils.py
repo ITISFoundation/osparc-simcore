@@ -242,13 +242,6 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     ):
         return True
 
-    # Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
-    # reason in the body will be received. This also needs retrying,
-    # for more information see:
-    # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
-    if exc.status == web.HTTPBadRequest.status_code and "RequestTimeout" in exc.body:
-        return True
-
     return False
 
 
@@ -327,25 +320,6 @@ async def _upload_file_part(
     raise exceptions.S3TransferError(msg)
 
 
-def _get_file_size_and_name(
-    file_to_upload: Path | UploadableFileObject,
-) -> tuple[int, str]:
-    if isinstance(file_to_upload, Path):
-        file_size = file_to_upload.stat().st_size
-        file_name = file_to_upload.as_posix()
-    else:
-        file_size = file_to_upload.file_size
-        file_name = file_to_upload.file_name
-
-    return file_size, file_name
-
-
-def _get_max_concurrency(file_to_upload: Path | UploadableFileObject) -> int:
-    # NOTE: when the file object is already created it cannot be duplicated so
-    # no concurrency is allowed in that case
-    return 4 if isinstance(file_to_upload, Path) else 1
-
-
 async def _process_batch(
     *,
     upload_tasks: list[Coroutine],
@@ -385,10 +359,16 @@ async def upload_file_to_presigned_links(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> list[UploadedPart]:
-    file_size: int
-    file_name: str
-    file_size, file_name = _get_file_size_and_name(file_to_upload)
-    max_concurrency: int = _get_max_concurrency(file_to_upload)
+    if isinstance(file_to_upload, Path):
+        file_size = file_to_upload.stat().st_size
+        file_name = file_to_upload.as_posix()
+    else:
+        file_size = file_to_upload.file_size
+        file_name = file_to_upload.file_name
+
+    # NOTE: when the file object is already created it cannot be duplicated so
+    # no concurrency is allowed in that case
+    max_concurrency: int = 4 if isinstance(file_to_upload, Path) else 1
 
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls: int = len(file_upload_links.urls)
