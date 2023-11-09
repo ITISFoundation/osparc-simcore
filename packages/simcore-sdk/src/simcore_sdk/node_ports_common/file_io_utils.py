@@ -320,6 +320,19 @@ async def _upload_file_part(
     raise exceptions.S3TransferError(msg)
 
 
+def _get_file_size_and_name(
+    file_to_upload: Path | UploadableFileObject,
+) -> tuple[int, str]:
+    if isinstance(file_to_upload, Path):
+        file_size = file_to_upload.stat().st_size
+        file_name = file_to_upload.as_posix()
+    else:
+        file_size = file_to_upload.file_size
+        file_name = file_to_upload.file_name
+
+    return file_size, file_name
+
+
 async def _process_batch(
     *,
     upload_tasks: list[Coroutine],
@@ -359,12 +372,7 @@ async def upload_file_to_presigned_links(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> list[UploadedPart]:
-    if isinstance(file_to_upload, Path):
-        file_size = file_to_upload.stat().st_size
-        file_name = file_to_upload.as_posix()
-    else:
-        file_size = file_to_upload.file_size
-        file_name = file_to_upload.file_name
+    file_size, file_name = _get_file_size_and_name(file_to_upload)
 
     # NOTE: when the file object is already created it cannot be duplicated so
     # no concurrency is allowed in that case
