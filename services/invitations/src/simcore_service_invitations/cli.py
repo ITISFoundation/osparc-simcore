@@ -26,8 +26,7 @@ from .services.invitations import (
 )
 
 _logger = logging.getLogger(__name__)
-
-err_console = Console(stderr=True)
+_err_console = Console(stderr=True)
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:main'
 main = typer.Typer(name=PROJECT_NAME)
@@ -108,6 +107,10 @@ def invite(
         None,
         help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
     ),
+    product: str = typer.Option(
+        None,
+        help=InvitationInputs.__fields__["product"].field_info.description,
+    ),
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
@@ -118,6 +121,7 @@ def invite(
         guest=email,
         trial_account_days=trial_account_days,
         extra_credits_in_usd=None,
+        product=product,
     )
 
     invitation_link, _ = create_invitation_link(
@@ -149,7 +153,7 @@ def extract(ctx: typer.Context, invitation_url: str):
         print(invitation.json(indent=1))  # noqa: T201
 
     except (InvalidInvitationCodeError, ValidationError):
-        err_console.print("[bold red]Invalid code[/bold red]")
+        _err_console.print("[bold red]Invalid code[/bold red]")
 
 
 @main.command()
