@@ -299,6 +299,11 @@ async def _find_needed_instances(
         )
 
         # try to assign the task to one of the active, pending or net created instances
+        _logger.debug(
+            "Try to assign %s to any active/pending/created instance in the %s",
+            f"{task}",
+            f"{cluster=}",
+        )
         if (
             await auto_scaling_mode.try_assigning_task_to_instances(
                 app,
