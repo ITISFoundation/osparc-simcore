@@ -30,9 +30,14 @@ def app_environment(
     env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    envs_plugins = setenvs_from_dict(
+    monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
+    app_environment.pop("WEBSERVER_INVITATIONS", None)
+
+    envs = setenvs_from_dict(
         monkeypatch,
         {
+            **app_environment,
+            # disable
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
@@ -48,25 +53,17 @@ def app_environment(
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
-        },
-    )
-
-    # undefine WEBSERVER_INVITATIONS
-    app_environment.pop("WEBSERVER_INVITATIONS", None)
-    monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
-
-    # set INVITATIONS_* variables using those in .devel-env
-    envs_invitations = setenvs_from_dict(
-        monkeypatch,
-        envs={
-            name: value
-            for name, value in env_devel_dict.items()
-            if name.startswith("INVITATIONS_")
+            # set INVITATIONS_* variables using those in .devel-env
+            **{
+                key: value
+                for key, value in env_devel_dict.items()
+                if key.startswith("INVITATIONS_")
+            },
         },
     )
 
     print(ApplicationSettings.create_from_envs().json(indent=2))
-    return app_environment | envs_plugins | envs_invitations
+    return envs
 
 
 async def test_invitation_service_unavailable(
