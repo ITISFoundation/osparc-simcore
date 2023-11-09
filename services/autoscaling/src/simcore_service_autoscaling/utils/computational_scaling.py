@@ -78,7 +78,10 @@ async def try_assigning_task_to_instances(
         tasks_needed_resources = _compute_tasks_needed_resources(
             instance_assigned_tasks
         )
+        _logger.debug("%s", f"{instance_total_resources=}")
         _logger.debug("%s", f"{tasks_needed_resources=}")
+        _logger.debug("%s", f"{get_max_resources_from_dask_task(pending_task)=}")
+        _logger.debug("%s", f"{instance_total_resources - tasks_needed_resources}")
         if (
             instance_total_resources - tasks_needed_resources
         ) >= get_max_resources_from_dask_task(pending_task):
