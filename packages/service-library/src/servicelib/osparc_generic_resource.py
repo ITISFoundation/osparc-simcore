@@ -74,4 +74,7 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
         ):
             await self.destroy(identifier, **extra_kwargs)
 
-        return await self.is_present(identifier, **extra_kwargs) is False
+        was_removed = await self.is_present(identifier, **extra_kwargs) is False
+        if not was_removed:
+            _logger.warning("Resource %s could not be removed", identifier)
+        return was_removed
