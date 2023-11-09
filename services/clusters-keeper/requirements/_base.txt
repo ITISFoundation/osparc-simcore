@@ -11,9 +11,7 @@ aio-pika==9.3.0
 aioboto3==12.0.0
     # via -r requirements/_base.in
 aiobotocore==2.7.0
-    # via
-    #   aioboto3
-    #   aiobotocore
+    # via aioboto3
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -155,7 +153,6 @@ httpx==0.25.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   respx
 idna==3.4
     # via
     #   anyio
@@ -297,8 +294,6 @@ referencing==0.29.3
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-respx==0.20.2
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 rich==13.6.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
