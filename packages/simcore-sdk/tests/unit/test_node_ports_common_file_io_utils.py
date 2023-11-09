@@ -95,7 +95,9 @@ async def test_check_for_aws_http_errors(
         try:
             await _raise_for_status(resp)
         except ExtendedClientResponseError as exception:
-            assert _check_for_aws_http_errors(exception) is test_params.will_retry
+            assert (
+                _check_for_aws_http_errors(exception) is test_params.will_retry
+            )  # noqa: PT017
 
 
 async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out_error(

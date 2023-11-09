@@ -306,6 +306,44 @@ async def upload_path(
     :raises exceptions.NodeportsException
     :return: stored id, S3 entity_tag
     """
+    async for attempt in AsyncRetrying(  # noqa: RET503
+        reraise=True,
+        wait=wait_random_exponential(),
+        stop=stop_after_attempt(
+            NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
+        ),
+        retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
+        before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+        after=after_log(_logger, log_level=logging.ERROR),
+    ):
+        with attempt:
+            return await _upload_path(
+                user_id=user_id,
+                store_id=store_id,
+                store_name=store_name,
+                s3_object=s3_object,
+                path_to_upload=path_to_upload,
+                io_log_redirect_cb=io_log_redirect_cb,
+                client_session=client_session,
+                r_clone_settings=r_clone_settings,
+                progress_bar=progress_bar,
+                exclude_patterns=exclude_patterns,
+            )
+
+
+async def _upload_path(
+    *,
+    user_id: UserID,
+    store_id: LocationID | None,
+    store_name: LocationName | None,
+    s3_object: StorageFileID,
+    path_to_upload: Path | UploadableFileObject,
+    io_log_redirect_cb: LogRedirectCB | None,
+    client_session: ClientSession | None,
+    r_clone_settings: RCloneSettings | None,
+    progress_bar: ProgressBarData | None,
+    exclude_patterns: set[str] | None,
+) -> UploadedFile | UploadedFolder:
     _logger.debug(
         "Uploading %s to %s:%s@%s",
         f"{path_to_upload=}",
@@ -331,31 +369,20 @@ async def upload_path(
     async with ClientSessionContextManager(client_session) as session:
         upload_links: FileUploadSchema | None = None
         try:
-            async for attempt in AsyncRetrying(
-                reraise=True,
-                wait=wait_random_exponential(),
-                stop=stop_after_attempt(
-                    NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
-                ),
-                retry=retry_if_exception_type(exceptions.AWSS3400RequestTimeOutError),
-                before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
-                after=after_log(_logger, log_level=logging.ERROR),
-            ):
-                with attempt:
-                    store_id, e_tag, upload_links = await _upload_to_s3(
-                        user_id=user_id,
-                        store_id=store_id,
-                        store_name=store_name,
-                        s3_object=s3_object,
-                        path_to_upload=path_to_upload,
-                        io_log_redirect_cb=io_log_redirect_cb,
-                        r_clone_settings=r_clone_settings,
-                        progress_bar=progress_bar,
-                        is_directory=is_directory,
-                        session=session,
-                        exclude_patterns=exclude_patterns,
-                        sha256_checksum=checksum,
-                    )
+            store_id, e_tag, upload_links = await _upload_to_s3(
+                user_id=user_id,
+                store_id=store_id,
+                store_name=store_name,
+                s3_object=s3_object,
+                path_to_upload=path_to_upload,
+                io_log_redirect_cb=io_log_redirect_cb,
+                r_clone_settings=r_clone_settings,
+                progress_bar=progress_bar,
+                is_directory=is_directory,
+                session=session,
+                exclude_patterns=exclude_patterns,
+                sha256_checksum=checksum,
+            )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
