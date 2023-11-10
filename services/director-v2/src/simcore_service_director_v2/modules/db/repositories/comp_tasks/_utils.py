@@ -34,7 +34,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -231,7 +231,9 @@ async def _get_pricing_and_hardware_infos(
     return pricing_info, hardware_info
 
 
-_RAM_SAFE_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "1GiB")
+_RAM_SAFE_MARGIN_RATIO: Final[
+    float
+] = 0.1  # NOTE: machines always have less available RAM than advertised
 _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
@@ -280,7 +282,10 @@ async def _update_project_node_resources_from_hardware_info(
                 float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
             )
             image_resources.resources["RAM"].set_value(
-                selected_ec2_instance_type.ram - _RAM_SAFE_MARGIN
+                int(
+                    selected_ec2_instance_type.ram
+                    - _RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+                )
             )
 
             await project_nodes_repo.update(
