@@ -312,7 +312,6 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
     return _do
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
