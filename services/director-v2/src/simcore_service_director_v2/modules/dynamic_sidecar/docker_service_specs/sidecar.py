@@ -109,6 +109,7 @@ def _get_environment_variables(
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
+        "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
     }
 
 
