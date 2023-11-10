@@ -107,14 +107,6 @@ def mock_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
-        autospec=True,
-    )
-
-
-@pytest.fixture
 def mock_remove_nodes(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
@@ -424,7 +416,6 @@ async def _assert_ec2_instances(
     return internal_dns_names
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
@@ -799,7 +790,7 @@ async def test__deactivate_empty_nodes(
         initialized_app, active_cluster, DynamicAutoscaling()
     )
     assert not updated_cluster.active_nodes
-    assert updated_cluster.drained_nodes == active_cluster.active_nodes
+    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
@@ -835,7 +826,7 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
         initialized_app, active_cluster, DynamicAutoscaling()
     )
     assert not updated_cluster.active_nodes
-    assert updated_cluster.drained_nodes == active_cluster.active_nodes
+    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )

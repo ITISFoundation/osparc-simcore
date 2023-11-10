@@ -5,7 +5,7 @@ from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, Any, Final, Protocol, runtime_checkable
+from typing import IO, Any, Coroutine, Final, Protocol, runtime_checkable
 
 import aiofiles
 from aiohttp import (
@@ -242,13 +242,6 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     ):
         return True
 
-    # Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
-    # reason in the body will be received. This also needs retrying,
-    # for more information see:
-    # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
-    if exc.status == web.HTTPBadRequest.status_code and "RequestTimeout" in exc.body:
-        return True
-
     return False
 
 
@@ -327,6 +320,49 @@ async def _upload_file_part(
     raise exceptions.S3TransferError(msg)
 
 
+def _get_file_size_and_name(
+    file_to_upload: Path | UploadableFileObject,
+) -> tuple[int, str]:
+    if isinstance(file_to_upload, Path):
+        file_size = file_to_upload.stat().st_size
+        file_name = file_to_upload.as_posix()
+    else:
+        file_size = file_to_upload.file_size
+        file_name = file_to_upload.file_name
+
+    return file_size, file_name
+
+
+async def _process_batch(
+    *,
+    upload_tasks: list[Coroutine],
+    max_concurrency: int,
+    file_name: str,
+    file_size: int,
+    file_chunk_size: int,
+    last_chunk_size: int,
+) -> list[UploadedPart]:
+    results: list[UploadedPart] = []
+    try:
+        upload_results = await logged_gather(
+            *upload_tasks, log=_logger, max_concurrency=max_concurrency
+        )
+
+        for i, e_tag in upload_results:
+            results.append(UploadedPart(number=i + 1, e_tag=e_tag))
+    except ExtendedClientResponseError as e:
+        if e.status == web.HTTPBadRequest.status_code and "RequestTimeout" in e.body:
+            raise exceptions.AwsS3BadRequestRequestTimeoutError(e.body) from e
+    except ClientError as exc:
+        msg = (
+            f"Could not upload file {file_name} ({file_size=}, "
+            f"{file_chunk_size=}, {last_chunk_size=}):{exc}"
+        )
+        raise exceptions.S3TransferError(msg) from exc
+
+    return results
+
+
 async def upload_file_to_presigned_links(
     session: ClientSession,
     file_upload_links: FileUploadSchema,
@@ -336,22 +372,15 @@ async def upload_file_to_presigned_links(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> list[UploadedPart]:
-    file_size = 0
-    file_name = ""
-    if isinstance(file_to_upload, Path):
-        file_size = file_to_upload.stat().st_size
-        file_name = file_to_upload.as_posix()
-    else:
-        file_size = file_to_upload.file_size
-        file_name = file_to_upload.file_name
+    file_size, file_name = _get_file_size_and_name(file_to_upload)
 
     # NOTE: when the file object is already created it cannot be duplicated so
     # no concurrency is allowed in that case
-    max_concurrency = 4 if isinstance(file_to_upload, Path) else 1
+    max_concurrency: int = 4 if isinstance(file_to_upload, Path) else 1
 
     file_chunk_size = int(file_upload_links.chunk_size)
-    num_urls = len(file_upload_links.urls)
-    last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
+    num_urls: int = len(file_upload_links.urls)
+    last_chunk_size: int = file_size - file_chunk_size * (num_urls - 1)
 
     results: list[UploadedPart] = []
     async with AsyncExitStack() as stack:
@@ -372,7 +401,7 @@ async def upload_file_to_presigned_links(
         for partition_of_indexed_urls in partition_gen(
             indexed_urls, slice_size=_CONCURRENT_MULTIPART_UPLOADS_COUNT
         ):
-            upload_tasks = []
+            upload_tasks: list[Coroutine] = []
             for index, upload_url in partition_of_indexed_urls:
                 this_file_chunk_size = (
                     file_chunk_size if (index + 1) < num_urls else last_chunk_size
@@ -391,19 +420,15 @@ async def upload_file_to_presigned_links(
                         progress_bar=sub_progress,
                     )
                 )
-            try:
-                upload_results = await logged_gather(
-                    *upload_tasks, log=_logger, max_concurrency=max_concurrency
+            results.extend(
+                await _process_batch(
+                    upload_tasks=upload_tasks,
+                    max_concurrency=max_concurrency,
+                    file_name=file_name,
+                    file_size=file_chunk_size,
+                    file_chunk_size=file_chunk_size,
+                    last_chunk_size=last_chunk_size,
                 )
-
-                for i, e_tag in upload_results:
-                    results.append(UploadedPart(number=i + 1, e_tag=e_tag))
-
-            except ClientError as exc:  # noqa: PERF203
-                msg = (
-                    f"Could not upload file {file_name} ({file_size=}, "
-                    f"{file_chunk_size=}, {last_chunk_size=}):{exc}"
-                )
-                raise exceptions.S3TransferError(msg) from exc
+            )
 
     return results
