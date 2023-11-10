@@ -90,7 +90,7 @@ async def test_check_for_aws_http_errors(
             )
 
 
-async def test_process_batch_emits_400_request_timeout(
+async def test_process_batch_captures_400_request_timeout_and_wraps_in_error(
     aioresponses_mocker: aioresponses, client_session: ClientSession
 ):
     async def _mock_upload_task() -> None:
