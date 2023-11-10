@@ -116,13 +116,13 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _createChildControlImpl: function(id) {
-      let layout;
       let control;
       switch (id) {
         case "header":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             anonymous: true,
             allowGrowX: true,
+            allowShrinkX: false,
             alignY: "middle",
             padding: this.self().PADDING
           });
@@ -131,9 +131,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "body":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             decorator: "main",
-            backgroundColor: "yellow",
-            height: 300,
-            allowGrowY: false
+            allowGrowY: true,
+            allowGrowX: true,
+            allowShrinkX: true,
+            paddingLeft: this.self().PADDING,
+            paddingRight: this.self().PADDING
           });
           this._mainLayout.add(control, this.self().POS.THUMBNAIL);
           break;
@@ -152,7 +154,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true
+            anonymous: true,
+            paddingLeft: this.self().PADDING,
+            paddingRight: this.self().PADDING
           });
           this._mainLayout.add(control, this.self().POS.SUBTITLE);
           break;
@@ -218,8 +222,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           "background-repeat": "no-repeat",
           "background-size": "cover", // auto width, 85% height
           "background-position": "center center",
-          "background-origin": "content-box",
-          "background-color": "pink"
+          "background-origin": "content-box"
         });
       }
     },

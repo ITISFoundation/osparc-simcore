@@ -125,13 +125,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           break;
         case "project-state":
-          control = new osparc.ui.basic.Thumbnail();
-          this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
+          const bodyLayout = this.getChildControl("body");
+          control = new qx.ui.basic.Label().set({
+            toolTipText: this.tr("Job Status"),
+            alignY: "bottom"
           });
+          bodyLayout.add(control);
           break;
         case "permission-icon":
           control = new qx.ui.basic.Image();

@@ -255,7 +255,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: ["STARTED", "SUCCESS", "FAILED", "UNKNOWN", "NOT_STARTED"],
       nullable: false,
       init: "UNKNOWN",
-      apply: "_applyProjectState"
+      apply: "__applyProjectState"
     },
 
     locked: {
@@ -348,7 +348,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         icon: resourceData.thumbnail || defaultThumbnail,
-        // backgroundImage: resourceData.thumbnail || defaultThumbnail,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
@@ -367,10 +366,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _applyIcon: function(value, old) {
       throw new Error("Abstract method called!");
     },
-
-    // _applyBackground: function(value, old) {
-    //   throw new Error("Abstract method called!");
-    // },
 
     _applyTitle: function(value, old) {
       throw new Error("Abstract method called!");
@@ -516,12 +511,36 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyProjectState: function(state) {
-      this.__enableCard(!state);
+    // _applyProjectState: function(state) {
+    //   this.__enableCard(!state);
+    //   this.getChildControl("project-state").set({
+    //     opacity: 1.0,
+    //     visibility: state ? "visible" : "excluded"
+    //   });
+    // },
+    __applyProjectState: function(state) {
+      let label;
+      const border = new qx.ui.decoration.Decorator().set({
+        width: 1,
+        style: "solid",
+        color: "black"
+      });
+      var w3 = new qx.ui.basic.Label(state).set({
+        backgroundColor: "blue",
+        decorator: border,
+        padding: 5
+      });
+      label = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      label.add(w3);
+      // this.__enableCard(!state);
       this.getChildControl("project-state").set({
         opacity: 1.0,
         visibility: state ? "visible" : "excluded"
       });
+      if (state) {
+        const projectStateLabel = this.getChildControl("project-state");
+        projectStateLabel.add(label);
+      }
     },
 
     _applyState: function(state) {
@@ -533,40 +552,41 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (projectState !== "UNKNOWN") {
         this.__showCardFromProjectState(state["state"]);
       }
-      this.setProjectState(projectState);
+      // this.setProjectState(projectState);
       this.setLocked(locked);
     },
 
     __showCardFromProjectState: function(projectStatus) {
+      debugger
       const status = projectStatus["value"];
-      let image = null;
+      let label = null
       switch (status) {
         case "STARTED":
-          image = "@FontAwesome5Solid/sync-alt/";
+          label = "Started";
           break;
         case "SUCCESS":
-          image = "@FontAwesome5Solid/flag-checkered/";
+          label = "Success";
           break;
         case "FAILED":
-          image = "@FontAwesome5Solid/exclamation/";
+          label = "Failed";
           break;
         default:
-          image = null;
+          label = null;
           break;
       }
-      this.__showProjectStateImage(image);
+      this.__applyProjectState(label);
     },
-
-    __showProjectStateImage: function(stateImageSrc) {
-      this.getChildControl("project-state").set({
-        opacity: 1.0,
-        visibility: "visible"
-      });
-      const stateImage = this.getChildControl("project-state").getChildControl("image");
-      stateImageSrc += this.classname.includes("Grid") ? "32" : "22";
-      stateImage.setSource(stateImageSrc);
-    },
-
+    //
+    // __showProjectStateImage: function(stateLabel) {
+    //   this.getChildControl("project-state").set({
+    //     opacity: 1.0,
+    //     visibility: "visible"
+    //   });
+    //   const stateImage = this.getChildControl("project-state");
+    //   stateLabel += this.classname.includes("Grid") ? "32" : "22";
+    //   stateImage.setSource(stateLabel);
+    // },
+    //
     __showBlockedCardFromStatus: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
