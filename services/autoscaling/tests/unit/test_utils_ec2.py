@@ -6,15 +6,14 @@
 import random
 
 import pytest
+from aws_library.ec2.models import EC2InstanceType, Resources
 from faker import Faker
 from pydantic import ByteSize
 from simcore_service_autoscaling.core.errors import (
     ConfigurationError,
     Ec2InstanceNotFoundError,
 )
-from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils.utils_ec2 import (
-    EC2InstanceType,
     closest_instance_policy,
     compose_user_data,
     find_best_fitting_ec2_instance,

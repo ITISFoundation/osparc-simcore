@@ -7,6 +7,7 @@ import logging
 from typing import cast
 
 import arrow
+from aws_library.ec2.models import EC2InstanceType, Resources
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -24,13 +25,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import ApplicationSettings, get_application_settings
-from ..models import (
-    AssociatedInstance,
-    Cluster,
-    EC2InstanceData,
-    EC2InstanceType,
-    Resources,
-)
+from ..models import AssociatedInstance, Cluster, EC2InstanceData
 from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,

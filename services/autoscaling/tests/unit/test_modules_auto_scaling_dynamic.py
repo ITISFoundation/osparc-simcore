@@ -16,6 +16,7 @@ from unittest import mock
 
 import aiodocker
 import pytest
+from aws_library.ec2.models import Resources
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import (
@@ -35,7 +36,7 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
-from simcore_service_autoscaling.models import AssociatedInstance, Cluster, Resources
+from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
     _activate_drained_nodes,
     _deactivate_empty_nodes,

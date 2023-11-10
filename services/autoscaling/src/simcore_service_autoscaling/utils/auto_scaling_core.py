@@ -3,12 +3,13 @@ import logging
 import re
 from typing import Final
 
+from aws_library.ec2.models import EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import AssociatedInstance, EC2InstanceData
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 

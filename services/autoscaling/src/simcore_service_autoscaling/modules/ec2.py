@@ -7,6 +7,7 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from aiocache import cached
+from aws_library.ec2.models import EC2InstanceType, Resources
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
@@ -25,7 +26,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings
-from ..models import EC2InstanceData, EC2InstanceType, Resources
+from ..models import EC2InstanceData
 from ..utils.utils_ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)

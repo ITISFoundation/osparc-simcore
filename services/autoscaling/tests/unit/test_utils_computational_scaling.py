@@ -8,6 +8,7 @@ from collections.abc import Callable
 from unittest import mock
 
 import pytest
+from aws_library.ec2.models import EC2InstanceType, Resources
 from faker import Faker
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import ByteSize, parse_obj_as
@@ -17,8 +18,6 @@ from simcore_service_autoscaling.models import (
     DaskTask,
     DaskTaskResources,
     EC2InstanceData,
-    EC2InstanceType,
-    Resources,
 )
 from simcore_service_autoscaling.utils.computational_scaling import (
     _DEFAULT_MAX_CPU,

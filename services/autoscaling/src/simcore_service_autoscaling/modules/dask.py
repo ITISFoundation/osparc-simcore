@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator, Coroutine
 from typing import Any, Final, TypeAlias
 
 import distributed
+from aws_library.ec2.models import Resources
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 
 from ..core.errors import (
@@ -17,7 +18,6 @@ from ..models import (
     DaskTaskId,
     DaskTaskResources,
     EC2InstanceData,
-    Resources,
 )
 from ..utils.auto_scaling_core import (
     node_host_name_from_ec2_private_dns,

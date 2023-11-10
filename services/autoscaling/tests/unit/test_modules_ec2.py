@@ -7,6 +7,7 @@ from typing import cast
 
 import botocore.exceptions
 import pytest
+from aws_library.ec2.models import EC2InstanceType
 from faker import Faker
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
@@ -18,7 +19,6 @@ from simcore_service_autoscaling.core.errors import (
     Ec2TooManyInstancesError,
 )
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
-from simcore_service_autoscaling.models import EC2InstanceType
 from simcore_service_autoscaling.modules.ec2 import (
     AutoscalingEC2,
     EC2InstanceData,
@@ -73,7 +73,7 @@ async def test_ec2_does_not_initialize_if_deactivated(
     initialized_app: FastAPI,
 ):
     assert hasattr(initialized_app.state, "ec2_client")
-    assert initialized_app.state.ec2_client == None
+    assert initialized_app.state.ec2_client is None
     with pytest.raises(ConfigurationError):
         get_ec2_client(initialized_app)
 

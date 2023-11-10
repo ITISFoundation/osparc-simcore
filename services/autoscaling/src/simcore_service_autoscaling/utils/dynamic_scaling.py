@@ -2,12 +2,13 @@ import datetime
 import logging
 from collections.abc import Iterable
 
+from aws_library.ec2.models import EC2InstanceType, Resources
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Task
 from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.settings import get_application_settings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import AssociatedInstance, EC2InstanceData
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
 

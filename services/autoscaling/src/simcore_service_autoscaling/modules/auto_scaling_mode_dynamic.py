@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 
+from aws_library.ec2.models import EC2InstanceType, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
@@ -7,7 +8,7 @@ from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import AssociatedInstance, EC2InstanceData
 from ..utils import dynamic_scaling as utils
 from ..utils import utils_docker, utils_ec2
 from ..utils.rabbitmq import log_tasks_message, progress_tasks_message

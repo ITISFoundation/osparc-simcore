@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Final, cast
 
 import yaml
+from aws_library.ec2.models import Resources
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
@@ -33,7 +34,7 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
-from ..models import EC2InstanceData, Resources
+from ..models import EC2InstanceData
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)

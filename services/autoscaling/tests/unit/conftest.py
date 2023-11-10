@@ -23,6 +23,7 @@ import requests
 import simcore_service_autoscaling
 from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
+from aws_library.ec2.models import Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -45,7 +46,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
-from simcore_service_autoscaling.models import Cluster, DaskTaskResources, Resources
+from simcore_service_autoscaling.models import Cluster, DaskTaskResources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry

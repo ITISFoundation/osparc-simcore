@@ -3,14 +3,15 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import aiodocker
 import pytest
+from aws_library.ec2.models import Resources
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
 from pydantic import ByteSize, ValidationError, parse_obj_as
-from simcore_service_autoscaling.models import Resources
 
 
 @pytest.mark.parametrize(

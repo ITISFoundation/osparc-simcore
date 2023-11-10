@@ -18,6 +18,7 @@ from unittest import mock
 
 import distributed
 import pytest
+from aws_library.ec2.models import Resources
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from faker import Faker
 from fastapi import FastAPI
@@ -34,7 +35,6 @@ from simcore_service_autoscaling.models import (
     AssociatedInstance,
     Cluster,
     EC2InstanceData,
-    Resources,
 )
 from simcore_service_autoscaling.modules.auto_scaling_core import (
     _deactivate_empty_nodes,

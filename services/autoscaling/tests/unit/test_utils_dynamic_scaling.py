@@ -8,11 +8,11 @@ from collections.abc import Callable
 from datetime import timedelta
 
 import pytest
+from aws_library.ec2.models import EC2InstanceType
 from faker import Faker
 from models_library.generated_models.docker_rest_api import Task
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
-from simcore_service_autoscaling.models import EC2InstanceType
 from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from simcore_service_autoscaling.utils.dynamic_scaling import (
     try_assigning_task_to_pending_instances,

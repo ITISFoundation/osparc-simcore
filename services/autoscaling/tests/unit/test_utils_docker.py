@@ -6,11 +6,13 @@ import asyncio
 import datetime
 import itertools
 import random
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import aiodocker
 import pytest
+from aws_library.ec2.models import Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.docker import DockerGenericTag, DockerLabelKey
@@ -24,7 +26,6 @@ from models_library.generated_models.docker_rest_api import (
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.docker_utils import to_datetime
-from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     Node,
@@ -72,7 +73,6 @@ async def create_node_labels(
                 "Labels": {f"{label}": "true" for label in labels},
             },
         )
-        return
 
     yield _creator
     # revert labels
