@@ -50,5 +50,5 @@ repos:
     - id: pytest-testit
       name: pytest-testit
       language: script
-      files: \.x$
+      types: [file, python]
       entry: scripts/precommit/pytest-testit.bash
