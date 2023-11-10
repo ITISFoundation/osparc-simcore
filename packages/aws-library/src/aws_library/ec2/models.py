@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from typing import TypeAlias
 
 from pydantic import BaseModel, ByteSize, NonNegativeFloat, PositiveInt
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -47,14 +48,15 @@ class EC2InstanceType:
     ram: ByteSize
 
 
-InstancePrivateDNSName = str
+InstancePrivateDNSName: TypeAlias = str
+EC2Tags: TypeAlias = dict[str, str]
 
 
 @dataclass(frozen=True)
 class EC2InstanceData:
     launch_time: datetime.datetime
-    id: str
+    id: str  # noqa: A003
     aws_private_dns: InstancePrivateDNSName
-    type: InstanceTypeType
+    type: InstanceTypeType  # noqa: A003
     state: InstanceStateNameType
     resources: Resources
