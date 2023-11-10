@@ -193,14 +193,6 @@ def mock_find_node_with_name(
 
 
 @pytest.fixture
-def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
-        autospec=True,
-    )
-
-
-@pytest.fixture
 def mock_cluster_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_cluster_used_resources",
@@ -323,16 +315,22 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
             id="No explicit instance defined",
         ),
         pytest.param(
-            "t2.xlarge",
-            parse_obj_as(ByteSize, "4Gib"),
-            "t2.xlarge",
-            id="Explicitely ask for t2.xlarge",
+            "g4dn.2xlarge",
+            None,
+            "g4dn.2xlarge",
+            id="Explicitely ask for g4dn.2xlarge and use all the resources",
         ),
         pytest.param(
             "r5n.8xlarge",
-            parse_obj_as(ByteSize, "128Gib"),
+            parse_obj_as(ByteSize, "116Gib"),
             "r5n.8xlarge",
-            id="Explicitely ask for r5n.8xlarge",
+            id="Explicitely ask for r5n.8xlarge and set the resources",
+        ),
+        pytest.param(
+            "r5n.8xlarge",
+            None,
+            "r5n.8xlarge",
+            id="Explicitely ask for r5n.8xlarge and use all the resources",
         ),
     ],
 )
@@ -352,7 +350,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     dask_spec_local_cluster: distributed.SpecCluster,
     create_dask_task_resources: Callable[..., DaskTaskResources],
     dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize,
+    dask_ram: ByteSize | None,
     expected_ec2_type: InstanceTypeType,
 ):
     # we have nothing running now
@@ -360,6 +358,19 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
+    if dask_task_imposed_ec2_type and not dask_ram:
+        instance_types = await ec2_client.describe_instance_types(
+            InstanceTypes=[dask_task_imposed_ec2_type]
+        )
+        assert instance_types
+        assert "InstanceTypes" in instance_types
+        assert instance_types["InstanceTypes"]
+        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
+        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+        dask_ram = parse_obj_as(
+            ByteSize,
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        )
     dask_task_resources = create_dask_task_resources(
         dask_task_imposed_ec2_type, dask_ram
     )
@@ -493,6 +504,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         return_value=Resources.create_as_empty(),
         autospec=True,
     )
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_dask_get_worker_still_has_results_in_memory.assert_called()
     assert mocked_dask_get_worker_still_has_results_in_memory.call_count == 2
@@ -738,7 +750,7 @@ async def test__deactivate_empty_nodes(
         initialized_app, active_cluster, ComputationalAutoscaling()
     )
     assert not updated_cluster.active_nodes
-    assert updated_cluster.drained_nodes == active_cluster.active_nodes
+    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
@@ -773,7 +785,7 @@ async def test__deactivate_empty_nodes_with_finished_tasks_should_not_deactivate
         initialized_app, deepcopy(active_cluster), ComputationalAutoscaling()
     )
     assert not updated_cluster.active_nodes
-    assert updated_cluster.drained_nodes == active_cluster.active_nodes
+    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )

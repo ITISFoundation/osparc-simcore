@@ -57,7 +57,7 @@ async def associate_ec2_instances_with_nodes(
         try:
             docker_node_name = node_host_name_from_ec2_private_dns(instance_data)
         except Ec2InvalidDnsNameError:
-            _logger.exception("Unexcepted EC2 private dns name")
+            _logger.exception("Unexpected EC2 private dns name")
             non_associated_instances.append(instance_data)
             continue
 
@@ -125,6 +125,7 @@ def filter_by_task_defined_instance(
     instance_type_name: InstanceTypeType | None,
     active_instances_to_tasks,
     pending_instances_to_tasks,
+    drained_instances_to_tasks,
     needed_new_instance_types_for_tasks,
 ) -> tuple:
     return (
@@ -139,6 +140,12 @@ def filter_by_task_defined_instance(
                 _instance_data_map_by_type_name, type_name=instance_type_name
             ),
             pending_instances_to_tasks,
+        ),
+        filter(
+            functools.partial(
+                _instance_data_map_by_type_name, type_name=instance_type_name
+            ),
+            drained_instances_to_tasks,
         ),
         filter(
             functools.partial(

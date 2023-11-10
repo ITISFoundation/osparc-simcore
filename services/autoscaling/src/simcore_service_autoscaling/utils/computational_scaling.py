@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import Final, Iterable
+from collections.abc import Iterable
+from typing import Final
 
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
@@ -15,7 +16,6 @@ from ..models import (
     EC2InstanceType,
     Resources,
 )
-from . import utils_docker
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def try_assigning_task_to_node(
     instance_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
     for instance, node_assigned_tasks in instance_to_tasks:
-        instance_total_resource = utils_docker.get_node_total_resources(instance.node)
+        instance_total_resource = instance.ec2_instance.resources
         tasks_needed_resources = _compute_tasks_needed_resources(node_assigned_tasks)
         if (
             instance_total_resource - tasks_needed_resources
@@ -60,7 +60,6 @@ async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: DaskTask,
     instances_to_tasks: Iterable[tuple[EC2InstanceData, list[DaskTask]]],
-    type_to_instance_map: dict[str, EC2InstanceType],
     *,
     notify_progress: bool,
 ) -> bool:
@@ -70,10 +69,7 @@ async def try_assigning_task_to_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
     for instance, instance_assigned_tasks in instances_to_tasks:
-        instance_type = type_to_instance_map[instance.type]
-        instance_total_resources = Resources(
-            cpus=instance_type.cpus, ram=instance_type.ram
-        )
+        instance_total_resources = instance.resources
         tasks_needed_resources = _compute_tasks_needed_resources(
             instance_assigned_tasks
         )
