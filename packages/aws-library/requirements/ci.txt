@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 ../pytest-simcore/
+../service-library/
 
 # current module
 .
