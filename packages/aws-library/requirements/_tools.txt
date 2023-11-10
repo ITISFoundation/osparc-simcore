@@ -6,7 +6,7 @@
 #
 astroid==3.0.1
     # via pylint
-black==23.10.1
+black==23.11.0
     # via -r requirements/../../../requirements/devenv.txt
 build==1.0.3
     # via pip-tools
@@ -61,7 +61,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.1.4
+ruff==0.1.5
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
