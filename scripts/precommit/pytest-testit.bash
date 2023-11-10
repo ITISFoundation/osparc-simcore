@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Remove the line containing @pytest.mark.testit in staged files
-git diff --cached --name-only | grep -E '\.x$' | while IFS= read -r file; do
-    sed -i '/@pytest\.mark\.testit/d' "$file"
-    git add "$file"
-    echo "Removed @pytest.mark.testit from $file"
+# Check for the presence of @pytest.mark.testit in staged files
+if git diff --cached | grep -q '@pytest\.mark\.testit'; then
+    echo "Error: Your commit contains '@pytest.mark.testit'. Please remove it before committing."
     exit 1
-done
+fi
