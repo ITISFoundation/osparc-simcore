@@ -23,6 +23,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
 from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import Node
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
@@ -44,7 +45,10 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_computational import 
     ComputationalAutoscaling,
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
-from simcore_service_autoscaling.modules.docker import get_docker_client
+from simcore_service_autoscaling.modules.docker import (
+    AutoscalingDocker,
+    get_docker_client,
+)
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -194,9 +198,23 @@ def mock_find_node_with_name(
 
 @pytest.fixture
 def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
+    async def _fake_set_node_availability(
+        docker_client: AutoscalingDocker, node: Node, *, available: bool
+    ) -> Node:
+        returned_node = deepcopy(node)
+        assert returned_node.Spec
+        returned_node.Spec.Availability = (
+            Availability.active if available else Availability.drain
+        )
+        returned_node.UpdatedAt = datetime.datetime.now(
+            tz=datetime.timezone.utc
+        ).isoformat()
+        return returned_node
+
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
         autospec=True,
+        side_effect=_fake_set_node_availability,
     )
 
 
@@ -512,6 +530,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         return_value=Resources.create_as_empty(),
         autospec=True,
     )
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_dask_get_worker_still_has_results_in_memory.assert_called()
     assert mocked_dask_get_worker_still_has_results_in_memory.call_count == 2

@@ -488,8 +488,8 @@ async def _deactivate_empty_nodes(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> Cluster:
     docker_client = get_docker_client(app)
-    active_empty_nodes: list[AssociatedInstance] = []
-    active_non_empty_nodes: list[AssociatedInstance] = []
+    active_empty_instances: list[AssociatedInstance] = []
+    active_non_empty_instances: list[AssociatedInstance] = []
     for instance in cluster.active_nodes:
         try:
             node_used_resources = await auto_scaling_mode.compute_node_used_resources(
@@ -497,34 +497,38 @@ async def _deactivate_empty_nodes(
                 instance,
             )
             if node_used_resources == Resources.create_as_empty():
-                active_empty_nodes.append(instance)
+                active_empty_instances.append(instance)
             else:
-                active_non_empty_nodes.append(instance)
+                active_non_empty_instances.append(instance)
         except DaskWorkerNotFoundError:  # noqa: PERF203
             _logger.exception(
                 "EC2 node instance is not registered to dask-scheduler! TIP: Needs investigation"
             )
 
     # drain this empty nodes
-    updated_nodes = await asyncio.gather(
+    updated_nodes: list[Node] = await asyncio.gather(
         *(
             utils_docker.set_node_availability(
                 docker_client,
                 node.node,
                 available=False,
             )
-            for node in active_empty_nodes
+            for node in active_empty_instances
         )
     )
     if updated_nodes:
         _logger.info(
             "following nodes set to drain: '%s'",
-            f"{[node.node.Description.Hostname for node in updated_nodes if node.node.Description]}",
+            f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
         )
+    newly_drained_instances = [
+        AssociatedInstance(node, instance.ec2_instance)
+        for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
+    ]
     return dataclasses.replace(
         cluster,
-        active_nodes=active_non_empty_nodes,
-        drained_nodes=cluster.drained_nodes + updated_nodes,
+        active_nodes=active_non_empty_instances,
+        drained_nodes=cluster.drained_nodes + newly_drained_instances,
     )
 
 
