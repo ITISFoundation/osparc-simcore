@@ -1,3 +1,9 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from collections.abc import Callable
 from decimal import Decimal
 from unittest import mock
