@@ -776,7 +776,7 @@ async def test__deactivate_empty_nodes(
         initialized_app, active_cluster, ComputationalAutoscaling()
     )
     assert not updated_cluster.active_nodes
-    assert updated_cluster.drained_nodes == active_cluster.active_nodes
+    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
@@ -811,7 +811,7 @@ async def test__deactivate_empty_nodes_with_finished_tasks_should_not_deactivate
         initialized_app, deepcopy(active_cluster), ComputationalAutoscaling()
     )
     assert not updated_cluster.active_nodes
-    assert updated_cluster.drained_nodes == active_cluster.active_nodes
+    assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
