@@ -50,13 +50,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           break;
         case "project-state":
-          control = new osparc.ui.basic.Thumbnail().set({
-            minWidth: 40
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
-          });
           break;
         case "permission-icon":
           control = new qx.ui.basic.Image().set({
@@ -196,6 +189,67 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         const label = this.getChildControl("last-change");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
+    },
+
+    _applyProjectState: function(projectStatus) {
+      const status = projectStatus["value"];
+      let label = null;
+      let border;
+      let backgroundColor;
+      switch (status) {
+          case "NOT_STARTED":
+            label = "Not Started";
+            border = "rgba(9, 89, 122, 1)";
+            backgroundColor = "rgba(9, 89, 122, 0.1)";
+            break;
+        case "STARTED":
+          label = "Started";
+          border = "rgba(9, 89, 122, 1)";
+          backgroundColor = "rgba(9, 89, 122, 0.1)";
+          break;
+        case "SUCCESS":
+          label = "Success";
+          border = "rgba(10, 182, 255, 1)";
+          backgroundColor = "rgba(10, 182, 255, 0.1)";
+          break;
+        case "FAILED":
+          label = "Failed";
+          border = "rgba(255, 108, 108, 1)";
+          backgroundColor = "rgba(255, 108, 108, 0.1)";
+          break;
+        default:
+          label = null;
+          border = null;
+          backgroundColor = null;
+          break;
+      }
+      this.__applyProjectLabel(label, border, backgroundColor);
+    },
+
+    __applyProjectLabel: function(lbl, bdr, bg) {
+      let control;
+      const border = new qx.ui.decoration.Decorator().set({
+        width: 1,
+        style: "solid",
+        color: bdr,
+        backgroundColor: bg
+      });
+      control = new qx.ui.basic.Label(lbl).set({
+        textColor: bdr,
+        minWidth: 60,
+        textAlign: "center",
+        alignY: "middle",
+        decorator: border,
+        padding: 5,
+        toolTipText: this.tr("Project status")
+      });
+      control.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      this._add(control, {
+        row: 0,
+        column: osparc.dashboard.ListButtonBase.POS.STATUS
+      });
     },
 
     // overridden

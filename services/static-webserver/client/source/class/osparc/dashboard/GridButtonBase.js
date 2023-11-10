@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_HEIGHT: 220,
     PADDING: 10,
     SPACING_IN: 5,
-    SPACING: 10,
+    SPACING: 15,
     // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
     TITLE_MAX_HEIGHT: 38, // two lines in Manrope
     POS: {
@@ -69,7 +69,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         row: 0,
         column: 0,
         rowSpan: 1,
-        colSpan: 3
+        colSpan: 4
       },
       SUBTITLE: {
         row: 1,
@@ -82,6 +82,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         column: 0,
         rowSpan: 1,
         colSpan: 3
+      },
+      STATUS: {
+        row: 2,
+        column: 0
       },
       TAGS: {
         row: 3,
@@ -124,7 +128,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             allowGrowX: true,
             allowShrinkX: false,
             alignY: "middle",
-            padding: this.self().PADDING
+            padding: this.self().PADDING,
           });
           this._mainLayout.add(control, this.self().POS.TITLE);
           break;
@@ -140,6 +144,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           this._mainLayout.add(control, this.self().POS.THUMBNAIL);
           break;
         case "title":
+          let titleLayout;
           control = new qx.ui.basic.Label().set({
             font: "text-14",
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
@@ -147,7 +152,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             rich: true,
             wrap: true
           });
-          const titleLayout = this.getChildControl("header");
+          titleLayout = this.getChildControl("header").getContentElement().setStyles({
+            "background-color": "background-card-header"
+          });
           titleLayout.addAt(control, 0, {
             flex: 1
           });
@@ -216,13 +223,13 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           image.addListener(eventName, () => this.__fitIconHeight(), this);
         });
       } else {
-        const container = this.getChildControl("body").getContentElement();
-        container.setStyles({
+        // const container = this.getChildControl("body").getContentElement();
+        const container = this.getContentElement().setStyles({
           "background-image": `url(${value})`,
           "background-repeat": "no-repeat",
           "background-size": "cover", // auto width, 85% height
           "background-position": "center center",
-          "background-origin": "content-box"
+          "background-origin": "border-box"
         });
       }
     },

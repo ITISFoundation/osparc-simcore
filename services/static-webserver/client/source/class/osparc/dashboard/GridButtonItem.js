@@ -125,12 +125,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           break;
         case "project-state":
-          const bodyLayout = this.getChildControl("body");
-          control = new qx.ui.basic.Label().set({
-            toolTipText: this.tr("Job Status"),
-            alignY: "bottom"
-          });
-          bodyLayout.add(control);
           break;
         case "permission-icon":
           control = new qx.ui.basic.Image();
@@ -182,6 +176,64 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       tick.setVisibility("excluded");
       const untick = this.getChildControl("tick-unselected");
       untick.setVisibility("excluded");
+    },
+
+    _applyProjectState: function(projectStatus) {
+      const status = projectStatus["value"];
+      let label = null;
+      let border;
+      let backgroundColor;
+      switch (status) {
+        case "NOT_STARTED":
+          label = "Not Started";
+          border = "rgba(9, 89, 122, 1)";
+          backgroundColor = "rgba(9, 89, 122, 0.1)";
+          break;
+        case "STARTED":
+          label = "Started";
+          border = "rgba(9, 89, 122, 1)";
+          backgroundColor = "rgba(9, 89, 122, 0.1)";
+          break;
+        case "SUCCESS":
+          label = "Success";
+          border = "rgba(10, 182, 255, 1)";
+          backgroundColor = "rgba(10, 182, 255, 0.1)";
+          break;
+        case "FAILED":
+          label = "Failed";
+          border = "rgba(255, 108, 108, 1)";
+          backgroundColor = "rgba(255, 108, 108, 0.1)";
+          break;
+        default:
+          label = null;
+          border = null;
+          backgroundColor = null;
+          break;
+      }
+      this.__applyProjectLabel(label, border, backgroundColor);
+    },
+
+    __applyProjectLabel: function(lbl, bdr, bg) {
+      let control;
+      const border = new qx.ui.decoration.Decorator().set({
+        width: 1,
+        style: "solid",
+        color: bdr,
+        backgroundColor: bdr
+      });
+      control = new qx.ui.basic.Label(lbl).set({
+        textAlign: "center",
+        minWidth: 60,
+        alignY: "middle",
+        alignX: "center",
+        decorator: border,
+        padding: 5,
+        toolTipText: this.tr("Project status")
+      });
+      control.getContentElement().setStyles({
+        "border-radius": "8px"
+      });
+      this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.STATUS);
     },
 
     // overridden

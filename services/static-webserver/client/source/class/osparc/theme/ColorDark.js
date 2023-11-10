@@ -29,6 +29,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-main-3": "c04",
     "background-main-4": "c05",
     "background-main-5": "c06",
+    "background-card-header": "rgba(1, 18, 26, 1)",
 
     // text
     "text": "c13",

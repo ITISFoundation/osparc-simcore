@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     this.base(arguments);
     this.set({
       width: osparc.dashboard.ListButtonBase.ITEM_WIDTH,
-      height: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
+      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
       allowGrowX: true
     });
 
@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
 
   statics: {
     ITEM_WIDTH: 600,
-    ITEM_HEIGHT: 35,
+    ITEM_HEIGHT: 40,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
@@ -51,12 +51,13 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       UPDATES: 4,
       UI_MODE: 5,
       TAGS: 6,
-      PERMISSION: 7,
-      TSR: 8,
-      SHARED: 9,
-      LAST_CHANGE: 10,
-      HITS: 11,
-      OPTIONS: 12
+      STATUS: 7,
+      PERMISSION: 8,
+      TSR: 9,
+      SHARED: 10,
+      LAST_CHANGE: 11,
+      HITS: 12,
+      OPTIONS: 13,
     }
   },
 

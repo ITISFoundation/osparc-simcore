@@ -252,10 +252,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     projectState: {
-      check: ["STARTED", "SUCCESS", "FAILED", "UNKNOWN", "NOT_STARTED"],
+      check: ["NOT_STARTED", "STARTED", "SUCCESS", "FAILED", "UNKNOWN"],
       nullable: false,
       init: "UNKNOWN",
-      apply: "__applyProjectState"
+      apply: "_applyProjectState"
     },
 
     locked: {
@@ -511,37 +511,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    // _applyProjectState: function(state) {
-    //   this.__enableCard(!state);
-    //   this.getChildControl("project-state").set({
-    //     opacity: 1.0,
-    //     visibility: state ? "visible" : "excluded"
-    //   });
+    // __applyProjectState: function(status, border) {
+    //   if (status !== null) {
+    //     const label = this.getChildControl("project-state");
+    //     label.setValue(String(status));
+    //   }
     // },
-    __applyProjectState: function(state) {
-      let label;
-      const border = new qx.ui.decoration.Decorator().set({
-        width: 1,
-        style: "solid",
-        color: "black"
-      });
-      var w3 = new qx.ui.basic.Label(state).set({
-        backgroundColor: "blue",
-        decorator: border,
-        padding: 5
-      });
-      label = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      label.add(w3);
-      // this.__enableCard(!state);
-      this.getChildControl("project-state").set({
-        opacity: 1.0,
-        visibility: state ? "visible" : "excluded"
-      });
-      if (state) {
-        const projectStateLabel = this.getChildControl("project-state");
-        projectStateLabel.add(label);
-      }
-    },
 
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
@@ -550,33 +525,47 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
       if (projectState !== "UNKNOWN") {
-        this.__showCardFromProjectState(state["state"]);
+        this._applyProjectState(state["state"]);
       }
-      // this.setProjectState(projectState);
       this.setLocked(locked);
     },
 
-    __showCardFromProjectState: function(projectStatus) {
-      debugger
-      const status = projectStatus["value"];
-      let label = null
-      switch (status) {
-        case "STARTED":
-          label = "Started";
-          break;
-        case "SUCCESS":
-          label = "Success";
-          break;
-        case "FAILED":
-          label = "Failed";
-          break;
-        default:
-          label = null;
-          break;
-      }
-      this.__applyProjectState(label);
+    _applyProjectState: function(value, old) {
+      throw new Error("Abstract method called!");
+      // const status = projectStatus["value"];
+      // let label = null;
+      // let border;
+      // let backgroundColor,
+      // switch (status) {
+      //   case "STARTED":
+      //     label = "Started";
+      //     border = "rgba(9, 89, 122, 1)";
+      //     backgroundColor = "rgba(9, 89, 122, 0.1)";
+      //     break;
+      //   case "SUCCESS":
+      //     label = "Success";
+      //     border = "rgba(10, 182, 255, 1)";
+      //     backgroundColor = "rgba(10, 182, 255, 0.1)";
+      //     break;
+      //   case "FAILED":
+      //     label = "Failed";
+      //     border = "rgba(255, 108, 108, 1)";
+      //     backgroundColor = "rgba(255, 108, 108, 0.1)";
+      //     break;
+      //   default:
+      //     label = null;
+      //     border = null;
+      //     backgroundColor = null
+      //     break;
+      // }
+      // this.set({
+      //   label,
+      //   border,
+      //   backgroundColor
+      // });
+      // this.__applyProjectState(label, border);
     },
-    //
+
     // __showProjectStateImage: function(stateLabel) {
     //   this.getChildControl("project-state").set({
     //     opacity: 1.0,
@@ -586,7 +575,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     //   stateLabel += this.classname.includes("Grid") ? "32" : "22";
     //   stateImage.setSource(stateLabel);
     // },
-    //
+
     __showBlockedCardFromStatus: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
