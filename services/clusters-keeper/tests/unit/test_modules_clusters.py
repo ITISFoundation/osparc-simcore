@@ -61,10 +61,11 @@ def _base_configuration(
 async def _assert_cluster_instance_created(
     app_settings: ApplicationSettings,
     ec2_client: EC2Client,
+    instance_id: str,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    instances = await ec2_client.describe_instances()
+    instances = await ec2_client.describe_instances(InstanceIds=[instance_id])
     assert len(instances["Reservations"]) == 1
     assert "Instances" in instances["Reservations"][0]
     assert len(instances["Reservations"][0]["Instances"]) == 1
@@ -109,7 +110,11 @@ async def _create_cluster(
     # check we do have a new machine in AWS
 
     await _assert_cluster_instance_created(
-        get_application_settings(app), ec2_client, user_id, wallet_id
+        get_application_settings(app),
+        ec2_client,
+        created_clusters[0].id,
+        user_id,
+        wallet_id,
     )
     return created_clusters
 
@@ -135,7 +140,7 @@ async def test_get_cluster(
     user_ids = [user_id, user_id + 13, user_id + 456]
     list_created_clusters = await asyncio.gather(
         *(
-            create_cluster(initialized_app, user_id=u, wallet_id=wallet_id)
+            _create_cluster(initialized_app, ec2_client, user_id=u, wallet_id=wallet_id)
             for u in user_ids
         )
     )
@@ -168,6 +173,16 @@ async def test_get_cluster_workers_returns_empty_if_no_workers(
         await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id)
         == []
     )
+
+
+async def test_get_cluster_workers(
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+    initialized_app: FastAPI,
+):
+    ...
 
 
 async def _assert_cluster_heartbeat_on_instance(
