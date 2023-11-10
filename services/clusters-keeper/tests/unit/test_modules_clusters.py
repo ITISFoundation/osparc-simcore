@@ -24,6 +24,7 @@ from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,
     delete_clusters,
+    get_cluster,
 )
 from simcore_service_clusters_keeper.utils.ec2 import (
     _APPLICATION_TAG_KEY,
@@ -120,6 +121,28 @@ async def test_create_cluster(
     initialized_app: FastAPI,
 ):
     await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
+
+
+async def test_get_cluster(
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+    initialized_app: FastAPI,
+):
+    # create multiple clusters for different users
+    user_ids = [user_id, user_id + 13, user_id + 456]
+    list_created_clusters = await asyncio.gather(
+        *(
+            create_cluster(initialized_app, user_id=u, wallet_id=wallet_id)
+            for u in user_ids
+        )
+    )
+    for u, created_clusters in zip(user_ids, list_created_clusters, strict=True):
+        returned_cluster = await get_cluster(
+            initialized_app, user_id=u, wallet_id=wallet_id
+        )
+        assert created_clusters[0] == returned_cluster
 
 
 async def _assert_cluster_heartbeat_on_instance(
