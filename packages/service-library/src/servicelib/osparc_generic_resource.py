@@ -6,10 +6,11 @@ from servicelib.logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
+Ident = TypeVar("Ident")
+Res = TypeVar("Res")
 
 
-class BaseOsparcGenericResourceManager(ABC, Generic[T]):
+class BaseOsparcGenericResourceManager(ABC, Generic[Ident, Res]):
     """Common interface used to manage the lifecycle of osparc resources.
 
     An osparc resource can be anything that needs to be created and then removed
@@ -21,30 +22,30 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
     """
 
     @abstractmethod
-    async def is_present(self, identifier: T, **extra_kwargs) -> bool:
-        """Checks if a resource exists
+    async def get(self, identifier: Ident, **extra_kwargs) -> Res | None:
+        """Returns a resource if exits.
 
         Arguments:
             identifier -- user chosen identifier for the resource
             **extra_kwargs -- can be overloaded by the user
 
         Returns:
-            True if the resource exists otherwise False
+            None if the resource does not exit
         """
 
     @abstractmethod
-    async def create(self, **extra_kwargs) -> T:
+    async def create(self, **extra_kwargs) -> tuple[Ident, Res]:
         """Used for creating the resources
 
         Arguments:
             **extra_kwargs -- can be overloaded by the user
 
         Returns:
-            user chosen identifier for the resource
+            tuple[identifier for the resource, resource object]
         """
 
     @abstractmethod
-    async def destroy(self, identifier: T, **extra_kwargs) -> None:
+    async def destroy(self, identifier: Ident, **extra_kwargs) -> None:
         """Used to destroy an existing resource
 
         Usually ``is_present`` will be called before attempting a removal.
@@ -54,7 +55,7 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
             **extra_kwargs -- can be overloaded by the user
         """
 
-    async def safe_remove(self, identifier: T, **extra_kwargs) -> bool:
+    async def safe_remove(self, identifier: Ident, **extra_kwargs) -> bool:
         """Removes the resource if is present.
         Logs errors, without re-raising.
 
@@ -65,8 +66,7 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
         Returns:
             True if the resource was removed successfully otherwise false
         """
-        is_present = await self.is_present(identifier, **extra_kwargs)
-        if not is_present:
+        if await self.get(identifier, **extra_kwargs) is None:
             return False
 
         with log_context(
@@ -74,9 +74,32 @@ class BaseOsparcGenericResourceManager(ABC, Generic[T]):
         ), log_catch(_logger, reraise=False):
             await self.destroy(identifier, **extra_kwargs)
 
-        was_removed = await self.is_present(identifier, **extra_kwargs) is False
+        was_removed = await self.get(identifier, **extra_kwargs) is None
         if not was_removed:
             _logger.warning(
                 "%s: resource %s could not be removed", self.__class__, identifier
             )
         return was_removed
+
+    async def get_or_create(
+        self, identifier: Ident | None = None, **extra_kwargs
+    ) -> tuple[Ident, Res]:
+        """Creates or returns an existing resource if an ``identifier`` is provided.
+
+        NOTE: when a resource is created, it could return a new identifier.
+        **ALWAYS** overwrite your previous identifier with
+        the one returned by this function!
+
+        Arguments:
+            identifier -- user chosen identifier for the resource
+            **extra_kwargs -- can be overloaded by the user
+
+        Returns:
+            tuple[identifier for the resource, resource object]
+        """
+        if identifier:
+            resource: Res | None = await self.get(identifier, **extra_kwargs)
+            if resource:
+                return identifier, resource
+
+        return await self.create(**extra_kwargs)
