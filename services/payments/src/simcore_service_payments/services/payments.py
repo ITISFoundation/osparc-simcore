@@ -157,7 +157,7 @@ async def on_payment_completed(
         credit_transaction_id = await rut_api.create_credit_transaction(
             product_name=transaction.product_name,
             wallet_id=transaction.wallet_id,
-            wallet_name="id={transaction.wallet_id}",
+            wallet_name=f"id={transaction.wallet_id}",
             user_id=transaction.user_id,
             user_email=transaction.user_email,
             osparc_credits=transaction.osparc_credits,
