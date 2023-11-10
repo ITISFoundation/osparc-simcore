@@ -38,14 +38,14 @@ async def delete_api_keys(
 
 
 @router.expose()
-async def api_key_exists(
+async def api_key_get(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
     name: str,
-) -> bool:
-    return await _api.exists(app, name=name, user_id=user_id, product_name=product_name)
+) -> ApiKeyGet | None:
+    return await _api.get(app, name=name, user_id=user_id, product_name=product_name)
 
 
 async def register_rpc_routes_on_startup(app: web.Application):

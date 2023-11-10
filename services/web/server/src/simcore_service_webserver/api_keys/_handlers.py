@@ -48,19 +48,19 @@ async def list_api_keys(request: web.Request):
     return envelope_json_response(api_keys_names)
 
 
-@routes.post(f"/{API_VTAG}/auth/api-keys/{{name}}:exists", name="api_key_exists")
+@routes.get(f"/{API_VTAG}/auth/api-keys/{{name}}", name="api_key_get")
 @login_required
 @permission_required("user.apikey.*")
-async def api_key_exists(request: web.Request):
+async def api_key_get(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_RequestParams, request)
-    key_exists = await _api.exists(
+    key = await _api.get(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         name=path_params.name,
     )
-    return envelope_json_response(key_exists)
+    return envelope_json_response(key)
 
 
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")

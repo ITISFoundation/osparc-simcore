@@ -13,13 +13,13 @@ import respx
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
 from models_library.users import UserID
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 
 async def test_product_webserver(

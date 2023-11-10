@@ -505,13 +505,13 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
-  /v0/auth/api-keys/{name}:exists:
-    post:
+  /v0/auth/api-keys/{name}:
+    get:
       tags:
       - auth
-      summary: Api Key Exists
-      description: returns if a key exists or not
-      operationId: api_key_exists
+      summary: Api Key Get
+      description: returns the key or None
+      operationId: api_key_get
       parameters:
       - required: true
         schema:
@@ -521,18 +521,17 @@ paths:
         in: path
       responses:
         '200':
-          description: returns if the key exist or not in the platform
+          description: returns the api key or None
           content:
             application/json:
               schema:
-                title: Response 200 Api Key Exists
-                type: boolean
+                $ref: '#/components/schemas/ApiKeyGet'
         '400':
           description: key name requested is invalid
         '401':
-          description: requires login to check key existence
+          description: requires login to get the keu
         '403':
-          description: not enough permissions to check key existence
+          description: not enough permissions to get the keu
   /v0/catalog/services:
     get:
       tags:
