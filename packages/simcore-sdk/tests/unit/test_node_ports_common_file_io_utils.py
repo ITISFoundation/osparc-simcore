@@ -26,6 +26,7 @@ from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeo
 from simcore_sdk.node_ports_common.file_io_utils import (
     ExtendedClientResponseError,
     _check_for_aws_http_errors,
+    _process_batch,
     _raise_for_status,
     upload_file_to_presigned_links,
 )
@@ -64,17 +65,6 @@ class _TestParams:
 @pytest.mark.parametrize(
     "test_params",
     [
-        _TestParams(
-            will_retry=True,
-            status_code=400,
-            body='<?xml version="1.0" encoding="UTF-8"?><Error><Code>RequestTimeout</Code>'
-            "<Message>Your socket connection to the server was not read from or written to within "
-            "the timeout period. Idle connections will be closed.</Message>"
-            "<RequestId>7EE901348D6C6812</RequestId><HostId>"
-            "FfQE7jdbUt39E6mcQq/"
-            "ZeNR52ghjv60fccNT4gCE4IranXjsGLG+L6FUyiIxx1tAuXL9xtz2NAY7ZlbzMTm94fhY3TBiCBmf"
-            "</HostId></Error>",
-        ),
         _TestParams(will_retry=True, status_code=500),
         _TestParams(will_retry=True, status_code=503),
         _TestParams(will_retry=False, status_code=400),
@@ -98,6 +88,36 @@ async def test_check_for_aws_http_errors(
             assert (  # noqa: PT017
                 _check_for_aws_http_errors(exception) is test_params.will_retry
             )
+
+
+async def test_process_batch_emits_400_request_timeout(
+    aioresponses_mocker: aioresponses, client_session: ClientSession
+):
+    async def _mock_upload_task() -> None:
+        body = (
+            '<?xml version="1.0" encoding="UTF-8"?><Error><Code>RequestTimeout</Code>'
+            "<Message>Your socket connection to the server was not read from or written to within "
+            "the timeout period. Idle connections will be closed.</Message>"
+            "<RequestId>7EE901348D6C6812</RequestId><HostId>"
+            "FfQE7jdbUt39E6mcQq/"
+            "ZeNR52ghjv60fccNT4gCE4IranXjsGLG+L6FUyiIxx1tAuXL9xtz2NAY7ZlbzMTm94fhY3TBiCBmf"
+            "</HostId></Error>"
+        )
+        aioresponses_mocker.get(A_TEST_ROUTE, body=body, status=400)
+
+        async with client_session.get(A_TEST_ROUTE) as resp:
+            # raises like _session_put does
+            await _raise_for_status(resp)
+
+    with pytest.raises(AwsS3BadRequestRequestTimeoutError):
+        await _process_batch(
+            upload_tasks=[_mock_upload_task()],
+            max_concurrency=1,
+            file_name="mock_file",
+            file_size=1,
+            file_chunk_size=1,
+            last_chunk_size=1,
+        )
 
 
 async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out_error(
