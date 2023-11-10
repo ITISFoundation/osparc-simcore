@@ -15,7 +15,6 @@ from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
@@ -24,9 +23,8 @@ from simcore_service_clusters_keeper.modules.clusters import (
 from simcore_service_clusters_keeper.modules.clusters_management_core import (
     check_clusters,
 )
-from simcore_service_clusters_keeper.utils.ec2 import get_cluster_name
 from types_aiobotocore_ec2 import EC2Client
-from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 
 @pytest.fixture
@@ -172,66 +170,6 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     )
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
-
-
-@pytest.fixture
-def create_ec2_workers(
-    aws_ami_id: str,
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID,
-    app_settings: ApplicationSettings,
-) -> Callable[[int], Awaitable[list[str]]]:
-    async def _do(num: int) -> list[str]:
-        instance_type: InstanceTypeType = "c3.8xlarge"
-        instances = await ec2_client.run_instances(
-            ImageId=aws_ami_id,
-            MinCount=num,
-            MaxCount=num,
-            InstanceType=instance_type,
-            TagSpecifications=[
-                {
-                    "ResourceType": "instance",
-                    "Tags": [
-                        {
-                            "Key": "Name",
-                            "Value": f"{get_cluster_name(app_settings,user_id=user_id,wallet_id=wallet_id,is_manager=False)}_blahblah",
-                        }
-                    ],
-                }
-            ],
-        )
-        print(f"--> created {num} new instances of {instance_type=}")
-        instance_ids = [
-            i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
-        ]
-        waiter = ec2_client.get_waiter("instance_exists")
-        await waiter.wait(InstanceIds=instance_ids)
-        instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
-        assert "Reservations" in instances
-        assert instances["Reservations"]
-        assert "Instances" in instances["Reservations"][0]
-        for instance in instances["Reservations"][0]["Instances"]:
-            assert "State" in instance
-            assert "Name" in instance["State"]
-            assert instance["State"]["Name"] == "running"
-            assert "Tags" in instance
-            for tags in instance["Tags"]:
-                assert "Key" in tags
-                if "Name" in tags["Key"]:
-                    assert "Value" in tags
-                    assert (
-                        get_cluster_name(
-                            app_settings,
-                            user_id=user_id,
-                            wallet_id=wallet_id,
-                            is_manager=False,
-                        )
-                        in tags["Value"]
-                    )
-        return instance_ids
-
-    return _do
 
 
 async def test_cluster_management_core_properly_removes_workers_on_shutdown(

@@ -5,6 +5,7 @@
 
 import asyncio
 import datetime
+from typing import Awaitable, Callable
 
 import arrow
 import pytest
@@ -175,14 +176,33 @@ async def test_get_cluster_workers_returns_empty_if_no_workers(
     )
 
 
-async def test_get_cluster_workers(
+async def test_get_cluster_workers_does_not_return_cluster_primary_machine(
     _base_configuration: None,
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    ...
+    await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
+    assert (
+        await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id)
+        == []
+    )
+
+
+async def test_get_cluster_workers(
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+    initialized_app: FastAPI,
+    create_ec2_workers: Callable[[int], Awaitable[list[str]]],
+):
+    created_instance_ids = await create_ec2_workers(10)
+    returned_ec2_instances = await get_cluster_workers(
+        initialized_app, user_id=user_id, wallet_id=wallet_id
+    )
+    assert len(created_instance_ids) == len(returned_ec2_instances)
 
 
 async def _assert_cluster_heartbeat_on_instance(
