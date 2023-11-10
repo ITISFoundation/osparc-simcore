@@ -3,7 +3,6 @@ import logging
 from collections import deque
 from collections.abc import Sequence
 from datetime import datetime
-from textwrap import dedent
 from typing import Final
 
 import arrow
@@ -28,8 +27,6 @@ _MAX_PROMETHEUS_SAMPLES: Final[NonNegativeInt] = 5
 _TASK_CANCELLATION_TIMEOUT_S: Final[NonNegativeInt] = 2
 
 _USER_SERVICES_NOT_STARTED: Final[str] = "User service(s) was/were not started"
-_EXTRA_METRIC_NAME: Final[str] = "dy_sidecar_event_generated_at"
-_EXTRA_METRIC_DESCRIPTION: Final[str] = "last time data was updated"
 
 
 def _get_user_services_scrape_interval(
@@ -57,21 +54,8 @@ class MetricsResponse(BaseModel):
         return f"{arrow.now().datetime.isoformat()}"
 
     @classmethod
-    def __get_event_generated_at_metric(cls) -> str:
-        metric_name = _EXTRA_METRIC_NAME
-        description = _EXTRA_METRIC_DESCRIPTION
-        value = cls.__get_iso_timestamp()
-        return dedent(
-            f"""
-            # HELP {metric_name} {description}
-            # TYPE {metric_name} gauge
-            {metric_name}{{label="value"}} {value}
-            """
-        )
-
-    @classmethod
     def from_reply(cls, metrics_fetch_result: str) -> "MetricsResponse":
-        body = f"{cls.__get_event_generated_at_metric()}\n{metrics_fetch_result}"
+        body = f"{metrics_fetch_result}"
         return cls(body=body, status=status.HTTP_200_OK)
 
     @classmethod
