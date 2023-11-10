@@ -8,9 +8,11 @@ import datetime
 import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from copy import deepcopy
 from datetime import timezone
 from pathlib import Path
 from typing import Any, Final, cast
+from unittest import mock
 
 import aiodocker
 import distributed
@@ -745,3 +747,25 @@ async def create_dask_task(
         return future
 
     return _creator
+
+
+@pytest.fixture
+def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
+    async def _fake_set_node_availability(
+        docker_client: AutoscalingDocker, node: Node, *, available: bool
+    ) -> Node:
+        returned_node = deepcopy(node)
+        assert returned_node.Spec
+        returned_node.Spec.Availability = (
+            Availability.active if available else Availability.drain
+        )
+        returned_node.UpdatedAt = datetime.datetime.now(
+            tz=datetime.timezone.utc
+        ).isoformat()
+        return returned_node
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
+        autospec=True,
+        side_effect=_fake_set_node_availability,
+    )

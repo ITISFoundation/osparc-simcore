@@ -107,14 +107,6 @@ def mock_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
-        autospec=True,
-    )
-
-
-@pytest.fixture
 def mock_remove_nodes(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
