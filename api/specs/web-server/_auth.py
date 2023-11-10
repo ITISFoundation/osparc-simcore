@@ -270,27 +270,27 @@ async def list_api_keys():
     """lists display names of API keys by this user"""
 
 
-@router.post(
-    "/auth/api-keys/{name}:exists",
-    operation_id="api_key_exists",
+@router.get(
+    "/auth/api-keys/{name}",
+    operation_id="api_key_get",
     responses={
         status.HTTP_200_OK: {
-            "description": "returns if the key exist or not in the platform",
-            "model": bool,
+            "description": "returns the api key or None",
+            "model": ApiKeyGet | None,
         },
         status.HTTP_400_BAD_REQUEST: {
             "description": "key name requested is invalid",
         },
         status.HTTP_401_UNAUTHORIZED: {
-            "description": "requires login to check key existence",
+            "description": "requires login to get the keu",
         },
         status.HTTP_403_FORBIDDEN: {
-            "description": "not enough permissions to check key existence",
+            "description": "not enough permissions to get the keu",
         },
     },
 )
-async def api_key_exists(name: str):
-    """returns if a key exists or not"""
+async def api_key_get(name: str):
+    """returns the key or None"""
 
 
 @router.post(
