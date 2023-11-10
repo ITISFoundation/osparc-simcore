@@ -424,7 +424,6 @@ async def _assert_ec2_instances(
     return internal_dns_names
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
