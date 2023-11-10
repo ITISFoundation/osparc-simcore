@@ -49,7 +49,7 @@ def mock_rut_api_responses(
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_get_service_pricing_plan(
+async def test_get_service_pricinp_plan_role_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_rut_api_responses: AioResponsesMock,
