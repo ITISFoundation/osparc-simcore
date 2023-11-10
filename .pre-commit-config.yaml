@@ -45,3 +45,10 @@ repos:
     hooks:
       - id: black
         name: black format code
+  - repo: local
+    hooks:
+    - id: pytest-testit
+      name: pytest-testit
+      language: script
+      files: \.x$
+      entry: scripts/precommit/pytest-testit.bash
