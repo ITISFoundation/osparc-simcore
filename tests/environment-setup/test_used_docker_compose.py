@@ -6,9 +6,9 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable
 from itertools import chain
 from pathlib import Path
-from typing import Iterable
 
 import pytest
 import yaml

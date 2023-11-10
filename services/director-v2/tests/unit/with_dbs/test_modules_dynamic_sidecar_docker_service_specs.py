@@ -214,6 +214,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_ID": "234",
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
+                    "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
                         '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
