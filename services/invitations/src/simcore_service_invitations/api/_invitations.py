@@ -46,6 +46,7 @@ async def create_invitation(
         invitation_inputs,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,
+        default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
     invitation = ApiInvitationContentAndLink(
         invitation_url=invitation_link,

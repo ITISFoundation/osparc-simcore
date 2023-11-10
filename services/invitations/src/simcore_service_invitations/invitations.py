@@ -7,6 +7,7 @@ from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
 from models_library.invitations import InvitationContent, InvitationInputs
+from models_library.products import ProductName
 from pydantic import HttpUrl, ValidationError, parse_obj_as
 from starlette.datastructures import URL
 
@@ -63,6 +64,9 @@ class _ContentWithShortNames(InvitationContent):
             "extra_credits_in_usd": {
                 "alias": "e",
             },
+            "product": {
+                "alias": "p",
+            },
             "created": {
                 "alias": "c",
             },
@@ -107,15 +111,19 @@ def _fernet_encrypt_as_urlsafe_code(
 
 
 def _create_invitation_code(
-    invitation_data: InvitationInputs, secret_key: bytes
+    invitation_data: InvitationInputs,
+    secret_key: bytes,
+    default_product: ProductName,
 ) -> bytes:
     """Produces url-safe invitation code in bytes"""
 
     # builds content
     content = InvitationContent(
-        **invitation_data.dict(),
+        **invitation_data.dict(exclude_none=True),
         created=datetime.now(tz=timezone.utc),
     )
+    if content.product is None:
+        content.product = default_product
 
     content_jsonstr: str = _ContentWithShortNames.serialize(content)
     assert "\n" not in content_jsonstr  # nosec
@@ -133,10 +141,15 @@ def _create_invitation_code(
 
 
 def create_invitation_link(
-    invitation_data: InvitationInputs, secret_key: bytes, base_url: HttpUrl
+    invitation_data: InvitationInputs,
+    secret_key: bytes,
+    base_url: HttpUrl,
+    default_product: ProductName,
 ) -> HttpUrl:
     invitation_code = _create_invitation_code(
-        invitation_data=invitation_data, secret_key=secret_key
+        invitation_data=invitation_data,
+        secret_key=secret_key,
+        default_product=default_product,
     )
     # Adds message as the invitation in query
     return _build_link(

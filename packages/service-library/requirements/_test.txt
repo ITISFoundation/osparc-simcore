@@ -15,6 +15,10 @@ aiosignal==1.3.1
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
+anyio==4.0.0
+    # via
+    #   -c requirements/_fastapi.txt
+    #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-timeout==4.0.3
@@ -36,6 +40,8 @@ certifi==2023.7.22
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_fastapi.txt
+    #   httpcore
+    #   httpx
     #   requests
 charset-normalizer==3.3.2
     # via
@@ -52,6 +58,7 @@ docker==6.1.3
 exceptiongroup==1.1.3
     # via
     #   -c requirements/_fastapi.txt
+    #   anyio
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
@@ -65,11 +72,26 @@ frozenlist==1.4.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+h11==0.14.0
+    # via
+    #   -c requirements/_fastapi.txt
+    #   httpcore
+httpcore==0.18.0
+    # via
+    #   -c requirements/_fastapi.txt
+    #   httpx
+httpx==0.25.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_fastapi.txt
+    #   respx
 idna==3.4
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
+    #   anyio
+    #   httpx
     #   requests
     #   yarl
 iniconfig==2.0.0
@@ -182,6 +204,8 @@ requests==2.31.0
     #   -c requirements/_aiohttp.txt
     #   docker
     #   jsonschema-spec
+respx==0.20.2
+    # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via
     #   -c requirements/_aiohttp.txt
@@ -203,7 +227,10 @@ six==1.16.0
 sniffio==1.3.0
     # via
     #   -c requirements/_fastapi.txt
+    #   anyio
     #   asgi-lifespan
+    #   httpcore
+    #   httpx
 termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
