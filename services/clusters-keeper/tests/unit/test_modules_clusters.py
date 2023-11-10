@@ -145,6 +145,27 @@ async def test_get_cluster(
         assert created_clusters[0] == returned_cluster
 
 
+async def test_get_cluster_raises_if_not_found(
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+    initialized_app: FastAPI,
+):
+    with pytest.raises(Ec2InstanceNotFoundError):
+        await get_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+
+
+async def test_get_cluster_workers(
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+    initialized_app: FastAPI,
+):
+    ...
+
+
 async def _assert_cluster_heartbeat_on_instance(
     ec2_client: EC2Client,
 ) -> datetime.datetime:
