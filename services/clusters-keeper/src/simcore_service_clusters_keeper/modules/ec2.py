@@ -120,7 +120,9 @@ class ClustersKeeperEC2:
             msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_instances(instance_settings, tags=tags)
+            current_instances = await self.get_instances(
+                key_names=[instance_settings.PRIMARY_EC2_INSTANCES_KEY_NAME], tags=tags
+            )
             if (
                 len(current_instances) + number_of_instances
                 > instance_settings.PRIMARY_EC2_INSTANCES_MAX_INSTANCES
@@ -191,8 +193,8 @@ class ClustersKeeperEC2:
 
     async def get_instances(
         self,
-        instance_settings: PrimaryEC2InstancesSettings,
         *,
+        key_names: list[str],
         tags: EC2Tags,
         state_names: list[InstanceStateNameType] | None = None,
     ) -> list[EC2InstanceData]:
@@ -204,7 +206,7 @@ class ClustersKeeperEC2:
         filters: list[FilterTypeDef] = [
             {
                 "Name": "key-name",
-                "Values": [instance_settings.PRIMARY_EC2_INSTANCES_KEY_NAME],
+                "Values": key_names,
             },
             {"Name": "instance-state-name", "Values": state_names},
         ]

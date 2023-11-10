@@ -25,8 +25,6 @@ from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
 from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
-    _EXTRA_METRIC_DESCRIPTION,
-    _EXTRA_METRIC_NAME,
     _USER_SERVICES_NOT_STARTED,
     UserServicesMetrics,
 )
@@ -163,5 +161,3 @@ async def test_metrics_enabled_containers_will_start(
 
     response = await httpx_async_client.get("/metrics")
     assert response.status_code == status.HTTP_200_OK, response
-    assert _EXTRA_METRIC_NAME in response.text
-    assert _EXTRA_METRIC_DESCRIPTION in response.text

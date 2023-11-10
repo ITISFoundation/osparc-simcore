@@ -35,7 +35,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        await stop_periodic_task(app.state.clusters_cleaning_task)
+        await stop_periodic_task(app.state.clusters_cleaning_task, timeout=5)
 
     return _stop
 

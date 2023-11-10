@@ -79,7 +79,6 @@ class ComputationalAutoscaling(BaseAutoscaling):
             app,
             pending_task,
             instances_to_tasks,
-            type_to_instance_map,
             notify_progress=notify_progress,
         )
 

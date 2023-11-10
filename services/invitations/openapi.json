@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "1.1.0"
+    "version": "1.1.1"
   },
   "paths": {
     "/": {
@@ -188,6 +188,11 @@
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "This invitations can only be used for this product.If None, it will use INVITATIONS_DEFAULT_PRODUCT"
+          },
           "created": {
             "type": "string",
             "format": "date-time",
@@ -238,6 +243,11 @@
             "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "This invitations can only be used for this product.If None, it will use INVITATIONS_DEFAULT_PRODUCT"
           },
           "created": {
             "type": "string",
@@ -299,6 +309,11 @@
             "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "This invitations can only be used for this product.If None, it will use INVITATIONS_DEFAULT_PRODUCT"
           }
         },
         "type": "object",

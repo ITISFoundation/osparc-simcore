@@ -14,7 +14,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
-from ....core.dynamic_sidecar_settings import DynamicSidecarSettings
 from ..docker_service_specs.volume_remover import spec_volume_removal_service
 from ._utils import docker_client
 
@@ -33,7 +32,7 @@ SERVICE_FINISHED_STATES: set[str] = {
 
 
 async def remove_volumes_from_node(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    swarm_stack_name: str,
     volume_names: list[str],
     docker_node_id: str,
     user_id: UserID,
@@ -56,7 +55,7 @@ async def remove_volumes_from_node(
         service_timeout_s = volume_removal_timeout_s * len(volume_names)
 
         service_spec = spec_volume_removal_service(
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            swarm_stack_name=swarm_stack_name,
             docker_node_id=docker_node_id,
             user_id=user_id,
             project_id=project_id,
@@ -131,18 +130,14 @@ async def remove_volumes_from_node(
         return True
 
 
-async def remove_pending_volume_removal_services(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-) -> None:
+async def remove_pending_volume_removal_services(swarm_stack_name: str) -> None:
     """
     Removes all pending volume removal services. Such a service
     will be considered pending if it is running for longer than its
     intended duration (defined in the `service_timeout_s` label).
     """
     service_filters = {
-        "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-        ],
+        "label": [f"swarm_stack_name={swarm_stack_name}"],
         "name": [f"{DYNAMIC_VOLUME_REMOVER_PREFIX}"],
     }
     async with docker_client() as client:

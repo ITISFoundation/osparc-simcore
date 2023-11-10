@@ -44,7 +44,7 @@ class Resources(BaseModel):
 
 @dataclass(frozen=True)
 class EC2InstanceType:
-    name: str
+    name: InstanceTypeType
     cpus: PositiveInt
     ram: ByteSize
 
@@ -59,6 +59,7 @@ class EC2InstanceData:
     aws_private_dns: InstancePrivateDNSName
     type: InstanceTypeType
     state: InstanceStateNameType
+    resources: Resources
 
 
 @dataclass(frozen=True)

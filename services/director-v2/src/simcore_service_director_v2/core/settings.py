@@ -5,7 +5,6 @@
 import datetime
 import re
 from functools import cached_property
-from typing import Final
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -26,7 +25,6 @@ from pydantic import (
     ConstrainedStr,
     Field,
     NonNegativeInt,
-    PositiveFloat,
     parse_obj_as,
     validator,
 )
@@ -44,11 +42,12 @@ from settings_library.resource_usage_tracker import (
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_postgres_database.models.clusters import ClusterType
+from simcore_sdk.node_ports_common.settings import (
+    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
+)
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from .dynamic_sidecar_settings import DynamicSidecarSettings
-
-_MINUTE: Final[NonNegativeInt] = 60
+from .dynamic_services_settings import DynamicServicesSettings
 
 
 class PlacementConstraintStr(ConstrainedStr):
@@ -76,36 +75,6 @@ class DirectorV0Settings(BaseCustomSettings):
             path=f"/{self.DIRECTOR_V0_VTAG}",
         )
         return url
-
-
-class DynamicServicesSchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: bool = True
-
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: PositiveFloat = Field(
-        5.0, description="interval at which the scheduler cycle is repeated"
-    )
-
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = (
-        Field(
-            30 * _MINUTE,
-            description="interval at which cleaning of unused dy-sidecar "
-            "docker volume removal services is executed",
-        )
-    )
-
-
-class DynamicServicesSettings(BaseCustomSettings):
-    # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module
-    # WARNING: THIS IS NOT the same module as dynamic-sidecar
-    DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
-        default=True, description="Enables/Disables the dynamic_sidecar submodule"
-    )
-
-    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
-
-    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings = Field(
-        auto_default_from_env=True
-    )
 
 
 class ComputationalBackendSettings(BaseCustomSettings):
@@ -217,6 +186,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     SIMCORE_SERVICES_PREFIX: str | None = Field(
         "simcore/services",
         description="useful when developing with an alternative registry namespace",
+    )
+
+    DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: NonNegativeInt = Field(
+        default=NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
+        description="forwarded to sidecars which use nodeports",
     )
 
     # monitoring

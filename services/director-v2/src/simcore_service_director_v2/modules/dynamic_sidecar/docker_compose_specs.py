@@ -26,6 +26,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
+from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ...modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,
@@ -284,11 +285,11 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
 
     docker_compose_version = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
     )
 
-    egress_proxy_settings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
+    egress_proxy_settings: EgressProxySettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
     )
 
     # when no compose yaml file was provided
