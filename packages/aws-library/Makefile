@@ -23,7 +23,7 @@ tests: ## runs unit tests
 		--color=yes \
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
-		--cov=dask_task_models_library \
+		--cov=aws_library \
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
@@ -40,7 +40,7 @@ tests-ci: ## runs unit tests
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
-		--cov=dask_task_models_library \
+		--cov=aws_library \
 		--durations=10 \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
