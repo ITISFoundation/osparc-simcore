@@ -22,13 +22,13 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class AutoscalingEC2:
+class SimcoreEC2API:
     client: EC2Client
     session: aioboto3.Session
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    async def create(cls, settings: EC2Settings) -> "AutoscalingEC2":
+    async def create(cls, settings: EC2Settings) -> "SimcoreEC2API":
         session = aioboto3.Session()
         session_client = session.client(
             "ec2",
