@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from typing import Awaitable, Callable, Final
+from collections.abc import Awaitable, Callable
+from typing import Final
 from unittest.mock import MagicMock
 
 import pytest
@@ -32,9 +33,9 @@ def user_id(faker: Faker) -> UserID:
     return faker.pyint(min_value=1)
 
 
-@pytest.fixture
-def wallet_id(faker: Faker) -> WalletID:
-    return faker.pyint(min_value=1)
+@pytest.fixture(params=("with_wallet", "without_wallet"))
+def wallet_id(faker: Faker, request: pytest.FixtureRequest) -> WalletID | None:
+    return faker.pyint(min_value=1) if request.param == "with_wallet" else None
 
 
 _FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[int] = 10
@@ -131,7 +132,7 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     _base_configuration: None,
     ec2_client: EC2Client,
     user_id: UserID,
-    wallet_id: WalletID,
+    wallet_id: WalletID | None,
     initialized_app: FastAPI,
     mocked_dask_ping_scheduler: MockedDaskModule,
 ):
@@ -177,7 +178,7 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     _base_configuration: None,
     ec2_client: EC2Client,
     user_id: UserID,
-    wallet_id: WalletID,
+    wallet_id: WalletID | None,
     initialized_app: FastAPI,
     mocked_dask_ping_scheduler: MockedDaskModule,
     create_ec2_workers: Callable[[int], Awaitable[list[str]]],

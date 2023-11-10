@@ -3,6 +3,8 @@ import logging
 
 import arrow
 from fastapi import FastAPI
+from models_library.users import UserID
+from models_library.wallets import WalletID
 
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
@@ -57,8 +59,16 @@ async def _find_terminateable_instances(
     # get all terminateable instances associated worker instances
     worker_instances = []
     for instance in terminateable_instances:
-        user_id = instance.tags["user_id"]
-        wallet_id = instance.tags["wallet_id"]
+        assert "user_id" in instance.tags  # nosec
+        user_id = UserID(instance.tags["user_id"])
+        assert "wallet_id" in instance.tags  # nosec
+        # NOTE: wallet_id can be None
+        wallet_id = (
+            WalletID(instance.tags["wallet_id"])
+            if instance.tags["wallet_id"] != "None"
+            else None
+        )
+
         worker_instances.extend(
             await get_cluster_workers(app, user_id=user_id, wallet_id=wallet_id)
         )
