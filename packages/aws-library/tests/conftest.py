@@ -7,6 +7,7 @@ import aws_library
 import pytest
 
 pytest_plugins = [
+    "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
