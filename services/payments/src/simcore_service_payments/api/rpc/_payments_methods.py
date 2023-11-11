@@ -1,4 +1,5 @@
 import logging
+import warnings
 from decimal import Decimal
 
 from fastapi import FastAPI
@@ -127,7 +128,44 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
     user_email: EmailStr,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
+    warnings.warn(
+        f"{__name__}.init_payment_with_payment_method is deprecated. Use instead pay_with_payment_method",
+        DeprecationWarning,
+        stacklevel=1,
+    )
     return await payments.init_payment_with_payment_method(
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
+        repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+        payment_method_id=payment_method_id,
+        amount_dollars=amount_dollars,
+        target_credits=target_credits,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
+        comment=comment,
+    )
+
+
+@router.expose()
+async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
+    app: FastAPI,
+    *,
+    payment_method_id: PaymentMethodID,
+    amount_dollars: Decimal,
+    target_credits: Decimal,
+    product_name: str,
+    wallet_id: WalletID,
+    wallet_name: str,
+    user_id: UserID,
+    user_name: str,
+    user_email: EmailStr,
+    comment: str | None = None,
+):
+    return await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),

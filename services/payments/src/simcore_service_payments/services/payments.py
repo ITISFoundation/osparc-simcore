@@ -6,6 +6,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+import warnings
 from decimal import Decimal
 
 import arrow
@@ -91,7 +92,6 @@ async def cancel_one_time_payment(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-
     payment = await repo.get_payment_transaction(
         payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
     )
@@ -123,7 +123,6 @@ async def acknowledge_one_time_payment(
     payment_id: PaymentID,
     ack: AckPayment,
 ) -> PaymentsTransactionsDB:
-
     return await repo_transactions.update_ack_payment_transaction(
         payment_id=payment_id,
         completion_state=(
@@ -189,6 +188,12 @@ async def init_payment_with_payment_method(
     user_email: EmailStr,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
+    warnings.warn(
+        f"{__name__}.init_payment_with_payment_method is deprecated. Use instead pay_with_payment_method",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     initiated_at = arrow.utcnow().datetime
 
     acked = await repo_methods.get_payment_method(
@@ -222,6 +227,31 @@ async def init_payment_with_payment_method(
         payment_id=f"{payment_id}",
         payment_form_url=None,
     )
+
+
+async def pay_with_payment_method(
+    gateway: PaymentsGatewayApi,
+    repo_transactions: PaymentsTransactionsRepo,
+    repo_methods: PaymentsMethodsRepo,
+    *,
+    payment_method_id: PaymentMethodID,
+    amount_dollars: Decimal,
+    target_credits: Decimal,
+    product_name: str,
+    wallet_id: WalletID,
+    wallet_name: str,
+    user_id: UserID,
+    user_name: str,
+    user_email: EmailStr,
+    comment: str | None = None,
+):
+    initiated_at = arrow.utcnow().datetime
+
+    acked = await repo_methods.get_payment_method(
+        payment_method_id, user_id=user_id, wallet_id=wallet_id
+    )
+
+    raise NotImplementedError
 
 
 async def get_payments_page(
