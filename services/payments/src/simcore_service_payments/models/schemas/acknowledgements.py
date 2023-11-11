@@ -22,6 +22,20 @@ class SavedPaymentMethod(AckPaymentMethod):
     payment_method_id: PaymentMethodID
 
 
+class AckPaymentWithPaymentMethod(_BaseAck):
+    # NOTE: This model is equivalent to `AckPayment` below
+    # Nonetheless I decided to separate it for clarity in the OAS
+    # since in payments w/ payment-method the field `saved` will
+    # never be provided.
+    invoice_url: HttpUrl | None = Field(
+        default=None, description="Link to invoice is required when success=true"
+    )
+
+
+#
+# ACK one-time payments
+#
+
 _ONE_TIME_SUCCESS: dict[str, Any] = {
     "success": True,
     "invoice_url": "https://invoices.com/id=12345",
@@ -53,22 +67,11 @@ _EXAMPLES: list[dict[str, Any]] = [
 ]
 
 
-#
-# ACK one-time payments
-#
-
-
-class AckPaymentWithPaymentMethod(_BaseAck):
-    # NOTE: This model is equivalent to `AckPayment` below
-    # Nonetheless I decided to separate it for clarity in the OAS
-    # since in payments w/ payment-method the field `saved` will
-    # never be provided.
+class AckPayment(_BaseAck):
     invoice_url: HttpUrl | None = Field(
         default=None, description="Link to invoice is required when success=true"
     )
 
-
-class AckPayment(AckPaymentWithPaymentMethod):
     saved: SavedPaymentMethod | None = Field(
         default=None,
         description="Gets the payment-method if user opted to save it during payment."
