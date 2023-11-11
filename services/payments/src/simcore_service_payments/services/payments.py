@@ -248,11 +248,23 @@ async def pay_with_payment_method(
     comment: str | None = None,
 ) -> PaymentTransaction:
     initiated_at = arrow.utcnow().datetime
-    # TODO: check with Dennis whether ack_payment.payment_id
-    init_payment_id = f"{uuid.uuid4()}"
 
     acked = await repo_methods.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
+    )
+
+    # TODO: retry if PaymentAlreadyExistsError
+    # TODO: async with repo_transactions.begin(): should set a scope transaction inside
+    payment_id = await repo_transactions.insert_init_payment_transaction(
+        payment_id=f"{uuid.uuid4()}",  # TODO: check with Dennis whether ack_payment.payment_id
+        price_dollars=amount_dollars,
+        osparc_credits=target_credits,
+        product_name=product_name,
+        user_id=user_id,
+        user_email=user_email,
+        wallet_id=wallet_id,
+        comment=comment,
+        initiated_at=initiated_at,
     )
 
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
@@ -264,19 +276,6 @@ async def pay_with_payment_method(
             user_email=user_email,
             wallet_name=wallet_name,
         ),
-    )
-
-    # TODO: insert_payment_transaction
-    payment_id = await repo_transactions.insert_init_payment_transaction(
-        payment_id=init_payment_id,
-        price_dollars=amount_dollars,
-        osparc_credits=target_credits,
-        product_name=product_name,
-        user_id=user_id,
-        user_email=user_email,
-        wallet_id=wallet_id,
-        comment=comment,
-        initiated_at=initiated_at,
     )
 
     transaction = await repo_transactions.update_ack_payment_transaction(

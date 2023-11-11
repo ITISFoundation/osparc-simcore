@@ -22,21 +22,6 @@ from .base import BaseRepository
 
 
 class PaymentsTransactionsRepo(BaseRepository):
-    async def insert_payment_transaction(
-        self,
-        payment_id: PaymentID,
-        *,
-        price_dollars: Decimal,
-        osparc_credits: Decimal,
-        product_name: str,
-        user_id: UserID,
-        user_email: str,
-        wallet_id: WalletID,
-        comment: str | None,
-        initiated_at: datetime.datetime,
-    ):
-        raise NotImplementedError
-
     async def insert_init_payment_transaction(
         self,
         payment_id: PaymentID,
