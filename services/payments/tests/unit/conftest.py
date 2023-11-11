@@ -37,6 +37,9 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPaymentWithPaymentMethod,
+)
 
 
 @pytest.fixture
@@ -254,16 +257,23 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
                 json=jsonable_encoder(PaymentMethodsBatch(items=items)),
             )
 
-        def _init_payment(request: httpx.Request, pm_id: PaymentMethodID):
+        def _pay(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
             assert InitPayment.parse_raw(request.content) is not None
 
             # checks
             _get(request, pm_id)
 
+            payment_id = faker.uuid4()
             return httpx.Response(
                 status.HTTP_200_OK,
-                json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
+                json=jsonable_encoder(
+                    AckPaymentWithPaymentMethod(
+                        success=True,
+                        message=f"Payment '{payment_id}' with payment-method '{pm_id}'",
+                        invoice_url=faker.url(),
+                    )
+                ),
             )
 
         # ------
@@ -290,8 +300,8 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
 
         mock_router.post(
             path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
-            name="init_payment_with_payment_method",
-        ).mock(side_effect=_init_payment)
+            name="pay_with_payment_method",
+        ).mock(side_effect=_pay)
 
     yield _mock
 

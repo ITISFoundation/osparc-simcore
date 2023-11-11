@@ -92,7 +92,6 @@ async def test_one_time_payment_workflow(
     mock_payments_gateway_service_or_none: MockRouter | None,
     amount_dollars: float,
 ):
-
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
     assert payment_gateway_api
 
@@ -131,7 +130,6 @@ async def test_payment_methods_workflow(
     mock_payments_gateway_service_or_none: MockRouter | None,
     amount_dollars: float,
 ):
-
     payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
         app
     )
@@ -171,8 +169,7 @@ async def test_payment_methods_workflow(
     assert len(items) == 1
     assert items[0] == got_payment_method
 
-    # init payments with payment-method (needs to be ACK to complete)
-    payment_initiated = await payments_gateway_api.init_payment_with_payment_method(
+    payment_with_payment_method = await payments_gateway_api.pay_with_payment_method(
         id_=payment_method_id,
         payment=InitPayment(
             amount_dollars=amount_dollars,
@@ -182,10 +179,7 @@ async def test_payment_methods_workflow(
             wallet_name=faker.word(),
         ),
     )
-
-    # cancel payment
-    payment_canceled = await payments_gateway_api.cancel_payment(payment_initiated)
-    assert payment_canceled is not None
+    assert payment_with_payment_method.success
 
     # delete payment-method
     await payments_gateway_api.delete_payment_method(payment_method_id)
@@ -197,8 +191,6 @@ async def test_payment_methods_workflow(
     assert http_status_error.response.status_code == status.HTTP_404_NOT_FOUND
 
     if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
-
         # all defined payment-methods
         for route in mock_payments_gateway_service_or_none.routes:
             if route.name and "payment_method" in route.name:

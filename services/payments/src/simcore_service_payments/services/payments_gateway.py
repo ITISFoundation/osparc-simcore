@@ -14,6 +14,9 @@ from fastapi.encoders import jsonable_encoder
 from httpx import URL
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPaymentWithPaymentMethod,
+)
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -123,8 +126,15 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
 
-    async def pay_with_payment_method(self):
-        raise NotImplementedError
+    async def pay_with_payment_method(
+        self, id_: PaymentMethodID, payment: InitPayment
+    ) -> AckPaymentWithPaymentMethod:
+        response = await self.client.post(
+            f"/payment-methods/{id_}:pay",
+            json=jsonable_encoder(payment),
+        )
+        response.raise_for_status()
+        return AckPaymentWithPaymentMethod.parse_obj(response.json())
 
 
 def setup_payments_gateway(app: FastAPI):
