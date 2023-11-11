@@ -31,7 +31,7 @@ botocore==1.31.64
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.31.83
+botocore-stubs==1.31.84
     # via types-aiobotocore
 charset-normalizer==3.3.2
     # via aiohttp
