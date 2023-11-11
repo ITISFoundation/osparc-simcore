@@ -58,15 +58,21 @@ _EXAMPLES: list[dict[str, Any]] = [
 #
 
 
-class AckPayment(_BaseAck):
+class AckPaymentWithPaymentMethod(_BaseAck):
+    # NOTE: This model is equivalent to `AckPayment` below
+    # Nonetheless I decided to separate it for clarity in the OAS
+    # since in payments w/ payment-method the field `saved` will
+    # never be provided.
     invoice_url: HttpUrl | None = Field(
         default=None, description="Link to invoice is required when success=true"
     )
+
+
+class AckPayment(AckPaymentWithPaymentMethod):
     saved: SavedPaymentMethod | None = Field(
         default=None,
-        description="If the user decided to save the payment method"
-        "after payment it returns the payment-method acknoledgement response."
-        "Otherwise it defaults to None.",
+        description="Gets the payment-method if user opted to save it during payment."
+        "If used did not opt to save of payment-method was already saved, then it defaults to None",
     )
 
     class Config:
