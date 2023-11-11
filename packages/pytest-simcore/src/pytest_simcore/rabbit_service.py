@@ -16,7 +16,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_host import get_localhost_ip, get_service_published_port
 
 _logger = logging.getLogger(__name__)
 

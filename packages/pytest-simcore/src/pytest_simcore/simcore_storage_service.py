@@ -15,7 +15,7 @@ from pydantic import parse_obj_as
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_host import get_localhost_ip, get_service_published_port
 
 
 @pytest.fixture(scope="module")

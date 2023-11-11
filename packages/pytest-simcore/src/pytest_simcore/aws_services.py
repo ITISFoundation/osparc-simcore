@@ -10,7 +10,7 @@ import pytest
 from aiobotocore.session import get_session
 from aiohttp.test_utils import unused_port
 from moto.server import ThreadedMotoServer
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 
 
 @pytest.fixture(scope="module")

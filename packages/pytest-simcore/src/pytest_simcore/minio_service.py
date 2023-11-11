@@ -16,7 +16,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_host import get_localhost_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +69,6 @@ def minio_config(
 
 @pytest.fixture(scope="module")
 def minio_service(minio_config: dict[str, str]) -> Iterator[Minio]:
-
     client = Minio(**minio_config["client"])
 
     for attempt in Retrying(

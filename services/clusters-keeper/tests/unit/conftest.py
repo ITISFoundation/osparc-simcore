@@ -26,8 +26,8 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from moto.server import ThreadedMotoServer
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.application import create_app
