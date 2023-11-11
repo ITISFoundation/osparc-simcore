@@ -1,8 +1,29 @@
+import time
+
 from fastapi import FastAPI
+from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 from servicelib.db_async_engine import close_db_connection, connect_to_db
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.settings import ApplicationSettings
+
+
+def get_engine(app: FastAPI) -> AsyncEngine:
+    assert app.state.engine  # nosec
+    return app.state.engine
+
+
+async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
+    try:
+        tic = time.time()
+        # test
+        async with engine.connect() as connection:
+            await connection.execute("SELECT 1")
+
+        return IsResponsive(elapsed=time.time() - tic)
+    except SQLAlchemyError as err:
+        return IsNonResponsive(reason=f"{err}")
 
 
 def setup_postgres(app: FastAPI):
