@@ -39,7 +39,10 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
-from simcore_service_payments.models.schemas.acknowledgements import AckPayment
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPayment,
+    AckPaymentWithPaymentMethod,
+)
 from simcore_service_payments.models.schemas.auth import Token
 
 logging.basicConfig(level=logging.INFO)
@@ -291,7 +294,7 @@ def create_payment_method_router():
 
     @router.get(
         "/{id}",
-        response_class=GetPaymentMethod,
+        response_model=GetPaymentMethod,
         responses=ERROR_RESPONSES,
     )
     def get_payment_method(
@@ -315,10 +318,10 @@ def create_payment_method_router():
 
     @router.post(
         "/{id}:pay",
-        response_model=PaymentInitiated,
+        response_model=AckPaymentWithPaymentMethod,
         responses=ERROR_RESPONSES,
     )
-    def init_payment_with_payment_method(
+    def pay_with_payment_method(
         id: PaymentMethodID,
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
