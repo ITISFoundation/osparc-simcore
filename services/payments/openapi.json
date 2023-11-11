@@ -235,7 +235,7 @@
               }
             ],
             "title": "Saved",
-            "description": "If the user decided to save the payment methodafter payment it returns the payment-method acknoledgement response.Otherwise it defaults to None."
+            "description": "Gets the payment-method if user opted to save it during payment.If used did not opt to save of payment-method was already saved, then it defaults to None"
           }
         },
         "type": "object",
