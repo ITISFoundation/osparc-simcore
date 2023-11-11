@@ -6,6 +6,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+import uuid
 import warnings
 from decimal import Decimal
 
@@ -13,6 +14,7 @@ import arrow
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
+    PaymentTransaction,
     WalletPaymentInitiated,
 )
 from models_library.users import UserID
@@ -29,7 +31,7 @@ from ..core.errors import PaymentAlreadyAckedError, PaymentNotFoundError
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.payments_gateway import InitPayment, PaymentInitiated
-from ..models.schemas.acknowledgements import AckPayment
+from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from .payments_gateway import PaymentsGatewayApi
 
@@ -244,14 +246,51 @@ async def pay_with_payment_method(
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-):
+) -> PaymentTransaction:
     initiated_at = arrow.utcnow().datetime
+    # TODO: check with Dennis whether ack_payment.payment_id
+    init_payment_id = f"{uuid.uuid4()}"
 
     acked = await repo_methods.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 
-    raise NotImplementedError
+    ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
+        acked.payment_method_id,
+        payment=InitPayment(
+            amount_dollars=amount_dollars,
+            credits=target_credits,
+            user_name=user_name,
+            user_email=user_email,
+            wallet_name=wallet_name,
+        ),
+    )
+
+    # TODO: insert_payment_transaction
+    payment_id = await repo_transactions.insert_init_payment_transaction(
+        payment_id=init_payment_id,
+        price_dollars=amount_dollars,
+        osparc_credits=target_credits,
+        product_name=product_name,
+        user_id=user_id,
+        user_email=user_email,
+        wallet_id=wallet_id,
+        comment=comment,
+        initiated_at=initiated_at,
+    )
+
+    transaction = await repo_transactions.update_ack_payment_transaction(
+        payment_id=payment_id,
+        completion_state=(
+            PaymentTransactionState.SUCCESS
+            if ack.success
+            else PaymentTransactionState.FAILED
+        ),
+        state_message=ack.message,
+        invoice_url=ack.invoice_url,
+    )
+
+    return transaction.to_api_model()
 
 
 async def get_payments_page(

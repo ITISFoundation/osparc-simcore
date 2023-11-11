@@ -10,7 +10,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,
-    WalletPaymentInitiated,
+    PaymentTransaction,
 )
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
@@ -222,9 +222,9 @@ async def test_webserver_pay_with_payment_method_workflow(
         ack=AckPaymentMethod(success=True, message="Faked ACK"),
     )
 
-    payment_inited = await rpc_client.request(
+    transaction = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_payment_with_payment_method"),
+        parse_obj_as(RPCMethodName, "pay_with_payment_method"),
         payment_method_id=created.payment_method_id,
         amount_dollars=faker.pyint(),
         target_credits=faker.pyint(),
@@ -237,14 +237,14 @@ async def test_webserver_pay_with_payment_method_workflow(
         comment="Payment with stored credit-card",
     )
 
-    assert isinstance(payment_inited, WalletPaymentInitiated)
-    assert payment_inited.payment_id
-    assert payment_inited.payment_form_url is None
+    assert isinstance(transaction, PaymentTransaction)
+    assert transaction.payment_id
+    assert transaction.state == "SUCCESS"
 
     payment = await PaymentsTransactionsRepo(app.state.engine).get_payment_transaction(
-        payment_inited.payment_id, user_id=user_id, wallet_id=wallet_id
+        transaction.payment_id, user_id=user_id, wallet_id=wallet_id
     )
     assert payment is not None
-    assert payment.payment_id == payment_inited.payment_id
-    assert payment.state == PaymentTransactionState.PENDING
+    assert payment.payment_id == transaction.payment_id
+    assert payment.state == PaymentTransactionState.SUCCESS
     assert payment.comment == "Payment with stored credit-card"
