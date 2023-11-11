@@ -11,16 +11,16 @@ from ..core.settings import ApplicationSettings
 
 def get_engine(app: FastAPI) -> AsyncEngine:
     assert app.state.engine  # nosec
-    return app.state.engine
+    engine: AsyncEngine = app.state.engine
+    return engine
 
 
 async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
     try:
         tic = time.time()
         # test
-        async with engine.connect() as connection:
-            await connection.execute("SELECT 1")
-
+        async with engine.connect():
+            ...
         return IsResponsive(elapsed=time.time() - tic)
     except SQLAlchemyError as err:
         return IsNonResponsive(reason=f"{err}")
