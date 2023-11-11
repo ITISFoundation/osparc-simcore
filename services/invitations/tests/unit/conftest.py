@@ -13,7 +13,7 @@ from models_library.products import ProductName
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_invitations.invitations import InvitationInputs
+from simcore_service_invitations.services.invitations import InvitationInputs
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
