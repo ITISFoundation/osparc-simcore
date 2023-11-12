@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import os
+from collections.abc import Callable, Iterable
 from copy import deepcopy
-from typing import Callable, Iterable
 
 import aiohttp
 import pytest
@@ -15,7 +15,8 @@ from pydantic import parse_obj_as
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
-from .helpers.utils_host import get_localhost_ip, get_service_published_port
+from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_host import get_localhost_ip
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +39,7 @@ def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable
     os.environ = old_environ
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def storage_service(
     minio_service: Minio, storage_endpoint: URL, docker_stack: dict
 ) -> URL:
