@@ -16,7 +16,7 @@ from unittest import mock
 
 import aiodocker
 import pytest
-from aws_library.ec2.models import Resources
+from aws_library.ec2.models import EC2InstanceData, Resources
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import (
@@ -51,7 +51,6 @@ from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
 )
-from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -59,7 +58,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 @pytest.fixture
 def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instances",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.terminate_instances",
         autospec=True,
     )
 
@@ -71,7 +70,7 @@ def mock_start_aws_instance(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.start_aws_instance",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.start_aws_instance",
         autospec=True,
         return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )

@@ -23,7 +23,8 @@ import requests
 import simcore_service_autoscaling
 from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import Resources
+from aws_library.ec2.client import SimcoreEC2API
+from aws_library.ec2.models import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -48,7 +49,6 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import Cluster, DaskTaskResources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
-from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -637,9 +637,9 @@ async def aws_ami_id(
 @pytest.fixture
 async def autoscaling_ec2(
     app_environment: EnvVarsDict,
-) -> AsyncIterator[AutoscalingEC2]:
+) -> AsyncIterator[SimcoreEC2API]:
     settings = EC2Settings.create_from_envs()
-    ec2 = await AutoscalingEC2.create(settings)
+    ec2 = await SimcoreEC2API.create(settings)
     assert ec2
     yield ec2
     await ec2.close()
@@ -647,7 +647,7 @@ async def autoscaling_ec2(
 
 @pytest.fixture
 async def ec2_client(
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
 ) -> EC2Client:
     return autoscaling_ec2.client
 

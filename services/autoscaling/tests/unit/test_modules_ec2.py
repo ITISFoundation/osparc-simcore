@@ -7,7 +7,8 @@ from typing import cast
 
 import botocore.exceptions
 import pytest
-from aws_library.ec2.models import EC2InstanceType
+from aws_library.ec2.client import SimcoreEC2API
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType
 from faker import Faker
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
@@ -19,11 +20,7 @@ from simcore_service_autoscaling.core.errors import (
     Ec2TooManyInstancesError,
 )
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
-from simcore_service_autoscaling.modules.ec2 import (
-    AutoscalingEC2,
-    EC2InstanceData,
-    get_ec2_client,
-)
+from simcore_service_autoscaling.modules.ec2 import get_ec2_client
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -43,7 +40,7 @@ def app_settings(
 
 
 async def test_ec2_client_lifespan(ec2_settings: EC2Settings):
-    ec2 = await AutoscalingEC2.create(settings=ec2_settings)
+    ec2 = await SimcoreEC2API.create(settings=ec2_settings)
     assert ec2
     assert ec2.client
     assert ec2.exit_stack
@@ -100,7 +97,7 @@ async def test_ping(
     mocked_aws_server_envs: None,
     aws_allowed_ec2_instance_type_names_env: list[str],
     app_settings: ApplicationSettings,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
 ):
     assert await autoscaling_ec2.ping() is True
     mocked_aws_server.stop()
@@ -113,7 +110,7 @@ async def test_get_ec2_instance_capabilities(
     mocked_aws_server_envs: None,
     aws_allowed_ec2_instance_type_names_env: list[str],
     app_settings: ApplicationSettings,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
@@ -173,7 +170,7 @@ async def test_start_aws_instance(
     aws_security_group_id: str,
     aws_ami_id: str,
     ec2_client: EC2Client,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
     app_settings: ApplicationSettings,
     faker: Faker,
     fake_ec2_instance_type: EC2InstanceType,
@@ -216,7 +213,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     aws_security_group_id: str,
     aws_ami_id: str,
     ec2_client: EC2Client,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
     app_settings: ApplicationSettings,
     faker: Faker,
     fake_ec2_instance_type: EC2InstanceType,
@@ -257,7 +254,7 @@ async def test_get_instances(
     aws_security_group_id: str,
     aws_ami_id: str,
     ec2_client: EC2Client,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
     app_settings: ApplicationSettings,
     faker: Faker,
     fake_ec2_instance_type: EC2InstanceType,
@@ -297,7 +294,7 @@ async def test_terminate_instance(
     aws_security_group_id: str,
     aws_ami_id: str,
     ec2_client: EC2Client,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
     app_settings: ApplicationSettings,
     faker: Faker,
     fake_ec2_instance_type: EC2InstanceType,
@@ -331,7 +328,7 @@ async def test_terminate_instance_not_existing_raises(
     aws_security_group_id: str,
     aws_ami_id: str,
     ec2_client: EC2Client,
-    autoscaling_ec2: AutoscalingEC2,
+    autoscaling_ec2: SimcoreEC2API,
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):

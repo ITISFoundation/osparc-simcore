@@ -7,7 +7,7 @@ import logging
 from typing import cast
 
 import arrow
-from aws_library.ec2.models import EC2InstanceType, Resources
+from aws_library.ec2.models import EC2InstanceConfig, EC2InstanceType, Resources
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -53,12 +53,13 @@ async def _analyze_current_cluster(
 
     # get the EC2 instances we have
     existing_ec2_instances = await get_ec2_client(app).get_instances(
-        app_settings.AUTOSCALING_EC2_INSTANCES, auto_scaling_mode.get_ec2_tags(app)
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+        tags=auto_scaling_mode.get_ec2_tags(app),
     )
 
     terminated_ec2_instances = await get_ec2_client(app).get_instances(
-        app_settings.AUTOSCALING_EC2_INSTANCES,
-        auto_scaling_mode.get_ec2_tags(app),
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+        tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["terminated"],
     )
 
@@ -402,11 +403,17 @@ async def _start_instances(
     results = await asyncio.gather(
         *[
             ec2_client.start_aws_instance(
-                app_settings.AUTOSCALING_EC2_INSTANCES,
-                instance_type=instance_type,
-                tags=instance_tags,
-                startup_script=instance_startup_script,
+                EC2InstanceConfig(
+                    type=instance_type,
+                    tags=instance_tags,
+                    startup_script=instance_startup_script,
+                    ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_AMI_ID,
+                    key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+                    security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                    subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                ),
                 number_of_instances=instance_num,
+                max_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
             )
             for instance_type, instance_num in needed_instances.items()
         ],
