@@ -56,7 +56,6 @@ def app_environment(
 
 @pytest.fixture
 async def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
-    # return mocker.AsyncMock(return_value=True)
     return mocker.patch(
         "simcore_service_payments.services.auto_recharge_listener.process_message"
     )

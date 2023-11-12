@@ -24,13 +24,22 @@ async def _subscribe_to_rabbitmq(app) -> str:
         return subscribed_queue
 
 
+async def _unsubscribe_consumer(app) -> None:
+    with log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq queue"):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+        await rabbit_client.unsubscribe_consumer(
+            WalletCreditsMessage.get_channel_name(),
+        )
+        return None
+
+
 def setup_auto_recharge_listener(app: FastAPI) -> None:
     async def _on_startup() -> None:
         app.state.auto_recharge_rabbitmq_consumer = await _subscribe_to_rabbitmq(app)
 
     async def _on_shutdown() -> None:
-        # NOTE: We want to have persistent queue, therefore we will not unsubscribe
-        ...
+        # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
+        app.state.auto_recharge_rabbitmq_constumer = await _unsubscribe_consumer(app)
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
