@@ -60,3 +60,15 @@ class EC2InstanceData:
     type: InstanceTypeType  # noqa: A003
     state: InstanceStateNameType
     resources: Resources
+
+
+@dataclass(frozen=True)
+class EC2InstanceConfig:
+    type: EC2InstanceType
+    tags: EC2Tags
+    startup_script: str
+
+    ami_id: str
+    key_name: str
+    security_group_ids: list[str]
+    subnet_id: str

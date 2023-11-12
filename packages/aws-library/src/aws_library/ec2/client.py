@@ -9,13 +9,19 @@ from aiobotocore.session import ClientCreatorContext
 from aiocache import cached
 from pydantic import ByteSize
 from servicelib.logging_utils import log_context
-from settings_library.ec2 import EC2InstancesSettings, EC2Settings
+from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from .errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
-from .models import EC2InstanceData, EC2InstanceType, EC2Tags, Resources
+from .models import (
+    EC2InstanceConfig,
+    EC2InstanceData,
+    EC2InstanceType,
+    EC2Tags,
+    Resources,
+)
 from .utils import compose_user_data
 
 _logger = logging.getLogger(__name__)
@@ -79,48 +85,41 @@ class SimcoreEC2API:
 
     async def start_aws_instance(
         self,
-        instance_settings: EC2InstancesSettings,
-        instance_type: EC2InstanceType,
-        tags: dict[str, str],
-        startup_script: str,
+        instance_config: EC2InstanceConfig,
         number_of_instances: int,
+        max_number_of_instances: int = 10,
     ) -> list[EC2InstanceData]:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"launching {number_of_instances} AWS instance(s) {instance_type.name} with {tags=}",
+            msg=f"launching {number_of_instances} AWS instance(s) {instance_config.type.name} with {instance_config.tags=}",
         ):
             # first check the max amount is not already reached
             current_instances = await self.get_instances(
-                key_names=[instance_settings.EC2_INSTANCES_KEY_NAME], tags=tags
+                key_names=[instance_config.key_name], tags=instance_config.tags
             )
-            if (
-                len(current_instances) + number_of_instances
-                > instance_settings.EC2_INSTANCES_MAX_INSTANCES
-            ):
-                raise EC2TooManyInstancesError(
-                    num_instances=instance_settings.EC2_INSTANCES_MAX_INSTANCES
-                )
+            if len(current_instances) + number_of_instances > max_number_of_instances:
+                raise EC2TooManyInstancesError(num_instances=max_number_of_instances)
 
             instances = await self.client.run_instances(
-                ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
+                ImageId=instance_config.ami_id,
                 MinCount=number_of_instances,
                 MaxCount=number_of_instances,
-                InstanceType=instance_type.name,
+                InstanceType=instance_config.type.name,
                 InstanceInitiatedShutdownBehavior="terminate",
-                KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
-                SubnetId=instance_settings.EC2_INSTANCES_SUBNET_ID,
+                KeyName=instance_config.key_name,
+                SubnetId=instance_config.subnet_id,
                 TagSpecifications=[
                     {
                         "ResourceType": "instance",
                         "Tags": [
                             {"Key": tag_key, "Value": tag_value}
-                            for tag_key, tag_value in tags.items()
+                            for tag_key, tag_value in instance_config.tags.items()
                         ],
                     }
                 ],
-                UserData=compose_user_data(startup_script),
-                SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                UserData=compose_user_data(instance_config.startup_script),
+                SecurityGroupIds=instance_config.security_group_ids,
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             _logger.info(
@@ -143,7 +142,9 @@ class SimcoreEC2API:
                     aws_private_dns=instance["PrivateDnsName"],
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
-                    resources=Resources(cpus=instance_type.cpus, ram=instance_type.ram),
+                    resources=Resources(
+                        cpus=instance_config.type.cpus, ram=instance_config.type.ram
+                    ),
                 )
                 for instance in instances["Reservations"][0]["Instances"]
             ]
