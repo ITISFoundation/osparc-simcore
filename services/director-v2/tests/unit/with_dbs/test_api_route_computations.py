@@ -56,6 +56,10 @@ from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils import (
+    _CPUS_SAFE_MARGIN,
+    _RAM_SAFE_MARGIN_RATIO,
+)
 from simcore_service_director_v2.utils.computations import to_node_class
 from starlette import status
 
@@ -500,12 +504,16 @@ async def test_create_computation_with_wallet(
                             "resources"
                         ] == {
                             "CPU": {
-                                "limit": fake_ec2_cpus - 0.1,
-                                "reservation": fake_ec2_cpus - 0.1,
+                                "limit": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
+                                "reservation": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
                             },
                             "RAM": {
-                                "limit": fake_ec2_ram - 1024**3,
-                                "reservation": fake_ec2_ram - 1024**3,
+                                "limit": int(
+                                    fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram
+                                ),
+                                "reservation": int(
+                                    fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram
+                                ),
                             },
                         }
                     elif "s4l-core" in node.required_resources:
