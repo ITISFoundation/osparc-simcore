@@ -13,7 +13,7 @@ from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
 from simcore_service_invitations.cli import main
 from simcore_service_invitations.core.settings import ApplicationSettings
-from simcore_service_invitations.invitations import InvitationInputs
+from simcore_service_invitations.services.invitations import InvitationInputs
 from typer.testing import CliRunner
 
 
