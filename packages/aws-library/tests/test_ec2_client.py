@@ -6,19 +6,19 @@
 import datetime
 import json
 from collections.abc import AsyncIterator
-from typing import cast
+from typing import cast, get_args
 
 import botocore.exceptions
 import pytest
 from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.errors import EC2TooManyInstancesError
+from aws_library.ec2.errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
 from aws_library.ec2.models import EC2InstanceType, EC2Tags
 from faker import Faker
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.ec2 import EC2InstancesSettings, EC2Settings
 from types_aiobotocore_ec2 import EC2Client
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
 def _ec2_allowed_types() -> list[InstanceTypeType]:
@@ -173,6 +173,7 @@ async def _assert_instances_in_ec2(
     expected_num_instances: int,
     expected_instance_type: EC2InstanceType,
     expected_tags: EC2Tags,
+    expected_state: str,
 ) -> None:
     all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == expected_num_reservations
@@ -186,6 +187,7 @@ async def _assert_instances_in_ec2(
             assert instance["Tags"] == [
                 {"Key": key, "Value": value} for key, value in expected_tags.items()
             ]
+            assert instance["State"]["Name"] == expected_state
 
 
 async def test_start_aws_instance(
@@ -215,6 +217,7 @@ async def test_start_aws_instance(
         expected_num_instances=number_of_instances,
         expected_instance_type=fake_ec2_instance_type,
         expected_tags=tags,
+        expected_state="running",
     )
 
     # create a second reservation
@@ -231,6 +234,7 @@ async def test_start_aws_instance(
         expected_num_instances=number_of_instances,
         expected_instance_type=fake_ec2_instance_type,
         expected_tags=tags,
+        expected_state="running",
     )
 
 
@@ -272,6 +276,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
         expected_num_instances=1,
         expected_instance_type=fake_ec2_instance_type,
         expected_tags=tags,
+        expected_state="running",
     )
 
     # now creating one more shall fail
@@ -289,97 +294,161 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
         expected_num_instances=1,
         expected_instance_type=fake_ec2_instance_type,
         expected_tags=tags,
+        expected_state="running",
     )
 
 
-# async def test_get_instances(
-#     mocked_ec2_server_envs: None,
-#     aws_vpc_id: str,
-#     aws_subnet_id: str,
-#     aws_security_group_id: str,
-#     aws_ami_id: str,
-#     ec2_client: EC2Client,
-#     autoscaling_ec2: AutoscalingEC2,
-#     app_settings: ApplicationSettings,
-#     faker: Faker,
-#     fake_ec2_instance_type: EC2InstanceType,
-# ):
-#     assert app_settings.AUTOSCALING_EC2_INSTANCES
-#     # we have nothing running now in ec2
-#     all_instances = await ec2_client.describe_instances()
-#     assert not all_instances["Reservations"]
-#     assert (
-#         await autoscaling_ec2.get_instances(app_settings.AUTOSCALING_EC2_INSTANCES, {})
-#         == []
-#     )
+async def test_get_instances(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    fake_ec2_instance_type: EC2InstanceType,
+    ec2_instances_settings: EC2InstancesSettings,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    assert (
+        await simcore_ec2_api.get_instances(
+            key_names=[ec2_instances_settings.EC2_INSTANCES_KEY_NAME], tags={}
+        )
+        == []
+    )
 
-#     # create some instance
-#     tags = faker.pydict(allowed_types=(str,))
-#     startup_script = faker.pystr()
-#     created_instances = await autoscaling_ec2.start_aws_instance(
-#         app_settings.AUTOSCALING_EC2_INSTANCES,
-#         fake_ec2_instance_type,
-#         tags=tags,
-#         startup_script=startup_script,
-#         number_of_instances=1,
-#     )
-#     assert len(created_instances) == 1
+    # create some instance
+    tags = faker.pydict(allowed_types=(str,))
+    startup_script = faker.pystr()
+    num_instances = faker.pyint(
+        min_value=1, max_value=ec2_instances_settings.EC2_INSTANCES_MAX_INSTANCES
+    )
+    created_instances = await simcore_ec2_api.start_aws_instance(
+        ec2_instances_settings,
+        fake_ec2_instance_type,
+        tags=tags,
+        startup_script=startup_script,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=fake_ec2_instance_type,
+        expected_tags=tags,
+        expected_state="running",
+    )
+    # this returns all the entries using thes key names
+    instance_received = await simcore_ec2_api.get_instances(
+        key_names=[ec2_instances_settings.EC2_INSTANCES_KEY_NAME], tags={}
+    )
+    assert created_instances == instance_received
 
-#     instance_received = await autoscaling_ec2.get_instances(
-#         app_settings.AUTOSCALING_EC2_INSTANCES,
-#         tags=tags,
-#     )
-#     assert created_instances == instance_received
+    # passing the tags will return the same
+    instance_received = await simcore_ec2_api.get_instances(
+        key_names=[ec2_instances_settings.EC2_INSTANCES_KEY_NAME], tags=tags
+    )
+    assert created_instances == instance_received
 
+    # asking for running state will also return the same
+    instance_received = await simcore_ec2_api.get_instances(
+        key_names=[ec2_instances_settings.EC2_INSTANCES_KEY_NAME],
+        tags=tags,
+        state_names=["running"],
+    )
+    assert created_instances == instance_received
 
-# async def test_terminate_instance(
-#     mocked_ec2_server_envs: None,
-#     aws_vpc_id: str,
-#     aws_subnet_id: str,
-#     aws_security_group_id: str,
-#     aws_ami_id: str,
-#     ec2_client: EC2Client,
-#     autoscaling_ec2: AutoscalingEC2,
-#     app_settings: ApplicationSettings,
-#     faker: Faker,
-#     fake_ec2_instance_type: EC2InstanceType,
-# ):
-#     assert app_settings.AUTOSCALING_EC2_INSTANCES
-#     # we have nothing running now in ec2
-#     all_instances = await ec2_client.describe_instances()
-#     assert not all_instances["Reservations"]
-#     # create some instance
-#     tags = faker.pydict(allowed_types=(str,))
-#     startup_script = faker.pystr()
-#     created_instances = await autoscaling_ec2.start_aws_instance(
-#         app_settings.AUTOSCALING_EC2_INSTANCES,
-#         fake_ec2_instance_type,
-#         tags=tags,
-#         startup_script=startup_script,
-#         number_of_instances=1,
-#     )
-#     assert len(created_instances) == 1
-
-#     # terminate the instance
-#     await autoscaling_ec2.terminate_instances(created_instances)
-#     # calling it several times is ok, the instance stays a while
-#     await autoscaling_ec2.terminate_instances(created_instances)
+    # asking for other states shall return nothing
+    for state in get_args(InstanceStateNameType):
+        instance_received = await simcore_ec2_api.get_instances(
+            key_names=[ec2_instances_settings.EC2_INSTANCES_KEY_NAME],
+            tags=tags,
+            state_names=[state],
+        )
+        if state == "running":
+            assert created_instances == instance_received
+        else:
+            assert not instance_received
 
 
-# async def test_terminate_instance_not_existing_raises(
-#     mocked_ec2_server_envs: None,
-#     aws_vpc_id: str,
-#     aws_subnet_id: str,
-#     aws_security_group_id: str,
-#     aws_ami_id: str,
-#     ec2_client: EC2Client,
-#     autoscaling_ec2: AutoscalingEC2,
-#     app_settings: ApplicationSettings,
-#     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-# ):
-#     assert app_settings.AUTOSCALING_EC2_INSTANCES
-#     # we have nothing running now in ec2
-#     all_instances = await ec2_client.describe_instances()
-#     assert not all_instances["Reservations"]
-#     with pytest.raises(Ec2InstanceNotFoundError):
-#         await autoscaling_ec2.terminate_instances([fake_ec2_instance_data()])
+async def test_terminate_instance(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    fake_ec2_instance_type: EC2InstanceType,
+    ec2_instances_settings: EC2InstancesSettings,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    # create some instance
+    tags = faker.pydict(allowed_types=(str,))
+    startup_script = faker.pystr()
+    num_instances = faker.pyint(
+        min_value=1, max_value=ec2_instances_settings.EC2_INSTANCES_MAX_INSTANCES
+    )
+    created_instances = await simcore_ec2_api.start_aws_instance(
+        ec2_instances_settings,
+        fake_ec2_instance_type,
+        tags=tags,
+        startup_script=startup_script,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=fake_ec2_instance_type,
+        expected_tags=tags,
+        expected_state="running",
+    )
+
+    # terminate the instance
+    await simcore_ec2_api.terminate_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=fake_ec2_instance_type,
+        expected_tags=tags,
+        expected_state="terminated",
+    )
+    # calling it several times is ok, the instance stays a while
+    await simcore_ec2_api.terminate_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=fake_ec2_instance_type,
+        expected_tags=tags,
+        expected_state="terminated",
+    )
+
+
+@pytest.fixture
+def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
+    def _creator(**overrides) -> EC2InstanceData:
+        return EC2InstanceData(
+            **(
+                {
+                    "launch_time": faker.date_time(tzinfo=timezone.utc),
+                    "id": faker.uuid4(),
+                    "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
+                    "type": faker.pystr(),
+                    "state": faker.pystr(),
+                    "resources": Resources(cpus=4.0, ram=ByteSize(1024 * 1024)),
+                }
+                | overrides
+            )
+        )
+
+    return _creator
+
+
+async def test_terminate_instance_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    fake_ec2_instance_type: EC2InstanceType,
+    ec2_instances_settings: EC2InstancesSettings,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.terminate_instances([fake_ec2_instance_data()])
