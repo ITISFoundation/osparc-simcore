@@ -230,15 +230,20 @@ class SimcoreEC2API:
     async def set_instances_tags(
         self, instances: list[EC2InstanceData], *, tags: EC2Tags
     ) -> None:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"setting {tags=} on instances '[{[i.id for i in instances]}]'",
-        ):
-            await self.client.create_tags(
-                Resources=[i.id for i in instances],
-                Tags=[
-                    {"Key": tag_key, "Value": tag_value}
-                    for tag_key, tag_value in tags.items()
-                ],
-            )
+        try:
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                msg=f"setting {tags=} on instances '[{[i.id for i in instances]}]'",
+            ):
+                await self.client.create_tags(
+                    Resources=[i.id for i in instances],
+                    Tags=[
+                        {"Key": tag_key, "Value": tag_value}
+                        for tag_key, tag_value in tags.items()
+                    ],
+                )
+        except botocore.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code", "") == "InvalidID":
+                raise EC2InstanceNotFoundError from exc
+            raise  # pragma: no cover

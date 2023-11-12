@@ -6,15 +6,16 @@
 import datetime
 import json
 from collections.abc import AsyncIterator
-from typing import cast, get_args
+from typing import Callable, cast, get_args
 
 import botocore.exceptions
 import pytest
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
-from aws_library.ec2.models import EC2InstanceType, EC2Tags
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, EC2Tags, Resources
 from faker import Faker
 from moto.server import ThreadedMotoServer
+from pydantic import ByteSize
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.ec2 import EC2InstancesSettings, EC2Settings
 from types_aiobotocore_ec2 import EC2Client
@@ -187,6 +188,8 @@ async def _assert_instances_in_ec2(
             assert instance["Tags"] == [
                 {"Key": key, "Value": value} for key, value in expected_tags.items()
             ]
+            assert "State" in instance
+            assert "Name" in instance["State"]
             assert instance["State"]["Name"] == expected_state
 
 
@@ -427,7 +430,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
         return EC2InstanceData(
             **(
                 {
-                    "launch_time": faker.date_time(tzinfo=timezone.utc),
+                    "launch_time": faker.date_time(tzinfo=datetime.timezone.utc),
                     "id": faker.uuid4(),
                     "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
                     "type": faker.pystr(),
@@ -444,11 +447,60 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
 async def test_terminate_instance_not_existing_raises(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    with pytest.raises(EC2InstanceNotFoundError):
+        await simcore_ec2_api.terminate_instances([fake_ec2_instance_data()])
+
+
+async def test_set_instance_tags(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
     faker: Faker,
     fake_ec2_instance_type: EC2InstanceType,
     ec2_instances_settings: EC2InstancesSettings,
 ):
-    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    # create some instance
+    tags = faker.pydict(allowed_types=(str,))
+    startup_script = faker.pystr()
+    num_instances = faker.pyint(
+        min_value=1, max_value=ec2_instances_settings.EC2_INSTANCES_MAX_INSTANCES
+    )
+    created_instances = await simcore_ec2_api.start_aws_instance(
+        ec2_instances_settings,
+        fake_ec2_instance_type,
+        tags=tags,
+        startup_script=startup_script,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=fake_ec2_instance_type,
+        expected_tags=tags,
+        expected_state="running",
+    )
+
+    new_tags = faker.pydict(allowed_types=(str,))
+    await simcore_ec2_api.set_instances_tags(created_instances, tags=new_tags)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=fake_ec2_instance_type,
+        expected_tags=tags | new_tags,
+        expected_state="running",
+    )
+
+
+async def test_set_instance_tags_not_existing_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
     await _assert_no_instances_in_ec2(ec2_client)
     with pytest.raises(EC2InstanceNotFoundError):
-        await simcore_ec2_api.terminate_instances([fake_ec2_instance_data()])
+        await simcore_ec2_api.set_instances_tags([fake_ec2_instance_data()], tags={})
