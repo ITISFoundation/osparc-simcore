@@ -5,8 +5,8 @@
 
 import datetime
 import json
-from collections.abc import AsyncIterator
-from typing import Callable, cast, get_args
+from collections.abc import AsyncIterator, Callable
+from typing import cast, get_args
 
 import botocore.exceptions
 import pytest
