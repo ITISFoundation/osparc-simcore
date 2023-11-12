@@ -148,14 +148,14 @@ async def create_payment_method(
     )
 
 
-async def list_payments_methods(
+async def list_successful_payment_methods(
     gateway: PaymentsGatewayApi,
     repo: PaymentsMethodsRepo,
     *,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[PaymentMethodGet]:
-    acked_many = await repo.list_user_payment_methods(
+    acked_many = await repo.list_user_successful_payment_methods(
         user_id=user_id, wallet_id=wallet_id
     )
     assert not any(acked.completed_at is None for acked in acked_many)  # nosec

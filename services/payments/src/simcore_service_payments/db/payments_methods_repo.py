@@ -115,7 +115,7 @@ class PaymentsMethodsRepo(BaseRepository):
             state_message=state_message,
         )
 
-    async def list_user_payment_methods(
+    async def list_user_successful_payment_methods(
         self,
         *,
         user_id: UserID,
@@ -135,7 +135,7 @@ class PaymentsMethodsRepo(BaseRepository):
         rows = result.fetchall() or []
         return parse_obj_as(list[PaymentsMethodsDB], rows)
 
-    async def get_payment_method(
+    async def get_successful_payment_method_(
         self,
         payment_method_id: PaymentMethodID,
         *,

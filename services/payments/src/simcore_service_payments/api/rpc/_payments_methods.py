@@ -69,7 +69,7 @@ async def list_payment_methods(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[PaymentMethodGet]:
-    return await payments_methods.list_payments_methods(
+    return await payments_methods.list_successful_payment_methods(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo=PaymentsMethodsRepo(db_engine=app.state.engine),
         user_id=user_id,
