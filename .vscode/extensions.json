@@ -3,9 +3,11 @@
     "charliermarsh.ruff",
     "eamodio.gitlens",
     "exiasr.hadolint",
+    "ms-python.black-formatter",
     "ms-python.python",
     "njpwerner.autodocstring",
     "samuelcolvin.jinjahtml",
     "timonwong.shellcheck",
+    "vscode-icons-team.vscode-icons",
   ]
 }
