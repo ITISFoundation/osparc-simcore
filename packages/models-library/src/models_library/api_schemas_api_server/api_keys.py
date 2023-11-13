@@ -6,8 +6,9 @@ class ApiKey(BaseModel):
     api_secret: SecretStr
 
 
-class ApiKeyInDB(ApiKey):
-    api_secret: str  # overwrite parent type
+class ApiKeyInDB(BaseModel):
+    api_key: str
+    api_secret: str
 
     id_: int = Field(0, alias="id")
     display_name: str
