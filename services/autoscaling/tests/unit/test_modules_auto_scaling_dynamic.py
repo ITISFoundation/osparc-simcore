@@ -676,7 +676,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         - datetime.timedelta(seconds=1)
     ).isoformat()
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    mocked_docker_remove_node.assert_called_once_with(mock.ANY, [fake_node], force=True)
+    mocked_docker_remove_node.assert_called_once_with(
+        mock.ANY, nodes=[fake_node], force=True
+    )
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
