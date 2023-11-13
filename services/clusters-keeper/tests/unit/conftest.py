@@ -6,7 +6,6 @@ import importlib.resources
 import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from datetime import timezone
 from pathlib import Path
 from typing import Any
 
@@ -35,10 +34,7 @@ from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
     EC2ClustersKeeperSettings,
 )
-from simcore_service_clusters_keeper.modules.ec2 import (
-    ClustersKeeperEC2,
-    EC2InstanceData,
-)
+from simcore_service_clusters_keeper.modules.ec2 import ClustersKeeperEC2
 from simcore_service_clusters_keeper.utils.ec2 import get_cluster_name
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -359,27 +355,6 @@ async def ec2_client(
     clusters_keeper_ec2: ClustersKeeperEC2,
 ) -> EC2Client:
     return clusters_keeper_ec2.client
-
-
-@pytest.fixture
-def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
-    def _creator(**overrides) -> EC2InstanceData:
-        return EC2InstanceData(
-            **(
-                {
-                    "launch_time": faker.date_time(tzinfo=timezone.utc),
-                    "id": faker.uuid4(),
-                    "aws_private_dns": faker.name(),
-                    "aws_public_ip": faker.ipv4_public(),
-                    "type": faker.pystr(),
-                    "state": faker.pystr(),
-                    "tags": faker.pydict(allowed_types=(str,)),
-                }
-                | overrides
-            )
-        )
-
-    return _creator
 
 
 @pytest.fixture
