@@ -68,3 +68,19 @@ def mocked_ec2_server_envs(
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = mocked_ec2_server_settings.dict()
     return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
+async def mocked_s3_server_envs(
+    mocked_aws_server: ThreadedMotoServer,
+    reset_aws_server_state: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    changed_envs = {
+        "S3_SECURE": "false",
+        "S3_ENDPOINT": f"{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
+        "S3_ACCESS_KEY": "xxx",
+        "S3_SECRET_KEY": "xxx",
+        "S3_BUCKET_NAME": "pytestbucket",
+    }
+    return setenvs_from_dict(monkeypatch, changed_envs)
