@@ -21,6 +21,10 @@ class BaseOsparcGenericResourceManager(ABC, Generic[Ident, Res]):
     For usage check ``packages/service-library/tests/test_osparc_generic_resource.py``
     """
 
+    # If True ``get_or_create`` will add the `identifier` calling ``create``.
+    # Overwrite in constructor.
+    GET_OR_CREATE_INJECTS_IDENTIFIER: bool = False
+
     @abstractmethod
     async def get(self, identifier: Ident, **extra_kwargs) -> Res | None:
         """Returns a resource if exits.
@@ -101,5 +105,8 @@ class BaseOsparcGenericResourceManager(ABC, Generic[Ident, Res]):
             resource: Res | None = await self.get(identifier, **extra_kwargs)
             if resource:
                 return identifier, resource
+
+        if self.GET_OR_CREATE_INJECTS_IDENTIFIER:
+            extra_kwargs["identifier"] = identifier
 
         return await self.create(**extra_kwargs)

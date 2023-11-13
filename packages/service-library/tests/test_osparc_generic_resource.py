@@ -162,3 +162,25 @@ async def test_get_or_create_creates_identifier_when_provided_identifier_is_miss
         identifier=missing_identifier, length=1
     )
     assert new_identifier != missing_identifier
+
+
+async def test_get_or_create_with_identifier():
+    class ManagerInjectingIdentifier(RandomTextResoruceManager):
+        def __init__(self) -> None:
+            super().__init__()
+            self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
+
+    manager = ManagerInjectingIdentifier()
+    with pytest.raises(TypeError, match="identifier"):
+        await manager.get_or_create(length=1)
+
+    class FixedManagerInjectingIdentifier(ManagerInjectingIdentifier):
+        # pylint:disable=arguments-differ
+        async def create(
+            self, length: int, identifier: UserDefinedID
+        ) -> tuple[UserDefinedID, Any]:
+            _ = identifier
+            return await super().create(length)
+
+    fixed_manager = FixedManagerInjectingIdentifier()
+    await fixed_manager.get_or_create(length=1)
