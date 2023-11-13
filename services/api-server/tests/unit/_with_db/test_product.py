@@ -70,7 +70,7 @@ async def test_product_webserver(
         key = keys[wallet_id]
         response = await client.get(
             f"{API_VTAG}/wallets/{wallet_id}",
-            auth=httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value()),
+            auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )
         assert response.status_code == status.HTTP_200_OK
     assert wallet_get_mock.call_count == len(keys)
