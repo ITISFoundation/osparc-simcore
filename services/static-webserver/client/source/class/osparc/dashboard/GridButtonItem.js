@@ -43,10 +43,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _createChildControlImpl: function(id) {
       let control;
+      let footerLayout;
       switch (id) {
         case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TSR);
+          footerLayout = this.getChildControl("footer");
+          footerLayout.addAt(control, 0, {
+            flex: 1
+          });
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
@@ -79,10 +83,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true
           });
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          footerLayout = this.getChildControl("footer");
+          footerLayout.addAt(control, 0, {
+            flex: 1
+          });
+          // this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-button":
-          this.getChildControl("header").set({
+          this.getChildControl("title").set({
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_DIMENSIONS
           });
           control = new qx.ui.form.MenuButton().set({
@@ -123,8 +131,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             bottom: 0,
             left: 0
           });
-          break;
-        case "project-state":
           break;
         case "permission-icon":
           control = new qx.ui.basic.Image();
@@ -178,63 +184,58 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       untick.setVisibility("excluded");
     },
 
-    _applyProjectState: function(projectStatus) {
-      const status = projectStatus["value"];
-      let label = null;
-      let border;
-      let backgroundColor;
-      switch (status) {
-        case "NOT_STARTED":
-          label = "Not Started";
-          border = "rgba(9, 89, 122, 1)";
-          backgroundColor = "rgba(9, 89, 122, 0.1)";
-          break;
-        case "STARTED":
-          label = "Started";
-          border = "rgba(9, 89, 122, 1)";
-          backgroundColor = "rgba(9, 89, 122, 0.1)";
-          break;
-        case "SUCCESS":
-          label = "Success";
-          border = "rgba(10, 182, 255, 1)";
-          backgroundColor = "rgba(10, 182, 255, 0.1)";
-          break;
-        case "FAILED":
-          label = "Failed";
-          border = "rgba(255, 108, 108, 1)";
-          backgroundColor = "rgba(255, 108, 108, 0.1)";
-          break;
-        default:
-          label = null;
-          border = null;
-          backgroundColor = null;
-          break;
-      }
-      this.__applyProjectLabel(label, border, backgroundColor);
-    },
-
-    __applyProjectLabel: function(lbl, bdr, bg) {
-      let control;
-      const border = new qx.ui.decoration.Decorator().set({
-        width: 1,
-        style: "solid",
-        color: bdr,
-        backgroundColor: bdr
-      });
-      control = new qx.ui.basic.Label(lbl).set({
-        textAlign: "center",
-        minWidth: 60,
-        alignY: "middle",
-        alignX: "center",
-        decorator: border,
-        padding: 5,
-        toolTipText: this.tr("Project status")
-      });
-      control.getContentElement().setStyles({
-        "border-radius": "8px"
-      });
-      this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.STATUS);
-    },
+    // _applyProjectState: function(projectStatus) {
+    //   const status = projectStatus["value"];
+    //   let icon;
+    //   let label;
+    //   let border;
+    //   switch (status) {
+    //     case "STARTED":
+    //       icon = "@FontAwesome5Solid/spinner/14";
+    //       label = "Running";
+    //       border = "info";
+    //       break;
+    //     case "SUCCESS":
+    //       icon = "@FontAwesome5Solid/check/14";
+    //       label = "Success";
+    //       border = "success";
+    //       break;
+    //     case "FAILED":
+    //       icon = "@FontAwesome5Solid/times/14";
+    //       label = "Failed";
+    //       border = "error";
+    //       break;
+    //     default:
+    //       icon = "@FontAwesome5Solid/times/14";
+    //       label = "Failed";
+    //       border = "error";
+    //       break;
+    //   }
+    //   this.__applyProjectLabel(icon, label, border);
+    // },
+    //
+    // __applyProjectLabel: function(icn, lbl, bdr) {
+    //   let control;
+    //   const border = new qx.ui.decoration.Decorator().set({
+    //     width: 1,
+    //     style: "solid",
+    //     color: bdr,
+    //     backgroundColor: bdr
+    //   });
+    //   control = new qx.ui.basic.Image(icn).set({
+    //     height: 26,
+    //     width: 26,
+    //     alignY: "middle",
+    //     alignX: "center",
+    //     padding: 5,
+    //     decorator: border,
+    //     toolTipText: this.tr(`Project ${lbl}`)
+    //   });
+    //   control.getContentElement().setStyles({
+    //     "border-radius": "50%"
+    //   });
+    //   this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.STATUS);
+    // },
 
     // overridden
     _applyLastChangeDate: function(value, old) {

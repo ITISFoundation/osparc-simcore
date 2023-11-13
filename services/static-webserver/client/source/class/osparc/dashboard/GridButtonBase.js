@@ -63,7 +63,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     SPACING_IN: 5,
     SPACING: 15,
     // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
-    TITLE_MAX_HEIGHT: 38, // two lines in Manrope
+    TITLE_MAX_HEIGHT: 44, // two lines in Manrope
     POS: {
       TITLE: {
         row: 0,
@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         row: 2,
         column: 0,
         rowSpan: 1,
-        colSpan: 3
+        colSpan: 4
       },
       STATUS: {
         row: 2,
@@ -106,6 +106,12 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         column: 2,
         rowSpan: 2,
         colSpan: 1
+      },
+      FOOTER: {
+        row: 4,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 4
       }
     }
   },
@@ -120,6 +126,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     // overridden
     _createChildControlImpl: function(id) {
+      let titleLayout;
+      let titleRow;
       let control;
       switch (id) {
         case "header":
@@ -128,7 +136,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             allowGrowX: true,
             allowShrinkX: false,
             alignY: "middle",
-            padding: this.self().PADDING,
+            padding: this.self().PADDING
           });
           this._mainLayout.add(control, this.self().POS.TITLE);
           break;
@@ -143,29 +151,50 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           this._mainLayout.add(control, this.self().POS.THUMBNAIL);
           break;
+        case "footer":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            anonymous: true,
+            allowGrowX: true,
+            allowShrinkX: false,
+            alignY: "middle",
+            padding: this.self().PADDING,
+            backgroundColor: "background-card-header"
+          });
+          this._mainLayout.add(control, this.self().POS.FOOTER);
+          break;
+        case "title-row":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+            anonymous: true
+          });
+          titleLayout = this.getChildControl("header");
+          titleLayout.addAt(control, 1, {
+            flex: 1
+          });
+          break;
         case "title":
-          let titleLayout;
           control = new qx.ui.basic.Label().set({
-            font: "text-14",
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
+            font: "text-16",
+            maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().TITLE_MAX_HEIGHT,
             rich: true,
             wrap: true
           });
-          titleLayout = this.getChildControl("header").getContentElement().setStyles({
-            "background-color": "background-card-header"
-          });
-          titleLayout.addAt(control, 0, {
+          titleRow = this.getChildControl("title-row");
+          titleRow.addAt(control, 0, {
             flex: 1
           });
           break;
         case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true,
-            paddingLeft: this.self().PADDING,
-            paddingRight: this.self().PADDING
+            anonymous: true
           });
-          this._mainLayout.add(control, this.self().POS.SUBTITLE);
+          titleLayout = this.getChildControl("header");
+          titleLayout.set({
+            backgroundColor: "background-card-header"
+          });
+          titleLayout.addAt(control, 1, {
+            flex: 1
+          });
           break;
         case "subtitle-icon": {
           control = new qx.ui.basic.Image().set({
@@ -224,7 +253,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         });
       } else {
         // const container = this.getChildControl("body").getContentElement();
-        const container = this.getContentElement().setStyles({
+        this.getContentElement().setStyles({
           "background-image": `url(${value})`,
           "background-repeat": "no-repeat",
           "background-size": "cover", // auto width, 85% height

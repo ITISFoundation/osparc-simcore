@@ -239,12 +239,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyHits"
     },
 
-    // backgroundImage: {
-    //   check: "String",
-    //   apply: "_applyBackground",
-    //   nullable: true
-    // },
-
     state: {
       check: "Object",
       nullable: false,
@@ -511,13 +505,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    // __applyProjectState: function(status, border) {
-    //   if (status !== null) {
-    //     const label = this.getChildControl("project-state");
-    //     label.setValue(String(status));
-    //   }
-    // },
-
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
       const projectState = ("state" in state) ? state["state"]["value"] : "UNKNOWN";
@@ -530,51 +517,59 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.setLocked(locked);
     },
 
-    _applyProjectState: function(value, old) {
-      throw new Error("Abstract method called!");
-      // const status = projectStatus["value"];
-      // let label = null;
-      // let border;
-      // let backgroundColor,
-      // switch (status) {
-      //   case "STARTED":
-      //     label = "Started";
-      //     border = "rgba(9, 89, 122, 1)";
-      //     backgroundColor = "rgba(9, 89, 122, 0.1)";
-      //     break;
-      //   case "SUCCESS":
-      //     label = "Success";
-      //     border = "rgba(10, 182, 255, 1)";
-      //     backgroundColor = "rgba(10, 182, 255, 0.1)";
-      //     break;
-      //   case "FAILED":
-      //     label = "Failed";
-      //     border = "rgba(255, 108, 108, 1)";
-      //     backgroundColor = "rgba(255, 108, 108, 0.1)";
-      //     break;
-      //   default:
-      //     label = null;
-      //     border = null;
-      //     backgroundColor = null
-      //     break;
-      // }
-      // this.set({
-      //   label,
-      //   border,
-      //   backgroundColor
-      // });
-      // this.__applyProjectState(label, border);
+    _applyProjectState: function(projectStatus) {
+      const status = projectStatus["value"];
+      let icon;
+      let label;
+      let border;
+      switch (status) {
+        case "STARTED":
+          icon = "@FontAwesome5Solid/spinner/12";
+          label = "Running";
+          border = "info";
+          break;
+        case "SUCCESS":
+          icon = "@FontAwesome5Solid/check/12";
+          label = "Success";
+          border = "success";
+          break;
+        case "FAILED":
+          icon = "@FontAwesome5Solid/times/12";
+          label = "Failed";
+          border = "error";
+          break;
+        default:
+          icon = null;
+          label = null;
+          border = null;
+          break;
+      }
+      this.__applyProjectLabel(icon, label, border);
     },
 
-    // __showProjectStateImage: function(stateLabel) {
-    //   this.getChildControl("project-state").set({
-    //     opacity: 1.0,
-    //     visibility: "visible"
-    //   });
-    //   const stateImage = this.getChildControl("project-state");
-    //   stateLabel += this.classname.includes("Grid") ? "32" : "22";
-    //   stateImage.setSource(stateLabel);
-    // },
+    __applyProjectLabel: function(icn, lbl, bdr) {
+      let control;
+      const border = new qx.ui.decoration.Decorator().set({
+        width: 1,
+        style: "solid",
+        color: bdr,
+        backgroundColor: bdr
+      });
+      control = new qx.ui.basic.Image(icn).set({
+        height: 22,
+        width: 22,
+        alignY: "middle",
+        alignX: "center",
+        padding: 4,
+        decorator: border,
+        toolTipText: this.tr(`Project ${lbl}`)
+      });
+      control.getContentElement().setStyles({
+        "border-radius": "50%"
+      });
+      const titleLayout = this.getChildControl("title-row");
+      titleLayout.add(control);
+    },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
       const status = lockedStatus["status"];

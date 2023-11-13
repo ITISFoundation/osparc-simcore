@@ -58,12 +58,14 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       LAST_CHANGE: 11,
       HITS: 12,
       OPTIONS: 13,
+      FOOTER: 14
     }
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
+      let titleRow;
       switch (id) {
         case "icon": {
           control = new osparc.ui.basic.Thumbnail(null, 40, this.self().ITEM_HEIGHT-2*5).set({
@@ -79,6 +81,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           });
           break;
         }
+        case "title-row":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+            anonymous: true
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TITLE
+          });
+          break;
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
@@ -87,9 +98,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             maxHeight: 19,
             rich: true
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.TITLE
+          titleRow = this.getChildControl("title-row");
+          titleRow.addAt(control, 0, {
+            flex: 1
           });
           break;
         case "description":
