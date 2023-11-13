@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import datetime
 from collections.abc import AsyncIterator, Callable
 from typing import cast, get_args
 
@@ -20,11 +19,9 @@ from aws_library.ec2.models import (
     EC2InstanceData,
     EC2InstanceType,
     EC2Tags,
-    Resources,
 )
 from faker import Faker
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -376,28 +373,6 @@ async def test_terminate_instance(
         expected_tags=ec2_instance_config.tags,
         expected_state="terminated",
     )
-
-
-@pytest.fixture
-def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
-    def _creator(**overrides) -> EC2InstanceData:
-        return EC2InstanceData(
-            **(
-                {
-                    "launch_time": faker.date_time(tzinfo=datetime.timezone.utc),
-                    "id": faker.uuid4(),
-                    "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
-                    "aws_public_ip": faker.ipv4(),
-                    "type": faker.pystr(),
-                    "state": faker.pystr(),
-                    "resources": Resources(cpus=4.0, ram=ByteSize(1024 * 1024)),
-                    "tags": faker.pydict(allowed_types=(str,)),
-                }
-                | overrides
-            )
-        )
-
-    return _creator
 
 
 async def test_terminate_instance_not_existing_raises(
