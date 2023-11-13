@@ -4,7 +4,6 @@
 
 import importlib.resources
 import json
-import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -235,108 +234,6 @@ def aws_allowed_ec2_instance_type_names_env(
         ),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
-
-
-@pytest.fixture(scope="session")
-def vpc_cidr_block() -> str:
-    return "10.0.0.0/16"
-
-
-@pytest.fixture
-async def aws_vpc_id(
-    mocked_aws_server_envs: None,
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    ec2_client: EC2Client,
-    vpc_cidr_block: str,
-) -> AsyncIterator[str]:
-    vpc = await ec2_client.create_vpc(
-        CidrBlock=vpc_cidr_block,
-    )
-    vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
-    print(f"--> Created Vpc in AWS with {vpc_id=}")
-    yield vpc_id
-
-    await ec2_client.delete_vpc(VpcId=vpc_id)
-    print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
-
-
-@pytest.fixture(scope="session")
-def subnet_cidr_block() -> str:
-    return "10.0.1.0/24"
-
-
-@pytest.fixture
-async def aws_subnet_id(
-    monkeypatch: pytest.MonkeyPatch,
-    aws_vpc_id: str,
-    ec2_client: EC2Client,
-    subnet_cidr_block: str,
-) -> AsyncIterator[str]:
-    subnet = await ec2_client.create_subnet(
-        CidrBlock=subnet_cidr_block, VpcId=aws_vpc_id
-    )
-    assert "Subnet" in subnet
-    assert "SubnetId" in subnet["Subnet"]
-    subnet_id = subnet["Subnet"]["SubnetId"]
-    print(f"--> Created Subnet in AWS with {subnet_id=}")
-
-    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_SUBNET_ID", subnet_id)
-    yield subnet_id
-
-    # all the instances in the subnet must be terminated before that works
-    instances_in_subnet = await ec2_client.describe_instances(
-        Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
-    )
-    if instances_in_subnet["Reservations"]:
-        print(f"--> terminating {len(instances_in_subnet)} instances in subnet")
-        await ec2_client.terminate_instances(
-            InstanceIds=[
-                instance["Instances"][0]["InstanceId"]  # type: ignore
-                for instance in instances_in_subnet["Reservations"]
-            ]
-        )
-        print(f"<-- terminated {len(instances_in_subnet)} instances in subnet")
-
-    await ec2_client.delete_subnet(SubnetId=subnet_id)
-    subnets = await ec2_client.describe_subnets()
-    print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
-    print(f"current {subnets=}")
-
-
-@pytest.fixture
-async def aws_security_group_id(
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-    aws_vpc_id: str,
-    ec2_client: EC2Client,
-) -> AsyncIterator[str]:
-    security_group = await ec2_client.create_security_group(
-        Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
-    )
-    security_group_id = security_group["GroupId"]
-    print(f"--> Created Security Group in AWS with {security_group_id=}")
-    monkeypatch.setenv(
-        "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS",
-        json.dumps([security_group_id]),
-    )
-    yield security_group_id
-    await ec2_client.delete_security_group(GroupId=security_group_id)
-    print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
-
-
-@pytest.fixture
-async def aws_ami_id(
-    app_environment: EnvVarsDict,
-    mocked_aws_server_envs: None,
-    monkeypatch: pytest.MonkeyPatch,
-    ec2_client: EC2Client,
-) -> str:
-    images = await ec2_client.describe_images()
-    image = random.choice(images["Images"])  # noqa S311
-    ami_id = image["ImageId"]  # type: ignore
-    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_AMI_ID", ami_id)
-    return ami_id
 
 
 @pytest.fixture
