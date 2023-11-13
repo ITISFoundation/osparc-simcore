@@ -622,9 +622,13 @@ async def _autoscale_cluster(
 ) -> Cluster:
     # 1. check if we have pending tasks and resolve them by activating some drained nodes
     unrunnable_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
+    _logger.debug("found %s unrunnable tasks", len(unrunnable_tasks))
     # 2. try to activate drained nodes to cover some of the tasks
     still_unrunnable_tasks, cluster = await _activate_drained_nodes(
         app, cluster, unrunnable_tasks, auto_scaling_mode
+    )
+    _logger.debug(
+        "still %s unrunnable tasks after node activation", len(still_unrunnable_tasks)
     )
 
     # let's check if there are still pending tasks or if the reserve was used
