@@ -19,7 +19,7 @@ from pytest_simcore.pydantic_models import iter_model_examples_in_module
     "model_cls, example_name, example_data",
     itertools.chain(
         iter_model_examples_in_module(simcore_service_invitations.api._invitations),
-        iter_model_examples_in_module(simcore_service_invitations.invitations),
+        iter_model_examples_in_module(simcore_service_invitations.services.invitations),
     ),
 )
 def test_model_examples(

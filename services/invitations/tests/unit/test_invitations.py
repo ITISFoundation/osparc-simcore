@@ -11,13 +11,14 @@ import cryptography.fernet
 import pytest
 from faker import Faker
 from models_library.invitations import InvitationContent, InvitationInputs
+from models_library.products import ProductName
 from pydantic import BaseModel, ValidationError
-from simcore_service_invitations.invitations import (
+from simcore_service_invitations.services.invitations import (
     InvalidInvitationCodeError,
     _ContentWithShortNames,
     _create_invitation_code,
     _fernet_encrypt_as_urlsafe_code,
-    create_invitation_link,
+    create_invitation_link_and_content,
     decrypt_invitation,
     extract_invitation_content,
 )
@@ -60,24 +61,33 @@ def test_export_by_alias_produces_smaller_strings(
 
 
 def test_create_and_decrypt_invitation(
-    invitation_data: InvitationInputs, faker: Faker, secret_key: str
+    invitation_data: InvitationInputs,
+    faker: Faker,
+    secret_key: str,
+    default_product: ProductName,
 ):
-    invitation_link = create_invitation_link(
-        invitation_data, secret_key=secret_key.encode(), base_url=faker.url()
+    invitation_link, _ = create_invitation_link_and_content(
+        invitation_data,
+        secret_key=secret_key.encode(),
+        base_url=faker.url(),
+        default_product=default_product,
     )
-
-    print(invitation_link)
-
+    assert invitation_link.fragment
     query_params = dict(parse.parse_qsl(URL(invitation_link.fragment).query))
 
     # will raise TokenError or ValidationError
     invitation = decrypt_invitation(
         invitation_code=query_params["invitation"],
         secret_key=secret_key.encode(),
+        default_product=default_product,
     )
 
     assert isinstance(invitation, InvitationContent)
-    assert invitation.dict(exclude={"created"}) == invitation_data.dict()
+    assert invitation.product is not None
+
+    expected = invitation_data.dict(exclude_none=True)
+    expected.setdefault("product", default_product)
+    assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
 
 
 #
@@ -86,26 +96,36 @@ def test_create_and_decrypt_invitation(
 
 
 @pytest.fixture
-def invitation_code(invitation_data: InvitationInputs, secret_key: str) -> str:
-    return _create_invitation_code(
-        invitation_data, secret_key=secret_key.encode()
-    ).decode()
+def invitation_code(
+    invitation_data: InvitationInputs, secret_key: str, default_product: ProductName
+) -> str:
+    content = InvitationContent.create_from_inputs(invitation_data, default_product)
+    code = _create_invitation_code(content, secret_key.encode())
+    return code.decode()
 
 
 def test_valid_invitation_code(
     secret_key: str,
     invitation_code: str,
     invitation_data: InvitationInputs,
+    default_product: ProductName,
 ):
     invitation = decrypt_invitation(
         invitation_code=invitation_code,
         secret_key=secret_key.encode(),
+        default_product=default_product,
     )
 
-    assert invitation.dict(exclude={"created"}) == invitation_data.dict()
+    expected = invitation_data.dict(exclude_none=True)
+    expected.setdefault("product", default_product)
+    assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
 
 
-def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
+def test_invalid_invitation_encoding(
+    secret_key: str,
+    invitation_code: str,
+    default_product: ProductName,
+):
     my_invitation_code = invitation_code[:-1]  # strip last (wrong code!)
     my_secret_key = secret_key.encode()
 
@@ -113,6 +133,7 @@ def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
         decrypt_invitation(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
     assert f"{error_info.value}" == "Incorrect padding"
@@ -121,10 +142,15 @@ def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
 
-def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str):
+def test_invalid_invitation_secret(
+    another_secret_key: str,
+    invitation_code: str,
+    default_product: ProductName,
+):
     my_invitation_code = invitation_code
     my_secret_key = another_secret_key.encode()
 
@@ -132,33 +158,37 @@ def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str
         decrypt_invitation(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
     with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
+            default_product=default_product,
         )
 
 
-def test_invalid_invitation_data(secret_key: str):
+def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
     # encrypts contents
-    class OtherData(BaseModel):
+    class OtherModel(BaseModel):
         foo: int = 123
 
-    my_secret_key = secret_key.encode()
-    my_invitation_code = _fernet_encrypt_as_urlsafe_code(
-        data=OtherData().json().encode(), secret_key=my_secret_key
+    secret = secret_key.encode()
+    other_code = _fernet_encrypt_as_urlsafe_code(
+        data=OtherModel().json().encode(), secret_key=secret
     )
 
     with pytest.raises(ValidationError):
         decrypt_invitation(
-            invitation_code=my_invitation_code,
-            secret_key=my_secret_key,
+            invitation_code=other_code.decode(),
+            secret_key=secret,
+            default_product=default_product,
         )
 
     with pytest.raises(InvalidInvitationCodeError):
         extract_invitation_content(
-            invitation_code=my_invitation_code,
-            secret_key=my_secret_key,
+            invitation_code=other_code.decode(),
+            secret_key=secret,
+            default_product=default_product,
         )

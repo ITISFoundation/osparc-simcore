@@ -2,14 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Callable, cast
+from collections.abc import Callable
+from typing import cast
 
 import botocore.exceptions
 import pytest
 from faker import Faker
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
-from pytest_mock.plugin import MockerFixture
+from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_autoscaling.core.errors import (
     ConfigurationError,
@@ -17,6 +18,7 @@ from simcore_service_autoscaling.core.errors import (
     Ec2TooManyInstancesError,
 )
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
+from simcore_service_autoscaling.models import EC2InstanceType
 from simcore_service_autoscaling.modules.ec2 import (
     AutoscalingEC2,
     EC2InstanceData,
@@ -137,6 +139,33 @@ async def test_get_ec2_instance_capabilities(
         assert any(i.name == instance_type_name for i in instance_types)
 
 
+@pytest.fixture
+async def fake_ec2_instance_type(
+    mocked_aws_server_envs: None,
+    ec2_client: EC2Client,
+) -> EC2InstanceType:
+    instance_type_name: InstanceTypeType = parse_obj_as(InstanceTypeType, "c3.8xlarge")
+    instance_types = await ec2_client.describe_instance_types(
+        InstanceTypes=[instance_type_name]
+    )
+    assert instance_types
+    assert "InstanceTypes" in instance_types
+    assert instance_types["InstanceTypes"]
+    assert "MemoryInfo" in instance_types["InstanceTypes"][0]
+    assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+    assert "VCpuInfo" in instance_types["InstanceTypes"][0]
+    assert "DefaultVCpus" in instance_types["InstanceTypes"][0]["VCpuInfo"]
+
+    return EC2InstanceType(
+        name=instance_type_name,
+        cpus=instance_types["InstanceTypes"][0]["VCpuInfo"]["DefaultVCpus"],
+        ram=parse_obj_as(
+            ByteSize,
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        ),
+    )
+
+
 async def test_start_aws_instance(
     mocked_aws_server_envs: None,
     aws_vpc_id: str,
@@ -147,7 +176,7 @@ async def test_start_aws_instance(
     autoscaling_ec2: AutoscalingEC2,
     app_settings: ApplicationSettings,
     faker: Faker,
-    mocker: MockerFixture,
+    fake_ec2_instance_type: EC2InstanceType,
 ):
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -155,12 +184,11 @@ async def test_start_aws_instance(
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        instance_type,
+        fake_ec2_instance_type,
         tags=tags,
         startup_script=startup_script,
         number_of_instances=1,
@@ -174,7 +202,7 @@ async def test_start_aws_instance(
     assert len(running_instance["Instances"]) == 1
     running_instance = running_instance["Instances"][0]
     assert "InstanceType" in running_instance
-    assert running_instance["InstanceType"] == instance_type
+    assert running_instance["InstanceType"] == fake_ec2_instance_type.name
     assert "Tags" in running_instance
     assert running_instance["Tags"] == [
         {"Key": key, "Value": value} for key, value in tags.items()
@@ -191,7 +219,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     autoscaling_ec2: AutoscalingEC2,
     app_settings: ApplicationSettings,
     faker: Faker,
-    mocker: MockerFixture,
+    fake_ec2_instance_type: EC2InstanceType,
 ):
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -205,7 +233,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     for _ in range(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES):
         await autoscaling_ec2.start_aws_instance(
             app_settings.AUTOSCALING_EC2_INSTANCES,
-            faker.pystr(),
+            fake_ec2_instance_type,
             tags=tags,
             startup_script=startup_script,
             number_of_instances=1,
@@ -215,7 +243,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     with pytest.raises(Ec2TooManyInstancesError):
         await autoscaling_ec2.start_aws_instance(
             app_settings.AUTOSCALING_EC2_INSTANCES,
-            faker.pystr(),
+            fake_ec2_instance_type,
             tags=tags,
             startup_script=startup_script,
             number_of_instances=1,
@@ -232,7 +260,7 @@ async def test_get_instances(
     autoscaling_ec2: AutoscalingEC2,
     app_settings: ApplicationSettings,
     faker: Faker,
-    mocker: MockerFixture,
+    fake_ec2_instance_type: EC2InstanceType,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
@@ -244,12 +272,11 @@ async def test_get_instances(
     )
 
     # create some instance
-    instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     created_instances = await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        instance_type,
+        fake_ec2_instance_type,
         tags=tags,
         startup_script=startup_script,
         number_of_instances=1,
@@ -273,19 +300,18 @@ async def test_terminate_instance(
     autoscaling_ec2: AutoscalingEC2,
     app_settings: ApplicationSettings,
     faker: Faker,
-    mocker: MockerFixture,
+    fake_ec2_instance_type: EC2InstanceType,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     # create some instance
-    instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     created_instances = await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        instance_type,
+        fake_ec2_instance_type,
         tags=tags,
         startup_script=startup_script,
         number_of_instances=1,

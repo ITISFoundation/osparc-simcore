@@ -8,6 +8,7 @@ const {
   url,
   user,
   pass,
+  serviceName,
   newUser,
   startTimeout,
   basicauthUsername,
@@ -15,10 +16,9 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const serviceName = "sim4life";
-
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
+  serviceNameValue = serviceName || 'sim4life'
+  const tutorial = new tutorialBase.TutorialBase(url, serviceNameValue, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();
