@@ -115,15 +115,6 @@ def mock_remove_nodes(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def mock_cluster_used_resources(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_cluster_used_resources",
-        autospec=True,
-        return_value=Resources.create_as_empty(),
-    )
-
-
-@pytest.fixture
 def mock_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_node_used_resources",

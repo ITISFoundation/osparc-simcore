@@ -88,11 +88,6 @@ def dask_workers_config() -> dict[str, Any]:
     }
 
 
-@pytest.fixture
-def empty_cluster(cluster: Callable[..., Cluster]) -> Cluster:
-    return cluster()
-
-
 async def _assert_ec2_instances(
     ec2_client: EC2Client,
     *,
@@ -187,15 +182,6 @@ def mock_find_node_with_name(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
-    )
-
-
-@pytest.fixture
-def mock_cluster_used_resources(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_cluster_used_resources",
-        autospec=True,
-        return_value=Resources.create_as_empty(),
     )
 
 
