@@ -22,6 +22,7 @@ from faker import Faker
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize
 from settings_library.ec2 import EC2Settings
+from simcore_service_autoscaling.core.errors import Ec2InstanceInvalidError
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
@@ -125,6 +126,14 @@ async def test_get_ec2_instance_capabilities_empty_list_returns_all_options(
     instance_types = await simcore_ec2_api.get_ec2_instance_capabilities(set())
     assert instance_types
     assert len(instance_types) > 50
+
+
+async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
+    simcore_ec2_api: SimcoreEC2API,
+    faker: Faker,
+):
+    with pytest.raises(Ec2InstanceInvalidError):
+        await simcore_ec2_api.get_ec2_instance_capabilities(set(faker.pystr()))
 
 
 @pytest.fixture(params=_ec2_allowed_types())

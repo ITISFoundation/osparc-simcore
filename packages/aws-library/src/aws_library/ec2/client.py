@@ -14,7 +14,12 @@ from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
-from .errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
+from .errors import (
+    EC2InstanceNotFoundError,
+    EC2InstanceTypeInvalidError,
+    EC2RuntimeError,
+    EC2TooManyInstancesError,
+)
 from .models import (
     EC2InstanceConfig,
     EC2InstanceData,
@@ -65,23 +70,37 @@ class SimcoreEC2API:
         self,
         instance_type_names: set[InstanceTypeType],
     ) -> list[EC2InstanceType]:
-        """instance_type_names must be a set of unique values"""
-        instance_types = await self.client.describe_instance_types(
-            InstanceTypes=list(instance_type_names)
-        )
-        list_instances: list[EC2InstanceType] = []
-        for instance in instance_types.get("InstanceTypes", []):
-            with contextlib.suppress(KeyError):
-                list_instances.append(
-                    EC2InstanceType(
-                        name=instance["InstanceType"],
-                        cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                        ram=ByteSize(
-                            int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
-                        ),
+        """returns the ec2 instance types from a list of instance type names
+            NOTE: the order might differ!
+        Arguments:
+            instance_type_names -- the types to filter with
+
+        Raises:
+            Ec2InstanceTypeInvalidError: some invalid types were used as filter
+            ClustersKeeperRuntimeError: unexpected error communicating with EC2
+
+        """
+        try:
+            instance_types = await self.client.describe_instance_types(
+                InstanceTypes=list(instance_type_names)
+            )
+            list_instances: list[EC2InstanceType] = []
+            for instance in instance_types.get("InstanceTypes", []):
+                with contextlib.suppress(KeyError):
+                    list_instances.append(
+                        EC2InstanceType(
+                            name=instance["InstanceType"],
+                            cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                            ram=ByteSize(
+                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
+                            ),
+                        )
                     )
-                )
-        return list_instances
+            return list_instances
+        except botocore.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code", "") == "InvalidInstanceType":
+                raise EC2InstanceTypeInvalidError from exc
+            raise EC2RuntimeError from exc  # pragma: no cover
 
     async def start_aws_instance(
         self,
