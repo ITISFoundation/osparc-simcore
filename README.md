@@ -76,9 +76,8 @@ To build and run:
 
 To develop, in addition:
 
-- python 3.10 (recommend using [pyenv](https://brain2life.hashnode.dev/how-to-install-pyenv-python-version-manager-on-ubuntu-2004) as python installation manager)
-- nodejs for client part (this dependency will be deprecated soon)
-- swagger-cli (make sure to have a recent version of nodejs)
+- *python 3.10*: we recommend using the python manager [pyenv](https://brain2life.hashnode.dev/how-to-install-pyenv-python-version-manager-on-ubuntu-2004)
+- *nodejs* for client part: we recommend using the node manager [nvm](https://github.com/nvm-sh/nvm#install--update-script)
 - [vscode] (highly recommended)
 
 To verify current base OS, Docker and Python build versions have a look at:
