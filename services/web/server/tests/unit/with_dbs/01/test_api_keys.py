@@ -92,9 +92,7 @@ async def test_create_api_keys(
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert sorted(data) == [
-            display_name,
-        ]
+        assert sorted(data) == [display_name]
 
 
 @pytest.mark.parametrize(
