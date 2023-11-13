@@ -334,7 +334,6 @@ async def wallet_payment_method_id(
     return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
 
 
-@pytest.mark.testit
 async def test_one_time_payment_with_payment_method(
     latest_osparc_price: Decimal,
     client: TestClient,

@@ -57,6 +57,9 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
         # The following services are affected if rabbitmq is not in place
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_auto_recharge_listener"
+        )
 
     return _do
 
