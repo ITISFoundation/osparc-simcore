@@ -145,14 +145,14 @@ async def test_worker_nodes(
 async def test_remove_monitored_down_nodes_with_empty_list_does_nothing(
     autoscaling_docker: AutoscalingDocker,
 ):
-    assert await remove_nodes(autoscaling_docker, []) == []
+    assert await remove_nodes(autoscaling_docker, nodes=[]) == []
 
 
 async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
 ):
-    assert await remove_nodes(autoscaling_docker, [host_node]) == []
+    assert await remove_nodes(autoscaling_docker, nodes=[host_node]) == []
 
 
 @pytest.fixture
@@ -174,7 +174,7 @@ async def test_remove_monitored_down_nodes_of_down_node(
     assert fake_docker_node.Status
     fake_docker_node.Status.State = NodeState.down
     assert fake_docker_node.Status.State == NodeState.down
-    assert await remove_nodes(autoscaling_docker, [fake_docker_node]) == [
+    assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == [
         fake_docker_node
     ]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
@@ -190,7 +190,7 @@ async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
     assert fake_docker_node.Status
     fake_docker_node.Status = None
     assert not fake_docker_node.Status
-    assert await remove_nodes(autoscaling_docker, [fake_docker_node]) == []
+    assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == []
 
 
 async def test_pending_service_task_with_insufficient_resources_with_no_service(
