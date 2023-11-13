@@ -127,7 +127,6 @@ class SimcoreEC2API:
                 InstanceType=instance_config.type.name,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_config.key_name,
-                SubnetId=instance_config.subnet_id,
                 TagSpecifications=[
                     {
                         "ResourceType": "instance",
@@ -138,6 +137,14 @@ class SimcoreEC2API:
                     }
                 ],
                 UserData=compose_user_data(instance_config.startup_script),
+                NetworkInterfaces=[
+                    {
+                        "AssociatePublicIpAddress": True,
+                        "DeviceIndex": 0,
+                        "SubnetId": instance_config.subnet_id,
+                        "Groups": instance_config.security_group_ids,
+                    }
+                ],
                 SecurityGroupIds=instance_config.security_group_ids,
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
@@ -159,8 +166,12 @@ class SimcoreEC2API:
                     launch_time=instance["LaunchTime"],
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
+                    aws_public_ip=instance["PublicIpAddress"]
+                    if "PublicIpAddress" in instance
+                    else None,
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
+                    tags={tag["Key"]: tag["Value"] for tag in instance["Tags"]},
                     resources=Resources(
                         cpus=instance_config.type.cpus, ram=instance_config.type.ram
                     ),
@@ -177,7 +188,7 @@ class SimcoreEC2API:
         self,
         *,
         key_names: list[str],
-        tags: dict[str, str],
+        tags: EC2Tags,
         state_names: list[InstanceStateNameType] | None = None,
     ) -> list[EC2InstanceData]:
         # NOTE: be careful: Name=instance-state-name,Values=["pending", "running"] means pending OR running
@@ -211,17 +222,22 @@ class SimcoreEC2API:
                     {instance["InstanceType"]}
                 )
                 assert len(ec2_instance_types) == 1  # nosec
+                assert "Tags" in instance  # nosec
                 all_instances.append(
                     EC2InstanceData(
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
+                        aws_public_ip=instance["PublicIpAddress"]
+                        if "PublicIpAddress" in instance
+                        else None,
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
                         resources=Resources(
                             cpus=ec2_instance_types[0].cpus,
                             ram=ec2_instance_types[0].ram,
                         ),
+                        tags={tag["Key"]: tag["Value"] for tag in instance["Tags"]},
                     )
                 )
         _logger.debug(
