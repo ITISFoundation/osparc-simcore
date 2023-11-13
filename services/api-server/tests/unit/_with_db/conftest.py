@@ -269,5 +269,5 @@ async def auth(
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
-        return httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value())
-    assert False, "Did not generate authentication"
+        return httpx.BasicAuth(key.api_key, key.api_secret)
+    pytest.fail("Did not generate authentication")

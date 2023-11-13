@@ -104,7 +104,7 @@ async def test_product_catalog(
     for key in keys:
         response = await client.get(
             f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
-            auth=httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value()),
+            auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )
 
     assert respx_mock.call_count == len(keys)
