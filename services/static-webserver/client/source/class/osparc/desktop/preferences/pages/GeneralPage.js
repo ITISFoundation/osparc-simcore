@@ -27,8 +27,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     const walletIndicatorSettings = this.__createCreditsIndicatorSettings();
     this.add(walletIndicatorSettings);
 
-    this.add(this.__createInactivitySetting())
-    this.add(this.__createJobConcurrencySetting())
+    this.add(this.__createInactivitySetting());
+    this.add(this.__createJobConcurrencySetting());
   },
 
   statics: {
@@ -139,8 +139,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
-      form.add(jobConcurrencySpinner, this.tr("Maximum concurrent jobs"))
-      box.add(new qx.ui.form.renderer.Single(form))
+      form.add(jobConcurrencySpinner, this.tr("Maximum concurrent jobs"));
+      box.add(new qx.ui.form.renderer.Single(form));
       return box;
     }
   }
