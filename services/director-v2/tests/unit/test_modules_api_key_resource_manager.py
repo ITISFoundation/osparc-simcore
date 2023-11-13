@@ -36,7 +36,6 @@ def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID):
 @pytest.fixture
 async def mock_rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    faker: Faker,
     mocker: MockerFixture,
 ) -> RabbitMQRPCClient:
     rpc_client = await rabbitmq_rpc_client("client")
@@ -44,7 +43,7 @@ async def mock_rpc_client(
 
     router = RPCRouter()
 
-    # these mock the original endpoints
+    # mocks the interface defined in the webserver
 
     @router.expose()
     async def api_key_get(
@@ -75,12 +74,15 @@ async def mock_rpc_client(
     return rpc_client
 
 
-async def test_rpc_endpoints(mock_rpc_client: RabbitMQRPCClient):
+async def test_rpc_endpoints(
+    mock_rpc_client: RabbitMQRPCClient,
+    faker: Faker,
+):
     manager = APIKeysManager(FastAPI())
 
-    identifier = "some_id"
-    product_name = "a_product"
-    user_id = 1
+    identifier = faker.pystr()
+    product_name = faker.pystr()
+    user_id = faker.pyint()
 
     api_key = await manager.get(
         identifier=identifier, product_name=product_name, user_id=user_id
