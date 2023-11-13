@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Final, cast
 
 import yaml
-from aws_library.ec2.models import Resources
+from aws_library.ec2.models import EC2InstanceData, Resources
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
@@ -34,7 +34,6 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
-from ..models import EC2InstanceData
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -78,7 +77,7 @@ async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
 
 
 async def remove_nodes(
-    docker_client: AutoscalingDocker, nodes: list[Node], force: bool = False
+    docker_client: AutoscalingDocker, *, nodes: list[Node], force: bool = False
 ) -> list[Node]:
     """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 

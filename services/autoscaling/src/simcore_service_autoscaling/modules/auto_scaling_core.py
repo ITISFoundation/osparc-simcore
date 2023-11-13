@@ -7,7 +7,12 @@ import logging
 from typing import cast
 
 import arrow
-from aws_library.ec2.models import EC2InstanceConfig, EC2InstanceType, Resources
+from aws_library.ec2.models import (
+    EC2InstanceConfig,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -25,7 +30,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import ApplicationSettings, get_application_settings
-from ..models import AssociatedInstance, Cluster, EC2InstanceData
+from ..models import AssociatedInstance, Cluster
 from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
@@ -108,7 +113,7 @@ async def _analyze_current_cluster(
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     if cluster.disconnected_nodes:
         await utils_docker.remove_nodes(
-            get_docker_client(app), cluster.disconnected_nodes
+            get_docker_client(app), nodes=cluster.disconnected_nodes
         )
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
@@ -592,7 +597,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
 
         await utils_docker.remove_nodes(
             get_docker_client(app),
-            [i.node for i in terminateable_instances],
+            nodes=[i.node for i in terminateable_instances],
             force=True,
         )
         terminated_instance_ids = [i.ec2_instance.id for i in terminateable_instances]

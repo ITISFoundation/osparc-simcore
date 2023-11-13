@@ -2,7 +2,7 @@ import collections
 import logging
 from collections.abc import Iterable
 
-from aws_library.ec2.models import EC2InstanceType, Resources
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
@@ -15,7 +15,7 @@ from servicelib.utils import logged_gather
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import AssociatedInstance, DaskTask, EC2InstanceData
+from ..models import AssociatedInstance, DaskTask
 from ..utils import computational_scaling as utils
 from ..utils import utils_docker, utils_ec2
 from . import dask
