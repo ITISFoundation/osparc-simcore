@@ -10,7 +10,11 @@ from typing import cast, get_args
 import botocore.exceptions
 import pytest
 from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
+from aws_library.ec2.errors import (
+    EC2InstanceNotFoundError,
+    EC2InstanceTypeInvalidError,
+    EC2TooManyInstancesError,
+)
 from aws_library.ec2.models import (
     EC2InstanceConfig,
     EC2InstanceData,
@@ -22,7 +26,6 @@ from faker import Faker
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize
 from settings_library.ec2 import EC2Settings
-from simcore_service_autoscaling.core.errors import Ec2InstanceInvalidError
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
@@ -132,7 +135,7 @@ async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
     simcore_ec2_api: SimcoreEC2API,
     faker: Faker,
 ):
-    with pytest.raises(Ec2InstanceInvalidError):
+    with pytest.raises(EC2InstanceTypeInvalidError):
         await simcore_ec2_api.get_ec2_instance_capabilities(set(faker.pystr()))
 
 
