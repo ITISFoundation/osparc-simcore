@@ -5,6 +5,7 @@ from typing import Any, Final, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import NonNegativeInt, parse_obj_as
+from servicelib.utils import logged_gather
 
 ContextDict: TypeAlias = dict[str, Any]
 ContextGetter: TypeAlias = Callable[[ContextDict], Any]
@@ -94,6 +95,8 @@ _HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
 async def resolve_variables_from_context(
     variables_getters: dict[str, ContextGetter],
     context: ContextDict,
+    *,
+    resolve_in_parallel: bool = True,
 ) -> dict[str, SubstitutionValue]:
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
@@ -113,7 +116,10 @@ async def resolve_variables_from_context(
             environs[key] = value
 
     # evaluates handlers
-    values = await asyncio.gather(*coros.values())
+    values = await logged_gather(
+        *coros.values(),
+        max_concurrency=0 if resolve_in_parallel else 1,
+    )
     for key, value in zip(coros.keys(), values, strict=True):
         environs[key] = value
 
