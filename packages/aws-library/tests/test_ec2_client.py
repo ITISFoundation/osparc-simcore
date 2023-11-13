@@ -125,7 +125,8 @@ async def test_get_ec2_instance_capabilities_empty_list_returns_all_options(
 ):
     instance_types = await simcore_ec2_api.get_ec2_instance_capabilities(set())
     assert instance_types
-    assert len(instance_types) > 50
+    # NOTE: this might need adaptation when moto is updated
+    assert 700 < len(instance_types) < 800
 
 
 async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
