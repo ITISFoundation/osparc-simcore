@@ -2,7 +2,7 @@ import datetime
 import logging
 from typing import cast
 
-from aws_library.ec2.models import EC2InstanceConfig, EC2InstanceData
+from aws_library.ec2.models import EC2InstanceConfig, EC2InstanceData, EC2InstanceType
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -30,7 +30,9 @@ async def create_cluster(
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
-    ec2_instance_type = await ec2_client.get_ec2_instance_capabilities(
+    ec2_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
         instance_type_names={
             cast(
                 InstanceTypeType,
@@ -42,8 +44,9 @@ async def create_cluster(
             )
         }
     )
+    assert len(ec2_instance_types) == 1  # nosec
     instance_config = EC2InstanceConfig(
-        type=ec2_instance_type,
+        type=ec2_instance_types[0],
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
         startup_script=create_startup_script(
             app_settings,
