@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import cast
+from typing import Final, cast
 
 from fastapi import FastAPI
 from models_library.basic_types import (
@@ -19,6 +19,13 @@ from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
+
+CLUSTERS_KEEPER_ENV_PREFIX: Final[str] = "CLUSTERS_KEEPER_"
+
+
+class ClustersKeeperEC2Settings(EC2Settings):
+    class Config:
+        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
@@ -173,7 +180,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    CLUSTERS_KEEPER_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
+    CLUSTERS_KEEPER_EC2_ACCESS: ClustersKeeperEC2Settings | None = Field(
+        auto_default_from_env=True
+    )
 
     CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
         auto_default_from_env=True
