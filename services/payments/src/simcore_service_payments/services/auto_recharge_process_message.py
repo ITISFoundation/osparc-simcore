@@ -2,16 +2,22 @@ import logging
 from decimal import Decimal
 
 from fastapi import FastAPI
+from simcore_service_payments.db.payments_transactions_repo import (
+    PaymentsTransactionsRepo,
+)
 from models_library.api_schemas_webserver.wallets import GetWalletAutoRecharge
+from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
-from pydantic import parse_raw_as
+from pydantic import EmailStr, parse_obj_as, parse_raw_as
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
-
+from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from ..core.settings import ApplicationSettings
-from .auto_recharge import get_wallet_payment_autorecharge
-from .payments_methods import get_payment_method
+from .auto_recharge import get_wallet_auto_recharge
+from .payments_methods import get_payment_method_by_id
+from .payments import init_payment_with_payment_method
+from .rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
 
@@ -22,37 +28,66 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     _logger.debug("Process msg: %s", rabbit_message)
 
     settings: ApplicationSettings = app.state.settings
-    auto_recharge_repo: AutoRechargeRepo = AutoRechargeRepo(db_engine=app.state.engine)
 
     # 1. Check if wallet credits are bellow the threshold
-    if rabbit_message.credits > Decimal(100):  # TODO: from settings MIN CREDITS
-        return True
+    if rabbit_message.credits > settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS:
+        return True  # --> We do not auto recharge
 
-    # 2. Check if auto-recharge functionality is ON for wallet_id
-    payment_autorecharge: GetWalletAutoRecharge | None = (
-        await get_wallet_payment_autorecharge(
-            settings, auto_recharge_repo, wallet_id=rabbit_message.wallet_id
-        )
+    # 2. Check if auto-recharge functionality is enabled for wallet_id
+    _auto_recharge_repo: AutoRechargeRepo = AutoRechargeRepo(db_engine=app.state.engine)
+    wallet_auto_recharge: GetWalletAutoRecharge | None = await get_wallet_auto_recharge(
+        settings, _auto_recharge_repo, wallet_id=rabbit_message.wallet_id
     )
     if (
-        payment_autorecharge is None
-        or payment_autorecharge.enabled is False
-        or payment_autorecharge.payment_method_id is None
+        wallet_auto_recharge is None
+        or wallet_auto_recharge.enabled is False
+        or wallet_auto_recharge.payment_method_id is None
     ):
-        return True
+        return True  # --> We do not auto recharge
 
     # 3. Get Payment method
     _payments_gateway = PaymentsGatewayApi.get_from_app_state(app)
     _payments_repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    await get_payment_method(
-        _payments_gateway,
-        _payments_repo,
-        payment_method_id=payment_autorecharge.payment_method_id,
-        user_id=1,  # TODO: Why user_id/wallet_id is here? I would query purly based on payment_method_id
-        wallet_id=rabbit_message.wallet_id,
+    payment_method = (
+        await get_payment_method_by_id(  # Maybe add user to the payment_method?
+            _payments_gateway,
+            _payments_repo,
+            payment_method_id=wallet_auto_recharge.payment_method_id,
+        )
     )
 
-    # 4. Pay with payment method
-    # TODO: I will need to query webserver for user email & wallet name?
+    # 4. Check whether number of topups is still in the limit
+    assert settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
+
+    # 5. Protective measure: check whether there was not already top up made in the last minutes?
+
+    # 6. Pay with payment method
+    ## 6.1 Ask webserver to compute credits with current dollar/credit ratio
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_product_credit_price_by_app_and_product"),
+        product_name="osparc",
+    )
+    parse_obj_as(ConvertedCreditsGet | None, result)
+    target_credits = Decimal(1000)
+
+    ## 6.2 Make payment
+    _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
+    await init_payment_with_payment_method(
+        gateway=_payments_gateway,
+        repo_transactions=_payments_transactions_repo,
+        repo_methods=_payments_repo,
+        payment_method_id=payment_method.idr,  # equals to wallet_auto_recharge.payment_method_id
+        amount_dollars=wallet_auto_recharge.top_up_amount_in_usd,
+        target_credits=target_credits,
+        product_name="osparc",  # I need to know the product probably will add to the message
+        wallet_id=rabbit_message.wallet_id,
+        wallet_name=f"id={rabbit_message.wallet_id}",
+        user_id=1,  # payment_method.user_id ?
+        user_name=f"id={1}",  # payment_method.user_id ?
+        user_email=EmailStr("unknown@unknown.itis"),  # Get
+        comment="Payment generated by auto recharge",
+    )
 
     return True
