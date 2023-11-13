@@ -38,8 +38,9 @@ def setup_auto_recharge_listener(app: FastAPI):
 
     async def _on_shutdown():
         assert app.state.auto_recharge_rabbitmq_consumer  # nosec
-        # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
-        await _unsubscribe_consumer(app)
+        if app.state.rabbitmq_client:
+            # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
+            await _unsubscribe_consumer(app)
         app.state.auto_recharge_rabbitmq_constumer = None
 
     app.add_event_handler("startup", _on_startup)
