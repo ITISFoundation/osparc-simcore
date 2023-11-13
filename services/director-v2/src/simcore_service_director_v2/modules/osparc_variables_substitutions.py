@@ -224,7 +224,7 @@ async def _get_or_create_api_key(
         product_name=product_name,
         user_id=user_id,
     )
-    return key_data.api_key
+    return f"{key_data.api_key}"
 
 
 async def _get_or_create_api_secret(
@@ -238,7 +238,7 @@ async def _get_or_create_api_secret(
         product_name=product_name,
         user_id=user_id,
     )
-    return key_data.api_secret
+    return f"{key_data.api_secret}"
 
 
 def _setup_lifespan_osparc_variables_table(app: FastAPI):
