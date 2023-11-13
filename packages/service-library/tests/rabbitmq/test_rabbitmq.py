@@ -435,3 +435,20 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
     # now do a second subscribtion wiht topics, will create a TOPICS exchange
     with pytest.raises(aio_pika.exceptions.ChannelPreconditionFailed):
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
+
+
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+async def test_unsubscribe_consumer(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocked_message_parser: mock.AsyncMock,
+):
+    exchange_name = f"{random_exchange_name()}"
+    client = rabbitmq_client("consumer")
+    await client.subscribe(exchange_name, mocked_message_parser, exclusive_queue=False)
+    # Unsubsribe just a consumer, the queue will be still there
+    await client.unsubscribe_consumer(exchange_name)
+    # Unsubsribe the queue
+    await client.unsubscribe(exchange_name)
+    with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
+        await client.unsubscribe(exchange_name)
