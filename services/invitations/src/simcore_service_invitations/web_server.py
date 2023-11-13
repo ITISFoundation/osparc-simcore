@@ -4,7 +4,7 @@ import uvicorn
 
 
 def start(
-    log_level: Literal["info", "debug", "warning", "error"], reload: bool = False
+    log_level: Literal["info", "debug", "warning", "error"], *, reload: bool = False
 ):
     uvicorn.run(
         "simcore_service_invitations.web_main:the_app",

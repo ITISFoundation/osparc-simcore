@@ -1,7 +1,6 @@
 import getpass
 import logging
 
-import rich
 import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
@@ -18,16 +17,15 @@ from settings_library.utils_cli import (
 from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
-from .invitations import (
+from .services.invitations import (
     InvalidInvitationCodeError,
-    create_invitation_link,
+    create_invitation_link_and_content,
     extract_invitation_code_from,
     extract_invitation_content,
 )
 
 _logger = logging.getLogger(__name__)
-
-err_console = Console(stderr=True)
+_err_console = Console(stderr=True)
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:main'
 main = typer.Typer(name=PROJECT_NAME)
@@ -108,6 +106,10 @@ def invite(
         None,
         help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
     ),
+    product: str = typer.Option(
+        None,
+        help=InvitationInputs.__fields__["product"].field_info.description,
+    ),
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
@@ -118,15 +120,16 @@ def invite(
         guest=email,
         trial_account_days=trial_account_days,
         extra_credits_in_usd=None,
+        product=product,
     )
 
-    invitation_link = create_invitation_link(
+    invitation_link, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
-    rich.print(invitation_link)
+    print(invitation_link)  # noqa: T201
 
 
 @main.command()
@@ -142,12 +145,14 @@ def extract(ctx: typer.Context, invitation_url: str):
                 parse_obj_as(HttpUrl, invitation_url)
             ),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+            default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )
+        assert invitation.product is not None  # nosec
 
         print(invitation.json(indent=1))  # noqa: T201
 
     except (InvalidInvitationCodeError, ValidationError):
-        err_console.print("[bold red]Invalid code[/bold red]")
+        _err_console.print("[bold red]Invalid code[/bold red]")
 
 
 @main.command()
