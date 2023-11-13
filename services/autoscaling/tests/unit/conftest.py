@@ -514,6 +514,7 @@ def aws_allowed_ec2_instance_type_names() -> list[InstanceTypeType]:
         "t2.2xlarge",
         "g3.4xlarge",
         "g4dn.2xlarge",
+        "g4dn.8xlarge",
         "r5n.4xlarge",
         "r5n.8xlarge",
     ]
