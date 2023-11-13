@@ -79,6 +79,10 @@ class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "userInactivityThreshold"
     value: int | None = 30 * _MINUTE  # in seconds
 
+class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
+    preference_identifier = "jobConcurrencyLimit"
+    value: int | None = 4
+
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
@@ -95,6 +99,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     CreditsWarningThresholdFrontendUserPreference,
     WalletIndicatorVisibilityFrontendUserPreference,
     UserInactivityThresholdFrontendUserPreference,
+    JobConcurrencyLimitFrontendUserPreference,
 ]
 
 
