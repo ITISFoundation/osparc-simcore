@@ -8,6 +8,7 @@ import pytest
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
+    "pytest_simcore.aws_ec2_service",
     "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
