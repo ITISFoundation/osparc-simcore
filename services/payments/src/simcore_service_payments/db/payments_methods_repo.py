@@ -102,7 +102,6 @@ class PaymentsMethodsRepo(BaseRepository):
         completion_state: InitPromptAckFlowState,
         state_message: str | None,
     ) -> PaymentsMethodsDB:
-
         await self.insert_init_payment_method(
             payment_method_id,
             user_id=user_id,
@@ -135,7 +134,24 @@ class PaymentsMethodsRepo(BaseRepository):
         rows = result.fetchall() or []
         return parse_obj_as(list[PaymentsMethodsDB], rows)
 
-    async def get_successful_payment_method_(
+    async def get_successful_payment_method_by_id(
+        self,
+        payment_method_id: PaymentMethodID,
+    ) -> PaymentsMethodsDB:
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                payments_methods.select().where(
+                    (payments_methods.c.payment_method_id == payment_method_id)
+                    & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
+                )
+            )
+            row = result.first()
+            if row is None:
+                raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
+
+            return PaymentsMethodsDB.from_orm(row)
+
+    async def get_successful_payment_method(
         self,
         payment_method_id: PaymentMethodID,
         *,

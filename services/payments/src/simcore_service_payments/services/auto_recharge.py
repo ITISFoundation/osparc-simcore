@@ -50,7 +50,7 @@ def _from_api_to_db_model(
 _NEWEST = 0
 
 
-async def get_wallet_payment_autorecharge(
+async def get_wallet_auto_recharge(
     settings: ApplicationSettings,
     auto_recharge_repo: AutoRechargeRepo,
     *,
@@ -64,7 +64,7 @@ async def get_wallet_payment_autorecharge(
         return GetWalletAutoRecharge(
             enabled=payments_autorecharge_db.enabled,
             payment_method_id=payments_autorecharge_db.primary_payment_method_id,
-            min_balance_in_credits=100.0,  # TODO: take from settings
+            min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
             top_up_amount_in_usd=payments_autorecharge_db.top_up_amount_in_usd,
             monthly_limit_in_usd=payments_autorecharge_db.monthly_limit_in_usd,
         )
@@ -80,12 +80,10 @@ async def get_wallet_payment_autorecharge_with_default(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge:
-    # TODO: Ask Pedro
-    # await raise_for_wallet_payments_permissions(
-    #     app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    # )
-    wallet_autorecharge = await get_wallet_payment_autorecharge(
-        app,
+    settings: ApplicationSettings = app.state.settings
+
+    wallet_autorecharge = await get_wallet_auto_recharge(
+        settings,
         auto_recharge_repo,
         wallet_id=wallet_id,
     )
@@ -107,7 +105,6 @@ async def get_wallet_payment_autorecharge_with_default(
             top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
             monthly_limit_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT,
         )
-
     return wallet_autorecharge
 
 

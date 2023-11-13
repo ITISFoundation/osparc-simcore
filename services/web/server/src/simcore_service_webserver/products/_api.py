@@ -49,6 +49,15 @@ async def get_current_product_credit_price(
     return await repo.get_product_latest_credit_price_or_none(current_product_name)
 
 
+async def get_product_credit_price_by_app_and_product(
+    app: web.Application, *, product_name: ProductName
+):
+    repo = ProductRepository.create_from_app(app)
+    return await repo.get_product_latest_credit_price_or_none(product_name)
+
+
+# Get conversion! send already money -> get credits
+
 #
 # helpers for get_product_template_path
 #

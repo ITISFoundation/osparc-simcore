@@ -170,6 +170,19 @@ async def list_successful_payment_methods(
     ]
 
 
+async def get_payment_method_by_id(
+    gateway: PaymentsGatewayApi,
+    repo: PaymentsMethodsRepo,
+    *,
+    payment_method_id: PaymentMethodID,
+) -> PaymentMethodGet:
+    acked = await repo.get_successful_payment_method_by_id(payment_method_id)
+    assert acked.state == InitPromptAckFlowState.SUCCESS  # nosec
+
+    got: GetPaymentMethod = await gateway.get_payment_method(acked.payment_method_id)
+    return merge_models(got, acked)
+
+
 async def get_payment_method(
     gateway: PaymentsGatewayApi,
     repo: PaymentsMethodsRepo,
