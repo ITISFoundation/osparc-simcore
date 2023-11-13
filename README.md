@@ -72,13 +72,13 @@ Services are deployed in two stacks:``simcore-stack`` comprises all core-service
 To build and run:
 
 - git
-- docker
+- [docker](https://docs.docker.com/engine/install/ubuntu/#installation-methods)
 - make >=4.2
 - awk, jq (optional tools within makefiles)
 
 To develop, in addition:
 
-- python 3.10
+- python 3.10 (recommend using [pyenv](https://brain2life.hashnode.dev/how-to-install-pyenv-python-version-manager-on-ubuntu-2004) as python installation manager)
 - nodejs for client part (this dependency will be deprecated soon)
 - swagger-cli (make sure to have a recent version of nodejs)
 - [vscode] (highly recommended)
