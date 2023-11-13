@@ -24,6 +24,8 @@ class APIKeysManager(BaseOsparcGenericResourceManager[str, ApiKeyGet]):
     def rpc_client(self) -> RabbitMQRPCClient:
         return get_rabbitmq_rpc_client(self.app)
 
+    # pylint:disable=arguments-differ
+
     async def get(
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
