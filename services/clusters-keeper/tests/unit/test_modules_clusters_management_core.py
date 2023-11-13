@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from attr import dataclass
+from aws_library.ec2.models import EC2InstanceData
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID
@@ -16,7 +17,6 @@ from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,

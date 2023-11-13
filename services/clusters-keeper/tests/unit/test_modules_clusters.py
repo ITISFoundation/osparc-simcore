@@ -9,6 +9,7 @@ from typing import Awaitable, Callable
 
 import arrow
 import pytest
+from aws_library.ec2.models import EC2InstanceData
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID
@@ -20,7 +21,6 @@ from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
     get_application_settings,
 )
-from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,

@@ -3,6 +3,7 @@ import datetime
 import functools
 from typing import Any, Final
 
+from aws_library.ec2.models import EC2InstanceData
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
@@ -14,7 +15,6 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from .._meta import PACKAGE_DATA_FOLDER
 from ..core.settings import ApplicationSettings
-from ..models import EC2InstanceData
 from .dask import get_scheduler_url
 
 _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
