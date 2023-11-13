@@ -58,12 +58,10 @@ def app_environment(
 
 @pytest.fixture
 def _base_configuration(
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names_env: list[str],
     disabled_rabbitmq: None,
     mocked_redis_server: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_primary_ec2_instances_envs: EnvVarsDict,
 ) -> None:
     ...
 

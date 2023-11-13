@@ -19,9 +19,9 @@ import aiopg.sa
 import httpx
 import pytest
 import respx
+from aws_library.ec2.models import EC2InstanceType
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
     ComputationGet,
@@ -62,6 +62,7 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
 )
 from simcore_service_director_v2.utils.computations import to_node_class
 from starlette import status
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -264,11 +265,13 @@ def default_pricing_plan(request: pytest.FixtureRequest) -> ServicePricingPlanGe
 @pytest.fixture
 def default_pricing_plan_aws_ec2_type(
     default_pricing_plan: ServicePricingPlanGet,
-) -> str | None:
+) -> InstanceTypeType | None:
     for p in default_pricing_plan.pricing_units:
         if p.default:
             if p.specific_info.aws_ec2_instances:
-                return p.specific_info.aws_ec2_instances[0]
+                return parse_obj_as(
+                    InstanceTypeType, p.specific_info.aws_ec2_instances[0]
+                )
             return None
     pytest.fail("no default pricing plan defined!")
     msg = "make pylint happy by raising here"
@@ -400,7 +403,7 @@ def fake_ec2_ram() -> ByteSize:
 @pytest.fixture
 def mocked_clusters_keeper_service_get_instance_type_details(
     mocker: MockerFixture,
-    default_pricing_plan_aws_ec2_type: str,
+    default_pricing_plan_aws_ec2_type: InstanceTypeType,
     fake_ec2_cpus: PositiveInt,
     fake_ec2_ram: ByteSize,
 ) -> mock.Mock:

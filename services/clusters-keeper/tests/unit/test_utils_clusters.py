@@ -26,7 +26,7 @@ def cluster_machines_name_prefix(faker: Faker) -> str:
 
 def test_create_startup_script(
     disabled_rabbitmq: None,
-    mocked_aws_server_envs: EnvVarsDict,
+    mocked_ec2_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,

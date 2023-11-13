@@ -5,7 +5,7 @@
 
 import asyncio
 import datetime
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import arrow
 import pytest
@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper._meta import VERSION as APP_VERSION
 from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
 from simcore_service_clusters_keeper.core.settings import (
@@ -50,11 +51,9 @@ def wallet_id(faker: Faker) -> WalletID:
 def _base_configuration(
     docker_swarm: None,
     disabled_rabbitmq: None,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names_env: list[str],
     mocked_redis_server: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_primary_ec2_instances_envs: EnvVarsDict,
 ) -> None:
     ...
 

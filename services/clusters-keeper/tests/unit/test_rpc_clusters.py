@@ -15,6 +15,7 @@ from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.clusters import (
     get_or_create_cluster,
@@ -43,11 +44,9 @@ def wallet_id(faker: Faker) -> WalletID:
 def _base_configuration(
     docker_swarm: None,
     enabled_rabbitmq: None,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names_env: list[str],
     mocked_redis_server: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_primary_ec2_instances_envs: EnvVarsDict,
     initialized_app: FastAPI,
 ) -> None:
     ...
