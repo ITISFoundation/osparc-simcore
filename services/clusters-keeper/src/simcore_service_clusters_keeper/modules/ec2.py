@@ -3,13 +3,14 @@ from typing import cast
 
 from aws_library.ec2.client import SimcoreEC2API
 from fastapi import FastAPI
+from settings_library.ec2 import EC2Settings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
 from ..core.errors import ConfigurationError, Ec2NotConnectedError
-from ..core.settings import EC2ClustersKeeperSettings, get_application_settings
+from ..core.settings import get_application_settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
 
-        settings: EC2ClustersKeeperSettings | None = get_application_settings(
+        settings: EC2Settings | None = get_application_settings(
             app
         ).CLUSTERS_KEEPER_EC2_ACCESS
 
@@ -47,9 +48,9 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_ec2_client(app: FastAPI) -> ClustersKeeperEC2:
+def get_ec2_client(app: FastAPI) -> SimcoreEC2API:
     if not app.state.ec2_client:
         raise ConfigurationError(
             msg="EC2 client is not available. Please check the configuration."
         )
-    return cast(ClustersKeeperEC2, app.state.ec2_client)
+    return cast(SimcoreEC2API, app.state.ec2_client)
