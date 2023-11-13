@@ -195,7 +195,7 @@ def file_id(faker: Faker) -> str:
 
 @pytest.fixture
 async def create_upload_links(
-    mocked_s3_server: ThreadedMotoServer,
+    mocked_aws_server: ThreadedMotoServer,
     aiobotocore_s3_client: AioBaseClient,
     faker: Faker,
     bucket: str,
