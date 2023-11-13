@@ -2,6 +2,9 @@
 # Specifies third-party dependencies for 'aws-library'
 #
 --constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
 
 aioboto3
 aiocache
