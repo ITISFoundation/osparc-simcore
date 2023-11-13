@@ -4,7 +4,6 @@
 <img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="500">
 </p>
 
-
 <!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
 [![black_badge]](https://github.com/psf/black)
 [![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
@@ -27,7 +26,6 @@
 [s4l_status]:https://img.shields.io/badge/dynamic/json?label=s4l-lite.io&query=%24.status.description&url=https%3A%2F%2Fdfrzcpn4jp96.statuspage.io%2Fapi%2Fv2%2Fstatus.json
 [osparc_status]:https://img.shields.io/badge/dynamic/json?label=osparc.io&query=%24.status.description&url=https%3A%2F%2Fstatus.osparc.io%2Fapi%2Fv2%2Fstatus.json
 <!------------------------------------------------------------------------------------------>
-
 
 The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline **S**imulations for **S**timulating **P**eripheral **A**ctivity to **R**elieve **C**onditions – is one of the three integrative cores of the SPARC program’s Data Resource Center (DRC).
 The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
@@ -135,7 +133,7 @@ To upgrade a single requirement named `fastapi`run:
 
 - [Git release workflow](docs/releasing-workflow-instructions.md)
 - Public [releases](https://github.com/ITISFoundation/osparc-simcore/releases)
-- Production in https://osparc.io
+- Production in <https://osparc.io>
 - [Staging instructions](docs/releasing-workflow-instructions.md#staging-example)
 - [User Manual](https://itisfoundation.github.io/osparc-manual/)
 
@@ -191,6 +189,5 @@ This project is licensed under the terms of the [MIT license](LICENSE).
 </p>
 
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
-[chocolatey]:https://chocolatey.org/
 [vscode]:https://code.visualstudio.com/
 [WSL2]:https://docs.microsoft.com/en-us/windows/wsl
