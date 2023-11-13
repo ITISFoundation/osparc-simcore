@@ -66,14 +66,12 @@ def local_dask_scheduler_server_envs(
 @pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
+    mocked_ec2_server_envs: EnvVarsDict,
     enabled_computational_mode: EnvVarsDict,
     local_dask_scheduler_server_envs: EnvVarsDict,
+    mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names_env: list[str],
     mocked_redis_server: None,
 ) -> None:
     ...
