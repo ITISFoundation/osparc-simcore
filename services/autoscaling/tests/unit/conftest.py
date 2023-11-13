@@ -9,7 +9,6 @@ import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
-from datetime import timezone
 from pathlib import Path
 from typing import Any, Final, cast
 from unittest import mock
@@ -24,7 +23,7 @@ import simcore_service_autoscaling
 from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
 from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.models import EC2InstanceData, Resources
+from aws_library.ec2.models import EC2InstanceData
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -58,6 +57,7 @@ from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.aws_ec2_service",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
@@ -678,26 +678,6 @@ def osparc_docker_label_keys(
 @pytest.fixture
 def aws_instance_private_dns() -> str:
     return "ip-10-23-40-12.ec2.internal"
-
-
-@pytest.fixture
-def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
-    def _creator(**overrides) -> EC2InstanceData:
-        return EC2InstanceData(
-            **(
-                {
-                    "launch_time": faker.date_time(tzinfo=timezone.utc),
-                    "id": faker.uuid4(),
-                    "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
-                    "type": faker.pystr(),
-                    "state": faker.pystr(),
-                    "resources": Resources(cpus=4.0, ram=ByteSize(1024 * 1024)),
-                }
-                | overrides
-            )
-        )
-
-    return _creator
 
 
 @pytest.fixture
