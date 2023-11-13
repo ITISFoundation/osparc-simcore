@@ -31,8 +31,10 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def _on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
+            app.state.rabbitmq_client = None
         if app.state.rabbitmq_rpc_server:
             await app.state.rabbitmq_rpc_server.close()
+            app.state.rabbitmq_rpc_server = None
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

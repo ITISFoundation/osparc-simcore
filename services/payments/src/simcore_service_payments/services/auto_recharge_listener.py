@@ -30,16 +30,18 @@ async def _unsubscribe_consumer(app) -> None:
         await rabbit_client.unsubscribe_consumer(
             WalletCreditsMessage.get_channel_name(),
         )
-        return None
 
 
-def setup_auto_recharge_listener(app: FastAPI) -> None:
-    async def _on_startup() -> None:
+def setup_auto_recharge_listener(app: FastAPI):
+    async def _on_startup():
         app.state.auto_recharge_rabbitmq_consumer = await _subscribe_to_rabbitmq(app)
 
-    async def _on_shutdown() -> None:
-        # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
-        app.state.auto_recharge_rabbitmq_constumer = await _unsubscribe_consumer(app)
+    async def _on_shutdown():
+        assert app.state.auto_recharge_rabbitmq_consumer  # nosec
+        if app.state.rabbitmq_client:
+            # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
+            await _unsubscribe_consumer(app)
+        app.state.auto_recharge_rabbitmq_constumer = None
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
