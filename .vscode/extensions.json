@@ -3,6 +3,7 @@
     "charliermarsh.ruff",
     "eamodio.gitlens",
     "exiasr.hadolint",
+    "ms-azuretools.vscode-docker",
     "ms-python.black-formatter",
     "ms-python.python",
     "njpwerner.autodocstring",
