@@ -38,7 +38,7 @@ async def test_get_instance_type_details_all_options(
     # an empty set returns all options
 
     rpc_response = await get_instance_type_details(
-        clusters_keeper_rabbitmq_rpc_client, instance_type_names=[]
+        clusters_keeper_rabbitmq_rpc_client, instance_type_names=set()
     )
     assert rpc_response
     assert isinstance(rpc_response, list)

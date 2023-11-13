@@ -273,7 +273,10 @@ async def test_get_instances(
     assert not all_instances["Reservations"]
     assert (
         await clusters_keeper_ec2.get_instances(
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES, tags={}
+            key_names=[
+                app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
+            ],
+            tags={},
         )
         == []
     )
@@ -292,7 +295,9 @@ async def test_get_instances(
     assert len(created_instances) == 1
 
     instance_received = await clusters_keeper_ec2.get_instances(
-        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
+        key_names=[
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME
+        ],
         tags=tags,
     )
     assert created_instances == instance_received
