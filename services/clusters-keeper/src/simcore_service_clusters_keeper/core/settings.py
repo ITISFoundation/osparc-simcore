@@ -12,21 +12,13 @@ from models_library.basic_types import (
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-
-
-class EC2ClustersKeeperSettings(BaseCustomSettings):
-    EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID: str
-    EC2_CLUSTERS_KEEPER_ENDPOINT: str | None = Field(
-        default=None, description="do not define if using standard AWS"
-    )
-    EC2_CLUSTERS_KEEPER_REGION_NAME: str = "us-east-1"
-    EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY: str
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
@@ -181,9 +173,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    CLUSTERS_KEEPER_EC2_ACCESS: EC2ClustersKeeperSettings | None = Field(
-        auto_default_from_env=True
-    )
+    CLUSTERS_KEEPER_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
 
     CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
         auto_default_from_env=True
