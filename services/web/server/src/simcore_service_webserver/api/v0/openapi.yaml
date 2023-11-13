@@ -505,33 +505,6 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
-  /v0/auth/api-keys/{name}:
-    get:
-      tags:
-      - auth
-      summary: Api Key Get
-      description: returns the key or None
-      operationId: api_key_get
-      parameters:
-      - required: true
-        schema:
-          title: Name
-          type: string
-        name: name
-        in: path
-      responses:
-        '200':
-          description: returns the api key or None
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiKeyGet'
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to get the keu
-        '403':
-          description: not enough permissions to get the keu
   /v0/catalog/services:
     get:
       tags:

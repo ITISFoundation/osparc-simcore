@@ -9,7 +9,6 @@ from datetime import timedelta
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -96,28 +95,6 @@ async def test_create_api_keys(
         assert sorted(data) == [
             display_name,
         ]
-
-    # check key existence
-    resp = await client.get(f"/v0/auth/api-keys/{display_name}")
-    data, errors = await assert_status(resp, expected)
-
-    if not errors:
-        assert ApiKeyGet.parse_obj(data).display_name == display_name
-
-
-@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
-async def test_api_key_does_not_exists(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_role: UserRole,
-    expected: type[web.HTTPException],
-    disable_gc_manual_guest_users: None,
-):
-    resp = await client.get("/v0/auth/api-keys/missing_key")
-    data, errors = await assert_status(resp, expected)
-
-    if not errors:
-        assert data is None
 
 
 @pytest.mark.parametrize(
