@@ -1,7 +1,6 @@
 import base64
 import binascii
 import logging
-from datetime import datetime, timezone
 from typing import Any, ClassVar, cast
 from urllib import parse
 
@@ -13,35 +12,30 @@ from starlette.datastructures import URL
 
 _logger = logging.getLogger(__name__)
 
-#
-# Errors
-#
-
 
 class InvalidInvitationCodeError(Exception):
     ...
-
-
-#
-# Models
-#
 
 
 class _ContentWithShortNames(InvitationContent):
     """Helper model to serialize/deserialize to json using shorter field names"""
 
     @classmethod
-    def serialize(cls, model_data: InvitationContent) -> str:
+    def serialize(cls, model_obj: InvitationContent) -> str:
         """Exports to json using *short* aliases and values in order to produce shorter codes"""
         model_w_short_aliases_json: str = cls.construct(
-            **model_data.dict(exclude_unset=True)
+            **model_obj.dict(exclude_unset=True)
         ).json(exclude_unset=True, by_alias=True)
+        # NOTE: json arguments try to minimize the amount of data
+        # serialized. The CONS is that it relies on models in the code
+        # that might change over time. This might lead to some datasets in codes
+        # that fail in deserialization
         return model_w_short_aliases_json
 
     @classmethod
-    def deserialize(cls, raw_data: str) -> InvitationContent:
+    def deserialize(cls, raw_json: str) -> InvitationContent:
         """Parses a json string and returns InvitationContent model"""
-        model_w_short_aliases = cls.parse_raw(raw_data)
+        model_w_short_aliases = cls.parse_raw(raw_json)
         return InvitationContent.construct(
             **model_w_short_aliases.dict(exclude_unset=True)
         )
@@ -90,17 +84,6 @@ def _build_link(
     return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
 
 
-def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
-    """Parses url and extracts invitation"""
-    try:
-        query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
-        invitation_code: str = query_params["invitation"]
-        return invitation_code
-    except KeyError as err:
-        _logger.debug("Invalid invitation: %s", err)
-        raise InvalidInvitationCodeError from err
-
-
 def _fernet_encrypt_as_urlsafe_code(
     data: bytes,
     secret_key: bytes,
@@ -111,20 +94,11 @@ def _fernet_encrypt_as_urlsafe_code(
 
 
 def _create_invitation_code(
-    invitation_data: InvitationInputs,
+    content: InvitationContent,
     secret_key: bytes,
-    default_product: ProductName,
 ) -> bytes:
     """Produces url-safe invitation code in bytes"""
-
-    # builds content
-    content = InvitationContent(
-        **invitation_data.dict(exclude_none=True),
-        created=datetime.now(tz=timezone.utc),
-    )
-    if content.product is None:
-        content.product = default_product
-
+    # shorten names
     content_jsonstr: str = _ContentWithShortNames.serialize(content)
     assert "\n" not in content_jsonstr  # nosec
 
@@ -140,25 +114,39 @@ def _create_invitation_code(
 #
 
 
-def create_invitation_link(
+def create_invitation_link_and_content(
     invitation_data: InvitationInputs,
     secret_key: bytes,
     base_url: HttpUrl,
     default_product: ProductName,
-) -> HttpUrl:
-    invitation_code = _create_invitation_code(
-        invitation_data=invitation_data,
-        secret_key=secret_key,
-        default_product=default_product,
-    )
+) -> tuple[HttpUrl, InvitationContent]:
+    content = InvitationContent.create_from_inputs(invitation_data, default_product)
+    code = _create_invitation_code(content, secret_key)
     # Adds message as the invitation in query
-    return _build_link(
+    link = _build_link(
         base_url=base_url,
-        code_url_safe=invitation_code.decode(),
+        code_url_safe=code.decode(),
     )
+    return link, content
 
 
-def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationContent:
+def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
+    """Parses url and extracts invitation"""
+    if not invitation_url.fragment:
+        raise InvalidInvitationCodeError
+
+    try:
+        query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
+        invitation_code: str = query_params["invitation"]
+        return invitation_code
+    except KeyError as err:
+        _logger.debug("Invalid invitation: %s", err)
+        raise InvalidInvitationCodeError from err
+
+
+def decrypt_invitation(
+    invitation_code: str, secret_key: bytes, default_product: ProductName
+) -> InvitationContent:
     """
 
     WARNING: invitation_code should not be taken directly from the url fragment without 'parse_invitation_code'
@@ -174,17 +162,25 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationCon
     decryted: bytes = fernet.decrypt(token=code)
 
     # parses serialized invitation
-    return _ContentWithShortNames.deserialize(raw_data=decryted.decode())
+    content = _ContentWithShortNames.deserialize(raw_json=decryted.decode())
+    if content.product is None:
+        content.product = default_product
+    return content
 
 
 def extract_invitation_content(
-    invitation_code: str, secret_key: bytes
+    invitation_code: str, secret_key: bytes, default_product: ProductName
 ) -> InvitationContent:
     """As decrypt_invitation but raises InvalidInvitationCode if fails"""
     try:
-        return decrypt_invitation(
-            invitation_code=invitation_code, secret_key=secret_key
+        content = decrypt_invitation(
+            invitation_code=invitation_code,
+            secret_key=secret_key,
+            default_product=default_product,
         )
+        assert content.product is not None  # nosec
+        return content
+
     except (InvalidToken, ValidationError, binascii.Error) as err:
         _logger.debug("Invalid code: %s", err)
         raise InvalidInvitationCodeError from err
