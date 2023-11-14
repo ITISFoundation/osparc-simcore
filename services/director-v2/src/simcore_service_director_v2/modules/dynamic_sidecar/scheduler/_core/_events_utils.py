@@ -106,9 +106,9 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
     )
     # pylint: disable=protected-access
     scheduler_data: SchedulerData = (
-        dynamic_sidecars_scheduler._scheduler.get_scheduler_data(
+        dynamic_sidecars_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
             node_uuid
-        )  # noqa: SLF001
+        )
     )
     return scheduler_data
 
