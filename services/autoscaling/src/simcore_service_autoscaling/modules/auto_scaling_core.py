@@ -319,7 +319,7 @@ async def _find_needed_instances(
             drained_instances_to_tasks,
             needed_new_instance_types_for_tasks,
         )
-
+        _logger.info("%s", f"{filtered_active_instance_to_task=}")
         # try to assign the task to one of the active, pending or net created instances
         _logger.debug(
             "Try to assign %s to any active/pending/created instance in the %s",
