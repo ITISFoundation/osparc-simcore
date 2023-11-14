@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import cast
+from typing import Any, ClassVar, cast
 
 from fastapi import FastAPI
 from models_library.basic_types import (
@@ -12,6 +12,8 @@ from models_library.basic_types import (
 from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
     AnyUrl,
+    BaseModel,
+    Extra,
     Field,
     NonNegativeInt,
     PositiveInt,
@@ -30,22 +32,28 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
+class EC2InstanceBootSpecific(BaseModel):
+    ami_id: str
+    custom_boot_scripts: list[str]
+
+    class Config:
+        extra = Extra.forbid
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "ami_id": "ami-123456789abcdef",
+                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
+                }
+            ]
+        }
+
+
 class EC2InstancesSettings(BaseCustomSettings):
-    EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        min_items=1,
-        unique_items=True,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
-    EC2_INSTANCES_AMI_ID: str = Field(
-        ...,
-        min_length=1,
-        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
-    )
-    EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
-    )
+
     EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
@@ -112,11 +120,16 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_intance_names(cls, value):
+    def check_valid_intance_names(
+        cls, value: dict[str, EC2InstanceBootSpecific]
+    ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(tuple[InstanceTypeType, ...], value)
-        return value
+        if all(parse_obj_as(InstanceTypeType, key) for key in value):
+            return value
+
+        msg = "Invalid instance type name"
+        raise ValueError(msg)
 
 
 class NodesMonitoringSettings(BaseCustomSettings):

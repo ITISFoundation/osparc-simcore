@@ -25,6 +25,7 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -41,7 +42,11 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
-from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
+from simcore_service_autoscaling.core.settings import (
+    ApplicationSettings,
+    EC2InstanceBootSpecific,
+    EC2Settings,
+)
 from simcore_service_autoscaling.models import Cluster, DaskTaskResources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from tenacity import retry
@@ -94,6 +99,7 @@ def app_environment(
     ec2_instances: list[InstanceTypeType],
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
+
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -104,8 +110,16 @@ def app_environment(
                 faker.pylist(allowed_types=(str,))
             ),
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    ec2_type_name: jsonable_encoder(
+                        EC2InstanceBootSpecific(
+                            **EC2InstanceBootSpecific.Config.schema_extra["examples"][0]
+                        )
+                    )
+                    for ec2_type_name in ec2_instances
+                }
+            ),
         },
     )
     return mock_env_devel_environment | envs

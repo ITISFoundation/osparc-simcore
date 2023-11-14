@@ -8,7 +8,15 @@ import json
 import pytest
 from pydantic import ValidationError
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from simcore_service_autoscaling.core.settings import ApplicationSettings
+from simcore_service_autoscaling.core.settings import (
+    ApplicationSettings,
+    EC2InstancesSettings,
+)
+
+
+def test_ec2_instances_settings(app_environment: EnvVarsDict):
+    settings = EC2InstancesSettings.create_from_envs()
+    assert isinstance(settings.EC2_INSTANCES_ALLOWED_TYPES, dict)
 
 
 def test_settings(app_environment: EnvVarsDict):
