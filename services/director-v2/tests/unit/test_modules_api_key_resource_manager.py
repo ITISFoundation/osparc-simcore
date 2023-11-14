@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import pytest
 from faker import Faker
