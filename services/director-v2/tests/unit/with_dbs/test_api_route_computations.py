@@ -62,7 +62,6 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
 )
 from simcore_service_director_v2.utils.computations import to_node_class
 from starlette import status
-from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -265,13 +264,11 @@ def default_pricing_plan(request: pytest.FixtureRequest) -> ServicePricingPlanGe
 @pytest.fixture
 def default_pricing_plan_aws_ec2_type(
     default_pricing_plan: ServicePricingPlanGet,
-) -> InstanceTypeType | None:
+) -> str | None:
     for p in default_pricing_plan.pricing_units:
         if p.default:
             if p.specific_info.aws_ec2_instances:
-                return parse_obj_as(
-                    InstanceTypeType, p.specific_info.aws_ec2_instances[0]
-                )
+                return p.specific_info.aws_ec2_instances[0]
             return None
     pytest.fail("no default pricing plan defined!")
     msg = "make pylint happy by raising here"
