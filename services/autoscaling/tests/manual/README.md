@@ -104,5 +104,5 @@ make up-devel # this will deploy the autoscaling stack
 4. start some docker services to trigger autoscaling
 ```bash
 # run on EC2 instance
-docker service create --reserve-cpu=4 --reserve-memory=1GiB --constraint=node.label==testing.monitored-node --label=testing.monitored-service redis # will create a redis service reserving 4 CPUs and 1GiB of RAM
+docker service create --name=test-service --reserve-cpu=4 --reserve-memory=1GiB --constraint=node.labels.testing.monitored-node==true --label=testing.monitored-service=true redis # will create a redis service reserving 4 CPUs and 1GiB of RAM
 ```
