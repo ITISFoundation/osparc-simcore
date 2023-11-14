@@ -163,7 +163,7 @@ def _assert_rabbit_autoscaling_message_sent(
 
 
 @pytest.fixture
-def mock_tag_node(mocker: MockerFixture) -> mock.Mock:
+def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
     async def fake_tag_node(*args, **kwargs) -> DockerNode:
         return args[1]
 
@@ -175,7 +175,7 @@ def mock_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def mock_find_node_with_name(
+def mock_docker_find_node_with_name(
     mocker: MockerFixture, fake_node: DockerNode
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
@@ -186,7 +186,7 @@ def mock_find_node_with_name(
 
 
 @pytest.fixture
-def mock_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
+def mock_docker_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_node_used_resources",
         autospec=True,
@@ -288,6 +288,24 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
     return _do
 
 
+@pytest.fixture
+def mock_dask_get_worker_has_results_in_memory(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.dask.get_worker_still_has_results_in_memory",
+        return_value=0,
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mock_dask_get_worker_used_resources(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.dask.get_worker_used_resources",
+        return_value=Resources.create_as_empty(),
+        autospec=True,
+    )
+
+
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
@@ -324,12 +342,14 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
     ec2_client: EC2Client,
-    mock_tag_node: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
     fake_node: DockerNode,
     mock_rabbitmq_post_message: mock.Mock,
-    mock_find_node_with_name: mock.Mock,
-    mock_set_node_availability: mock.Mock,
-    mock_compute_node_used_resources: mock.Mock,
+    mock_docker_find_node_with_name: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_docker_compute_node_used_resources: mock.Mock,
+    mock_dask_get_worker_has_results_in_memory: mock.Mock,
+    mock_dask_get_worker_used_resources: mock.Mock,
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
     create_dask_task_resources: Callable[..., DaskTaskResources],
@@ -376,10 +396,12 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
-    mock_find_node_with_name.assert_not_called()
-    mock_tag_node.assert_not_called()
-    mock_set_node_availability.assert_not_called()
-    mock_compute_node_used_resources.assert_not_called()
+    mock_docker_find_node_with_name.assert_not_called()
+    mock_docker_tag_node.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_compute_node_used_resources.assert_not_called()
+    mock_dask_get_worker_has_results_in_memory.assert_not_called()
+    mock_dask_get_worker_used_resources.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -395,7 +417,10 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
     )
-    mock_compute_node_used_resources.assert_not_called()
+    mock_dask_get_worker_has_results_in_memory.assert_called_once()
+    mock_dask_get_worker_has_results_in_memory.reset_mock()
+    mock_dask_get_worker_used_resources.assert_called_once()
+    mock_dask_get_worker_used_resources.reset_mock()
     internal_dns_names = await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -407,25 +432,24 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     internal_dns_name = internal_dns_names[0].removesuffix(".ec2.internal")
 
     # the node is tagged and made active right away since we still have the pending task
-    mock_find_node_with_name.assert_called_once()
-    mock_find_node_with_name.reset_mock()
+    mock_docker_find_node_with_name.assert_called_once()
+    mock_docker_find_node_with_name.reset_mock()
     expected_docker_node_tags = {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
     }
-    mock_tag_node.assert_called_once_with(
+    mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_node,
         tags=expected_docker_node_tags,
         available=False,
     )
-    mock_tag_node.reset_mock()
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_tag_node.reset_mock()
+    mock_docker_set_node_availability.assert_called_once_with(
         get_docker_client(initialized_app), fake_node, available=True
     )
-    mock_set_node_availability.reset_mock()
-
-    # in this case there is no message sent since the worker was not started yet
-    mock_rabbitmq_post_message.assert_not_called()
+    mock_docker_set_node_availability.reset_mock()
+    mock_rabbitmq_post_message.assert_called_once()
+    mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked
     auto_scaling_mode = ComputationalAutoscaling()
@@ -442,14 +466,22 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     fake_node.Description.Hostname = internal_dns_name
 
     # 3. calling this multiple times should do nothing
-    for _ in range(10):
+    num_useless_calls = 10
+    for _ in range(num_useless_calls):
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=auto_scaling_mode
         )
-    mock_compute_node_used_resources.assert_not_called()
-    mock_find_node_with_name.assert_not_called()
-    mock_tag_node.assert_not_called()
-    mock_set_node_availability.assert_not_called()
+    mock_dask_get_worker_has_results_in_memory.assert_called()
+    assert (
+        mock_dask_get_worker_has_results_in_memory.call_count == 2 * num_useless_calls
+    )
+    mock_dask_get_worker_has_results_in_memory.reset_mock()
+    mock_dask_get_worker_used_resources.assert_called()
+    assert mock_dask_get_worker_used_resources.call_count == 2 * num_useless_calls
+    mock_dask_get_worker_used_resources.reset_mock()
+    mock_docker_find_node_with_name.assert_not_called()
+    mock_docker_tag_node.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
     await _assert_ec2_instances(
         ec2_client,
@@ -459,48 +491,28 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         instance_state="running",
     )
 
-    # check no rabbit messages were sent
-    # NOTE: we currently have no real dask-worker here
-    mock_rabbitmq_post_message.assert_not_called()
+    # check rabbit messages were sent
+    mock_rabbitmq_post_message.assert_called()
+    assert mock_rabbitmq_post_message.call_count == num_useless_calls
+    mock_rabbitmq_post_message.reset_mock()
 
     #
     # 4. now scaling down, as we deleted all the tasks
     #
     del dask_future
-    # the worker will not be found since there is none in this testing environment, but it should not raise
-    await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    # check the number of instances did not change and is still running
-    await _assert_ec2_instances(
-        ec2_client,
-        num_reservations=1,
-        num_instances=1,
-        instance_type=expected_ec2_type,
-        instance_state="running",
-    )
-    # now mock the call so that it triggers deactivation
-    mocked_dask_get_worker_still_has_results_in_memory = mocker.patch(
-        "simcore_service_autoscaling.modules.dask.get_worker_still_has_results_in_memory",
-        return_value=0,
-        autospec=True,
-    )
-    mocked_dask_get_worker_used_resources = mocker.patch(
-        "simcore_service_autoscaling.modules.dask.get_worker_used_resources",
-        return_value=Resources.create_as_empty(),
-        autospec=True,
-    )
 
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    mocked_dask_get_worker_still_has_results_in_memory.assert_called()
-    assert mocked_dask_get_worker_still_has_results_in_memory.call_count == 2
-    mocked_dask_get_worker_still_has_results_in_memory.reset_mock()
-    mocked_dask_get_worker_used_resources.assert_called()
-    assert mocked_dask_get_worker_used_resources.call_count == 2
-    mocked_dask_get_worker_used_resources.reset_mock()
+    mock_dask_get_worker_has_results_in_memory.assert_called()
+    assert mock_dask_get_worker_has_results_in_memory.call_count == 2
+    mock_dask_get_worker_has_results_in_memory.reset_mock()
+    mock_dask_get_worker_used_resources.assert_called()
+    assert mock_dask_get_worker_used_resources.call_count == 2
+    mock_dask_get_worker_used_resources.reset_mock()
     # the node shall be set to drain, but not yet terminated
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         get_docker_client(initialized_app), fake_node, available=False
     )
-    mock_set_node_availability.reset_mock()
+    mock_docker_set_node_availability.reset_mock()
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -550,6 +562,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         instance_type=expected_ec2_type,
         instance_state="terminated",
     )
+
+    # this call should never be used in computational mode
+    mock_docker_compute_node_used_resources.assert_not_called()
 
 
 async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
@@ -658,11 +673,11 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
     ec2_client: EC2Client,
-    mock_tag_node: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
     scale_up_params: _ScaleUpParams,
     mock_rabbitmq_post_message: mock.Mock,
-    mock_find_node_with_name: mock.Mock,
-    mock_set_node_availability: mock.Mock,
+    mock_docker_find_node_with_name: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
     dask_spec_local_cluster: distributed.SpecCluster,
 ):
     # we have nothing running now
@@ -697,9 +712,9 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
-    mock_find_node_with_name.assert_not_called()
-    mock_tag_node.assert_not_called()
-    mock_set_node_availability.assert_not_called()
+    mock_docker_find_node_with_name.assert_not_called()
+    mock_docker_tag_node.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -728,7 +743,7 @@ async def test__deactivate_empty_nodes(
     cluster: Callable[..., Cluster],
     host_node: DockerNode,
     fake_associated_host_instance: AssociatedInstance,
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
 ):
     # since we have no service running, we expect the passed node to be set to drain
     active_cluster = cluster(active_nodes=[fake_associated_host_instance])
@@ -737,7 +752,7 @@ async def test__deactivate_empty_nodes(
     )
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
 
@@ -748,7 +763,7 @@ async def test__deactivate_empty_nodes_with_finished_tasks_should_not_deactivate
     cluster: Callable[..., Cluster],
     host_node: DockerNode,
     fake_associated_host_instance: AssociatedInstance,
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
 ):
     dask_future = create_dask_task({})
@@ -762,7 +777,7 @@ async def test__deactivate_empty_nodes_with_finished_tasks_should_not_deactivate
         initialized_app, deepcopy(active_cluster), ComputationalAutoscaling()
     )
     assert updated_cluster.active_nodes
-    mock_set_node_availability.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
 
     # now removing the dask_future shall remove the result from the memory
     del dask_future
@@ -772,6 +787,6 @@ async def test__deactivate_empty_nodes_with_finished_tasks_should_not_deactivate
     )
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )

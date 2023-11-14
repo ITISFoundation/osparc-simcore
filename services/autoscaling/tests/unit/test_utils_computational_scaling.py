@@ -22,6 +22,7 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.utils.computational_scaling import (
     _DEFAULT_MAX_CPU,
     _DEFAULT_MAX_RAM,
+    AssignedDaskTasksToInstance,
     get_max_resources_from_dask_task,
     try_assigning_task_to_instance_types,
     try_assigning_task_to_instances,
@@ -133,7 +134,7 @@ async def test_try_assigning_task_to_node(
     assert instance_to_tasks[0][1] == [task, task]
 
 
-async def test_try_assigning_task_to_pending_instances_with_no_instances(
+async def test_try_assigning_task_to_instances_with_no_instances(
     fake_app: mock.Mock,
     fake_task: Callable[..., DaskTask],
 ):
@@ -144,15 +145,15 @@ async def test_try_assigning_task_to_pending_instances_with_no_instances(
     )
 
 
-async def test_try_assigning_task_to_pending_instances(
+async def test_try_assigning_task_to_instances(
     fake_app: mock.Mock,
     fake_task: Callable[..., DaskTask],
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     task = fake_task(required_resources={"CPU": 2})
     ec2_instance = fake_ec2_instance_data()
-    pending_instance_to_tasks: list[tuple[EC2InstanceData, list[DaskTask]]] = [
-        (ec2_instance, [])
+    pending_instance_to_tasks: list[AssignedDaskTasksToInstance] = [
+        (ec2_instance, [], Resources(cpus=4, ram=ByteSize(1024**2)))
     ]
 
     # calling once should allow to add that task to the instance
