@@ -49,7 +49,7 @@ class RandomTextAPI:
 # define a custom manager using the custom user defined identifiers
 # NOTE: note that the generic uses `[UserDefinedID, Any]`
 # which enforces typing constraints on the overloaded abstract methods
-class RandomTextResoruceManager(BaseOsparcGenericResourcesManager[UserDefinedID, Any]):
+class RandomTextResourcesManager(BaseOsparcGenericResourcesManager[UserDefinedID, Any]):
     # pylint:disable=arguments-differ
 
     def __init__(self) -> None:
@@ -66,16 +66,16 @@ class RandomTextResoruceManager(BaseOsparcGenericResourcesManager[UserDefinedID,
 
 
 @pytest.fixture
-def manager() -> RandomTextResoruceManager:
-    return RandomTextResoruceManager()
+def manager() -> RandomTextResourcesManager:
+    return RandomTextResourcesManager()
 
 
-async def test_resource_is_missing(manager: RandomTextResoruceManager):
+async def test_resource_is_missing(manager: RandomTextResourcesManager):
     missing_identifier = UserDefinedID()
     assert await manager.get(missing_identifier) is None
 
 
-async def test_manual_workflow(manager: RandomTextResoruceManager):
+async def test_manual_workflow(manager: RandomTextResourcesManager):
     # creation
     identifier, _ = await manager.create(length=1)
     assert await manager.get(identifier) is not None
@@ -89,7 +89,7 @@ async def test_manual_workflow(manager: RandomTextResoruceManager):
 
 @pytest.mark.parametrize("delete_before_removal", [True, False])
 async def test_automatic_cleanup_workflow(
-    manager: RandomTextResoruceManager, delete_before_removal: bool
+    manager: RandomTextResourcesManager, delete_before_removal: bool
 ):
     # creation
     identifier, _ = await manager.create(length=1)
@@ -112,7 +112,7 @@ async def test_automatic_cleanup_workflow(
 
 async def test_safe_remove_api_raises_error(
     mocker: MockerFixture,
-    manager: RandomTextResoruceManager,
+    manager: RandomTextResourcesManager,
     caplog: pytest.LogCaptureFixture,
 ):
     caplog.clear()
@@ -130,7 +130,7 @@ async def test_safe_remove_api_raises_error(
     assert "could not be removed" in caplog.text
 
 
-async def test_get_or_create_exiting(manager: RandomTextResoruceManager):
+async def test_get_or_create_exiting(manager: RandomTextResourcesManager):
     exiting_identifier, exiting_obj = manager.api.create(length=1)
     # query an existing identifier
     identifier, obj = await manager.get_or_create(
@@ -140,7 +140,7 @@ async def test_get_or_create_exiting(manager: RandomTextResoruceManager):
     assert obj == exiting_obj
 
 
-async def test_get_or_create_creates_identifier(manager: RandomTextResoruceManager):
+async def test_get_or_create_creates_identifier(manager: RandomTextResourcesManager):
     # creates an identifier
     new_identifier, new_obj = await manager.get_or_create(length=1)
     new_identifier_1, obj1 = await manager.get_or_create(
@@ -153,7 +153,7 @@ async def test_get_or_create_creates_identifier(manager: RandomTextResoruceManag
 
 
 async def test_get_or_create_creates_identifier_when_provided_identifier_is_missing(
-    manager: RandomTextResoruceManager,
+    manager: RandomTextResourcesManager,
 ):
     missing_identifier = UserDefinedID(uuid4())
     assert await manager.get(missing_identifier) is None
@@ -165,7 +165,7 @@ async def test_get_or_create_creates_identifier_when_provided_identifier_is_miss
 
 
 async def test_get_or_create_with_identifier():
-    class ManagerInjectingIdentifier(RandomTextResoruceManager):
+    class ManagerInjectingIdentifier(RandomTextResourcesManager):
         def __init__(self) -> None:
             super().__init__()
             self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
