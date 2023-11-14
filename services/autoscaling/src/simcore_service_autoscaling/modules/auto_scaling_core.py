@@ -452,15 +452,21 @@ async def _start_instances(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     instance_tags = auto_scaling_mode.get_ec2_tags(app)
-    instance_startup_script = await ec2_startup_script(app_settings)
     results = await asyncio.gather(
         *[
             ec2_client.start_aws_instance(
                 EC2InstanceConfig(
                     type=instance_type,
                     tags=instance_tags,
-                    startup_script=instance_startup_script,
-                    ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_AMI_ID,
+                    startup_script=await ec2_startup_script(
+                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                            instance_type.name
+                        ],
+                        app_settings,
+                    ),
+                    ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                        instance_type.name
+                    ].ami_id,
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
                     subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
