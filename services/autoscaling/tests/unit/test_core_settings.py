@@ -110,29 +110,44 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
 
 
 def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert not settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
+    assert not next(
+        iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
+    ).pre_pull_images
 
     # passing an invalid image tag name will fail
     monkeypatch.setenv(
-        "EC2_INSTANCES_PRE_PULL_IMAGES", json.dumps(["io.simcore.some234.cool-"])
+        "EC2_INSTANCES_ALLOWED_TYPES",
+        json.dumps(
+            {
+                "t2.micro": {
+                    "ami_id": faker.pystr(),
+                    "pre_pull_images": ["io.simcore.some234.cool-"],
+                }
+            }
+        ),
     )
     settings = ApplicationSettings.create_from_envs()
     assert not settings.AUTOSCALING_EC2_INSTANCES
 
     # passing a valid will pass
     monkeypatch.setenv(
-        "EC2_INSTANCES_PRE_PULL_IMAGES",
+        "EC2_INSTANCES_ALLOWED_TYPES",
         json.dumps(
-            [
-                "nginx:latest",
-                "itisfoundation/my-very-nice-service:latest",
-                "simcore/services/dynamic/another-nice-one:2.4.5",
-                "asd",
-            ]
+            {
+                "t2.micro": {
+                    "ami_id": faker.pystr(),
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                }
+            }
         ),
     )
     settings = ApplicationSettings.create_from_envs()
@@ -142,4 +157,6 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
         "itisfoundation/my-very-nice-service:latest",
         "simcore/services/dynamic/another-nice-one:2.4.5",
         "asd",
-    ] == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
+    ] == next(
+        iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
+    ).pre_pull_images

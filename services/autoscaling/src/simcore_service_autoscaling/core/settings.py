@@ -1,9 +1,7 @@
 import datetime
-import tempfile
 from functools import cached_property
-from typing import Any, ClassVar, cast
+from typing import cast
 
-import sh
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -11,11 +9,9 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import DockerLabelKey
 from pydantic import (
     AnyUrl,
-    BaseModel,
-    Extra,
     Field,
     NonNegativeInt,
     PositiveInt,
@@ -32,41 +28,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-
-
-class EC2InstanceBootSpecific(BaseModel):
-    ami_id: str
-    custom_boot_scripts: list[str] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), "
-        "each entry is run one after the other using '&&' operator",
-    )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "ami_id": "ami-123456789abcdef",
-                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
-                }
-            ]
-        }
-
-    @validator("custom_boot_scripts")
-    @classmethod
-    def validate_bash_calls(cls, v):
-        try:
-            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
-                temp_file.writelines(v)
-                temp_file.flush()
-                # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash("-n", temp_file.name)
-        except sh.ErrorReturnCode as exc:
-            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
-            raise ValueError(msg) from exc
-
-        return v
+from ..models import EC2InstanceBootSpecific
 
 
 class EC2InstancesSettings(BaseCustomSettings):
@@ -101,15 +63,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         min_length=1,
         description="prefix used to name the EC2 instances created by this instance of autoscaling",
     )
-    EC2_INSTANCES_PRE_PULL_IMAGES: list[DockerGenericTag] = Field(
-        default_factory=list,
-        description="a list of docker image/tags to pull on instance cold start",
-    )
-    EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=30),
-        description="time interval between pulls of images (minimum is 1 minute) "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
+
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
