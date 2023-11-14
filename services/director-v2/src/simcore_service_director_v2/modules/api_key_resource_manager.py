@@ -8,13 +8,13 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from servicelib.osparc_generic_resource import BaseOsparcGenericResourceManager
+from servicelib.osparc_generic_resource import BaseOsparcGenericResourcesManager
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 from .rabbitmq import get_rabbitmq_rpc_client
 
 
-class APIKeysManager(BaseOsparcGenericResourceManager[str, ApiKeyGet]):
+class APIKeysManager(BaseOsparcGenericResourcesManager[str, ApiKeyGet]):
     def __init__(self, app: FastAPI) -> None:
         self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
         self.app = app

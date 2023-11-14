@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pytest_mock import MockerFixture
-from servicelib.osparc_generic_resource import BaseOsparcGenericResourceManager
+from servicelib.osparc_generic_resource import BaseOsparcGenericResourcesManager
 
 
 # define a custom type of ID for the API
@@ -49,7 +49,7 @@ class RandomTextAPI:
 # define a custom manager using the custom user defined identifiers
 # NOTE: note that the generic uses `[UserDefinedID, Any]`
 # which enforces typing constraints on the overloaded abstract methods
-class RandomTextResoruceManager(BaseOsparcGenericResourceManager[UserDefinedID, Any]):
+class RandomTextResoruceManager(BaseOsparcGenericResourcesManager[UserDefinedID, Any]):
     # pylint:disable=arguments-differ
 
     def __init__(self) -> None:
