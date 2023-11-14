@@ -27,7 +27,7 @@ class BaseOsparcGenericResourceManager(ABC, Generic[Ident, Res]):
 
     @abstractmethod
     async def get(self, identifier: Ident, **extra_kwargs) -> Res | None:
-        """Returns a resource if exits.
+        """Returns a resource if exists.
 
         Arguments:
             identifier -- user chosen identifier for the resource
@@ -52,7 +52,7 @@ class BaseOsparcGenericResourceManager(ABC, Generic[Ident, Res]):
     async def destroy(self, identifier: Ident, **extra_kwargs) -> None:
         """Used to destroy an existing resource
 
-        Usually ``is_present`` will be called before attempting a removal.
+        Usually ``get`` will be called before attempting a removal.
 
         Arguments:
             identifier -- user chosen identifier for the resource
