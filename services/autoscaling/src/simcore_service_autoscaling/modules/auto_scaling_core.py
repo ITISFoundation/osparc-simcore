@@ -285,7 +285,8 @@ async def _find_needed_instances(
         (
             i.ec2_instance,
             [],
-            await auto_scaling_mode.compute_node_used_resources(app, i),
+            i.ec2_instance.resources
+            - await auto_scaling_mode.compute_node_used_resources(app, i),
         )
         for i in cluster.active_nodes
     ]
