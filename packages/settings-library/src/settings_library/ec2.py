@@ -14,7 +14,7 @@ class EC2Settings(BaseCustomSettings):
     EC2_SECRET_ACCESS_KEY: str
 
     class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
                 {
                     "EC2_ACCESS_KEY_ID": "my_access_key_id",
