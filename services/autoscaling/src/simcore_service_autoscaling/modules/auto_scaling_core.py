@@ -326,7 +326,6 @@ async def _find_needed_instances(
             f"{task}",
             f"{cluster=}",
         )
-        _logger.warning("%s", f"{filtered_active_instance_to_task}")
         if (
             await auto_scaling_mode.try_assigning_task_to_instances(
                 app,
