@@ -292,6 +292,13 @@ async def _find_needed_instances(
         task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
             app, task
         )
+        _logger.info(
+            "task %s %s",
+            task,
+            f"defines ec2 type as {task_defined_ec2_type}"
+            if task_defined_ec2_type
+            else "does NOT define ec2 type",
+        )
         (
             filtered_active_instance_to_task,
             filtered_pending_instance_to_task,
