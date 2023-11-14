@@ -347,7 +347,7 @@ async def _app_lifespan(app: FastAPI):
 def create_app():
     app = FastAPI(
         title="fake-payment-gateway",
-        version="0.2.1",
+        version="0.3.0",
         lifespan=_app_lifespan,
         debug=True,
     )
