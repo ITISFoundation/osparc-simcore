@@ -220,6 +220,13 @@
             "type": "string",
             "title": "Message"
           },
+          "provider_payment_id": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Provider Payment Id",
+            "description": "Payment ID from the provider (e.g. stripe payment ID)"
+          },
           "invoice_url": {
             "type": "string",
             "maxLength": 2083,
@@ -245,10 +252,11 @@
         "title": "AckPayment",
         "example": {
           "success": true,
+          "provider_payment_id": "pi_123ABC",
           "invoice_url": "https://invoices.com/id=12345",
           "saved": {
             "success": true,
-            "payment_method_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "payment_method_id": "3FA85F64-5717-4562-B3FC-2C963F66AFA6"
           }
         }
       },
