@@ -3,6 +3,7 @@ import logging
 
 import httpx
 from fastapi import FastAPI
+from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 
 _logger = logging.getLogger(__name__)
 
@@ -50,6 +51,13 @@ class BaseHttpApi:
             return True
         except httpx.HTTPError:
             return False
+
+    async def check_liveness(self) -> LivenessResult:
+        try:
+            response = await self.client.get("/")
+            return IsResponsive(elapsed=response.elapsed)
+        except httpx.RequestError as err:
+            return IsNonResponsive(reason=f"{err}")
 
 
 class AppStateMixin:
