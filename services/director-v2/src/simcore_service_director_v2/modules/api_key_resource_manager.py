@@ -8,9 +8,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from servicelib.osparc_generic_resource import BaseOsparcGenericResourcesManager
 from servicelib.rabbitmq import RabbitMQRPCClient
 
+from ..utils.osparc_generic_resource import BaseOsparcGenericResourcesManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
 

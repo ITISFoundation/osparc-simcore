@@ -7,7 +7,9 @@ from uuid import UUID, uuid4
 
 import pytest
 from pytest_mock import MockerFixture
-from servicelib.osparc_generic_resource import BaseOsparcGenericResourcesManager
+from simcore_service_director_v2.utils.osparc_generic_resource import (
+    BaseOsparcGenericResourcesManager,
+)
 
 
 # define a custom type of ID for the API
