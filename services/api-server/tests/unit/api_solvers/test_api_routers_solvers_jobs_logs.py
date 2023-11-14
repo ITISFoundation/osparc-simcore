@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse
 # - Streaming with FastAPI: https://python.plainenglish.io/streaming-with-fastapi-4b86f33bfca
 # - Server Side Events (SSE) https://amittallapragada.github.io/docker/fastapi/python/2020/12/23/server-side-events.html
 # - Streaming with FastAPI https://python.plainenglish.io/streaming-with-fastapi-4b86f33bfca
-
+# -
 
 _NEW_LINE = "\n"
 CHUNK_MSG = "expected" + _NEW_LINE
@@ -58,8 +58,8 @@ async def test_it(client: httpx.AsyncClient, as_json: bool):
     chunk_size = len(CHUNK_MSG)
 
     received = []
-    async with client.stream("GET", "/logs") as r:
-        async for text in r.aiter_text(chunk_size):
+    async with client.stream("GET", "/logs") as response:
+        async for text in response.aiter_text(chunk_size):
             received.append(text)
 
     assert (
@@ -70,8 +70,8 @@ async def test_it(client: httpx.AsyncClient, as_json: bool):
         * 10
     )
 
-    async with client.stream("GET", f"/logs?as_json={1 if as_json else 0}") as r:
-        async for line in r.aiter_lines():
+    async with client.stream("GET", f"/logs?as_json={1 if as_json else 0}") as response:
+        async for line in response.aiter_lines():
             if as_json:
                 data = json.loads(line)
                 txt = json.dumps(data, indent=1)
