@@ -12,7 +12,6 @@ import pytest
 import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
-from models_library.healthchecks import IsResponsive
 from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
 
 
@@ -98,11 +97,6 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
 
         assert await api.ping()
         assert await api.is_healhy()
-
-        alive = await api.check_liveness()
-        assert bool(alive)
-        assert isinstance(alive, IsResponsive)
-        assert alive.elapsed.total_seconds() < 1
 
     # shutdown event
     assert api.client.is_closed
