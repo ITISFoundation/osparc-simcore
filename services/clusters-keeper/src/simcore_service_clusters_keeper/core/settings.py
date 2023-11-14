@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Final, cast
+from typing import Any, ClassVar, Final, cast
 
 from fastapi import FastAPI
 from models_library.basic_types import (
@@ -24,8 +24,19 @@ CLUSTERS_KEEPER_ENV_PREFIX: Final[str] = "CLUSTERS_KEEPER_"
 
 
 class ClustersKeeperEC2Settings(EC2Settings):
-    class Config:
+    class Config(EC2Settings.Config):
         env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
+                }
+            ],
+        }
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
