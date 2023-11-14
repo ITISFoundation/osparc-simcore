@@ -34,7 +34,7 @@ def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID):
 
 
 @pytest.fixture
-async def mock_rpc_client(
+async def mock_rpc_server(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mocker: MockerFixture,
 ) -> RabbitMQRPCClient:
@@ -75,7 +75,7 @@ async def mock_rpc_client(
 
 
 async def test_rpc_endpoints(
-    mock_rpc_client: RabbitMQRPCClient,
+    mock_rpc_server: RabbitMQRPCClient,
     faker: Faker,
 ):
     manager = APIKeysManager(FastAPI())
