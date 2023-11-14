@@ -62,7 +62,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         *,
         notify_progress: bool
     ) -> bool:
-        return await utils.try_assigning_task_to_pending_instances(
+        return await utils.try_assigning_task_to_instances(
             app,
             pending_task,
             instances_to_tasks,
@@ -75,7 +75,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         pending_task,
         instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
     ) -> bool:
-        return utils.try_assigning_task_to_instances(
+        return utils.try_assigning_task_to_instance_types(
             pending_task, instance_types_to_tasks
         )
 

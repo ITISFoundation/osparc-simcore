@@ -32,7 +32,7 @@ def try_assigning_task_to_node(
     return False
 
 
-def try_assigning_task_to_instances(
+def try_assigning_task_to_instance_types(
     pending_task: Task,
     instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[Task]]],
 ) -> bool:
@@ -49,7 +49,7 @@ def try_assigning_task_to_instances(
     return False
 
 
-async def try_assigning_task_to_pending_instances(
+async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: Task,
     instances_to_tasks: Iterable[tuple[EC2InstanceData, list[Task]]],
