@@ -66,10 +66,8 @@ async def get(
     app: web.Application, *, name: str, user_id: UserID, product_name: ProductName
 ) -> ApiKeyGet | None:
     repo = ApiKeyRepo.create_from_app(app)
-    result = await repo.get(
-        display_name=name, user_id=user_id, product_name=product_name
-    )
-    return ApiKeyGet.parse_obj(result) if result else None
+    row = await repo.get(display_name=name, user_id=user_id, product_name=product_name)
+    return ApiKeyGet.parse_obj(row) if row else None
 
 
 async def delete_api_key(
