@@ -1,5 +1,7 @@
 // This is a template. Clone and replace extension ".template.json" by ".json"
 {
+  "autoDocstring.docstringFormat": "pep257",
+
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -27,9 +29,8 @@
     "**/.git/subtree-cache/**": true,
     "**/node_modules/*/**": true
   },
-  "python.formatting.autopep8Args": [
-    "--max-line-length 140"
-  ],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
     "./packages/models-library/src",
     "./packages/postgres-database/src",
@@ -54,26 +55,15 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
-  "python.testing.pytestEnabled": true,
-  "autoDocstring.docstringFormat": "pep257",
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "hadolint.cliOptions": [],
-  "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
-  "shellcheck.run": "onSave",
-  "shellcheck.enableQuickFix": true,
-  "python.formatting.provider": "black",
-  "isort.path": [
-    "${workspaceFolder}/.venv/bin/isort"
-  ],
-  "isort.args": [
-    "--settings-path=${workspaceFolder}/.isort.cfg"
-  ],
-  "python.analysis.autoImportCompletions": true,
-  "python.analysis.typeCheckingMode": "basic",
   "ruff.lint.args": [
     "--config=${workspaceFolder}/.ruff.toml"
   ],
   "ruff.path": [
     "${workspaceFolder}/.venv/bin/ruff"
-  ]
+  ],
+  "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
+  "shellcheck.run": "onSave",
+  "shellcheck.enableQuickFix": true
 }

@@ -379,7 +379,9 @@ async def _assert_ec2_instances(
     assert len(all_instances["Reservations"]) == num_reservations
     for reservation in all_instances["Reservations"]:
         assert "Instances" in reservation
-        assert len(reservation["Instances"]) == num_instances
+        assert (
+            len(reservation["Instances"]) == num_instances
+        ), f"created {num_instances} instances of {reservation['Instances'][0]['InstanceType'] if num_instances > 0 else 'n/a'}"
         for instance in reservation["Instances"]:
             assert "InstanceType" in instance
             assert instance["InstanceType"] == instance_type
@@ -440,7 +442,7 @@ async def _assert_ec2_instances(
         ),
     ],
 )
-async def test_cluster_scaling_up_and_down(
+async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
@@ -686,6 +688,7 @@ async def test_cluster_scaling_up_and_down(
 
 @dataclass(frozen=True)
 class _ScaleUpParams:
+    imposed_instance_type: str | None
     service_resources: Resources
     num_services: int
     expected_instance_type: str
@@ -697,15 +700,28 @@ class _ScaleUpParams:
     [
         pytest.param(
             _ScaleUpParams(
+                imposed_instance_type=None,
                 service_resources=Resources(
                     cpus=5, ram=parse_obj_as(ByteSize, "36Gib")
                 ),
                 num_services=10,
-                expected_instance_type="g3.4xlarge",
+                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
                 expected_num_instances=4,
             ),
             id="sim4life-light",
-        )
+        ),
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.8xlarge",
+                service_resources=Resources(
+                    cpus=5, ram=parse_obj_as(ByteSize, "20480MB")
+                ),
+                num_services=7,
+                expected_instance_type="g4dn.8xlarge",  # 1 GPU, 32 CPUs, 128GiB
+                expected_num_instances=2,
+            ),
+            id="sim4life",
+        ),
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
@@ -714,13 +730,12 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
     mock_tag_node: mock.Mock,
-    fake_node: Node,
     scale_up_params: _ScaleUpParams,
     mock_rabbitmq_post_message: mock.Mock,
     mock_find_node_with_name: mock.Mock,
@@ -741,6 +756,11 @@ async def test_cluster_scaling_up_starts_multiple_instances(
                 ),
                 service_monitored_labels,
                 "pending",
+                [
+                    f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
+                ]
+                if scale_up_params.imposed_instance_type
+                else [],
             )
             for _ in range(scale_up_params.num_services)
         )
@@ -756,7 +776,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         ec2_client,
         num_reservations=1,
         num_instances=scale_up_params.expected_num_instances,
-        instance_type="g3.4xlarge",
+        instance_type=scale_up_params.expected_instance_type,
         instance_state="running",
     )
 
