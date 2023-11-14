@@ -24,7 +24,7 @@ from tenacity.wait import wait_fixed, wait_random_exponential
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_dict import copy_from_dict
-from .helpers.utils_docker import get_localhost_ip
+from .helpers.utils_host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 

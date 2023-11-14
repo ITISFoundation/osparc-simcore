@@ -56,16 +56,16 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
     assert (
-        settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        == datetime.timedelta(minutes=59)
+        datetime.timedelta(minutes=59)
+        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
     )
 
     monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", "-1:05:00")
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert (
-        settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        == datetime.timedelta(minutes=0)
+        datetime.timedelta(minutes=0)
+        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
     )
 
 
@@ -74,7 +74,7 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES == []
+    assert not settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
 
     # passing an invalid image tag name will fail
     monkeypatch.setenv(
@@ -97,9 +97,9 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(
     )
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES == [
+    assert [
         "nginx:latest",
         "itisfoundation/my-very-nice-service:latest",
         "simcore/services/dynamic/another-nice-one:2.4.5",
         "asd",
-    ]
+    ] == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES

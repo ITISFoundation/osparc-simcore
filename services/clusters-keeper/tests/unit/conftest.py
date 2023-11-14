@@ -4,46 +4,40 @@
 
 import importlib.resources
 import json
-import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from datetime import timezone
 from pathlib import Path
 from typing import Any
 
 import aiodocker
 import httpx
 import pytest
-import requests
 import simcore_service_clusters_keeper
 import simcore_service_clusters_keeper.data
 import yaml
-from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
+from aws_library.ec2.client import SimcoreEC2API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from moto.server import ThreadedMotoServer
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
+    CLUSTERS_KEEPER_ENV_PREFIX,
     ApplicationSettings,
-    EC2ClustersKeeperSettings,
-)
-from simcore_service_clusters_keeper.modules.ec2 import (
-    ClustersKeeperEC2,
-    EC2InstanceData,
 )
 from simcore_service_clusters_keeper.utils.ec2 import get_cluster_name
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.aws_server",
+    "pytest_simcore.aws_ec2_service",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
@@ -77,6 +71,19 @@ def ec2_instances() -> list[InstanceTypeType]:
 
 
 @pytest.fixture
+def mocked_ec2_server_envs(
+    mocked_ec2_server_settings: EC2Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    # NOTE: overrides the EC2Settings with what clusters-keeper expects
+    changed_envs: EnvVarsDict = {
+        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": v
+        for k, v in mocked_ec2_server_settings.dict().items()
+    }
+    return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -88,8 +95,8 @@ def app_environment(
         monkeypatch,
         {
             "CLUSTERS_KEEPER_EC2_ACCESS": "{}",
-            "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": faker.pystr(),
-            "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": faker.pystr(),
+            "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": faker.pystr(),
+            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
@@ -109,6 +116,28 @@ def app_environment(
         },
     )
     return mock_env_devel_environment | envs
+
+
+@pytest.fixture
+def mocked_primary_ec2_instances_envs(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_security_group_id: str,
+    aws_subnet_id: str,
+    aws_ami_id: str,
+) -> EnvVarsDict:
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "PRIMARY_EC2_INSTANCES_KEY_NAME": "osparc-pytest",
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+                [aws_security_group_id]
+            ),
+            "PRIMARY_EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
+            "PRIMARY_EC2_INSTANCES_AMI_ID": aws_ami_id,
+        },
+    )
+    return app_environment | envs
 
 
 @pytest.fixture
@@ -175,53 +204,6 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         yield client
 
 
-@pytest.fixture(scope="module")
-def mocked_aws_server() -> Iterator[ThreadedMotoServer]:
-    """creates a moto-server that emulates AWS services in place
-    NOTE: Never use a bucket with underscores it fails!!
-    """
-    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=unused_port())
-    # pylint: disable=protected-access
-    print(
-        f"--> started mock AWS server on {server._ip_address}:{server._port}"  # noqa: SLF001
-    )
-    print(
-        f"--> Dashboard available on [http://{server._ip_address}:{server._port}/moto-api/]"  # noqa: SLF001
-    )
-    server.start()
-    yield server
-    server.stop()
-    print(
-        f"<-- stopped mock AWS server on {server._ip_address}:{server._port}"  # noqa: SLF001
-    )
-
-
-@pytest.fixture
-def reset_aws_server_state(mocked_aws_server: ThreadedMotoServer) -> Iterator[None]:
-    # NOTE: reset_aws_server_state [http://docs.getmoto.org/en/latest/docs/server_mode.html#reset-api]
-    yield
-    # pylint: disable=protected-access
-    requests.post(
-        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}/moto-api/reset",  # noqa: SLF001
-        timeout=10,
-    )
-
-
-@pytest.fixture
-def mocked_aws_server_envs(
-    app_environment: EnvVarsDict,
-    mocked_aws_server: ThreadedMotoServer,
-    reset_aws_server_state: None,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    changed_envs = {
-        "EC2_CLUSTERS_KEEPER_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
-        "EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID": "xxx",
-        "EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY": "xxx",
-    }
-    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
-
-
 @pytest.fixture
 def aws_allowed_ec2_instance_type_names_env(
     app_environment: EnvVarsDict,
@@ -241,145 +223,15 @@ def aws_allowed_ec2_instance_type_names_env(
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
-@pytest.fixture(scope="session")
-def vpc_cidr_block() -> str:
-    return "10.0.0.0/16"
-
-
-@pytest.fixture
-async def aws_vpc_id(
-    mocked_aws_server_envs: None,
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    ec2_client: EC2Client,
-    vpc_cidr_block: str,
-) -> AsyncIterator[str]:
-    vpc = await ec2_client.create_vpc(
-        CidrBlock=vpc_cidr_block,
-    )
-    vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
-    print(f"--> Created Vpc in AWS with {vpc_id=}")
-    yield vpc_id
-
-    await ec2_client.delete_vpc(VpcId=vpc_id)
-    print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
-
-
-@pytest.fixture(scope="session")
-def subnet_cidr_block() -> str:
-    return "10.0.1.0/24"
-
-
-@pytest.fixture
-async def aws_subnet_id(
-    monkeypatch: pytest.MonkeyPatch,
-    aws_vpc_id: str,
-    ec2_client: EC2Client,
-    subnet_cidr_block: str,
-) -> AsyncIterator[str]:
-    subnet = await ec2_client.create_subnet(
-        CidrBlock=subnet_cidr_block, VpcId=aws_vpc_id
-    )
-    assert "Subnet" in subnet
-    assert "SubnetId" in subnet["Subnet"]
-    subnet_id = subnet["Subnet"]["SubnetId"]
-    print(f"--> Created Subnet in AWS with {subnet_id=}")
-
-    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_SUBNET_ID", subnet_id)
-    yield subnet_id
-
-    # all the instances in the subnet must be terminated before that works
-    instances_in_subnet = await ec2_client.describe_instances(
-        Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
-    )
-    if instances_in_subnet["Reservations"]:
-        print(f"--> terminating {len(instances_in_subnet)} instances in subnet")
-        await ec2_client.terminate_instances(
-            InstanceIds=[
-                instance["Instances"][0]["InstanceId"]  # type: ignore
-                for instance in instances_in_subnet["Reservations"]
-            ]
-        )
-        print(f"<-- terminated {len(instances_in_subnet)} instances in subnet")
-
-    await ec2_client.delete_subnet(SubnetId=subnet_id)
-    subnets = await ec2_client.describe_subnets()
-    print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
-    print(f"current {subnets=}")
-
-
-@pytest.fixture
-async def aws_security_group_id(
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-    aws_vpc_id: str,
-    ec2_client: EC2Client,
-) -> AsyncIterator[str]:
-    security_group = await ec2_client.create_security_group(
-        Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
-    )
-    security_group_id = security_group["GroupId"]
-    print(f"--> Created Security Group in AWS with {security_group_id=}")
-    monkeypatch.setenv(
-        "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS",
-        json.dumps([security_group_id]),
-    )
-    yield security_group_id
-    await ec2_client.delete_security_group(GroupId=security_group_id)
-    print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
-
-
-@pytest.fixture
-async def aws_ami_id(
-    app_environment: EnvVarsDict,
-    mocked_aws_server_envs: None,
-    monkeypatch: pytest.MonkeyPatch,
-    ec2_client: EC2Client,
-) -> str:
-    images = await ec2_client.describe_images()
-    image = random.choice(images["Images"])  # noqa S311
-    ami_id = image["ImageId"]  # type: ignore
-    monkeypatch.setenv("PRIMARY_EC2_INSTANCES_AMI_ID", ami_id)
-    return ami_id
-
-
 @pytest.fixture
 async def clusters_keeper_ec2(
     app_environment: EnvVarsDict,
-) -> AsyncIterator[ClustersKeeperEC2]:
-    settings = EC2ClustersKeeperSettings.create_from_envs()
-    ec2 = await ClustersKeeperEC2.create(settings)
+) -> AsyncIterator[SimcoreEC2API]:
+    settings = EC2Settings.create_from_envs()
+    ec2 = await SimcoreEC2API.create(settings)
     assert ec2
     yield ec2
     await ec2.close()
-
-
-@pytest.fixture
-async def ec2_client(
-    clusters_keeper_ec2: ClustersKeeperEC2,
-) -> EC2Client:
-    return clusters_keeper_ec2.client
-
-
-@pytest.fixture
-def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
-    def _creator(**overrides) -> EC2InstanceData:
-        return EC2InstanceData(
-            **(
-                {
-                    "launch_time": faker.date_time(tzinfo=timezone.utc),
-                    "id": faker.uuid4(),
-                    "aws_private_dns": faker.name(),
-                    "aws_public_ip": faker.ipv4_public(),
-                    "type": faker.pystr(),
-                    "state": faker.pystr(),
-                    "tags": faker.pydict(allowed_types=(str,)),
-                }
-                | overrides
-            )
-        )
-
-    return _creator
 
 
 @pytest.fixture
