@@ -142,7 +142,12 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
             "EC2_INSTANCES_AMI_ID": aws_ami_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                aws_allowed_ec2_instance_type_names
+                {
+                    ec2_type_name: jsonable_encoder(
+                        EC2InstanceBootSpecific(ami_id=aws_ami_id)
+                    )
+                    for ec2_type_name in aws_allowed_ec2_instance_type_names
+                }
             ),
         },
     )
