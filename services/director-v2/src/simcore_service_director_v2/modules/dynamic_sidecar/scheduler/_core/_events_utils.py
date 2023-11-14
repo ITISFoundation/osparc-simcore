@@ -83,15 +83,13 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 def parse_containers_inspect(
     containers_inspect: dict[str, Any] | None
 ) -> list[DockerContainerInspect]:
-    results: list[DockerContainerInspect] = []
-
     if containers_inspect is None:
         return []
 
-    for container_id in containers_inspect:
-        container_inspect_data = containers_inspect[container_id]
-        results.append(DockerContainerInspect.from_container(container_inspect_data))
-    return results
+    return [
+        DockerContainerInspect.from_container(containers_inspect[container_id])
+        for container_id in containers_inspect
+    ]
 
 
 def are_all_user_services_containers_running(
