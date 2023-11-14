@@ -6,17 +6,49 @@ import datetime
 import json
 
 import pytest
+from faker import Faker
 from pydantic import ValidationError
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import (
     ApplicationSettings,
     EC2InstancesSettings,
 )
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 def test_ec2_instances_settings(app_environment: EnvVarsDict):
     settings = EC2InstancesSettings.create_from_envs()
     assert isinstance(settings.EC2_INSTANCES_ALLOWED_TYPES, dict)
+
+
+@pytest.fixture
+def instance_type_with_invalid_boot_script(
+    mock_env_devel_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    ec2_instances: list[InstanceTypeType],
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    ec2_type_name: {
+                        "ami_id": faker.pystr(),
+                        "custom_boot_scripts": ['ls"'],
+                    }
+                    for ec2_type_name in ec2_instances
+                }
+            ),
+        },
+    )
+
+
+def test_ec2_instances_settings_with_invalid_custom_script_raises(
+    app_environment: EnvVarsDict, instance_type_with_invalid_boot_script: EnvVarsDict
+):
+    with pytest.raises(ValidationError):
+        EC2InstancesSettings.create_from_envs()
 
 
 def test_settings(app_environment: EnvVarsDict):

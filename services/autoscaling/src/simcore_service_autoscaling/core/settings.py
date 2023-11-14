@@ -1,7 +1,9 @@
 import datetime
+import tempfile
 from functools import cached_property
 from typing import Any, ClassVar, cast
 
+import sh
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -34,7 +36,11 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 class EC2InstanceBootSpecific(BaseModel):
     ami_id: str
-    custom_boot_scripts: list[str]
+    custom_boot_scripts: list[str] = Field(
+        default_factory=list,
+        description="script(s) to run on EC2 instance startup (be careful!), "
+        "each entry is run one after the other using '&&' operator",
+    )
 
     class Config:
         extra = Extra.forbid
@@ -46,6 +52,21 @@ class EC2InstanceBootSpecific(BaseModel):
                 }
             ]
         }
+
+    @validator("custom_boot_scripts")
+    @classmethod
+    def validate_bash_calls(cls, v):
+        try:
+            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
+                temp_file.writelines(v)
+                temp_file.flush()
+                # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
+                sh.bash("-n", temp_file.name)
+        except sh.ErrorReturnCode as exc:
+            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
+            raise ValueError(msg) from exc
+
+        return v
 
 
 class EC2InstancesSettings(BaseCustomSettings):
