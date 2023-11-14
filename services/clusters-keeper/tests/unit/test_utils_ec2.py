@@ -6,6 +6,7 @@ import pytest
 from faker import Faker
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.ec2 import (
     _APPLICATION_TAG_KEY,
@@ -52,7 +53,7 @@ def test_get_cluster_name(
 
 
 def test_creation_ec2_tags(
-    mocked_aws_server_envs: None,
+    mocked_ec2_server_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
@@ -79,7 +80,7 @@ def test_creation_ec2_tags(
 
 
 def test_all_created_ec2_instances_filter(
-    mocked_aws_server_envs: None,
+    mocked_ec2_server_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,

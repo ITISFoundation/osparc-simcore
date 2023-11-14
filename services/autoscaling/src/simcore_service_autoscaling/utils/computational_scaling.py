@@ -3,19 +3,14 @@ import logging
 from collections.abc import Iterable
 from typing import Final
 
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import (
-    AssociatedInstance,
-    DaskTask,
-    EC2InstanceData,
-    EC2InstanceType,
-    Resources,
-)
+from ..models import AssociatedInstance, DaskTask
 
 _logger = logging.getLogger(__name__)
 

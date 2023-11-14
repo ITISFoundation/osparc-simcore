@@ -2,13 +2,14 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import AssociatedInstance
 
 
 @dataclass

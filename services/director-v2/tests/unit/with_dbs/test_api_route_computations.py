@@ -21,7 +21,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
     ComputationGet,
@@ -407,7 +407,7 @@ def mocked_clusters_keeper_service_get_instance_type_details(
     return mocker.patch(
         "simcore_service_director_v2.modules.db.repositories.comp_tasks._utils.get_instance_type_details",
         return_value=[
-            EC2InstanceType(
+            EC2InstanceTypeGet(
                 name=default_pricing_plan_aws_ec2_type,
                 cpus=fake_ec2_cpus,
                 ram=fake_ec2_ram,
@@ -426,7 +426,7 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     return mocker.patch(
         "simcore_service_director_v2.modules.db.repositories.comp_tasks._utils.get_instance_type_details",
         return_value=[
-            EC2InstanceType(
+            EC2InstanceTypeGet(
                 name=faker.pystr(),
                 cpus=fake_ec2_cpus,
                 ram=fake_ec2_ram,

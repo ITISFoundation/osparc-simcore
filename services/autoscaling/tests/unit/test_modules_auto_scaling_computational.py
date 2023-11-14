@@ -18,6 +18,7 @@ from unittest import mock
 
 import distributed
 import pytest
+from aws_library.ec2.models import Resources
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from faker import Faker
 from fastapi import FastAPI
@@ -34,7 +35,6 @@ from simcore_service_autoscaling.models import (
     AssociatedInstance,
     Cluster,
     EC2InstanceData,
-    Resources,
 )
 from simcore_service_autoscaling.modules.auto_scaling_core import (
     _deactivate_empty_nodes,
@@ -66,14 +66,12 @@ def local_dask_scheduler_server_envs(
 @pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
+    mocked_ec2_server_envs: EnvVarsDict,
     enabled_computational_mode: EnvVarsDict,
     local_dask_scheduler_server_envs: EnvVarsDict,
+    mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names_env: list[str],
     mocked_redis_server: None,
 ) -> None:
     ...
@@ -88,11 +86,6 @@ def dask_workers_config() -> dict[str, Any]:
             "options": {"nthreads": 2, "resources": {"CPU": 2, "RAM": 2e9}},
         }
     }
-
-
-@pytest.fixture
-def empty_cluster(cluster: Callable[..., Cluster]) -> Cluster:
-    return cluster()
 
 
 async def _assert_ec2_instances(
@@ -193,15 +186,6 @@ def mock_find_node_with_name(
 
 
 @pytest.fixture
-def mock_cluster_used_resources(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_cluster_used_resources",
-        autospec=True,
-        return_value=Resources.create_as_empty(),
-    )
-
-
-@pytest.fixture
 def mock_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_node_used_resources",
@@ -220,7 +204,7 @@ def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
 @pytest.fixture
 def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instances",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.terminate_instances",
         autospec=True,
     )
 
@@ -232,7 +216,7 @@ def mock_start_aws_instance(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.start_aws_instance",
+        "simcore_service_autoscaling.modules.ec2.SimcoreEC2API.start_aws_instance",
         autospec=True,
         return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )
@@ -556,7 +540,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         - datetime.timedelta(seconds=1)
     ).isoformat()
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    mocked_docker_remove_node.assert_called_once_with(mock.ANY, [fake_node], force=True)
+    mocked_docker_remove_node.assert_called_once_with(
+        mock.ANY, nodes=[fake_node], force=True
+    )
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,

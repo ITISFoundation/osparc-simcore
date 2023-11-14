@@ -3,12 +3,13 @@ import logging
 import re
 from typing import Final
 
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import AssociatedInstance
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
@@ -24,7 +25,8 @@ def node_host_name_from_ec2_private_dns(
         Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
     """
     if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
-        return match.group("host_name")
+        host_name: str = match.group("host_name")
+        return host_name
     raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
 
 
