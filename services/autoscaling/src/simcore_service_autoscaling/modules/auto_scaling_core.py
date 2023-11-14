@@ -392,7 +392,7 @@ async def _find_needed_instances(
         # check if some are already pending
         remaining_pending_instances = [
             instance
-            for instance, assigned_tasks in pending_instances_to_tasks
+            for instance, assigned_tasks, _ in pending_instances_to_tasks
             if not assigned_tasks
         ]
         if len(remaining_pending_instances) < (
