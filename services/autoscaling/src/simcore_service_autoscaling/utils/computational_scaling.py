@@ -59,7 +59,7 @@ AssignedDaskTasksToInstance: TypeAlias = tuple[
 async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: DaskTask,
-    instances_to_tasks: Iterable[AssignedDaskTasksToInstance],
+    instances_to_tasks: list[AssignedDaskTasksToInstance],
     *,
     notify_progress: bool,
 ) -> bool:
@@ -102,7 +102,7 @@ async def try_assigning_task_to_instances(
 
 def try_assigning_task_to_instance_types(
     pending_task: DaskTask,
-    instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[DaskTask]]],
+    instance_types_to_tasks: list[tuple[EC2InstanceType, list[DaskTask]]],
 ) -> bool:
     for instance, instance_assigned_tasks in instance_types_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)

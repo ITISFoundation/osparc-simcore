@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
 from dataclasses import dataclass
 
 from aws_library.ec2.models import EC2InstanceData, Resources
@@ -52,7 +51,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        instances_to_tasks: Iterable[AssignedTasksToInstance],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
@@ -62,7 +61,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @abstractmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        instance_types_to_tasks: Iterable[AssignedTasksToInstanceType],
+        instance_types_to_tasks: list[AssignedTasksToInstanceType],
     ) -> bool:
         ...
 

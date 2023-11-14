@@ -61,7 +61,7 @@ class DynamicAutoscaling(BaseAutoscaling):
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        instances_to_tasks: Iterable[AssignedTasksToInstance],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
@@ -75,7 +75,7 @@ class DynamicAutoscaling(BaseAutoscaling):
     @staticmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        instance_types_to_tasks: Iterable[AssignedTasksToInstanceType],
+        instance_types_to_tasks: list[AssignedTasksToInstanceType],
     ) -> bool:
         return utils.try_assigning_task_to_instance_types(
             pending_task, instance_types_to_tasks

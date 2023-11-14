@@ -65,7 +65,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        instances_to_tasks: Iterable[AssignedTasksToInstance],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
@@ -79,7 +79,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: list[tuple[EC2InstanceType, list]],
     ) -> bool:
         return utils.try_assigning_task_to_instance_types(
             pending_task, instance_types_to_tasks

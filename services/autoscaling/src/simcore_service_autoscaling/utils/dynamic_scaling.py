@@ -35,7 +35,7 @@ def try_assigning_task_to_node(
 
 def try_assigning_task_to_instance_types(
     pending_task: Task,
-    instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[Task]]],
+    instance_types_to_tasks: list[tuple[EC2InstanceType, list[Task]]],
 ) -> bool:
     for instance, instance_assigned_tasks in instance_types_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
@@ -56,7 +56,7 @@ AssignedDockerTasksToInstance: TypeAlias = tuple[EC2InstanceData, list[Task], Re
 async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: Task,
-    instances_to_tasks: Iterable[AssignedDockerTasksToInstance],
+    instances_to_tasks: list[AssignedDockerTasksToInstance],
     *,
     notify_progress: bool,
 ) -> bool:

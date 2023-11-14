@@ -1,7 +1,7 @@
 import functools
 import logging
 import re
-from typing import Final, Iterable
+from typing import Final
 
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
@@ -112,57 +112,65 @@ def _instance_type_by_type_name(
 
 
 def _instance_type_map_by_type_name(
-    mapping: tuple[EC2InstanceType, list], *, type_name: InstanceTypeType | None
+    mapping: AssignedTasksToInstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
     ec2_type, _ = mapping
     return _instance_type_by_type_name(ec2_type, type_name=type_name)
 
 
 def _instance_data_map_by_type_name(
-    mapping: tuple[EC2InstanceData, list], *, type_name: InstanceTypeType | None
+    mapping: AssignedTasksToInstance, *, type_name: InstanceTypeType | None
 ) -> bool:
     if type_name is None:
         return True
-    ec2_data, _ = mapping
+    ec2_data, *_ = mapping
     return bool(ec2_data.type == type_name)
 
 
 def filter_by_task_defined_instance(
     instance_type_name: InstanceTypeType | None,
-    active_instances_to_tasks: Iterable[AssignedTasksToInstance],
-    pending_instances_to_tasks: Iterable[AssignedTasksToInstance],
-    drained_instances_to_tasks: Iterable[AssignedTasksToInstance],
-    needed_new_instance_types_for_tasks: Iterable[AssignedTasksToInstanceType],
+    active_instances_to_tasks: list[AssignedTasksToInstance],
+    pending_instances_to_tasks: list[AssignedTasksToInstance],
+    drained_instances_to_tasks: list[AssignedTasksToInstance],
+    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType],
 ) -> tuple[
-    Iterable[AssignedTasksToInstance],
-    Iterable[AssignedTasksToInstance],
-    Iterable[AssignedTasksToInstance],
-    Iterable[AssignedTasksToInstanceType],
+    list[AssignedTasksToInstance],
+    list[AssignedTasksToInstance],
+    list[AssignedTasksToInstance],
+    list[AssignedTasksToInstanceType],
 ]:
     return (
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            active_instances_to_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_data_map_by_type_name, type_name=instance_type_name
+                ),
+                active_instances_to_tasks,
+            )
         ),
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            pending_instances_to_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_data_map_by_type_name, type_name=instance_type_name
+                ),
+                pending_instances_to_tasks,
+            )
         ),
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            drained_instances_to_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_data_map_by_type_name, type_name=instance_type_name
+                ),
+                drained_instances_to_tasks,
+            )
         ),
-        filter(
-            functools.partial(
-                _instance_type_map_by_type_name, type_name=instance_type_name
-            ),
-            needed_new_instance_types_for_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_type_map_by_type_name, type_name=instance_type_name
+                ),
+                needed_new_instance_types_for_tasks,
+            )
         ),
     )
 
