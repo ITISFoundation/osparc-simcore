@@ -14,6 +14,8 @@ from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from simcore_service_autoscaling.models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
     AssociatedInstance,
     DaskTask,
     DaskTaskResources,
@@ -22,7 +24,6 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.utils.computational_scaling import (
     _DEFAULT_MAX_CPU,
     _DEFAULT_MAX_RAM,
-    AssignedDaskTasksToInstance,
     get_max_resources_from_dask_task,
     try_assigning_task_to_instance_types,
     try_assigning_task_to_instances,
@@ -152,8 +153,12 @@ async def test_try_assigning_task_to_instances(
 ):
     task = fake_task(required_resources={"CPU": 2})
     ec2_instance = fake_ec2_instance_data()
-    pending_instance_to_tasks: list[AssignedDaskTasksToInstance] = [
-        (ec2_instance, [], Resources(cpus=4, ram=ByteSize(1024**2)))
+    pending_instance_to_tasks: list[AssignedTasksToInstance] = [
+        AssignedTasksToInstance(
+            instance=ec2_instance,
+            assigned_tasks=[],
+            available_resources=Resources(cpus=4, ram=ByteSize(1024**2)),
+        )
     ]
 
     # calling once should allow to add that task to the instance
@@ -166,7 +171,7 @@ async def test_try_assigning_task_to_instances(
         )
         is True
     )
-    assert pending_instance_to_tasks[0][1] == [task]
+    assert pending_instance_to_tasks[0].assigned_tasks == [task]
     # calling a second time as well should allow to add that task to the instance
     assert (
         await try_assigning_task_to_instances(
@@ -177,7 +182,7 @@ async def test_try_assigning_task_to_instances(
         )
         is True
     )
-    assert pending_instance_to_tasks[0][1] == [task, task]
+    assert pending_instance_to_tasks[0].assigned_tasks == [task, task]
     # calling a third time should fail
     assert (
         await try_assigning_task_to_instances(
@@ -188,7 +193,7 @@ async def test_try_assigning_task_to_instances(
         )
         is False
     )
-    assert pending_instance_to_tasks[0][1] == [task, task]
+    assert pending_instance_to_tasks[0].assigned_tasks == [task, task]
 
 
 def test_try_assigning_task_to_instance_types_with_empty_types(
@@ -206,16 +211,16 @@ def test_try_assigning_task_to_instance_types(
     fake_instance_type = EC2InstanceType(
         name=faker.name(), cpus=6, ram=parse_obj_as(ByteSize, "2GiB")
     )
-    instance_type_to_tasks: list[tuple[EC2InstanceType, list[DaskTask]]] = [
-        (fake_instance_type, [])
+    instance_type_to_tasks: list[AssignedTasksToInstanceType] = [
+        AssignedTasksToInstanceType(instance_type=fake_instance_type, assigned_tasks=[])
     ]
     # now this should work 3 times
     assert try_assigning_task_to_instance_types(task, instance_type_to_tasks) is True
-    assert instance_type_to_tasks[0][1] == [task]
+    assert instance_type_to_tasks[0].assigned_tasks == [task]
     assert try_assigning_task_to_instance_types(task, instance_type_to_tasks) is True
-    assert instance_type_to_tasks[0][1] == [task, task]
+    assert instance_type_to_tasks[0].assigned_tasks == [task, task]
     assert try_assigning_task_to_instance_types(task, instance_type_to_tasks) is True
-    assert instance_type_to_tasks[0][1] == [task, task, task]
+    assert instance_type_to_tasks[0].assigned_tasks == [task, task, task]
     # now it should fail
     assert try_assigning_task_to_instance_types(task, instance_type_to_tasks) is False
-    assert instance_type_to_tasks[0][1] == [task, task, task]
+    assert instance_type_to_tasks[0].assigned_tasks == [task, task, task]

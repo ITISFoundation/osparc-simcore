@@ -114,8 +114,7 @@ def _instance_type_by_type_name(
 def _instance_type_map_by_type_name(
     mapping: AssignedTasksToInstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
-    ec2_type, _ = mapping
-    return _instance_type_by_type_name(ec2_type, type_name=type_name)
+    return _instance_type_by_type_name(mapping.instance_type, type_name=type_name)
 
 
 def _instance_data_map_by_type_name(
@@ -123,8 +122,7 @@ def _instance_data_map_by_type_name(
 ) -> bool:
     if type_name is None:
         return True
-    ec2_data, *_ = mapping
-    return bool(ec2_data.type == type_name)
+    return bool(mapping.instance.type == type_name)
 
 
 def filter_by_task_defined_instance(

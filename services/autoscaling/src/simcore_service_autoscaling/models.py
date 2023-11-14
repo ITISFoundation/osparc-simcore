@@ -4,8 +4,18 @@ from typing import Any, TypeAlias
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
 
-AssignedTasksToInstance: TypeAlias = tuple[EC2InstanceData, list, Resources]
-AssignedTasksToInstanceType: TypeAlias = tuple[EC2InstanceType, list]
+
+@dataclass(frozen=True, kw_only=True)
+class AssignedTasksToInstance:
+    instance: EC2InstanceData
+    available_resources: Resources
+    assigned_tasks: list
+
+
+@dataclass(frozen=True, kw_only=True)
+class AssignedTasksToInstanceType:
+    instance_type: EC2InstanceType
+    assigned_tasks: list
 
 
 @dataclass(frozen=True)

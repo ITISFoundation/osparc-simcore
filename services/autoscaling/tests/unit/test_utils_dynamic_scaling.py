@@ -13,8 +13,8 @@ from faker import Faker
 from models_library.generated_models.docker_rest_api import Task
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
+from simcore_service_autoscaling.models import AssignedTasksToInstance
 from simcore_service_autoscaling.utils.dynamic_scaling import (
-    AssignedDockerTasksToInstance,
     try_assigning_task_to_instances,
 )
 
@@ -56,8 +56,12 @@ async def test_try_assigning_task_to_instances(
         Spec={"Resources": {"Reservations": {"NanoCPUs": 2 * 1e9}}}
     )
     fake_instance = fake_ec2_instance_data()
-    pending_instance_to_tasks: list[AssignedDockerTasksToInstance] = [
-        (fake_instance, [], Resources(cpus=4, ram=ByteSize(1024**3)))
+    pending_instance_to_tasks: list[AssignedTasksToInstance] = [
+        AssignedTasksToInstance(
+            instance=fake_instance,
+            assigned_tasks=[],
+            available_resources=Resources(cpus=4, ram=ByteSize(1024**3)),
+        )
     ]
 
     # calling once should allow to add that task to the instance

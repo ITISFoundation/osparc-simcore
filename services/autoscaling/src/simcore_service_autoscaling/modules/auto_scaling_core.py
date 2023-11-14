@@ -332,19 +332,27 @@ async def _find_needed_instances(
 ) -> dict[EC2InstanceType, int]:
     # 1. check first the pending task needs
     active_instances_to_tasks: list[AssignedTasksToInstance] = [
-        (
-            i.ec2_instance,
-            [],
-            i.ec2_instance.resources
+        AssignedTasksToInstance(
+            instance=i.ec2_instance,
+            assigned_tasks=[],
+            available_resources=i.ec2_instance.resources
             - await auto_scaling_mode.compute_node_used_resources(app, i),
         )
         for i in cluster.active_nodes
     ]
     pending_instances_to_tasks: list[AssignedTasksToInstance] = [
-        (i, [], i.resources) for i in cluster.pending_ec2s
+        AssignedTasksToInstance(
+            instance=i, assigned_tasks=[], available_resources=i.resources
+        )
+        for i in cluster.pending_ec2s
     ]
     drained_instances_to_tasks: list[AssignedTasksToInstance] = [
-        (i.ec2_instance, [], i.ec2_instance.resources) for i in cluster.drained_nodes
+        AssignedTasksToInstance(
+            instance=i.ec2_instance,
+            assigned_tasks=[],
+            available_resources=i.ec2_instance.resources,
+        )
+        for i in cluster.drained_nodes
     ]
     needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType] = []
     for task in pending_tasks:
@@ -377,7 +385,11 @@ async def _find_needed_instances(
                 defined_ec2 = find_selected_instance_type_for_task(
                     task_defined_ec2_type, available_ec2_types, auto_scaling_mode, task
                 )
-                needed_new_instance_types_for_tasks.append((defined_ec2, [task]))
+                needed_new_instance_types_for_tasks.append(
+                    AssignedTasksToInstanceType(
+                        instance_type=defined_ec2, assigned_tasks=[task]
+                    )
+                )
             else:
                 # we go for best fitting type
                 best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
@@ -385,7 +397,11 @@ async def _find_needed_instances(
                     auto_scaling_mode.get_max_resources_from_task(task),
                     score_type=utils_ec2.closest_instance_policy,
                 )
-                needed_new_instance_types_for_tasks.append((best_ec2_instance, [task]))
+                needed_new_instance_types_for_tasks.append(
+                    AssignedTasksToInstanceType(
+                        instance_type=best_ec2_instance, assigned_tasks=[task]
+                    )
+                )
         except Ec2InstanceNotFoundError:
             _logger.exception(
                 "Task %s needs more resources than any EC2 instance "
@@ -396,7 +412,10 @@ async def _find_needed_instances(
             _logger.exception("Unexpected error:")
 
     num_instances_per_type = collections.defaultdict(
-        int, collections.Counter(t for t, _ in needed_new_instance_types_for_tasks)
+        int,
+        collections.Counter(
+            t.instance_type for t in needed_new_instance_types_for_tasks
+        ),
     )
 
     # 2. check the buffer needs
@@ -410,9 +429,7 @@ async def _find_needed_instances(
     ) > 0:
         # check if some are already pending
         remaining_pending_instances = [
-            instance
-            for instance, assigned_tasks, _ in pending_instances_to_tasks
-            if not assigned_tasks
+            i.instance for i in pending_instances_to_tasks if not i.assigned_tasks
         ]
         if len(remaining_pending_instances) < (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
