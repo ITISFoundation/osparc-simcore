@@ -1,22 +1,23 @@
 import logging
-from decimal import Decimal
 
 from fastapi import FastAPI
-from simcore_service_payments.db.payments_transactions_repo import (
-    PaymentsTransactionsRepo,
-)
+from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import GetWalletAutoRecharge
+from models_library.products import CreditResultGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from pydantic import EmailStr, parse_obj_as, parse_raw_as
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
+from simcore_service_payments.db.payments_transactions_repo import (
+    PaymentsTransactionsRepo,
+)
 from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+
 from ..core.settings import ApplicationSettings
 from .auto_recharge import get_wallet_auto_recharge
-from .payments_methods import get_payment_method_by_id
 from .payments import init_payment_with_payment_method
+from .payments_methods import get_payment_method_by_id
 from .rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
@@ -60,17 +61,18 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     assert settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
 
     # 5. Protective measure: check whether there was not already top up made in the last minutes?
+    # TODO: Matus add protective measure
 
     # 6. Pay with payment method
     ## 6.1 Ask webserver to compute credits with current dollar/credit ratio
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_product_credit_price_by_app_and_product"),
-        product_name="osparc",
+        parse_obj_as(RPCMethodName, "get_credit_amount"),
+        dollar_amount=wallet_auto_recharge.top_up_amount_in_usd,
+        product_name=rabbit_message.product_name,
     )
-    parse_obj_as(ConvertedCreditsGet | None, result)
-    target_credits = Decimal(1000)
+    credit_result = parse_obj_as(CreditResultGet, result)
 
     ## 6.2 Make payment
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
@@ -80,8 +82,8 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
         repo_methods=_payments_repo,
         payment_method_id=payment_method.idr,  # equals to wallet_auto_recharge.payment_method_id
         amount_dollars=wallet_auto_recharge.top_up_amount_in_usd,
-        target_credits=target_credits,
-        product_name="osparc",  # I need to know the product probably will add to the message
+        target_credits=credit_result.credit_amount,
+        product_name=rabbit_message.product_name,
         wallet_id=rabbit_message.wallet_id,
         wallet_name=f"id={rabbit_message.wallet_id}",
         user_id=1,  # payment_method.user_id ?

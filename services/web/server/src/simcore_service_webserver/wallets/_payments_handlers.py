@@ -41,7 +41,7 @@ from ..payments.api import (
     pay_with_payment_method,
     replace_wallet_payment_autorecharge,
 )
-from ..products.api import get_current_product_credit_price
+from ..products.api import get_credit_amount
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
@@ -63,7 +63,20 @@ async def _eval_total_credits_or_raise(
         # '0 or None' should raise
         raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-    return parse_obj_as(NonNegativeDecimal, amount_dollars / usd_per_credit)
+    credit_result = await get_credit_amount(
+        request.app, dollar_amount=init.price_dollars, product_name=product_name
+    )
+
+    return await init_creation_of_wallet_payment(
+        request.app,
+        user_id=user_id,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        osparc_credits=credit_result.credit_amount,
+        comment=init.comment,
+        price_dollars=init.price_dollars,
+        payment_method_id=payment_method_id,
+    )
 
 
 routes = web.RouteTableDef()

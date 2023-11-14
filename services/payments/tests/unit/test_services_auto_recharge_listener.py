@@ -67,7 +67,7 @@ async def test_process_event_functions(
     rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
     publisher = rabbitmq_client("publisher")
-    msg = WalletCreditsMessage(wallet_id=1, credits=Decimal(120.5))
+    msg = WalletCreditsMessage(wallet_id=1, credits=Decimal(120.5), product_name="s4l")
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
     async for attempt in AsyncRetrying(

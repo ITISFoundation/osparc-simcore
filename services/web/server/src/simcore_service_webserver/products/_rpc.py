@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.basic_types import NonNegativeDecimal
@@ -11,13 +13,14 @@ router = RPCRouter()
 
 
 @router.expose()
-async def get_product_credit_price_by_app_and_product(
+async def get_credit_amount(
     app: web.Application,
     *,
+    dollar_amount: Decimal,
     product_name: ProductName,
 ) -> NonNegativeDecimal | None:
-    return await _api.get_product_credit_price_by_app_and_product(
-        app, product_name=product_name
+    await _api.get_credit_amount(
+        app, dollar_amount=dollar_amount, product_name=product_name
     )
 
 
