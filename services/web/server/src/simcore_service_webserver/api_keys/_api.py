@@ -1,4 +1,3 @@
-import logging
 import re
 import string
 from typing import Final
@@ -10,9 +9,6 @@ from models_library.users import UserID
 
 from ..login.utils import get_random_string
 from ._db import ApiKeyRepo
-
-_logger = logging.getLogger(__name__)
-
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
