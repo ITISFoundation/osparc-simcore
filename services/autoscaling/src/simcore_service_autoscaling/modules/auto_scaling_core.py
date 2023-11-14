@@ -30,7 +30,12 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import ApplicationSettings, get_application_settings
-from ..models import AssociatedInstance, Cluster
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+    Cluster,
+)
 from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
@@ -275,19 +280,22 @@ async def _find_needed_instances(
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
 ) -> dict[EC2InstanceType, int]:
-    type_to_instance_map = {t.name: t for t in available_ec2_types}
-
     # 1. check first the pending task needs
-    active_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
-        (i.ec2_instance, []) for i in cluster.active_nodes
+    active_instances_to_tasks: list[AssignedTasksToInstance] = [
+        (
+            i.ec2_instance,
+            [],
+            await auto_scaling_mode.compute_node_used_resources(app, i),
+        )
+        for i in cluster.active_nodes
     ]
-    pending_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
-        (i, []) for i in cluster.pending_ec2s
+    pending_instances_to_tasks: list[AssignedTasksToInstance] = [
+        (i, [], i.resources) for i in cluster.pending_ec2s
     ]
-    drained_instances_to_tasks: list[tuple[EC2InstanceData, list]] = [
-        (i.ec2_instance, []) for i in cluster.drained_nodes
+    drained_instances_to_tasks: list[AssignedTasksToInstance] = [
+        (i.ec2_instance, [], i.ec2_instance.resources) for i in cluster.drained_nodes
     ]
-    needed_new_instance_types_for_tasks: list[tuple[EC2InstanceType, list]] = []
+    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType] = []
     for task in pending_tasks:
         task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
             app, task
@@ -323,21 +331,18 @@ async def _find_needed_instances(
                 app,
                 task,
                 filtered_active_instance_to_task,
-                type_to_instance_map,
                 notify_progress=False,
             )
             or await auto_scaling_mode.try_assigning_task_to_instances(
                 app,
                 task,
                 filtered_pending_instance_to_task,
-                type_to_instance_map,
                 notify_progress=True,
             )
             or await auto_scaling_mode.try_assigning_task_to_instances(
                 app,
                 task,
                 filtered_drained_instances_to_task,
-                type_to_instance_map,
                 notify_progress=False,
             )
             or auto_scaling_mode.try_assigning_task_to_instance_types(

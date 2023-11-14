@@ -1,7 +1,7 @@
 import datetime
 import logging
 from collections.abc import Iterable
-from typing import Final
+from typing import Final, TypeAlias
 
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
@@ -51,10 +51,15 @@ def try_assigning_task_to_node(
     return False
 
 
+AssignedDaskTasksToInstance: TypeAlias = tuple[
+    EC2InstanceData, list[DaskTask], Resources
+]
+
+
 async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: DaskTask,
-    instances_to_tasks: Iterable[tuple[EC2InstanceData, list[DaskTask]]],
+    instances_to_tasks: Iterable[AssignedDaskTasksToInstance],
     *,
     notify_progress: bool,
 ) -> bool:
@@ -63,13 +68,16 @@ async def try_assigning_task_to_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    for instance, instance_assigned_tasks in instances_to_tasks:
-        instance_total_resources = instance.resources
+    for (
+        instance,
+        instance_assigned_tasks,
+        instance_available_resources,
+    ) in instances_to_tasks:
         tasks_needed_resources = _compute_tasks_needed_resources(
             instance_assigned_tasks
         )
         if (
-            instance_total_resources - tasks_needed_resources
+            instance_available_resources - tasks_needed_resources
         ) >= get_max_resources_from_dask_task(pending_task):
             instance_assigned_tasks.append(pending_task)
             if notify_progress:

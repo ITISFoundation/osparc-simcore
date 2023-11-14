@@ -1,6 +1,7 @@
 import datetime
 import logging
 from collections.abc import Iterable
+from typing import TypeAlias
 
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from fastapi import FastAPI
@@ -49,11 +50,13 @@ def try_assigning_task_to_instance_types(
     return False
 
 
+AssignedDockerTasksToInstance: TypeAlias = tuple[EC2InstanceData, list[Task], Resources]
+
+
 async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: Task,
-    instances_to_tasks: Iterable[tuple[EC2InstanceData, list[Task]]],
-    type_to_instance_map: dict[str, EC2InstanceType],
+    instances_to_tasks: Iterable[AssignedDockerTasksToInstance],
     *,
     notify_progress: bool,
 ) -> bool:
@@ -62,16 +65,16 @@ async def try_assigning_task_to_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    for instance, instance_assigned_tasks in instances_to_tasks:
-        instance_type = type_to_instance_map[instance.type]
-        instance_total_resources = Resources(
-            cpus=instance_type.cpus, ram=instance_type.ram
-        )
+    for (
+        instance,
+        instance_assigned_tasks,
+        instance_available_resources,
+    ) in instances_to_tasks:
         tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
             instance_assigned_tasks
         )
         if (
-            instance_total_resources - tasks_needed_resources
+            instance_available_resources - tasks_needed_resources
         ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
             instance_assigned_tasks.append(pending_task)
             if notify_progress:

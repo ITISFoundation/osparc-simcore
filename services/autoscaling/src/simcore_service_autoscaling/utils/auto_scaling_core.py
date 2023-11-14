@@ -1,7 +1,7 @@
 import functools
 import logging
 import re
-from typing import Final
+from typing import Final, Iterable
 
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
@@ -9,7 +9,11 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import AssociatedInstance
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+)
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
@@ -125,11 +129,16 @@ def _instance_data_map_by_type_name(
 
 def filter_by_task_defined_instance(
     instance_type_name: InstanceTypeType | None,
-    active_instances_to_tasks,
-    pending_instances_to_tasks,
-    drained_instances_to_tasks,
-    needed_new_instance_types_for_tasks,
-) -> tuple:
+    active_instances_to_tasks: Iterable[AssignedTasksToInstance],
+    pending_instances_to_tasks: Iterable[AssignedTasksToInstance],
+    drained_instances_to_tasks: Iterable[AssignedTasksToInstance],
+    needed_new_instance_types_for_tasks: Iterable[AssignedTasksToInstanceType],
+) -> tuple[
+    Iterable[AssignedTasksToInstance],
+    Iterable[AssignedTasksToInstance],
+    Iterable[AssignedTasksToInstance],
+    Iterable[AssignedTasksToInstanceType],
+]:
     return (
         filter(
             functools.partial(

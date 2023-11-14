@@ -1,8 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
+
+AssignedTasksToInstance: TypeAlias = tuple[EC2InstanceData, list, Resources]
+AssignedTasksToInstanceType: TypeAlias = tuple[EC2InstanceType, list]
 
 
 @dataclass(frozen=True)
