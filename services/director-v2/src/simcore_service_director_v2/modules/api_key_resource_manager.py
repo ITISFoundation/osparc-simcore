@@ -1,4 +1,3 @@
-from functools import cached_property
 from uuid import uuid5
 
 from fastapi import FastAPI
@@ -20,7 +19,7 @@ class APIKeysManager(BaseOsparcGenericResourceManager[str, ApiKeyGet]):
         self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
         self.app = app
 
-    @cached_property
+    @property
     def rpc_client(self) -> RabbitMQRPCClient:
         return get_rabbitmq_rpc_client(self.app)
 
