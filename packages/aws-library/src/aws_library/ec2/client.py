@@ -145,7 +145,6 @@ class SimcoreEC2API:
                         "Groups": instance_config.security_group_ids,
                     }
                 ],
-                SecurityGroupIds=instance_config.security_group_ids,
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             _logger.info(
