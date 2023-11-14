@@ -597,7 +597,7 @@ async def create_dask_task(
 
 
 @pytest.fixture
-def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
+def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
     async def _fake_set_node_availability(
         docker_client: AutoscalingDocker, node: Node, *, available: bool
     ) -> Node:

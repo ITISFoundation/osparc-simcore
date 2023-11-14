@@ -8,13 +8,14 @@ from collections.abc import Callable
 from datetime import timedelta
 
 import pytest
-from aws_library.ec2.models import EC2InstanceData, EC2InstanceType
+from aws_library.ec2.models import EC2InstanceData, Resources
 from faker import Faker
 from models_library.generated_models.docker_rest_api import Task
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
+from simcore_service_autoscaling.models import AssignedTasksToInstance
 from simcore_service_autoscaling.utils.dynamic_scaling import (
-    try_assigning_task_to_pending_instances,
+    try_assigning_task_to_instances,
 )
 
 
@@ -28,22 +29,21 @@ def fake_task(faker: Faker) -> Callable[..., Task]:
     return _creator
 
 
-async def test_try_assigning_task_to_pending_instances_with_no_instances(
+async def test_try_assigning_task_to_instances_with_no_instances(
     mocker: MockerFixture,
     fake_task: Callable[..., Task],
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     fake_app = mocker.Mock()
     pending_task = fake_task()
     assert (
-        await try_assigning_task_to_pending_instances(
-            fake_app, pending_task, [], {}, notify_progress=True
+        await try_assigning_task_to_instances(
+            fake_app, pending_task, [], notify_progress=True
         )
         is False
     )
 
 
-async def test_try_assigning_task_to_pending_instances(
+async def test_try_assigning_task_to_instances(
     mocker: MockerFixture,
     fake_task: Callable[..., Task],
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
@@ -56,43 +56,40 @@ async def test_try_assigning_task_to_pending_instances(
         Spec={"Resources": {"Reservations": {"NanoCPUs": 2 * 1e9}}}
     )
     fake_instance = fake_ec2_instance_data()
-    pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]] = [
-        (fake_instance, [])
-    ]
-    type_to_instance_map = {
-        fake_instance.type: EC2InstanceType(
-            name=fake_instance.type, cpus=4, ram=ByteSize(1024 * 1024)
+    pending_instance_to_tasks: list[AssignedTasksToInstance] = [
+        AssignedTasksToInstance(
+            instance=fake_instance,
+            assigned_tasks=[],
+            available_resources=Resources(cpus=4, ram=ByteSize(1024**3)),
         )
-    }
+    ]
+
     # calling once should allow to add that task to the instance
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app,
             pending_task,
             pending_instance_to_tasks,
-            type_to_instance_map,
             notify_progress=True,
         )
         is True
     )
     # calling a second time as well should allow to add that task to the instance
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app,
             pending_task,
             pending_instance_to_tasks,
-            type_to_instance_map,
             notify_progress=True,
         )
         is True
     )
     # calling a third time should fail
     assert (
-        await try_assigning_task_to_pending_instances(
+        await try_assigning_task_to_instances(
             fake_app,
             pending_task,
             pending_instance_to_tasks,
-            type_to_instance_map,
             notify_progress=True,
         )
         is False

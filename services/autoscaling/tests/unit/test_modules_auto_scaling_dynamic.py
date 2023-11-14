@@ -446,7 +446,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     fake_node: Node,
     mock_rabbitmq_post_message: mock.Mock,
     mock_find_node_with_name: mock.Mock,
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mocker: MockerFixture,
     docker_service_imposed_ec2_type: InstanceTypeType | None,
@@ -487,7 +487,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # as the new node is already running, but is not yet connected, hence not tagged and drained
     mock_find_node_with_name.assert_not_called()
     mock_tag_node.assert_not_called()
-    mock_set_node_availability.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
     mock_compute_node_used_resources.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
@@ -537,10 +537,10 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=False,
     )
     mock_tag_node.reset_mock()
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         get_docker_client(initialized_app), fake_node, available=True
     )
-    mock_set_node_availability.reset_mock()
+    mock_docker_set_node_availability.reset_mock()
 
     # check rabbit messages were sent, we do have worker
     assert fake_node.Description
@@ -586,7 +586,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_compute_node_used_resources.assert_called()
     mock_find_node_with_name.assert_not_called()
     mock_tag_node.assert_not_called()
-    mock_set_node_availability.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
     await _assert_ec2_instances(
         ec2_client,
@@ -615,17 +615,17 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         instance_type=expected_ec2_type,
         instance_state="running",
     )
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         get_docker_client(initialized_app), fake_node, available=False
     )
-    mock_set_node_availability.reset_mock()
+    mock_docker_set_node_availability.reset_mock()
 
     # calling again does the exact same
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         get_docker_client(initialized_app), fake_node, available=False
     )
-    mock_set_node_availability.reset_mock()
+    mock_docker_set_node_availability.reset_mock()
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -730,7 +730,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     scale_up_params: _ScaleUpParams,
     mock_rabbitmq_post_message: mock.Mock,
     mock_find_node_with_name: mock.Mock,
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -774,7 +774,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     # as the new node is already running, but is not yet connected, hence not tagged and drained
     mock_find_node_with_name.assert_not_called()
     mock_tag_node.assert_not_called()
-    mock_set_node_availability.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -791,7 +791,7 @@ async def test__deactivate_empty_nodes(
     cluster: Callable[..., Cluster],
     host_node: Node,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
 ):
     # since we have no service running, we expect the passed node to be set to drain
     active_cluster = cluster(
@@ -802,7 +802,7 @@ async def test__deactivate_empty_nodes(
     )
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
 
@@ -813,7 +813,7 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
     cluster: Callable[..., Cluster],
     host_node: Node,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
@@ -838,7 +838,7 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
     )
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_set_node_availability.assert_called_once_with(
+    mock_docker_set_node_availability.assert_called_once_with(
         mock.ANY, host_node, available=False
     )
 
@@ -850,7 +850,7 @@ async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with
     cluster: Callable[..., Cluster],
     host_node: Node,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    mock_set_node_availability: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
@@ -878,7 +878,7 @@ async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with
         initialized_app, active_cluster, DynamicAutoscaling()
     )
     assert updated_cluster == active_cluster
-    mock_set_node_availability.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
 
 
 async def test__find_terminateable_nodes_with_no_hosts(
