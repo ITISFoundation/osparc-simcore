@@ -33,11 +33,23 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(15));
 
+    const decorator = new qx.ui.decoration.Decorator().set({
+      width: 1,
+      style: "solid",
+      color: this.self().LOG_LEVEL_COLOR_MAP[level].color
+    });
+
     this.set({
       padding: 18,
       maxWidth: 400,
       allowStretchX: false,
-      alignX: "center"
+      alignX: "center",
+      backgroundColor: this.self().LOG_LEVEL_COLOR_MAP[level].backgroundColor,
+      decorator
+    });
+
+    this.getContentElement().setStyles({
+      "border-radius": "8px"
     });
 
     const badge = this.getChildControl("badge");
@@ -78,20 +90,24 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
   statics: {
     LOG_LEVEL_COLOR_MAP: {
       "INFO": {
-        color: "ready-green",
-        icon: "@FontAwesome5Solid/check/"
+        color: "info",
+        icon: "@FontAwesome5Solid/check/",
+        backgroundColor: "info_bg"
       },
       "DEBUG": {
-        color: "warning-yellow",
-        icon: "@FontAwesome5Solid/info/"
+        color: "warning",
+        icon: "@FontAwesome5Solid/info/",
+        backgroundColor: "warning_bg"
       },
       "WARNING": {
-        color: "busy-orange",
-        icon: "@FontAwesome5Solid/exclamation-triangle/"
+        color: "warning",
+        icon: "@FontAwesome5Solid/exclamation-triangle/",
+        backgroundColor: "warning_bg"
       },
       "ERROR": {
-        color: "failed-red",
-        icon: "@FontAwesome5Solid/exclamation/"
+        color: "error",
+        icon: "@FontAwesome5Solid/exclamation/",
+        backgroundColor: "error_bg"
       }
     }
   },
