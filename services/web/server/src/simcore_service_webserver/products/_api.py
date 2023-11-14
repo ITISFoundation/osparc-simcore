@@ -1,15 +1,18 @@
+from decimal import Decimal
 from pathlib import Path
+from typing import Final
 
 import aiofiles
 from aiohttp import web
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import ProductName
+from models_library.products import CreditResultGet, ProductName
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._resources import webserver_resources
 from ._db import ProductRepository
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from ._model import Product
+from .errors import ProductPriceNotDefinedError
 
 
 def get_product_name(request: web.Request) -> str:
@@ -49,14 +52,34 @@ async def get_current_product_credit_price(
     return await repo.get_product_latest_credit_price_or_none(current_product_name)
 
 
-async def get_product_credit_price_by_app_and_product(
-    app: web.Application, *, product_name: ProductName
-):
+MSG_PRICE_NOT_DEFINED_ERROR: Final[
+    str
+] = "No payments are accepted until this product has a price"
+
+
+async def get_credit_amount(
+    app: web.Application, *, dollar_amount: Decimal, product_name: ProductName
+) -> CreditResultGet:
+    """For provided dollars and product gets credit amount.
+
+    NOTE: Contrary to other product api functions (e.g. get_current_product) this function
+    gets the latest update from the database. Otherwise, products are loaded
+    on startup and cached therefore in those cases would require a restart
+    of the service for the latest changes to take effect.
+    """
     repo = ProductRepository.create_from_app(app)
-    return await repo.get_product_latest_credit_price_or_none(product_name)
+    usd_per_credit: NonNegativeDecimal | None = (
+        await repo.get_product_latest_credit_price_or_none(product_name)
+    )
+    if not usd_per_credit:
+        # '0 or None' should raise
+        raise ProductPriceNotDefinedError(
+            reason=f"Product {product_name} usd_per_credit is either not defined or zero"
+        )
 
+    credit_amount = dollar_amount / usd_per_credit
+    return CreditResultGet(product_name=product_name, credit_amount=credit_amount)
 
-# Get conversion! send already money -> get credits
 
 #
 # helpers for get_product_template_path

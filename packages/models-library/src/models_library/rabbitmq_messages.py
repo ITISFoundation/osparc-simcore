@@ -264,6 +264,7 @@ class WalletCreditsMessage(RabbitMessageBase):
     )
     wallet_id: WalletID
     credits: Decimal
+    product_name: str
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}"
