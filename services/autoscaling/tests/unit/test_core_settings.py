@@ -88,7 +88,7 @@ def test_defining_both_computational_and_dynamic_modes_is_invalid_and_raises(
         ApplicationSettings.create_from_envs()
 
 
-def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(
+def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", "1:05:00")
@@ -109,7 +109,7 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(
     )
 
 
-def test_EC2_INSTANCES_PRE_PULL_IMAGES(
+def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     settings = ApplicationSettings.create_from_envs()
