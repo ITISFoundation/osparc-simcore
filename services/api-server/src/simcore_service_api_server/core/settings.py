@@ -122,7 +122,7 @@ class ApplicationSettings(BasicSettings):
 
     API_SERVER_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
-    PAYMENTS_RABBITMQ: RabbitSettings = Field(
+    API_SERVER_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
     )
 
