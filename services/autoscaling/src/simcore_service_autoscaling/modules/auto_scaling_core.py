@@ -273,6 +273,56 @@ async def _activate_drained_nodes(
     )
 
 
+async def _try_assign_tasks_to_instances(
+    app: FastAPI,
+    task,
+    auto_scaling_mode: BaseAutoscaling,
+    task_defined_ec2_type: InstanceTypeType | None,
+    active_instances_to_tasks: list[AssignedTasksToInstance],
+    pending_instances_to_tasks: list[AssignedTasksToInstance],
+    drained_instances_to_tasks: list[AssignedTasksToInstance],
+    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType],
+) -> bool:
+    (
+        filtered_active_instance_to_task,
+        filtered_pending_instance_to_task,
+        filtered_drained_instances_to_task,
+        filtered_needed_new_instance_types_to_task,
+    ) = filter_by_task_defined_instance(
+        task_defined_ec2_type,
+        active_instances_to_tasks,
+        pending_instances_to_tasks,
+        drained_instances_to_tasks,
+        needed_new_instance_types_for_tasks,
+    )
+    # try to assign the task to one of the active, pending or net created instances
+    if (
+        await auto_scaling_mode.try_assigning_task_to_instances(
+            app,
+            task,
+            filtered_active_instance_to_task,
+            notify_progress=False,
+        )
+        or await auto_scaling_mode.try_assigning_task_to_instances(
+            app,
+            task,
+            filtered_pending_instance_to_task,
+            notify_progress=True,
+        )
+        or await auto_scaling_mode.try_assigning_task_to_instances(
+            app,
+            task,
+            filtered_drained_instances_to_task,
+            notify_progress=False,
+        )
+        or auto_scaling_mode.try_assigning_task_to_instance_types(
+            task, filtered_needed_new_instance_types_to_task
+        )
+    ):
+        return True
+    return False
+
+
 async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list,
@@ -308,46 +358,15 @@ async def _find_needed_instances(
             if task_defined_ec2_type
             else "does NOT define ec2 type",
         )
-        (
-            filtered_active_instance_to_task,
-            filtered_pending_instance_to_task,
-            filtered_drained_instances_to_task,
-            filtered_needed_new_instance_types_to_task,
-        ) = filter_by_task_defined_instance(
+        if await _try_assign_tasks_to_instances(
+            app,
+            task,
+            auto_scaling_mode,
             task_defined_ec2_type,
             active_instances_to_tasks,
             pending_instances_to_tasks,
             drained_instances_to_tasks,
             needed_new_instance_types_for_tasks,
-        )
-        # try to assign the task to one of the active, pending or net created instances
-        _logger.debug(
-            "Try to assign %s to any active/pending/created instance in the %s",
-            f"{task}",
-            f"{cluster=}",
-        )
-        if (
-            await auto_scaling_mode.try_assigning_task_to_instances(
-                app,
-                task,
-                filtered_active_instance_to_task,
-                notify_progress=False,
-            )
-            or await auto_scaling_mode.try_assigning_task_to_instances(
-                app,
-                task,
-                filtered_pending_instance_to_task,
-                notify_progress=True,
-            )
-            or await auto_scaling_mode.try_assigning_task_to_instances(
-                app,
-                task,
-                filtered_drained_instances_to_task,
-                notify_progress=False,
-            )
-            or auto_scaling_mode.try_assigning_task_to_instance_types(
-                task, filtered_needed_new_instance_types_to_task
-            )
         ):
             continue
 
