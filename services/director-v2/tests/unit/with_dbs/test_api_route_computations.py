@@ -400,7 +400,7 @@ def fake_ec2_ram() -> ByteSize:
 @pytest.fixture
 def mocked_clusters_keeper_service_get_instance_type_details(
     mocker: MockerFixture,
-    default_pricing_plan_aws_ec2_type: InstanceTypeType,
+    default_pricing_plan_aws_ec2_type: str,
     fake_ec2_cpus: PositiveInt,
     fake_ec2_ram: ByteSize,
 ) -> mock.Mock:
