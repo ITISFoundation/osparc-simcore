@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "42Crunch.vscode-openapi",
     "charliermarsh.ruff",
     "eamodio.gitlens",
     "exiasr.hadolint",
