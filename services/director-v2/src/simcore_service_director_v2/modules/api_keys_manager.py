@@ -66,12 +66,40 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
 # Do we still have to keep track of them though?
 
 
-def get_api_key_name(node_id: NodeID) -> str:
+async def get_or_create_api_key(
+    app: FastAPI, *, product_name: ProductName, user_id: UserID, node_id: NodeID
+) -> ApiKeyGet:
+    api_keys_manager = _get_api_keys_manager(app)
+    display_name = _get_api_key_name(node_id)
+
+    key_data: ApiKeyGet | None = await api_keys_manager.get(
+        identifier=display_name, product_name=product_name, user_id=user_id
+    )
+    if key_data is None:
+        _, key_data = await api_keys_manager.create(
+            identifier=display_name, product_name=product_name, user_id=user_id
+        )
+
+    return key_data
+
+
+async def safe_remove(
+    app: FastAPI, *, node_id: NodeID, product_name: ProductName, user_id: UserID
+) -> None:
+    api_keys_manager = _get_api_keys_manager(app)
+    display_name = _get_api_key_name(node_id)
+
+    await api_keys_manager.remove(
+        identifier=display_name, product_name=product_name, user_id=user_id
+    )
+
+
+def _get_api_key_name(node_id: NodeID) -> str:
     obfuscated_node_id = uuid5(node_id, f"{node_id}")
     return f"_auto_{obfuscated_node_id}"
 
 
-def get_api_keys_manager(app: FastAPI) -> APIKeysManager:
+def _get_api_keys_manager(app: FastAPI) -> APIKeysManager:
     api_keys_manager: APIKeysManager = app.state.api_keys_manager
     return api_keys_manager
 

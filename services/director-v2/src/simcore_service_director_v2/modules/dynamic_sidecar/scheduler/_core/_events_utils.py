@@ -5,7 +5,6 @@ import logging
 from typing import Any, Final
 
 from fastapi import FastAPI
-from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
@@ -13,7 +12,6 @@ from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from models_library.users import UserID
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -40,7 +38,7 @@ from .....models.dynamic_services_scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
-from ....api_keys_manager import get_api_key_name, get_api_keys_manager
+from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
@@ -253,16 +251,6 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     task_progress.update(message="finished removing resources", percent=1)
 
 
-async def _remove_generated_secrets(
-    app: FastAPI, *, node_id: NodeID, product_name: ProductName, user_id: UserID
-) -> None:
-    # removes secrets that may have been generated when the sidecar was started
-
-    await get_api_keys_manager(app).safe_remove(
-        identifier=get_api_key_name(node_id), product_name=product_name, user_id=user_id
-    )
-
-
 async def attempt_pod_removal_and_data_saving(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
@@ -359,7 +347,7 @@ async def attempt_pod_removal_and_data_saving(
         TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
     )
 
-    await _remove_generated_secrets(
+    await safe_remove(
         app,
         node_id=scheduler_data.node_uuid,
         product_name=scheduler_data.product_name,

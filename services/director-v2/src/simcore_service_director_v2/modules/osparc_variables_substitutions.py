@@ -26,7 +26,7 @@ from ..utils.osparc_variables import (
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
-from .api_keys_manager import get_api_key_name, get_api_keys_manager
+from .api_keys_manager import get_or_create_api_key
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
 
 _logger = logging.getLogger(__name__)
@@ -220,29 +220,25 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
 async def _get_or_create_api_key(
     app: FastAPI, product_name: ProductName, user_id: UserID, node_id: NodeID
 ) -> str:
-    display_name = get_api_key_name(node_id)
-
-    api_keys_manager = get_api_keys_manager(app)
-    _, key_data = await api_keys_manager.get_or_create(
-        identifier=display_name,
+    key_data = await get_or_create_api_key(
+        app,
         product_name=product_name,
         user_id=user_id,
+        node_id=node_id,
     )
-    return key_data.api_key  # type: ignore[no-any-return]
+    return key_data.api_key
 
 
 async def _get_or_create_api_secret(
     app: FastAPI, product_name: ProductName, user_id: UserID, node_id: NodeID
 ) -> str:
-    display_name = get_api_key_name(node_id)
-
-    api_keys_manager = get_api_keys_manager(app)
-    _, key_data = await api_keys_manager.get_or_create(
-        identifier=display_name,
+    key_data = await get_or_create_api_key(
+        app,
         product_name=product_name,
         user_id=user_id,
+        node_id=node_id,
     )
-    return key_data.api_secret  # type: ignore[no-any-return]
+    return key_data.api_secret
 
 
 def _setup_lifespan_osparc_variables_table(app: FastAPI):

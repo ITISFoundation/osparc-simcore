@@ -15,7 +15,7 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from simcore_service_director_v2.modules.api_keys_manager import (
     APIKeysManager,
-    get_api_key_name,
+    _get_api_key_name,
 )
 
 pytest_simcore_core_services_selection = [
@@ -29,7 +29,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID):
-    api_key_names = {get_api_key_name(node_id) for x in range(1000)}
+    api_key_names = {_get_api_key_name(node_id) for x in range(1000)}
     assert len(api_key_names) == 1
 
 

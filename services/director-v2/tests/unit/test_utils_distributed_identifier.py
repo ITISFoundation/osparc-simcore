@@ -105,17 +105,18 @@ async def test_automatic_cleanup_workflow(
     assert (await manager.get(identifier) is not None) is is_still_present
 
     # safe remove the resource
-    expected_safe_removal_result = not delete_before_removal
-    assert await manager.safe_remove(identifier) is expected_safe_removal_result
+    await manager.remove(identifier)
 
     # resource no longer exists
     assert await manager.get(identifier) is None
 
 
-async def test_safe_remove_api_raises_error(
+@pytest.mark.parametrize("reraise", [True, False])
+async def test_remove_raises_error(
     mocker: MockerFixture,
     manager: RandomTextResourcesManager,
     caplog: pytest.LogCaptureFixture,
+    reraise: bool,
 ):
     caplog.clear()
 
@@ -126,63 +127,11 @@ async def test_safe_remove_api_raises_error(
     identifier, _ = await manager.create(length=1)
     assert await manager.get(identifier) is not None
 
-    # report failed to remove and log
-    assert await manager.safe_remove(identifier) is False
+    if reraise:
+        with pytest.raises(RuntimeError):
+            await manager.remove(identifier, reraise=reraise)
+    else:
+        await manager.remove(identifier, reraise=reraise)
+    # check logs in case of error
+    assert "Unhandled exception:" in caplog.text
     assert error_message in caplog.text
-    assert "could not be removed" in caplog.text
-
-
-async def test_get_or_create_exiting(manager: RandomTextResourcesManager):
-    exiting_identifier, exiting_obj = manager.api.create(length=1)
-    # query an existing identifier
-    identifier, obj = await manager.get_or_create(
-        identifier=exiting_identifier, length=1
-    )
-    assert identifier == exiting_identifier
-    assert obj == exiting_obj
-
-
-async def test_get_or_create_creates_identifier(manager: RandomTextResourcesManager):
-    # creates an identifier
-    new_identifier, new_obj = await manager.get_or_create(length=1)
-    new_identifier_1, obj1 = await manager.get_or_create(
-        identifier=new_identifier,
-        # NOTE extra_kwargs are ignored when the object already exists
-        length=2,
-    )
-    assert new_identifier == new_identifier_1
-    assert new_obj == obj1
-
-
-async def test_get_or_create_creates_identifier_when_provided_identifier_is_missing(
-    manager: RandomTextResourcesManager,
-):
-    missing_identifier = UserDefinedID(uuid4())
-    assert await manager.get(missing_identifier) is None
-
-    new_identifier, _ = await manager.get_or_create(
-        identifier=missing_identifier, length=1
-    )
-    assert new_identifier != missing_identifier
-
-
-async def test_get_or_create_with_identifier():
-    class ManagerInjectingIdentifier(RandomTextResourcesManager):
-        def __init__(self) -> None:
-            super().__init__()
-            self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
-
-    manager = ManagerInjectingIdentifier()
-    with pytest.raises(TypeError, match="identifier"):
-        await manager.get_or_create(length=1)
-
-    class FixedManagerInjectingIdentifier(ManagerInjectingIdentifier):
-        # pylint:disable=arguments-differ
-        async def create(
-            self, length: int, identifier: UserDefinedID
-        ) -> tuple[UserDefinedID, Any]:
-            _ = identifier
-            return await super().create(length)
-
-    fixed_manager = FixedManagerInjectingIdentifier()
-    await fixed_manager.get_or_create(length=1)
