@@ -113,7 +113,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_intance_names(
+    def check_valid_instance_names(
         cls, value: dict[str, EC2InstanceBootSpecific]
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
