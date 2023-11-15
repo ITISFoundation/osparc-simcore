@@ -25,7 +25,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
 
     # pylint:disable=arguments-differ
 
-    async def get(
+    async def get(  # type:ignore [override]
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
         result = await self.rpc_client.request(
@@ -37,7 +37,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
         )
         return parse_obj_as(ApiKeyGet | None, result)
 
-    async def create(
+    async def create(  # type:ignore [override]
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> tuple[str, ApiKeyGet]:
         result = await self.rpc_client.request(
@@ -49,7 +49,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
         )
         return identifier, ApiKeyGet.parse_obj(result)
 
-    async def destroy(
+    async def destroy(  # type:ignore [override]
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> None:
         await self.rpc_client.request(

@@ -226,7 +226,7 @@ async def _get_or_create_api_key(
         user_id=user_id,
         node_id=node_id,
     )
-    return key_data.api_key
+    return key_data.api_key  # type:ignore [no-any-return]
 
 
 async def _get_or_create_api_secret(
@@ -238,7 +238,7 @@ async def _get_or_create_api_secret(
         user_id=user_id,
         node_id=node_id,
     )
-    return key_data.api_secret
+    return key_data.api_secret  # type:ignore [no-any-return]
 
 
 def _setup_lifespan_osparc_variables_table(app: FastAPI):
