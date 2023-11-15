@@ -12,7 +12,8 @@ from .utils import ACTIVE, USER, get_user_name_from_email, validate_user_status
 
 async def get_user_by_email(app: web.Application, *, email: str) -> dict:
     db: AsyncpgStorage = get_plugin_storage(app)
-    return await db.get_user({"email": email})
+    user: dict = await db.get_user({"email": email})
+    return user
 
 
 async def create_user(
