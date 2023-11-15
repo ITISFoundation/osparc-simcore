@@ -7,15 +7,16 @@
 import asyncio
 import json
 import logging
+from asyncio import Queue
 from collections.abc import AsyncIterable, Callable
-from contextlib import asynccontextmanager, suppress
-from typing import Annotated
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import httpx
 import pytest
 from faker import Faker
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -27,7 +28,6 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.services.rabbitmq import get_rabbitmq_client
-from starlette.background import BackgroundTask
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -206,15 +206,10 @@ def new_routes_injected(app: FastAPI):
 
     _NEW_LINE = "\n"
 
-    async def get_buffer(request: Request):
-        return asyncio.Queue()
+    async def _json_logs_generator(project_id: UUID) -> AsyncIterable[str]:
+        log_queu: Queue[JobLog] = Queue(maxsize=50)
 
-    async def listen_to_logs(
-        buffer: Annotated[asyncio.Queue, Depends(get_buffer)],
-        project_id: ProjectID,
-        follow: bool = False,
-    ):
-        async def _consume_log(data: bytes):
+        async def _add_logs_to_queu(data: bytes):
             got = LoggerRabbitMessage.parse_raw(data)
             assert got.project_id == project_id
 
@@ -224,77 +219,27 @@ def new_routes_injected(app: FastAPI):
                 log_level=got.log_level,
                 messages=got.messages,
             )
-
-            if follow:
-                await buffer.put(item)
-            else:
-                with suppress(asyncio.QueueFull):
-                    buffer.put_nowait(item)
-
-            return True
-
-        # listen to project_id
-        async with rabbit_consuming_context(app, project_id, _consume_log):
-
-            yield
-
-            print("stopping listening to logs")
-
-    async def _json_logs_generator(
-        queue: asyncio.Queue, follow: bool
-    ) -> AsyncIterable[str]:
-        if follow:
-            # forever
-            while True:
-                # if queue is empty, it waits
-                job_log = await queue.get()
-                yield job_log.json() + _NEW_LINE
-        else:
-            try:
-                await asyncio.sleep(0)
-                # Return an item if one is immediately available
-                job_log = queue.get_nowait()
-                yield job_log.json() + _NEW_LINE
-
-            except asyncio.QueueEmpty:
-                pass
-
-    @app.get("/projects/{project_id}/logs")
-    async def _stream_logs_handler(project_id: ProjectID, *, follow: bool = False):
-        buffer = asyncio.Queue()
-
-        async def _consume_log(data: bytes):
-            got = LoggerRabbitMessage.parse_raw(data)
-            assert got.project_id == project_id
-
-            item = JobLog(
-                job_id=got.project_id,
-                node_id=got.node_id,
-                log_level=got.log_level,
-                messages=got.messages,
-            )
-
-            if follow:
-                await buffer.put(item)
-            else:
-                with suppress(asyncio.QueueFull):
-                    buffer.put_nowait(item)
-
+            await log_queu.put(item)
             return True
 
         # listen to project_id
         rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
         queue_name = await rabbit_consumer.subscribe(
             LoggerRabbitMessage.get_channel_name(),
-            _consume_log,
+            _add_logs_to_queu,
             exclusive_queue=True,
             topics=[f"{project_id}.*"],
         )
 
+        while True:
+            log: JobLog = await log_queu.get()
+            yield log.json() + _NEW_LINE
+
+    @app.get("/projects/{project_id}/logs")
+    async def _stream_logs_handler(project_id: ProjectID, *, follow: bool = False):
         return StreamingResponse(
-            _json_logs_generator(buffer, follow=follow),
+            _json_logs_generator(project_id),
             media_type="application/x-ndjson",
-            background=BackgroundTask(rabbit_consumer.unsubscribe, queue_name),
         )
 
 
