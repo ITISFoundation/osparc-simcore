@@ -31,7 +31,7 @@ class ClustersKeeperEC2Settings(EC2Settings):
             "examples": [
                 {
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
-                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ENDPOINT": "https://my_ec2_endpoint.com",
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }

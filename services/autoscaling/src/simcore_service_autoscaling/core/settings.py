@@ -41,7 +41,7 @@ class AutoscalingEC2Settings(EC2Settings):
             "examples": [
                 {
                     f"{AUTOSCALING_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
-                    f"{AUTOSCALING_ENV_PREFIX}EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_ENDPOINT": "https://my_ec2_endpoint.com",
                     f"{AUTOSCALING_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
                     f"{AUTOSCALING_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
