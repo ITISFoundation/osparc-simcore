@@ -51,7 +51,12 @@ def _raise_if_error(operation_id: str):
     except HTTPStatusError as err:
 
         model = ErrorModel.parse_obj(err.response.json())
-        _logger.debug("{}")
+        _logger.debug(
+            "status error %d: %s\n%s",
+            err.response.status_code,
+            err,
+            model.json(indent=1),
+        )
 
         raise PaymentsGatewayError(
             operation_id=operation_id,

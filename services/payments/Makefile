@@ -23,8 +23,8 @@ external ?= .env-secret
 
 test-dev-unit-external: ## runs test-dev against external service defined in $(external) envfile
 	# Running tests using external environ '$(external)'
-	$(MAKE) test-dev-unit pytest-parameters="--external-envfile=$(external)"
+	$(MAKE) test-dev-unit pytest-parameters="--external-envfile=$(external) -m external_test"
 
 test-ci-unit-external: ## runs test-ci against external service defined in $(external) envfile
 	# Running tests using external environ '$(external)'
-	$(MAKE) test-ci-unit pytest-parameters="--external-envfile=$(external)"
+	$(MAKE) test-ci-unit pytest-parameters="--external-envfile=$(external) -m external_test"
