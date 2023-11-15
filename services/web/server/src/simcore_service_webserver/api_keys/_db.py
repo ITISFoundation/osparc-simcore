@@ -5,7 +5,8 @@ from datetime import timedelta
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
-from aiopg.sa.result import ResultProxy
+from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.basic_types import IdInt
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -27,7 +28,7 @@ class ApiKeyRepo:
         self, *, user_id: UserID, product_name: ProductName
     ) -> list[str]:
         async with self.engine.acquire() as conn:
-            stmt = sa.select(api_keys.c.display_name,).where(
+            stmt = sa.select(api_keys.c.display_name).where(
                 (api_keys.c.user_id == user_id)
                 & (api_keys.c.product_name == product_name)
             )
@@ -64,9 +65,24 @@ class ApiKeyRepo:
             rows = await result.fetchall() or []
             return [r.id for r in rows]
 
+    async def get(
+        self, *, display_name: str, user_id: UserID, product_name: ProductName
+    ) -> ApiKeyInDB | None:
+        async with self.engine.acquire() as conn:
+            stmt = sa.select(api_keys).where(
+                (api_keys.c.user_id == user_id)
+                & (api_keys.c.display_name == display_name)
+                & (api_keys.c.product_name == product_name)
+            )
+
+            result: ResultProxy = await conn.execute(stmt)
+            row: RowProxy | None = await result.fetchone()
+            _logger.error("debug %s", row)
+            return ApiKeyInDB.from_orm(row) if row else None
+
     async def delete_by_name(
         self, *, display_name: str, user_id: UserID, product_name: ProductName
-    ):
+    ) -> None:
         async with self.engine.acquire() as conn:
             stmt = api_keys.delete().where(
                 (api_keys.c.user_id == user_id)
@@ -77,7 +93,7 @@ class ApiKeyRepo:
 
     async def delete_by_key(
         self, *, api_key: str, user_id: UserID, product_name: ProductName
-    ):
+    ) -> None:
         async with self.engine.acquire() as conn:
             stmt = api_keys.delete().where(
                 (api_keys.c.user_id == user_id)

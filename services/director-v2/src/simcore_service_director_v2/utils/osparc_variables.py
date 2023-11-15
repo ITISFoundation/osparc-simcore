@@ -5,6 +5,7 @@ from typing import Any, Final, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import NonNegativeInt, parse_obj_as
+from servicelib.utils import logged_gather
 
 ContextDict: TypeAlias = dict[str, Any]
 ContextGetter: TypeAlias = Callable[[ContextDict], Any]
@@ -94,7 +95,21 @@ _HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
 async def resolve_variables_from_context(
     variables_getters: dict[str, ContextGetter],
     context: ContextDict,
+    *,
+    resolve_in_parallel: bool = True,
 ) -> dict[str, SubstitutionValue]:
+    """Resolves variables given a list of handlers and a context
+    containing vars which can be used by the handlers.
+
+    Arguments:
+        variables_getters -- mapping of awaitables which resolve the value
+        context -- variables which can be passed to the awaitables
+
+    Keyword Arguments:
+        resolve_in_parallel -- sometimes the variable_getters cannot be ran in parallel,
+            for example due to race conditions,
+            for those situations set to False (default: {True})
+    """
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
         key: fun(context) for key, fun in variables_getters.items()
@@ -113,7 +128,10 @@ async def resolve_variables_from_context(
             environs[key] = value
 
     # evaluates handlers
-    values = await asyncio.gather(*coros.values())
+    values = await logged_gather(
+        *coros.values(),
+        max_concurrency=0 if resolve_in_parallel else 1,
+    )
     for key, value in zip(coros.keys(), values, strict=True):
         environs[key] = value
 
