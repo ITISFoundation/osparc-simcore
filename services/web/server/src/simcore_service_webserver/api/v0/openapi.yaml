@@ -5256,8 +5256,11 @@ components:
       properties:
         priceDollars:
           title: Pricedollars
-          minimum: 0.0
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           type: number
+          maximum: 1000000.0
+          minimum: 0.0
         comment:
           title: Comment
           maxLength: 100
@@ -7546,14 +7549,6 @@ components:
       required:
       - idr
       - walletId
-      - cardHolderName
-      - cardNumberMasked
-      - cardType
-      - expirationMonth
-      - expirationYear
-      - streetAddress
-      - zipcode
-      - country
       - created
       type: object
       properties:
@@ -7582,15 +7577,6 @@ components:
         expirationYear:
           title: Expirationyear
           type: integer
-        streetAddress:
-          title: Streetaddress
-          type: string
-        zipcode:
-          title: Zipcode
-          type: string
-        country:
-          title: Country
-          type: string
         created:
           title: Created
           type: string
