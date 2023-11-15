@@ -27,6 +27,7 @@ from simcore_postgres_database.models.payments_transactions import (
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from tenacity import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
 from ..core.errors import (
@@ -275,7 +276,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     payment_id = ack.payment_id
 
     async for attempt in AsyncRetrying(
-        stop_after_attempt=3,
+        stop=stop_after_attempt(3),
         retry=retry_if_exception_type(PaymentAlreadyExistsError),
         reraise=True,
     ):

@@ -1,5 +1,4 @@
 import logging
-from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
@@ -12,8 +11,10 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
+from models_library.basic_types import NonNegativeDecimal
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
+from pydantic import parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -50,16 +51,16 @@ from ._handlers import (
 _logger = logging.getLogger(__name__)
 
 
-async def _eval_osparc_credits_or_raise(
-    request: web.Request, price_dollars: Decimal
-) -> Decimal:
+async def _eval_total_credits_or_raise(
+    request: web.Request, amount_dollars: NonNegativeDecimal
+) -> NonNegativeDecimal:
     # Conversion
     usd_per_credit = await get_current_product_credit_price(request)
     if not usd_per_credit:
         # '0 or None' should raise
         raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-    return price_dollars / usd_per_credit
+    return parse_obj_as(NonNegativeDecimal, amount_dollars / usd_per_credit)
 
 
 routes = web.RouteTableDef()
@@ -88,7 +89,7 @@ async def _create_payment(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
 
-        osparc_credits = await _eval_osparc_credits_or_raise(
+        osparc_credits = await _eval_total_credits_or_raise(
             request, body_params.price_dollars
         )
 
@@ -331,7 +332,7 @@ async def _pay_with_payment_method(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
 
-        osparc_credits = await _eval_osparc_credits_or_raise(
+        osparc_credits = await _eval_total_credits_or_raise(
             request, body_params.price_dollars
         )
 
