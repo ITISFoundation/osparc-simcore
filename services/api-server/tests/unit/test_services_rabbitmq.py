@@ -124,20 +124,19 @@ async def test_subscribe_publish_receive_logs(
 async def rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
-    comsumer_message_handler: Callable | None = None,
-):
-    if not comsumer_message_handler:
-        comsumer_message_handler = AsyncMock(return_value=True)
+) -> AsyncIterable[AsyncMock]:
+
+    consumer_message_handler = AsyncMock(return_value=True)
 
     rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
     queue_name = await rabbit_consumer.subscribe(
         LoggerRabbitMessage.get_channel_name(),
-        comsumer_message_handler,
+        consumer_message_handler,
         exclusive_queue=True,
         topics=[f"{project_id}.*"],
     )
 
-    yield comsumer_message_handler
+    yield consumer_message_handler
 
     await rabbit_consumer.unsubscribe(queue_name)
 
@@ -180,9 +179,9 @@ async def test_multiple_producers_and_single_consumer(
                 *(produce_logs(f"{n}") for n in range(5)),
             ]
         )
+        await asyncio.sleep(1)
 
     # check it received
-    await asyncio.sleep(1)
     assert consumer_message_handler.await_count == 1
     (data,) = consumer_message_handler.call_args[0]
     assert isinstance(data, bytes)
