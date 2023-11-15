@@ -17,7 +17,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
-    api_key_resource_manager,
+    api_keys_manager,
     catalog,
     comp_scheduler,
     dask_clients_pool,
@@ -167,7 +167,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if dynamic_scheduler_enabled:
         dynamic_sidecar.setup(app)
-        api_key_resource_manager.setup(app)
+        api_keys_manager.setup(app)
 
     if (
         settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED

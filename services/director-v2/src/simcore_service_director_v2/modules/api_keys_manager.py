@@ -10,11 +10,11 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.rabbitmq import RabbitMQRPCClient
 
-from ..utils.osparc_generic_resource import BaseOsparcGenericResourcesManager
+from ..utils.distributed_identifer import BaseDistributedIdentifierManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
 
-class APIKeysManager(BaseOsparcGenericResourcesManager[str, ApiKeyGet]):
+class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
     def __init__(self, app: FastAPI) -> None:
         self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
         self.app = app
@@ -59,6 +59,11 @@ class APIKeysManager(BaseOsparcGenericResourcesManager[str, ApiKeyGet]):
             user_id=user_id,
             name=identifier,
         )
+
+
+# TODO: requires a task for cleaning up whatever was created here.
+# In this case we can figure out form existing names what is wrong?
+# Do we still have to keep track of them though?
 
 
 def get_api_key_name(node_id: NodeID) -> str:

@@ -10,7 +10,7 @@ Ident = TypeVar("Ident")
 Res = TypeVar("Res")
 
 
-class BaseOsparcGenericResourcesManager(ABC, Generic[Ident, Res]):
+class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res]):
     """Common interface used to manage the lifecycle of osparc resources.
 
     An osparc resource can be anything that needs to be created and then removed
@@ -62,32 +62,26 @@ class BaseOsparcGenericResourcesManager(ABC, Generic[Ident, Res]):
             **extra_kwargs -- can be overloaded by the user
         """
 
-    async def safe_remove(self, identifier: Ident, **extra_kwargs) -> bool:
-        """Removes the resource if is present.
-        Logs errors, without re-raising.
+    async def safe_remove(
+        self, identifier: Ident, *, reraise: bool = False, **extra_kwargs
+    ) -> None:
+        """Removes the resource if is present,
+        by default it does not reraise any error.
 
         Arguments:
             identifier -- user chosen identifier for the resource
+            reraise -- when True raises any exception raised by ``destroy`` (default: {False})
             **extra_kwargs -- can be overloaded by the user
 
         Returns:
-            True if the resource was removed successfully otherwise false
+            True if the resource was removed successfully otherwise False
         """
-        if await self.get(identifier, **extra_kwargs) is None:
-            return False
-
         with log_context(
             _logger, logging.DEBUG, f"{self.__class__}: removing {identifier}"
-        ), log_catch(_logger, reraise=False):
+        ), log_catch(_logger, reraise=reraise):
             await self.destroy(identifier, **extra_kwargs)
 
-        was_removed = await self.get(identifier, **extra_kwargs) is None
-        if not was_removed:
-            _logger.warning(
-                "%s: resource %s could not be removed", self.__class__, identifier
-            )
-        return was_removed
-
+    # TODO: we do not require this pattern here, it can be added to the handlers that create it
     async def get_or_create(
         self, identifier: Ident | None = None, **extra_kwargs
     ) -> tuple[Ident, Res]:

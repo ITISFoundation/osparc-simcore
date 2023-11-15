@@ -13,7 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
-from simcore_service_director_v2.modules.api_key_resource_manager import (
+from simcore_service_director_v2.modules.api_keys_manager import (
     APIKeysManager,
     get_api_key_name,
 )

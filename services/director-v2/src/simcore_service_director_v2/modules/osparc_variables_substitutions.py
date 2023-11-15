@@ -26,7 +26,7 @@ from ..utils.osparc_variables import (
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
-from .api_key_resource_manager import get_api_key_name, get_api_keys_manager
+from .api_keys_manager import get_api_key_name, get_api_keys_manager
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
 
 _logger = logging.getLogger(__name__)

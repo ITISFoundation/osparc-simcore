@@ -7,8 +7,8 @@ from uuid import UUID, uuid4
 
 import pytest
 from pytest_mock import MockerFixture
-from simcore_service_director_v2.utils.osparc_generic_resource import (
-    BaseOsparcGenericResourcesManager,
+from simcore_service_director_v2.utils.distributed_identifer import (
+    BaseDistributedIdentifierManager,
 )
 
 
@@ -51,7 +51,7 @@ class RandomTextAPI:
 # define a custom manager using the custom user defined identifiers
 # NOTE: note that the generic uses `[UserDefinedID, Any]`
 # which enforces typing constraints on the overloaded abstract methods
-class RandomTextResourcesManager(BaseOsparcGenericResourcesManager[UserDefinedID, Any]):
+class RandomTextResourcesManager(BaseDistributedIdentifierManager[UserDefinedID, Any]):
     # pylint:disable=arguments-differ
 
     def __init__(self) -> None:

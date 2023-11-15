@@ -39,8 +39,8 @@ from .....models.dynamic_services_scheduler import (
     DockerStatus,
     SchedulerData,
 )
-from .....modules.api_key_resource_manager import get_api_key_name, get_api_keys_manager
 from .....utils.db import get_repository
+from ....api_keys_manager import get_api_key_name, get_api_keys_manager
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
