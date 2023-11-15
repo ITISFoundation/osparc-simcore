@@ -92,6 +92,7 @@ make build-devel # this will build the autoscaling devel image
 cd osparc-simcore/services/autoscaling/tests/manual
 make .env # generate an initial .env file
 nano .env # edit .env and set the variables as needed
+# in particular NODES_MONITORING_NEW_NODES_LABELS, NODES_MONITORING_NODE_LABELS, NODES_MONITORING_SERVICE_LABELS must be activated
 ```
 
 3. start autoscaling stack
