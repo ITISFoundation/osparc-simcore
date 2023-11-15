@@ -8,7 +8,7 @@ The dynamic mode is used directly with docker swarm facilities.
 ### requirements
 
 1. AWS EC2 access
-2. a machine running in EC2 with docker installed and access to osparc-simcore repository
+2. a machine running in EC2 with docker installed and access to osparc-simcore repository (for example t2.xlarge to have some computational power)
 
 
 ## computational mode
