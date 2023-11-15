@@ -103,8 +103,10 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
+            "AUTOSCALING_EC2_ACCESS": "{}",
             "EC2_ACCESS_KEY_ID": faker.pystr(),
             "EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "AUTOSCALING_EC2_INSTANCES": "{}",
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
