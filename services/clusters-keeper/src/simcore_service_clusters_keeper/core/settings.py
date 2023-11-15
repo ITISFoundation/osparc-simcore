@@ -46,15 +46,25 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         unique_items=True,
         description="Defines which EC2 instances are considered as candidates for new EC2 instance",
     )
-    WORKERS_EC2_INSTANCES_AMI_ID: str = Field(
+
+    WORKERS_EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
-        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
+        description="SSH key filename (without ext) to access the instance through SSH"
+        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
+        "this is required to start a new EC2 instance",
+    )
+    # BUFFER is not exposed since we set it to 0
+    WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=3),
+        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     WORKERS_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
         description="Defines the maximum number of instances the clusters_keeper app may create",
     )
+    # NAME PREFIX is not exposed since we override it anyway
     WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
@@ -69,29 +79,11 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
-    WORKERS_EC2_INSTANCES_KEY_NAME: str = Field(
-        ...,
-        min_length=1,
-        description="SSH key filename (without ext) to access the instance through SSH"
-        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
-        "this is required to start a new EC2 instance",
-    )
 
     WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Time after which an EC2 instance may be terminated (min 0, max 59 minutes) "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-
-    WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-
-    WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
 
     @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
