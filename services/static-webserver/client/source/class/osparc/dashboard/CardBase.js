@@ -507,11 +507,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      const projectState = ("state" in state) ? state["state"]["value"] : "UNKNOWN";
+      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (locked) {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
-      if (projectState !== "UNKNOWN") {
+      if (projectState) {
         this._applyProjectState(state["state"]);
       }
       this.setLocked(locked);
@@ -553,9 +553,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         width: 1,
         style: "solid",
         color: bdr,
-        backgroundColor: bdr
+        backgroundColor: bdr,
       });
       control = new qx.ui.basic.Image(icn).set({
+        textColor: "status_icon",
         height: 22,
         width: 22,
         alignY: "middle",
@@ -565,7 +566,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipText: this.tr(`Project ${lbl}`)
       });
       control.getContentElement().setStyles({
-        "border-radius": "50%"
+        "border-radius": "50%",
+        "background-clip": "border-box"
       });
       const titleLayout = this.getChildControl("title-row");
       titleLayout.add(control);

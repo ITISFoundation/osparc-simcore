@@ -156,7 +156,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             anonymous: true,
             allowGrowX: true,
             allowShrinkX: false,
-            alignY: "middle",
+            alignY: "bottom",
             padding: this.self().PADDING,
             backgroundColor: "background-card-header"
           });
@@ -228,6 +228,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             alignX: "center",
             allowGrowX: true,
             allowGrowY: true
+          });
+          bodyLayout.getContentElement().setStyles({
+            "border-width": "0px"
           });
           bodyLayout.add(control, {flex: 1});
           break;
