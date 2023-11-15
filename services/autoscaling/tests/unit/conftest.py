@@ -6,6 +6,7 @@ import asyncio
 import dataclasses
 import datetime
 import json
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
@@ -25,7 +26,6 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -112,10 +112,8 @@ def app_environment(
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: jsonable_encoder(
-                        EC2InstanceBootSpecific(
-                            **EC2InstanceBootSpecific.Config.schema_extra["examples"][0]
-                        )
+                    ec2_type_name: random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
                     )
                     for ec2_type_name in ec2_instances
                 }
@@ -143,9 +141,10 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_AMI_ID": aws_ami_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: jsonable_encoder(
-                        EC2InstanceBootSpecific(ami_id=aws_ami_id)
+                    ec2_type_name: random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
                     )
+                    | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
