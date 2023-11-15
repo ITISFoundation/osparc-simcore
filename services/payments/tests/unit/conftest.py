@@ -272,6 +272,8 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
                         success=True,
                         message=f"Payment '{payment_id}' with payment-method '{pm_id}'",
                         invoice_url=faker.url(),
+                        provider_payment_id="pi_123456ABCDEFG123456ABCDE",
+                        payment_id=payment_id,
                     )
                 ),
             )
