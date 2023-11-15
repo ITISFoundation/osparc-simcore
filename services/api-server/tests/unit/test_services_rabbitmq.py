@@ -34,6 +34,8 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = []
 
+_NEW_LINE = "\n"
+
 
 @pytest.fixture
 def app_environment(
@@ -206,12 +208,8 @@ class JobLog(BaseModel):
 
 
 @pytest.fixture
-def new_routes_injected(app: FastAPI):
-    # https://docs.python.org/3/library/asyncio-queue.html#queue
-
-    _NEW_LINE = "\n"
-
-    async def _json_logs_generator(project_id: UUID) -> AsyncIterable[str]:
+async def json_log_generator(client: httpx.AsyncClient, app: FastAPI):
+    async def _json_log_generator(project_id: UUID) -> AsyncIterable[str]:
         log_queu: Queue[JobLog] = Queue(maxsize=50)
 
         async def _add_logs_to_queu(data: bytes):
@@ -237,13 +235,41 @@ def new_routes_injected(app: FastAPI):
         )
 
         while True:
+            while log_queu.empty():
+                await asyncio.sleep(2)
             log: JobLog = await log_queu.get()
             yield log.json() + _NEW_LINE
+
+    yield _json_log_generator
+
+
+async def test_json_log_generator(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    project_id: ProjectID,
+    node_id: NodeID,
+    produce_logs: Callable,
+    json_log_generator,
+    faker: Faker,
+):
+
+    msg: str = faker.text()
+    asyncio.gather(produce_logs("expected", project_id, node_id, [msg]))
+    await asyncio.sleep(1)
+    async for log in json_log_generator(project_id):
+        assert msg == log
+        msg = faker.text()
+        await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
+
+
+@pytest.fixture
+def new_routes_injected(app: FastAPI, json_log_generator):
+    # https://docs.python.org/3/library/asyncio-queue.html#queue
 
     @app.get("/projects/{project_id}/logs")
     async def _stream_logs_handler(project_id: ProjectID, *, follow: bool = False):
         return StreamingResponse(
-            _json_logs_generator(project_id),
+            json_log_generator(project_id),
             media_type="application/x-ndjson",
         )
 
