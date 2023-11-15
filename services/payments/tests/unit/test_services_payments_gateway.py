@@ -160,7 +160,7 @@ async def test_payment_methods_workflow(
     got_payment_method = await payments_gateway_api.get_payment_method(
         payment_method_id
     )
-    assert got_payment_method.idr == payment_method_id
+    assert got_payment_method.id == payment_method_id
     print(got_payment_method.json(indent=2))
 
     # list payment-methods
