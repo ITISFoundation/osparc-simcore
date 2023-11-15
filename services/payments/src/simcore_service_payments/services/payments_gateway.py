@@ -8,7 +8,6 @@
 import contextlib
 import functools
 import logging
-import warnings
 from collections.abc import Callable
 from contextlib import suppress
 
@@ -160,22 +159,6 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     async def delete_payment_method(self, id_: PaymentMethodID) -> None:
         response = await self.client.delete(f"/payment-methods/{id_}")
         response.raise_for_status()
-
-    @_handle_status_errors
-    async def init_payment_with_payment_method(
-        self, id_: PaymentMethodID, payment: InitPayment
-    ) -> PaymentInitiated:
-        warnings.warn(
-            f"{__name__}.init_payment_with_payment_method is deprecated. Use instead pay_with_payment_method",
-            DeprecationWarning,
-            stacklevel=1,
-        )
-        response = await self.client.post(
-            f"/payment-methods/{id_}:pay",
-            json=jsonable_encoder(payment),
-        )
-        response.raise_for_status()
-        return PaymentInitiated.parse_obj(response.json())
 
     @_handle_status_errors
     async def pay_with_payment_method(

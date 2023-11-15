@@ -7,7 +7,6 @@
 
 import logging
 import uuid
-import warnings
 from decimal import Decimal
 
 import arrow
@@ -178,63 +177,6 @@ async def on_payment_completed(
         RUT,
         f"{transaction.payment_id=}",
         f"{credit_transaction_id=}",
-    )
-
-
-async def init_payment_with_payment_method(  # noqa: PLR0913
-    gateway: PaymentsGatewayApi,
-    repo_transactions: PaymentsTransactionsRepo,
-    repo_methods: PaymentsMethodsRepo,
-    *,
-    payment_method_id: PaymentMethodID,
-    amount_dollars: Decimal,
-    target_credits: Decimal,
-    product_name: str,
-    wallet_id: WalletID,
-    wallet_name: str,
-    user_id: UserID,
-    user_name: str,
-    user_email: EmailStr,
-    comment: str | None = None,
-) -> WalletPaymentInitiated:
-    warnings.warn(
-        f"{__name__}.init_payment_with_payment_method is deprecated. Use instead pay_with_payment_method",
-        DeprecationWarning,
-        stacklevel=1,
-    )
-
-    initiated_at = arrow.utcnow().datetime
-
-    acked = await repo_methods.get_payment_method(
-        payment_method_id, user_id=user_id, wallet_id=wallet_id
-    )
-
-    payment_inited = await gateway.init_payment_with_payment_method(
-        acked.payment_method_id,
-        payment=InitPayment(
-            amount_dollars=amount_dollars,
-            credits=target_credits,
-            user_name=user_name,
-            user_email=user_email,
-            wallet_name=wallet_name,
-        ),
-    )
-
-    payment_id = await repo_transactions.insert_init_payment_transaction(
-        payment_id=payment_inited.payment_id,
-        price_dollars=amount_dollars,
-        osparc_credits=target_credits,
-        product_name=product_name,
-        user_id=user_id,
-        user_email=user_email,
-        wallet_id=wallet_id,
-        comment=comment,
-        initiated_at=initiated_at,
-    )
-
-    return WalletPaymentInitiated(
-        payment_id=f"{payment_id}",
-        payment_form_url=None,
     )
 
 

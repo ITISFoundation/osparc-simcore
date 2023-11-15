@@ -135,7 +135,6 @@ async def init_creation_of_wallet_payment(
     user_id: UserID,
     wallet_id: WalletID,
     comment: str | None,
-    payment_method_id: PaymentMethodID | None = None,
 ) -> WalletPaymentInitiated:
     """
 
@@ -157,38 +156,22 @@ async def init_creation_of_wallet_payment(
     user = await get_user_name_and_email(app, user_id=user_id)
     settings: PaymentsSettings = get_plugin_settings(app)
     payment_inited: WalletPaymentInitiated
-    if payment_method_id is None:
-        if settings.PAYMENTS_FAKE_COMPLETION:
-            payment_inited = await _fake_init_payment(
-                app,
-                price_dollars,
-                osparc_credits,
-                product_name,
-                wallet_id,
-                user_id,
-                user.email,
-                comment,
-            )
-        else:
-            # call to payment-service
-            assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-            payment_inited = await _rpc.init_payment(
-                app,
-                amount_dollars=price_dollars,
-                target_credits=osparc_credits,
-                product_name=product_name,
-                wallet_id=wallet_id,
-                wallet_name=user_wallet.name,
-                user_id=user_id,
-                user_name=user.name,
-                user_email=user.email,
-                comment=comment,
-            )
-    else:
-        assert payment_method_id is not None  # nosec
-        payment_inited = await _rpc.init_payment_with_payment_method(
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        payment_inited = await _fake_init_payment(
             app,
-            payment_method_id=payment_method_id,
+            price_dollars,
+            osparc_credits,
+            product_name,
+            wallet_id,
+            user_id,
+            user.email,
+            comment,
+        )
+    else:
+        # call to payment-service
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        payment_inited = await _rpc.init_payment(
+            app,
             amount_dollars=price_dollars,
             target_credits=osparc_credits,
             product_name=product_name,
