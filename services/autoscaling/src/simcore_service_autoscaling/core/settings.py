@@ -21,21 +21,13 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-
-
-class EC2Settings(BaseCustomSettings):
-    EC2_ACCESS_KEY_ID: str
-    EC2_ENDPOINT: str | None = Field(
-        default=None, description="do not define if using standard AWS"
-    )
-    EC2_REGION_NAME: str = "us-east-1"
-    EC2_SECRET_ACCESS_KEY: str
 
 
 class EC2InstancesSettings(BaseCustomSettings):

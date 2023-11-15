@@ -25,6 +25,7 @@ SETUP = dict(
             "aiohttp",
             "aioredis",
             "docker",
+            "moto[server]",
             "python-socketio",
             "PyYAML",
             "sqlalchemy[postgresql_psycopg2binary]",

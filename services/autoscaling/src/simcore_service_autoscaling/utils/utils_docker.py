@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Final, cast
 
 import yaml
+from aws_library.ec2.models import EC2InstanceData, Resources
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
@@ -33,7 +34,6 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
-from ..models import EC2InstanceData, Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
 
 
 async def remove_nodes(
-    docker_client: AutoscalingDocker, nodes: list[Node], force: bool = False
+    docker_client: AutoscalingDocker, *, nodes: list[Node], force: bool = False
 ) -> list[Node]:
     """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 
@@ -107,21 +107,24 @@ async def remove_nodes(
 
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-    if (
-        not task.Status
-        or not task.Status.State
-        or not task.Status.Message
-        or not task.Status.Err
+    with log_context(
+        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task}"
     ):
-        return False
-    return (
-        task.Status.State == TaskState.pending
-        and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
-        and (
-            _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
-            or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.Status.Err
+        if (
+            not task.Status
+            or not task.Status.State
+            or not task.Status.Message
+            or not task.Status.Err
+        ):
+            return False
+        return (
+            task.Status.State == TaskState.pending
+            and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
+            and (
+                _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+                or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.Status.Err
+            )
         )
-    )
 
 
 async def _associated_service_has_no_node_placement_contraints(
@@ -187,6 +190,10 @@ async def pending_service_tasks_with_insufficient_resources(
     )
 
     sorted_tasks = sorted(tasks, key=_by_created_dt)
+    logger.debug(
+        "found following tasks that might trigger autoscaling: %s",
+        [task.ID for task in tasks],
+    )
 
     return [
         task

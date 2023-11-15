@@ -13,13 +13,13 @@ import respx
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
 from models_library.users import UserID
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 
 async def test_product_webserver(
@@ -70,7 +70,7 @@ async def test_product_webserver(
         key = keys[wallet_id]
         response = await client.get(
             f"{API_VTAG}/wallets/{wallet_id}",
-            auth=httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value()),
+            auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )
         assert response.status_code == status.HTTP_200_OK
     assert wallet_get_mock.call_count == len(keys)
@@ -104,7 +104,7 @@ async def test_product_catalog(
     for key in keys:
         response = await client.get(
             f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
-            auth=httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value()),
+            auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )
 
     assert respx_mock.call_count == len(keys)
