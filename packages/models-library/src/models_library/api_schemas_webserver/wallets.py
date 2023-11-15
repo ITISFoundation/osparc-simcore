@@ -124,14 +124,11 @@ class PaymentMethodTransaction(OutputSchema):
 class PaymentMethodGet(OutputSchema):
     idr: PaymentMethodID
     wallet_id: WalletID
-    card_holder_name: str
-    card_number_masked: str
-    card_type: str
-    expiration_month: int
-    expiration_year: int
-    street_address: str
-    zipcode: str
-    country: str
+    card_holder_name: str | None = None
+    card_number_masked: str | None = None
+    card_type: str | None = None
+    expiration_month: int | None = None
+    expiration_year: int | None = None
     created: datetime
     auto_recharge: bool = Field(
         default=False,
@@ -149,10 +146,13 @@ class PaymentMethodGet(OutputSchema):
                     "cardType": "Visa",
                     "expirationMonth": 10,
                     "expirationYear": 2025,
-                    "streetAddress": "123 Main St",
-                    "zipcode": "12345",
-                    "country": "United States",
                     "created": "2023-09-13T15:30:00Z",
+                    "autoRecharge": "False",
+                },
+                {
+                    "idr": "pm_1234567890",
+                    "walletId": 3,
+                    "created": "2024-09-13T15:30:00Z",
                     "autoRecharge": "False",
                 },
             ],
