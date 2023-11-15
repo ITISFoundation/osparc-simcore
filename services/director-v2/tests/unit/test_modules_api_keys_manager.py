@@ -67,7 +67,7 @@ async def mock_rpc_server(
 
     # mock returned client
     mocker.patch(
-        "simcore_service_director_v2.modules.api_key_resource_manager.get_rabbitmq_rpc_client",
+        "simcore_service_director_v2.modules.api_keys_manager.get_rabbitmq_rpc_client",
         return_value=rpc_client,
     )
 
