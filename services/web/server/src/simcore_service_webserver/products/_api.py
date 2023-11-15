@@ -1,6 +1,5 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Final
 
 import aiofiles
 from aiohttp import web
@@ -50,11 +49,6 @@ async def get_current_product_credit_price(
     current_product_name = get_product_name(request)
     repo = ProductRepository.create_from_request(request)
     return await repo.get_product_latest_credit_price_or_none(current_product_name)
-
-
-MSG_PRICE_NOT_DEFINED_ERROR: Final[
-    str
-] = "No payments are accepted until this product has a price"
 
 
 async def get_credit_amount(

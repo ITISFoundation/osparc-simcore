@@ -13,6 +13,6 @@ class CreditResultGet(BaseModel):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {"product_name": "osparc", "credit_amount": Decimal(15.5)},
+                {"product_name": "s4l", "credit_amount": Decimal(15.5)},
             ]
         }

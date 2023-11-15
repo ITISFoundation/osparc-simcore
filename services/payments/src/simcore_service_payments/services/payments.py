@@ -191,7 +191,7 @@ async def init_payment_with_payment_method(
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
-    acked = await repo_methods.get_payment_method(
+    acked = await repo_methods.get_successful_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 

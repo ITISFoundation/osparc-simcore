@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, ClassVar, Literal
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.basic_types import AmountDecimal, IDStr
@@ -61,6 +61,24 @@ class GetPaymentMethod(BaseModel):
     zipcode: str
     country: str
     created: datetime
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "idr": "pm_1234567890",
+                    "card_holder_name": "John Doe",
+                    "card_number_masked": "**** **** **** 1234",
+                    "card_type": "Visa",
+                    "expiration_month": 10,
+                    "expiration_year": 2025,
+                    "street_address": "123 Main St",
+                    "zipcode": "12345",
+                    "country": "United States",
+                    "created": "2023-09-13T15:30:00Z",
+                },
+            ],
+        }
 
 
 class BatchGetPaymentMethods(BaseModel):

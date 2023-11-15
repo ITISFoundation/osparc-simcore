@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
+from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp.requests_validation import (
@@ -62,7 +63,7 @@ async def _init_creation_of_payments(
         # '0 or None' should raise
         raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-    credit_result = await get_credit_amount(
+    credit_result: CreditResultGet = await get_credit_amount(
         request.app, dollar_amount=init.price_dollars, product_name=product_name
     )
 
