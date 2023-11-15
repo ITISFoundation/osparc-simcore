@@ -624,7 +624,7 @@ async def _find_terminateable_instances(
             _logger.info(
                 "%s has still %ss before being terminateable",
                 f"{instance.ec2_instance.id=}",
-                f"{(elapsed_time_since_drained - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION).total_seconds()}",
+                f"{(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION - elapsed_time_since_drained).total_seconds()}",
             )
 
     if terminateable_nodes:
