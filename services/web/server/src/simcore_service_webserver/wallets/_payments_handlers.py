@@ -39,7 +39,6 @@ from ..payments.api import (
 from ..products.api import get_credit_amount
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
 from ._handlers import (
     WalletsPathParams,
     WalletsRequestContext,
@@ -57,12 +56,6 @@ async def _init_creation_of_payments(
     payment_method_id,
     init: CreateWalletPayment,
 ) -> WalletPaymentInitiated:
-    # Conversion
-    usd_per_credit = await get_current_product_credit_price(request)
-    if not usd_per_credit:
-        # '0 or None' should raise
-        raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
-
     credit_result: CreditResultGet = await get_credit_amount(
         request.app, dollar_amount=init.price_dollars, product_name=product_name
     )
