@@ -107,11 +107,11 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
     __createInactivitySetting: function() {
       const box = this._createSectionBox(this.tr("Inactivity shutdown"));
-      const label = this._createHelpLabel(this.tr("Choose after how long should inactive studies be closed."));
+      const label = this._createHelpLabel(this.tr("Choose after how long should inactive studies be closed. A value of zero disables this function."));
       box.add(label);
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
-        minimum: 1,
+        minimum: 0,
         maximum: Number.MAX_SAFE_INTEGER,
         singleStep: 1,
         allowGrowX: false
@@ -132,9 +132,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
-        maximum: Number.MAX_SAFE_INTEGER,
+        maximum: 10,
         singleStep: 1,
-        allowGrowX: false
+        allowGrowX: false,
+        enabled: false
       });
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
