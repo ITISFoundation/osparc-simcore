@@ -81,7 +81,7 @@ class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
 
 class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "jobConcurrencyLimit"
-    value: int | None = 4
+    value: int | None = 1
 
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
