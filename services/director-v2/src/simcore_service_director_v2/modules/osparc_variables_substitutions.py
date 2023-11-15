@@ -156,10 +156,14 @@ async def resolve_and_substitute_session_variables_in_specs(
 
     if requested := set(resolver.get_identifiers()):
         available = set(table.variables_names())
-
-        if identifiers := available.intersection(requested):
+        identifiers_to_replace = available.intersection(requested)
+        _logger.debug(
+            "resolve_and_substitute_session_variables_in_specs identifiers_to_replace=%s",
+            identifiers_to_replace,
+        )
+        if identifiers_to_replace:
             environs = await resolve_variables_from_context(
-                table.copy(include=identifiers),
+                table.copy(include=identifiers_to_replace),
                 context=ContextDict(
                     app=app,
                     user_id=user_id,

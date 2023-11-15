@@ -377,9 +377,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         app=app,
         specs=service_spec,
         user_id=user_id,
-        # NOTE: at this point all OsparcIdentifiers have to be replaced
-        # an error will be raised otherwise
-        safe=False,
+        safe=True,
         product_name=product_name,
         project_id=project_id,
         node_id=node_id,
@@ -387,6 +385,8 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     service_spec = await resolve_and_substitute_lifespan_variables_in_specs(
         app=app,
         specs=service_spec,
+        # NOTE: at this point all OsparcIdentifiers have to be replaced
+        # an error will be raised otherwise
         safe=True,
         product_name=product_name,
         user_id=user_id,
