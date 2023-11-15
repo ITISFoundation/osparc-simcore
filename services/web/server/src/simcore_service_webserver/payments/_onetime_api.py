@@ -285,6 +285,41 @@ async def cancel_payment_to_wallet(
         )
 
 
+async def _fake_pay_with_payment_method(
+    app,
+    amount_dollars,
+    target_credits,
+    product_name,
+    wallet_id,
+    wallet_name,
+    user_id,
+    user_name,
+    user_email,
+    payment_method_id: PaymentMethodID,
+    comment,
+) -> PaymentTransaction:
+
+    assert user_name  # nosec
+    assert wallet_name  # nosec
+
+    payment_inited = await _fake_init_payment(
+        app,
+        amount_dollars,
+        target_credits,
+        product_name,
+        wallet_id,
+        user_id,
+        user_email,
+        comment,
+    )
+    return await _ack_creation_of_wallet_payment(
+        app,
+        payment_id=payment_inited.payment_id,
+        completion_state=PaymentTransactionState.SUCCESS,
+        message=f"Fake payment completed with payment-id = {payment_method_id}",
+    )
+
+
 async def pay_with_payment_method(
     app: web.Application,
     *,
@@ -296,7 +331,50 @@ async def pay_with_payment_method(
     payment_method_id: PaymentMethodID,
     comment: str | None,
 ) -> PaymentTransaction:
-    raise NotImplementedError
+
+    # wallet: check permissions
+    await raise_for_wallet_payments_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    user_wallet = await get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    assert user_wallet.wallet_id == wallet_id  # nosec
+
+    # user info
+    user = await get_user_name_and_email(app, user_id=user_id)
+
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        return await _fake_pay_with_payment_method(
+            app,
+            payment_method_id=payment_method_id,
+            amount_dollars=price_dollars,
+            target_credits=osparc_credits,
+            product_name=product_name,
+            wallet_id=wallet_id,
+            wallet_name=user_wallet.name,
+            user_id=user_id,
+            user_name=user.name,
+            user_email=user.email,
+            comment=comment,
+        )
+
+    assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+
+    return await _rpc.pay_with_payment_method(
+        app,
+        payment_method_id=payment_method_id,
+        amount_dollars=price_dollars,
+        target_credits=osparc_credits,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        wallet_name=user_wallet.name,
+        user_id=user_id,
+        user_name=user.name,
+        user_email=user.email,
+        comment=comment,
+    )
 
 
 async def list_user_payments_page(

@@ -266,7 +266,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-) -> WalletPaymentInitiated:
+) -> PaymentTransaction:
 
     rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
