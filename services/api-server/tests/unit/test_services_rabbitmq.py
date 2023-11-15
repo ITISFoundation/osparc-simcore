@@ -298,8 +298,7 @@ def new_routes_injected(app: FastAPI):
         )
 
 
-@pytest.mark.testit
-async def test_it(
+async def test_stream_logs(
     new_routes_injected: None,
     app: FastAPI,
     client: httpx.AsyncClient,
@@ -310,11 +309,13 @@ async def test_it(
 ):
 
     coro = produce_logs(
-        "expected", project_id, node_id, ["expected message"] * 3, logging.DEBUG
+        "expected", project_id, node_id, ["expected message"], logging.DEBUG
     )
 
-    tasks = [asyncio.create_task(coro, name="log-producer") for _ in range(3)]
+    n_tasks: int = 3
+    tasks = [asyncio.create_task(coro, name="log-producer") for _ in range(n_tasks)]
 
+    n_count: int = 0
     async with client.stream("GET", f"/projects/{project_id}/logs") as r:
         # streams open
         async for line in r.aiter_lines():
@@ -322,6 +323,8 @@ async def test_it(
             log = JobLog.parse_obj(data)
             assert log.job_id == project_id
             assert log.log_level == logging.DEBUG
-            assert log.messages == ["expected message"] * 3
+            assert log.messages == ["expected message"]
 
             print(log.json(indent=3))
+            n_count += 1
+    assert n_count == n_tasks
