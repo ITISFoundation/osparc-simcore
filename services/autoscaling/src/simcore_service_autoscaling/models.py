@@ -91,17 +91,44 @@ class EC2InstanceBootSpecific(BaseModel):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
+                    # just AMI
+                    "ami_id": "ami-123456789abcdef",
+                },
+                {
+                    # AMI + scripts
                     "ami_id": "ami-123456789abcdef",
                     "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
                 },
                 {
+                    # AMI + scripts + pre-pull
                     "ami_id": "ami-123456789abcdef",
                     "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
-                    "pre_pull_images": ["ubuntu/latest"],
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
                 },
                 {
+                    # AMI + pre-pull
                     "ami_id": "ami-123456789abcdef",
-                    "pre_pull_images": ["ubuntu/latest"],
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                },
+                {
+                    # AMI + pre-pull + cron
+                    "ami_id": "ami-123456789abcdef",
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
                     "pre_pull_images_cron_interval": "01:00:00",
                 },
             ]
