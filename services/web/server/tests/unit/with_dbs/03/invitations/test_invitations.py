@@ -11,6 +11,7 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.invitations._client import (
     InvitationsServiceApi,
     get_invitations_service_api,
@@ -72,7 +73,7 @@ def app_environment(
 
 async def test_invitation_service_unavailable(
     client: TestClient,
-    expected_invitation: ApiInvitationContent,
+    fake_osparc_invitation: ApiInvitationContent,
     current_product: Product,
 ):
     assert client.app
@@ -83,7 +84,7 @@ async def test_invitation_service_unavailable(
     with pytest.raises(InvitationsServiceUnavailable):
         await validate_invitation_url(
             app=client.app,
-            guest_email=expected_invitation.guest,
+            guest_email=fake_osparc_invitation.guest,
             invitation_url="https://server.com#/registration?invitation=1234",
             current_product=current_product,
         )
@@ -103,55 +104,71 @@ async def test_invitation_service_api_ping(
     # second request is mocked to fail (since mock only works once)
     assert not await invitations_api.is_responsive()
 
+    mock_invitations_service_http_api.assert_called()
+
 
 async def test_valid_invitation(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: ApiInvitationContent,
+    fake_osparc_invitation: ApiInvitationContent,
     current_product: Product,
 ):
     assert client.app
     invitation = await validate_invitation_url(
         app=client.app,
-        guest_email=expected_invitation.guest,
+        guest_email=fake_osparc_invitation.guest,
         invitation_url="https://server.com#register?invitation=1234",
         current_product=current_product,
     )
     assert invitation
-    assert invitation == expected_invitation
+    assert invitation == fake_osparc_invitation
+    mock_invitations_service_http_api.assert_called_once()
 
 
-async def test_invalid_invitation_if_guest_is_already_registered(
+async def test_invalid_invitation_if_guest_is_already_registered_in_product(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: ApiInvitationContent,
+    fake_osparc_invitation: ApiInvitationContent,
     current_product: Product,
 ):
     assert client.app
+    kwargs = {
+        "app": client.app,
+        "guest_email": fake_osparc_invitation.guest,
+        "invitation_url": "https://server.com#register?invitation=1234",
+        "current_product": current_product,
+    }
+
+    # user exists
     async with NewUser(
         params={
             "name": "test-user",
-            "email": expected_invitation.guest,
+            "email": fake_osparc_invitation.guest,
         },
         app=client.app,
-    ):
+    ) as user:
+
+        # valid because user is not assigned to product
+        assert await validate_invitation_url(**kwargs) == fake_osparc_invitation
+
+        # now use is in product
+        await auto_add_user_to_product_group(
+            client.app, user_id=user["id"], product_name=current_product.name
+        )
+
+        # invitation is invalid now
         with pytest.raises(InvalidInvitation):
-            await validate_invitation_url(
-                app=client.app,
-                guest_email=expected_invitation.guest,
-                invitation_url="https://server.com#register?invitation=1234",
-                current_product=current_product,
-            )
+            await validate_invitation_url(**kwargs)
 
 
 async def test_invalid_invitation_if_not_guest(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: ApiInvitationContent,
+    fake_osparc_invitation: ApiInvitationContent,
     current_product: Product,
 ):
     assert client.app
-    assert expected_invitation.guest != "unexpected_guest@email.me"
+    assert fake_osparc_invitation.guest != "unexpected_guest@email.me"
     with pytest.raises(InvalidInvitation):
         await validate_invitation_url(
             app=client.app,

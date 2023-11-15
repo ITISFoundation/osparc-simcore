@@ -30,7 +30,8 @@ def get_current_product(request: web.Request) -> Product:
 
 
 def list_products(app: web.Application) -> list[Product]:
-    products: list[Product] = app[APP_PRODUCTS_KEY].values()
+    # FIXME: order!
+    products: list[Product] = list(app[APP_PRODUCTS_KEY].values())
     return products
 
 

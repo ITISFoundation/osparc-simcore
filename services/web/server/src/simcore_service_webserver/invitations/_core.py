@@ -76,6 +76,7 @@ def _handle_exceptions_as_invitations_errors():
         raise InvitationsServiceUnavailable from err
 
     except (ValidationError, ClientError) as err:
+        _logger.debug("Invitations error %s", f"{err}")
         raise InvitationsServiceUnavailable from err
 
     except InvitationsErrors:
@@ -135,7 +136,7 @@ async def validate_invitation_url(
             )
 
         # check product
-        assert current_product.group_id is None  # nosec
+        assert current_product.group_id is not None  # nosec
         if (
             invitation.product is not None
             and invitation.product != current_product.name

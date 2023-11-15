@@ -54,12 +54,15 @@ def current_product(client: TestClient) -> Product:
 
 
 @pytest.fixture
-def expected_invitation(
+def fake_osparc_invitation(
     invitations_service_openapi_specs: dict[str, Any]
 ) -> ApiInvitationContent:
+    """
+    Emulates an invitation for osparc product
+    """
     oas = deepcopy(invitations_service_openapi_specs)
     content = ApiInvitationContent.parse_obj(
-        oas["components"]["schemas"]["_ApiInvitationContent"]["example"]
+        oas["components"]["schemas"]["ApiInvitationContent"]["example"]
     )
     content.product = "osparc"
     return content
@@ -75,7 +78,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker: AioResponsesMock,
     invitations_service_openapi_specs: dict[str, Any],
     base_url: URL,
-    expected_invitation: ApiInvitationContent,
+    fake_osparc_invitation: ApiInvitationContent,
 ) -> AioResponsesMock:
     oas = deepcopy(invitations_service_openapi_specs)
 
@@ -97,18 +100,24 @@ def mock_invitations_service_http_api(
 
     # extract
     assert "/v1/invitations:extract" in oas["paths"]
+
+    def _extract(url, **kwargs):
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload=jsonable_encoder(fake_osparc_invitation.dict()),
+        )
+
     aioresponses_mocker.post(
         f"{base_url}/v1/invitations:extract",
-        status=web.HTTPOk.status_code,
-        payload=jsonable_encoder(expected_invitation.dict()),
+        callback=_extract,
+        repeat=True,  # NOTE: this can be used many times
     )
 
     # generate
     assert "/v1/invitations" in oas["paths"]
     example = oas["components"]["schemas"]["ApiInvitationContentAndLink"]["example"]
 
-    def _side_effect(url, **kwargs):
-
+    def _generate(url, **kwargs):
         body = kwargs["json"]
         assert isinstance(body, dict)
         if not body.get("product"):
@@ -127,6 +136,9 @@ def mock_invitations_service_http_api(
             ),
         )
 
-    aioresponses_mocker.post(f"{base_url}/v1/invitations", callback=_side_effect)
+    aioresponses_mocker.post(
+        f"{base_url}/v1/invitations",
+        callback=_generate,
+    )
 
     return aioresponses_mocker
