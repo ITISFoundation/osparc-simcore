@@ -17,10 +17,7 @@ from simcore_postgres_database.models.users import users
 
 from ..db.plugin import get_database_engine
 from ..products.api import Product
-from ._client import (
-    InvitationsServiceApi,
-    get_invitations_service_api,
-)
+from ._client import InvitationsServiceApi, get_invitations_service_api
 from .errors import (
     MSG_INVALID_INVITATION_URL,
     MSG_INVITATION_ALREADY_USED,
@@ -104,8 +101,9 @@ def is_service_invitation_code(code: str):
 
 async def validate_invitation_url(
     app: web.Application,
-    guest_email: str,
+    *,
     current_product: Product,
+    guest_email: str,
     invitation_url: str,
 ) -> ApiInvitationContent:
     """Validates invitation and associated email/user and returns content upon success
@@ -130,23 +128,29 @@ async def validate_invitation_url(
             invitation_url=valid_url
         )
 
+        # check email
         if invitation.guest != guest_email:
             raise InvalidInvitation(
                 reason="This invitation was issued for a different email"
             )
 
+        # check product
+        assert current_product.group_id is None  # nosec
         if (
             invitation.product is not None
             and invitation.product != current_product.name
-        ) or current_product.group_id is None:
+        ):
             raise InvalidInvitation(
-                reason=f"This invitation was issued for a different product, i.e. {invitation.product}"
+                reason="This invitation was issued for a different product. "
+                f"Got '{invitation.product}', expected '{current_product.name}'"
             )
 
-        # existing users cannot be re-invited
-        if await _is_user_registered_in_platform(app=app, email=invitation.guest):
-            # FIXME: a user might be already registered but the invitation is for another product
-            # here we should simply add the user to the current product group and let him login
+        # check invitation used
+        assert invitation.product == current_product.name  # nosec
+        if await _is_user_registered_in_product(
+            app=app, email=invitation.guest, product_group_id=current_product.group_id
+        ):
+            # NOTE: a user might be already registered but the invitation is for another product
             raise InvalidInvitation(reason=MSG_INVITATION_ALREADY_USED)
 
     return invitation

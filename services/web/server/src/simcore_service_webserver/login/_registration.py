@@ -12,6 +12,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
+from models_library.products import ProductName
 from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, validator
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
@@ -52,6 +53,7 @@ class InvitationData(BaseModel):
         "Sets the number of days from creation until the account expires",
     )
     extra_credits_in_usd: PositiveInt | None = None
+    product: ProductName | None = None
 
 
 class _InvitationValidator(BaseModel):
@@ -222,6 +224,7 @@ async def check_and_consume_invitation(
                 guest=content.guest,
                 trial_account_days=content.trial_account_days,
                 extra_credits_in_usd=content.extra_credits_in_usd,
+                product=content.product,
             )
 
     # database-type invitations

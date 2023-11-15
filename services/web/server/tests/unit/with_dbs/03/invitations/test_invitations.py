@@ -30,14 +30,17 @@ def app_environment(
     env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ):
+    # ensures WEBSERVER_INVITATIONS is undefined
     monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
     app_environment.pop("WEBSERVER_INVITATIONS", None)
 
+    # new envs
     envs = setenvs_from_dict(
         monkeypatch,
         {
+            # as before
             **app_environment,
-            # disable
+            # disable these plugins
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
@@ -53,7 +56,7 @@ def app_environment(
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
-            # set INVITATIONS_* variables using those in .devel-env
+            # set INVITATIONS_* variables using those in .env-devel
             **{
                 key: value
                 for key, value in env_devel_dict.items()
@@ -62,6 +65,7 @@ def app_environment(
         },
     )
 
+    # tests envs
     print(ApplicationSettings.create_from_envs().json(indent=2))
     return envs
 
