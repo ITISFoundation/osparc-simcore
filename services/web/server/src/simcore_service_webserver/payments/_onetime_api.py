@@ -285,6 +285,20 @@ async def cancel_payment_to_wallet(
         )
 
 
+async def pay_with_payment_method(
+    app: web.Application,
+    *,
+    price_dollars: Decimal,
+    osparc_credits: Decimal,
+    product_name: str,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+    comment: str | None,
+) -> PaymentTransaction:
+    raise NotImplementedError
+
+
 async def list_user_payments_page(
     app: web.Application,
     product_name: str,

@@ -3,6 +3,7 @@
 """
 
 import logging
+import warnings
 from decimal import Decimal
 
 from aiohttp import web
@@ -12,6 +13,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentTransaction,
     WalletPaymentInitiated,
 )
 from models_library.basic_types import IDStr
@@ -225,6 +227,11 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
     user_email: EmailStr,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
+    warnings.warn(
+        f"{__name__}.init_payment_with_payment_method is deprecated. Use instead pay_with_payment_method",
+        DeprecationWarning,
+        stacklevel=1,
+    )
     rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
     result = await rpc_client.request(
@@ -242,4 +249,41 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
         comment=comment,
     )
     assert isinstance(result, WalletPaymentInitiated)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
+    app: web.Application,
+    *,
+    payment_method_id: PaymentMethodID,
+    amount_dollars: Decimal,
+    target_credits: Decimal,
+    product_name: str,
+    wallet_id: WalletID,
+    wallet_name: str,
+    user_id: UserID,
+    user_name: str,
+    user_email: EmailStr,
+    comment: str | None = None,
+) -> WalletPaymentInitiated:
+
+    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+
+    result = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "pay_with_payment_method"),
+        payment_method_id=payment_method_id,
+        amount_dollars=amount_dollars,
+        target_credits=target_credits,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
+        comment=comment,
+    )
+
+    assert isinstance(result, PaymentTransaction)
     return result

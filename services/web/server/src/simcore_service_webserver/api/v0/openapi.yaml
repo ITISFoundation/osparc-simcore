@@ -4312,8 +4312,8 @@ paths:
     post:
       tags:
       - wallets
-      summary: Init Payment With Payment Method
-      operationId: init_payment_with_payment_method
+      summary: Pay With Payment Method
+      operationId: pay_with_payment_method
       parameters:
       - required: true
         schema:
@@ -4339,7 +4339,7 @@ paths:
         required: true
       responses:
         '202':
-          description: Payment initialized
+          description: Pay with payment-method
           content:
             application/json:
               schema:
