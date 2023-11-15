@@ -12,18 +12,9 @@ from starlette.datastructures import URL
 
 _logger = logging.getLogger(__name__)
 
-#
-# Errors
-#
-
 
 class InvalidInvitationCodeError(Exception):
     ...
-
-
-#
-# Models
-#
 
 
 class _ContentWithShortNames(InvitationContent):
@@ -123,7 +114,7 @@ def _create_invitation_code(
 #
 
 
-def create_invitation_link(
+def create_invitation_link_and_content(
     invitation_data: InvitationInputs,
     secret_key: bytes,
     base_url: HttpUrl,

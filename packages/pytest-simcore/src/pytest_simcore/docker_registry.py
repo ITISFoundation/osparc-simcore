@@ -15,7 +15,7 @@ import pytest
 import tenacity
 from pytest import FixtureRequest
 
-from .helpers.utils_docker import get_localhost_ip
+from .helpers.utils_host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 

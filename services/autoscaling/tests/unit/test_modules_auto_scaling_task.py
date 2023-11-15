@@ -20,7 +20,7 @@ _FAST_POLL_INTERVAL = 1
 def app_environment(
     app_environment: EnvVarsDict,
     disabled_rabbitmq: None,
-    mocked_aws_server_envs: None,
+    mocked_ec2_server_envs: None,
     mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:

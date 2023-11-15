@@ -13,12 +13,12 @@ from faker import Faker
 from models_library.invitations import InvitationContent, InvitationInputs
 from models_library.products import ProductName
 from pydantic import BaseModel, ValidationError
-from simcore_service_invitations.invitations import (
+from simcore_service_invitations.services.invitations import (
     InvalidInvitationCodeError,
     _ContentWithShortNames,
     _create_invitation_code,
     _fernet_encrypt_as_urlsafe_code,
-    create_invitation_link,
+    create_invitation_link_and_content,
     decrypt_invitation,
     extract_invitation_content,
 )
@@ -66,7 +66,7 @@ def test_create_and_decrypt_invitation(
     secret_key: str,
     default_product: ProductName,
 ):
-    invitation_link, _ = create_invitation_link(
+    invitation_link, _ = create_invitation_link_and_content(
         invitation_data,
         secret_key=secret_key.encode(),
         base_url=faker.url(),

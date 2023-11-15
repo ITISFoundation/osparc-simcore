@@ -108,13 +108,19 @@ def mock_invitations_service_http_api(
     example = oas["components"]["schemas"]["ApiInvitationContentAndLink"]["example"]
 
     def _side_effect(url, **kwargs):
+
+        body = kwargs["json"]
+        assert isinstance(body, dict)
+        if not body.get("product"):
+            body["product"] = example["product"]
+
         return CallbackResult(
             status=web.HTTPOk.status_code,
             payload=jsonable_encoder(
                 ApiInvitationContentAndLink.parse_obj(
                     {
                         **example,
-                        **kwargs["json"],
+                        **body,
                         "created": datetime.now(tz=timezone.utc),
                     }
                 )

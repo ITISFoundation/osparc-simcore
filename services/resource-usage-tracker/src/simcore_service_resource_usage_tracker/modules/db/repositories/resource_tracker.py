@@ -690,7 +690,7 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         if row is None:
             raise CustomResourceUsageTrackerError(
-                msg=f"Pricing unit id {pricing_unit_id} not found"
+                msg=f"Pricing plan {pricing_plan_id} and pricing unit {pricing_unit_id} for product {product_name} not found"
             )
         return PricingUnitsDB.from_orm(row)
 
@@ -723,6 +723,6 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         if row is None:
             raise CustomResourceUsageTrackerError(
-                msg=f"Pricing unit cosd id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
+                msg=f"Pricing unit cost id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
             )
         return PricingUnitCostsDB.from_orm(row)

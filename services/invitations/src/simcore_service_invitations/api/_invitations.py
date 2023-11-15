@@ -11,9 +11,9 @@ from models_library.api_schemas_invitations.invitations import (
 )
 
 from ..core.settings import ApplicationSettings
-from ..invitations import (
+from ..services.invitations import (
     InvalidInvitationCodeError,
-    create_invitation_link,
+    create_invitation_link_and_content,
     extract_invitation_code_from,
     extract_invitation_content,
 )
@@ -41,7 +41,7 @@ async def create_invitation(
 ):
     """Generates a new invitation code and returns its content and an invitation link"""
 
-    invitation_link, invitation_content = create_invitation_link(
+    invitation_link, invitation_content = create_invitation_link_and_content(
         invitation_inputs,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,

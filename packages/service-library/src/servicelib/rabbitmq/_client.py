@@ -63,6 +63,9 @@ class RabbitMQClient(RabbitMQClientBase):
             channel.close_callbacks.add(self._channel_close_callback)
             return channel
 
+    async def _get_consumer_tag(self, exchange_name) -> str:
+        return f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}"
+
     async def subscribe(
         self,
         exchange_name: str,
@@ -139,10 +142,11 @@ class RabbitMQClient(RabbitMQClientBase):
                         )
                         await message.nack()
 
+            _consumer_tag = await self._get_consumer_tag(exchange_name)
             await queue.consume(
                 _on_message,
                 exclusive=exclusive_queue,
-                consumer_tag=f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}",
+                consumer_tag=_consumer_tag,
             )
             output: str = queue.name
             return output
@@ -214,3 +218,11 @@ class RabbitMQClient(RabbitMQClientBase):
                 aio_pika.Message(message.body()),
                 routing_key=message.routing_key() or "",
             )
+
+    async def unsubscribe_consumer(self, exchange_name: str):
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            queue_name = exchange_name
+            queue = await channel.get_queue(queue_name)
+            _consumer_tag = await self._get_consumer_tag(exchange_name)
+            await queue.cancel(_consumer_tag)

@@ -15,10 +15,10 @@ from models_library.api_schemas_invitations.invitations import (
 from models_library.products import ProductName
 from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._invitations import INVALID_INVITATION_URL_MSG
-from simcore_service_invitations.invitations import (
+from simcore_service_invitations.services.invitations import (
     InvitationContent,
     InvitationInputs,
-    create_invitation_link,
+    create_invitation_link_and_content,
 )
 
 
@@ -90,7 +90,7 @@ def test_check_valid_invitation(
     secret_key: str,
     default_product: ProductName,
 ):
-    invitation_url, _ = create_invitation_link(
+    invitation_url, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
         secret_key=secret_key.encode(),
         base_url=f"{client.base_url}",
@@ -120,7 +120,7 @@ def test_check_invalid_invitation_with_different_secret(
     another_secret_key: str,
     default_product: ProductName,
 ):
-    invitation_url, _ = create_invitation_link(
+    invitation_url, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
         secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",
@@ -166,7 +166,7 @@ def test_check_invalid_invitation_with_wrong_code(
     another_secret_key: str,
     default_product: ProductName,
 ):
-    invitation_url, _ = create_invitation_link(
+    invitation_url, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
         secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",

@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncIterable, AsyncIterator, Awaitable, Callable
+from unittest.mock import AsyncMock
 
 import pytest
 from aiobotocore.session import AioBaseClient, get_session
@@ -19,10 +20,13 @@ from models_library.api_schemas_storage import (
 )
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeoutError
 from simcore_sdk.node_ports_common.file_io_utils import (
     ExtendedClientResponseError,
     _check_for_aws_http_errors,
+    _process_batch,
     _raise_for_status,
     upload_file_to_presigned_links,
 )
@@ -61,17 +65,6 @@ class _TestParams:
 @pytest.mark.parametrize(
     "test_params",
     [
-        _TestParams(
-            will_retry=True,
-            status_code=400,
-            body='<?xml version="1.0" encoding="UTF-8"?><Error><Code>RequestTimeout</Code>'
-            "<Message>Your socket connection to the server was not read from or written to within "
-            "the timeout period. Idle connections will be closed.</Message>"
-            "<RequestId>7EE901348D6C6812</RequestId><HostId>"
-            "FfQE7jdbUt39E6mcQq/"
-            "ZeNR52ghjv60fccNT4gCE4IranXjsGLG+L6FUyiIxx1tAuXL9xtz2NAY7ZlbzMTm94fhY3TBiCBmf"
-            "</HostId></Error>",
-        ),
         _TestParams(will_retry=True, status_code=500),
         _TestParams(will_retry=True, status_code=503),
         _TestParams(will_retry=False, status_code=400),
@@ -92,17 +85,74 @@ async def test_check_for_aws_http_errors(
         try:
             await _raise_for_status(resp)
         except ExtendedClientResponseError as exception:
-            assert _check_for_aws_http_errors(exception) is test_params.will_retry
+            assert (  # noqa: PT017
+                _check_for_aws_http_errors(exception) is test_params.will_retry
+            )
+
+
+async def test_process_batch_captures_400_request_timeout_and_wraps_in_error(
+    aioresponses_mocker: aioresponses, client_session: ClientSession
+):
+    async def _mock_upload_task() -> None:
+        body = (
+            '<?xml version="1.0" encoding="UTF-8"?><Error><Code>RequestTimeout</Code>'
+            "<Message>Your socket connection to the server was not read from or written to within "
+            "the timeout period. Idle connections will be closed.</Message>"
+            "<RequestId>7EE901348D6C6812</RequestId><HostId>"
+            "FfQE7jdbUt39E6mcQq/"
+            "ZeNR52ghjv60fccNT4gCE4IranXjsGLG+L6FUyiIxx1tAuXL9xtz2NAY7ZlbzMTm94fhY3TBiCBmf"
+            "</HostId></Error>"
+        )
+        aioresponses_mocker.get(A_TEST_ROUTE, body=body, status=400)
+
+        async with client_session.get(A_TEST_ROUTE) as resp:
+            # raises like _session_put does
+            await _raise_for_status(resp)
+
+    with pytest.raises(AwsS3BadRequestRequestTimeoutError):
+        await _process_batch(
+            upload_tasks=[_mock_upload_task()],
+            max_concurrency=1,
+            file_name="mock_file",
+            file_size=1,
+            file_chunk_size=1,
+            last_chunk_size=1,
+        )
+
+
+async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out_error(
+    mocker: MockerFixture,
+    create_upload_links: Callable[[int, ByteSize], Awaitable[FileUploadSchema]],
+    create_file_of_size: Callable[[ByteSize], Path],
+):
+    file_size = ByteSize(1)
+    upload_links = await create_upload_links(1, file_size)
+
+    mocker.patch(
+        "simcore_sdk.node_ports_common.file_io_utils._upload_file_part",
+        side_effect=AwsS3BadRequestRequestTimeoutError(body="nothing"),
+    )
+
+    async with ProgressBarData(steps=1) as progress_bar:
+        with pytest.raises(AwsS3BadRequestRequestTimeoutError):
+            await upload_file_to_presigned_links(
+                session=AsyncMock(),
+                file_upload_links=upload_links,
+                file_to_upload=create_file_of_size(file_size),
+                num_retries=0,
+                io_log_redirect_cb=None,
+                progress_bar=progress_bar,
+            )
 
 
 @pytest.fixture
 async def aiobotocore_s3_client(
-    mocked_s3_server: ThreadedMotoServer,
+    mocked_aws_server: ThreadedMotoServer,
 ) -> AsyncIterator[AioBaseClient]:
     session = get_session()
     async with session.create_client(
         "s3",
-        endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
+        endpoint_url=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
         aws_secret_access_key="xxx",
         aws_access_key_id="xxx",
     ) as client:
@@ -145,7 +195,7 @@ def file_id(faker: Faker) -> str:
 
 @pytest.fixture
 async def create_upload_links(
-    mocked_s3_server: ThreadedMotoServer,
+    mocked_aws_server: ThreadedMotoServer,
     aiobotocore_s3_client: AioBaseClient,
     faker: Faker,
     bucket: str,

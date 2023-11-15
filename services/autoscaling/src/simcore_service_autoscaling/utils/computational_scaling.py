@@ -1,7 +1,9 @@
 import datetime
 import logging
-from typing import Final, Iterable
+from collections.abc import Iterable
+from typing import Final
 
+from aws_library.ec2.models import Resources
 from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from fastapi import FastAPI
 from servicelib.utils_formatting import timedelta_as_minute_second
@@ -9,13 +11,11 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
     AssociatedInstance,
     DaskTask,
-    EC2InstanceData,
-    EC2InstanceType,
-    Resources,
 )
-from . import utils_docker
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def try_assigning_task_to_node(
     instance_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
 ) -> bool:
     for instance, node_assigned_tasks in instance_to_tasks:
-        instance_total_resource = utils_docker.get_node_total_resources(instance.node)
+        instance_total_resource = instance.ec2_instance.resources
         tasks_needed_resources = _compute_tasks_needed_resources(node_assigned_tasks)
         if (
             instance_total_resource - tasks_needed_resources
@@ -59,8 +59,7 @@ def try_assigning_task_to_node(
 async def try_assigning_task_to_instances(
     app: FastAPI,
     pending_task: DaskTask,
-    instances_to_tasks: Iterable[tuple[EC2InstanceData, list[DaskTask]]],
-    type_to_instance_map: dict[str, EC2InstanceType],
+    instances_to_tasks: list[AssignedTasksToInstance],
     *,
     notify_progress: bool,
 ) -> bool:
@@ -69,23 +68,23 @@ async def try_assigning_task_to_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    for instance, instance_assigned_tasks in instances_to_tasks:
-        instance_type = type_to_instance_map[instance.type]
-        instance_total_resources = Resources(
-            cpus=instance_type.cpus, ram=instance_type.ram
-        )
+    for assigned_tasks_to_instance in instances_to_tasks:
         tasks_needed_resources = _compute_tasks_needed_resources(
-            instance_assigned_tasks
+            assigned_tasks_to_instance.assigned_tasks
         )
         if (
-            instance_total_resources - tasks_needed_resources
+            assigned_tasks_to_instance.available_resources - tasks_needed_resources
         ) >= get_max_resources_from_dask_task(pending_task):
-            instance_assigned_tasks.append(pending_task)
+            assigned_tasks_to_instance.assigned_tasks.append(pending_task)
             if notify_progress:
                 now = datetime.datetime.now(datetime.timezone.utc)
-                time_since_launch = now - instance.launch_time
+                time_since_launch = (
+                    now - assigned_tasks_to_instance.instance.launch_time
+                )
                 estimated_time_to_completion = (
-                    instance.launch_time + instance_max_time_to_start - now
+                    assigned_tasks_to_instance.instance.launch_time
+                    + instance_max_time_to_start
+                    - now
                 )
                 _logger.info(
                     "LOG: %s",
@@ -103,16 +102,19 @@ async def try_assigning_task_to_instances(
 
 def try_assigning_task_to_instance_types(
     pending_task: DaskTask,
-    instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list[DaskTask]]],
+    instance_types_to_tasks: list[AssignedTasksToInstanceType],
 ) -> bool:
-    for instance, instance_assigned_tasks in instance_types_to_tasks:
-        instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
+    for assigned_tasks_to_instance_type in instance_types_to_tasks:
+        instance_total_resource = Resources(
+            cpus=assigned_tasks_to_instance_type.instance_type.cpus,
+            ram=assigned_tasks_to_instance_type.instance_type.ram,
+        )
         tasks_needed_resources = _compute_tasks_needed_resources(
-            instance_assigned_tasks
+            assigned_tasks_to_instance_type.assigned_tasks
         )
         if (
             instance_total_resource - tasks_needed_resources
         ) >= get_max_resources_from_dask_task(pending_task):
-            instance_assigned_tasks.append(pending_task)
+            assigned_tasks_to_instance_type.assigned_tasks.append(pending_task)
             return True
     return False

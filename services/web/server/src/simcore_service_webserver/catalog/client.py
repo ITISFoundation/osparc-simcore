@@ -26,7 +26,7 @@ from settings_library.catalog import CatalogSettings
 from yarl import URL
 
 from .._meta import api_version_prefix
-from ._constants import MSG_CATALOG_SERVICE_UNAVAILABLE
+from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -39,7 +39,14 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
 
         yield session
 
-    except (asyncio.TimeoutError, ClientConnectionError, ClientResponseError) as err:
+    except ClientResponseError as err:
+        if err.status == 404:
+            raise web.HTTPNotFound(reason=MSG_CATALOG_SERVICE_NOT_FOUND)
+        raise web.HTTPServiceUnavailable(
+            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        ) from err
+
+    except (asyncio.TimeoutError, ClientConnectionError) as err:
         _logger.debug("Request to catalog service failed: %s", err)
         raise web.HTTPServiceUnavailable(
             reason=MSG_CATALOG_SERVICE_UNAVAILABLE
