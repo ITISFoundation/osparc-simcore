@@ -348,7 +348,7 @@ async def test_one_time_payment_with_payment_method(
     )
 
     assert (
-        client.app.router["init_payment_with_payment_method"]
+        client.app.router["pay_with_payment_method"]
         .url_for(
             wallet_id=f"{logged_user_wallet.wallet_id}",
             payment_method_id=wallet_payment_method_id,
@@ -367,7 +367,7 @@ async def test_one_time_payment_with_payment_method(
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     payment = WalletPaymentInitiated.parse_obj(data)
-    assert mock_rpc_payments_service_api["init_payment_with_payment_method"].called
+    assert mock_rpc_payments_service_api["pay_with_payment_method"].called
 
     assert payment.payment_id
     assert payment.payment_form_url is None

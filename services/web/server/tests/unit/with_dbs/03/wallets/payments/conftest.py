@@ -261,8 +261,8 @@ def mock_rpc_payments_service_api(
             autospec=True,
             side_effect=_del,
         ),
-        "init_payment_with_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._onetime_api._rpc.init_payment_with_payment_method",
+        "pay_with_payment_method": mocker.patch(
+            "simcore_service_webserver.payments._onetime_api._rpc.pay_with_payment_method",
             autospec=True,
             side_effect=_pay,
         ),

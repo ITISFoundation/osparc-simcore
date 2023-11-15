@@ -15,6 +15,7 @@ from models_library.basic_types import AmountDecimal, NonNegativeDecimal
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import parse_obj_as
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -22,6 +23,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -35,6 +37,7 @@ from ..payments.api import (
     init_creation_of_wallet_payment_method,
     list_user_payments_page,
     list_wallet_payment_methods,
+    notify_payment_completed,
     pay_with_payment_method,
     replace_wallet_payment_autorecharge,
 )
@@ -350,7 +353,15 @@ async def _pay_with_payment_method(request: web.Request):
         # NOTE: Due to the design change in https://github.com/ITISFoundation/osparc-simcore/pull/5017
         #       we decided not to change the return value to avoid changing the front-end logic
         #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
-        #
+
+        fire_and_forget_task(
+            notify_payment_completed(
+                request.app, user_id=req_ctx.user_id, payment=payment
+            ),
+            task_suffix_name=f"{__name__}._pay_with_payment_method",
+            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
         return envelope_json_response(
             WalletPaymentInitiated(
                 payment_id=payment.payment_id,
