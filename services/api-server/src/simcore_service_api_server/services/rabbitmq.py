@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 
 def setup_rabbitmq(app: FastAPI) -> None:
-    settings: RabbitSettings = app.state.settings.PAYMENTS_RABBITMQ
+    settings: RabbitSettings = app.state.settings.API_SERVER_RABBITMQ
     app.state.rabbitmq_client = None
     app.state.rabbitmq_rpc_server = None
 
