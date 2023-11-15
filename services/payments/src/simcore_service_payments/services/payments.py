@@ -260,8 +260,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 
-    # TODO: async with repo_transactions.begin(): should set a scope transaction inside
-
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,
         payment=InitPayment(

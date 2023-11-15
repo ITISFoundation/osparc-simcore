@@ -347,8 +347,6 @@ async def _pay_with_payment_method(request: web.Request):
             price_dollars=body_params.price_dollars,
         )
 
-        # TODO: how is front-end reacting? Should i simply trigger socketit from here as a background task??
-
         # NOTE: Due to the design change in https://github.com/ITISFoundation/osparc-simcore/pull/5017
         #       we decided not to change the return value to avoid changing the front-end logic
         #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
