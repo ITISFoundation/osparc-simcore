@@ -19,11 +19,6 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import CreditResultGet, ProductName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from pytest_mock.plugin import MockerFixture
-
-# I need autorecharge DB
-# I need payment method
-# Mock get_credit_amount
-#
 from pytest_simcore.helpers.rawdata_fakers import (
     random_payment_autorecharge,
     random_payment_method,
@@ -105,7 +100,6 @@ def populate_test_db(
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
         _primary_payment_method_id = faker.uuid4()
-        # _wallet_id = faker.pyint()
         _completed_at = datetime.now(tz=timezone.utc) + timedelta(minutes=1)
 
         con.execute(
@@ -134,13 +128,8 @@ def populate_test_db(
 
 
 @pytest.fixture()
-def wallet_id():
-    return 10
-
-
-# @pytest.fixture()
-# def mock_():
-#     GetPaymentMethod
+def wallet_id(faker: Faker):
+    return faker.pyint()
 
 
 @pytest.fixture
