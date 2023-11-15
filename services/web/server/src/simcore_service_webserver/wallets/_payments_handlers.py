@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import NonNegativeDecimal
+from models_library.basic_types import AmountDecimal, NonNegativeDecimal
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import parse_obj_as
@@ -52,7 +52,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _eval_total_credits_or_raise(
-    request: web.Request, amount_dollars: NonNegativeDecimal
+    request: web.Request, amount_dollars: AmountDecimal
 ) -> NonNegativeDecimal:
     # Conversion
     usd_per_credit = await get_current_product_credit_price(request)
@@ -311,7 +311,7 @@ async def _delete_payment_method(request: web.Request):
 
 @routes.post(
     f"/{VTAG}/wallets/{{wallet_id}}/payments-methods/{{payment_method_id}}:pay",
-    name="init_payment_with_payment_method",
+    name="pay_with_payment_method",
 )
 @login_required
 @permission_required("wallets.*")

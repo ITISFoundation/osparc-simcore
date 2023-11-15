@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Literal, TypeAlias
 
 from pydantic import Field, HttpUrl
 
-from ..basic_types import IDStr, NonNegativeDecimal
+from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus
@@ -55,7 +55,7 @@ PaymentMethodID: TypeAlias = IDStr
 
 
 class CreateWalletPayment(InputSchema):
-    price_dollars: Decimal
+    price_dollars: AmountDecimal
     comment: str = FieldNotRequired(max_length=100)
 
 
