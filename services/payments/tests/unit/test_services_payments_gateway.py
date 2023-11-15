@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -17,6 +16,7 @@ from simcore_service_payments.models.payments_gateway import (
 )
 from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
+    PaymentsGatewayError,
     setup_payments_gateway,
 )
 
@@ -185,10 +185,12 @@ async def test_payment_methods_workflow(
     # delete payment-method
     await payments_gateway_api.delete_payment_method(payment_method_id)
 
-    with pytest.raises(httpx.HTTPStatusError) as err_info:
+    with pytest.raises(PaymentsGatewayError) as err_info:
         await payments_gateway_api.get_payment_method(payment_method_id)
 
-    http_status_error = err_info.value
+    assert err_info.value.operation_id == "payments_gateway.get_payment_method"
+
+    http_status_error = err_info.value.http_status_error
     assert http_status_error.response.status_code == status.HTTP_404_NOT_FOUND
 
     if mock_payments_gateway_service_or_none:

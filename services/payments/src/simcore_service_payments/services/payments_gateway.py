@@ -10,12 +10,14 @@ import functools
 import logging
 import warnings
 from collections.abc import Callable
+from contextlib import suppress
 
 import httpx
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
+from pydantic import ValidationError
 from pydantic.errors import PydanticErrorMixin
 from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
 from simcore_service_payments.models.schemas.acknowledgements import (
@@ -42,6 +44,13 @@ class PaymentsGatewayError(PydanticErrorMixin, ValueError):
     msg_template = "Payment-gateway got {status_code} for {operation_id}: {reason}"
 
 
+def _parse_raw_or_none(text: str | None):
+    if text:
+        with suppress(ValidationError):
+            return ErrorModel.parse_raw(text)
+    return None
+
+
 @contextlib.contextmanager
 def _raise_if_error(operation_id: str):
     try:
@@ -49,20 +58,13 @@ def _raise_if_error(operation_id: str):
         yield
 
     except HTTPStatusError as err:
-
-        model = ErrorModel.parse_obj(err.response.json())
-        _logger.debug(
-            "status error %d: %s\n%s",
-            err.response.status_code,
-            err,
-            model.json(indent=1),
-        )
+        model = _parse_raw_or_none(err.response.text)
 
         raise PaymentsGatewayError(
-            operation_id=operation_id,
-            status_code=err.response.status_code,
-            reason=model.message,
-            model=ErrorModel.parse_obj(err.response.json()),
+            operation_id=f"PaymentsGatewayApi.{operation_id}",
+            reason=model.message if model else f"{err}",
+            http_status_error=err,
+            model=model,
         ) from err
 
 
