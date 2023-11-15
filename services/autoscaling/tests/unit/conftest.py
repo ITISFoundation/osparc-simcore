@@ -20,7 +20,7 @@ import psutil
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -44,7 +44,6 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
-    EC2InstanceBootSpecific,
     EC2Settings,
 )
 from simcore_service_autoscaling.models import Cluster, DaskTaskResources

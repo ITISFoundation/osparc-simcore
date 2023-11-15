@@ -3,7 +3,12 @@ import logging
 import re
 from typing import Final
 
-from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
+from aws_library.ec2.models import (
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -13,7 +18,6 @@ from ..models import (
     AssignedTasksToInstance,
     AssignedTasksToInstanceType,
     AssociatedInstance,
-    EC2InstanceBootSpecific,
 )
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker

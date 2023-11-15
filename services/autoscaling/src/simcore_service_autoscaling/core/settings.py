@@ -2,6 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, cast
 
+from aws_library.ec2.models import EC2InstanceBootSpecific
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -28,7 +29,6 @@ from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-from ..models import EC2InstanceBootSpecific
 
 AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
 
