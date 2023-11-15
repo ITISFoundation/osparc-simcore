@@ -69,9 +69,13 @@ class DaskTask:
     required_resources: DaskTaskResources
 
 
+AMIIdStr: TypeAlias = str
+CommandStr: TypeAlias = str
+
+
 class EC2InstanceBootSpecific(BaseModel):
-    ami_id: str
-    custom_boot_scripts: list[str] = Field(
+    ami_id: AMIIdStr
+    custom_boot_scripts: list[CommandStr] = Field(
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), "
         "each entry is run one after the other using '&&' operator",
