@@ -15,7 +15,6 @@ import simcore_service_clusters_keeper
 import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.client import SimcoreEC2API
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -202,36 +201,6 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
-
-
-@pytest.fixture
-def aws_allowed_ec2_instance_type_names_env(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    changed_envs = {
-        "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-            [
-                "t2.xlarge",
-                "t2.2xlarge",
-                "g3.4xlarge",
-                "r5n.4xlarge",
-                "r5n.8xlarge",
-            ]
-        ),
-    }
-    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
-
-
-@pytest.fixture
-async def clusters_keeper_ec2(
-    app_environment: EnvVarsDict,
-) -> AsyncIterator[SimcoreEC2API]:
-    settings = EC2Settings.create_from_envs()
-    ec2 = await SimcoreEC2API.create(settings)
-    assert ec2
-    yield ec2
-    await ec2.close()
 
 
 @pytest.fixture
