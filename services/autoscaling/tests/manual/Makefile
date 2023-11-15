@@ -18,10 +18,14 @@ include ../../../../scripts/common-service.Makefile
 
 up-devel: .init-swarm .stack-devel.yml ## starts local test application
 	@docker stack deploy --with-registry-auth --compose-file=.stack-devel.yml autoscaling
+	# to follow logs of autoscaling, run
+	# docker service logs --follow autoscaling_autoscaling
 
 up-computational-devel: .init-swarm .stack-computational-devel.yml ## starts local test application in computational mode
 	# DASK_MONITORING_URL set to $(DASK_MONITORING_URL)
 	@docker stack deploy --with-registry-auth --compose-file=.stack-computational-devel.yml comp-autoscaling
+	# to follow logs of autoscaling, run
+	# docker service logs --follow comp-autoscaling_autoscaling
 
 down: .env ## stops local test app dependencies (running bare metal against AWS)
 	# remove stacks

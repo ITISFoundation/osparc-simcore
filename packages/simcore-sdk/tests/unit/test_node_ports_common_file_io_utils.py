@@ -147,12 +147,12 @@ async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out
 
 @pytest.fixture
 async def aiobotocore_s3_client(
-    mocked_s3_server: ThreadedMotoServer,
+    mocked_aws_server: ThreadedMotoServer,
 ) -> AsyncIterator[AioBaseClient]:
     session = get_session()
     async with session.create_client(
         "s3",
-        endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
+        endpoint_url=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
         aws_secret_access_key="xxx",
         aws_access_key_id="xxx",
     ) as client:
@@ -195,7 +195,7 @@ def file_id(faker: Faker) -> str:
 
 @pytest.fixture
 async def create_upload_links(
-    mocked_s3_server: ThreadedMotoServer,
+    mocked_aws_server: ThreadedMotoServer,
     aiobotocore_s3_client: AioBaseClient,
     faker: Faker,
     bucket: str,

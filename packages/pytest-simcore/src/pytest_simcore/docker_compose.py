@@ -15,9 +15,10 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import pytest
 import yaml
@@ -30,11 +31,8 @@ from .helpers import (
 )
 from .helpers.constants import HEADER_STR
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import (
-    get_localhost_ip,
-    run_docker_compose_config,
-    save_docker_infos,
-)
+from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
+from .helpers.utils_host import get_localhost_ip
 
 
 @pytest.fixture(scope="session")
@@ -79,9 +77,9 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
     env_devel["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
 
-    if not "DOCKER_REGISTRY" in os.environ:
+    if "DOCKER_REGISTRY" not in os.environ:
         env_devel["DOCKER_REGISTRY"] = "local"
-    if not "DOCKER_IMAGE_TAG" in os.environ:
+    if "DOCKER_IMAGE_TAG" not in os.environ:
         env_devel["DOCKER_IMAGE_TAG"] = "production"
 
     return {key: value for key, value in env_devel.items() if value is not None}
@@ -264,8 +262,7 @@ def core_docker_compose_file(
 @pytest.fixture(scope="module")
 def ops_services_selection(request) -> list[str]:
     """Selection of services from the ops stack"""
-    ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
-    return ops_services
+    return getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
 
 
 @pytest.fixture(scope="module")
@@ -370,7 +367,7 @@ def _filter_services_and_dump(
     with docker_compose_path.open("wt") as fh:
         if "TRAVIS" in os.environ:
             # in travis we do not have access to file
-            print(f"{str(docker_compose_path):-^100}")
+            print(f"{docker_compose_path!s:-^100}")
             yaml.dump(content, sys.stdout, default_flow_style=False)
             print("-" * 100)
         else:

@@ -2,12 +2,12 @@ import datetime
 import logging
 
 import arrow
+from aws_library.ec2.models import EC2InstanceData
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from ..core.settings import get_application_settings
-from ..models import EC2InstanceData
 from ..modules.clusters import (
     delete_clusters,
     get_all_clusters,
@@ -25,7 +25,8 @@ def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime
     if last_heartbeat := instance.tags.get(HEARTBEAT_TAG_KEY, None):
         last_heartbeat_time: datetime.datetime = arrow.get(last_heartbeat).datetime
         return last_heartbeat_time
-    return instance.launch_time
+    launch_time: datetime.datetime = instance.launch_time
+    return launch_time
 
 
 async def _find_terminateable_instances(

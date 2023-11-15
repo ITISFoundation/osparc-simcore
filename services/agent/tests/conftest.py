@@ -22,7 +22,7 @@ from simcore_service_agent.core.settings import ApplicationSettings
 pytestmark = pytest.mark.asyncio
 
 pytest_plugins = [
-    "pytest_simcore.aws_services",
+    "pytest_simcore.aws_server",
     "pytest_simcore.repository_paths",
 ]
 
@@ -188,9 +188,9 @@ def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 
 @pytest.fixture(scope="module")
-def mocked_s3_server_url(mocked_s3_server: ThreadedMotoServer) -> HttpUrl:
+def mocked_s3_server_url(mocked_aws_server: ThreadedMotoServer) -> HttpUrl:
     # pylint: disable=protected-access
     return parse_obj_as(
         HttpUrl,
-        f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # noqa: SLF001
+        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # noqa: SLF001
     )

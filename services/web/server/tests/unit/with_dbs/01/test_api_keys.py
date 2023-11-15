@@ -80,20 +80,19 @@ async def test_create_api_keys(
     expected: type[web.HTTPException],
     disable_gc_manual_guest_users: None,
 ):
-    resp = await client.post("/v0/auth/api-keys", json={"display_name": "foo"})
+    display_name = "foo"
+    resp = await client.post("/v0/auth/api-keys", json={"display_name": display_name})
 
     data, errors = await assert_status(resp, expected)
 
     if not errors:
-        assert data["display_name"] == "foo"
+        assert data["display_name"] == display_name
         assert "api_key" in data
         assert "api_secret" in data
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert sorted(data) == [
-            "foo",
-        ]
+        assert sorted(data) == [display_name]
 
 
 @pytest.mark.parametrize(

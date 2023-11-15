@@ -3,6 +3,7 @@ import datetime
 import functools
 from typing import Any, Final
 
+from aws_library.ec2.models import EC2InstanceData
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
@@ -14,7 +15,6 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from .._meta import PACKAGE_DATA_FOLDER
 from ..core.settings import ApplicationSettings
-from ..models import EC2InstanceData
 from .dask import get_scheduler_url
 
 _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
@@ -40,8 +40,8 @@ def create_startup_script(
 
     environment_variables = [
         f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
-        f"EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID}",
-        f"EC2_CLUSTERS_KEEPER_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_ENDPOINT}",
+        f"CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ACCESS_KEY_ID}",
+        f"CLUSTERS_KEEPER_EC2_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ENDPOINT}",
         f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
         f"WORKERS_EC2_INSTANCES_AMI_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_AMI_ID}",
         f"WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS)}",
@@ -52,8 +52,8 @@ def create_startup_script(
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
         f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
-        f"EC2_CLUSTERS_KEEPER_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_REGION_NAME}",
-        f"EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY}",
+        f"CLUSTERS_KEEPER_EC2_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_REGION_NAME}",
+        f"CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_SECRET_ACCESS_KEY}",
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
     ]
 
