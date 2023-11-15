@@ -81,13 +81,17 @@ async def test_subscribe_publish_receive_logs(
     node_id: NodeID,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
-    _comsumer_message_handler = AsyncMock(return_value=True)
+    async def _consumer_message_handler(data, **kwargs):
+        _consumer_message_handler.called = True
+        _consumer_message_handler.data = data
+        _ = LoggerRabbitMessage.parse_raw(data)
+        return True
 
     # create consumer & subscribe
     rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
     queue_name = await rabbit_consumer.subscribe(
         LoggerRabbitMessage.get_channel_name(),
-        _comsumer_message_handler,
+        _consumer_message_handler,
         exclusive_queue=False,  # this instance should receive the incoming messages
         topics=[f"{project_id}.*"],
     )
@@ -100,13 +104,15 @@ async def test_subscribe_publish_receive_logs(
         node_id=node_id,
         messages=[faker.text() for _ in range(10)],
     )
+    _consumer_message_handler.called = False
+    _consumer_message_handler.data = None
     await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     # check it received
     await asyncio.sleep(1)
 
-    assert _comsumer_message_handler.await_count
-    (data,) = _comsumer_message_handler.call_args[0]
+    assert _consumer_message_handler.called
+    data = _consumer_message_handler.data
     assert isinstance(data, bytes)
     assert LoggerRabbitMessage.parse_raw(data) == log_message
 
