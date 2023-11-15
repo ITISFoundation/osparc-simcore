@@ -7,11 +7,11 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
+from aws_library.ec2.models import EC2InstanceData
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
-from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.utils.clusters import (
     create_cluster_from_ec2_instance,
     create_startup_script,
@@ -26,7 +26,7 @@ def cluster_machines_name_prefix(faker: Faker) -> str:
 
 def test_create_startup_script(
     disabled_rabbitmq: None,
-    mocked_aws_server_envs: EnvVarsDict,
+    mocked_ec2_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
