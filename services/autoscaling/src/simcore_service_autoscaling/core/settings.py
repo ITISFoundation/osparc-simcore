@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import cast
+from typing import Any, ClassVar, Final, cast
 
 from fastapi import FastAPI
 from models_library.basic_types import (
@@ -29,6 +29,24 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..models import EC2InstanceBootSpecific
+
+AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
+
+
+class AutoscalingEC2Settings(EC2Settings):
+    class Config(EC2Settings.Config):
+        env_prefix = AUTOSCALING_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
+                }
+            ],
+        }
 
 
 class EC2InstancesSettings(BaseCustomSettings):
@@ -172,7 +190,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    AUTOSCALING_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
+    AUTOSCALING_EC2_ACCESS: AutoscalingEC2Settings | None = Field(
+        auto_default_from_env=True
+    )
 
     AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None = Field(
         auto_default_from_env=True
