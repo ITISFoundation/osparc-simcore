@@ -91,7 +91,7 @@ def test_defining_both_computational_and_dynamic_modes_is_invalid_and_raises(
 def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", "1:05:00")
+    setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_TERMINATION": "1:05:00"})
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
@@ -99,8 +99,9 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
         datetime.timedelta(minutes=59)
         == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
     )
-
-    monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", "-1:05:00")
+    setenvs_from_dict(
+        monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_TERMINATION": "-1:05:00"}
+    )
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -114,41 +115,42 @@ def test_EC2_INSTANCES_PRE_PULL_IMAGES(  # noqa: N802
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert not next(
-        iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
-    ).pre_pull_images
 
     # passing an invalid image tag name will fail
-    monkeypatch.setenv(
-        "EC2_INSTANCES_ALLOWED_TYPES",
-        json.dumps(
-            {
-                "t2.micro": {
-                    "ami_id": faker.pystr(),
-                    "pre_pull_images": ["io.simcore.some234.cool-"],
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    "t2.micro": {
+                        "ami_id": faker.pystr(),
+                        "pre_pull_images": ["io.simcore.some234.cool-"],
+                    }
                 }
-            }
-        ),
+            )
+        },
     )
-    settings = ApplicationSettings.create_from_envs()
-    assert not settings.AUTOSCALING_EC2_INSTANCES
+    with pytest.raises(ValidationError):
+        ApplicationSettings.create_from_envs()
 
     # passing a valid will pass
-    monkeypatch.setenv(
-        "EC2_INSTANCES_ALLOWED_TYPES",
-        json.dumps(
-            {
-                "t2.micro": {
-                    "ami_id": faker.pystr(),
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    "t2.micro": {
+                        "ami_id": faker.pystr(),
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                    }
                 }
-            }
-        ),
+            ),
+        },
     )
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES

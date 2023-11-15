@@ -175,6 +175,7 @@ def enabled_dynamic_mode(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "AUTOSCALING_NODES_MONITORING": "{}",
             "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
             "NODES_MONITORING_SERVICE_LABELS": json.dumps(
                 ["pytest.fake-service-label"]
@@ -193,6 +194,7 @@ def enabled_computational_mode(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "AUTOSCALING_DASK": "{}",
             "DASK_MONITORING_URL": faker.url(),
             "DASK_MONITORING_USER_NAME": faker.user_name(),
             "DASK_MONITORING_PASSWORD": faker.password(),
