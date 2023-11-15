@@ -43,6 +43,7 @@ from pytest_simcore.helpers.utils_host import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
+    AUTOSCALING_ENV_PREFIX,
     ApplicationSettings,
     EC2InstanceBootSpecific,
     EC2Settings,
@@ -92,6 +93,19 @@ def ec2_instances() -> list[InstanceTypeType]:
 
 
 @pytest.fixture
+def mocked_ec2_server_envs(
+    mocked_ec2_server_settings: EC2Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    # NOTE: overrides the EC2Settings with what autoscaling expects
+    changed_envs: EnvVarsDict = {
+        f"{AUTOSCALING_ENV_PREFIX}{k}": v
+        for k, v in mocked_ec2_server_settings.dict().items()
+    }
+    return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -104,8 +118,8 @@ def app_environment(
         monkeypatch,
         {
             "AUTOSCALING_EC2_ACCESS": "{}",
-            "EC2_ACCESS_KEY_ID": faker.pystr(),
-            "EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "AUTOSCALING_EC2_ACCESS_KEY_ID": faker.pystr(),
+            "AUTOSCALING_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "AUTOSCALING_EC2_INSTANCES": "{}",
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
