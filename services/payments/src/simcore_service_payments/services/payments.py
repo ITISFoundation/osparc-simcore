@@ -25,9 +25,15 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
+from tenacity import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 
 from .._constants import RUT
-from ..core.errors import PaymentAlreadyAckedError, PaymentNotFoundError
+from ..core.errors import (
+    PaymentAlreadyAckedError,
+    PaymentAlreadyExistsError,
+    PaymentNotFoundError,
+)
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.payments_gateway import InitPayment, PaymentInitiated
@@ -174,7 +180,7 @@ async def on_payment_completed(
     )
 
 
-async def init_payment_with_payment_method(
+async def init_payment_with_payment_method(  # noqa: PLR0913
     gateway: PaymentsGatewayApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
@@ -231,7 +237,7 @@ async def init_payment_with_payment_method(
     )
 
 
-async def pay_with_payment_method(
+async def pay_with_payment_method(  # noqa: PLR0913
     gateway: PaymentsGatewayApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
@@ -253,19 +259,7 @@ async def pay_with_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 
-    # TODO: retry if PaymentAlreadyExistsError
     # TODO: async with repo_transactions.begin(): should set a scope transaction inside
-    payment_id = await repo_transactions.insert_init_payment_transaction(
-        payment_id=f"{uuid.uuid4()}",  # TODO: check with Dennis whether ack_payment.payment_id
-        price_dollars=amount_dollars,
-        osparc_credits=target_credits,
-        product_name=product_name,
-        user_id=user_id,
-        user_email=user_email,
-        wallet_id=wallet_id,
-        comment=comment,
-        initiated_at=initiated_at,
-    )
 
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,
@@ -277,6 +271,28 @@ async def pay_with_payment_method(
             wallet_name=wallet_name,
         ),
     )
+
+    payment_id = ack.payment_id
+
+    async for attempt in AsyncRetrying(
+        stop_after_attempt=3,
+        retry=retry_if_exception_type(PaymentAlreadyExistsError),
+        reraise=True,
+    ):
+        with attempt:
+            payment_id = await repo_transactions.insert_init_payment_transaction(
+                ack.payment_id or f"{uuid.uuid4()}",
+                price_dollars=amount_dollars,
+                osparc_credits=target_credits,
+                product_name=product_name,
+                user_id=user_id,
+                user_email=user_email,
+                wallet_id=wallet_id,
+                comment=comment,
+                initiated_at=initiated_at,
+            )
+
+    assert payment_id is not None  # nosec
 
     transaction = await repo_transactions.update_ack_payment_transaction(
         payment_id=payment_id,
