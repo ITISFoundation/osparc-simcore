@@ -209,8 +209,13 @@ async def register(request: web.Request):
             expires_at=expires_at,
         )
 
-    # NOTE: PC->SAN: should this go here or when user is actually logged in?
-    assert product.name == invitation.product if invitation else True  # nosec
+    # setup user groups
+    assert (  # nosec
+        product.name == invitation.product
+        if invitation and invitation.product
+        else True
+    )
+
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
     await auto_add_user_to_product_group(
         app=request.app,
@@ -265,7 +270,12 @@ async def register(request: web.Request):
 
     # NOTE: Here confirmation is disabled
     assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
-    assert product.name == invitation.product if invitation else True  # nosec
+    assert (  # nosec
+        product.name == invitation.product
+        if invitation and invitation.product
+        else True
+    )
+
     await notify_user_confirmation(
         request.app,
         user_id=user["id"],
