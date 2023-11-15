@@ -20,7 +20,6 @@ import psutil
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import EC2InstanceData
 from deepdiff import DeepDiff
 from faker import Faker
@@ -539,17 +538,6 @@ def aws_allowed_ec2_instance_type_names_env(
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
-
-
-@pytest.fixture
-async def autoscaling_ec2(
-    app_environment: EnvVarsDict,
-) -> AsyncIterator[SimcoreEC2API]:
-    settings = EC2Settings.create_from_envs()
-    ec2 = await SimcoreEC2API.create(settings)
-    assert ec2
-    yield ec2
-    await ec2.close()
 
 
 @pytest.fixture
