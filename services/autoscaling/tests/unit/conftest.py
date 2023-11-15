@@ -203,16 +203,15 @@ def enabled_computational_mode(
 
 
 @pytest.fixture
-def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("RABBIT_HOST")
-    monkeypatch.delenv("RABBIT_USER")
-    monkeypatch.delenv("RABBIT_SECURE")
-    monkeypatch.delenv("RABBIT_PASSWORD")
+def disabled_rabbitmq(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AUTOSCALING_RABBITMQ", "null")
 
 
 @pytest.fixture
-def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("EC2_ACCESS_KEY_ID")
+def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTOSCALING_EC2_ACCESS", "null")
 
 
 @pytest.fixture
