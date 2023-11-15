@@ -264,6 +264,7 @@ async def test_stream_logs(
 
     n_tasks: int = 3
     tasks = [asyncio.create_task(coro, name="log-producer") for _ in range(n_tasks)]
+    asyncio.gather(*tasks)
 
     n_count: int = 0
     async with client.stream("GET", f"/projects/{project_id}/logs") as r:
