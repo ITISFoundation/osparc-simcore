@@ -37,7 +37,7 @@ class AutoRechargeRepo(BaseRepository):
         async with self.db_engine.begin() as conn:
             stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
             result = await conn.execute(stmt)
-            row = await result.first()
+            row = result.first()
             return PaymentsAutorechargeDB.from_orm(row) if row else None
 
     async def replace_wallet_autorecharge(
@@ -71,6 +71,6 @@ class AutoRechargeRepo(BaseRepository):
                 monthly_limit_in_usd=new.monthly_limit_in_usd,
             )
             result = await conn.execute(stmt)
-            row = await result.first()
+            row = result.first()
             assert row  # nosec
             return PaymentsAutorechargeDB.from_orm(row)

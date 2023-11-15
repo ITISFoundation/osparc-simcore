@@ -199,6 +199,8 @@ def random_payment_method(
         "user_id": FAKE.pyint(),
         "wallet_id": FAKE.pyint(),
         "initiated_at": utcnow(),
+        "state": "PENDING",
+        "completed_at": None,
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_methods.columns})
@@ -229,6 +231,27 @@ def random_payment_transaction(
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
+
+    data.update(overrides)
+    return data
+
+
+def random_payment_autorecharge(
+    primary_payment_method_id: str = FAKE.uuid4(),
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.payments_autorecharge import (
+        payments_autorecharge,
+    )
+
+    data = {
+        "wallet_id": FAKE.pyint(),
+        "enabled": True,
+        "primary_payment_method_id": primary_payment_method_id,
+        "top_up_amount_in_usd": 100,
+        "monthly_limit_in_usd": 1000,
+    }
+    assert set(data.keys()).issubset({c.name for c in payments_autorecharge.columns})
 
     data.update(overrides)
     return data

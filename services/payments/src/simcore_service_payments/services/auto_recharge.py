@@ -6,12 +6,9 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
 )
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
-# from ._methods_db import list_successful_payment_methods
-# from ._onetime_api import raise_for_wallet_payments_permissions
 from ..core.settings import ApplicationSettings
 from ..db.auto_recharge_repo import AutoRechargeRepo, PaymentsAutorechargeDB
 from ..db.payments_methods_repo import PaymentsMethodsRepo
@@ -56,7 +53,6 @@ async def get_wallet_auto_recharge(
     *,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge | None:
-    # TODO: Permissions will be checked in webserver!
     payments_autorecharge_db: PaymentsAutorechargeDB | None = (
         await auto_recharge_repo.get_wallet_autorecharge(wallet_id=wallet_id)
     )
@@ -76,7 +72,6 @@ async def get_wallet_payment_autorecharge_with_default(
     auto_recharge_repo: AutoRechargeRepo,
     payments_method_repo: PaymentsMethodsRepo,
     *,
-    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge:
@@ -112,15 +107,10 @@ async def replace_wallet_payment_autorecharge(
     app: FastAPI,
     repo: AutoRechargeRepo,
     *,
-    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     new: ReplaceWalletAutoRecharge,
 ) -> GetWalletAutoRecharge:
-    # TODO: Ask Pedro
-    # await raise_for_wallet_payments_permissions(
-    #     app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    # )
     settings: ApplicationSettings = app.state.settings
     got: PaymentsAutorechargeDB = await repo.replace_wallet_autorecharge(
         user_id=user_id,

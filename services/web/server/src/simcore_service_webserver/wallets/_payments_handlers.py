@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.basic_types import AmountDecimal, NonNegativeDecimal
+from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import parse_obj_as
@@ -63,7 +64,7 @@ async def _eval_total_credits_or_raise(
         # '0 or None' should raise
         raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
 
-    credit_result = await get_credit_amount(
+    credit_result: CreditResultGet = await get_credit_amount(
         request.app, dollar_amount=init.price_dollars, product_name=product_name
     )
 
