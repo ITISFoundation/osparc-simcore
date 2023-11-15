@@ -61,11 +61,6 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
         )
 
 
-# TODO: requires a task for cleaning up whatever was created here.
-# In this case we can figure out form existing names what is wrong?
-# Do we still have to keep track of them though?
-
-
 async def get_or_create_api_key(
     app: FastAPI, *, product_name: ProductName, user_id: UserID, node_id: NodeID
 ) -> ApiKeyGet:
