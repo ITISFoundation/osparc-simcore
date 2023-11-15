@@ -188,7 +188,7 @@ async def test_payment_methods_workflow(
     with pytest.raises(PaymentsGatewayError) as err_info:
         await payments_gateway_api.get_payment_method(payment_method_id)
 
-    assert err_info.value.operation_id == "PaymentsGateway.get_payment_method"
+    assert err_info.value.operation_id == "PaymentsGatewayApi.get_payment_method"
 
     http_status_error = err_info.value.http_status_error
     assert http_status_error.response.status_code == status.HTTP_404_NOT_FOUND
