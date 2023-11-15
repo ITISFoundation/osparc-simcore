@@ -14,7 +14,6 @@ from .._meta import API_VTAG
 from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..invitations.api import is_service_invitation_code
 from ..products.api import Product, get_current_product
-from ..security.api import encrypt_password
 from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
@@ -22,6 +21,7 @@ from ..session.access_policies import (
 from ..utils import MINUTE
 from ..utils_aiohttp import NextPage, envelope_json_response
 from ..utils_rate_limiting import global_rate_limit_route
+from . import _auth_api
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import (
@@ -51,18 +51,14 @@ from .utils import (
     ACTIVE,
     CONFIRMATION_PENDING,
     REGISTRATION,
-    USER,
     envelope_response,
     flash_response,
+    get_user_name_from_email,
     notify_user_confirmation,
 )
 from .utils_email import get_template_path, send_email_from_template
 
 log = logging.getLogger(__name__)
-
-
-def _get_user_name(email: str) -> str:
-    return email.split("@")[0]
 
 
 routes = RouteTableDef()
@@ -191,26 +187,35 @@ async def register(request: web.Request):
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
-    username = _get_user_name(registration.email)
-    user: dict = await db.create_user(
-        {
-            "name": username,
-            "email": registration.email,
-            "password_hash": encrypt_password(registration.password.get_secret_value()),
-            "status": (
+    #  get authorized user or create new
+    user = await _auth_api.get_user_by_email(request.app, email=registration.email)
+    if user:
+        await _auth_api.check_authorized_user_or_raise(
+            user,
+            product=product,
+            email=registration.email,
+            password=registration.password.get_secret_value(),
+        )
+    else:
+        user = await _auth_api.create_user(
+            request.app,
+            email=registration.email,
+            password=registration.password.get_secret_value(),
+            status=(
                 CONFIRMATION_PENDING
                 if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
                 else ACTIVE
             ),
-            "role": USER,
-            "expires_at": expires_at,
-        }
-    )
+            expires_at=expires_at,
+        )
 
     # NOTE: PC->SAN: should this go here or when user is actually logged in?
+    assert product.name == invitation.product if invitation else True  # nosec
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
     await auto_add_user_to_product_group(
-        app=request.app, user_id=user["id"], product_name=product.name
+        app=request.app,
+        user_id=user["id"],
+        product_name=product.name,
     )
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
@@ -232,7 +237,7 @@ async def register(request: web.Request):
                 context={
                     "host": request.host,
                     "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
-                    "name": username,
+                    "name": user["name"],
                     "support_email": product.support_email,
                 },
             )
@@ -260,6 +265,7 @@ async def register(request: web.Request):
 
     # NOTE: Here confirmation is disabled
     assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
+    assert product.name == invitation.product if invitation else True  # nosec
     await notify_user_confirmation(
         request.app,
         user_id=user["id"],
@@ -348,7 +354,7 @@ async def register_phone(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            user_name=_get_user_name(registration.email),
+            user_name=get_user_name_from_email(registration.email),
         )
 
         message = MSG_2FA_CODE_SENT.format(

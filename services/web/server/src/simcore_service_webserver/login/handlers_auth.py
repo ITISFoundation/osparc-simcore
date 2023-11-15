@@ -14,7 +14,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
 from ..products.api import Product, get_current_product
-from ..security.api import check_password, forget
+from ..security.api import forget
 from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
@@ -27,6 +27,7 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
+from ._auth_api import check_authorized_user_or_raise, get_user_by_email
 from ._constants import (
     CODE_2FA_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
@@ -37,22 +38,14 @@ from ._constants import (
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
     MSG_UNAUTHORIZED_LOGIN_2FA,
-    MSG_UNKNOWN_EMAIL,
     MSG_WRONG_2FA_CODE,
-    MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema
 from ._security import login_granted_response
 from .decorators import login_required
 from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import (
-    ACTIVE,
-    envelope_response,
-    flash_response,
-    notify_user_logout,
-    validate_user_status,
-)
+from .utils import envelope_response, flash_response, notify_user_logout
 
 log = logging.getLogger(__name__)
 
@@ -98,25 +91,14 @@ async def login(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-
     login_ = await parse_request_body_as(LoginBody, request)
 
-    user = await db.get_user({"email": login_.email})
-    if not user:
-        raise web.HTTPUnauthorized(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-        )
-
-    validate_user_status(user=user, support_email=product.support_email)
-
-    if not check_password(login_.password.get_secret_value(), user["password_hash"]):
-        raise web.HTTPUnauthorized(
-            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
-        )
-
-    assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
-    assert user["email"] == login_.email, "db corrupted. Invalid email"  # nosec
+    user = await check_authorized_user_or_raise(
+        user=await get_user_by_email(request.app, email=login_.email),
+        product=product,
+        email=login_.email,
+        password=login_.password.get_secret_value(),
+    )
 
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole(user["role"]) > UserRole.USER
