@@ -4,6 +4,7 @@
 
 import importlib.resources
 import json
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ import simcore_service_clusters_keeper
 import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
+from aws_library.ec2.models import EC2InstanceBootSpecific
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -105,8 +107,14 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
-            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
-            "WORKERS_EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    ec2_type_name: random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                    )
+                    for ec2_type_name in ec2_instances
+                }
+            ),
             "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
             ),
@@ -161,10 +169,7 @@ def disable_clusters_management_background_task(
 
 @pytest.fixture
 def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("RABBIT_HOST")
-    monkeypatch.delenv("RABBIT_USER")
-    monkeypatch.delenv("RABBIT_SECURE")
-    monkeypatch.delenv("RABBIT_PASSWORD")
+    monkeypatch.setenv("CLUSTERS_KEEPER_RABBITMQ", "null")
 
 
 @pytest.fixture

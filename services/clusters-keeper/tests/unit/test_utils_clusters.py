@@ -79,7 +79,6 @@ def test_create_startup_script(
 
     # check lists have \" written in them
     list_settings = [
-        "WORKERS_EC2_INSTANCES_ALLOWED_TYPES",
         "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS",
     ]
     assert all(

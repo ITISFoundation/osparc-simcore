@@ -2,6 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, cast
 
+from aws_library.ec2.models import EC2InstanceBootSpecific
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -40,11 +41,9 @@ class ClustersKeeperEC2Settings(EC2Settings):
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
-    WORKERS_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    WORKERS_EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        min_items=1,
-        unique_items=True,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
 
     WORKERS_EC2_INSTANCES_KEY_NAME: str = Field(
@@ -88,11 +87,16 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
     @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_intance_names(cls, value):
+    def check_valid_instance_names(
+        cls, value: dict[str, EC2InstanceBootSpecific]
+    ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(tuple[InstanceTypeType, ...], value)
-        return value
+        if all(parse_obj_as(InstanceTypeType, key) for key in value):
+            return value
+
+        msg = "Invalid instance type name"
+        raise ValueError(msg)
 
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):

@@ -1,9 +1,11 @@
 import base64
 import datetime
 import functools
+import json
 from typing import Any, Final
 
 from aws_library.ec2.models import EC2InstanceData
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
@@ -38,13 +40,16 @@ def create_startup_script(
         entries_as_str = ",".join(rf"\"{k}\"" for k in entries)
         return f"[{entries_as_str}]"
 
+    def _convert_to_env_dict(entries: dict[str, Any]) -> str:
+        return f"'{json.dumps(jsonable_encoder(entries))}'"
+
     environment_variables = [
         f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
         f"CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ACCESS_KEY_ID}",
         f"CLUSTERS_KEEPER_EC2_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ENDPOINT}",
         f"CLUSTERS_KEEPER_EC2_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_REGION_NAME}",
         f"CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_SECRET_ACCESS_KEY}",
-        f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
+        f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
         f"WORKERS_EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME}",
         f"WORKERS_EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
         f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
