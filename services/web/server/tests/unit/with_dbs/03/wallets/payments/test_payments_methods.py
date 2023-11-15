@@ -26,14 +26,8 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_postgres_database.models.payments_transactions import (
-    PaymentTransactionState,
-)
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
-)
-from simcore_service_webserver.payments._onetime_api import (
-    _ack_creation_of_wallet_payment,
 )
 from simcore_service_webserver.payments.settings import PaymentsSettings
 from simcore_service_webserver.payments.settings import (
@@ -376,18 +370,8 @@ async def test_one_time_payment_with_payment_method(
     assert mock_rpc_payments_service_api["init_payment_with_payment_method"].called
 
     assert payment.payment_id
-    assert payment.payment_form_url
-    assert payment.payment_form_url.host == "some-fake-gateway.com"
-    assert payment.payment_form_url.query
-    assert payment.payment_form_url.query.endswith(payment.payment_id)
+    assert payment.payment_form_url is None
 
-    # Complete
-    await _ack_creation_of_wallet_payment(
-        client.app,
-        payment_id=payment.payment_id,
-        completion_state=PaymentTransactionState.SUCCESS,
-        invoice_url=faker.url(),
-    )
     # check notification to RUT (fake)
     assert mock_rut_add_credits_to_wallet.called
     mock_rut_add_credits_to_wallet.assert_called_once()

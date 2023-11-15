@@ -285,5 +285,5 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
         comment=comment,
     )
 
-    assert isinstance(result, PaymentTransaction)
+    assert isinstance(result, PaymentTransaction)  # nosec
     return result
