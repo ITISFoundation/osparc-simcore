@@ -36,7 +36,7 @@ def mock_background_task(mocker: MockerFixture) -> mock.Mock:
 
 async def test_clusters_management_task_created_and_deleted(
     disabled_rabbitmq: None,
-    mocked_aws_server_envs: None,
+    mocked_ec2_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,

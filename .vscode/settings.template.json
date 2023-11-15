@@ -32,6 +32,7 @@
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
+    "./packages/aws-library/src",
     "./packages/models-library/src",
     "./packages/postgres-database/src",
     "./packages/postgres-database/tests",

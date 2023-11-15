@@ -36,8 +36,8 @@ from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
@@ -269,7 +269,6 @@ def mocked_webserver_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
             "name": "webserver",

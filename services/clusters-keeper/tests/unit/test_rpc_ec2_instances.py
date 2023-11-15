@@ -4,7 +4,8 @@
 
 import pytest
 from fastapi import FastAPI
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
@@ -21,11 +22,8 @@ pytest_simcore_ops_services_selection = []
 def _base_configuration(
     docker_swarm: None,
     enabled_rabbitmq: None,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names_env: list[str],
     mocked_redis_server: None,
+    mocked_ec2_server_envs: EnvVarsDict,
     initialized_app: FastAPI,
 ) -> None:
     ...
@@ -42,7 +40,7 @@ async def test_get_instance_type_details_all_options(
     )
     assert rpc_response
     assert isinstance(rpc_response, list)
-    assert isinstance(rpc_response[0], EC2InstanceType)
+    assert isinstance(rpc_response[0], EC2InstanceTypeGet)
 
 
 async def test_get_instance_type_details_specific_type_names(

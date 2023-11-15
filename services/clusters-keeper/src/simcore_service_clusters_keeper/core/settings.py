@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import cast
+from typing import Any, ClassVar, Final, cast
 
 from fastapi import FastAPI
 from models_library.basic_types import (
@@ -12,6 +12,7 @@ from models_library.basic_types import (
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -19,14 +20,23 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
+CLUSTERS_KEEPER_ENV_PREFIX: Final[str] = "CLUSTERS_KEEPER_"
 
-class EC2ClustersKeeperSettings(BaseCustomSettings):
-    EC2_CLUSTERS_KEEPER_ACCESS_KEY_ID: str
-    EC2_CLUSTERS_KEEPER_ENDPOINT: str | None = Field(
-        default=None, description="do not define if using standard AWS"
-    )
-    EC2_CLUSTERS_KEEPER_REGION_NAME: str = "us-east-1"
-    EC2_CLUSTERS_KEEPER_SECRET_ACCESS_KEY: str
+
+class ClustersKeeperEC2Settings(EC2Settings):
+    class Config(EC2Settings.Config):
+        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
+                }
+            ],
+        }
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
@@ -181,7 +191,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    CLUSTERS_KEEPER_EC2_ACCESS: EC2ClustersKeeperSettings | None = Field(
+    CLUSTERS_KEEPER_EC2_ACCESS: ClustersKeeperEC2Settings | None = Field(
         auto_default_from_env=True
     )
 
