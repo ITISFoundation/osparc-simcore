@@ -37,9 +37,12 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPaymentWithPaymentMethod,
+)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def is_pdb_enabled(request: pytest.FixtureRequest):
     """Returns true if tests are set to use interactive debugger, i.e. --pdb"""
     options = request.config.option
@@ -126,15 +129,22 @@ def payments_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
         con.execute(payments_transactions.delete())
 
 
+#
+MAX_TIME_FOR_APP_TO_STARTUP = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+
+
 @pytest.fixture
-async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
-    test_app = create_app()
+async def app(
+    app_environment: EnvVarsDict, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
+    the_test_app = create_app()
     async with LifespanManager(
-        test_app,
-        startup_timeout=None,  # for debugging
-        shutdown_timeout=10,
+        the_test_app,
+        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
-        yield test_app
+        yield the_test_app
 
 
 #
@@ -205,7 +215,7 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
             pm_id = faker.uuid4()
             _payment_methods[pm_id] = PaymentMethodInfoTuple(
                 init=InitPaymentMethod.parse_raw(request.content),
-                get=GetPaymentMethod(**random_payment_method_data(idr=pm_id)),
+                get=GetPaymentMethod(**random_payment_method_data(id=pm_id)),
             )
 
             return httpx.Response(
@@ -247,16 +257,25 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
                 json=jsonable_encoder(PaymentMethodsBatch(items=items)),
             )
 
-        def _init_payment(request: httpx.Request, pm_id: PaymentMethodID):
+        def _pay(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
             assert InitPayment.parse_raw(request.content) is not None
 
             # checks
             _get(request, pm_id)
 
+            payment_id = faker.uuid4()
             return httpx.Response(
                 status.HTTP_200_OK,
-                json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
+                json=jsonable_encoder(
+                    AckPaymentWithPaymentMethod(
+                        success=True,
+                        message=f"Payment '{payment_id}' with payment-method '{pm_id}'",
+                        invoice_url=faker.url(),
+                        provider_payment_id="pi_123456ABCDEFG123456ABCDE",
+                        payment_id=payment_id,
+                    )
+                ),
             )
 
         # ------
@@ -283,8 +302,8 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
 
         mock_router.post(
             path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
-            name="init_payment_with_payment_method",
-        ).mock(side_effect=_init_payment)
+            name="pay_with_payment_method",
+        ).mock(side_effect=_pay)
 
     yield _mock
 
@@ -305,7 +324,7 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
@@ -332,7 +351,6 @@ def mock_payments_gateway_service_or_none(
     mock_payments_methods_routes: Callable,
     external_environment: EnvVarsDict,
 ) -> MockRouter | None:
-
     # EITHER tests against external payments-gateway
     if payments_gateway_url := external_environment.get("PAYMENTS_GATEWAY_URL"):
         print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
