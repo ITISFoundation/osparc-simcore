@@ -4312,8 +4312,8 @@ paths:
     post:
       tags:
       - wallets
-      summary: Init Payment With Payment Method
-      operationId: init_payment_with_payment_method
+      summary: Pay With Payment Method
+      operationId: pay_with_payment_method
       parameters:
       - required: true
         schema:
@@ -4339,7 +4339,7 @@ paths:
         required: true
       responses:
         '202':
-          description: Payment initialized
+          description: Pay with payment-method
           content:
             application/json:
               schema:
@@ -5256,7 +5256,11 @@ components:
       properties:
         priceDollars:
           title: Pricedollars
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           type: number
+          maximum: 1000000.0
+          minimum: 0.0
         comment:
           title: Comment
           maxLength: 100
@@ -7545,14 +7549,6 @@ components:
       required:
       - idr
       - walletId
-      - cardHolderName
-      - cardNumberMasked
-      - cardType
-      - expirationMonth
-      - expirationYear
-      - streetAddress
-      - zipcode
-      - country
       - created
       type: object
       properties:
@@ -7581,15 +7577,6 @@ components:
         expirationYear:
           title: Expirationyear
           type: integer
-        streetAddress:
-          title: Streetaddress
-          type: string
-        zipcode:
-          title: Zipcode
-          type: string
-        country:
-          title: Country
-          type: string
         created:
           title: Created
           type: string

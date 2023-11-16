@@ -6,12 +6,14 @@
 # pylint: disable=too-many-arguments
 
 import logging
+import uuid
 from decimal import Decimal
 
 import arrow
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
+    PaymentTransaction,
     WalletPaymentInitiated,
 )
 from models_library.users import UserID
@@ -22,13 +24,20 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
+from tenacity import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
-from ..core.errors import PaymentAlreadyAckedError, PaymentNotFoundError
+from ..core.errors import (
+    PaymentAlreadyAckedError,
+    PaymentAlreadyExistsError,
+    PaymentNotFoundError,
+)
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.payments_gateway import InitPayment, PaymentInitiated
-from ..models.schemas.acknowledgements import AckPayment
+from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from .payments_gateway import PaymentsGatewayApi
 
@@ -91,7 +100,6 @@ async def cancel_one_time_payment(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-
     payment = await repo.get_payment_transaction(
         payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
     )
@@ -123,7 +131,6 @@ async def acknowledge_one_time_payment(
     payment_id: PaymentID,
     ack: AckPayment,
 ) -> PaymentsTransactionsDB:
-
     return await repo_transactions.update_ack_payment_transaction(
         payment_id=payment_id,
         completion_state=(
@@ -173,7 +180,7 @@ async def on_payment_completed(
     )
 
 
-async def init_payment_with_payment_method(
+async def pay_with_payment_method(  # noqa: PLR0913
     gateway: PaymentsGatewayApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
@@ -188,14 +195,14 @@ async def init_payment_with_payment_method(
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-) -> WalletPaymentInitiated:
+) -> PaymentTransaction:
     initiated_at = arrow.utcnow().datetime
 
     acked = await repo_methods.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 
-    payment_inited = await gateway.init_payment_with_payment_method(
+    ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,
         payment=InitPayment(
             amount_dollars=amount_dollars,
@@ -206,22 +213,40 @@ async def init_payment_with_payment_method(
         ),
     )
 
-    payment_id = await repo_transactions.insert_init_payment_transaction(
-        payment_id=payment_inited.payment_id,
-        price_dollars=amount_dollars,
-        osparc_credits=target_credits,
-        product_name=product_name,
-        user_id=user_id,
-        user_email=user_email,
-        wallet_id=wallet_id,
-        comment=comment,
-        initiated_at=initiated_at,
+    payment_id = ack.payment_id
+
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(3),
+        retry=retry_if_exception_type(PaymentAlreadyExistsError),
+        reraise=True,
+    ):
+        with attempt:
+            payment_id = await repo_transactions.insert_init_payment_transaction(
+                ack.payment_id or f"{uuid.uuid4()}",
+                price_dollars=amount_dollars,
+                osparc_credits=target_credits,
+                product_name=product_name,
+                user_id=user_id,
+                user_email=user_email,
+                wallet_id=wallet_id,
+                comment=comment,
+                initiated_at=initiated_at,
+            )
+
+    assert payment_id is not None  # nosec
+
+    transaction = await repo_transactions.update_ack_payment_transaction(
+        payment_id=payment_id,
+        completion_state=(
+            PaymentTransactionState.SUCCESS
+            if ack.success
+            else PaymentTransactionState.FAILED
+        ),
+        state_message=ack.message,
+        invoice_url=ack.invoice_url,
     )
 
-    return WalletPaymentInitiated(
-        payment_id=f"{payment_id}",
-        payment_form_url=None,
-    )
+    return transaction.to_api_model()
 
 
 async def get_payments_page(

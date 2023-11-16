@@ -6,7 +6,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
-    WalletPaymentInitiated,
 )
 from models_library.basic_types import IDStr
 from models_library.users import UserID
@@ -113,7 +112,7 @@ async def delete_payment_method(
 
 
 @router.expose()
-async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
+async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     app: FastAPI,
     *,
     payment_method_id: PaymentMethodID,
@@ -126,8 +125,8 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-) -> WalletPaymentInitiated:
-    return await payments.init_payment_with_payment_method(
+):
+    return await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
