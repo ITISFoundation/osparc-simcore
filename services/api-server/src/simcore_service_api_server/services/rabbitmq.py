@@ -1,10 +1,12 @@
 import logging
-from typing import cast
+from typing import Annotated, cast
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
+
+from ..api.dependencies.application import get_app
 
 _logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
     app.add_event_handler("shutdown", _on_shutdown)
 
 
-def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
+def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQClient:
     assert app.state.rabbitmq_client  # nosec
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
