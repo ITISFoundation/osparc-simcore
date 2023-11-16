@@ -11,11 +11,9 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import AmountDecimal, NonNegativeDecimal
 from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -54,25 +52,6 @@ from ._handlers import (
 _logger = logging.getLogger(__name__)
 
 
-async def _eval_total_credits_or_raise(
-    request: web.Request, amount_dollars: AmountDecimal
-) -> NonNegativeDecimal:
-    credit_result: CreditResultGet = await get_credit_amount(
-        request.app, dollar_amount=init.price_dollars, product_name=product_name
-    )
-
-    return await init_creation_of_wallet_payment(
-        request.app,
-        user_id=user_id,
-        product_name=product_name,
-        wallet_id=wallet_id,
-        osparc_credits=credit_result.credit_amount,
-        comment=init.comment,
-        price_dollars=init.price_dollars,
-        payment_method_id=payment_method_id,
-    )
-
-
 routes = web.RouteTableDef()
 
 
@@ -98,9 +77,10 @@ async def _create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-
-        osparc_credits = await _eval_total_credits_or_raise(
-            request, body_params.price_dollars
+        credit_result: CreditResultGet = await get_credit_amount(
+            request.app,
+            dollar_amount=body_params.price_dollars,
+            product_name=req_ctx.product_name,
         )
 
         payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
@@ -108,7 +88,7 @@ async def _create_payment(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=osparc_credits,
+            osparc_credits=credit_result.credit_amount,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
         )
@@ -341,7 +321,6 @@ async def _pay_with_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-
         osparc_credits = await _eval_total_credits_or_raise(
             request, body_params.price_dollars
         )
