@@ -215,7 +215,7 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
             pm_id = faker.uuid4()
             _payment_methods[pm_id] = PaymentMethodInfoTuple(
                 init=InitPaymentMethod.parse_raw(request.content),
-                get=GetPaymentMethod(**random_payment_method_data(idr=pm_id)),
+                get=GetPaymentMethod(**random_payment_method_data(id=pm_id)),
             )
 
             return httpx.Response(

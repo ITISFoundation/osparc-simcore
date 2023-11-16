@@ -259,5 +259,6 @@ def random_payment_method_data(**overrides) -> dict[str, Any]:
         "expiration_year": FAKE.future_date().year,
         "created": utcnow(),
     }
+    assert set(overrides.keys()).issubset(data.keys())
     data.update(**overrides)
     return data

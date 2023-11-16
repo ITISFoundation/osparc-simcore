@@ -193,7 +193,7 @@ async def _ack_creation_of_wallet_payment(
     completion_state: PaymentTransactionState,
     message: str | None = None,
     invoice_url: HttpUrl | None = None,
-    nofify_enabled: bool = True,
+    notify_enabled: bool = True,
 ) -> PaymentTransaction:
     #
     # NOTE: implements endpoint in payment service hit by the gateway
@@ -215,7 +215,7 @@ async def _ack_creation_of_wallet_payment(
     payment = _to_api_model(transaction)
 
     # notifying front-end via web-sockets
-    if nofify_enabled:
+    if notify_enabled:
         await notify_payment_completed(
             app, user_id=transaction.user_id, payment=payment
         )
@@ -305,7 +305,7 @@ async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-ma
         completion_state=PaymentTransactionState.SUCCESS,
         message=f"Fake payment completed with payment-id = {payment_method_id}",
         invoice_url=f"https://fake-invoice.com/?id={inited.payment_id}",  # type: ignore
-        nofify_enabled=False,
+        notify_enabled=False,
     )
 
 
