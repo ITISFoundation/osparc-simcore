@@ -211,7 +211,7 @@ class JobLog(BaseModel):
 
 
 class LogListener:
-    _queu: Queue[JobLog]
+    _queue: Queue[JobLog]
     _queu_name: str
     _rabbit_consumer: RabbitMQClient
 
@@ -223,9 +223,9 @@ class LogListener:
         job_logs: list[JobLog] = [],
     ) -> "LogListener":
         self = cls()
-        self._queu = Queue()
+        self._queue = Queue()
         for job_log in job_logs:
-            await self._queu.put(job_log)
+            await self._queue.put(job_log)
         self._rabbit_consumer = rabbit_consumer
         self._queu_name = await self._rabbit_consumer.subscribe(
             LoggerRabbitMessage.get_channel_name(),
@@ -246,13 +246,13 @@ class LogListener:
             log_level=got.log_level,
             messages=got.messages,
         )
-        await self._queu.put(item)
+        await self._queue.put(item)
         return True
 
     async def log_generator(self) -> AsyncIterable[str]:
         n_logs: int = 0
         while n_logs < 10:
-            log: JobLog = await self._queu.get()
+            log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
             n_logs += 1
 
