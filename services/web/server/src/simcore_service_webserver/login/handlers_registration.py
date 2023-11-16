@@ -208,9 +208,8 @@ async def register(request: web.Request):
     if user:
         await _auth_api.check_authorized_user_or_raise(
             user,
-            product=product,
-            email=registration.email,
             password=registration.password.get_secret_value(),
+            product=product,
         )
     else:
         user = await _auth_api.create_user(
@@ -364,7 +363,7 @@ async def register_phone(request: web.Request):
             raise ValueError(msg)
 
         if await db.get_user({"phone": registration.phone}):
-            raise web.HTTPUnauthorized(
+            raise web.HTTPUnauthorized(  # noqa: TRY301
                 reason="Cannot register this phone number because it is already assigned to an active user",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )

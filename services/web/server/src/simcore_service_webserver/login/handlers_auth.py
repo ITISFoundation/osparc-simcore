@@ -95,9 +95,8 @@ async def login(request: web.Request):
 
     user = await check_authorized_user_or_raise(
         user=await get_user_by_email(request.app, email=login_.email),
-        product=product,
-        email=login_.email,
         password=login_.password.get_secret_value(),
+        product=product,
     )
 
     # Some roles have login privileges

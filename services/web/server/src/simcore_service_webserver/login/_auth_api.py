@@ -7,7 +7,7 @@ from ..products.api import Product
 from ..security.api import check_password, encrypt_password
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import ACTIVE, USER, get_user_name_from_email, validate_user_status
+from .utils import USER, get_user_name_from_email, validate_user_status
 
 
 async def get_user_by_email(app: web.Application, *, email: str) -> dict:
@@ -40,7 +40,9 @@ async def create_user(
 
 
 async def check_authorized_user_or_raise(
-    user: dict, product: Product, email: str, password: str
+    user: dict,
+    password: str,
+    product: Product,
 ) -> dict:
 
     if not user:
@@ -55,6 +57,4 @@ async def check_authorized_user_or_raise(
             reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
-    assert user["email"] == email, "db corrupted. Invalid email"  # nosec
     return user
