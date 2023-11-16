@@ -334,8 +334,30 @@ async def _pay_with_payment_method(request: web.Request):
             osparc_credits=osparc_credits,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
+            osparc_credits=osparc_credits,
+            comment=body_params.comment,
+            price_dollars=body_params.price_dollars,
         )
 
+        # NOTE: Due to the design change in https://github.com/ITISFoundation/osparc-simcore/pull/5017
+        #       we decided not to change the return value to avoid changing the front-end logic
+        #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
+
+        fire_and_forget_task(
+            notify_payment_completed(
+                request.app, user_id=req_ctx.user_id, payment=payment
+            ),
+            task_suffix_name=f"{__name__}._pay_with_payment_method",
+            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
+        return envelope_json_response(
+            WalletPaymentInitiated(
+                payment_id=payment.payment_id,
+                payment_form_url=None,
+            ),
+            web.HTTPAccepted,
+        )
         # NOTE: Due to the design change in https://github.com/ITISFoundation/osparc-simcore/pull/5017
         #       we decided not to change the return value to avoid changing the front-end logic
         #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
