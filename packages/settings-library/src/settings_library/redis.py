@@ -15,6 +15,7 @@ class RedisDatabase(int, Enum):
     SCHEDULED_MAINTENANCE = 3
     USER_NOTIFICATIONS = 4
     ANNOUNCEMENTS = 5
+    DISTRIBUTED_IDENTIFIERS = 6
 
 
 class RedisSettings(BaseCustomSettings):
