@@ -55,11 +55,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    STUDY_ICON: "https://github.com/ZurichMedTech/s4l-assets/blob/main/app/thumbnails/huygens_MRI.png?raw=true",
-    TEMPLATE_ICON: "https://zmt.swiss/assets/images/sim4life/framework/postpromain.jpg",
-    SERVICE_ICON: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLw7j07Ch4UVslMIMcG-RilEpc8aM8vrueZBDlmICFfHxAxlZChvvZp24Oaj-WX3SJYQc&usqp=CAU",
-    COMP_SERVICE_ICON: "https://zmt.swiss/assets/images/sim4life/physics_models/flow01b.jpg",
-    DYNAMIC_SERVICE_ICON: "https://zmt.swiss/assets/Visuals/vip/_resampled/ResizedImageWzY1MCwzNzVd/visual-neurorat-mm.png",
+    STUDY_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    TEMPLATE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    COMP_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    DYNAMIC_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -530,12 +530,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         case "SUCCESS":
           icon = "@FontAwesome5Solid/check/12";
-          label = "Success";
+          label = "Ran successfully";
           border = "success";
+          break;
+        case "ABORTED":
+          icon = "@FontAwesome5Solid/info/12";
+          label = "Run aborted";
+          border = "warning";
           break;
         case "FAILED":
           icon = "@FontAwesome5Solid/times/12";
-          label = "Failed";
+          label = "Ran with error";
           border = "error";
           break;
         default:
@@ -548,29 +553,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyProjectLabel: function(icn, lbl, bdr) {
-      let control;
+      const projectStatusLabel = this.getChildControl("project-status");
+      projectStatusLabel.setVisibility(icn && lbl && bdr ? "visible" : "excluded");
       const border = new qx.ui.decoration.Decorator().set({
         width: 1,
         style: "solid",
         color: bdr,
-        backgroundColor: bdr,
+        backgroundColor: bdr
       });
-      control = new qx.ui.basic.Image(icn).set({
-        textColor: "status_icon",
-        height: 22,
-        width: 22,
-        alignY: "middle",
-        alignX: "center",
-        padding: 4,
-        decorator: border,
-        toolTipText: this.tr(`Project ${lbl}`)
+      const icon = this.getChildControl("project-status-icon");
+      const label = this.getChildControl("project-status-label");
+      icon.setSource(icn);
+      icon.set({
+        decorator: border
       });
-      control.getContentElement().setStyles({
+      icon.getContentElement().setStyles({
         "border-radius": "50%",
         "background-clip": "border-box"
       });
-      const titleLayout = this.getChildControl("title-row");
-      titleLayout.add(control);
+      label.setValue(lbl);
     },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
