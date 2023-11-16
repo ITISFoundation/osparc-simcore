@@ -92,6 +92,10 @@ class ApplicationSettings(_BaseApplicationSettings):
         default=10000,
         description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
     )
+    PAYMENTS_AUTORECHARGE_ENABLED: bool = Field(
+        default=False,
+        description="Based on this variable is the auto recharge functionality in Payment service enabled",
+    )
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"

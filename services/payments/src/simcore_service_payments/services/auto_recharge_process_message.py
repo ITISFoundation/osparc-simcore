@@ -74,9 +74,10 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
         return True  # We do not auto recharge
 
     # Step 6: Perform auto-recharge
-    await _perform_auto_recharge(
-        app, rabbit_message, payment_method_db, wallet_auto_recharge
-    )
+    if settings.PAYMENTS_AUTORECHARGE_ENABLED:
+        await _perform_auto_recharge(
+            app, rabbit_message, payment_method_db, wallet_auto_recharge
+        )
     return True
 
 

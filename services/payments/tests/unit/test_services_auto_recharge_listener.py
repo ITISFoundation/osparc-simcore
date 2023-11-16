@@ -87,6 +87,7 @@ def app_environment(
             **postgres_env_vars_dict,
             **external_environment,
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
+            "PAYMENTS_AUTORECHARGE_ENABLED": "1",
         },
     )
 
