@@ -2,7 +2,6 @@
 
 """
 import logging
-from collections.abc import Callable, Mapping
 from copy import deepcopy
 from typing import Any
 
@@ -27,6 +26,7 @@ from ..utils.osparc_variables import (
     OsparcVariablesTable,
     resolve_variables_from_context,
 )
+from .api_keys_manager import get_or_create_api_key
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
 
 _logger = logging.getLogger(__name__)
@@ -156,10 +156,14 @@ async def resolve_and_substitute_session_variables_in_specs(
 
     if requested := set(resolver.get_identifiers()):
         available = set(table.variables_names())
-
-        if identifiers := available.intersection(requested):
+        identifiers_to_replace = available.intersection(requested)
+        _logger.debug(
+            "resolve_and_substitute_session_variables_in_specs identifiers_to_replace=%s",
+            identifiers_to_replace,
+        )
+        if identifiers_to_replace:
             environs = await resolve_variables_from_context(
-                table.copy(include=identifiers),
+                table.copy(include=identifiers_to_replace),
                 context=ContextDict(
                     app=app,
                     user_id=user_id,
@@ -176,14 +180,76 @@ async def resolve_and_substitute_session_variables_in_specs(
     return deepcopy(specs)
 
 
-async def resolve_and_substitute_lifespan_variables_in_specs(
-    _app: FastAPI,
-    _specs: dict[str, Any],
+async def resolve_and_substitute_service_lifetime_variables_in_specs(
+    app: FastAPI,
+    specs: dict[str, Any],
     *,
-    _callbacks_registry: Mapping[str, Callable],
+    product_name: ProductName,
+    user_id: UserID,
+    node_id: NodeID,
     safe: bool = True,
-):
-    raise NotImplementedError
+) -> dict[str, Any]:
+    registry: OsparcVariablesTable = app.state.lifespan_osparc_variables_table
+
+    resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
+
+    if requested := set(resolver.get_identifiers()):
+        available = set(registry.variables_names())
+
+        if identifiers := available.intersection(requested):
+            environs = await resolve_variables_from_context(
+                registry.copy(include=identifiers),
+                context=ContextDict(
+                    app=app,
+                    product_name=product_name,
+                    user_id=user_id,
+                    node_id=node_id,
+                ),
+                # NOTE: the api key and secret cannot be resolved in parallel
+                # due to race conditions
+                resolve_in_parallel=False,
+            )
+
+            resolver.set_substitutions(mappings=environs)
+            new_specs: dict[str, Any] = resolver.run(safe=safe)
+            return new_specs
+
+    return deepcopy(specs)
+
+
+async def _get_or_create_api_key(
+    app: FastAPI, product_name: ProductName, user_id: UserID, node_id: NodeID
+) -> str:
+    key_data = await get_or_create_api_key(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        node_id=node_id,
+    )
+    return key_data.api_key  # type:ignore [no-any-return]
+
+
+async def _get_or_create_api_secret(
+    app: FastAPI, product_name: ProductName, user_id: UserID, node_id: NodeID
+) -> str:
+    key_data = await get_or_create_api_key(
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        node_id=node_id,
+    )
+    return key_data.api_secret  # type:ignore [no-any-return]
+
+
+def _setup_lifespan_osparc_variables_table(app: FastAPI):
+    app.state.lifespan_osparc_variables_table = table = OsparcVariablesTable()
+
+    table.register_from_handler("OSPARC_VARIABLE_API_KEY")(_get_or_create_api_key)
+    table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(_get_or_create_api_secret)
+
+    _logger.debug(
+        "Registered lifespan_osparc_variables_table=%s", sorted(table.variables_names())
+    )
 
 
 async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
@@ -205,6 +271,7 @@ def _setup_session_osparc_variables(app: FastAPI):
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
         ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
         ("OSPARC_VARIABLE_NODE_ID", "node_id"),
+        # ANE -> PC: why not register the user_id as well at this point?
     ]:
         table.register_from_context(name, context_name)
 
@@ -226,5 +293,6 @@ def setup(app: FastAPI):
 
     def on_startup() -> None:
         _setup_session_osparc_variables(app)
+        _setup_lifespan_osparc_variables_table(app)
 
     app.add_event_handler("startup", on_startup)

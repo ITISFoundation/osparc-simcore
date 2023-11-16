@@ -1,4 +1,3 @@
-import logging
 import re
 import string
 from typing import Final
@@ -10,9 +9,6 @@ from models_library.users import UserID
 
 from ..login.utils import get_random_string
 from ._db import ApiKeyRepo
-
-_logger = logging.getLogger(__name__)
-
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
@@ -60,6 +56,14 @@ async def create_api_key(
         api_key=api_key,
         api_secret=api_secret,
     )
+
+
+async def get(
+    app: web.Application, *, name: str, user_id: UserID, product_name: ProductName
+) -> ApiKeyGet | None:
+    repo = ApiKeyRepo.create_from_app(app)
+    row = await repo.get(display_name=name, user_id=user_id, product_name=product_name)
+    return ApiKeyGet.parse_obj(row) if row else None
 
 
 async def delete_api_key(

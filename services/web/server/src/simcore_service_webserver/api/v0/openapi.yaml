@@ -445,13 +445,6 @@ paths:
       summary: List Api Keys
       description: lists display names of API keys by this user
       operationId: list_api_keys
-      parameters:
-      - required: true
-        schema:
-          title: Code
-          type: string
-        name: code
-        in: query
       responses:
         '200':
           description: returns the display names of API keys
