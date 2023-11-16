@@ -66,8 +66,9 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
         > wallet_auto_recharge.monthly_limit_in_usd
     ):
         _logger.warning(
-            "Current month spending would go over the limit %s",
+            "Current month spending would go over the limit %s for payment method %s",
             wallet_auto_recharge.monthly_limit_in_usd,
+            wallet_auto_recharge.payment_method_id,
         )
         return True  # --> We do not auto recharge
 

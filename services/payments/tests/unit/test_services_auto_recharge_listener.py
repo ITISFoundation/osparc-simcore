@@ -47,7 +47,7 @@ pytest_simcore_ops_services_selection = [
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    rabbit_env_vars_dict: EnvVarsDict,
+    rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
     postgres_env_vars_dict: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
     external_environment: EnvVarsDict,
