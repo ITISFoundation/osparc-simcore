@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Final
+from typing import Any
 
 from fastapi import FastAPI
 from models_library.projects_networks import ProjectsNetworks
@@ -59,13 +59,6 @@ from ...errors import EntrypointContainerNotFoundError
 from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 _logger = logging.getLogger(__name__)
-
-
-# Used to ensure no more that X services per node pull or push data
-# Locking is applied when:
-# - study is being opened (state and outputs are pulled)
-# - study is being closed (state and outputs are saved)
-RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
 def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
@@ -237,8 +230,10 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     # pylint: disable=protected-access
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
-    await app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(  # noqa: SLF001
-        scheduler_data.node_uuid
+    await (
+        app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(  # noqa: SLF001
+            scheduler_data.node_uuid
+        )
     )
     task_progress.update(message="finished removing resources", percent=1)
 
