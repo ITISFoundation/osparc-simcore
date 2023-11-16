@@ -83,7 +83,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 async def _check_wallet_credits_above_threshold(
     threshold_in_credits: NonNegativeDecimal, _credits: Decimal
 ) -> bool:
-    return _credits > threshold_in_credits
+    return bool(_credits > threshold_in_credits)
 
 
 async def _check_autorecharge_conditions_not_met(
