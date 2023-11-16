@@ -85,3 +85,16 @@ class AppStateMixin:
         old = getattr(app.state, cls.app_state_name, None)
         delattr(app.state, cls.app_state_name)
         return old
+
+
+def to_curl_command(request: httpx.Request) -> str:
+    """Composes a curl command from a given request
+
+    Can be used to reproduce a request in a separate terminal (e.g. debugging)
+    """
+    # Adapted from https://github.com/marcuxyz/curlify2/blob/master/curlify2/curlify.py
+    headers = [f'"{k}: {v}"' for k, v in request.headers.items()]
+    method = request.method
+    url = request.url
+    body = request.read().decode()
+    return f"curl -X {method} -H {' -H '.join(headers)} -d '{body}' {url}"

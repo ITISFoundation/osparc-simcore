@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -17,6 +18,7 @@ from simcore_service_payments.models.payments_gateway import (
 from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
     PaymentsGatewayError,
+    _raise_as_payments_gateway_error,
     setup_payments_gateway,
 )
 
@@ -188,6 +190,7 @@ async def test_payment_methods_workflow(
     with pytest.raises(PaymentsGatewayError) as err_info:
         await payments_gateway_api.get_payment_method(payment_method_id)
 
+    assert str(err_info.value)
     assert err_info.value.operation_id == "PaymentsGatewayApi.get_payment_method"
 
     http_status_error = err_info.value.http_status_error
@@ -198,3 +201,21 @@ async def test_payment_methods_workflow(
         for route in mock_payments_gateway_service_or_none.routes:
             if route.name and "payment_method" in route.name:
                 assert route.called
+
+
+async def test_payments_gateway_error_exception():
+    async def _go():
+        with _raise_as_payments_gateway_error(operation_id="foo"):
+            async with httpx.AsyncClient(
+                app=FastAPI(),
+                base_url="http://payments.testserver.io",
+            ) as client:
+                response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
+                response.raise_for_status()
+
+    with pytest.raises(PaymentsGatewayError) as err_info:
+        await _go()
+    err = err_info.value
+    assert isinstance(err, PaymentsGatewayError)
+
+    assert "curl -X POST" in err.get_detailed_message()

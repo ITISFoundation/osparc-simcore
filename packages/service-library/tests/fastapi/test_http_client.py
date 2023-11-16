@@ -13,7 +13,7 @@ import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from models_library.healthchecks import IsResponsive
-from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
+from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi, to_curl_command
 
 
 def test_using_app_state_mixin():
@@ -106,3 +106,15 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
 
     # shutdown event
     assert api.client.is_closed
+
+
+async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str):
+
+    mock_server_api.post(path__startswith="/foo").respond(status.HTTP_200_OK)
+
+    async with httpx.AsyncClient(base_url=base_url) as client:
+        response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
+        assert response.status_code == 200
+
+        cmd = to_curl_command(response.request)
+        assert cmd.startswith("curl -X POST -H")
