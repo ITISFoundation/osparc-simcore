@@ -250,11 +250,13 @@ class LogListener:
         return True
 
     async def log_generator(self) -> AsyncIterable[str]:
-        n_logs: int = 0
-        while n_logs < 10:
+        ii: int = 0
+        while True:
+            ii += 1
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
-            n_logs += 1
+            if ii == 10:
+                break
 
 
 @pytest.fixture
@@ -347,18 +349,8 @@ async def new_routes_injected(client: httpx.AsyncClient, app: FastAPI):
         *,
         rabbit_consumer: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
     ):
-        inital_job_logs: list[JobLog] = [
-            JobLog(
-                job_id=_faker.uuid4(),
-                node_id=_faker.uuid4(),
-                log_level=logging.DEBUG,
-                messages=["initial message"],
-            )
-            for _ in range(100)
-        ]
-
         log_listener: LogListener = await LogListener.create(
-            rabbit_consumer, project_id, job_logs=inital_job_logs
+            rabbit_consumer, project_id
         )
         return StreamingResponse(
             log_listener.log_generator(),
@@ -366,31 +358,41 @@ async def new_routes_injected(client: httpx.AsyncClient, app: FastAPI):
 
 
 async def test_stream_logs(
-    #    app: FastAPI,
+    app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
     node_id: NodeID,
     project_id: ProjectID,
     produce_logs: Callable,
     new_routes_injected: None,
+    faker: Faker,
 ):
-    # coro = produce_logs(
-    #     "expected", project_id, node_id, ["expected message"], logging.DEBUG
-    # )
+    async def _log_publisher(n_logs: int) -> list[str]:
+        logs = []
+        for ii in range(n_logs):
+            msg: str = faker.text()
+            await asyncio.sleep(faker.pyfloat(min_value=0.0, max_value=5.0))
+            await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
+            logs.append(msg)
+        return logs
 
-    # n_tasks: int = 3
-    # tasks = [asyncio.create_task(coro, name="log-producer") for _ in range(n_tasks)]
-    # asyncio.gather(*tasks)
+    n_logs: int = 10
+    publisher_task = asyncio.create_task(_log_publisher(n_logs))
 
-    n_count: int = 0
+    collected_messages: list[str] = []
     async with client.stream("GET", f"/projects/{project_id}/logs") as r:
         # streams open
+        ii: int = 0
         async for line in r.aiter_lines():
             data = json.loads(line)
             log = JobLog.parse_obj(data)
-            # assert log.job_id == project_id
             assert log.log_level == logging.DEBUG
-
+            assert len(log.messages) == 1
+            collected_messages += log.messages
             _logger.info(log.json(indent=3))
-            n_count += 1
-    assert n_count > 0
+            ii += 1
+            if ii == n_logs:
+                break
+
+    assert publisher_task.done()
+    assert collected_messages == publisher_task.result()
