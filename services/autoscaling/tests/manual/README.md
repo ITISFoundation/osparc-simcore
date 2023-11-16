@@ -8,7 +8,7 @@ The dynamic mode is used directly with docker swarm facilities.
 ### requirements
 
 1. AWS EC2 access
-2. a machine running in EC2 with docker installed and access to osparc-simcore repository
+2. a machine running in EC2 with docker installed and access to osparc-simcore repository (for example t2.xlarge to have some computational power)
 
 
 ## computational mode
@@ -92,6 +92,7 @@ make build-devel # this will build the autoscaling devel image
 cd osparc-simcore/services/autoscaling/tests/manual
 make .env # generate an initial .env file
 nano .env # edit .env and set the variables as needed
+# in particular NODES_MONITORING_NEW_NODES_LABELS, NODES_MONITORING_NODE_LABELS, NODES_MONITORING_SERVICE_LABELS must be activated
 ```
 
 3. start autoscaling stack
