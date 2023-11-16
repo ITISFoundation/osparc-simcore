@@ -1,8 +1,19 @@
 import datetime
+import tempfile
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, ByteSize, NonNegativeFloat, PositiveInt
+import sh
+from models_library.docker import DockerGenericTag
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    Extra,
+    Field,
+    NonNegativeFloat,
+    PositiveInt,
+    validator,
+)
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
@@ -74,3 +85,88 @@ class EC2InstanceConfig:
     key_name: str
     security_group_ids: list[str]
     subnet_id: str
+
+
+AMIIdStr: TypeAlias = str
+CommandStr: TypeAlias = str
+
+
+class EC2InstanceBootSpecific(BaseModel):
+    ami_id: AMIIdStr
+    custom_boot_scripts: list[CommandStr] = Field(
+        default_factory=list,
+        description="script(s) to run on EC2 instance startup (be careful!), "
+        "each entry is run one after the other using '&&' operator",
+    )
+    pre_pull_images: list[DockerGenericTag] = Field(
+        default_factory=list,
+        description="a list of docker image/tags to pull on instance cold start",
+    )
+    pre_pull_images_cron_interval: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=30),
+        description="time interval between pulls of images (minimum is 1 minute) "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
+    class Config:
+        extra = Extra.forbid
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    # just AMI
+                    "ami_id": "ami-123456789abcdef",
+                },
+                {
+                    # AMI + scripts
+                    "ami_id": "ami-123456789abcdef",
+                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
+                },
+                {
+                    # AMI + scripts + pre-pull
+                    "ami_id": "ami-123456789abcdef",
+                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                },
+                {
+                    # AMI + pre-pull
+                    "ami_id": "ami-123456789abcdef",
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                },
+                {
+                    # AMI + pre-pull + cron
+                    "ami_id": "ami-123456789abcdef",
+                    "pre_pull_images": [
+                        "nginx:latest",
+                        "itisfoundation/my-very-nice-service:latest",
+                        "simcore/services/dynamic/another-nice-one:2.4.5",
+                        "asd",
+                    ],
+                    "pre_pull_images_cron_interval": "01:00:00",
+                },
+            ]
+        }
+
+    @validator("custom_boot_scripts")
+    @classmethod
+    def validate_bash_calls(cls, v):
+        try:
+            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
+                temp_file.writelines(v)
+                temp_file.flush()
+                # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
+                sh.bash("-n", temp_file.name)
+        except sh.ErrorReturnCode as exc:
+            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
+            raise ValueError(msg) from exc
+
+        return v

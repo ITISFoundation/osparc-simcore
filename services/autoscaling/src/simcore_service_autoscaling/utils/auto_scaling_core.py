@@ -3,7 +3,12 @@ import logging
 import re
 from typing import Final
 
-from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
+from aws_library.ec2.models import (
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -74,15 +79,14 @@ async def associate_ec2_instances_with_nodes(
     return associated_instances, non_associated_instances
 
 
-async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    startup_commands = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS.copy()
-    )
+async def ec2_startup_script(
+    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
+) -> str:
+    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     startup_commands.append(await utils_docker.get_docker_swarm_join_bash_command())
     if app_settings.AUTOSCALING_REGISTRY:  # noqa: SIM102
         if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
+            ec2_boot_specific.pre_pull_images
         ):
             startup_commands.append(
                 " && ".join(
@@ -96,7 +100,7 @@ async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
             )
             startup_commands.append(
                 utils_docker.get_docker_pull_images_crontab(
-                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL
+                    ec2_boot_specific.pre_pull_images_cron_interval
                 ),
             )
 

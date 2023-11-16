@@ -3,7 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from typing import Any, Callable, Mapping
+from collections.abc import Callable, Mapping
+from typing import Any
 
 import aiodocker
 import pytest
@@ -28,12 +29,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_TENACITY_RETRY_PARAMS = dict(
-    reraise=True,
-    retry=retry_if_exception_type(AssertionError),
-    stop=stop_after_delay(30),
-    wait=wait_fixed(0.1),
-)
+_TENACITY_RETRY_PARAMS = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(30),
+    "wait": wait_fixed(0.1),
+}
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
@@ -86,7 +87,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
     initialized_app: FastAPI,
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
-    assert initialized_app.state.rabbitmq_client == None
+    assert initialized_app.state.rabbitmq_client is None
     with pytest.raises(ConfigurationError):
         get_rabbitmq_client(initialized_app)
 

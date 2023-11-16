@@ -4,6 +4,7 @@
 
 import importlib.resources
 import json
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,7 @@ import simcore_service_clusters_keeper
 import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.client import SimcoreEC2API
+from aws_library.ec2.models import EC2InstanceBootSpecific
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -106,8 +107,14 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
-            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
-            "WORKERS_EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    ec2_type_name: random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                    )
+                    for ec2_type_name in ec2_instances
+                }
+            ),
             "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
             ),
@@ -162,10 +169,7 @@ def disable_clusters_management_background_task(
 
 @pytest.fixture
 def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("RABBIT_HOST")
-    monkeypatch.delenv("RABBIT_USER")
-    monkeypatch.delenv("RABBIT_SECURE")
-    monkeypatch.delenv("RABBIT_PASSWORD")
+    monkeypatch.setenv("CLUSTERS_KEEPER_RABBITMQ", "null")
 
 
 @pytest.fixture
@@ -202,36 +206,6 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
-
-
-@pytest.fixture
-def aws_allowed_ec2_instance_type_names_env(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    changed_envs = {
-        "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-            [
-                "t2.xlarge",
-                "t2.2xlarge",
-                "g3.4xlarge",
-                "r5n.4xlarge",
-                "r5n.8xlarge",
-            ]
-        ),
-    }
-    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
-
-
-@pytest.fixture
-async def clusters_keeper_ec2(
-    app_environment: EnvVarsDict,
-) -> AsyncIterator[SimcoreEC2API]:
-    settings = EC2Settings.create_from_envs()
-    ec2 = await SimcoreEC2API.create(settings)
-    assert ec2
-    yield ec2
-    await ec2.close()
 
 
 @pytest.fixture
