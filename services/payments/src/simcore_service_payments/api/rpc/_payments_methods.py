@@ -17,6 +17,7 @@ from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments, payments_methods
 from ...services.payments_gateway import PaymentsGatewayApi
+from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 
 _logger = logging.getLogger(__name__)
 
@@ -128,6 +129,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
 ):
     return await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
+        rut=ResourceUsageTrackerApi.get_from_app_state(app),
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         payment_method_id=payment_method_id,

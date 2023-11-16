@@ -67,7 +67,7 @@ async def get_wallet_auto_recharge(
     return None
 
 
-async def get_wallet_payment_autorecharge_with_default(
+async def get_user_wallet_payment_autorecharge_with_default(
     app: FastAPI,
     auto_recharge_repo: AutoRechargeRepo,
     payments_method_repo: PaymentsMethodsRepo,

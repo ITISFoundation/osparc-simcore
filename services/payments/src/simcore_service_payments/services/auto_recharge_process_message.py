@@ -19,6 +19,9 @@ from simcore_service_payments.db.payments_transactions_repo import (
     PaymentsTransactionsRepo,
 )
 from simcore_service_payments.models.db import PaymentsMethodsDB
+from simcore_service_payments.services.resource_usage_tracker import (
+    ResourceUsageTrackerApi,
+)
 
 from ..core.settings import ApplicationSettings
 from .auto_recharge import get_wallet_auto_recharge
@@ -59,13 +62,13 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 
     # Step 4: Check spending limits
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
-    if _exceeds_monthly_limit(
+    if await _exceeds_monthly_limit(
         _payments_transactions_repo, rabbit_message.wallet_id, wallet_auto_recharge
     ):
         return True  # We do not auto recharge
 
     # Step 5: Check last top-up time
-    if _recently_topped_up(_payments_transactions_repo, rabbit_message.wallet_id):
+    if await _recently_topped_up(_payments_transactions_repo, rabbit_message.wallet_id):
         return True  # We do not auto recharge
 
     # Step 6: Perform auto-recharge
@@ -83,7 +86,6 @@ async def _exceeds_monthly_limit(
     cumulative_current_month_spending = (
         await payments_transactions_repo.sum_current_month_dollars(wallet_id=wallet_id)
     )
-
     return (
         wallet_auto_recharge.monthly_limit_in_usd is not None
         and cumulative_current_month_spending
@@ -127,9 +129,11 @@ async def _perform_auto_recharge(
 
     payments_gateway = PaymentsGatewayApi.get_from_app_state(app)
     payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
+    rut_api = ResourceUsageTrackerApi.get_from_app_state(app)
 
     await pay_with_payment_method(
         gateway=payments_gateway,
+        rut=rut_api,
         repo_transactions=payments_transactions_repo,
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         payment_method_id=cast(PaymentMethodID, wallet_auto_recharge.payment_method_id),
