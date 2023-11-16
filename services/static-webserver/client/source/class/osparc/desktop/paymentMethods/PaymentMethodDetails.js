@@ -50,10 +50,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodDetails", {
         [this.tr("Holder name"), paymentMethodData["cardHolderName"]],
         [this.tr("Type"), paymentMethodData["cardType"]],
         [this.tr("Number"), paymentMethodData["cardNumberMasked"]],
-        [this.tr("Expiration date"), paymentMethodData["expirationMonth"] + "/" + paymentMethodData["expirationYear"]],
-        [this.tr("Address"), paymentMethodData["streetAddress"]],
-        [this.tr("ZIP code"), paymentMethodData["zipcode"]],
-        [this.tr("Country"), paymentMethodData["country"]]
+        [this.tr("Expiration date"), paymentMethodData["expirationMonth"] + "/" + paymentMethodData["expirationYear"]]
       ].forEach((pair, idx) => {
         this._add(new qx.ui.basic.Label(pair[0]).set({
           font: "text-14"

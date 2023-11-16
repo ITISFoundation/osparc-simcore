@@ -5,6 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..core.settings import ApplicationSettings
 
 
+def get_engine(app: FastAPI) -> AsyncEngine:
+    assert app.state.engine  # nosec
+    engine: AsyncEngine = app.state.engine
+    return engine
+
+
 def setup_postgres(app: FastAPI):
     app.state.engine = None
 

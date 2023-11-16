@@ -36,10 +36,10 @@ class PaymentsTransactionsRepo(BaseRepository):
         initiated_at: datetime.datetime,
     ) -> PaymentID:
         """Annotates init-payment transaction
+
         Raises:
             PaymentAlreadyExistsError
         """
-
         try:
             async with self.db_engine.begin() as conn:
                 await conn.execute(
