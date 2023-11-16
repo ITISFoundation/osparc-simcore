@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import cast
 
 from fastapi import FastAPI
@@ -8,6 +9,7 @@ from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodID,
 )
+from models_library.basic_types import NonNegativeDecimal
 from models_library.products import CreditResultGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
@@ -39,7 +41,9 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     settings: ApplicationSettings = app.state.settings
 
     # Step 1: Check if wallet credits are below the threshold
-    if rabbit_message.credits > settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS:
+    if await _check_wallet_credits_above_threshold(
+        settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS, rabbit_message.credits
+    ):
         return True  # We do not auto recharge
 
     # Step 2: Check auto-recharge conditions
@@ -47,12 +51,10 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     wallet_auto_recharge: GetWalletAutoRecharge | None = await get_wallet_auto_recharge(
         settings, _auto_recharge_repo, wallet_id=rabbit_message.wallet_id
     )
-    if (
-        wallet_auto_recharge is None
-        or wallet_auto_recharge.enabled is False
-        or wallet_auto_recharge.payment_method_id is None
-    ):
+    if await _check_autorecharge_conditions_not_met(wallet_auto_recharge):
         return True  # We do not auto recharge
+    assert wallet_auto_recharge is not None  # nosec
+    assert wallet_auto_recharge.payment_method_id is not None  # nosec
 
     # Step 3: Get Payment method
     _payments_repo = PaymentsMethodsRepo(db_engine=app.state.engine)
@@ -76,6 +78,22 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
         app, rabbit_message, payment_method_db, wallet_auto_recharge
     )
     return True
+
+
+async def _check_wallet_credits_above_threshold(
+    threshold_in_credits: NonNegativeDecimal, _credits: Decimal
+) -> bool:
+    return _credits > threshold_in_credits
+
+
+async def _check_autorecharge_conditions_not_met(
+    wallet_auto_recharge: GetWalletAutoRecharge | None,
+) -> bool:
+    return (
+        wallet_auto_recharge is None
+        or wallet_auto_recharge.enabled is False
+        or wallet_auto_recharge.payment_method_id is None
+    )
 
 
 async def _exceeds_monthly_limit(

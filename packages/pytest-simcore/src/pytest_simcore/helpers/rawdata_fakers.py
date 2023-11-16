@@ -228,6 +228,8 @@ def random_payment_transaction(
         "wallet_id": 1,
         "comment": "Free starting credits",
         "initiated_at": utcnow(),
+        "state": "PENDING",
+        "completed_at": None,
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
