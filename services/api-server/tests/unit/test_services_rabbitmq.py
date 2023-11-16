@@ -255,6 +255,7 @@ class LogListener:
             ii += 1
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
+            # here need to query if project is done
             if ii == 10:
                 break
 
