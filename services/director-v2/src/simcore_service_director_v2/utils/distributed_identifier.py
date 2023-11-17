@@ -15,28 +15,30 @@ _logger = logging.getLogger(__name__)
 _REDIS_MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 _DEFAULT_CLEANUP_INTERVAL: Final[timedelta] = timedelta(minutes=1)
 
-Ident = TypeVar("Ident")
-Res = TypeVar("Res")
-
-# Provided at the moment of creation.
-# Can be used inside ``is_used`` and ``_destroy``.
+Identifier = TypeVar("Identifier")
+ResourceObject = TypeVar("ResourceObject")
 CleanupContext = TypeVar("CleanupContext")
 
 
-class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext]):
+class BaseDistributedIdentifierManager(
+    ABC, Generic[Identifier, ResourceObject, CleanupContext]
+):
     """Used to implement managers for resources that require book keeping
     in a distributed system.
 
+    NOTE: that ``Identifier`` and ``ResourceObject`` are serialized and deserialized
+    to and from Redis.
+
     Generics:
-        Ident -- a user defined object: used to uniquely identify the resource
-        Res -- a user defined object: referring to an existing resource
+        Identifier -- a user defined object: used to uniquely identify the resource
+        ResourceObject -- a user defined object: referring to an existing resource
         CleanupContext -- a user defined object: contains all necessary
             arguments used for removal and cleanup.
     """
 
     @classmethod
     @abstractmethod
-    def _deserialize_identifier(cls, raw: str) -> Ident:
+    def _deserialize_identifier(cls, raw: str) -> Identifier:
         """User provided deserialization for the identifier
 
         Arguments:
@@ -48,7 +50,7 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
 
     @classmethod
     @abstractmethod
-    def _serialize_identifier(cls, identifier: Ident) -> str:
+    def _serialize_identifier(cls, identifier: Identifier) -> str:
         """User provided serialization for the identifier
 
         Arguments:
@@ -83,7 +85,9 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
         """
 
     @abstractmethod
-    async def is_used(self, identifier: Ident, cleanup_context: CleanupContext) -> bool:
+    async def is_used(
+        self, identifier: Identifier, cleanup_context: CleanupContext
+    ) -> bool:
         """Check if the resource associated to the ``identifier`` is
         still being used.
         # NOTE: a resource can be created but not in use.
@@ -97,7 +101,7 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
         """
 
     @abstractmethod
-    async def _create(self, **extra_kwargs) -> tuple[Ident, Res]:
+    async def _create(self, **extra_kwargs) -> tuple[Identifier, ResourceObject]:
         """Used INTERNALLY for creating the resources.
         # NOTE: should not be used directly, use the public
         version ``create`` instead.
@@ -110,7 +114,9 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
         """
 
     @abstractmethod
-    async def get(self, identifier: Ident, **extra_kwargs) -> Res | None:
+    async def get(
+        self, identifier: Identifier, **extra_kwargs
+    ) -> ResourceObject | None:
         """If exists, returns the resource.
 
         Arguments:
@@ -123,7 +129,7 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
 
     @abstractmethod
     async def _destroy(
-        self, identifier: Ident, cleanup_context: CleanupContext
+        self, identifier: Identifier, cleanup_context: CleanupContext
     ) -> None:
         """Used to destroy an existing resource
         # NOTE: should not be used directly, use the public
@@ -138,7 +144,7 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
 
     async def create(
         self, *, cleanup_context: CleanupContext, **extra_kwargs
-    ) -> tuple[Ident, Res]:
+    ) -> tuple[Identifier, ResourceObject]:
         """Used for creating the resources
 
         Arguments:
@@ -155,7 +161,7 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
         )
         return identifier, result
 
-    async def remove(self, identifier: Ident, *, reraise: bool = False) -> None:
+    async def remove(self, identifier: Identifier, *, reraise: bool = False) -> None:
         """Attempts to remove the resource, if an error occurs it is logged.
 
         Arguments:
@@ -199,11 +205,11 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
         return f"{cls.class_path}:"
 
     @classmethod
-    def _to_redis_key(cls, identifier: Ident) -> str:
+    def _to_redis_key(cls, identifier: Identifier) -> str:
         return f"{cls._redis_key_prefix}{cls._serialize_identifier(identifier)}"
 
     @classmethod
-    def _from_redis_key(cls, redis_key: str) -> Ident:
+    def _from_redis_key(cls, redis_key: str) -> Identifier:
         return cls._deserialize_identifier(
             redis_key.removeprefix(cls._redis_key_prefix)
         )
@@ -239,14 +245,16 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
 
         self._cleanup_task: Task | None = None
 
-    async def _get_identifier_context(self, identifier: Ident) -> CleanupContext | None:
+    async def _get_identifier_context(
+        self, identifier: Identifier
+    ) -> CleanupContext | None:
         raw: bytes | None = await self.redis_client_sdk.redis.get(
             self._to_redis_key(identifier)
         )
         return self._deserialize_cleanup_context(raw) if raw else None
 
-    async def _get_tracked(self) -> dict[Ident, CleanupContext]:
-        identifiers: list[Ident] = [
+    async def _get_tracked(self) -> dict[Identifier, CleanupContext]:
+        identifiers: list[Identifier] = [
             self._from_redis_key(redis_key)
             for redis_key in await self.redis_client_sdk.redis.keys(
                 f"{self._redis_key_prefix}*"
@@ -270,7 +278,7 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
 
     async def _cleanup_unused_identifiers(self) -> None:
         # removes no longer used identifiers
-        tracked_data: dict[Ident, CleanupContext] = await self._get_tracked()
+        tracked_data: dict[Identifier, CleanupContext] = await self._get_tracked()
         _logger.info("Will remove unused  %s", list(tracked_data.keys()))
 
         for identifier, cleanup_context in tracked_data.items():
