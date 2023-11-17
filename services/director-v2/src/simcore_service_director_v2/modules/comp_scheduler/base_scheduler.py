@@ -398,12 +398,16 @@ class BaseCompScheduler(ABC):
                     user_id=user_id,
                     user_email=run_metadata.get("user_email", UNDEFINED_STR_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata.get(
-                        "project_name", UNDEFINED_STR_METADATA
+                    project_name=run_metadata.get("project_metadata", {}).get(
+                        "parent_project_name",
+                        run_metadata.get("project_name", UNDEFINED_STR_METADATA),
                     ),
                     node_id=t.node_id,
-                    node_name=run_metadata.get("node_id_names_map", {}).get(
-                        t.node_id, UNDEFINED_STR_METADATA
+                    node_name=run_metadata.get("project_metadata", {}).get(
+                        "parent_node_name",
+                        run_metadata.get("node_id_names_map", {}).get(
+                            t.node_id, UNDEFINED_STR_METADATA
+                        ),
                     ),
                     service_key=ServiceKey(t.image.name),
                     service_version=ServiceVersion(t.image.tag),
