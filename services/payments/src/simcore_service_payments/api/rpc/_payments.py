@@ -4,6 +4,7 @@ from decimal import Decimal
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
+    PaymentTransaction,
     WalletPaymentInitiated,
 )
 from models_library.users import UserID
@@ -84,3 +85,19 @@ async def cancel_payment(
             user_id=user_id,
             wallet_id=wallet_id,
         )
+
+
+@router.expose()
+async def get_payments_page(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    limit: int | None = None,
+    offset: int | None = None,
+) -> tuple[int, list[PaymentTransaction]]:
+    return await payments.get_payments_page(
+        repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
