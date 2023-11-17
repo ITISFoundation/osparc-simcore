@@ -29,7 +29,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -150,6 +150,7 @@ async def _check_pipeline_startable(
 
 async def _try_start_pipeline(
     *,
+    project_repo: ProjectsRepository,
     computation: ComputationCreate,
     complete_dag: nx.DiGraph,
     minimal_dag: nx.DiGraph,
@@ -178,6 +179,24 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
+    current_project_metadata = await projects_metadata_repo.get_metadata(
+        computation.project_id
+    )
+
+    parent_project_metadata = {}
+    if current_project_metadata is not None and "node_id" in current_project_metadata:
+        parent_node_id = NodeID(current_project_metadata["node_id"])
+        parent_node_idstr = NodeIDStr(f"{parent_node_id}")
+        parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
+        parent_project = await project_repo.get_project(parent_project_id)
+        assert parent_node_idstr in parent_project.workbench
+        parent_project_metadata = {
+            "parent_node_id": parent_node_id,
+            "parent_node_name": parent_project.workbench[parent_node_idstr].label,
+            "parent_project_id": parent_project_id,
+            "parent_project_name": parent_project.name,
+        }
+
     await scheduler.run_new_pipeline(
         computation.user_id,
         computation.project_id,
@@ -193,10 +212,9 @@ async def _try_start_pipeline(
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-            project_metadata=await projects_metadata_repo.get_metadata(
-                computation.project_id
-            ),
-        ),
+            project_metadata=parent_project_metadata,
+        )
+        or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
     )
 
@@ -289,6 +307,7 @@ async def create_computation(  # noqa: PLR0913
 
         if computation.start_pipeline:
             await _try_start_pipeline(
+                project_repo=project_repo,
                 computation=computation,
                 complete_dag=complete_dag,
                 minimal_dag=minimal_computational_dag,
