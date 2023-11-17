@@ -14,12 +14,14 @@ from unittest.mock import AsyncMock
 
 import httpx
 import pytest
+import respx
 from async_asgi_testclient import TestClient as AsyncAsgiClient
 from faker import Faker
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, status
 from fastapi.responses import StreamingResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -32,6 +34,10 @@ from pytest_simcore.helpers.utils_envs import (
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
 from simcore_service_api_server.models.schemas.jobs import JobLog
+from simcore_service_api_server.services.director_v2 import (
+    ComputationTaskGet,
+    DirectorV2Api,
+)
 from simcore_service_api_server.services.rabbitmq import get_rabbitmq_client
 
 pytest_simcore_core_services_selection = [
@@ -54,7 +60,7 @@ def app_environment(
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
     mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
-    mocker.patch("simcore_service_api_server.core.application.director_v2.setup")
+    # mocker.patch("simcore_service_api_server.core.application.director_v2.setup")
 
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
@@ -208,10 +214,31 @@ async def test_multiple_producers_and_single_consumer(
 
 @pytest.fixture
 async def log_listener(
-    client: httpx.AsyncClient, app: FastAPI, project_id: ProjectID
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    project_id: ProjectID,
+    user_id: UserID,
+    director_v2_service_mock: respx.MockRouter,
 ) -> AsyncIterable[LogListener]:
-    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
-    yield await LogListener.create(rabbit_consumer, project_id)
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        task = ComputationTaskGet.parse_obj(
+            ComputationTaskGet.Config.schema_extra["examples"][0]
+        )
+        task.state = RunningState.STARTED
+        return httpx.Response(status_code=status.HTTP_200_OK, json=task.json())
+
+    director_v2_service_mock.get(f"/v2/computations/{project_id}").mock(
+        side_effect=_get_computation
+    )
+
+    assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
+    log_listener: LogListener = LogListener(
+        user_id=user_id,
+        rabbit_consumer=get_rabbitmq_client(app),
+        director2_api=d2_client,
+    )
+    await log_listener.listen(project_id)
+    yield log_listener
 
 
 async def test_json_log_generator(

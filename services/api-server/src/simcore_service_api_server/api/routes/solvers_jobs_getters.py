@@ -364,10 +364,16 @@ async def get_log_stream(
     version: VersionStr,
     job_id: JobID,
     log_listener: Annotated[LogListener, Depends(LogListener)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    await log_listener.listen(job_id)
-    return StreamingResponse(
-        log_listener.log_generator(),
-        media_type="application/x-ndjson",
-        background=BackgroundTask(log_listener.stop_listening),
-    )
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    with log_context(_logger, logging.DEBUG, "Stream logs"):
+        _logger.debug("job: %s", job_name)
+        project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+        await log_listener.listen(job_id)
+        return StreamingResponse(
+            log_listener.log_generator(),
+            media_type="application/x-ndjson",
+            background=BackgroundTask(log_listener.stop_listening),
+        )
