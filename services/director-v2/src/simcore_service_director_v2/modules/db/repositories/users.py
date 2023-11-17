@@ -6,7 +6,7 @@ from ._base import BaseRepository
 
 
 class UsersRepository(BaseRepository):
-    async def get_user_email(self, user_id: UserID) -> str:
+    async def get_user_email(self, user_id: UserID) -> EmailStr:
         async with self.db_engine.acquire() as conn:
             email = await UsersRepo.get_email(conn, user_id)
             return parse_obj_as(EmailStr, email)
