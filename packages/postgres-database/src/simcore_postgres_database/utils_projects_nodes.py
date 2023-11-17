@@ -108,11 +108,10 @@ class ProjectNodesRepo:
             raise ProjectNodesProjectNotFound(msg) from exc
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
-            raise ProjectNodesDuplicateNode(
-                f"Project node already exists: {exc}"
-            ) from exc
+            msg = f"Project node already exists: {exc}"
+            raise ProjectNodesDuplicateNode(msg) from exc
 
-    async def list(self, connection: SAConnection) -> list[ProjectNode]:
+    async def list(self, connection: SAConnection) -> list[ProjectNode]:  # noqa: A003
         """list the nodes in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -261,3 +260,12 @@ class ProjectNodesRepo:
             },
         )
         await connection.execute(on_update_stmt)
+
+    @staticmethod
+    async def get_project_id_from_node_id(
+        connection: SAConnection, *, node_id: uuid.UUID
+    ) -> uuid.UUID:
+        get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(
+            projects_nodes.c.node_id == f"{node_id}"
+        )
+        return uuid.UUID(await connection.scalar(get_stmt))

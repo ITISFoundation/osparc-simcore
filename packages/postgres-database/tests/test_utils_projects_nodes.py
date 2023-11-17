@@ -5,8 +5,9 @@
 import asyncio
 import random
 import uuid
+from collections.abc import Awaitable, Callable
 from random import randint
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import pytest
 import sqlalchemy
@@ -152,7 +153,9 @@ async def test_list_project_nodes(
 
     created_nodes = await projects_nodes_repo.add(
         connection,
-        nodes=[create_fake_projects_node() for _ in range(randint(3, 12))],
+        nodes=[
+            create_fake_projects_node() for _ in range(randint(3, 12))
+        ],  # noqa: S311
     )
 
     nodes = await projects_nodes_repo.list(connection)
@@ -336,7 +339,7 @@ async def test_multiple_creation_deletion_of_nodes(
             assert list_nodes
             assert len(list_nodes) == NUM_NODES
             await projects_nodes_repo.delete(
-                connection, node_id=random.choice(list_nodes).node_id
+                connection, node_id=random.choice(list_nodes).node_id  # noqa: S311
             )
             list_nodes = await projects_nodes_repo.list(connection)
             assert list_nodes
@@ -344,3 +347,39 @@ async def test_multiple_creation_deletion_of_nodes(
             await _delete_project(connection, project_uuid=project.uuid)
 
     await asyncio.gather(*(_workflow() for _ in range(num_concurrent_workflows)))
+
+
+async def test_get_project_id_from_node_id(
+    pg_engine: Engine,
+    connection: SAConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    registered_user: RowProxy,
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+):
+    NUM_NODES = 11
+
+    async def _workflow() -> dict[uuid.UUID, list[uuid.UUID]]:
+        async with pg_engine.acquire() as connection:
+            project = await create_fake_project(connection, registered_user)
+            projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
+
+            list_of_nodes = await projects_nodes_repo.add(
+                connection,
+                nodes=[create_fake_projects_node() for _ in range(NUM_NODES)],
+            )
+
+        return {uuid.UUID(project["uuid"]): [node.node_id for node in list_of_nodes]}
+
+    # create some projects
+    list_of_project_id_node_ids_map = await asyncio.gather(
+        *(_workflow() for _ in range(10))
+    )
+
+    for project_id_to_node_ids_map in list_of_project_id_node_ids_map:
+        project_id = next(iter(project_id_to_node_ids_map))
+        random_node_id = random.choice(project_id_to_node_ids_map[project_id])
+        received_project_id = await ProjectNodesRepo.get_project_id_from_node_id(
+            connection, node_id=random_node_id
+        )
+        assert received_project_id == next(iter(project_id_to_node_ids_map))
