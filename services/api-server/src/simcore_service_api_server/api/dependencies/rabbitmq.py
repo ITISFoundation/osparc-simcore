@@ -33,21 +33,24 @@ class LogListener:
     _user_id: PositiveInt
     _director2_api: DirectorV2Api
 
-    @classmethod
-    async def create(
-        cls,
-        project_id: UUID,
-        rabbit_consumer: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
+    def __init__(
+        self,
         user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+        rabbit_consumer: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
         director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    ) -> "LogListener":
-        self = cls()
+    ):
+
         self._rabbit_consumer = rabbit_consumer
-        self._project_id = project_id
         self._user_id = user_id
         self._director2_api = director2_api
+        self._queue: Queue[JobLog] = Queue()
 
-        self._queue = Queue()
+    async def listen(
+        self,
+        project_id: UUID,
+    ) -> "LogListener":
+        self._project_id = project_id
+
         self._queu_name = await self._rabbit_consumer.subscribe(
             LoggerRabbitMessage.get_channel_name(),
             self._add_logs_to_queu,

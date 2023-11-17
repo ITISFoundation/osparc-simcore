@@ -15,7 +15,7 @@
 --editable ../../packages/models-library
 --editable ../../packages/postgres-database
 --editable ../../packages/pytest-simcore/
---editable ../../packages/service-library[fastapi]
+--editable ../../packages/service-library
 --editable ../../packages/settings-library/
 --editable ../../packages/simcore-sdk
 # installs current package
