@@ -1,7 +1,9 @@
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
 from collections.abc import Awaitable, Callable
+from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
@@ -10,16 +12,22 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID
+from models_library.services import RunID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
+from servicelib.redis import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_director_v2.modules.api_keys_manager import (
     APIKeysManager,
     _get_api_key_name,
+    get_or_create_api_key,
+    safe_remove,
 )
 
 pytest_simcore_core_services_selection = [
     "rabbit",
+    "redis",
 ]
 
 
@@ -28,9 +36,31 @@ def node_id(faker: Faker) -> NodeID:
     return faker.uuid4(cast_to=None)
 
 
-def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID):
-    api_key_names = {_get_api_key_name(node_id) for x in range(1000)}
+@pytest.fixture
+def run_id(faker: Faker) -> RunID:
+    return RunID(faker.pystr())
+
+
+@pytest.fixture
+def product_name(faker: Faker) -> ProductName:
+    return faker.pystr()
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint()
+
+
+def test_get_api_key_name_is_not_randomly_generated(node_id: NodeID, run_id: RunID):
+    api_key_names = {_get_api_key_name(node_id, run_id) for _ in range(1000)}
     assert len(api_key_names) == 1
+
+
+@pytest.fixture
+def redis_client_sdk(redis_service: RedisSettings) -> RedisClientSDK:
+    return RedisClientSDK(
+        redis_service.build_redis_dsn(RedisDatabase.DISTRIBUTED_IDENTIFIERS)
+    )
 
 
 @pytest.fixture
@@ -74,27 +104,65 @@ async def mock_rpc_server(
     return rpc_client
 
 
-async def test_rpc_endpoints(
+@pytest.fixture
+def app() -> FastAPI:
+    return FastAPI()
+
+
+@pytest.fixture
+def mock_dynamic_sidecars_scheduler(app: FastAPI, is_used: bool) -> None:
+    scheduler_mock = AsyncMock()
+    scheduler_mock.is_service_tracked = lambda: is_used
+    app.state.dynamic_sidecar_scheduler = scheduler_mock
+
+
+@pytest.fixture
+def api_keys_manager(
     mock_rpc_server: RabbitMQRPCClient,
-    faker: Faker,
+    mock_dynamic_sidecars_scheduler: None,
+    redis_client_sdk: RedisClientSDK,
+    app: FastAPI,
+) -> APIKeysManager:
+    app.state.api_keys_manager = manager = APIKeysManager(app, redis_client_sdk)
+    return manager
+
+
+@pytest.mark.parametrize("is_used", [True])
+async def test_api_keys_workflow(
+    api_keys_manager: APIKeysManager,
+    app: FastAPI,
+    node_id: NodeID,
+    run_id: RunID,
+    product_name: ProductName,
+    user_id: UserID,
 ):
-    manager = APIKeysManager(FastAPI())
-
-    identifier = faker.pystr()
-    product_name = faker.pystr()
-    user_id = faker.pyint()
-
-    api_key = await manager.get(
-        identifier=identifier, product_name=product_name, user_id=user_id
+    api_key = await get_or_create_api_key(
+        app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
     assert isinstance(api_key, ApiKeyGet)
+    assert len(await api_keys_manager._get_tracked()) == 1  # noqa: SLF001
 
-    identifier, api_key = await manager.create(
-        identifier=identifier, product_name=product_name, user_id=user_id
+    await safe_remove(app, node_id=node_id, run_id=run_id)
+    assert len(await api_keys_manager._get_tracked()) == 0  # noqa: SLF001
+
+
+@pytest.mark.parametrize("is_used", [False, True])
+async def test_background_cleanup(
+    api_keys_manager: APIKeysManager,
+    app: FastAPI,
+    node_id: NodeID,
+    run_id: RunID,
+    product_name: ProductName,
+    user_id: UserID,
+    is_used: bool,
+) -> None:
+    api_key = await get_or_create_api_key(
+        app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
-    assert isinstance(identifier, str)
     assert isinstance(api_key, ApiKeyGet)
+    assert len(await api_keys_manager._get_tracked()) == 1  # noqa: SLF001
 
-    await manager.destroy(
-        identifier=identifier, product_name=product_name, user_id=user_id
-    )
+    await api_keys_manager._cleanup_unused_identifiers()  # noqa: SLF001
+    assert (
+        len(await api_keys_manager._get_tracked()) == 1 if is_used else 0
+    )  # noqa: SLF001
