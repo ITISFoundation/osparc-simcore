@@ -17,7 +17,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserRole
 
@@ -253,7 +253,7 @@ def _setup_lifespan_osparc_variables_table(app: FastAPI):
     )
 
 
-async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
+async def _request_user_email(app: FastAPI, user_id: UserID) -> str:
     repo = get_repository(app, ServicesEnvironmentsRepository)
     return await repo.get_user_email(user_id=user_id)
 
