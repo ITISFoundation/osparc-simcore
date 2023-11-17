@@ -154,8 +154,8 @@ async def test_list_project_nodes(
     created_nodes = await projects_nodes_repo.add(
         connection,
         nodes=[
-            create_fake_projects_node() for _ in range(randint(3, 12))
-        ],  # noqa: S311
+            create_fake_projects_node() for _ in range(randint(3, 12))  # noqa: S311
+        ],
     )
 
     nodes = await projects_nodes_repo.list(connection)
@@ -378,8 +378,22 @@ async def test_get_project_id_from_node_id(
 
     for project_id_to_node_ids_map in list_of_project_id_node_ids_map:
         project_id = next(iter(project_id_to_node_ids_map))
-        random_node_id = random.choice(project_id_to_node_ids_map[project_id])
+        random_node_id = random.choice(
+            project_id_to_node_ids_map[project_id]
+        )  # noqa: S311
         received_project_id = await ProjectNodesRepo.get_project_id_from_node_id(
             connection, node_id=random_node_id
         )
         assert received_project_id == next(iter(project_id_to_node_ids_map))
+
+
+async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
+    pg_engine: Engine,
+    connection: SAConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    faker: Faker,
+):
+    with pytest.raises(ProjectNodesNodeNotFound):
+        await ProjectNodesRepo.get_project_id_from_node_id(
+            connection, node_id=faker.uuid4(cast_to=None)
+        )

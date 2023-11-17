@@ -265,7 +265,15 @@ class ProjectNodesRepo:
     async def get_project_id_from_node_id(
         connection: SAConnection, *, node_id: uuid.UUID
     ) -> uuid.UUID:
+        """
+        Raises:
+            ProjectNodesNodeNotFound:
+        """
         get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(
             projects_nodes.c.node_id == f"{node_id}"
         )
-        return uuid.UUID(await connection.scalar(get_stmt))
+        node_id = await connection.scalar(get_stmt)
+        if node_id is None:
+            msg = f"Node with {node_id} not found"
+            raise ProjectNodesNodeNotFound(msg)
+        return uuid.UUID(node_id)
