@@ -13,7 +13,6 @@ from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
-from ..._constants import PAG
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments
 from ...services.payments_gateway import PaymentsGatewayApi
@@ -74,7 +73,6 @@ async def cancel_payment(
         _logger,
         logging.INFO,
         "Cancel payment in %s",
-        PAG,
         f"{wallet_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
