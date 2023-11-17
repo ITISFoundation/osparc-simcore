@@ -3,7 +3,7 @@ from typing import Literal
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import EmailStr
+from pydantic import EmailStr, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_services_environments import (
     VENDOR_SECRET_PREFIX,
@@ -49,10 +49,10 @@ class ServicesEnvironmentsRepository(BaseRepository):
 
     async def get_user_role(self, user_id: UserID) -> UserRole:
         async with self.db_engine.acquire() as conn:
-            user_role: UserRole = await UsersRepo().get_role(conn, user_id=user_id)
-            return user_role
+            user_role = await UsersRepo().get_role(conn, user_id=user_id)
+            return UserRole(user_role)
 
     async def get_user_email(self, user_id: UserID) -> EmailStr:
         async with self.db_engine.acquire() as conn:
-            email: EmailStr = await UsersRepo().get_email(conn, user_id=user_id)
-            return email
+            email = await UsersRepo().get_email(conn, user_id=user_id)
+            return parse_obj_as(EmailStr, email)

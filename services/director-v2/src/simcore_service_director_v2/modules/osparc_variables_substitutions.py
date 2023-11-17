@@ -19,6 +19,7 @@ from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import BaseModel, EmailStr
 from servicelib.logging_utils import log_context
+from simcore_postgres_database.models.users import UserRole
 
 from ..utils.db import get_repository
 from ..utils.osparc_variables import (
@@ -259,8 +260,8 @@ async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
 
 async def _request_user_role(app: FastAPI, user_id: UserID) -> str:
     repo = get_repository(app, ServicesEnvironmentsRepository)
-    user_role = await repo.get_user_role(user_id=user_id)
-    return user_role.value
+    user_role: UserRole = await repo.get_user_role(user_id=user_id)
+    return f"{user_role.value}"
 
 
 def _setup_session_osparc_variables(app: FastAPI):

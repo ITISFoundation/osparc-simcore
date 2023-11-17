@@ -2,9 +2,10 @@
     i.e. models.users main table and all its relations
 """
 
+from typing import Any
+
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from pydantic import EmailStr, parse_obj_as
 
 from .models.users import UserRole, users
 
@@ -19,7 +20,7 @@ class UserNotFoundInRepoError(BaseUserRepoError):
 
 class UsersRepo:
     @staticmethod
-    async def get_role(conn: SAConnection, user_id: int) -> UserRole:
+    async def get_role(conn: SAConnection, user_id: int) -> Any:
         if value := await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
         ):
@@ -27,9 +28,9 @@ class UsersRepo:
         raise UserNotFoundInRepoError
 
     @staticmethod
-    async def get_email(conn: SAConnection, user_id: int) -> EmailStr:
+    async def get_email(conn: SAConnection, user_id: int) -> Any:
         if value := await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
         ):
-            return parse_obj_as(EmailStr, value)
+            return value
         raise UserNotFoundInRepoError
