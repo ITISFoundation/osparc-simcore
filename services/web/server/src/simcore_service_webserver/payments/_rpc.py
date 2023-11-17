@@ -107,6 +107,29 @@ async def cancel_payment(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def get_payments_page(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    limit: int | None,
+    offset: int | None,
+) -> tuple[int, list[PaymentTransaction]]:
+    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+
+    result: tuple[int, list[PaymentTransaction]] = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payments_page"),
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
+    assert (  # nosec
+        parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
+    )
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def init_creation_of_payment_method(
     app: web.Application,
     *,
