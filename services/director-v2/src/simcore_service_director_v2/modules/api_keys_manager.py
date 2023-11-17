@@ -1,3 +1,4 @@
+from datetime import timedelta
 from uuid import uuid5
 
 from fastapi import FastAPI
@@ -17,6 +18,8 @@ from ..core.settings import AppSettings
 from ..utils.distributed_identifier import BaseDistributedIdentifierManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
+_CLEANUP_INTERVAL = timedelta(minutes=5)
+
 
 class CleanupContext(BaseModel):
     # used for checking if used
@@ -29,7 +32,7 @@ class CleanupContext(BaseModel):
 
 class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupContext]):
     def __init__(self, app: FastAPI, redis_client_sdk: RedisClientSDK) -> None:
-        super().__init__(redis_client_sdk)
+        super().__init__(redis_client_sdk, cleanup_interval=_CLEANUP_INTERVAL)
         self.app = app
 
     @property
