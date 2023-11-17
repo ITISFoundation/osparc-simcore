@@ -67,6 +67,7 @@ def redis_client_sdk(redis_service: RedisSettings) -> RedisClientSDK:
 async def mock_rpc_server(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mocker: MockerFixture,
+    faker: Faker,
 ) -> RabbitMQRPCClient:
     rpc_client = await rabbitmq_rpc_client("client")
     rpc_server = await rabbitmq_rpc_client("mock_server")
@@ -75,17 +76,25 @@ async def mock_rpc_server(
 
     # mocks the interface defined in the webserver
 
+    _storage: dict[str, ApiKeyGet] = {}
+
     @router.expose()
     async def api_key_get(
         product_name: ProductName, user_id: UserID, name: str
-    ) -> ApiKeyGet:
-        return ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+    ) -> ApiKeyGet | None:
+        return _storage.get(f"{product_name}{user_id}", None)
 
     @router.expose()
     async def create_api_keys(
         product_name: ProductName, user_id: UserID, new: ApiKeyCreate
     ) -> ApiKeyGet:
-        return ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+        api_key = ApiKeyGet(
+            display_name=new.display_name,
+            api_key=faker.pystr(),
+            api_secret=faker.pystr(),
+        )
+        _storage[f"{product_name}{user_id}"] = api_key
+        return api_key
 
     @router.expose()
     async def delete_api_keys(
@@ -112,7 +121,7 @@ def app() -> FastAPI:
 @pytest.fixture
 def mock_dynamic_sidecars_scheduler(app: FastAPI, is_used: bool) -> None:
     scheduler_mock = AsyncMock()
-    scheduler_mock.is_service_tracked = lambda: is_used
+    scheduler_mock.is_service_tracked = lambda _: is_used
     app.state.dynamic_sidecar_scheduler = scheduler_mock
 
 
@@ -167,4 +176,4 @@ async def test_background_cleanup(
     assert await _get_resource_count(api_keys_manager) == 1
 
     await api_keys_manager._cleanup_unused_identifiers()  # noqa: SLF001
-    assert await _get_resource_count(api_keys_manager) == 1 if is_used else 0
+    assert await _get_resource_count(api_keys_manager) == (1 if is_used else 0)

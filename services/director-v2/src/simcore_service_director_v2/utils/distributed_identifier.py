@@ -174,6 +174,8 @@ class BaseDistributedIdentifierManager(
         ), log_catch(_logger, reraise=reraise):
             await self._destroy(identifier, cleanup_context)
 
+        await self.redis_client_sdk.redis.delete(self._to_redis_key(identifier))
+
     @classmethod
     @abstractmethod
     def _deserialize_identifier(cls, raw: str) -> Identifier:

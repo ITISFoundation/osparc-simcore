@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any
 from uuid import uuid5
 
 from fastapi import FastAPI
@@ -77,7 +78,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
     async def get(  # type:ignore [override] # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
-        result = await self.rpc_client.request(
+        result: Any | None = await self.rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "api_key_get"),
             product_name=product_name,
@@ -107,11 +108,11 @@ async def get_or_create_api_key(
     api_keys_manager = _get_api_keys_manager(app)
     display_name = _get_api_key_name(node_id, run_id)
 
-    key_data: ApiKeyGet | None = await api_keys_manager.get(
+    api_key: ApiKeyGet | None = await api_keys_manager.get(
         identifier=display_name, product_name=product_name, user_id=user_id
     )
-    if key_data is None:
-        _, key_data = await api_keys_manager.create(
+    if api_key is None:
+        _, api_key = await api_keys_manager.create(
             cleanup_context=CleanupContext(
                 node_id=node_id, product_name=product_name, user_id=user_id
             ),
@@ -120,7 +121,7 @@ async def get_or_create_api_key(
             user_id=user_id,
         )
 
-    return key_data
+    return api_key
 
 
 async def safe_remove(app: FastAPI, *, node_id: NodeID, run_id: RunID) -> None:
