@@ -344,6 +344,6 @@ async def test_no_redis_key_overlap_when_inheriting(
     # check keys contain the correct prefixes
     key_prefixes: set[str] = {k.split(":")[0] for k in keys}
     assert key_prefixes == {
-        RandomTextResourcesManager.class_path,
-        ChildRandomTextResourcesManager.class_path,
+        RandomTextResourcesManager.class_path(),
+        ChildRandomTextResourcesManager.class_path(),
     }

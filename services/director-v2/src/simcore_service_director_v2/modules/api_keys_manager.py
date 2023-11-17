@@ -57,12 +57,12 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
 
     async def is_used(self, identifier: str, cleanup_context: CleanupContext) -> bool:
         _ = identifier
-        scheduler: "DynamicSidecarsScheduler" = (  # noqa: F821
+        scheduler: "DynamicSidecarsScheduler" = (  # type:ignore [name-defined] # noqa: F821
             self.app.state.dynamic_sidecar_scheduler
         )
-        return scheduler.is_service_tracked(cleanup_context.node_id)
+        return bool(scheduler.is_service_tracked(cleanup_context.node_id))
 
-    async def _create(  # pylint:disable=arguments-differ # type:ignore [override]
+    async def _create(  # type:ignore [override] # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> tuple[str, ApiKeyGet]:
         result = await self.rpc_client.request(
@@ -74,7 +74,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
         )
         return identifier, ApiKeyGet.parse_obj(result)
 
-    async def get(  # pylint:disable=arguments-differ # type:ignore [override]
+    async def get(  # type:ignore [override] # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
         result = await self.rpc_client.request(
