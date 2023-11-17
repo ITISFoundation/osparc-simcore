@@ -17,6 +17,7 @@ from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
+from starlette.background import BackgroundTask
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -368,5 +369,5 @@ async def get_log_stream(
     return StreamingResponse(
         log_listener.log_generator(),
         media_type="application/x-ndjson",
-        background=log_listener.unsubscribe_task(),
+        background=BackgroundTask(log_listener.stop_listening),
     )

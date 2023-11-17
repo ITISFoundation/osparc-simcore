@@ -15,7 +15,6 @@ from simcore_service_api_server.api.dependencies.authentication import (
 from simcore_service_api_server.api.dependencies.services import get_api_client
 from simcore_service_api_server.models.schemas.jobs import JobLog
 from simcore_service_api_server.services.director_v2 import DirectorV2Api
-from starlette.background import BackgroundTask
 
 _NEW_LINE: Final[str] = "\n"
 
@@ -58,6 +57,9 @@ class LogListener:
             topics=[f"{self._project_id}.*"],
         )
 
+    async def stop_listening(self):
+        await self._rabbit_consumer.unsubscribe(self._queu_name)
+
     async def _add_logs_to_queu(self, data: bytes):
         got = LoggerRabbitMessage.parse_raw(data)
         item = JobLog(
@@ -83,6 +85,3 @@ class LogListener:
                 await asyncio.sleep(5)
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
-
-    def unsubscribe_task(self) -> BackgroundTask:
-        return BackgroundTask(self._rabbit_consumer.unsubscribe, self._queu_name)
