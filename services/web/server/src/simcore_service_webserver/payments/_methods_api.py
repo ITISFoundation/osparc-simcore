@@ -40,15 +40,12 @@ _logger = logging.getLogger(__name__)
 
 def _generate_fake_data(fake: Faker):
     return {
-        "idr": fake.uuid4(),
+        "id": fake.uuid4(),
         "card_holder_name": fake.name(),
         "card_number_masked": f"**** **** **** {fake.credit_card_number()[:4]}",
         "card_type": fake.credit_card_provider(),
         "expiration_month": fake.random_int(min=1, max=12),
         "expiration_year": fake.future_date().year,
-        "street_address": fake.street_address(),
-        "zipcode": fake.zipcode(),
-        "country": fake.country(),
     }
 
 

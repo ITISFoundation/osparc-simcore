@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
@@ -12,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _discover_product_by_hostname(request: web.Request) -> str | None:
-    products: dict[str, Product] = request.app[APP_PRODUCTS_KEY]
+    products: OrderedDict[str, Product] = request.app[APP_PRODUCTS_KEY]
     for product in products.values():
         if product.host_regex.search(request.host):
             product_name: str = product.name

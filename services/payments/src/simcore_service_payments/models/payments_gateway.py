@@ -51,15 +51,12 @@ class PaymentMethodInitiated(BaseModel):
 
 
 class GetPaymentMethod(BaseModel):
-    idr: PaymentMethodID
-    card_holder_name: str
-    card_number_masked: str
-    card_type: str
-    expiration_month: int
-    expiration_year: int
-    street_address: str
-    zipcode: str
-    country: str
+    id: PaymentMethodID
+    card_holder_name: str | None = None
+    card_number_masked: str | None = None
+    card_type: str | None = None
+    expiration_month: int | None = None
+    expiration_year: int | None = None
     created: datetime
 
 

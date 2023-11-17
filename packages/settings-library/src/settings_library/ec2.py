@@ -18,7 +18,7 @@ class EC2Settings(BaseCustomSettings):
             "examples": [
                 {
                     "EC2_ACCESS_KEY_ID": "my_access_key_id",
-                    "EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    "EC2_ENDPOINT": "https://my_ec2_endpoint.com",
                     "EC2_REGION_NAME": "us-east-1",
                     "EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }

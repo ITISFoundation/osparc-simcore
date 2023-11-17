@@ -2,6 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, cast
 
+from aws_library.ec2.models import EC2InstanceBootSpecific
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -31,7 +32,7 @@ class ClustersKeeperEC2Settings(EC2Settings):
             "examples": [
                 {
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
-                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ENDPOINT": "http://my_ec2_endpoint.com",
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ENDPOINT": "https://my_ec2_endpoint.com",
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
@@ -40,21 +41,29 @@ class ClustersKeeperEC2Settings(EC2Settings):
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
-    WORKERS_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    WORKERS_EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        min_items=1,
-        unique_items=True,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
-    WORKERS_EC2_INSTANCES_AMI_ID: str = Field(
+
+    WORKERS_EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
-        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
+        description="SSH key filename (without ext) to access the instance through SSH"
+        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
+        "this is required to start a new EC2 instance",
+    )
+    # BUFFER is not exposed since we set it to 0
+    WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=3),
+        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     WORKERS_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
         description="Defines the maximum number of instances the clusters_keeper app may create",
     )
+    # NAME PREFIX is not exposed since we override it anyway
     WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
@@ -69,13 +78,6 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
         "this is required to start a new EC2 instance",
     )
-    WORKERS_EC2_INSTANCES_KEY_NAME: str = Field(
-        ...,
-        min_length=1,
-        description="SSH key filename (without ext) to access the instance through SSH"
-        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
-        "this is required to start a new EC2 instance",
-    )
 
     WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
@@ -83,24 +85,18 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    WORKERS_EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=3),
-        description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-
-    WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
-    )
-
     @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_intance_names(cls, value):
+    def check_valid_instance_names(
+        cls, value: dict[str, EC2InstanceBootSpecific]
+    ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(tuple[InstanceTypeType, ...], value)
-        return value
+        if all(parse_obj_as(InstanceTypeType, key) for key in value):
+            return value
+
+        msg = "Invalid instance type name"
+        raise ValueError(msg)
 
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):

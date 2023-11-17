@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "42Crunch.vscode-openapi",
     "charliermarsh.ruff",
     "eamodio.gitlens",
     "exiasr.hadolint",
@@ -7,6 +8,7 @@
     "ms-python.black-formatter",
     "ms-python.pylint",
     "ms-python.python",
+    "ms-vscode.makefile-tools",
     "njpwerner.autodocstring",
     "samuelcolvin.jinjahtml",
     "timonwong.shellcheck",

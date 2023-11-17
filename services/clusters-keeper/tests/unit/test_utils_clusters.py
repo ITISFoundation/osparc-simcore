@@ -49,10 +49,11 @@ def test_create_startup_script(
         startup_script.splitlines()[-1].split("docker stack deploy")[0].strip()
     )
     assert startup_script_envs_definition
-    startup_script_env_keys_names = {
-        entry.split("=", maxsplit=1)[0]: entry.split("=", maxsplit=1)[1]
-        for entry in startup_script_envs_definition.split(" ")
-    }
+    # Use regular expression to split the string into key-value pairs (courtesy of chatGPT)
+    startup_script_key_value_pairs: list[tuple[str, str]] = re.findall(
+        r"(\S+)=([\S\s]+?)(?=\S+=|$)", startup_script_envs_definition
+    )
+    startup_script_env_keys_names = [key for key, _ in startup_script_key_value_pairs]
     # docker-compose expected values
     assert "services" in clusters_keeper_docker_compose
     assert "autoscaling" in clusters_keeper_docker_compose["services"]
@@ -79,8 +80,6 @@ def test_create_startup_script(
 
     # check lists have \" written in them
     list_settings = [
-        "WORKERS_EC2_INSTANCES_ALLOWED_TYPES",
-        "WORKERS_EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS",
         "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS",
     ]
     assert all(
