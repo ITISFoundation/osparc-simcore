@@ -127,6 +127,10 @@ def api_keys_manager(
     return manager
 
 
+async def _get_resource_count(api_keys_manager: APIKeysManager) -> int:
+    return len(await api_keys_manager._get_tracked())  # noqa: SLF001
+
+
 @pytest.mark.parametrize("is_used", [True])
 async def test_api_keys_workflow(
     api_keys_manager: APIKeysManager,
@@ -140,10 +144,10 @@ async def test_api_keys_workflow(
         app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
     assert isinstance(api_key, ApiKeyGet)
-    assert len(await api_keys_manager._get_tracked()) == 1  # noqa: SLF001
+    assert await _get_resource_count(api_keys_manager) == 1
 
     await safe_remove(app, node_id=node_id, run_id=run_id)
-    assert len(await api_keys_manager._get_tracked()) == 0  # noqa: SLF001
+    assert await _get_resource_count(api_keys_manager) == 0
 
 
 @pytest.mark.parametrize("is_used", [False, True])
@@ -160,9 +164,7 @@ async def test_background_cleanup(
         app, product_name=product_name, user_id=user_id, node_id=node_id, run_id=run_id
     )
     assert isinstance(api_key, ApiKeyGet)
-    assert len(await api_keys_manager._get_tracked()) == 1  # noqa: SLF001
+    assert await _get_resource_count(api_keys_manager) == 1
 
     await api_keys_manager._cleanup_unused_identifiers()  # noqa: SLF001
-    assert (
-        len(await api_keys_manager._get_tracked()) == 1 if is_used else 0
-    )  # noqa: SLF001
+    assert await _get_resource_count(api_keys_manager) == 1 if is_used else 0
