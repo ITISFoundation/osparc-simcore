@@ -60,8 +60,10 @@ class RandomTextEntry(BaseModel):
         return cls(text=text)
 
 
-# mocked api interface
 class RandomTextAPI:
+    # Emulates an external API
+    # used to create resources
+
     def __init__(self) -> None:
         self._created: dict[UserDefinedID, RandomTextEntry] = {}
 
@@ -79,7 +81,8 @@ class RandomTextAPI:
 
 @dataclass
 class ComponentUsingRandomText:
-    # this one is tracking if the above resources are bring used
+    # Emulates another component in the system
+    # using the created resources
 
     _in_use: bool = True
 
@@ -87,24 +90,28 @@ class ComponentUsingRandomText:
         _ = an_id
         return self._in_use
 
-    def toggle_is_present(self, in_use: bool) -> None:
+    def toggle_usage(self, in_use: bool) -> None:
         self._in_use = in_use
 
 
-class RandomTextCleanupContext(BaseModel):
-    # when cleaning up, extra parameters might be required
-    # in this case there aren't any since they are not required.
+class AnEmptyTextCleanupContext(BaseModel):
+    # nothing is required during cleanup, so the context
+    # is an empty object.
+    # A ``pydantic.BaseModel`` is used for convenience
+    # this could have inherited from ``object``
     ...
 
 
-# define a custom manager using the custom user defined identifiers
-# NOTE: note that the generic uses `[UserDefinedID, RandomTextEntry, RandomTextCleanupContext]`
-# which enforces typing constraints on the overloaded abstract methods
 class RandomTextResourcesManager(
     BaseDistributedIdentifierManager[
-        UserDefinedID, RandomTextEntry, RandomTextCleanupContext
+        UserDefinedID, RandomTextEntry, AnEmptyTextCleanupContext
     ]
 ):
+    # Implements a resource manager for handling the lifecycle of
+    # resources created by a service.
+    # It also comes in with automatic cleanup in case the service owing
+    # the resources failed to removed them in the past.
+
     def __init__(
         self,
         redis_client_sdk: RedisClientSDK,
@@ -125,21 +132,23 @@ class RandomTextResourcesManager(
         return f"{identifier._id}"  # noqa: SLF001
 
     @classmethod
-    def _deserialize_cleanup_context(cls, raw: StrBytes) -> RandomTextCleanupContext:
-        return RandomTextCleanupContext.parse_raw(raw)
+    def _deserialize_cleanup_context(cls, raw: StrBytes) -> AnEmptyTextCleanupContext:
+        return AnEmptyTextCleanupContext.parse_raw(raw)
 
     @classmethod
     def _serialize_cleanup_context(
-        cls, cleanup_context: RandomTextCleanupContext
+        cls, cleanup_context: AnEmptyTextCleanupContext
     ) -> str:
         return cleanup_context.json()
 
     async def is_used(
-        self, identifier: UserDefinedID, cleanup_context: RandomTextCleanupContext
+        self, identifier: UserDefinedID, cleanup_context: AnEmptyTextCleanupContext
     ) -> bool:
         _ = cleanup_context
         return self.component_using_random_text.is_used(identifier)
 
+    # NOTE: it is intended for the user to overwrite the **kwargs with custom names
+    # to provide a cleaner interface, tooling will complain slightly
     async def _create(  # pylint:disable=arguments-differ # type:ignore [override]
         self, length: int
     ) -> tuple[UserDefinedID, RandomTextEntry]:
@@ -149,7 +158,7 @@ class RandomTextResourcesManager(
         return self.api.get(identifier)
 
     async def _destroy(
-        self, identifier: UserDefinedID, _: RandomTextCleanupContext
+        self, identifier: UserDefinedID, _: AnEmptyTextCleanupContext
     ) -> None:
         self.api.delete(identifier)
 
@@ -208,7 +217,7 @@ async def test_full_workflow(
 ):
     # creation
     identifier, _ = await manager.create(
-        cleanup_context=RandomTextCleanupContext(), length=1
+        cleanup_context=AnEmptyTextCleanupContext(), length=1
     )
     assert await manager.get(identifier) is not None
 
@@ -240,7 +249,7 @@ async def test_remove_raises_error(
 
     # after creation object is present
     identifier, _ = await manager.create(
-        cleanup_context=RandomTextCleanupContext(), length=1
+        cleanup_context=AnEmptyTextCleanupContext(), length=1
     )
     assert await manager.get(identifier) is not None
 
@@ -259,7 +268,7 @@ async def _create_resources(
 ) -> list[UserDefinedID]:
     creation_results: list[tuple[UserDefinedID, RandomTextEntry]] = await logged_gather(
         *[
-            manager.create(cleanup_context=RandomTextCleanupContext(), length=1)
+            manager.create(cleanup_context=AnEmptyTextCleanupContext(), length=1)
             for _ in range(count)
         ],
         max_concurrency=_MAX_REDIS_CONCURRENCY,
@@ -309,7 +318,7 @@ async def test_background_removal_of_unused_resources(
     await _assert_all_resources(manager_with_no_cleanup_task, identifiers, exist=True)
 
     # make resources unused in external system
-    component_using_random_text.toggle_is_present(in_use=False)
+    component_using_random_text.toggle_usage(in_use=False)
     await manager_with_no_cleanup_task._cleanup_unused_identifiers()  # noqa: SLF001
     await _assert_all_resources(manager_with_no_cleanup_task, identifiers, exist=False)
 
@@ -331,10 +340,10 @@ async def test_no_redis_key_overlap_when_inheriting(
     # create an entry in the child and one in the parent
 
     parent_identifier, _ = await parent_manager.create(
-        cleanup_context=RandomTextCleanupContext(), length=1
+        cleanup_context=AnEmptyTextCleanupContext(), length=1
     )
     child_identifier, _ = await child_manager.create(
-        cleanup_context=RandomTextCleanupContext(), length=1
+        cleanup_context=AnEmptyTextCleanupContext(), length=1
     )
     assert parent_identifier != child_identifier
 
