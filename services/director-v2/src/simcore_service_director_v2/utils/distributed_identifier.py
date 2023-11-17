@@ -96,10 +96,10 @@ class BaseDistributedIdentifierManager(
     async def _get_identifier_context(
         self, identifier: Identifier
     ) -> CleanupContext | None:
-        raw: bytes | None = await self.redis_client_sdk.redis.get(
+        raw: str | None = await self.redis_client_sdk.redis.get(
             self._to_redis_key(identifier)
         )
-        return self._deserialize_cleanup_context(raw.decode()) if raw else None
+        return self._deserialize_cleanup_context(raw) if raw else None
 
     async def _get_tracked(self) -> dict[Identifier, CleanupContext]:
         identifiers: list[Identifier] = [
