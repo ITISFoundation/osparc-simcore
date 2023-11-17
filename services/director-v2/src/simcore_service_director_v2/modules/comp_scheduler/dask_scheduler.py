@@ -21,9 +21,6 @@ from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
-from simcore_service_director_v2.modules.db.repositories.comp_runs import (
-    CompRunsRepository,
-)
 
 from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
@@ -35,6 +32,7 @@ from ...models.dask_subsystem import DaskClientTaskState
 from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
+from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
@@ -360,9 +358,9 @@ class DaskScheduler(BaseCompScheduler):
             *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
             await publish_service_log(
                 self.rabbitmq_client,
-                user_id,
-                project_id,
-                node_id,
-                task_log_event.log,
-                task_log_event.log_level,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                log=task_log_event.log,
+                log_level=task_log_event.log_level,
             )
