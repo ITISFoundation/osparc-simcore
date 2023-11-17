@@ -30,6 +30,15 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "background-main-4": "blue",
     "background-main-5": "purple",
 
+    "primary-background-color": "rgba(255, 255, 255, 1)",
+    "modal-backdrop": "rgba(247, 248, 252, 1)",
+    "fab_background": "rgba(208, 211, 230, 1)",
+    "input_background": "rgba(209, 214, 218, 1)",
+    "window-popup-background": "rgba(181, 187, 192, 1)",
+
+    // Opacity < 1
+    "background-card-header": "rgba(224, 232, 237, 0.8)",
+
     // text
     "text": "c13",
     "text-disabled": "c07",

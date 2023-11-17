@@ -50,10 +50,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
-      backgroundColor: "background-main-2"
-    });
-    this.getContentElement().setStyle({
-      "box-shadow": "0 0 3px white"
+      backgroundColor: "primary-background-color"
     });
   },
 
@@ -113,6 +110,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __buildLayout: function() {
+      this.getContentElement().setStyle({
+        "box-shadow": "red 0px 0px 5px -1px"
+      }); // rgba(33, 50, 72, 1)
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");

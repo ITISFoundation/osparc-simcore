@@ -23,36 +23,31 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
     // main
-    "background-main": "c01",
+    "background-main": "#222",
     "background-main-1": "c02",
     "background-main-2": "c03",
     "background-main-3": "c04",
     "background-main-4": "c05",
     "background-main-5": "c06",
 
+    "primary-background-color": "rgba(0, 20, 46, 1)",
     "modal-backdrop": "rgba(8, 9, 13, 1)",
     "fab_background": "rgba(47, 50, 69, 1)",
     "input_background": "rgba(46, 51, 55, 1)",
     "window-popup-background": "rgba(74, 79, 84, 1)",
 
-    "default-button": "rgba(10, 182, 255, 1)",
-    "default-button-hover": "rgba(4, 73, 102, 1)",
-    "default-button-active": "rgba(9, 89, 122, 1)",
-    "default-button-focus": "rgba(10, 182, 255, 1)",
-    "default-button-focus-border": "rgba(254, 233, 86, 1)",
-
     // Opacity < 1
     "background-card-header": "rgba(1, 18, 26, 0.8)",
 
     // text
-    "text": "c13",
-    "text-disabled": "c07",
-    "text-selected": "c12",
-    "text-placeholder": "c07",
-    "text-darker": "c07",
-    "contrasted-text-dark": "c01",
-    "contrasted-text-light": "c13",
-    "link": "c11",
+    "text": "rgba(216, 216, 216, 1)",
+    "text-disabled": "rgba(113, 157, 181, 1)",
+    "text-selected": "rgba(10, 182, 255, 1)",
+    "text-placeholder": "rgba(174, 191, 207, 1)",
+    "text-darker": "rgba(255, 255, 255, 1)",
+    "contrasted-text-dark": "rgba(255, 255, 255, 1)",
+    "contrasted-text-light": "rgba(255, 255, 255, 1)",
+    "link": "rgba(10, 182, 255, 1)",
 
     // shadows
     "bg-shadow": "c06",
