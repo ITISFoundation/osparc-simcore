@@ -4,6 +4,7 @@
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
+from pydantic import EmailStr, parse_obj_as
 
 from .models.users import UserRole, users
 
@@ -23,12 +24,12 @@ class UsersRepo:
             sa.select(users.c.role).where(users.c.id == user_id)
         ):
             return UserRole(value)
-        raise UserNotFoundInRepoError()
+        raise UserNotFoundInRepoError
 
     @staticmethod
-    async def get_email(conn: SAConnection, user_id: int) -> str:
+    async def get_email(conn: SAConnection, user_id: int) -> EmailStr:
         if value := await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
         ):
-            return f"{value}"
-        raise UserNotFoundInRepoError()
+            return parse_obj_as(EmailStr, value)
+        raise UserNotFoundInRepoError

@@ -257,9 +257,10 @@ async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
     return await repo.get_user_email(user_id=user_id)
 
 
-async def _request_user_role(app: FastAPI, user_id: UserID):
+async def _request_user_role(app: FastAPI, user_id: UserID) -> str:
     repo = get_repository(app, ServicesEnvironmentsRepository)
-    return await repo.get_user_role(user_id=user_id)
+    user_role = await repo.get_user_role(user_id=user_id)
+    return user_role.value
 
 
 def _setup_session_osparc_variables(app: FastAPI):
@@ -271,7 +272,6 @@ def _setup_session_osparc_variables(app: FastAPI):
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
         ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
         ("OSPARC_VARIABLE_NODE_ID", "node_id"),
-        # ANE -> PC: why not register the user_id as well at this point?
     ]:
         table.register_from_context(name, context_name)
 
