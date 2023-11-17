@@ -65,7 +65,7 @@ async def test_create_payments_method_annotations_workflow(app: FastAPI):
     )
 
     # list
-    listed = await repo.list_user_successful_payment_methods(
+    listed = await repo.list_user_payment_methods(
         user_id=fake.user_id,
         wallet_id=fake.wallet_id,
     )
@@ -73,7 +73,7 @@ async def test_create_payments_method_annotations_workflow(app: FastAPI):
     assert listed[0] == acked
 
     # get
-    got = await repo.get_successful_payment_method(
+    got = await repo.get_payment_method(
         payment_method_id,
         user_id=fake.user_id,
         wallet_id=fake.wallet_id,
@@ -88,7 +88,7 @@ async def test_create_payments_method_annotations_workflow(app: FastAPI):
     )
     assert deleted == got
 
-    listed = await repo.list_user_successful_payment_methods(
+    listed = await repo.list_user_payment_methods(
         user_id=fake.user_id,
         wallet_id=fake.wallet_id,
     )
