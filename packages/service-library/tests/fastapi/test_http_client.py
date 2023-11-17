@@ -111,6 +111,8 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
 async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str):
 
     mock_server_api.post(path__startswith="/foo").respond(status.HTTP_200_OK)
+    mock_server_api.get(path__startswith="/foo").respond(status.HTTP_200_OK)
+    mock_server_api.delete(path__startswith="/foo").respond(status.HTTP_200_OK)
 
     async with httpx.AsyncClient(base_url=base_url) as client:
         response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
@@ -128,3 +130,19 @@ async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str)
             cmd
             == 'curl --request POST --header "host: test_base_http_api" --header "accept: */*" --header "accept-encoding: gzip, deflate" --header "connection: keep-alive" --header "user-agent: python-httpx/0.25.0" --header "content-length: 9" --header "content-type: application/json" --data \'{"y": 12}\' https://test_base_http_api/foo?x=3'
         )
+
+        # with GET
+        response = await client.get("/foo", params={"x": "3"})
+        cmd = to_curl_command(response.request)
+
+        assert (
+            cmd
+            == 'curl -X GET -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0"  https://test_base_http_api/foo?x=3'
+        )
+
+        # with DELETE
+        response = await client.delete("/foo", params={"x": "3"})
+        cmd = to_curl_command(response.request)
+
+        assert "DELETE" in cmd
+        assert " -d " not in cmd
