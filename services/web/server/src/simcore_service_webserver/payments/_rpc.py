@@ -116,7 +116,7 @@ async def get_payments_page(
 ) -> tuple[int, list[PaymentTransaction]]:
     rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
-    result = await rpc_client.request(
+    result: tuple[int, list[PaymentTransaction]] = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "get_payments_page"),
         user_id=user_id,
