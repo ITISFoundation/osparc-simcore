@@ -15,7 +15,7 @@ from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_director_v2.utils.distributed_identifer import (
+from simcore_service_director_v2.utils.distributed_identifier import (
     BaseDistributedIdentifierManager,
 )
 
