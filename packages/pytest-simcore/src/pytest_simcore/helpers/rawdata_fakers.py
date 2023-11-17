@@ -23,6 +23,10 @@ import faker
 from faker import Faker
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
@@ -199,7 +203,7 @@ def random_payment_method(
         "user_id": FAKE.pyint(),
         "wallet_id": FAKE.pyint(),
         "initiated_at": utcnow(),
-        "state": "PENDING",
+        "state": InitPromptAckFlowState.PENDING,
         "completed_at": None,
     }
     # state is not added on purpose
@@ -228,7 +232,7 @@ def random_payment_transaction(
         "wallet_id": 1,
         "comment": "Free starting credits",
         "initiated_at": utcnow(),
-        "state": "PENDING",
+        "state": PaymentTransactionState.PENDING,
         "completed_at": None,
     }
     # state is not added on purpose

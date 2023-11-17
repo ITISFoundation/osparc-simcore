@@ -404,7 +404,7 @@ def mock_resource_usage_tracker_service_api_base(
 
 
 @pytest.fixture
-def mock_rut_service_api(
+def mock_resoruce_usage_tracker_service_api(
     faker: Faker,
     mock_resource_usage_tracker_service_api_base: MockRouter,
     rut_service_openapi_specs: dict[str, Any],
