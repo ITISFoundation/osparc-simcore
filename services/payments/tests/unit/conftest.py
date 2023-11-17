@@ -7,10 +7,11 @@
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 from unittest.mock import Mock
 
 import httpx
+import jsonref
 import pytest
 import respx
 import sqlalchemy as sa
@@ -40,6 +41,7 @@ from simcore_service_payments.models.payments_gateway import (
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPaymentWithPaymentMethod,
 )
+from toolz.dicttoolz import get_in
 
 
 @pytest.fixture(scope="session")
@@ -361,3 +363,62 @@ def mock_payments_gateway_service_or_none(
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base
+
+
+#
+# mock resource-usage-tracker API
+#
+
+
+@pytest.fixture
+def rut_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    openapi_path = (
+        osparc_simcore_services_dir / "resource-usage-tracker" / "openapi.json"
+    )
+    return jsonref.loads(openapi_path.read_text())
+
+
+@pytest.fixture
+def mock_resource_usage_tracker_service_api_base(
+    app: FastAPI, rut_service_openapi_specs: dict[str, Any]
+) -> Iterator[MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    with respx.mock(
+        base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as respx_mock:
+        assert "healthcheck" in get_in(
+            ["paths", "/", "get", "operationId"],
+            rut_service_openapi_specs,
+            no_default=True,
+        )  # type: ignore
+        respx_mock.get(
+            path="/",
+            name="healthcheck",
+        ).respond(status.HTTP_200_OK)
+
+        yield respx_mock
+
+
+@pytest.fixture
+def mock_resoruce_usage_tracker_service_api(
+    faker: Faker,
+    mock_resource_usage_tracker_service_api_base: MockRouter,
+    rut_service_openapi_specs: dict[str, Any],
+) -> MockRouter:
+    # check it exists
+    get_in(
+        ["paths", "/v1/credit-transactions", "post", "operationId"],
+        rut_service_openapi_specs,
+        no_default=True,
+    )
+
+    # fake successful response
+    mock_resource_usage_tracker_service_api_base.post(
+        "/v1/credit-transactions"
+    ).respond(json={"credit_transaction_id": faker.pyint()})
+
+    return mock_resource_usage_tracker_service_api_base
