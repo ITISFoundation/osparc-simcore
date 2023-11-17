@@ -190,7 +190,7 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
     node_id: NodeID,
     safe: bool = True,
 ) -> dict[str, Any]:
-    registry: OsparcVariablesTable = app.state.lifespan_osparc_variables_table
+    registry: OsparcVariablesTable = app.state.service_lifespan_osparc_variables_table
 
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
@@ -242,14 +242,15 @@ async def _get_or_create_api_secret(
     return key_data.api_secret  # type:ignore [no-any-return]
 
 
-def _setup_lifespan_osparc_variables_table(app: FastAPI):
-    app.state.lifespan_osparc_variables_table = table = OsparcVariablesTable()
+def _setup_service_lifespan_osparc_variables_table(app: FastAPI):
+    app.state.service_lifespan_osparc_variables_table = table = OsparcVariablesTable()
 
     table.register_from_handler("OSPARC_VARIABLE_API_KEY")(_get_or_create_api_key)
     table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(_get_or_create_api_secret)
 
     _logger.debug(
-        "Registered lifespan_osparc_variables_table=%s", sorted(table.variables_names())
+        "Registered service_lifespan_osparc_variables_table=%s",
+        sorted(table.variables_names()),
     )
 
 
@@ -294,6 +295,6 @@ def setup(app: FastAPI):
 
     def on_startup() -> None:
         _setup_session_osparc_variables(app)
-        _setup_lifespan_osparc_variables_table(app)
+        _setup_service_lifespan_osparc_variables_table(app)
 
     app.add_event_handler("startup", on_startup)
