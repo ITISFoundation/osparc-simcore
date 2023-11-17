@@ -221,12 +221,9 @@ class LogListener:
         cls,
         rabbit_consumer: RabbitMQClient,
         project_id: UUID,
-        job_logs: list[JobLog] = [],
     ) -> "LogListener":
         self = cls()
         self._queue = Queue()
-        for job_log in job_logs:
-            await self._queue.put(job_log)
         self._rabbit_consumer = rabbit_consumer
         self._queu_name = await self._rabbit_consumer.subscribe(
             LoggerRabbitMessage.get_channel_name(),
