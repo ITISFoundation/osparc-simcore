@@ -16,7 +16,7 @@ from ..db.payments_methods_repo import PaymentsMethodsRepo
 _logger = logging.getLogger(__name__)
 
 
-def _from_db_to_api_model(
+def _from_db_to_api_model(  # NOSONAR
     db_model: PaymentsAutorechargeDB, min_balance_in_credits: NonNegativeDecimal
 ) -> GetWalletAutoRecharge:
     return GetWalletAutoRecharge(
@@ -28,7 +28,7 @@ def _from_db_to_api_model(
     )
 
 
-def _from_api_to_db_model(
+def _from_api_to_db_model(  # NOSONAR
     wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge
 ) -> PaymentsAutorechargeDB:
     return PaymentsAutorechargeDB(

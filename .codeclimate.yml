@@ -85,4 +85,3 @@ exclude_patterns:
   - services/web/server/src/simcore_service_webserver/exporter/formatters/sds/xlsx/templates/code_description.py
   - services/web/server/src/simcore_service_webserver/projects/db.py
   - "scripts/"
-  - services/web/server/src/simcore_service_webserver/payments/_autorecharge*
