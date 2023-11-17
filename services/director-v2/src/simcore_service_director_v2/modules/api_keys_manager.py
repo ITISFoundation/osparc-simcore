@@ -54,9 +54,9 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
 
     async def is_used(self, identifier: str, cleanup_context: CleanupContext) -> bool:
         _ = identifier
-        scheduler: "DynamicSidecarsScheduler" = (
+        scheduler: "DynamicSidecarsScheduler" = (  # noqa: F821
             self.app.state.dynamic_sidecar_scheduler
-        )  # noqa: F821
+        )
         return scheduler.is_service_tracked(cleanup_context.node_id)
 
     async def _create(  # pylint:disable=arguments-differ # type:ignore [override]
