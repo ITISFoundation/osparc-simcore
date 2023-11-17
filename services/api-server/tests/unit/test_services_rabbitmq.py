@@ -16,6 +16,7 @@ from uuid import UUID
 
 import httpx
 import pytest
+from async_asgi_testclient import TestClient as AsyncAsgiClient
 from faker import Faker
 from fastapi import Depends, FastAPI
 from fastapi.responses import StreamingResponse
@@ -250,14 +251,9 @@ class LogListener:
         return True
 
     async def log_generator(self) -> AsyncIterable[str]:
-        ii: int = 0
         while True:
-            ii += 1
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
-            # here need to query if project is done
-            if ii == 10:
-                break
 
 
 @pytest.fixture
@@ -380,11 +376,18 @@ async def test_stream_logs(
     n_logs: int = 10
     publisher_task = asyncio.create_task(_log_publisher(n_logs))
 
-    collected_messages: list[str] = []
-    async with client.stream("GET", f"/projects/{project_id}/logs") as r:
+    async with AsyncAsgiClient(application=app) as test_client:
+        collected_messages: list[str] = []
+        response = await test_client.get(f"/projects/{project_id}/logs", stream=True)
         # streams open
         ii: int = 0
-        async for line in r.aiter_lines():
+        while True:
+            data: bytes = b""
+            async for elm in response.iter_content():
+                data += elm
+                if data.decode().endswith("\n"):
+                    break
+            line = data.decode()
             data = json.loads(line)
             log = JobLog.parse_obj(data)
             assert log.log_level == logging.DEBUG
@@ -394,6 +397,5 @@ async def test_stream_logs(
             ii += 1
             if ii == n_logs:
                 break
-
     assert publisher_task.done()
     assert collected_messages == publisher_task.result()
