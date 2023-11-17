@@ -363,7 +363,11 @@ async def get_job_pricing_unit(
         )
 
 
-@router.get("/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream")
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
+    response_class=StreamingResponse,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
 async def get_log_stream(
     solver_key: SolverKeyId,
     version: VersionStr,
