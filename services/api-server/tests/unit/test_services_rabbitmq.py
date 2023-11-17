@@ -7,12 +7,10 @@
 import asyncio
 import json
 import logging
-from asyncio import Queue
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from typing import Annotated
 from unittest.mock import AsyncMock
-from uuid import UUID
 
 import httpx
 import pytest
@@ -24,20 +22,19 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
+from simcore_service_api_server.models.schemas.jobs import JobLog
 from simcore_service_api_server.services.rabbitmq import get_rabbitmq_client
-from starlette.background import BackgroundTask
 
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 pytest_simcore_ops_services_selection = []
 
-_NEW_LINE = "\n"
 _logger = logging.getLogger()
 _faker: Faker = Faker()
 
@@ -204,55 +201,6 @@ async def test_multiple_producers_and_single_consumer(
 #
 
 
-class JobLog(BaseModel):
-    job_id: ProjectID
-    node_id: NodeID | None
-    log_level: LogLevelInt
-    messages: list[LogMessageStr]
-
-
-class LogListener:
-    _queue: Queue[JobLog]
-    _queu_name: str
-    _rabbit_consumer: RabbitMQClient
-
-    @classmethod
-    async def create(
-        cls,
-        rabbit_consumer: RabbitMQClient,
-        project_id: UUID,
-    ) -> "LogListener":
-        self = cls()
-        self._queue = Queue()
-        self._rabbit_consumer = rabbit_consumer
-        self._queu_name = await self._rabbit_consumer.subscribe(
-            LoggerRabbitMessage.get_channel_name(),
-            self._add_logs_to_queu,
-            exclusive_queue=True,
-            topics=[f"{project_id}.*"],
-        )
-        return self
-
-    def unsubscribe_task(self) -> BackgroundTask:
-        return BackgroundTask(self._rabbit_consumer.unsubscribe, self._queu_name)
-
-    async def _add_logs_to_queu(self, data: bytes):
-        got = LoggerRabbitMessage.parse_raw(data)
-        item = JobLog(
-            job_id=got.project_id,
-            node_id=got.node_id,
-            log_level=got.log_level,
-            messages=got.messages,
-        )
-        await self._queue.put(item)
-        return True
-
-    async def log_generator(self) -> AsyncIterable[str]:
-        while True:
-            log: JobLog = await self._queue.get()
-            yield log.json() + _NEW_LINE
-
-
 @pytest.fixture
 async def log_listener(
     client: httpx.AsyncClient, app: FastAPI, project_id: ProjectID
@@ -311,7 +259,7 @@ async def fake_logger_injected(client: httpx.AsyncClient, app: FastAPI):
                     log_level=logging.INFO,
                     messages=[f"message#={ii}"],
                 )
-                yield job_log.json() + _NEW_LINE
+                yield job_log.json() + "\n"
 
         return StreamingResponse(_fake_log_generator(), media_type="application/json")
 
