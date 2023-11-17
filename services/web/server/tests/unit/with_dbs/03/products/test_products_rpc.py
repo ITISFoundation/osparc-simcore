@@ -63,7 +63,7 @@ async def rpc_client(
     return await rabbitmq_rpc_client("client")
 
 
-async def test_api_key_get(
+async def test_get_credit_amount(
     rpc_client: RabbitMQRPCClient,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,

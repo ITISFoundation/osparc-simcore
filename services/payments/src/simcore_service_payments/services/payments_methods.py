@@ -148,14 +148,14 @@ async def create_payment_method(
     )
 
 
-async def list_successful_payment_methods(
+async def list_payment_methods(
     gateway: PaymentsGatewayApi,
     repo: PaymentsMethodsRepo,
     *,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[PaymentMethodGet]:
-    acked_many = await repo.list_user_successful_payment_methods(
+    acked_many = await repo.list_user_payment_methods(
         user_id=user_id, wallet_id=wallet_id
     )
     assert not any(acked.completed_at is None for acked in acked_many)  # nosec
@@ -178,7 +178,7 @@ async def get_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentMethodGet:
-    acked = await repo.get_successful_payment_method(
+    acked = await repo.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
     assert acked.state == InitPromptAckFlowState.SUCCESS  # nosec
@@ -195,7 +195,7 @@ async def delete_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ):
-    acked = await repo.get_successful_payment_method(
+    acked = await repo.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 

@@ -84,11 +84,9 @@ async def get_user_wallet_payment_autorecharge_with_default(
     )
     if not wallet_autorecharge:
         payment_method_id = None
-        wallet_payment_methods = (
-            await payments_method_repo.list_user_successful_payment_methods(
-                user_id=user_id,
-                wallet_id=wallet_id,
-            )
+        wallet_payment_methods = await payments_method_repo.list_user_payment_methods(
+            user_id=user_id,
+            wallet_id=wallet_id,
         )
         if wallet_payment_methods:
             payment_method_id = wallet_payment_methods[_NEWEST].payment_method_id

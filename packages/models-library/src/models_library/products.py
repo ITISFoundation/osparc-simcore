@@ -7,7 +7,7 @@ ProductName: TypeAlias = str
 
 
 class CreditResultGet(BaseModel):
-    product_name: str
+    product_name: ProductName
     credit_amount: Decimal = Field(..., description="")
 
     class Config:

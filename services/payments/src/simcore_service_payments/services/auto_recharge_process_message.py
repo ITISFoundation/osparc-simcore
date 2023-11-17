@@ -40,7 +40,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 
     settings: ApplicationSettings = app.state.settings
 
-    # Step 1: Check if wallet credits are below the threshold
+    # Step 1: Check if wallet credits are above the threshold
     if await _check_wallet_credits_above_threshold(
         settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS, rabbit_message.credits
     ):
@@ -58,7 +58,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 
     # Step 3: Get Payment method
     _payments_repo = PaymentsMethodsRepo(db_engine=app.state.engine)
-    payment_method_db = await _payments_repo.get_successful_payment_method_by_id(
+    payment_method_db = await _payments_repo.get_payment_method_by_id(
         payment_method_id=wallet_auto_recharge.payment_method_id
     )
 
