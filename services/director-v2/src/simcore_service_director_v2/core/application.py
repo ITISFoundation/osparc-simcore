@@ -25,7 +25,6 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
-    node_rights,
     osparc_variables_substitutions,
     rabbitmq,
     remote_debug,
@@ -179,8 +178,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
         resource_usage_tracker_client.setup(app)
-
-    node_rights.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)
