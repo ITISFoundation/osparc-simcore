@@ -19,12 +19,20 @@ Ident = TypeVar("Ident")
 Res = TypeVar("Res")
 
 # Provided at the moment of creation.
-# Can be used inside ``is_present`` and ``remove``.
+# Can be used inside ``is_used`` and ``_destroy``.
 CleanupContext = TypeVar("CleanupContext")
 
 
 class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext]):
-    # TODO: add docstring here
+    """Used to implement managers for resources that require book keeping
+    in a distributed system.
+
+    Generics:
+        Ident -- a user defined object: used to uniquely identify the resource
+        Res -- a user defined object: referring to an existing resource
+        CleanupContext -- a user defined object: contains all necessary
+            arguments used for removal and cleanup.
+    """
 
     @classmethod
     @abstractmethod
