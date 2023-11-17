@@ -182,6 +182,7 @@ async def on_payment_completed(
 
 async def pay_with_payment_method(  # noqa: PLR0913
     gateway: PaymentsGatewayApi,
+    rut: ResourceUsageTrackerApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
     *,
@@ -245,6 +246,8 @@ async def pay_with_payment_method(  # noqa: PLR0913
         state_message=ack.message,
         invoice_url=ack.invoice_url,
     )
+
+    await on_payment_completed(transaction, rut)
 
     return transaction.to_api_model()
 

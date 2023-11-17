@@ -5,17 +5,12 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Iterator
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any
 
-import jsonref
 import pytest
-import respx
 from asgi_lifespan import LifespanManager
 from faker import Faker
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
 from simcore_service_payments.core.application import create_app
@@ -24,7 +19,6 @@ from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
     setup_resource_usage_tracker,
 )
-from toolz.dicttoolz import get_in
 
 
 async def test_setup_rut_api(app_environment: EnvVarsDict):
@@ -61,62 +55,8 @@ def app(
     return create_app()
 
 
-@pytest.fixture
-def rut_service_openapi_specs(
-    osparc_simcore_services_dir: Path,
-) -> dict[str, Any]:
-    openapi_path = (
-        osparc_simcore_services_dir / "resource-usage-tracker" / "openapi.json"
-    )
-    return jsonref.loads(openapi_path.read_text())
-
-
-@pytest.fixture
-def mock_resource_usage_tracker_service_api_base(
-    app: FastAPI, rut_service_openapi_specs: dict[str, Any]
-) -> Iterator[MockRouter]:
-    settings: ApplicationSettings = app.state.settings
-    with respx.mock(
-        base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as respx_mock:
-        assert "healthcheck" in get_in(
-            ["paths", "/", "get", "operationId"],
-            rut_service_openapi_specs,
-            no_default=True,
-        )  # type: ignore
-        respx_mock.get(
-            path="/",
-            name="healthcheck",
-        ).respond(status.HTTP_200_OK)
-
-        yield respx_mock
-
-
-@pytest.fixture
-def mock_rut_service_api(
-    faker: Faker,
-    mock_resource_usage_tracker_service_api_base: MockRouter,
-    rut_service_openapi_specs: dict[str, Any],
-):
-    # check it exists
-    get_in(
-        ["paths", "/v1/credit-transactions", "post", "operationId"],
-        rut_service_openapi_specs,
-        no_default=True,
-    )
-
-    # fake successful response
-    mock_resource_usage_tracker_service_api_base.post(
-        "/v1/credit-transactions"
-    ).respond(json={"credit_transaction_id": faker.pyint()})
-
-    return mock_resource_usage_tracker_service_api_base
-
-
 async def test_add_credits_to_wallet(
-    app: FastAPI, faker: Faker, mock_rut_service_api: MockRouter
+    app: FastAPI, faker: Faker, mock_resoruce_usage_tracker_service_api: MockRouter
 ):
     # test
     rut_api = ResourceUsageTrackerApi.get_from_app_state(app)
