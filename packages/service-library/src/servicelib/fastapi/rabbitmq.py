@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from settings_library.rabbit import RabbitSettings
 
 from ..rabbitmq import RabbitMQClient
-from ..rabbitmq_utils import wait_till_rabbitmq_responsive
+from ..rabbitmq._utils import wait_till_rabbitmq_responsive
 from .errors import ApplicationStateError
 
 _logger = logging.getLogger(__name__)

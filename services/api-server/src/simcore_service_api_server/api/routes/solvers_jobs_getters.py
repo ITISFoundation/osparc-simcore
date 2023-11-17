@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -354,3 +355,18 @@ async def get_job_pricing_unit(
         return await webserver_api.get_project_node_pricing_unit(
             project_id=job_id, node_id=node_id
         )
+
+
+@router.get("/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream")
+async def get_log_stream(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    log_listener: Annotated[LogListener, Depends(LogListener)],
+):
+    await log_listener.listen(job_id)
+    return StreamingResponse(
+        log_listener.log_generator(),
+        media_type="application/x-ndjson",
+        background=log_listener.unsubscribe_task(),
+    )
