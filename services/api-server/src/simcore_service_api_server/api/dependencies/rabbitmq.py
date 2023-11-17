@@ -48,7 +48,7 @@ class LogListener:
     async def listen(
         self,
         project_id: UUID,
-    ) -> "LogListener":
+    ):
         self._project_id = project_id
 
         self._queu_name = await self._rabbit_consumer.subscribe(
@@ -57,7 +57,6 @@ class LogListener:
             exclusive_queue=True,
             topics=[f"{self._project_id}.*"],
         )
-        return self
 
     async def _add_logs_to_queu(self, data: bytes):
         got = LoggerRabbitMessage.parse_raw(data)
