@@ -87,14 +87,32 @@ class AppStateMixin:
         return old
 
 
-def to_curl_command(request: httpx.Request) -> str:
+def to_curl_command(request: httpx.Request, *, use_short_options: bool = True) -> str:
     """Composes a curl command from a given request
 
     Can be used to reproduce a request in a separate terminal (e.g. debugging)
     """
     # Adapted from https://github.com/marcuxyz/curlify2/blob/master/curlify2/curlify.py
-    headers = [f'"{k}: {v}"' for k, v in request.headers.items()]
     method = request.method
     url = request.url
-    body = request.read().decode()
-    return f"curl -X {method} -H {' -H '.join(headers)} -d '{body}' {url}"
+
+    # https://curl.se/docs/manpage.html#-X
+    # -X, --request {method}
+    _x = "-X" if use_short_options else "--request"
+    request_option = f"{_x} {method}"
+
+    # https://curl.se/docs/manpage.html#-d
+    # -d, --data <data>          HTTP POST data
+    data_option = ""
+    if body := request.read().decode():
+        _d = "-d" if use_short_options else "--data"
+        data_option = f"{_d} '{body}'"
+
+    # https://curl.se/docs/manpage.html#-H
+    # H, --header <header/@file> Pass custom header(s) to server
+    headers_option = ""
+    if headers := [f'"{k}: {v}"' for k, v in request.headers.items()]:
+        _h = "-H" if use_short_options else "--header"
+        headers_option = f"{_h} {f' {_h} '.join(headers)}"
+
+    return f"curl {request_option} {headers_option} {data_option} {url}"

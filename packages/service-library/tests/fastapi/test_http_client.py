@@ -117,4 +117,14 @@ async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str)
         assert response.status_code == 200
 
         cmd = to_curl_command(response.request)
-        assert cmd.startswith("curl -X POST -H")
+
+        assert (
+            cmd
+            == 'curl -X POST -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0" -H "content-length: 9" -H "content-type: application/json" -d \'{"y": 12}\' https://test_base_http_api/foo?x=3'
+        )
+
+        cmd = to_curl_command(response.request, use_short_options=False)
+        assert (
+            cmd
+            == 'curl --request POST --header "host: test_base_http_api" --header "accept: */*" --header "accept-encoding: gzip, deflate" --header "connection: keep-alive" --header "user-agent: python-httpx/0.25.0" --header "content-length: 9" --header "content-type: application/json" --data \'{"y": 12}\' https://test_base_http_api/foo?x=3'
+        )
