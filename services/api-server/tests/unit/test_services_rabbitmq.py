@@ -24,7 +24,11 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import (
+    EnvVarsDict,
+    delenvs_from_dict,
+    setenvs_from_dict,
+)
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
 from simcore_service_api_server.models.schemas.jobs import JobLog
@@ -52,6 +56,7 @@ def app_environment(
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
     mocker.patch("simcore_service_api_server.core.application.director_v2.setup")
 
+    delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
         monkeypatch,
         {

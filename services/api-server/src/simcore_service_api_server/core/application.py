@@ -77,7 +77,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
-    setup_rabbitmq(app)
+    if settings.API_SERVER_RABBITMQ:
+        setup_rabbitmq(app)
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
