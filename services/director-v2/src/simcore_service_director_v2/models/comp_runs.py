@@ -21,6 +21,7 @@ class RunMetadataDict(TypedDict, total=False):
     user_email: str
     wallet_id: int | None
     wallet_name: str | None
+    project_metadata: dict[str, Any]
 
 
 class CompRunsAtDB(BaseModel):
