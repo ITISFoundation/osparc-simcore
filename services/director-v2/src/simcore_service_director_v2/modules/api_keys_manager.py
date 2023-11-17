@@ -6,38 +6,60 @@ from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.services import RunID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import BaseModel, StrBytes, parse_obj_as
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.redis import RedisClientSDK
+from settings_library.redis import RedisDatabase
 
-from ..utils.distributed_identifer import BaseDistributedIdentifierManager
+from ..core.settings import AppSettings
+from ..utils.distributed_identifier import BaseDistributedIdentifierManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
 
-class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
-    def __init__(self, app: FastAPI) -> None:
-        self.GET_OR_CREATE_INJECTS_IDENTIFIER = True
+class CleanupContext(BaseModel):
+    # used for checking if used
+    node_id: NodeID
+
+    # used for removing
+    product_name: ProductName
+    user_id: UserID
+
+
+class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupContext]):
+    def __init__(self, app: FastAPI, redis_client_sdk: RedisClientSDK) -> None:
+        super().__init__(redis_client_sdk)
         self.app = app
 
     @property
     def rpc_client(self) -> RabbitMQRPCClient:
         return get_rabbitmq_rpc_client(self.app)
 
-    # pylint:disable=arguments-differ
+    @classmethod
+    def _deserialize_identifier(cls, raw: str) -> str:
+        return raw
 
-    async def get(  # type:ignore [override]
-        self, identifier: str, product_name: ProductName, user_id: UserID
-    ) -> ApiKeyGet | None:
-        result = await self.rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "api_key_get"),
-            product_name=product_name,
-            user_id=user_id,
-            name=identifier,
-        )
-        return parse_obj_as(ApiKeyGet | None, result)
+    @classmethod
+    def _serialize_identifier(cls, identifier: str) -> str:
+        return identifier
 
-    async def create(  # type:ignore [override]
+    @classmethod
+    def _deserialize_cleanup_context(cls, raw: StrBytes) -> CleanupContext:
+        return CleanupContext.parse_raw(raw)
+
+    @classmethod
+    def _serialize_cleanup_context(cls, cleanup_context: CleanupContext) -> str:
+        return cleanup_context.json()
+
+    async def is_used(self, identifier: str, cleanup_context: CleanupContext) -> bool:
+        _ = identifier
+        scheduler: "DynamicSidecarsScheduler" = (
+            self.app.state.dynamic_sidecar_scheduler
+        )  # noqa: F821
+        return scheduler.is_service_tracked(cleanup_context.node_id)
+
+    async def _create(  # pylint:disable=arguments-differ # type:ignore [override]
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> tuple[str, ApiKeyGet]:
         result = await self.rpc_client.request(
@@ -49,49 +71,68 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet]):
         )
         return identifier, ApiKeyGet.parse_obj(result)
 
-    async def destroy(  # type:ignore [override]
+    async def get(  # pylint:disable=arguments-differ # type:ignore [override]
         self, identifier: str, product_name: ProductName, user_id: UserID
-    ) -> None:
+    ) -> ApiKeyGet | None:
+        result = await self.rpc_client.request(
+            WEBSERVER_RPC_NAMESPACE,
+            parse_obj_as(RPCMethodName, "api_key_get"),
+            product_name=product_name,
+            user_id=user_id,
+            name=identifier,
+        )
+        return parse_obj_as(ApiKeyGet | None, result)
+
+    async def _destroy(self, identifier: str, cleanup_context: CleanupContext) -> None:
         await self.rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "delete_api_keys"),
-            product_name=product_name,
-            user_id=user_id,
+            product_name=cleanup_context.product_name,
+            user_id=cleanup_context.user_id,
             name=identifier,
         )
 
 
 async def get_or_create_api_key(
-    app: FastAPI, *, product_name: ProductName, user_id: UserID, node_id: NodeID
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    node_id: NodeID,
+    run_id: RunID,
 ) -> ApiKeyGet:
     api_keys_manager = _get_api_keys_manager(app)
-    display_name = _get_api_key_name(node_id)
+    display_name = _get_api_key_name(node_id, run_id)
 
     key_data: ApiKeyGet | None = await api_keys_manager.get(
         identifier=display_name, product_name=product_name, user_id=user_id
     )
     if key_data is None:
         _, key_data = await api_keys_manager.create(
-            identifier=display_name, product_name=product_name, user_id=user_id
+            cleanup_context=CleanupContext(
+                node_id=node_id, product_name=product_name, user_id=user_id
+            ),
+            identifier=display_name,
+            product_name=product_name,
+            user_id=user_id,
         )
 
     return key_data
 
 
-async def safe_remove(
-    app: FastAPI, *, node_id: NodeID, product_name: ProductName, user_id: UserID
-) -> None:
+async def safe_remove(app: FastAPI, *, node_id: NodeID, run_id: RunID) -> None:
     api_keys_manager = _get_api_keys_manager(app)
-    display_name = _get_api_key_name(node_id)
+    display_name = _get_api_key_name(node_id, run_id)
 
-    await api_keys_manager.remove(
-        identifier=display_name, product_name=product_name, user_id=user_id
-    )
+    await api_keys_manager.remove(identifier=display_name)
 
 
-def _get_api_key_name(node_id: NodeID) -> str:
-    obfuscated_node_id = uuid5(node_id, f"{node_id}")
-    return f"_auto_{obfuscated_node_id}"
+def _get_api_key_name(node_id: NodeID, run_id: RunID) -> str:
+    # Generates a new unique key name for each service run
+    # This avoids race conditions if the service is starting and
+    # an the cleanup job is removing the key from an old run which
+    # was wrongly shut down
+    return f"_auto_{uuid5(node_id, run_id)}"
 
 
 def _get_api_keys_manager(app: FastAPI) -> APIKeysManager:
@@ -101,6 +142,19 @@ def _get_api_keys_manager(app: FastAPI) -> APIKeysManager:
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        app.state.api_keys_manager = APIKeysManager(app)
+        settings: AppSettings = app.state.settings
+
+        redis_dsn = settings.REDIS.build_redis_dsn(
+            RedisDatabase.DISTRIBUTED_IDENTIFIERS
+        )
+        redis_client_sdk = RedisClientSDK(redis_dsn)
+        app.state.api_keys_manager = manager = APIKeysManager(app, redis_client_sdk)
+
+        await manager.setup()
+
+    async def on_shutdown() -> None:
+        manager: APIKeysManager = app.state.api_keys_manager
+        await manager.shutdown()
 
     app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)

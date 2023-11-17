@@ -208,7 +208,14 @@ class BaseDistributedIdentifierManager(ABC, Generic[Ident, Res, CleanupContext])
         *,
         cleanup_interval: timedelta = _DEFAULT_CLEANUP_INTERVAL,
     ) -> None:
-        # TODO: add docstring
+        """
+        Arguments:
+            redis_client_sdk -- client connecting to Redis
+
+        Keyword Arguments:
+            cleanup_interval -- interval at which cleanup for unused
+            resources runs (default: {_DEFAULT_CLEANUP_INTERVAL})
+        """
 
         if not redis_client_sdk.redis_dsn.endswith(
             f"{RedisDatabase.DISTRIBUTED_IDENTIFIERS}"
