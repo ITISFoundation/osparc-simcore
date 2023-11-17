@@ -29,4 +29,4 @@ pytest-runner
 respx
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-boto3
-async_asgi_testclient
+async_asgi_testclient # only added to test streaming endpoints (see https://github.com/tiangolo/fastapi/discussions/9126).
