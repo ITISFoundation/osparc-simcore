@@ -123,9 +123,9 @@ async def get_payments_page(
         limit=limit,
         offset=offset,
     )
-    assert (
+    assert (  # nosec
         parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
-    )  # nosec
+    )
     return result
 
 
