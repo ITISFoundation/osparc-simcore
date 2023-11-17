@@ -148,7 +148,7 @@ async def create_payment_method(
     )
 
 
-async def list_payments_methods(
+async def list_payment_methods(
     gateway: PaymentsGatewayApi,
     repo: PaymentsMethodsRepo,
     *,

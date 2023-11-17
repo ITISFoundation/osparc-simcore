@@ -6,6 +6,7 @@ import asyncio
 import dataclasses
 import datetime
 import json
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
@@ -19,8 +20,7 @@ import psutil
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.client import SimcoreEC2API
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -41,7 +41,11 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
-from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
+from simcore_service_autoscaling.core.settings import (
+    AUTOSCALING_ENV_PREFIX,
+    ApplicationSettings,
+    EC2Settings,
+)
 from simcore_service_autoscaling.models import Cluster, DaskTaskResources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from tenacity import retry
@@ -87,6 +91,19 @@ def ec2_instances() -> list[InstanceTypeType]:
 
 
 @pytest.fixture
+def mocked_ec2_server_envs(
+    mocked_ec2_server_settings: EC2Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    # NOTE: overrides the EC2Settings with what autoscaling expects
+    changed_envs: EnvVarsDict = {
+        f"{AUTOSCALING_ENV_PREFIX}{k}": v
+        for k, v in mocked_ec2_server_settings.dict().items()
+    }
+    return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -94,18 +111,27 @@ def app_environment(
     ec2_instances: list[InstanceTypeType],
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
+
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "EC2_ACCESS_KEY_ID": faker.pystr(),
-            "EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "AUTOSCALING_EC2_ACCESS": "{}",
+            "AUTOSCALING_EC2_ACCESS_KEY_ID": faker.pystr(),
+            "AUTOSCALING_EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "AUTOSCALING_EC2_INSTANCES": "{}",
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
             ),
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    ec2_type_name: random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                    )
+                    for ec2_type_name in ec2_instances
+                }
+            ),
         },
     )
     return mock_env_devel_environment | envs
@@ -128,7 +154,13 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
             "EC2_INSTANCES_AMI_ID": aws_ami_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                aws_allowed_ec2_instance_type_names
+                {
+                    ec2_type_name: random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                    )
+                    | {"ami_id": aws_ami_id}
+                    for ec2_type_name in aws_allowed_ec2_instance_type_names
+                }
             ),
         },
     )
@@ -155,6 +187,7 @@ def enabled_dynamic_mode(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "AUTOSCALING_NODES_MONITORING": "{}",
             "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
             "NODES_MONITORING_SERVICE_LABELS": json.dumps(
                 ["pytest.fake-service-label"]
@@ -173,6 +206,7 @@ def enabled_computational_mode(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "AUTOSCALING_DASK": "{}",
             "DASK_MONITORING_URL": faker.url(),
             "DASK_MONITORING_USER_NAME": faker.user_name(),
             "DASK_MONITORING_PASSWORD": faker.password(),
@@ -181,16 +215,15 @@ def enabled_computational_mode(
 
 
 @pytest.fixture
-def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("RABBIT_HOST")
-    monkeypatch.delenv("RABBIT_USER")
-    monkeypatch.delenv("RABBIT_SECURE")
-    monkeypatch.delenv("RABBIT_PASSWORD")
+def disabled_rabbitmq(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AUTOSCALING_RABBITMQ", "null")
 
 
 @pytest.fixture
-def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("EC2_ACCESS_KEY_ID")
+def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTOSCALING_EC2_ACCESS", "null")
 
 
 @pytest.fixture
@@ -504,17 +537,6 @@ def aws_allowed_ec2_instance_type_names_env(
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
-
-
-@pytest.fixture
-async def autoscaling_ec2(
-    app_environment: EnvVarsDict,
-) -> AsyncIterator[SimcoreEC2API]:
-    settings = EC2Settings.create_from_envs()
-    ec2 = await SimcoreEC2API.create(settings)
-    assert ec2
-    yield ec2
-    await ec2.close()
 
 
 @pytest.fixture

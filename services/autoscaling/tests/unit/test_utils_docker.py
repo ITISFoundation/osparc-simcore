@@ -605,7 +605,7 @@ async def test_compute_node_used_resources_with_service(
     faker: Faker,
 ):
     # 1. if we have services with no defined reservations, then we cannot know what they use...
-    service_with_no_resources = await create_service(task_template, {}, "running")
+    await create_service(task_template, {}, "running")
     node_used_resources = await compute_node_used_resources(
         autoscaling_docker, host_node
     )
@@ -638,7 +638,7 @@ async def test_compute_node_used_resources_with_service(
     node_used_resources = await compute_node_used_resources(
         autoscaling_docker,
         host_node,
-        service_labels=[random.choice(list(service_labels.keys()))],
+        service_labels=[random.choice(list(service_labels.keys()))],  # noqa: S311
     )
     assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
     # 4. if we look for services with all the correct labels, they should then become visible again
