@@ -42,7 +42,7 @@ class LogListener:
         self._rabbit_consumer = rabbit_consumer
         self._user_id = user_id
         self._director2_api = director2_api
-        self._queue: Queue[JobLog] = Queue()
+        self._queue: Queue[JobLog] = Queue(50)
 
     async def listen(
         self,
