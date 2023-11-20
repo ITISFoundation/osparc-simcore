@@ -82,7 +82,7 @@ async def test_successful_one_time_payment_workflow(
     )
 
     # ACK via api/rest
-    result = await rpc_client.request(
+    inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_payment"),
         amount_dollars=1000,
@@ -96,15 +96,30 @@ async def test_successful_one_time_payment_workflow(
         timeout_s=None if is_pdb_enabled else 5,
     )
 
-    assert isinstance(result, WalletPaymentInitiated)
+    assert isinstance(inited, WalletPaymentInitiated)
     assert mock_payments_gateway_service_or_none.routes["init_payment"].called
 
     # ACK
     response = await client.post(
-        f"/v1/payments/{result.payment_id}:ack",
+        f"/v1/payments/{inited.payment_id}:ack",
         json=AckPayment(success=True, invoice_url=faker.url()).dict(),
         headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert mock_on_payment_completed.called
+
+    # LIST payments via api/rest
+    got = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payments_page"),
+        user_id=user_id,
+        timeout_s=None if is_pdb_enabled else 5,
+    )
+
+    total_number_of_items, transactions = got
+    assert total_number_of_items == 1
+    assert len(transactions) == 1
+
+    assert transactions[0].state == "SUCCESS"
+    assert transactions[0].payment_id == inited.payment_id
