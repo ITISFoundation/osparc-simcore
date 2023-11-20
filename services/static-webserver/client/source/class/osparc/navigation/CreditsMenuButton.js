@@ -108,24 +108,29 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
       const wallet = store.getContextWallet();
       if (wallet) {
         let text = "-";
-        const currentUsage = this.getCurrentUsage();
-        let used = null;
-        if (currentUsage) {
-          used = currentUsage.getUsedCredits();
-        }
+        // Note - We should figure out a way to handle credits being used.
+        // We need to consider what happens if it's not your prefered wallet being debited. I.E The projects wallet
+        // Where is a good place to display the Burned credits for a project.
+
+        // const currentUsage = this.getCurrentUsage();
+        // let used = null;
+        debugger
+        // if (currentUsage) {
+        //   used = currentUsage.getUsedCredits();
+        // }
         const creditsLeft = wallet.getCreditsAvailable();
         if (creditsLeft !== null) {
           text = "<span style='font-size:12px;display:inline-block'>CREDITS</span><br>";
           let nCreditsText = "";
-          if (used !== null) {
-            nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(used) + " / ";
-          }
+          // if (used !== null) {
+          //   nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(used) + " / ";
+          // }
           nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
           text += `<span>${nCreditsText}</span>`;
-          this.set({
-            minWidth: used ? 90 : null,
-            width: used ? 90 : null
-          });
+          // this.set({
+          //   minWidth: used ? 90 : null,
+          //   width: used ? 90 : null
+          // });
         }
         this.set({
           label: text,
