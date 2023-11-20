@@ -17,7 +17,7 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
-    MSG_EMAIL_EXISTS,
+    MSG_EMAIL_ALREADY_REGISTERED,
     MSG_LOGGED_IN,
     MSG_PASSWORD_MISMATCH,
     MSG_WEAK_PASSWORD,
@@ -130,7 +130,7 @@ async def test_registration_with_existing_email(
                 "confirm": user["raw_password"],
             },
         )
-    await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
+    await assert_error(response, web.HTTPConflict, MSG_EMAIL_ALREADY_REGISTERED)
 
 
 @pytest.fixture

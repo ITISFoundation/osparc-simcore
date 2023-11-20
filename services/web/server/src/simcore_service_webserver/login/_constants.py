@@ -14,7 +14,9 @@ MSG_CHANGE_EMAIL_REQUESTED: Final[
     str
 ] = "Please click on the verification link we sent to your new email address"
 MSG_EMAIL_CHANGED: Final[str] = "Your email is changed"
-MSG_EMAIL_EXISTS: Final[str] = "This email is already registered"
+MSG_EMAIL_ALREADY_REGISTERED: Final[
+    str
+] = "This email is already registered in this product"
 MSG_EMAIL_SENT: Final[
     str
 ] = "An email has been sent to {email} with further instructions"
