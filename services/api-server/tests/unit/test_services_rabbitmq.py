@@ -9,7 +9,8 @@ import json
 import logging
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated
+from datetime import datetime, timedelta
+from typing import Annotated, Final, Iterable
 from unittest.mock import AsyncMock
 
 import httpx
@@ -18,6 +19,7 @@ import respx
 from async_asgi_testclient import TestClient as AsyncAsgiClient
 from faker import Faker
 from fastapi import Depends, FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -213,21 +215,36 @@ async def test_multiple_producers_and_single_consumer(
 
 
 @pytest.fixture
+def computation_done() -> Iterable[Callable[[], bool]]:
+    stop_time: Final[datetime] = datetime.now() + timedelta(seconds=5)
+
+    def _job_done() -> bool:
+        return datetime.now() >= stop_time
+
+    yield _job_done
+
+
+@pytest.fixture
 async def log_listener(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
-    director_v2_service_mock: respx.MockRouter,
+    mocked_directorv2_service_api_base: respx.MockRouter,
+    computation_done: Callable[[], bool],
 ) -> AsyncIterable[LogListener]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         task = ComputationTaskGet.parse_obj(
             ComputationTaskGet.Config.schema_extra["examples"][0]
         )
-        task.state = RunningState.STARTED
-        return httpx.Response(status_code=status.HTTP_200_OK, json=task.json())
+        if computation_done():
+            task.state = RunningState.SUCCESS
+            task.stopped = datetime.now()
+        return httpx.Response(
+            status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
+        )
 
-    director_v2_service_mock.get(f"/v2/computations/{project_id}").mock(
+    mocked_directorv2_service_api_base.get(f"/v2/computations/{project_id}").mock(
         side_effect=_get_computation
     )
 
@@ -249,32 +266,29 @@ async def test_json_log_generator(
     produce_logs: Callable,
     log_listener: LogListener,
     faker: Faker,
+    computation_done: Callable[[], bool],
 ):
-    async def _log_publisher(n_logs: int) -> list[str]:
-        logs = []
-        for ii in range(n_logs):
+    published_logs: list[str] = []
+
+    async def _log_publisher():
+        while not computation_done():
             msg: str = faker.text()
             await asyncio.sleep(faker.pyfloat(min_value=0.0, max_value=5.0))
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
-            logs.append(msg)
-        return logs
+            published_logs.append(msg)
 
-    n_logs: int = 5
-    task = asyncio.create_task(_log_publisher(n_logs))
+    publish_task = asyncio.create_task(_log_publisher())
 
-    ii: int = 0
     collected_messages: list[str] = []
     async for log in log_listener.log_generator():
         job_log: JobLog = JobLog.parse_raw(log)
         assert len(job_log.messages) == 1
         assert job_log.job_id == project_id
         collected_messages.append(job_log.messages[0])
-        ii += 1
-        if ii == n_logs:
-            break
 
-    assert task.done()
-    assert task.result() == collected_messages
+    publish_task.cancel()
+    assert len(published_logs) > 0
+    assert published_logs == collected_messages
 
 
 @pytest.fixture

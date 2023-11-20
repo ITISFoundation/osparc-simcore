@@ -81,7 +81,7 @@ class LogListener:
         while True:
             while self._queue.empty():
                 if await self._project_done():
-                    raise StopAsyncIteration
+                    return
                 await asyncio.sleep(5)
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
