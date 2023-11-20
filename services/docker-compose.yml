@@ -956,7 +956,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "6",
+        "7",
         "--appendonly",
         "yes"
       ]
