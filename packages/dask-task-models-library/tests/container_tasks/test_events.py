@@ -13,6 +13,8 @@ from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
 )
+from dask_task_models_library.container_tasks.protocol import TaskOwner
+from faker import Faker
 from pytest_mock.plugin import MockerFixture
 
 
@@ -43,6 +45,11 @@ def mocked_dask_worker_job_id(mocker: MockerFixture) -> str:
     fake_job_id = "some_fake_job_id"
     mock_get_worker.return_value.get_current_task.return_value = fake_job_id
     return fake_job_id
+
+
+@pytest.fixture()
+def task_owner(faker: Faker) -> TaskOwner:
+    return False
 
 
 def test_task_progress_from_worker(mocked_dask_worker_job_id: str):
