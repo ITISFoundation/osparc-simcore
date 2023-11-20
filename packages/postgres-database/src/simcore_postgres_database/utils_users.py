@@ -3,12 +3,10 @@
 """
 
 
-from typing import cast
-
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 
-from .models.users import users
+from .models.users import UserRole, users
 
 
 class BaseUserRepoError(Exception):
@@ -21,17 +19,23 @@ class UserNotFoundInRepoError(BaseUserRepoError):
 
 class UsersRepo:
     @staticmethod
-    async def get_role(conn: SAConnection, user_id: int) -> str:
-        if value := await conn.scalar(
+    async def get_role(conn: SAConnection, user_id: int) -> UserRole:
+        value: UserRole | None = await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
-        ):
-            return cast(str, value)
+        )
+        if value:
+            assert isinstance(value, UserRole)  # nosec
+            return UserRole(value)
+
         raise UserNotFoundInRepoError
 
     @staticmethod
     async def get_email(conn: SAConnection, user_id: int) -> str:
-        if value := await conn.scalar(
+        value: str | None = await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
-        ):
-            return cast(str, value)
+        )
+        if value:
+            assert isinstance(value, str)  # nosec
+            return value
+
         raise UserNotFoundInRepoError
