@@ -638,7 +638,7 @@ async def test_run_computational_sidecar_dask(
         ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
     # check that the task produce the expected data, not less not more
-    assert isinstance(output_data, dict)
+    assert isinstance(output_data, TaskOutputData)
     for k, v in sleeper_task.expected_output_data.items():
         assert k in output_data
         assert output_data[k] == v
