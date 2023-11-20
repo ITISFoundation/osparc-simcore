@@ -15,6 +15,8 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
+from simcore_service_api_server.services.rabbitmq import post_message
+from simcore_service_director_v2.core.errors import ConfigurationError
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
