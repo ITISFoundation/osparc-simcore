@@ -26,7 +26,7 @@ class BaseDistributedIdentifierManager(
     """Used to implement managers for resources that require book keeping
     in a distributed system.
 
-    NOTE: that ``Identifier`` and ``ResourceObject`` are serialized and deserialized
+    NOTE: that ``Identifier`` and ``CleanupContext`` are serialized and deserialized
     to and from Redis.
 
     Generics:
