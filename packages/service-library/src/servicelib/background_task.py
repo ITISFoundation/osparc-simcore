@@ -49,7 +49,7 @@ async def _periodic_scheduled_task(
     task_name: str,
     **task_kwargs,
 ) -> None:
-    # NOTE: This retries forever unless cancelled
+    # NOTE: This retries forever unless cancelled or stopped
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
             if not continue_condition.can_continue:
