@@ -272,8 +272,8 @@ class ProjectNodesRepo:
         get_stmt = sqlalchemy.select(projects_nodes.c.project_uuid).where(
             projects_nodes.c.node_id == f"{node_id}"
         )
-        node_id = await connection.scalar(get_stmt)
-        if node_id is None:
-            msg = f"Node with {node_id} not found"
+        project_id = await connection.scalar(get_stmt)
+        if project_id is None:
+            msg = f"No project found containing {node_id=}"
             raise ProjectNodesNodeNotFound(msg)
-        return uuid.UUID(node_id)
+        return uuid.UUID(project_id)
