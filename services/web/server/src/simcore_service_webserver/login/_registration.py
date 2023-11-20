@@ -18,6 +18,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
+from ..groups.api import is_user_by_email_in_group
 from ..invitations.api import (
     extract_invitation,
     is_service_invitation_code,
@@ -26,7 +27,7 @@ from ..invitations.api import (
 from ..invitations.errors import InvalidInvitation, InvitationsServiceUnavailable
 from ..products.api import Product
 from ._confirmation import is_confirmation_expired, validate_confirmation_code
-from ._constants import MSG_EMAIL_EXISTS, MSG_INVITATIONS_CONTACT_SUFFIX
+from ._constants import MSG_EMAIL_ALREADY_REGISTERED, MSG_INVITATIONS_CONTACT_SUFFIX
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
 from .utils import CONFIRMATION_PENDING
@@ -75,46 +76,50 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, type | None] = {
 
 
 async def check_other_registrations(
+    app: web.Application,
     email: str,
+    product: Product,
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-    if user := await db.get_user({"email": email}):
-        # An account already registered with this email
-        #
-        #  RULE 'drop_previous_registration': any unconfirmed account w/o confirmation or
-        #  w/ an expired confirmation will get deleted and its account (i.e. email)
-        #  can be overtaken by this new registration
-        #
-        if user["status"] == CONFIRMATION_PENDING:
-            _confirmation = await db.get_confirmation(
-                filter_dict={
-                    "user": user,
-                    "action": ConfirmationAction.REGISTRATION.value,
-                }
-            )
-            drop_previous_registration = not _confirmation or is_confirmation_expired(
-                cfg, _confirmation
-            )
-            if drop_previous_registration:
-                if not _confirmation:
-                    await db.delete_user(user=user)
-                else:
-                    await db.delete_confirmation_and_user(
-                        user=user, confirmation=_confirmation
-                    )
+    user = await db.get_user({"email": email})
 
-                _logger.warning(
-                    "Re-registration of %s with expired %s"
-                    "Deleting user and proceeding to a new registration",
-                    f"{user=}",
-                    f"{_confirmation=}",
+    # An account already registered with this email
+    #
+    #  RULE 'drop_previous_registration': any unconfirmed account w/o confirmation or
+    #  w/ an expired confirmation will get deleted and its account (i.e. email)
+    #  can be overtaken by this new registration
+    #
+    if user and user["status"] == CONFIRMATION_PENDING:
+        _confirmation = await db.get_confirmation(
+            filter_dict={
+                "user": user,
+                "action": ConfirmationAction.REGISTRATION.value,
+            }
+        )
+        drop_previous_registration = not _confirmation or is_confirmation_expired(
+            cfg, _confirmation
+        )
+        if drop_previous_registration:
+            if not _confirmation:
+                await db.delete_user(user=user)
+            else:
+                await db.delete_confirmation_and_user(
+                    user=user, confirmation=_confirmation
                 )
-                return
 
-        # FIXME: this should not raise if different product!
+            _logger.warning(
+                "Re-registration of %s with expired %s"
+                "Deleting user and proceeding to a new registration",
+                f"{user=}",
+                f"{_confirmation=}",
+            )
+
+    if user and await is_user_by_email_in_group(
+        app, user_email=user["email"], group_id=product.group_id
+    ):
         raise web.HTTPConflict(
-            reason=MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_EMAIL_ALREADY_REGISTERED, content_type=MIMETYPE_APPLICATION_JSON
         )
 
 
