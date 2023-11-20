@@ -3,6 +3,8 @@
 """
 
 
+from typing import cast
+
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 
@@ -23,7 +25,7 @@ class UsersRepo:
         if value := await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
         ):
-            return value
+            return cast(str, value)
         raise UserNotFoundInRepoError
 
     @staticmethod
@@ -31,5 +33,5 @@ class UsersRepo:
         if value := await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
         ):
-            return value
+            return cast(str, value)
         raise UserNotFoundInRepoError
