@@ -84,7 +84,6 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
       if (currentUsage) {
         currentUsage.addListener("changeUsedCredits", () => {
           this.__updateCredits();
-          // this.__animate();
         });
       }
     },
@@ -97,39 +96,18 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
         wallet.addListener("changeCreditsAvailable", () => this.__updateCredits());
       }
     },
-    // Note - Sometimes it doesn't work and it bring the credits indicator into a failed state
-    // __animate: function() {
-    //   const label = this.getChildControl("label");
-    //   osparc.utils.Utils.animateUsage(label.getContentElement().getDomElement());
-    // },
 
     __updateCredits: function() {
       const store = osparc.store.Store.getInstance();
       const wallet = store.getContextWallet();
       if (wallet) {
         let text = "-";
-        // Note - We should figure out a way to handle credits being used.
-        // We need to consider what happens if it's not your prefered wallet being debited. I.E The projects wallet
-        // Where is a good place to display the Burned credits for a project.
-
-        // const currentUsage = this.getCurrentUsage();
-        // let used = null;
-        // if (currentUsage) {
-        //   used = currentUsage.getUsedCredits();
-        // }
         const creditsLeft = wallet.getCreditsAvailable();
         if (creditsLeft !== null) {
           text = "<span style='font-size:12px;display:inline-block'>CREDITS</span><br>";
           let nCreditsText = "";
-          // if (used !== null) {
-          //   nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(used) + " / ";
-          // }
           nCreditsText += osparc.desktop.credits.Utils.creditsToFixed(creditsLeft);
           text += `<span>${nCreditsText}</span>`;
-          // this.set({
-          //   minWidth: used ? 90 : null,
-          //   width: used ? 90 : null
-          // });
         }
         this.set({
           label: text,
