@@ -366,6 +366,23 @@ async def pay_with_payment_method(
     )
 
 
+async def _fake_get_payments_page(
+    app: web.Application,
+    user_id: UserID,
+    limit: int,
+    offset: int,
+):
+
+    (
+        total_number_of_items,
+        transactions,
+    ) = await _onetime_db.list_user_payment_transactions(
+        app, user_id=user_id, offset=offset, limit=limit
+    )
+
+    return total_number_of_items, [_to_api_model(t) for t in transactions]
+
+
 async def list_user_payments_page(
     app: web.Application,
     product_name: str,
@@ -378,11 +395,16 @@ async def list_user_payments_page(
     assert offset >= 0  # nosec
     assert product_name  # nosec
 
-    (
-        total_number_of_items,
-        transactions,
-    ) = await _onetime_db.list_user_payment_transactions(
-        app, user_id=user_id, offset=offset, limit=limit
-    )
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        total_number_of_items, payments = await _fake_get_payments_page(
+            app, user_id=user_id, offset=offset, limit=limit
+        )
 
-    return [_to_api_model(t) for t in transactions], total_number_of_items
+    else:
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        total_number_of_items, payments = await _rpc.get_payments_page(
+            app, user_id=user_id, offset=offset, limit=limit
+        )
+
+    return payments, total_number_of_items
