@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import TypeAlias, Union
+from typing import Any, ClassVar, TypeAlias
 
 from distributed.worker import get_worker
 from pydantic import BaseModel, Extra, validator
@@ -31,7 +31,7 @@ class TaskProgressEvent(BaseTaskEvent):
         return cls(job_id=get_worker().get_current_task(), progress=progress)
 
     class Config(BaseTaskEvent.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
@@ -69,7 +69,7 @@ class TaskLogEvent(BaseTaskEvent):
         return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
 
     class Config(BaseTaskEvent.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
@@ -78,6 +78,3 @@ class TaskLogEvent(BaseTaskEvent):
                 },
             ]
         }
-
-
-DaskTaskEvents = type[Union[TaskLogEvent, TaskProgressEvent]]
