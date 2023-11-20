@@ -2,6 +2,7 @@ from typing import Any
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
 
 from ..db.plugin import get_database_engine
@@ -93,6 +94,17 @@ async def auto_add_user_to_product_group(
     async with get_database_engine(app).acquire() as conn:
         return await _db.auto_add_user_to_product_group(
             conn, user_id=user_id, product_name=product_name
+        )
+
+
+async def is_user_by_email_in_group(
+    app: web.Application, user_email: LowerCaseEmailStr, group_id: GroupID
+) -> str:
+    async with get_database_engine(app).acquire() as conn:
+        return await _db.is_user_by_email_in_group(
+            conn,
+            email=user_email,  # type: ignore
+            group_id=group_id,
         )
 
 
