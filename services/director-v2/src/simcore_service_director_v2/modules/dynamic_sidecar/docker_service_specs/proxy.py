@@ -9,14 +9,19 @@ from models_library.services_resources import (
 )
 from pydantic import ByteSize
 
-from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
+from ....core.dynamic_services_settings import DynamicServicesSettings
+from ....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
+from ....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
+from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 
 
 def get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_settings: DynamicServicesSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     swarm_network_name: str,
@@ -28,6 +33,16 @@ def get_dynamic_proxy_spec(
     from the rest of the platform.
     """
 
+    proxy_settings: DynamicSidecarProxySettings = (
+        dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+    )
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        dynamic_services_settings.DYNAMIC_SIDECAR
+    )
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+        dynamic_services_settings.DYNAMIC_SCHEDULER
+    )
+
     mounts = [
         # docker socket needed to use the docker api
         {
@@ -37,9 +52,6 @@ def get_dynamic_proxy_spec(
             "ReadOnly": True,
         }
     ]
-    proxy_settings: DynamicSidecarProxySettings = (
-        dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
-    )
     caddy_file = (
         f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
     )
@@ -55,14 +67,14 @@ def get_dynamic_proxy_spec(
                 "TargetPort": proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
             }
         )
-    if dynamic_sidecar_settings.PROXY_EXPOSE_PORT:
+    if proxy_settings.PROXY_EXPOSE_PORT:
         ports.append({"Protocol": "tcp", "TargetPort": 80})
 
     return {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             # TODO: let's use a pydantic model with descriptions
-            "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
+            "io.simcore.zone": f"{dynamic_services_scheduler_settings.TRAEFIK_SIMCORE_ZONE}",
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
@@ -79,7 +91,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": f"hostregexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
         | StandardSimcoreDockerLabels(
@@ -88,7 +100,7 @@ def get_dynamic_proxy_spec(
             node_id=scheduler_data.node_uuid,
             product_name=scheduler_data.product_name,
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
-            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
             memory_limit=ByteSize(MEMORY_50MB),
             cpu_limit=float(CPU_10_PERCENT) / 1e9,
         ).to_simcore_runtime_docker_labels(),
@@ -106,7 +118,7 @@ def get_dynamic_proxy_spec(
                     node_id=scheduler_data.node_uuid,
                     product_name=scheduler_data.product_name,
                     simcore_user_agent=scheduler_data.request_simcore_user_agent,
-                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                     memory_limit=ByteSize(MEMORY_50MB),
                     cpu_limit=float(CPU_10_PERCENT) / 1e9,
                 ).to_simcore_runtime_docker_labels(),

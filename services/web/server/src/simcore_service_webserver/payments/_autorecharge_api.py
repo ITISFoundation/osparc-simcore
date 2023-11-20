@@ -5,6 +5,7 @@ from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     ReplaceWalletAutoRecharge,
 )
+from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -21,13 +22,15 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-def _from_db_to_api_model(db_model: PaymentsAutorechargeDB) -> GetWalletAutoRecharge:
+def _from_db_to_api_model(
+    db_model: PaymentsAutorechargeDB, min_balance_in_credits: NonNegativeDecimal
+) -> GetWalletAutoRecharge:
     return GetWalletAutoRecharge(
         enabled=db_model.enabled,
         payment_method_id=db_model.primary_payment_method_id,
-        min_balance_in_usd=db_model.min_balance_in_usd,
+        min_balance_in_credits=min_balance_in_credits,
         top_up_amount_in_usd=db_model.top_up_amount_in_usd,
-        top_up_countdown=db_model.top_up_countdown,
+        monthly_limit_in_usd=db_model.monthly_limit_in_usd,
     )
 
 
@@ -38,9 +41,8 @@ def _from_api_to_db_model(
         wallet_id=wallet_id,
         enabled=api_model.enabled,
         primary_payment_method_id=api_model.payment_method_id,
-        min_balance_in_usd=api_model.min_balance_in_usd,
         top_up_amount_in_usd=api_model.top_up_amount_in_usd,
-        top_up_countdown=api_model.top_up_countdown,
+        monthly_limit_in_usd=api_model.monthly_limit_in_usd,
     )
 
 
@@ -61,12 +63,11 @@ async def get_wallet_payment_autorecharge(
     await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
-
+    settings = get_plugin_settings(app)
     got: PaymentsAutorechargeDB | None = await get_wallet_autorecharge(
         app, wallet_id=wallet_id
     )
     if not got:
-        settings = get_plugin_settings(app)
         payment_method_id = None
         wallet_payment_methods = await list_successful_payment_methods(
             app,
@@ -79,12 +80,15 @@ async def get_wallet_payment_autorecharge(
         return GetWalletAutoRecharge(
             enabled=False,
             payment_method_id=payment_method_id,
-            min_balance_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MIN_BALANCE,
+            min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
             top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
-            top_up_countdown=None,
+            monthly_limit_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT,
         )
 
-    return _from_db_to_api_model(got)
+    return _from_db_to_api_model(
+        got,
+        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+    )
 
 
 async def replace_wallet_payment_autorecharge(
@@ -99,6 +103,7 @@ async def replace_wallet_payment_autorecharge(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
+    settings = get_plugin_settings(app)
     got: PaymentsAutorechargeDB = await replace_wallet_autorecharge(
         app,
         user_id=user_id,
@@ -106,4 +111,7 @@ async def replace_wallet_payment_autorecharge(
         new=_from_api_to_db_model(wallet_id, new),
     )
 
-    return _from_db_to_api_model(got)
+    return _from_db_to_api_model(
+        got,
+        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+    )

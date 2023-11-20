@@ -1,12 +1,20 @@
+from collections.abc import Iterable
+
+from aws_library.ec2.models import EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
 from servicelib.logging_utils import LogLevelInt
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+)
 from ..utils import dynamic_scaling as utils
-from ..utils import ec2, utils_docker
+from ..utils import utils_docker, utils_ec2
 from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
@@ -25,12 +33,14 @@ class DynamicAutoscaling(BaseAutoscaling):
     @staticmethod
     def get_ec2_tags(app: FastAPI) -> dict[str, str]:
         app_settings = get_application_settings(app)
-        return ec2.get_ec2_tags_dynamic(app_settings)
+        return utils_ec2.get_ec2_tags_dynamic(app_settings)
 
     @staticmethod
-    def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(
+        app: FastAPI, ec2_instance_data: EC2InstanceData
+    ) -> dict[DockerLabelKey, str]:
         app_settings = get_application_settings(app)
-        return utils_docker.get_docker_tags(app_settings)
+        return utils_docker.get__new_node_docker_tags(app_settings, ec2_instance_data)
 
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[Task]:
@@ -43,34 +53,32 @@ class DynamicAutoscaling(BaseAutoscaling):
 
     @staticmethod
     def try_assigning_task_to_node(
-        task, instance_to_tasks: list[tuple[AssociatedInstance, list]]
+        task, instances_to_tasks: Iterable[tuple[AssociatedInstance, list]]
     ) -> bool:
-        return utils.try_assigning_task_to_node(task, instance_to_tasks)
+        return utils.try_assigning_task_to_node(task, instances_to_tasks)
 
     @staticmethod
-    async def try_assigning_task_to_pending_instances(
+    async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list]],
-        type_to_instance_map: dict[str, EC2InstanceType],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
-        return await utils.try_assigning_task_to_pending_instances(
+        return await utils.try_assigning_task_to_instances(
             app,
             pending_task,
-            list_of_pending_instance_to_tasks,
-            type_to_instance_map,
+            instances_to_tasks,
             notify_progress=notify_progress,
         )
 
     @staticmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        list_of_instance_to_tasks: list[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: list[AssignedTasksToInstanceType],
     ) -> bool:
-        return utils.try_assigning_task_to_instances(
-            pending_task, list_of_instance_to_tasks
+        return utils.try_assigning_task_to_instance_types(
+            pending_task, instance_types_to_tasks
         )
 
     @staticmethod
@@ -80,12 +88,20 @@ class DynamicAutoscaling(BaseAutoscaling):
         await log_tasks_message(app, tasks, message, level=level)
 
     @staticmethod
-    async def progress_message_from_tasks(app: FastAPI, tasks: list, progress: float):
-        await progress_tasks_message(app, tasks, progress=1.0)
+    async def progress_message_from_tasks(
+        app: FastAPI, tasks: list, progress: float
+    ) -> None:
+        await progress_tasks_message(app, tasks, progress=progress)
 
     @staticmethod
     def get_max_resources_from_task(task) -> Resources:
         return utils_docker.get_max_resources_from_docker_task(task)
+
+    @staticmethod
+    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
+        return await utils_docker.get_task_instance_restriction(
+            get_docker_client(app), task
+        )
 
     @staticmethod
     async def compute_node_used_resources(

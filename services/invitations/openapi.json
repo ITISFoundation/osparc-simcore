@@ -1,9 +1,9 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "paths": {
     "/": {
@@ -143,170 +143,189 @@
   "components": {
     "schemas": {
       "ApiEncryptedInvitation": {
-        "title": "ApiEncryptedInvitation",
+        "properties": {
+          "invitation_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Invitation Url",
+            "description": "Invitation link"
+          }
+        },
+        "type": "object",
         "required": [
           "invitation_url"
         ],
-        "type": "object",
-        "properties": {
-          "invitation_url": {
-            "title": "Invitation Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "description": "Invitation link",
-            "format": "uri"
-          }
-        }
+        "title": "ApiEncryptedInvitation"
       },
       "ApiInvitationContent": {
-        "title": "ApiInvitationContent",
-        "required": [
-          "issuer",
-          "guest",
-          "created"
-        ],
-        "type": "object",
         "properties": {
           "issuer": {
-            "title": "Issuer",
+            "type": "string",
             "maxLength": 30,
             "minLength": 1,
-            "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+            "title": "Issuer",
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
           },
           "guest": {
-            "title": "Guest",
             "type": "string",
-            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
-            "format": "email"
+            "format": "email",
+            "title": "Guest",
+            "description": "Invitee's email. Note that the registration can ONLY be used with this email"
           },
           "trial_account_days": {
-            "title": "Trial Account Days",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Trial Account Days",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
           "extra_credits_in_usd": {
-            "title": "Extra Credits In Usd",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
-          "created": {
-            "title": "Created",
+          "product": {
             "type": "string",
-            "description": "Timestamp for creation",
-            "format": "date-time"
+            "title": "Product",
+            "description": "This invitations can only be used for this product."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created",
+            "description": "Timestamp for creation"
           }
         },
+        "type": "object",
+        "required": [
+          "issuer",
+          "guest",
+          "product",
+          "created"
+        ],
+        "title": "ApiInvitationContent",
         "description": "Data in an invitation",
         "example": {
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
+          "product": "osparc",
           "created": "2023-01-11 13:11:47.293595"
         }
       },
       "ApiInvitationContentAndLink": {
-        "title": "ApiInvitationContentAndLink",
-        "required": [
-          "issuer",
-          "guest",
-          "created",
-          "invitation_url"
-        ],
-        "type": "object",
         "properties": {
           "issuer": {
-            "title": "Issuer",
+            "type": "string",
             "maxLength": 30,
             "minLength": 1,
-            "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+            "title": "Issuer",
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
           },
           "guest": {
-            "title": "Guest",
             "type": "string",
-            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
-            "format": "email"
+            "format": "email",
+            "title": "Guest",
+            "description": "Invitee's email. Note that the registration can ONLY be used with this email"
           },
           "trial_account_days": {
-            "title": "Trial Account Days",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Trial Account Days",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
           "extra_credits_in_usd": {
-            "title": "Extra Credits In Usd",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
           },
-          "created": {
-            "title": "Created",
+          "product": {
             "type": "string",
-            "description": "Timestamp for creation",
-            "format": "date-time"
+            "title": "Product",
+            "description": "This invitations can only be used for this product."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created",
+            "description": "Timestamp for creation"
           },
           "invitation_url": {
-            "title": "Invitation Url",
+            "type": "string",
             "maxLength": 2083,
             "minLength": 1,
-            "type": "string",
-            "description": "Invitation link",
-            "format": "uri"
+            "format": "uri",
+            "title": "Invitation Url",
+            "description": "Invitation link"
           }
         },
+        "type": "object",
+        "required": [
+          "issuer",
+          "guest",
+          "product",
+          "created",
+          "invitation_url"
+        ],
+        "title": "ApiInvitationContentAndLink",
         "description": "Data in an invitation",
         "example": {
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
-          "created": "2023-01-11 12:11:47.293595",
+          "product": "osparc",
+          "created": "2023-01-11 13:11:47.293595",
           "invitation_url": "https://foo.com/#/registration?invitation=1234"
         }
       },
       "ApiInvitationInputs": {
-        "title": "ApiInvitationInputs",
-        "required": [
-          "issuer",
-          "guest"
-        ],
-        "type": "object",
         "properties": {
           "issuer": {
-            "title": "Issuer",
+            "type": "string",
             "maxLength": 30,
             "minLength": 1,
-            "type": "string",
-            "description": "Identifies who issued the invitation. E.g. an email, a service name etc"
+            "title": "Issuer",
+            "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
           },
           "guest": {
-            "title": "Guest",
             "type": "string",
-            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
-            "format": "email"
+            "format": "email",
+            "title": "Guest",
+            "description": "Invitee's email. Note that the registration can ONLY be used with this email"
           },
           "trial_account_days": {
-            "title": "Trial Account Days",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Trial Account Days",
             "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
             "minimum": 0
           },
           "extra_credits_in_usd": {
-            "title": "Extra Credits In Usd",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "If None, it will use INVITATIONS_DEFAULT_PRODUCT"
           }
         },
+        "type": "object",
+        "required": [
+          "issuer",
+          "guest"
+        ],
+        "title": "ApiInvitationInputs",
         "description": "Input data necessary to create an invitation",
         "example": {
           "issuer": "issuerid",
@@ -315,30 +334,21 @@
         }
       },
       "HTTPValidationError": {
-        "title": "HTTPValidationError",
-        "type": "object",
         "properties": {
           "detail": {
-            "title": "Detail",
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
-            }
+            },
+            "type": "array",
+            "title": "Detail"
           }
-        }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "ValidationError": {
-        "title": "ValidationError",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "type": "object",
         "properties": {
           "loc": {
-            "title": "Location",
-            "type": "array",
             "items": {
               "anyOf": [
                 {
@@ -348,43 +358,52 @@
                   "type": "integer"
                 }
               ]
-            }
+            },
+            "type": "array",
+            "title": "Location"
           },
           "msg": {
-            "title": "Message",
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           },
           "type": {
-            "title": "Error Type",
-            "type": "string"
+            "type": "string",
+            "title": "Error Type"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "_Meta": {
-        "title": "_Meta",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "docs_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Docs Url"
+          }
+        },
+        "type": "object",
         "required": [
           "name",
           "version",
           "docs_url"
         ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "version": {
-            "title": "Version",
-            "type": "string"
-          },
-          "docs_url": {
-            "title": "Docs Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
-          }
-        }
+        "title": "_Meta"
       }
     },
     "securitySchemes": {

@@ -2,13 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from models_library.resource_tracker import (
+from pydantic import BaseModel
+
+from ..resource_tracker import (
+    HardwareInfo,
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitCostId,
     PricingUnitId,
 )
-from pydantic import BaseModel
 
 
 class PricingUnitGet(BaseModel):
@@ -18,7 +20,7 @@ class PricingUnitGet(BaseModel):
     current_cost_per_unit: Decimal
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
-    specific_info: dict
+    specific_info: HardwareInfo
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -30,8 +32,9 @@ class PricingUnitGet(BaseModel):
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
-                    "specific_info": {},
+                    "specific_info": hw_config_example,
                 }
+                for hw_config_example in HardwareInfo.Config.schema_extra["examples"]
             ]
         }
 
@@ -55,9 +58,10 @@ class ServicePricingPlanGet(BaseModel):
                     "classification": "TIER",
                     "created_at": "2023-01-11 13:11:47.293595",
                     "pricing_plan_key": "pricing-plan-sleeper",
-                    "pricing_units": [
-                        PricingUnitGet.Config.schema_extra["examples"][0]
-                    ],
+                    "pricing_units": [pricing_unit_get_example],
                 }
+                for pricing_unit_get_example in PricingUnitGet.Config.schema_extra[
+                    "examples"
+                ]
             ]
         }

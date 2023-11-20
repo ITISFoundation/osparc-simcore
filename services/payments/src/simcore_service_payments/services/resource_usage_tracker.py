@@ -19,9 +19,9 @@ from models_library.products import ProductName
 from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
 
 from ..core.settings import ApplicationSettings
-from ..utils.http_client import AppStateMixin, BaseHttpApi
 
 _logger = logging.getLogger(__name__)
 

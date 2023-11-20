@@ -266,7 +266,7 @@ async def email_confirmation(code: str):
         },
     },
 )
-async def list_api_keys(code: str):
+async def list_api_keys():
     """lists display names of API keys by this user"""
 
 

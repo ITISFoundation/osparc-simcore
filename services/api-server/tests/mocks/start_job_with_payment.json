@@ -1,7 +1,7 @@
 [
  {
-  "name": "GET /projects/6e52228c-6edd-4505-9131-e901fdad5b17",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/6e52228c-6edd-4505-9131-e901fdad5b17')>",
+  "name": "GET /projects/e551e994-a68d-4c26-b6fc-59019b35ee6e",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/e551e994-a68d-4c26-b6fc-59019b35ee6e')>",
   "method": "GET",
   "host": "webserver",
   "path": {
@@ -30,26 +30,28 @@
   "request_payload": null,
   "response_body": {
    "data": {
-    "uuid": "6e52228c-6edd-4505-9131-e901fdad5b17",
-    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/6e52228c-6edd-4505-9131-e901fdad5b17",
-    "description": "Study associated to solver job:\n{\n  \"id\": \"6e52228c-6edd-4505-9131-e901fdad5b17\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/6e52228c-6edd-4505-9131-e901fdad5b17\",\n  \"inputs_checksum\": \"4b0d1a8e693c1edeafe258709732f75104f36c9a9f5efcf2d8136a4ac64dd5f5\",\n  \"created_at\": \"2023-10-19T12:46:18.158245+00:00\"\n}",
+    "uuid": "e551e994-a68d-4c26-b6fc-59019b35ee6e",
+    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/e551e994-a68d-4c26-b6fc-59019b35ee6e",
+    "description": "Study associated to solver job:\n{\n  \"id\": \"e551e994-a68d-4c26-b6fc-59019b35ee6e\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/e551e994-a68d-4c26-b6fc-59019b35ee6e\",\n  \"inputs_checksum\": \"015ba4cd5cf00c511a8217deb65c242e3b15dc6ae4b1ecf94982d693887d9e8a\",\n  \"created_at\": \"2023-10-26T14:10:11.103041+00:00\"\n}",
     "thumbnail": "https://via.placeholder.com/170x120.png",
-    "creationDate": "2023-10-19T12:46:18.189Z",
-    "lastChangeDate": "2023-10-19T13:37:32.548Z",
+    "creationDate": "2023-10-26T14:10:11.118Z",
+    "lastChangeDate": "2023-10-26T14:10:11.118Z",
     "workbench": {
-     "97792753-cbda-56a7-b8c0-576f990b21c0": {
+     "657b124c-0697-5166-b820-a2ea2704ae84": {
       "key": "simcore/services/comp/itis/sleeper",
       "version": "2.0.2",
       "label": "sleeper",
-      "progress": 100.0,
+      "progress": 0.0,
       "inputs": {
-       "input_1": {
+       "x": 4.33,
+       "n": 55,
+       "title": "Temperature",
+       "enabled": true,
+       "input_file": {
         "store": 0,
-        "path": "api/3fa85f64-5717-4562-b3fc-2c963f66afa6/file_with_number.txt",
-        "label": "file_with_number.txt"
-       },
-       "input_2": 3.0,
-       "input_3": 0
+        "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+        "label": "input.txt"
+       }
       },
       "inputsUnits": {},
       "inputNodes": [],
@@ -57,8 +59,8 @@
       "state": {
        "modified": true,
        "dependencies": [],
-       "currentStatus": "FAILED",
-       "progress": 1.0
+       "currentStatus": "NOT_STARTED",
+       "progress": null
       }
      }
     },
@@ -78,12 +80,12 @@
       "status": "CLOSED"
      },
      "state": {
-      "value": "FAILED"
+      "value": "NOT_STARTED"
      }
     },
     "ui": {
      "workbench": {
-      "97792753-cbda-56a7-b8c0-576f990b21c0": {
+      "657b124c-0697-5166-b820-a2ea2704ae84": {
        "position": {
         "x": 633,
         "y": 229
@@ -91,7 +93,7 @@
       }
      },
      "slideshow": {},
-     "currentNodeId": "97792753-cbda-56a7-b8c0-576f990b21c0",
+     "currentNodeId": "657b124c-0697-5166-b820-a2ea2704ae84",
      "annotations": {}
     },
     "quality": {},
@@ -101,8 +103,8 @@
   "status_code": 200
  },
  {
-  "name": "PUT /projects/6e52228c-6edd-4505-9131-e901fdad5b17/nodes/97792753-cbda-56a7-b8c0-576f990b21c0/pricing-plan/1/pricing-unit/1",
-  "description": "<Request('PUT', 'http://webserver:8080/v0/projects/6e52228c-6edd-4505-9131-e901fdad5b17/nodes/97792753-cbda-56a7-b8c0-576f990b21c0/pricing-plan/1/pricing-unit/1')>",
+  "name": "PUT /projects/e551e994-a68d-4c26-b6fc-59019b35ee6e/nodes/657b124c-0697-5166-b820-a2ea2704ae84/pricing-plan/1/pricing-unit/1",
+  "description": "<Request('PUT', 'http://webserver:8080/v0/projects/e551e994-a68d-4c26-b6fc-59019b35ee6e/nodes/657b124c-0697-5166-b820-a2ea2704ae84/pricing-plan/1/pricing-unit/1')>",
   "method": "PUT",
   "host": "webserver",
   "path": {
@@ -110,10 +112,10 @@
    "path_parameters": [
     {
      "in": "path",
-     "name": "pricing_unit_id",
+     "name": "pricing_plan_id",
      "required": true,
      "schema": {
-      "title": "Pricing Unit Id",
+      "title": "Pricing Plan Id",
       "type": "int",
       "pattern": null,
       "format": null,
@@ -123,7 +125,7 @@
       "allOf": null,
       "oneOf": null
      },
-     "response_value": "pricing-unit"
+     "response_value": "pricing-plan"
     },
     {
      "in": "path",
@@ -144,6 +146,23 @@
     },
     {
      "in": "path",
+     "name": "pricing_unit_id",
+     "required": true,
+     "schema": {
+      "title": "Pricing Unit Id",
+      "type": "int",
+      "pattern": null,
+      "format": null,
+      "exclusiveMinimum": true,
+      "minimum": 0,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "pricing-unit"
+    },
+    {
+     "in": "path",
      "name": "node_id",
      "required": true,
      "schema": {
@@ -158,75 +177,109 @@
       "oneOf": null
      },
      "response_value": "nodes"
-    },
-    {
-     "in": "path",
-     "name": "pricing_plan_id",
-     "required": true,
-     "schema": {
-      "title": "Pricing Plan Id",
-      "type": "int",
-      "pattern": null,
-      "format": null,
-      "exclusiveMinimum": true,
-      "minimum": 0,
-      "anyOf": null,
-      "allOf": null,
-      "oneOf": null
-     },
-     "response_value": "pricing-plan"
     }
    ]
   },
   "query": null,
   "request_payload": null,
-  "response_body": {
-  },
+  "response_body": null,
   "status_code": 204
  },
  {
-  "name": "POST /v2/computations",
-  "description": "<Request('POST', 'http://director-v2:8000/v2/computations')>",
+  "name": "POST /computations/e551e994-a68d-4c26-b6fc-59019b35ee6e:start",
+  "description": "<Request('POST', 'http://webserver:8080/v0/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e:start')>",
   "method": "POST",
-  "host": "director-v2",
+  "host": "webserver",
   "path": {
-   "path": "/v2/computations",
-   "path_parameters": []
+   "path": "/v0/computations/{project_id}:start",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
   },
   "query": null,
   "request_payload": {
-   "user_id": 1,
-   "project_id": "6e52228c-6edd-4505-9131-e901fdad5b17",
-   "start_pipeline": true,
-   "product_name": "osparc",
-   "use_on_demand_clusters": false
+   "force_restart": false,
+   "cluster_id": 0,
+   "subgraph": []
   },
   "response_body": {
-   "id": "6e52228c-6edd-4505-9131-e901fdad5b17",
-   "state": "PUBLISHED",
+   "data": {
+    "pipeline_id": "e551e994-a68d-4c26-b6fc-59019b35ee6e"
+   }
+  },
+  "status_code": 201
+ },
+ {
+  "name": "GET /v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "request_payload": null,
+  "response_body": {
+   "id": "e551e994-a68d-4c26-b6fc-59019b35ee6e",
+   "state": "STARTED",
    "result": null,
    "pipeline_details": {
     "adjacency_list": {
-     "97792753-cbda-56a7-b8c0-576f990b21c0": []
+     "657b124c-0697-5166-b820-a2ea2704ae84": []
     },
     "progress": 0.0,
     "node_states": {
-     "97792753-cbda-56a7-b8c0-576f990b21c0": {
+     "657b124c-0697-5166-b820-a2ea2704ae84": {
       "modified": true,
       "dependencies": [],
-      "currentStatus": "PUBLISHED",
-      "progress": null
+      "currentStatus": "STARTED",
+      "progress": 0.0
      }
     }
    },
-   "iteration": 9,
+   "iteration": 1,
    "cluster_id": 0,
-   "started": null,
-   "stopped": "2023-10-19T12:59:28.719336+00:00",
-   "submitted": "2023-10-19T12:59:50.999473+00:00",
-   "url": "http://director-v2:8000/v2/computations/6e52228c-6edd-4505-9131-e901fdad5b17?user_id=1",
-   "stop_url": "http://director-v2:8000/v2/computations/6e52228c-6edd-4505-9131-e901fdad5b17:stop?user_id=1"
+   "started": "2023-10-26T14:11:20.606448+00:00",
+   "stopped": null,
+   "submitted": "2023-10-26T14:11:20.460760+00:00",
+   "url": "http://director-v2:8000/v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e551e994-a68d-4c26-b6fc-59019b35ee6e:stop?user_id=1"
   },
-  "status_code": 201
+  "status_code": 200
  }
 ]

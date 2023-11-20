@@ -84,7 +84,7 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
       if (currentUsage) {
         currentUsage.addListener("changeUsedCredits", () => {
           this.__updateCredits();
-          this.__animate();
+          // this.__animate();
         });
       }
     },
@@ -97,11 +97,11 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
         wallet.addListener("changeCreditsAvailable", () => this.__updateCredits());
       }
     },
-
-    __animate: function() {
-      const label = this.getChildControl("label");
-      osparc.utils.Utils.animateUsage(label.getContentElement().getDomElement());
-    },
+    // Note - Sometimes it doesn't work and it bring the credits indicator into a failed state
+    // __animate: function() {
+    //   const label = this.getChildControl("label");
+    //   osparc.utils.Utils.animateUsage(label.getContentElement().getDomElement());
+    // },
 
     __updateCredits: function() {
       const store = osparc.store.Store.getInstance();

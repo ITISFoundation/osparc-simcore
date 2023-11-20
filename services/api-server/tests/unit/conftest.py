@@ -36,13 +36,14 @@ from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     PathDescription,
@@ -123,26 +124,16 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         engine.maxsize = 10
         app.state.engine = engine
 
-    # patch authentication entry in repo
-    faker_user_id = faker.pyint()
-
     # NOTE: here, instead of using the database, we patch repositories interface
     mocker.patch(
-        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user_id",
+        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user",
         autospec=True,
-        return_value=faker_user_id,
+        return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
         autospec=True,
         return_value=faker.email(),
-    )
-
-    # patches simcore_postgres_database.utils_products.get_default_product_name
-    mocker.patch(
-        "simcore_service_api_server.api.dependencies.application.get_default_product_name",
-        autospec=True,
-        return_value="osparc",
     )
 
     return HTTPBasicAuth(faker.word(), faker.password())
@@ -278,7 +269,6 @@ def mocked_webserver_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
             "name": "webserver",

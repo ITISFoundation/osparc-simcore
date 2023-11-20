@@ -17,7 +17,6 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 
 from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
-from ....core.settings import DynamicSidecarSettings
 
 
 class DockerVersion(str):
@@ -105,7 +104,7 @@ fi
 
 
 def spec_volume_removal_service(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    swarm_stack_name: str,
     docker_node_id: str,
     user_id: UserID,
     project_id: ProjectID,
@@ -154,7 +153,7 @@ def spec_volume_removal_service(
             "volume_removal_attempts": f"{volume_removal_attempts}",
             "sleep_between_attempts_s": f"{sleep_between_attempts_s}",
             "service_timeout_s": f"{service_timeout_s}",
-            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
+            "swarm_stack_name": swarm_stack_name,
             "user_id": f"{user_id}",
             "study_id": f"{project_id}",
             "node_id": f"{node_uuid}",

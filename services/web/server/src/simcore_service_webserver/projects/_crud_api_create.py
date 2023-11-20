@@ -24,6 +24,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..application_settings import get_settings
+from ..catalog import client as catalog_client
 from ..director_v2 import api
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -175,8 +176,13 @@ async def _copy_files_from_source_project(
 
 
 async def _compose_project_data(
-    new_project: ProjectDict, predefined_project: ProjectDict
-) -> ProjectDict:
+    app: web.Application,
+    *,
+    user_id: UserID,
+    new_project: ProjectDict,
+    predefined_project: ProjectDict,
+) -> tuple[ProjectDict, dict[NodeID, ProjectNodeCreate] | None]:
+    project_nodes: dict[NodeID, ProjectNodeCreate] | None = None
     if new_project:  # creates from a copy, just override fields
         # when predefined_project is ProjectCopyOverride
         for key in OVERRIDABLE_DOCUMENT_KEYS:
@@ -184,9 +190,21 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         # when predefined_project is ProjectCreateNew
+        project_nodes = {
+            NodeID(node_id): ProjectNodeCreate(
+                node_id=NodeID(node_id),
+                required_resources=jsonable_encoder(
+                    await catalog_client.get_service_resources(
+                        app, user_id, node_data["key"], node_data["version"]
+                    )
+                ),
+            )
+            for node_id, node_data in predefined_project.get("workbench", {}).items()
+        }
+
         new_project = predefined_project
 
-    return new_project
+    return new_project, project_nodes
 
 
 async def create_project(
@@ -227,14 +245,14 @@ async def create_project(
 
     new_project: ProjectDict = {}
     copy_file_coro = None
-    copy_project_nodes_coro = None
+    project_nodes = None
     try:
         task_progress.update(message="creating new study...")
         if from_study:
             # 1. prepare copy
             (
                 new_project,
-                copy_project_nodes_coro,
+                project_node_coro,
                 copy_file_coro,
             ) = await _prepare_project_copy(
                 request.app,
@@ -244,10 +262,17 @@ async def create_project(
                 deep_copy=copy_data,
                 task_progress=task_progress,
             )
+            if project_node_coro:
+                project_nodes = await project_node_coro
 
         if predefined_project:
             # 2. overrides with optional body and re-validate
-            new_project = await _compose_project_data(new_project, predefined_project)
+            new_project, project_nodes = await _compose_project_data(
+                request.app,
+                user_id=user_id,
+                new_project=new_project,
+                predefined_project=predefined_project,
+            )
 
         # 3. save new project in DB
         new_project = await db.insert_project(
@@ -256,9 +281,7 @@ async def create_project(
             product_name=product_name,
             force_as_template=as_template,
             hidden=copy_data,
-            project_nodes=await copy_project_nodes_coro
-            if copy_project_nodes_coro
-            else None,
+            project_nodes=project_nodes,
         )
 
         # 4. deep copy source project's files

@@ -4,8 +4,8 @@
 
 import pytest
 from httpx import AsyncClient
+from models_library.api_schemas__common.meta import BaseMeta
 from simcore_service_api_server._meta import API_VERSION, API_VTAG
-from simcore_service_api_server.models.schemas.meta import Meta
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,5 +16,5 @@ async def test_read_service_meta(client: AsyncClient):
     assert response.status_code == 200
     assert response.json()["version"] == API_VERSION
 
-    meta = Meta(**response.json())
+    meta = BaseMeta(**response.json())
     assert meta.version == API_VERSION

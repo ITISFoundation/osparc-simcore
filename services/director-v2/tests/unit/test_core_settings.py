@@ -9,13 +9,14 @@ from models_library.basic_types import LogLevel
 from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.r_clone import S3Provider
-from simcore_service_director_v2.core.settings import (
-    AppSettings,
-    BootModeEnum,
-    DynamicSidecarSettings,
+from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy import (
     EnvoyLogLevel,
+)
+from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
+    DynamicSidecarSettings,
     RCloneSettings,
 )
+from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 
 
 def _get_backend_type_options() -> set[str]:
@@ -172,7 +173,7 @@ def test_services_custom_constraints(
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
-    assert type(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS) == list
+    assert isinstance(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS, list)
     assert expected == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
 
 

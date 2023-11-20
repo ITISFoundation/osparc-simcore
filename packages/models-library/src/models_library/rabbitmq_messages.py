@@ -6,6 +6,7 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
+from models_library.products import ProductName
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
@@ -264,6 +265,7 @@ class WalletCreditsMessage(RabbitMessageBase):
     )
     wallet_id: WalletID
     credits: Decimal
+    product_name: ProductName
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}"

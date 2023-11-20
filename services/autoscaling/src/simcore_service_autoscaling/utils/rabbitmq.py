@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from aws_library.ec2.models import Resources
 from fastapi import FastAPI
 from models_library.docker import StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Task
@@ -13,7 +14,7 @@ from models_library.rabbitmq_messages import (
 from servicelib.logging_utils import log_catch
 
 from ..core.settings import ApplicationSettings, get_application_settings
-from ..models import Cluster, Resources
+from ..models import Cluster
 from ..modules.rabbitmq import post_message
 
 logger = logging.getLogger(__name__)

@@ -17,7 +17,9 @@ from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
-from ....core.settings import DynamicServicesSchedulerSettings
+from ....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from ._abc import SchedulerInternalsInterface, SchedulerPublicInterface
 from ._core._scheduler import Scheduler
 

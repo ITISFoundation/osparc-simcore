@@ -4,19 +4,19 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
+from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
+from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCServerError
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 from simcore_service_payments.core.errors import PaymentNotFoundError
 
@@ -70,12 +70,11 @@ def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
 
 async def test_rpc_init_payment_fail(
     app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     init_payment_kwargs: dict[str, Any],
     payments_clean_db: None,
 ):
     assert app
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(
@@ -92,14 +91,12 @@ async def test_rpc_init_payment_fail(
 
 async def test_webserver_one_time_payment_workflow(
     app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
     payments_clean_db: None,
 ):
     assert app
-
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -107,7 +104,7 @@ async def test_webserver_one_time_payment_workflow(
         **init_payment_kwargs,
     )
 
-    assert isinstance(result, WalletPaymentCreated)
+    assert isinstance(result, WalletPaymentInitiated)
 
     if mock_payments_gateway_service_or_none:
         assert mock_payments_gateway_service_or_none.routes["init_payment"].called
@@ -128,15 +125,13 @@ async def test_webserver_one_time_payment_workflow(
 
 
 async def test_cancel_invalid_payment_id(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
     faker: Faker,
     payments_clean_db: None,
 ):
     invalid_payment_id = faker.uuid4()
-
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
 
     with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(

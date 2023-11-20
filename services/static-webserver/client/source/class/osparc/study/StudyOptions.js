@@ -23,11 +23,15 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.set({
+      minWidth: 300
+    });
+
     this.__studyId = studyId;
 
     const params = {
       url: {
-        "studyId": studyId
+        studyId
       }
     };
     Promise.all([
@@ -65,10 +69,11 @@ qx.Class.define("osparc.study.StudyOptions", {
         firstUpperCase: true
       }) + qx.locale.Manager.tr(" Options");
       const width = 550;
-      const minHeight = 400;
+      const minHeight = 200;
       const maxHeight = 600;
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
-        maxHeight
+        maxHeight,
+        clickAwayClose: false
       });
       win.center();
       win.open();
@@ -103,14 +108,6 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30));
           this._addAt(control, 0);
           break;
-        case "options-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-            minWidth: 300
-          });
-          this._addAt(control, 1, {
-            flex: 1
-          });
-          break;
         case "wallet-selector-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("top-summary-layout").add(control);
@@ -123,14 +120,14 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", true).set({
+          control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
             width: 150
           });
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "credits-left-view":
           control = this.__getCreditsIndicator();
-          this.getChildControl("wallet-selector-layout").add(control);
+          this.getChildControl("top-summary-layout").add(control);
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
@@ -159,6 +156,24 @@ qx.Class.define("osparc.study.StudyOptions", {
             center: true
           });
           this.getChildControl("buttons-layout").add(control);
+          break;
+        case "advanced-options":
+          control = new qx.ui.form.CheckBox().set({
+            label: this.tr("Advanced options"),
+            value: false
+          });
+          this._addAt(control, 1);
+          break;
+        case "options-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+            padding: 10
+          });
+          this.getChildControl("advanced-options").bind("value", control, "visibility", {
+            converter: checked => checked ? "visible" : "excluded"
+          });
+          this._addAt(control, 2, {
+            flex: 1
+          });
           break;
         case "loading-units-spinner":
           control = new qx.ui.basic.Image().set({
@@ -192,8 +207,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         });
       }
 
-      // OM: puppeteer has no wallets. Enable it when BE is ready
-      // this.getChildControl("open-button").setEnabled(Boolean(wallet));
+      this.getChildControl("open-button").setEnabled(Boolean(wallet));
     },
 
     __buildLayout: function() {

@@ -8,19 +8,26 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from models_library.projects_nodes_io import BaseFileLink
+from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
+from ...models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobLog,
+    JobMetadata,
+    JobOutputs,
+)
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
@@ -28,8 +35,8 @@ from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
 from ...services.webserver import ProjectNotFoundError
-from ..dependencies.application import get_product_name, get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
@@ -126,8 +133,8 @@ async def get_jobs_page(
 
     return create_page(
         jobs,
-        total=projects_page.meta.total,
-        params=page_params,
+        projects_page.meta.total,
+        page_params,
     )
 
 
@@ -353,4 +360,40 @@ async def get_job_pricing_unit(
         node_id: UUID = UUID(node_ids[0])
         return await webserver_api.get_project_node_pricing_unit(
             project_id=job_id, node_id=node_id
+        )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
+    response_class=StreamingResponse,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_log_stream(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    async def _fake_generator(node_id: NodeIDStr):
+        for ii in range(100):
+            job_log: JobLog = JobLog(
+                job_id=job_id,
+                node_id=NodeID(node_id),
+                log_level=logging.DEBUG,
+                messages=[f"Hi Manuel. Gruss from the API-server {ii/100}"],
+            )
+            yield job_log.json() + "\n"
+
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+
+    with log_context(_logger, logging.DEBUG, f"Stream logs for {job_name=}"):
+        project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+
+        node_ids = list(project.workbench.keys())
+        assert len(node_ids) == 1  # nosec
+
+        return StreamingResponse(
+            _fake_generator(node_id=node_ids[0]),
+            media_type="application/x-ndjson",
         )

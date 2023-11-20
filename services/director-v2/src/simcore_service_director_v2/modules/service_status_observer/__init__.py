@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from . import _store
-from ._store import remove_from_status_cache, update_status_cache
+from ._store import remove_from_status_cache
 
 
 def setup(app: FastAPI) -> None:
@@ -11,5 +11,4 @@ def setup(app: FastAPI) -> None:
 __all__: tuple[str, ...] = (
     "remove_from_status_cache",
     "setup",
-    "update_status_cache",
 )

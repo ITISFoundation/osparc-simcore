@@ -3,10 +3,10 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
@@ -23,19 +23,16 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
-from ..application_settings import get_settings
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..products import api as products_api
-from ..projects import api as projects_api
 from ..security.decorators import permission_required
-from ..users import preferences_api as user_preferences_api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..version_control.models import CommitID
-from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ._abc import get_project_run_policy
+from ._api_utils import get_wallet_info
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
 
@@ -48,12 +45,6 @@ routes = web.RouteTableDef()
 class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
-
-
-class _ComputationStart(BaseModel):
-    force_restart: bool = False
-    cluster_id: ClusterID = 0
-    subgraph: set[str] = set()
 
 
 class _ComputationStarted(BaseModel):
@@ -86,7 +77,7 @@ async def start_computation(request: web.Request) -> web.Response:
 
         if request.can_read_body:
             body = await request.json()
-            assert parse_obj_as(_ComputationStart, body) is not None  # nosec
+            assert parse_obj_as(ComputationStart, body) is not None  # nosec
 
             subgraph = body.get("subgraph", [])
             force_restart = bool(body.get("force_restart", force_restart))
@@ -103,54 +94,14 @@ async def start_computation(request: web.Request) -> web.Response:
             )
 
         # Get wallet information
-        wallet_info = None
         product = products_api.get_current_product(request)
-        app_settings = get_settings(request.app)
-        if (
-            product.is_payment_enabled
-            and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
-        ):
-            project_wallet = await projects_api.get_project_wallet(
-                request.app, project_id=project_id
-            )
-            if project_wallet is None:
-                user_default_wallet_preference = await user_preferences_api.get_frontend_user_preference(
-                    request.app,
-                    user_id=req_ctx.user_id,
-                    product_name=req_ctx.product_name,
-                    preference_class=user_preferences_api.PreferredWalletIdFrontendUserPreference,
-                )
-                if user_default_wallet_preference is None:
-                    raise UserDefaultWalletNotFoundError(uid=req_ctx.user_id)
-                project_wallet_id = parse_obj_as(
-                    WalletID, user_default_wallet_preference.value
-                )
-                await projects_api.connect_wallet_to_project(
-                    request.app,
-                    product_name=req_ctx.product_name,
-                    project_id=project_id,
-                    user_id=req_ctx.user_id,
-                    wallet_id=project_wallet_id,
-                )
-            else:
-                project_wallet_id = project_wallet.wallet_id
-
-            # Check whether user has access to the wallet
-            wallet = (
-                await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
-                    request.app,
-                    user_id=req_ctx.user_id,
-                    wallet_id=project_wallet_id,
-                    product_name=req_ctx.product_name,
-                )
-            )
-            if wallet.available_credits <= ZERO_CREDITS:
-                raise WalletNotEnoughCreditsError(
-                    reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
-                )
-            wallet_info = WalletInfo(
-                wallet_id=project_wallet_id, wallet_name=wallet.name
-            )
+        wallet_info = await get_wallet_info(
+            request.app,
+            product=product,
+            user_id=req_ctx.user_id,
+            project_id=project_id,
+            product_name=req_ctx.product_name,
+        )
 
         options = {
             "start_pipeline": True,

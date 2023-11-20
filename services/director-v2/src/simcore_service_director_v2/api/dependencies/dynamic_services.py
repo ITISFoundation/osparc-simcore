@@ -9,7 +9,7 @@ from servicelib.logging_utils import log_decorator
 from servicelib.osparc_resource_manager import OsparcResourceManager
 from starlette.datastructures import URL
 
-from ...core.settings import DynamicServicesSettings
+from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler

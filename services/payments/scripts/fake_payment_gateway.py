@@ -29,6 +29,7 @@ from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
     ErrorModel,
+    GetPaymentMethod,
     InitPayment,
     InitPaymentMethod,
     PaymentCancelled,
@@ -38,16 +39,19 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
-from simcore_service_payments.models.schemas.acknowledgements import AckPayment
+from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPayment,
+    AckPaymentWithPaymentMethod,
+)
 from simcore_service_payments.models.schemas.auth import Token
 
 logging.basicConfig(level=logging.INFO)
 
 
 class Settings(BaseCustomSettings):
-    PAYMENTS_SERVICE_API_BASE_URL: HttpUrl
-    PAYMENTS_USERNAME: str
-    PAYMENTS_PASSWORD: SecretStr
+    PAYMENTS_SERVICE_API_BASE_URL: HttpUrl = "http://replace-with-ack-service.io"
+    PAYMENTS_USERNAME: str = "replace-with_username"
+    PAYMENTS_PASSWORD: SecretStr = "replace-with-password"
 
 
 def set_operation_id_as_handler_function_name(router: APIRouter):
@@ -290,7 +294,7 @@ def create_payment_method_router():
 
     @router.get(
         "/{id}",
-        response_class=HTMLResponse,
+        response_model=GetPaymentMethod,
         responses=ERROR_RESPONSES,
     )
     def get_payment_method(
@@ -314,7 +318,7 @@ def create_payment_method_router():
 
     @router.post(
         "/{id}:pay",
-        response_model=PaymentInitiated,
+        response_model=AckPaymentWithPaymentMethod,
         responses=ERROR_RESPONSES,
     )
     def pay_with_payment_method(
@@ -322,6 +326,7 @@ def create_payment_method_router():
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
     ):
+        assert id  # nosec
         assert payment  # nosec
         assert auth  # nosec
 
@@ -342,7 +347,7 @@ async def _app_lifespan(app: FastAPI):
 def create_app():
     app = FastAPI(
         title="fake-payment-gateway",
-        version="0.2.0",
+        version="0.3.0",
         lifespan=_app_lifespan,
         debug=True,
     )

@@ -3,18 +3,20 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest
 import tenacity
 from redis.asyncio import Redis, from_url
+from settings_library.basic_types import PortInt
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -33,13 +35,13 @@ async def redis_settings(
         "simcore_redis", testing_environ_vars["REDIS_PORT"]
     )
     # test runner is running on the host computer
-    settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=int(port))
+    settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=PortInt(port))
     await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
     return settings
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def redis_service(
     redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
@@ -53,7 +55,7 @@ def redis_service(
     return redis_settings
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def redis_client(
     redis_settings: RedisSettings,
 ) -> AsyncIterator[Redis]:
@@ -70,7 +72,7 @@ async def redis_client(
     await client.close(close_connection_pool=True)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def redis_locks_client(
     redis_settings: RedisSettings,
 ) -> AsyncIterator[Redis]:
@@ -98,6 +100,7 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
 
     try:
         if not await client.ping():
-            raise ConnectionError(f"{redis_url=} not available")
+            msg = f"{redis_url=} not available"
+            raise ConnectionError(msg)
     finally:
         await client.close(close_connection_pool=True)

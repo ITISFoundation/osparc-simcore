@@ -12,7 +12,6 @@ from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 
-from ...db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
@@ -33,9 +32,8 @@ from ...services.solver_job_models_converters import (
     create_new_project_for_job,
 )
 from ...services.webserver import ProjectNotFoundError
-from ..dependencies.application import get_product_name, get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
-from ..dependencies.database import get_repository
+from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -172,11 +170,6 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    product_name: Annotated[str, Depends(get_product_name)],
-    groups_extra_properties_repository: Annotated[
-        GroupsExtraPropertiesRepository,
-        Depends(get_repository(GroupsExtraPropertiesRepository)),
-    ],
     cluster_id: ClusterID | None = None,
 ):
     """Starts job job_id created with the solver solver_key:version
@@ -201,15 +194,14 @@ async def start_job(
             )
 
     with log_context(_logger, logging.DEBUG, "Starting job"):
-        task = await director2_api.start_computation(
-            project_id=job_id,
+        await webserver_api.start_project(project_id=job_id, cluster_id=cluster_id)
+        return await inspect_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
             user_id=user_id,
-            product_name=product_name,
-            cluster_id=cluster_id,
-            groups_extra_properties_repository=groups_extra_properties_repository,
+            director2_api=director2_api,
         )
-        job_status: JobStatus = create_jobstatus_from_task(task)
-        return job_status
 
 
 @router.post(

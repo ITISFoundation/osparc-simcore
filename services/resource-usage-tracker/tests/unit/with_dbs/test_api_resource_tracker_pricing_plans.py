@@ -1,3 +1,11 @@
+# pylint: disable=no-value-for-parameter
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from decimal import Decimal

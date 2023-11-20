@@ -246,7 +246,7 @@ async def _get_default_pricing_and_hardware_info(
                 service_pricing_plan_get.pricing_plan_id,
                 unit.pricing_unit_id,
                 unit.current_cost_per_unit_id,
-                unit.specific_info["aws_ec2_instances"],
+                unit.specific_info.aws_ec2_instances,
             )
 
     raise DefaultPricingUnitNotFoundError(
@@ -369,7 +369,7 @@ async def _start_dynamic_service(
                     request.app, product_name, pricing_plan_id, pricing_unit_id
                 )
                 pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-                aws_ec2_instances = pricing_unit_get.specific_info["aws_ec2_instances"]
+                aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
             else:
                 (
                     pricing_plan_id,

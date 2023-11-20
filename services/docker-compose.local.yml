@@ -67,6 +67,10 @@ services:
     ports:
       - "8011:8000"
 
+  dynamic-scheduler:
+    ports:
+      - "8012:8000"
+
   resource-usage-tracker:
     ports:
       - "8009:8000"

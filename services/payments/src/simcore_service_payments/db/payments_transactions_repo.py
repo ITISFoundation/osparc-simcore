@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -11,7 +11,6 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.errors import (
     PaymentAlreadyAckedError,
@@ -19,22 +18,14 @@ from ..core.errors import (
     PaymentNotFoundError,
 )
 from ..models.db import PaymentsTransactionsDB
-
-
-class BaseRepository:
-    """
-    Repositories are pulled at every request
-    """
-
-    def __init__(self, db_engine: AsyncEngine):
-        assert db_engine is not None  # nosec
-        self.db_engine = db_engine
+from .base import BaseRepository
 
 
 class PaymentsTransactionsRepo(BaseRepository):
     async def insert_init_payment_transaction(
         self,
         payment_id: PaymentID,
+        *,
         price_dollars: Decimal,
         osparc_credits: Decimal,
         product_name: str,
@@ -42,13 +33,13 @@ class PaymentsTransactionsRepo(BaseRepository):
         user_email: str,
         wallet_id: WalletID,
         comment: str | None,
-        initiated_at: datetime.datetime,
+        initiated_at: datetime,
     ) -> PaymentID:
         """Annotates init-payment transaction
+
         Raises:
             PaymentAlreadyExistsError
         """
-
         try:
             async with self.db_engine.begin() as conn:
                 await conn.execute(
@@ -183,6 +174,46 @@ class PaymentsTransactionsRepo(BaseRepository):
                     & (payments_transactions.c.user_id == user_id)
                     & (payments_transactions.c.wallet_id == wallet_id)
                 )
+            )
+            row = result.fetchone()
+            return PaymentsTransactionsDB.from_orm(row) if row else None
+
+    async def sum_current_month_dollars(self, *, wallet_id: WalletID) -> Decimal:
+        _current_timestamp = datetime.now(tz=timezone.utc)
+        _current_month_start_timestamp = _current_timestamp.replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+
+        async with self.db_engine.begin() as conn:
+            sum_stmt = sa.select(
+                sa.func.sum(payments_transactions.c.price_dollars)
+            ).where(
+                (payments_transactions.c.wallet_id == wallet_id)
+                & (
+                    payments_transactions.c.state.in_(
+                        [
+                            PaymentTransactionState.SUCCESS,
+                        ]
+                    )
+                )
+                & (
+                    payments_transactions.c.completed_at
+                    >= _current_month_start_timestamp
+                )
+            )
+            result = await conn.execute(sum_stmt)
+        row = result.first()
+        return Decimal(0) if row is None or row[0] is None else Decimal(row[0])
+
+    async def get_last_payment_transaction_for_wallet(
+        self, *, wallet_id: WalletID
+    ) -> PaymentsTransactionsDB | None:
+        async with self.db_engine.begin() as connection:
+            result = await connection.execute(
+                payments_transactions.select()
+                .where(payments_transactions.c.wallet_id == wallet_id)
+                .order_by(payments_transactions.c.initiated_at.desc())
+                .limit(1)
             )
             row = result.fetchone()
             return PaymentsTransactionsDB.from_orm(row) if row else None

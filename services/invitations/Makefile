@@ -7,7 +7,7 @@ include ../../scripts/common-service.Makefile
 
 
 .env-ignore:
-	$(APP_CLI_NAME) generate-dotenv --auto-password > $@
+	$(APP_CLI_NAME) echo-dotenv --auto-password > $@
 
 
 .PHONY: openapi.json
@@ -17,7 +17,7 @@ openapi.json: .env-ignore ## produces openapi.json
 	@set -o allexport; \
 	source $<; \
 	set +o allexport; \
-	python3 -c "import json; from $(APP_PACKAGE_NAME).web_main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 
 #

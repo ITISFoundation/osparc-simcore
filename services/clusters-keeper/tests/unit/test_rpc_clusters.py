@@ -11,12 +11,15 @@ import arrow
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.clusters import (
+    get_or_create_cluster,
+)
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
@@ -41,11 +44,9 @@ def wallet_id(faker: Faker) -> WalletID:
 def _base_configuration(
     docker_swarm: None,
     enabled_rabbitmq: None,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    aws_allowed_ec2_instance_type_names: list[str],
     mocked_redis_server: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_primary_ec2_instances_envs: EnvVarsDict,
     initialized_app: FastAPI,
 ) -> None:
     ...
@@ -105,9 +106,9 @@ async def test_get_or_create_cluster(
     mocked_dask_ping_scheduler: MockedDaskModule,
 ):
     # send rabbitmq rpc to create_cluster
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
-        CLUSTERS_KEEPER_RPC_NAMESPACE,
-        RPCMethodName("get_or_create_cluster"),
+
+    rpc_response = await get_or_create_cluster(
+        clusters_keeper_rabbitmq_rpc_client,
         user_id=user_id,
         wallet_id=wallet_id if use_wallet_id else None,
     )
@@ -121,9 +122,8 @@ async def test_get_or_create_cluster(
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
 
     # calling it again returns the existing cluster
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
-        CLUSTERS_KEEPER_RPC_NAMESPACE,
-        RPCMethodName("get_or_create_cluster"),
+    rpc_response = await get_or_create_cluster(
+        clusters_keeper_rabbitmq_rpc_client,
         user_id=user_id,
         wallet_id=wallet_id if use_wallet_id else None,
     )

@@ -10,6 +10,7 @@ import subprocess
 import sys
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
+from typing import AsyncGenerator
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -21,7 +22,8 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from models_library.users import UserID
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
+from pydantic import PositiveInt
 from pytest_simcore.helpers.rawdata_fakers import (
     random_api_key,
     random_product,
@@ -35,7 +37,6 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 ## POSTGRES -----
 
@@ -176,48 +177,97 @@ async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
 
 
 @pytest.fixture
-async def user_id(connection: SAConnection) -> AsyncIterator[UserID]:
-    uid = await connection.scalar(
-        users.insert().values(random_user()).returning(users.c.id)
-    )
-    assert uid
-    yield uid
+async def create_user_ids(
+    connection: SAConnection,
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
+    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
+        for _ in range(n):
+            while True:
+                user = random_user()
+                result = await connection.execute(
+                    users.select().where(users.c.name == user["name"])
+                )
+                entry = await result.first()
+                if entry is None:
+                    break
+            uid = await connection.scalar(
+                users.insert().values(user).returning(users.c.id)
+            )
+            assert uid
+            _generate_user_ids.generated_ids.append(uid)
+            yield uid
 
-    await connection.execute(users.delete().where(users.c.id == uid))
+    _generate_user_ids.generated_ids = []
+    yield _generate_user_ids
 
-
-@pytest.fixture
-async def product_name(connection: SAConnection) -> AsyncIterator[str]:
-    name = await connection.scalar(
-        products.insert()
-        .values(random_product(group_id=None))
-        .returning(products.c.name)
-    )
-    assert name
-    yield name
-
-    await connection.execute(products.delete().where(products.c.name == name))
-
-
-@pytest.fixture
-async def fake_api_key(
-    connection: SAConnection, user_id: int, product_name: str
-) -> AsyncIterator[ApiKeyInDB]:
-    result = await connection.execute(
-        api_keys.insert()
-        .values(**random_api_key(product_name, user_id))
-        .returning(sa.literal_column("*"))
-    )
-    row = await result.fetchone()
-    assert row
-    yield ApiKeyInDB.from_orm(row)
-
-    await connection.execute(api_keys.delete().where(api_keys.c.id == row.id))
+    for uid in _generate_user_ids.generated_ids:
+        await connection.execute(users.delete().where(users.c.id == uid))
 
 
 @pytest.fixture
-def auth(fake_api_key: ApiKeyInDB) -> httpx.BasicAuth:
+async def create_product_names(
+    connection: SAConnection,
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str, None]], None]:
+    async def _generate_product_names(
+        n: PositiveInt,
+    ) -> AsyncGenerator[str, None]:
+        for _ in range(n):
+            while True:
+                product = random_product(group_id=None)
+                result = await connection.execute(
+                    products.select().where(products.c.name == product["name"])
+                )
+                entry = await result.first()
+                if entry is None:
+                    break
+            name = await connection.scalar(
+                products.insert().values(product).returning(products.c.name)
+            )
+            assert name
+            _generate_product_names.generated_names.append(name)
+            yield name
+
+    _generate_product_names.generated_names = []
+    yield _generate_product_names
+
+    for name in _generate_product_names.generated_names:
+        await connection.execute(products.delete().where(products.c.name == name))
+
+
+@pytest.fixture
+async def create_fake_api_keys(
+    connection: SAConnection,
+    create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
+    create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
+    async def _generate_fake_api_key(n: PositiveInt):
+        users = create_user_ids(n)
+        products = create_product_names(n)
+        for _ in range(n):
+            product = await anext(products)
+            user = await anext(users)
+            result = await connection.execute(
+                api_keys.insert()
+                .values(**random_api_key(product, user))
+                .returning(sa.literal_column("*"))
+            )
+            row = await result.fetchone()
+            assert row
+            _generate_fake_api_key.row_ids.append(row.id)
+            yield ApiKeyInDB.from_orm(row)
+
+    _generate_fake_api_key.row_ids = []
+    yield _generate_fake_api_key
+
+    for row_id in _generate_fake_api_key.row_ids:
+        await connection.execute(api_keys.delete().where(api_keys.c.id == row_id))
+
+
+@pytest.fixture
+async def auth(
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
+) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
-    return httpx.BasicAuth(
-        fake_api_key.api_key, fake_api_key.api_secret.get_secret_value()
-    )
+    async for key in create_fake_api_keys(1):
+        return httpx.BasicAuth(key.api_key, key.api_secret)
+    pytest.fail("Did not generate authentication")

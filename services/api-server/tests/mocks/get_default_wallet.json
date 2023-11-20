@@ -1,0 +1,28 @@
+[
+ {
+  "name": "GET /wallets/default",
+  "description": "<Request('GET', 'http://webserver:8080/v0/wallets/default')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/wallets/default",
+   "path_parameters": []
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": {
+    "walletId": 1,
+    "name": "Bisgaard Credits",
+    "description": "Credits purchased by Bisgaard end up in here",
+    "owner": 3,
+    "thumbnail": null,
+    "status": "ACTIVE",
+    "created": "2023-11-06T11:23:38.559362+00:00",
+    "modified": "2023-11-06T11:23:38.559362+00:00",
+    "availableCredits": 0.0
+   }
+  },
+  "status_code": 200
+ }
+]

@@ -45,6 +45,7 @@ async def sum_credit_transactions_and_publish_to_rabbitmq(
         wallet_id=wallet_id,
         created_at=datetime.now(tz=timezone.utc),
         credits=wallet_total_credits.available_osparc_credits,
+        product_name=product_name,
     )
     await rabbitmq_client.publish(publish_message.channel_name, publish_message)
     return wallet_total_credits
@@ -118,3 +119,13 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
                 for service in batch_services
             )
         )
+
+
+async def compute_service_run_credit_costs(
+    start: datetime, stop: datetime, cost_per_unit: Decimal
+) -> Decimal:
+    if start <= stop:
+        time_delta = stop - start
+        return round(Decimal(time_delta.seconds / 3600) * cost_per_unit, 2)
+    msg = f"Stop {stop} is smaller then {start} this should not happen. Investigate."
+    raise ValueError(msg)

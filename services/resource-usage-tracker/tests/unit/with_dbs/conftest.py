@@ -51,6 +51,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
     env_vars: EnvVarsDict = {
         "SC_BOOT_MODE": "production",
         "POSTGRES_CLIENT_NAME": "postgres_test_client",
+        "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED": "0",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
@@ -106,6 +107,7 @@ def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str,
             "service_run_status": "RUNNING",
             "modified": datetime.now(tz=timezone.utc),
             "last_heartbeat_at": datetime.now(tz=timezone.utc),
+            "pricing_unit_cost": abs(faker.pyfloat()),
         }
         data.update(overrides)
         return data

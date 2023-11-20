@@ -1,12 +1,12 @@
 from textwrap import dedent
 from typing import Final
 
+from aws_library.ec2.models import EC2Tags
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from .._meta import VERSION
 from ..core.settings import ApplicationSettings
-from ..models import EC2Tags
 
 _APPLICATION_TAG_KEY: Final[str] = "io.simcore.clusters-keeper"
 _APPLICATION_VERSION_TAG: Final[EC2Tags] = {

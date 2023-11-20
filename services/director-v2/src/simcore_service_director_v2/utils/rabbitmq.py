@@ -135,6 +135,7 @@ async def publish_service_resource_tracking_heartbeat(
 
 async def publish_service_log(
     rabbitmq_client: RabbitMQClient,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -154,6 +155,7 @@ async def publish_service_log(
 
 async def publish_service_progress(
     rabbitmq_client: RabbitMQClient,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,

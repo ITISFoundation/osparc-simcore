@@ -110,6 +110,7 @@ node_modules/
 # IDEs config (except templates)
 .vscode/*
 !.vscode/*.template.json
+.idea/
 
 # manual overrides
 services/docker-compose.override.yml
@@ -177,5 +178,6 @@ Untitled*
 
 # service settings.schemas.json
 services/**/settings-schema.json
+services/payments/scripts/openapi.json
 
 tests/public-api/osparc_python_wheels/*

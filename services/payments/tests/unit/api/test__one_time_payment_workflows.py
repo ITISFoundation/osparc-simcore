@@ -4,20 +4,21 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Awaitable, Callable
-from typing import Any
-
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
-from pydantic import parse_obj_as
+from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
+from models_library.basic_types import IDStr
+from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.users import UserID
+from models_library.wallets import WalletID
+from pydantic import EmailStr, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
 
@@ -53,62 +54,72 @@ def app_environment(
     )
 
 
-@pytest.fixture
-def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
-    return {
-        "amount_dollars": 1000,
-        "target_credits": 10000,
-        "product_name": "osparc",
-        "wallet_id": 1,
-        "wallet_name": "wallet-name",
-        "user_id": 1,
-        "user_name": "user",
-        "user_email": "user@email.com",
-    }
-
-
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_successful_one_time_payment_workflow(
+    is_pdb_enabled: bool,
     app: FastAPI,
     client: httpx.AsyncClient,
     faker: Faker,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
-    init_payment_kwargs: dict[str, Any],
+    wallet_id: WalletID,
+    wallet_name: IDStr,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
     auth_headers: dict[str, str],
     payments_clean_db: None,
     mocker: MockerFixture,
 ):
-    assert (
-        mock_payments_gateway_service_or_none
-    ), "cannot run against external because we ACK here"
+    if mock_payments_gateway_service_or_none is None:
+        pytest.skip("cannot run thist test against external because we ACK here")
 
     mock_on_payment_completed = mocker.patch(
-        "simcore_service_payments.api.rest._acknowledgements.on_payment_completed",
+        "simcore_service_payments.api.rest._acknowledgements.payments.on_payment_completed",
         autospec=True,
     )
 
-    rpc_client = await rabbitmq_rpc_client("web-server-client")
-
-    # INIT
-    result = await rpc_client.request(
+    # ACK via api/rest
+    inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "init_payment"),
-        **init_payment_kwargs,
-        timeout_s=None,  # for debug
+        amount_dollars=1000,
+        target_credits=10000,
+        product_name="osparc",
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        user_id=user_id,
+        user_name=user_name,
+        user_email=user_email,
+        timeout_s=None if is_pdb_enabled else 5,
     )
-    assert isinstance(result, WalletPaymentCreated)
 
+    assert isinstance(inited, WalletPaymentInitiated)
     assert mock_payments_gateway_service_or_none.routes["init_payment"].called
 
     # ACK
     response = await client.post(
-        f"/v1/payments/{result.payment_id}:ack",
+        f"/v1/payments/{inited.payment_id}:ack",
         json=AckPayment(success=True, invoice_url=faker.url()).dict(),
         headers=auth_headers,
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert mock_on_payment_completed.called
+
+    # LIST payments via api/rest
+    got = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payments_page"),
+        user_id=user_id,
+        timeout_s=None if is_pdb_enabled else 5,
+    )
+
+    total_number_of_items, transactions = got
+    assert total_number_of_items == 1
+    assert len(transactions) == 1
+
+    assert transactions[0].state == "SUCCESS"
+    assert transactions[0].payment_id == inited.payment_id

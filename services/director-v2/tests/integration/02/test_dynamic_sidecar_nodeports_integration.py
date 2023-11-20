@@ -46,8 +46,8 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
@@ -68,7 +68,10 @@ from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
-from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
+from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
+    RCloneSettings,
+)
+from simcore_service_director_v2.core.settings import AppSettings
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

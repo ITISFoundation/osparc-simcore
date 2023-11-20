@@ -8,10 +8,8 @@ from math import floor
 from fastapi import FastAPI
 from servicelib.error_codes import create_error_code
 
-from .....core.settings import (
+from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
-    DynamicServicesSettings,
-    DynamicSidecarSettings,
 )
 from .....models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
@@ -31,15 +29,16 @@ logger = logging.getLogger(__name__)
 
 
 async def _apply_observation_cycle(
-    scheduler: "DynamicSidecarsScheduler", scheduler_data: SchedulerData  # type: ignore
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore  # noqa: F821
+    scheduler_data: SchedulerData,
 ) -> None:
     """
     fetches status for service and then processes all the registered events
     and updates the status back
     """
     app: FastAPI = scheduler.app
-    dynamic_services_settings: DynamicServicesSettings = (
-        app.state.settings.DYNAMIC_SERVICES
+    settings: DynamicServicesSchedulerSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
@@ -47,7 +46,7 @@ async def _apply_observation_cycle(
         scheduler_data.dynamic_sidecar.were_containers_created
         and not await are_sidecar_and_proxy_services_present(
             node_uuid=scheduler_data.node_uuid,
-            dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
+            swarm_stack_name=settings.SWARM_STACK_NAME,
         )
     ):
         # NOTE: once marked for removal the observation cycle needs
@@ -87,7 +86,6 @@ async def observing_single_service(
     scheduler: "DynamicSidecarsScheduler",  # type: ignore
     service_name: ServiceName,
     scheduler_data: SchedulerData,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_scheduler: DynamicServicesSchedulerSettings,
 ) -> None:
     app: FastAPI = scheduler.app
@@ -112,11 +110,11 @@ async def observing_single_service(
                 # NOTE: do not change below order, reduces pressure on the
                 # docker swarm engine API.
                 _trigger_every_30_seconds(
-                    scheduler._observation_counter,  # pylint:disable=protected-access
+                    scheduler._observation_counter,  # pylint:disable=protected-access  # noqa: SLF001
                     dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
                 )
                 and await is_dynamic_sidecar_stack_missing(
-                    scheduler_data.node_uuid, dynamic_sidecar_settings
+                    scheduler_data.node_uuid, dynamic_scheduler.SWARM_STACK_NAME
                 )
             ):
                 # if both proxy and sidecar ar missing at this point it

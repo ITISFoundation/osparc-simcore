@@ -1,12 +1,18 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from aws_library.ec2.models import EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+)
 
 
 @dataclass
@@ -23,7 +29,9 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def get_new_node_docker_tags(app: FastAPI) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(
+        app: FastAPI, ec2_instance_data: EC2InstanceData
+    ) -> dict[DockerLabelKey, str]:
         ...
 
     @staticmethod
@@ -34,17 +42,16 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @staticmethod
     @abstractmethod
     def try_assigning_task_to_node(
-        task, instance_to_tasks: list[tuple[AssociatedInstance, list]]
+        task, instances_to_tasks: list[tuple[AssociatedInstance, list]]
     ) -> bool:
         ...
 
     @staticmethod
     @abstractmethod
-    async def try_assigning_task_to_pending_instances(
+    async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list]],
-        type_to_instance_map: dict[str, EC2InstanceType],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
@@ -54,7 +61,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @abstractmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        list_of_instance_to_tasks: list[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: list[AssignedTasksToInstanceType],
     ) -> bool:
         ...
 
@@ -75,6 +82,11 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @staticmethod
     @abstractmethod
     def get_max_resources_from_task(task) -> Resources:
+        ...
+
+    @staticmethod
+    @abstractmethod
+    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
         ...
 
     @staticmethod
