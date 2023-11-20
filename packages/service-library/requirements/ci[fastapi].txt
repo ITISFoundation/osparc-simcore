@@ -15,6 +15,7 @@
 ../models-library/
 ../settings-library/
 ../pytest-simcore/
+../../services/api-server
 
 # current module
 .[fastapi]

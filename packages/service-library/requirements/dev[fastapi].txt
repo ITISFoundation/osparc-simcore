@@ -16,6 +16,7 @@
 --editable ../models-library/
 --editable ../settings-library/
 --editable ../pytest-simcore/
+--editable ../../services/api-server
 
 # current module
 --editable ."[fastapi]"
