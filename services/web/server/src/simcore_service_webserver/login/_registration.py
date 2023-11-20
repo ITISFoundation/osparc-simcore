@@ -112,6 +112,7 @@ async def check_other_registrations(
                 )
                 return
 
+        # FIXME: this should not raise if different product!
         raise web.HTTPConflict(
             reason=MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
         )
