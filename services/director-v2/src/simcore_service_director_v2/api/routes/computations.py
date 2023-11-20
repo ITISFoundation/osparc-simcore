@@ -29,7 +29,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -55,7 +55,7 @@ from ...core.errors import (
     SchedulerError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -64,6 +64,7 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
+from ...modules.db.repositories.projects_metadata import ProjectsMetadataRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
@@ -147,14 +148,44 @@ async def _check_pipeline_startable(
             ) from exc
 
 
+async def _get_project_metadata(
+    project_repo: ProjectsRepository,
+    projects_metadata_repo: ProjectsMetadataRepository,
+    computation: ComputationCreate,
+) -> ProjectMetadataDict:
+    current_project_metadata = await projects_metadata_repo.get_metadata(
+        computation.project_id
+    )
+
+    if not current_project_metadata:
+        return {}
+    if "node_id" not in current_project_metadata:
+        return {}
+
+    parent_node_id = NodeID(current_project_metadata["node_id"])
+    parent_node_idstr = NodeIDStr(f"{parent_node_id}")
+    parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
+    parent_project = await project_repo.get_project(parent_project_id)
+    assert parent_node_idstr in parent_project.workbench
+
+    return ProjectMetadataDict(
+        parent_node_id=parent_node_id,
+        parent_node_name=parent_project.workbench[parent_node_idstr].label,
+        parent_project_id=parent_project_id,
+        parent_project_name=parent_project.name,
+    )
+
+
 async def _try_start_pipeline(
     *,
+    project_repo: ProjectsRepository,
     computation: ComputationCreate,
     complete_dag: nx.DiGraph,
     minimal_dag: nx.DiGraph,
     scheduler: BaseCompScheduler,
     project: ProjectAtDB,
     users_repo: UsersRepository,
+    projects_metadata_repo: ProjectsMetadataRepository,
 ) -> None:
     if not minimal_dag.nodes():
         # 2 options here: either we have cycles in the graph or it's really done
@@ -191,7 +222,11 @@ async def _try_start_pipeline(
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-        ),
+            project_metadata=await _get_project_metadata(
+                project_repo, projects_metadata_repo, computation
+            ),
+        )
+        or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
     )
 
@@ -222,10 +257,13 @@ async def create_computation(  # noqa: PLR0913
     clusters_repo: Annotated[
         ClustersRepository, Depends(get_repository(ClustersRepository))
     ],
+    users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
+    projects_metadata_repo: Annotated[
+        ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))
+    ],
     director_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
-    users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
 ) -> ComputationGet:
@@ -281,12 +319,14 @@ async def create_computation(  # noqa: PLR0913
 
         if computation.start_pipeline:
             await _try_start_pipeline(
+                project_repo=project_repo,
                 computation=computation,
                 complete_dag=complete_dag,
                 minimal_dag=minimal_computational_dag,
                 scheduler=scheduler,
                 project=project,
                 users_repo=users_repo,
+                projects_metadata_repo=projects_metadata_repo,
             )
 
         # filter the tasks by the effective pipeline
