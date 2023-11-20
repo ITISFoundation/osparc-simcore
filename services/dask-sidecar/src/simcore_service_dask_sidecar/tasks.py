@@ -6,21 +6,12 @@ from pprint import pformat
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.io import (
-    TaskInputData,
-    TaskOutputData,
-    TaskOutputDataSchema,
-)
+from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import (
-    ContainerCommands,
-    ContainerEnvsDict,
-    ContainerImage,
-    ContainerLabelsDict,
-    ContainerTag,
+    ContainerTaskParameters,
     LogFileUploadURL,
 )
 from distributed.worker import logger
-from models_library.services_resources import BootMode
 from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
@@ -90,25 +81,18 @@ async def dask_teardown(_worker: distributed.Worker) -> None:
     logger.warning("Tearing down worker!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
-async def _run_computational_sidecar_async(  # pylint: disable=too-many-arguments # noqa: PLR0913
+async def _run_computational_sidecar_async(
     *,
+    task_parameters: ContainerTaskParameters,
     docker_auth: DockerBasicAuth,
-    service_key: ContainerImage,
-    service_version: ContainerTag,
-    input_data: TaskInputData,
-    output_data_keys: TaskOutputDataSchema,
     log_file_url: LogFileUploadURL,
-    command: ContainerCommands,
-    task_envs: ContainerEnvsDict,
-    task_labels: ContainerLabelsDict,
     s3_settings: S3Settings | None,
-    boot_mode: BootMode,
 ) -> TaskOutputData:
     task_publishers = TaskPublisher()
 
     _logger.debug(
         "run_computational_sidecar %s",
-        f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}, {s3_settings=}",
+        f"{task_parameters.dict()=}, {docker_auth=}, {log_file_url=}, {s3_settings=}",
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec
@@ -117,36 +101,23 @@ async def _run_computational_sidecar_async(  # pylint: disable=too-many-argument
     ):
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
-            service_key=service_key,
-            service_version=service_version,
-            input_data=input_data,
-            output_data_keys=output_data_keys,
-            log_file_url=log_file_url,
+            task_parameters=task_parameters,
             docker_auth=docker_auth,
-            boot_mode=boot_mode,
+            log_file_url=log_file_url,
+            s3_settings=s3_settings,
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
-            s3_settings=s3_settings,
-            task_envs=task_envs,
-            task_labels=task_labels,
         ) as sidecar:
-            output_data = await sidecar.run(command=command)
+            output_data = await sidecar.run(command=task_parameters.command)
         _logger.debug("completed run of sidecar with result %s", f"{output_data=}")
         return output_data
 
 
-def run_computational_sidecar(  # pylint: disable=too-many-arguments # noqa: PLR0913
+def run_computational_sidecar(
+    task_parameters: ContainerTaskParameters,
     docker_auth: DockerBasicAuth,
-    service_key: ContainerImage,
-    service_version: ContainerTag,
-    input_data: TaskInputData,
-    output_data_keys: TaskOutputDataSchema,
     log_file_url: LogFileUploadURL,
-    command: ContainerCommands,
-    task_envs: ContainerEnvsDict,
-    task_labels: ContainerLabelsDict,
     s3_settings: S3Settings | None,
-    boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -161,16 +132,9 @@ def run_computational_sidecar(  # pylint: disable=too-many-arguments # noqa: PLR
 
     return asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
+            task_parameters=task_parameters,
             docker_auth=docker_auth,
-            service_key=service_key,
-            service_version=service_version,
-            input_data=input_data,
-            output_data_keys=output_data_keys,
             log_file_url=log_file_url,
-            command=command,
-            task_envs=task_envs,
-            task_labels=task_labels,
             s3_settings=s3_settings,
-            boot_mode=boot_mode,
         )
     )

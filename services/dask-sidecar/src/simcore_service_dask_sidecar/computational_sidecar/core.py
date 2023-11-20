@@ -3,30 +3,20 @@ import json
 import logging
 import os
 import socket
+from collections.abc import Coroutine
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Coroutine, cast
+from typing import cast
 from uuid import uuid4
 
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
-from dask_task_models_library.container_tasks.io import (
-    FileUrl,
-    TaskInputData,
-    TaskOutputData,
-    TaskOutputDataSchema,
-)
-from dask_task_models_library.container_tasks.protocol import (
-    ContainerEnvsDict,
-    ContainerImage,
-    ContainerLabelsDict,
-    ContainerTag,
-)
-from models_library.services_resources import BootMode
+from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
+from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
@@ -53,20 +43,14 @@ logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 
 
-@dataclass
-class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
+@dataclass(kw_only=True, frozen=True, slots=True)
+class ComputationalSidecar:
+    task_parameters: ContainerTaskParameters
     docker_auth: DockerBasicAuth
-    service_key: ContainerImage
-    service_version: ContainerTag
-    input_data: TaskInputData
-    output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
-    boot_mode: BootMode
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
-    task_envs: ContainerEnvsDict
-    task_labels: ContainerLabelsDict
 
     async def _write_input_data(
         self,
@@ -80,7 +64,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         local_input_data_file = {}
         download_tasks = []
 
-        for input_key, input_params in self.input_data.items():
+        for input_key, input_params in self.task_parameters.input_data.items():
             if isinstance(input_params, FileUrl):
                 file_name = (
                     input_params.file_mapping
@@ -125,11 +109,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             )
             logger.debug(
                 "following outputs will be searched for:\n%s",
-                self.output_data_keys.json(indent=1),
+                self.task_parameters.output_data_keys.json(indent=1),
             )
 
             output_data = TaskOutputData.from_task_output(
-                self.output_data_keys,
+                self.task_parameters.output_data_keys,
                 task_volumes.outputs_folder,
                 "outputs.json"
                 if integration_version > LEGACY_INTEGRATION_VERSION
@@ -160,8 +144,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
         except (ValueError, ValidationError) as exc:
             raise ServiceBadFormattedOutputError(
-                service_key=self.service_key,
-                service_version=self.service_version,
+                service_key=self.task_parameters.image,
+                service_version=self.task_parameters.tag,
                 exc=exc,
             ) from exc
 
@@ -177,7 +161,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     async def run(self, command: list[str]) -> TaskOutputData:
         # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
-            f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
+            f"Starting task for {self.task_parameters.image}:{self.task_parameters.tag} on {socket.gethostname()}..."
         )
         self.task_publishers.publish_progress(0)
 
@@ -189,27 +173,30 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await pull_image(
                 docker_client,
                 self.docker_auth,
-                self.service_key,
-                self.service_version,
+                self.task_parameters.image,
+                self.task_parameters.tag,
                 self._publish_sidecar_log,
             )
 
             image_labels: ImageLabels = await get_image_labels(
-                docker_client, self.docker_auth, self.service_key, self.service_version
+                docker_client,
+                self.docker_auth,
+                self.task_parameters.image,
+                self.task_parameters.tag,
             )
             computational_shared_data_mount_point = (
                 await get_computational_shared_data_mount_point(docker_client)
             )
             config = await create_container_config(
                 docker_registry=self.docker_auth.server_address,
-                image=self.service_key,
-                tag=self.service_version,
+                image=self.task_parameters.image,
+                tag=self.task_parameters.tag,
                 command=command,
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
-                boot_mode=self.boot_mode,
+                boot_mode=self.task_parameters.boot_mode,
                 task_max_resources=self.task_max_resources,
-                envs=self.task_envs,
-                labels=self.task_labels,
+                envs=self.task_parameters.envs,
+                labels=self.task_parameters.labels,
             )
             await self._write_input_data(
                 task_volumes, image_labels.get_integration_version()
@@ -219,12 +206,12 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             async with managed_container(
                 docker_client,
                 config,
-                name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
+                name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
             ) as container, managed_monitor_container_log_task(
                 container=container,
                 progress_regexp=image_labels.get_progress_regexp(),
-                service_key=self.service_key,
-                service_version=self.service_version,
+                service_key=self.task_parameters.image,
+                service_version=self.task_parameters.tag,
                 task_publishers=self.task_publishers,
                 integration_version=image_labels.get_integration_version(),
                 task_volumes=task_volumes,
@@ -241,8 +228,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                 if container_data["State"]["ExitCode"] > os.EX_OK:
                     raise ServiceRuntimeError(
-                        service_key=self.service_key,
-                        service_version=self.service_version,
+                        service_key=self.task_parameters.image,
+                        service_version=self.task_parameters.tag,
                         container_id=container.id,
                         exit_code=container_data["State"]["ExitCode"],
                         service_logs=await cast(
