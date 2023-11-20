@@ -44,7 +44,6 @@ async def test_role_access_to_generate_invitation(
     expected_status: type[web.HTTPException],
     guest_email: str,
 ):
-
     assert client.app
     assert (
         client.app.router["generate_invitation"].url_for().path
@@ -93,12 +92,6 @@ async def test_product_owner_generates_invitation(
     )
 
     # request
-    assert client.app
-    assert (
-        client.app.router["generate_invitation"].url_for().path
-        == "/v0/invitation:generate"
-    )
-
     response = await client.post(
         "/v0/invitation:generate",
         json=request_model.dict(exclude_none=True),

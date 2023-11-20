@@ -22,7 +22,6 @@ async def test_check_registration_invitation_when_not_required(
     client: TestClient,
     mocker: MockerFixture,
 ):
-    assert client.app
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
@@ -33,9 +32,15 @@ async def test_check_registration_invitation_when_not_required(
         ),
     )
 
-    url = client.app.router["auth_check_registration_invitation"].url_for()
+    assert client.app
+    assert (
+        client.app.router["auth_check_registration_invitation"].url_for().path
+        == "/v0/auth/register/invitations:check"
+    )
+
     response = await client.post(
-        f"{url}", json=InvitationCheck(invitation="*" * 100).dict()
+        "/v0/auth/register/invitations:check",
+        json=InvitationCheck(invitation="*" * 100).dict(),
     )
     data, _ = await assert_status(response, web.HTTPOk)
 
@@ -47,7 +52,6 @@ async def test_check_registration_invitations_with_old_code(
     client: TestClient,
     mocker: MockerFixture,
 ):
-    assert client.app
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
@@ -56,9 +60,9 @@ async def test_check_registration_invitations_with_old_code(
         ),
     )
 
-    url = client.app.router["auth_check_registration_invitation"].url_for()
     response = await client.post(
-        f"{url}", json=InvitationCheck(invitation="short-code").dict()
+        "/v0/auth/register/invitations:check",
+        json=InvitationCheck(invitation="short-code").dict(),
     )
     data, _ = await assert_status(response, web.HTTPOk)
 
@@ -73,7 +77,7 @@ async def test_check_registration_invitation_and_get_email(
     mock_invitations_service_http_api: AioResponsesMock,
     fake_osparc_invitation: ApiInvitationContent,
 ):
-    assert client.app
+
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
@@ -82,9 +86,9 @@ async def test_check_registration_invitation_and_get_email(
         ),
     )
 
-    url = client.app.router["auth_check_registration_invitation"].url_for()
     response = await client.post(
-        f"{url}", json=InvitationCheck(invitation="*" * 105).dict()
+        "/v0/auth/register/invitations:check",
+        json=InvitationCheck(invitation="*" * 105).dict(),
     )
     data, _ = await assert_status(response, web.HTTPOk)
 
