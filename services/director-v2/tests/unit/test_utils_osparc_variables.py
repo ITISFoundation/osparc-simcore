@@ -25,8 +25,8 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_director_v2.api.dependencies.database import RepoType
 from simcore_service_director_v2.modules import osparc_variables_substitutions
-from simcore_service_director_v2.modules.db.repositories import services_environments
 from simcore_service_director_v2.modules.osparc_variables_substitutions import (
     resolve_and_substitute_service_lifetime_variables_in_specs,
     resolve_and_substitute_session_variables_in_specs,
@@ -120,17 +120,18 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     mocked_engine = AsyncMock()
     mocked_engine.acquire = _acquire
 
+    def _get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
+        return repo_type(db_engine=mocked_engine)
+
     mocker.patch(
         "simcore_service_director_v2.modules.osparc_variables_substitutions.get_repository",
-        return_value=services_environments.ServicesEnvironmentsRepository(
-            mocked_engine
-        ),
+        side_effect=_get_repository,
     )
 
 
 @pytest.fixture
 def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
-    base = "simcore_service_director_v2.modules.db.repositories.services_environments"
+    base = "simcore_service_director_v2.modules.db.repositories.users"
     mocker.patch(f"{base}.UsersRepo.get_role", return_value="USER")
     mocker.patch(f"{base}.UsersRepo.get_email", return_value="e@ma.il")
 
@@ -153,6 +154,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         "product_name": "${OSPARC_VARIABLE_PRODUCT_NAME}",
         "study_uuid": "${OSPARC_VARIABLE_STUDY_UUID}",
         "node_id": "${OSPARC_VARIABLE_NODE_ID}",
+        "user_id": "${OSPARC_VARIABLE_USER_ID}",
         "email": "${OSPARC_VARIABLE_USER_EMAIL}",
         "user_role": "${OSPARC_VARIABLE_USER_ROLE}",
     }
