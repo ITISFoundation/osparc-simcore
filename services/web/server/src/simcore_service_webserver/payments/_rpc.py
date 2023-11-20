@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentTransaction,
     WalletPaymentInitiated,
 )
 from models_library.basic_types import IDStr
@@ -103,6 +104,29 @@ async def cancel_payment(
         user_id=user_id,
         wallet_id=wallet_id,
     )
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_payments_page(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    limit: int | None,
+    offset: int | None,
+) -> tuple[int, list[PaymentTransaction]]:
+    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+
+    result: tuple[int, list[PaymentTransaction]] = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payments_page"),
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
+    assert (  # nosec
+        parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
+    )
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -211,7 +235,7 @@ async def delete_payment_method(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
+async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     app: web.Application,
     *,
     payment_method_id: PaymentMethodID,
@@ -224,12 +248,13 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
     user_name: str,
     user_email: EmailStr,
     comment: str | None = None,
-) -> WalletPaymentInitiated:
+) -> PaymentTransaction:
+
     rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_payment_with_payment_method"),
+        parse_obj_as(RPCMethodName, "pay_with_payment_method"),
         payment_method_id=payment_method_id,
         amount_dollars=amount_dollars,
         target_credits=target_credits,
@@ -241,5 +266,6 @@ async def init_payment_with_payment_method(  # noqa: PLR0913 # pylint: disable=t
         user_email=user_email,
         comment=comment,
     )
-    assert isinstance(result, WalletPaymentInitiated)  # nosec
+
+    assert isinstance(result, PaymentTransaction)  # nosec
     return result

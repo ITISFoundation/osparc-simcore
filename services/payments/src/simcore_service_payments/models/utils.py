@@ -15,9 +15,6 @@ def merge_models(got: GetPaymentMethod, acked: PaymentsMethodsDB) -> PaymentMeth
         card_type=got.card_type,
         expiration_month=got.expiration_month,
         expiration_year=got.expiration_year,
-        street_address=got.street_address,
-        zipcode=got.zipcode,
-        country=got.country,
         created=acked.completed_at,
         auto_recharge=False,  # this will be fileld in the web/server
     )

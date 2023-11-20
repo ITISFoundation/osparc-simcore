@@ -8,10 +8,11 @@ from collections import OrderedDict
 from collections.abc import Callable
 from textwrap import dedent
 
+from aws_library.ec2.models import EC2InstanceType, Resources
+
 from .._meta import VERSION
 from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
 from ..core.settings import ApplicationSettings
-from ..models import EC2InstanceType, Resources
 
 logger = logging.getLogger(__name__)
 

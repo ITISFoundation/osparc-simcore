@@ -1,14 +1,18 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
 from dataclasses import dataclass
 
+from aws_library.ec2.models import EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+)
 
 
 @dataclass
@@ -47,8 +51,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        instances_to_tasks: Iterable[tuple[EC2InstanceData, list]],
-        type_to_instance_map: dict[str, EC2InstanceType],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
@@ -58,7 +61,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @abstractmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: list[AssignedTasksToInstanceType],
     ) -> bool:
         ...
 

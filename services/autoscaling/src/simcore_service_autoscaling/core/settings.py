@@ -1,7 +1,8 @@
 import datetime
 from functools import cached_property
-from typing import cast
+from typing import Any, ClassVar, Final, cast
 
+from aws_library.ec2.models import EC2InstanceBootSpecific
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -9,7 +10,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import DockerLabelKey
 from pydantic import (
     AnyUrl,
     Field,
@@ -21,6 +22,7 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -28,32 +30,31 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
+AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
 
-class EC2Settings(BaseCustomSettings):
-    EC2_ACCESS_KEY_ID: str
-    EC2_ENDPOINT: str | None = Field(
-        default=None, description="do not define if using standard AWS"
-    )
-    EC2_REGION_NAME: str = "us-east-1"
-    EC2_SECRET_ACCESS_KEY: str
+
+class AutoscalingEC2Settings(EC2Settings):
+    class Config(EC2Settings.Config):
+        env_prefix = AUTOSCALING_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_ENDPOINT": "https://my_ec2_endpoint.com",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
+                    f"{AUTOSCALING_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
+                }
+            ],
+        }
 
 
 class EC2InstancesSettings(BaseCustomSettings):
-    EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        min_items=1,
-        unique_items=True,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
-    EC2_INSTANCES_AMI_ID: str = Field(
-        ...,
-        min_length=1,
-        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
-    )
-    EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
-    )
+
     EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
@@ -80,15 +81,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         min_length=1,
         description="prefix used to name the EC2 instances created by this instance of autoscaling",
     )
-    EC2_INSTANCES_PRE_PULL_IMAGES: list[DockerGenericTag] = Field(
-        default_factory=list,
-        description="a list of docker image/tags to pull on instance cold start",
-    )
-    EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=30),
-        description="time interval between pulls of images (minimum is 1 minute) "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
+
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
         min_items=1,
@@ -120,11 +113,16 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_intance_names(cls, value):
+    def check_valid_instance_names(
+        cls, value: dict[str, EC2InstanceBootSpecific]
+    ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(tuple[InstanceTypeType, ...], value)
-        return value
+        if all(parse_obj_as(InstanceTypeType, key) for key in value):
+            return value
+
+        msg = "Invalid instance type name"
+        raise ValueError(msg)
 
 
 class NodesMonitoringSettings(BaseCustomSettings):
@@ -192,7 +190,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    AUTOSCALING_EC2_ACCESS: EC2Settings | None = Field(auto_default_from_env=True)
+    AUTOSCALING_EC2_ACCESS: AutoscalingEC2Settings | None = Field(
+        auto_default_from_env=True
+    )
 
     AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None = Field(
         auto_default_from_env=True

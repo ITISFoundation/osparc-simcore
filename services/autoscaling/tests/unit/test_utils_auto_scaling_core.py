@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import datetime
 import json
 import re
 from collections.abc import Callable
@@ -13,6 +14,8 @@ from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import EC2InstanceData
@@ -135,10 +138,37 @@ def minimal_configuration(
     ...
 
 
-async def test_ec2_startup_script_no_pre_pulling(
-    minimal_configuration: None, app_settings: ApplicationSettings
+@pytest.fixture
+def ec2_instances_boot_just_ami(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {"t2.micro": {"ami_id": faker.pystr()}}
+            ),
+        },
+    )
+    return app_environment | envs
+
+
+async def test_ec2_startup_script_just_ami(
+    minimal_configuration: None,
+    ec2_instances_boot_just_ami: EnvVarsDict,
+    app_settings: ApplicationSettings,
 ):
-    startup_script = await ec2_startup_script(app_settings)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    instance_boot_specific = next(
+        iter(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
+        )
+    )
+    assert not instance_boot_specific.pre_pull_images
+    assert instance_boot_specific.pre_pull_images_cron_interval == datetime.timedelta(
+        minutes=30
+    )
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
         r"^docker swarm join --availability=drain --token .*$", startup_script
@@ -146,9 +176,30 @@ async def test_ec2_startup_script_no_pre_pulling(
 
 
 @pytest.fixture
-def enabled_pre_pull_images(
-    minimal_configuration: None, monkeypatch: pytest.MonkeyPatch
-) -> list[DockerGenericTag]:
+def ec2_instances_boot_ami_scripts(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> list[str]:
+    custom_scripts = faker.pylist(allowed_types=(str,))
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    "t2.micro": {
+                        "ami_id": faker.pystr(),
+                        "custom_boot_scripts": custom_scripts,
+                    }
+                }
+            ),
+        },
+    )
+    return custom_scripts
+
+
+@pytest.fixture
+def ec2_instances_boot_ami_pre_pull(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
     images = parse_obj_as(
         list[DockerGenericTag],
         [
@@ -158,23 +209,15 @@ def enabled_pre_pull_images(
             "asd",
         ],
     )
-    monkeypatch.setenv(
-        "EC2_INSTANCES_PRE_PULL_IMAGES",
-        json.dumps(images),
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {"t2.micro": {"ami_id": faker.pystr(), "pre_pull_images": images}}
+            ),
+        },
     )
-    return images
-
-
-@pytest.fixture
-def enabled_custom_boot_scripts(
-    minimal_configuration: None, monkeypatch: pytest.MonkeyPatch, faker: Faker
-) -> list[str]:
-    custom_scripts = faker.pylist(allowed_types=(str,))
-    monkeypatch.setenv(
-        "EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS",
-        json.dumps(custom_scripts),
-    )
-    return custom_scripts
+    return app_environment | envs
 
 
 @pytest.fixture
@@ -184,10 +227,18 @@ def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
 
 async def test_ec2_startup_script_with_pre_pulling(
     minimal_configuration: None,
-    enabled_pre_pull_images: None,
+    ec2_instances_boot_ami_pre_pull: EnvVarsDict,
     app_settings: ApplicationSettings,
 ):
-    startup_script = await ec2_startup_script(app_settings)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    instance_boot_specific = next(
+        iter(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
+        )
+    )
+    assert instance_boot_specific.pre_pull_images
+    assert instance_boot_specific.pre_pull_images_cron_interval
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 7
     assert re.fullmatch(
         r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
@@ -197,26 +248,43 @@ async def test_ec2_startup_script_with_pre_pulling(
 
 async def test_ec2_startup_script_with_custom_scripts(
     minimal_configuration: None,
-    enabled_pre_pull_images: None,
-    enabled_custom_boot_scripts: list[str],
+    ec2_instances_boot_ami_scripts: list[str],
     app_settings: ApplicationSettings,
 ):
     for _ in range(3):
-        startup_script = await ec2_startup_script(app_settings)
-        assert len(startup_script.split("&&")) == 7 + len(enabled_custom_boot_scripts)
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        instance_boot_specific = next(
+            iter(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
+            )
+        )
+        assert not instance_boot_specific.pre_pull_images
+        assert instance_boot_specific.pre_pull_images_cron_interval
+        startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
+        assert len(startup_script.split("&&")) == 1 + len(
+            ec2_instances_boot_ami_scripts
+        )
         assert re.fullmatch(
-            rf"^([^&&]+ &&){{{len(enabled_custom_boot_scripts)}}} (docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
+            rf"^([^&&]+ &&){{{len(ec2_instances_boot_ami_scripts)}}} (docker swarm join .+)$",
             startup_script,
         ), f"{startup_script=}"
 
 
 async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     minimal_configuration: None,
-    enabled_pre_pull_images: None,
+    ec2_instances_boot_ami_pre_pull: EnvVarsDict,
     disabled_registry: None,
     app_settings: ApplicationSettings,
 ):
-    startup_script = await ec2_startup_script(app_settings)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    instance_boot_specific = next(
+        iter(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
+        )
+    )
+    assert instance_boot_specific.pre_pull_images
+    assert instance_boot_specific.pre_pull_images_cron_interval
+    startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
         r"^docker swarm join --availability=drain --token .*$", startup_script

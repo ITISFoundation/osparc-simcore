@@ -22,6 +22,7 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_simcore.helpers.rawdata_fakers import (
     random_api_key,
@@ -36,7 +37,6 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 ## POSTGRES -----
 
@@ -269,5 +269,5 @@ async def auth(
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
-        return httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value())
-    assert False, "Did not generate authentication"
+        return httpx.BasicAuth(key.api_key, key.api_secret)
+    pytest.fail("Did not generate authentication")

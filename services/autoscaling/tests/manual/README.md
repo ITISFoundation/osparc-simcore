@@ -5,14 +5,16 @@ The autoscaling service may be started either in computational mode or in dynami
 The computational mode is used in conjunction with a dask-scheduler/dask-worker subsystem.
 The dynamic mode is used directly with docker swarm facilities.
 
+### requirements
+
+1. AWS EC2 access
+2. a machine running in EC2 with docker installed and access to osparc-simcore repository (for example t2.xlarge to have some computational power)
+
+
 ## computational mode
 
 When ```DASK_MONITORING_URL``` is set the computational mode is enabled.
 
-### requirements
-
-1. AWS EC2 access
-2. a machine running in EC2 with docker installed and access to osparc-simcore repository
 
 ### instructions
 
@@ -66,4 +68,42 @@ future.done() # shall return True once done
 
 # remove the future from the dask-scheduler memory, shall trigger the autoscaling service to remove the created machine
 del future
+```
+
+
+## dynamic mode
+
+When ```NODES_MONITORING_NEW_NODES_LABELS```, ```NODES_MONITORING_NODE_LABELS``` and ```NODES_MONITORING_SERVICE_LABELS``` are set the dynamic mode is enabled.
+
+### instructions
+
+1. prepare autoscaling
+
+```bash
+# run on EC2 instance
+git clone https://github.com/ITISFoundation/osparc-simcore.git
+cd osparc-simcore/services/autoscaling
+make build-devel # this will build the autoscaling devel image
+```
+
+2. setup environment variables
+```bash
+# run on EC2 instance
+cd osparc-simcore/services/autoscaling/tests/manual
+make .env # generate an initial .env file
+nano .env # edit .env and set the variables as needed
+# in particular NODES_MONITORING_NEW_NODES_LABELS, NODES_MONITORING_NODE_LABELS, NODES_MONITORING_SERVICE_LABELS must be activated
+```
+
+3. start autoscaling stack
+```bash
+# run on EC2 instance
+cd osparc-simcore/services/autoscaling/tests/manual
+make up-devel # this will deploy the autoscaling stack
+```
+
+4. start some docker services to trigger autoscaling
+```bash
+# run on EC2 instance
+docker service create --name=test-service --reserve-cpu=4 --reserve-memory=1GiB --constraint=node.labels.testing.monitored-node==true --label=testing.monitored-service=true redis # will create a redis service reserving 4 CPUs and 1GiB of RAM
 ```
