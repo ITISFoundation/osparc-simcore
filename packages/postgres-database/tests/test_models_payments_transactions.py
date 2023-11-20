@@ -47,7 +47,9 @@ def init_transaction(connection: SAConnection):
     async def _init(payment_id: str):
         # get payment_id from payment-gateway
         values = random_payment_transaction(payment_id=payment_id)
-
+        # remove states
+        values.pop("state")
+        values.pop("completed_at")
         # init successful: set timestamp
         values["initiated_at"] = utcnow()
 
@@ -178,6 +180,9 @@ def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Cal
         payment_ids = []
         for _ in range(expected_total):
             values = random_payment_transaction(user_id=user_id)
+            # remove states
+            values.pop("state")
+            values.pop("completed_at")
             payment_id = await insert_init_payment_transaction(connection, **values)
             assert payment_id
             payment_ids.append(payment_id)

@@ -5,77 +5,61 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
-import datetime
-import json
-from collections.abc import AsyncIterable
+import logging
+from typing import Iterable
 
 import httpx
 import pytest
+from faker import Faker
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from models_library.api_schemas_webserver.projects import ProjectGet
+from pytest_mock import MockFixture
+from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
+from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 
-# - docker OAS: Container logs https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerLogs
-# - Streaming with FastAPI: https://python.plainenglish.io/streaming-with-fastapi-4b86f33bfca
-# - Server Side Events (SSE) https://amittallapragada.github.io/docker/fastapi/python/2020/12/23/server-side-events.html
-# - Streaming with FastAPI https://python.plainenglish.io/streaming-with-fastapi-4b86f33bfca
-# -
-
-_NEW_LINE = "\n"
-CHUNK_MSG = "expected" + _NEW_LINE
+_logger = logging.getLogger(__name__)
 
 
-@pytest.fixture()
-def app() -> FastAPI:
-    app = FastAPI()
+@pytest.fixture
+def fake_project_for_streaming(
+    mocker: MockFixture, faker: Faker
+) -> Iterable[ProjectGet]:
 
-    async def _text_generator() -> AsyncIterable[str]:
-        for _ in range(10):
-            yield CHUNK_MSG
-            await asyncio.sleep(0)
-
-    async def _json_generator() -> AsyncIterable[str]:
-        i = 0
-        async for text in _text_generator():
-            yield json.dumps({"envent_id": i, "data": text}, indent=None) + _NEW_LINE
-            i += 1
-
-    @app.get("/logs")
-    async def stream_logs(as_json: bool = False):
-        if as_json:
-            return StreamingResponse(
-                _json_generator(), media_type="application/x-ndjson"
-            )
-        return StreamingResponse(_text_generator())
-
-    return app
-
-
-@pytest.mark.parametrize("as_json", [True, False])
-async def test_it(client: httpx.AsyncClient, as_json: bool):
-    # https://www.python-httpx.org/quickstart/#streaming-responses
-
-    chunk_size = len(CHUNK_MSG)
-
-    received = []
-    async with client.stream("GET", "/logs") as response:
-        async for text in response.aiter_text(chunk_size):
-            received.append(text)
-
-    assert (
-        received
-        == [
-            CHUNK_MSG,
-        ]
-        * 10
+    assert isinstance(response_body := GET_PROJECT.response_body, dict)
+    assert (data := response_body.get("data")) is not None
+    fake_project = ProjectGet.parse_obj(data)
+    fake_project.workbench = {faker.uuid4(): faker.uuid4()}
+    mocker.patch(
+        "simcore_service_api_server.api.dependencies.webserver.AuthSession.get_project",
+        return_value=fake_project,
     )
 
-    async with client.stream("GET", f"/logs?as_json={1 if as_json else 0}") as response:
-        async for line in response.aiter_lines():
-            if as_json:
-                data = json.loads(line)
-                txt = json.dumps(data, indent=1)
-            else:
-                txt = line
+    mocker.patch(
+        "simcore_service_api_server.api.routes.solvers_jobs_getters._raise_if_job_not_associated_with_solver"
+    )
+    yield fake_project
 
-            print(f"{datetime.datetime.now(tz=datetime.timezone.utc)}", txt, flush=True)
+
+async def test_log_streaming(
+    app: FastAPI,
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    fake_project_for_streaming: ProjectGet,
+):
+
+    job_id: JobID = fake_project_for_streaming.uuid
+
+    ii: int = 0
+    async with client.stream(
+        "GET",
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/logstream",
+        auth=auth,
+    ) as response:
+        response.raise_for_status()
+        async for line in response.aiter_lines():
+            job_log = JobLog.parse_raw(line)
+            _logger.debug(job_log.json())
+            ii += 1
+    assert ii > 0

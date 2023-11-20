@@ -358,7 +358,11 @@ async def get_job_pricing_unit(
         )
 
 
-@router.get("/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream")
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
+    response_class=StreamingResponse,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
 async def get_log_stream(
     solver_key: SolverKeyId,
     version: VersionStr,
@@ -367,7 +371,7 @@ async def get_log_stream(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    with log_context(_logger, logging.DEBUG, "Stream logs"):
+    with log_context(_logger, logging.DEBUG, "Begin streaming logs"):
         _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
