@@ -60,7 +60,7 @@ class BaseDistributedIdentifierManager(
             )
             raise TypeError(msg)
 
-        self.redis_client_sdk = redis_client_sdk
+        self._redis_client_sdk = redis_client_sdk
         self.cleanup_interval = cleanup_interval
 
         self._cleanup_task: Task | None = None
@@ -96,7 +96,7 @@ class BaseDistributedIdentifierManager(
     async def _get_identifier_context(
         self, identifier: Identifier
     ) -> CleanupContext | None:
-        raw: str | None = await self.redis_client_sdk.redis.get(
+        raw: str | None = await self._redis_client_sdk.redis.get(
             self._to_redis_key(identifier)
         )
         return self._deserialize_cleanup_context(raw) if raw else None
@@ -104,7 +104,7 @@ class BaseDistributedIdentifierManager(
     async def _get_tracked(self) -> dict[Identifier, CleanupContext]:
         identifiers: list[Identifier] = [
             self._from_redis_key(redis_key)
-            for redis_key in await self.redis_client_sdk.redis.keys(
+            for redis_key in await self._redis_client_sdk.redis.keys(
                 f"{self._redis_key_prefix()}*"
             )
         ]
@@ -148,7 +148,7 @@ class BaseDistributedIdentifierManager(
             tuple[identifier for the resource, resource object]
         """
         identifier, result = await self._create(**extra_kwargs)
-        await self.redis_client_sdk.redis.set(
+        await self._redis_client_sdk.redis.set(
             self._to_redis_key(identifier),
             self._serialize_cleanup_context(cleanup_context),
         )
@@ -174,7 +174,7 @@ class BaseDistributedIdentifierManager(
         ), log_catch(_logger, reraise=reraise):
             await self._destroy(identifier, cleanup_context)
 
-        await self.redis_client_sdk.redis.delete(self._to_redis_key(identifier))
+        await self._redis_client_sdk.redis.delete(self._to_redis_key(identifier))
 
     @classmethod
     @abstractmethod
