@@ -19,4 +19,5 @@ class ProjectsMetadataRepository(BaseRepository):
             project_custom_metadata: ProjectMetadata = await projects_metadata_get(
                 conn, project_id
             )
-        return project_custom_metadata.custom
+        custom_metadata: dict[str, Any] | None = project_custom_metadata.custom
+        return custom_metadata
