@@ -20,6 +20,8 @@ from models_library.api_schemas_invitations.invitations import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,
@@ -142,3 +144,49 @@ def mock_invitations_service_http_api(
     )
 
     return aioresponses_mocker
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # ensures WEBSERVER_INVITATIONS is undefined
+    monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
+    app_environment.pop("WEBSERVER_INVITATIONS", None)
+
+    # new envs
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            # as before
+            **app_environment,
+            # disable these plugins
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_EXPORTER": "null",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_META_MODELING": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_REMOTE_DEBUG": "0",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
+            "WEBSERVER_TAGS": "0",
+            "WEBSERVER_TRACING": "null",
+            "WEBSERVER_VERSION_CONTROL": "0",
+            "WEBSERVER_WALLETS": "0",
+            # set INVITATIONS_* variables using those in .env-devel
+            **{
+                key: value
+                for key, value in env_devel_dict.items()
+                if key.startswith("INVITATIONS_")
+            },
+        },
+    )
+
+    # tests envs
+    print(ApplicationSettings.create_from_envs().json(indent=2))
+    return envs
