@@ -1,7 +1,7 @@
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 
-from .helpers.utils_docker import get_localhost_ip
+from .helpers.utils_host import get_localhost_ip
 
 # WARNING: any request done through the client will go through aioresponses. It is
 # unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.

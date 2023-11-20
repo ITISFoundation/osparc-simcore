@@ -1,6 +1,5 @@
+from aws_library.ec2.models import EC2InstanceData
 from pydantic import AnyUrl, parse_obj_as
-
-from ..models import EC2InstanceData
 
 
 def get_scheduler_url(ec2_instance: EC2InstanceData) -> AnyUrl:

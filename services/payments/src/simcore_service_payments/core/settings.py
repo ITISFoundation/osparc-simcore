@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import cast
 
+from models_library.basic_types import NonNegativeDecimal
 from pydantic import Field, HttpUrl, PositiveFloat, SecretStr, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -76,6 +77,25 @@ class ApplicationSettings(_BaseApplicationSettings):
         min_length=30,
     )
     PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = Field(default=30)
+
+    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: NonNegativeDecimal = Field(
+        default=100,
+        description="Minimum balance in credits to top-up for auto-recharge",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
+        default=100,
+        description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: NonNegativeDecimal | None = Field(
+        default=10000,
+        description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
+    )
+    PAYMENTS_AUTORECHARGE_ENABLED: bool = Field(
+        default=False,
+        description="Based on this variable is the auto recharge functionality in Payment service enabled",
+    )
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"

@@ -4,7 +4,8 @@
 # pylint:disable=too-many-arguments
 
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import aiodocker
 from faker import Faker
@@ -29,12 +30,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_TENACITY_RETRY_PARAMS = dict(
-    reraise=True,
-    retry=retry_if_exception_type(AssertionError),
-    stop=stop_after_delay(30),
-    wait=wait_fixed(0.1),
-)
+_TENACITY_RETRY_PARAMS = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(30),
+    "wait": wait_fixed(0.1),
+}
 
 
 # Selection of core and tool services started in this swarm fixture (integration)

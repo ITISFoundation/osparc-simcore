@@ -3,12 +3,22 @@ import logging
 import re
 from typing import Final
 
+from aws_library.ec2.models import (
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+)
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
@@ -24,7 +34,8 @@ def node_host_name_from_ec2_private_dns(
         Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
     """
     if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
-        return match.group("host_name")
+        host_name: str = match.group("host_name")
+        return host_name
     raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
 
 
@@ -68,15 +79,14 @@ async def associate_ec2_instances_with_nodes(
     return associated_instances, non_associated_instances
 
 
-async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    startup_commands = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS.copy()
-    )
+async def ec2_startup_script(
+    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
+) -> str:
+    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     startup_commands.append(await utils_docker.get_docker_swarm_join_bash_command())
     if app_settings.AUTOSCALING_REGISTRY:  # noqa: SIM102
         if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES
+            ec2_boot_specific.pre_pull_images
         ):
             startup_commands.append(
                 " && ".join(
@@ -90,7 +100,7 @@ async def ec2_startup_script(app_settings: ApplicationSettings) -> str:
             )
             startup_commands.append(
                 utils_docker.get_docker_pull_images_crontab(
-                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL
+                    ec2_boot_specific.pre_pull_images_cron_interval
                 ),
             )
 
@@ -106,52 +116,63 @@ def _instance_type_by_type_name(
 
 
 def _instance_type_map_by_type_name(
-    mapping: tuple[EC2InstanceType, list], *, type_name: InstanceTypeType | None
+    mapping: AssignedTasksToInstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
-    ec2_type, _ = mapping
-    return _instance_type_by_type_name(ec2_type, type_name=type_name)
+    return _instance_type_by_type_name(mapping.instance_type, type_name=type_name)
 
 
 def _instance_data_map_by_type_name(
-    mapping: tuple[EC2InstanceData, list], *, type_name: InstanceTypeType | None
+    mapping: AssignedTasksToInstance, *, type_name: InstanceTypeType | None
 ) -> bool:
     if type_name is None:
         return True
-    ec2_data, _ = mapping
-    return bool(ec2_data.type == type_name)
+    return bool(mapping.instance.type == type_name)
 
 
 def filter_by_task_defined_instance(
     instance_type_name: InstanceTypeType | None,
-    active_instances_to_tasks,
-    pending_instances_to_tasks,
-    drained_instances_to_tasks,
-    needed_new_instance_types_for_tasks,
-) -> tuple:
+    active_instances_to_tasks: list[AssignedTasksToInstance],
+    pending_instances_to_tasks: list[AssignedTasksToInstance],
+    drained_instances_to_tasks: list[AssignedTasksToInstance],
+    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType],
+) -> tuple[
+    list[AssignedTasksToInstance],
+    list[AssignedTasksToInstance],
+    list[AssignedTasksToInstance],
+    list[AssignedTasksToInstanceType],
+]:
     return (
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            active_instances_to_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_data_map_by_type_name, type_name=instance_type_name
+                ),
+                active_instances_to_tasks,
+            )
         ),
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            pending_instances_to_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_data_map_by_type_name, type_name=instance_type_name
+                ),
+                pending_instances_to_tasks,
+            )
         ),
-        filter(
-            functools.partial(
-                _instance_data_map_by_type_name, type_name=instance_type_name
-            ),
-            drained_instances_to_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_data_map_by_type_name, type_name=instance_type_name
+                ),
+                drained_instances_to_tasks,
+            )
         ),
-        filter(
-            functools.partial(
-                _instance_type_map_by_type_name, type_name=instance_type_name
-            ),
-            needed_new_instance_types_for_tasks,
+        list(
+            filter(
+                functools.partial(
+                    _instance_type_map_by_type_name, type_name=instance_type_name
+                ),
+                needed_new_instance_types_for_tasks,
+            )
         ),
     )
 

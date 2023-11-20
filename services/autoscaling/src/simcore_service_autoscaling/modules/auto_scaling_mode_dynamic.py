@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 
+from aws_library.ec2.models import EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
@@ -7,7 +8,11 @@ from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
+from ..models import (
+    AssignedTasksToInstance,
+    AssignedTasksToInstanceType,
+    AssociatedInstance,
+)
 from ..utils import dynamic_scaling as utils
 from ..utils import utils_docker, utils_ec2
 from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
@@ -56,25 +61,23 @@ class DynamicAutoscaling(BaseAutoscaling):
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,
-        instances_to_tasks: Iterable[tuple[EC2InstanceData, list]],
-        type_to_instance_map: dict[str, EC2InstanceType],
+        instances_to_tasks: list[AssignedTasksToInstance],
         *,
         notify_progress: bool
     ) -> bool:
-        return await utils.try_assigning_task_to_pending_instances(
+        return await utils.try_assigning_task_to_instances(
             app,
             pending_task,
             instances_to_tasks,
-            type_to_instance_map,
             notify_progress=notify_progress,
         )
 
     @staticmethod
     def try_assigning_task_to_instance_types(
         pending_task,
-        instance_types_to_tasks: Iterable[tuple[EC2InstanceType, list]],
+        instance_types_to_tasks: list[AssignedTasksToInstanceType],
     ) -> bool:
-        return utils.try_assigning_task_to_instances(
+        return utils.try_assigning_task_to_instance_types(
             pending_task, instance_types_to_tasks
         )
 

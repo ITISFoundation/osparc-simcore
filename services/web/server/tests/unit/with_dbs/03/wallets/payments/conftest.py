@@ -20,6 +20,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentTransaction,
     WalletGet,
 )
 from models_library.basic_types import IDStr
@@ -40,7 +41,9 @@ from simcore_service_webserver.payments._methods_api import (
 )
 from simcore_service_webserver.payments._onetime_api import (
     _fake_cancel_payment,
+    _fake_get_payments_page,
     _fake_init_payment,
+    _fake_pay_with_payment_method,
 )
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
@@ -129,6 +132,17 @@ def mock_rpc_payments_service_api(
     ):
         await _fake_cancel_payment(app, payment_id)
 
+    async def _get_page(
+        app: web.Application,
+        *,
+        user_id: UserID,
+        limit: int | None,
+        offset: int | None,
+    ):
+        assert limit is not None
+        assert offset is not None
+        return await _fake_get_payments_page(app, user_id, limit, offset)
+
     #  payment-methods  ----
     async def _init_pm(
         app: web.Application,
@@ -200,24 +214,27 @@ def mock_rpc_payments_service_api(
         user_name: str,
         user_email: EmailStr,
         comment: str | None = None,
-    ):
+    ) -> PaymentTransaction:
+
         assert await _get(
             app,
             payment_method_id=payment_method_id,
             user_id=user_id,
             wallet_id=wallet_id,
         )
-        return await _init(
+
+        return await _fake_pay_with_payment_method(
             app,
-            amount_dollars=amount_dollars,
-            target_credits=target_credits,
-            product_name=product_name,
-            wallet_id=wallet_id,
-            wallet_name=wallet_name,
-            user_id=user_id,
-            user_name=user_name,
-            user_email=user_email,
-            comment=comment,
+            amount_dollars,
+            target_credits,
+            product_name,
+            wallet_id,
+            wallet_name,
+            user_id,
+            user_name,
+            user_email,
+            payment_method_id,
+            comment,
         )
 
     return {
@@ -230,6 +247,11 @@ def mock_rpc_payments_service_api(
             "simcore_service_webserver.payments._onetime_api._rpc.cancel_payment",
             autospec=True,
             side_effect=_cancel,
+        ),
+        "get_payments_page": mocker.patch(
+            "simcore_service_webserver.payments._onetime_api._rpc.get_payments_page",
+            autospec=True,
+            side_effect=_get_page,
         ),
         "init_creation_of_payment_method": mocker.patch(
             "simcore_service_webserver.payments._methods_api._rpc.init_creation_of_payment_method",
@@ -256,8 +278,8 @@ def mock_rpc_payments_service_api(
             autospec=True,
             side_effect=_del,
         ),
-        "init_payment_with_payment_method": mocker.patch(
-            "simcore_service_webserver.payments._onetime_api._rpc.init_payment_with_payment_method",
+        "pay_with_payment_method": mocker.patch(
+            "simcore_service_webserver.payments._onetime_api._rpc.pay_with_payment_method",
             autospec=True,
             side_effect=_pay,
         ),

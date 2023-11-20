@@ -1,5 +1,6 @@
 import logging
 import tempfile
+from collections import OrderedDict
 from pathlib import Path
 
 from aiohttp import web
@@ -59,7 +60,9 @@ async def auto_create_products_groups(app: web.Application) -> None:
 
 
 def _set_app_state(
-    app: web.Application, app_products: dict[str, Product], default_product_name: str
+    app: web.Application,
+    app_products: OrderedDict[str, Product],
+    default_product_name: str,
 ):
     app[APP_PRODUCTS_KEY] = app_products
     assert default_product_name in app_products  # nosec
@@ -70,7 +73,7 @@ async def load_products_on_startup(app: web.Application):
     """
     Loads info on products stored in the database into app's storage (i.e. memory)
     """
-    app_products: dict[str, Product] = {}
+    app_products: OrderedDict[str, Product] = OrderedDict()
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as connection:
         async for row in iter_products(connection):
