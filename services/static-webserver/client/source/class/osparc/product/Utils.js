@@ -130,13 +130,13 @@ qx.Class.define("osparc.product.Utils", {
           logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
           break;
         case "s4lacad":
-          logosPath = lightLogo ? "osparc/s4lacad-white.png" : "osparc/s4lacad-black.png";
+          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
           break;
         case "s4ldesktop":
-          logosPath = lightLogo ? "osparc/s4ldesktop-white.png" : "osparc/s4ldesktop-black.png";
+          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
           break;
         case "s4ldesktopacad":
-          logosPath = lightLogo ? "osparc/s4ldesktopacad-white.png" : "osparc/s4ldesktopacad-black.png";
+          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
           break;
         case "tis":
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";

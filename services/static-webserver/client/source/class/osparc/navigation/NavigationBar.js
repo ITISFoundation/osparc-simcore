@@ -110,9 +110,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __buildLayout: function() {
-      this.getContentElement().setStyle({
-        "box-shadow": "red 0px 0px 5px -1px"
-      }); // rgba(33, 50, 72, 1)
       this.getChildControl("left-items");
       this.getChildControl("center-items");
       this.getChildControl("right-items");
