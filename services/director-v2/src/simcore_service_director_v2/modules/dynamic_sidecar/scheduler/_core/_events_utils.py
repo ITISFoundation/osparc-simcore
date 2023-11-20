@@ -310,10 +310,7 @@ async def attempt_pod_removal_and_data_saving(
     )
 
     await safe_remove(
-        app,
-        node_id=scheduler_data.node_uuid,
-        product_name=scheduler_data.product_name,
-        user_id=scheduler_data.user_id,
+        app, node_id=scheduler_data.node_uuid, run_id=scheduler_data.run_id
     )
 
     # remove sidecar's api client
