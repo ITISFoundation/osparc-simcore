@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 import logging
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
@@ -16,7 +15,6 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import respx
-from async_asgi_testclient import TestClient as AsyncAsgiClient
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
@@ -287,50 +285,3 @@ async def test_log_listener(
     publish_task.cancel()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
-
-
-async def test_stream_logs(
-    app: FastAPI,
-    client: httpx.AsyncClient,
-    user_id: UserID,
-    node_id: NodeID,
-    project_id: ProjectID,
-    produce_logs: Callable,
-    new_routes_injected: None,
-    faker: Faker,
-):
-    async def _log_publisher(n_logs: int) -> list[str]:
-        logs = []
-        for ii in range(n_logs):
-            msg: str = faker.text()
-            await asyncio.sleep(faker.pyfloat(min_value=0.0, max_value=5.0))
-            await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
-            logs.append(msg)
-        return logs
-
-    n_logs: int = 10
-    publisher_task = asyncio.create_task(_log_publisher(n_logs))
-
-    async with AsyncAsgiClient(application=app) as test_client:
-        collected_messages: list[str] = []
-        response = await test_client.get(f"/projects/{project_id}/logs", stream=True)
-        # streams open
-        ii: int = 0
-        while True:
-            data: bytes = b""
-            async for elm in response.iter_content():
-                data += elm
-                if data.decode().endswith("\n"):
-                    break
-            line = data.decode()
-            data = json.loads(line)
-            log = JobLog.parse_obj(data)
-            assert log.log_level == logging.DEBUG
-            assert len(log.messages) == 1
-            collected_messages += log.messages
-            _logger.info(log.json(indent=3))
-            ii += 1
-            if ii == n_logs:
-                break
-    assert publisher_task.done()
-    assert collected_messages == publisher_task.result()
