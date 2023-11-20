@@ -83,7 +83,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "ooil=service_integration.cli:app",
-            "osparc-service-integrator=service_integration.cli:app"
+            "osparc-service-integrator=service_integration.cli:app",
             "simcore-service=service_integration.cli:app",
             "simcore-service-integrator=service_integration.cli:app",
         ],
