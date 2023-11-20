@@ -8,12 +8,13 @@ import asyncio
 import json
 import logging
 import re
+from collections.abc import Callable, Coroutine, Iterable
 
 # copied out from dask
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Any, Callable, Coroutine, Iterable
+from typing import Any
 from unittest import mock
 from uuid import uuid4
 
@@ -41,7 +42,6 @@ from models_library.services_resources import BootMode
 from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl, SecretStr, parse_obj_as
-from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -143,7 +143,7 @@ class ServiceExampleParam:
     expected_output_data: TaskOutputData
     expected_logs: list[str]
     integration_version: version.Version
-    task_envs: dict[EnvVarsDict, str]
+    task_envs: dict[EnvVarKey, str]
 
     def sidecar_params(self) -> dict[str, Any]:
         return {
@@ -170,7 +170,7 @@ def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
 
 
 @pytest.fixture(params=list(BootMode), ids=str)
-def boot_mode(request: FixtureRequest) -> BootMode:
+def boot_mode(request: pytest.FixtureRequest) -> BootMode:
     return request.param
 
 
@@ -182,7 +182,7 @@ def boot_mode(request: FixtureRequest) -> BootMode:
     ],
     ids=lambda v: f"integration.version.{v}",
 )
-def integration_version(request: FixtureRequest) -> version.Version:
+def integration_version(request: pytest.FixtureRequest) -> version.Version:
     print("--> Using service integration:", request.param)
     return version.Version(request.param)
 
@@ -274,7 +274,7 @@ def sleeper_task(
         f"echo '{faker.text(max_nb_chars=17216)}'",
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
-        f"sleep {randint(1,4)}",
+        f"sleep {randint(1,4)}",  # noqa: S311
     ]
 
     # defines the expected outputs
@@ -287,34 +287,38 @@ def sleeper_task(
     output_file_url = s3_remote_file_url(file_path="output_file")
     expected_output_keys = TaskOutputDataSchema.parse_obj(
         {
-            **{k: {"required": True} for k in jsonable_outputs.keys()},
-            **{
-                "pytest_file": {
-                    "required": True,
-                    "mapping": "a_outputfile",
-                    "url": f"{output_file_url}",
-                },
-                "pytest_file_with_mapping": {
-                    "required": True,
-                    "mapping": "subfolder/a_outputfile",
-                    "url": f"{output_file_url}",
-                },
-            },
+            **(
+                {k: {"required": True} for k in jsonable_outputs}
+                | {
+                    "pytest_file": {
+                        "required": True,
+                        "mapping": "a_outputfile",
+                        "url": f"{output_file_url}",
+                    },
+                    "pytest_file_with_mapping": {
+                        "required": True,
+                        "mapping": "subfolder/a_outputfile",
+                        "url": f"{output_file_url}",
+                    },
+                }
+            ),
         }
     )
     expected_output_data = TaskOutputData.parse_obj(
         {
-            **jsonable_outputs,
-            **{
-                "pytest_file": {
-                    "url": f"{output_file_url}",
-                    "file_mapping": "a_outputfile",
-                },
-                "pytest_file_with_mapping": {
-                    "url": f"{output_file_url}",
-                    "file_mapping": "subfolder/a_outputfile",
-                },
-            },
+            **(
+                jsonable_outputs
+                | {
+                    "pytest_file": {
+                        "url": f"{output_file_url}",
+                        "file_mapping": "a_outputfile",
+                    },
+                    "pytest_file_with_mapping": {
+                        "url": f"{output_file_url}",
+                        "file_mapping": "subfolder/a_outputfile",
+                    },
+                }
+            ),
         }
     )
     jsonized_outputs = json.dumps(jsonable_outputs).replace('"', '\\"')
@@ -423,7 +427,9 @@ def sleeper_task_unexpected_output(
 
 
 @pytest.fixture()
-def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_info_level(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.INFO, logger="simcore_service_dask_sidecar"):
         yield caplog
 
@@ -436,16 +442,15 @@ def mocked_get_image_labels(
         ImageLabels, ServiceDockerData.Config.schema_extra["examples"][0]
     )
     labels.integration_version = f"{integration_version}"
-    mocked_get_image_labels = mocker.patch(
+    return mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_image_labels",
         autospec=True,
         return_value=labels,
     )
-    return mocked_get_image_labels
 
 
 def test_run_computational_sidecar_real_fct(
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_level: pytest.LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
@@ -609,6 +614,7 @@ async def test_run_computational_sidecar_dask(
         ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
     # check that the task produce the expected data, not less not more
+    assert isinstance(output_data, dict)
     for k, v in sleeper_task.expected_output_data.items():
         assert k in output_data
         assert output_data[k] == v
@@ -684,7 +690,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
 def test_failing_service_raises_exception(
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_level: pytest.LogCaptureFixture,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     failing_ubuntu_task: ServiceExampleParam,
@@ -703,7 +709,7 @@ def test_failing_service_raises_exception(
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
 def test_running_service_that_generates_unexpected_data_raises_exception(
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_level: pytest.LogCaptureFixture,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task_unexpected_output: ServiceExampleParam,
