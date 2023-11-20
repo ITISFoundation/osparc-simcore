@@ -10,7 +10,7 @@ import logging
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Annotated, Final, Iterable
+from typing import Final, Iterable
 from unittest.mock import AsyncMock
 
 import httpx
@@ -18,9 +18,8 @@ import pytest
 import respx
 from async_asgi_testclient import TestClient as AsyncAsgiClient
 from faker import Faker
-from fastapi import Depends, FastAPI, status
+from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -62,7 +61,6 @@ def app_environment(
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
     mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
-    # mocker.patch("simcore_service_api_server.core.application.director_v2.setup")
 
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
@@ -258,7 +256,7 @@ async def log_listener(
     yield log_listener
 
 
-async def test_json_log_generator(
+async def test_log_listener(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
@@ -289,60 +287,6 @@ async def test_json_log_generator(
     publish_task.cancel()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
-
-
-@pytest.fixture
-async def fake_logger_injected(client: httpx.AsyncClient, app: FastAPI):
-    @app.get("/projects/{project_id}/logs")
-    async def _stream_logs_handler(
-        project_id: ProjectID,
-    ):
-        async def _fake_log_generator() -> AsyncIterable[str]:
-            for ii in range(100):
-                job_log: JobLog = JobLog(
-                    job_id=project_id,
-                    node_id=_faker.uuid4(),
-                    log_level=logging.INFO,
-                    messages=[f"message#={ii}"],
-                )
-                yield job_log.json() + "\n"
-
-        return StreamingResponse(_fake_log_generator(), media_type="application/json")
-
-
-async def test_fake_logging_endpoint(
-    app: FastAPI,
-    client: httpx.AsyncClient,
-    project_id: ProjectID,
-    fake_logger_injected: None,
-):
-    async with client.stream("GET", f"/projects/{project_id}/logs") as r:
-        # streams open
-        ii: int = 0
-        async for line in r.aiter_lines():
-            data = json.loads(line)
-            log = JobLog.parse_obj(data)
-            assert log.job_id == project_id
-            assert len(log.messages) == 1
-            assert log.messages[0] == f"message#={ii}"
-            ii += 1
-            _logger.info(log.json(indent=3))
-
-
-@pytest.fixture
-async def new_routes_injected(client: httpx.AsyncClient, app: FastAPI):
-    @app.get("/projects/{project_id}/logs")
-    async def _stream_logs_handler(
-        project_id: ProjectID,
-        *,
-        rabbit_consumer: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
-    ):
-        log_listener: LogListener = await LogListener.create(
-            rabbit_consumer, project_id
-        )
-        return StreamingResponse(
-            log_listener.log_generator(),
-        )
 
 
 async def test_stream_logs(
