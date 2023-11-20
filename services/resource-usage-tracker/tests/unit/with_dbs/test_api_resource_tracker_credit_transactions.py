@@ -33,7 +33,7 @@ def resource_tracker_credit_transactions_db(
 
 
 async def test_credit_transactions_workflow(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
     async_client: httpx.AsyncClient,
