@@ -217,13 +217,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
-    emptyWorkbench: {
-      check: "Boolean",
-      nullable: false,
-      init: null,
-      event: "changeEmptyWorkbench",
-      apply: "__applyEmptyWorkbench"
-    },
+    // emptyWorkbench: {
+    //   check: "Boolean",
+    //   nullable: false,
+    //   init: null,
+    //   event: "changeEmptyWorkbench",
+    //   apply: "__applyEmptyWorkbench"
+    // },
 
     updatable: {
       check: [null, "retired", "deprecated", "updatable"],
@@ -430,9 +430,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
       if (workbench === null) {
         // it is a service
         return;
@@ -465,11 +462,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__showBlockedCard(image, toolTipText);
           }
         });
-    },
-
-    __applyEmptyWorkbench: function(isEmpty) {
-      const emptyWorkbench = this.getChildControl("empty-workbench");
-      emptyWorkbench.setVisibility(isEmpty ? "visible" : "excluded");
     },
 
     __applyUpdatable: function(updatable) {
@@ -825,25 +817,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
-    _getEmptyWorkbenchIcon: function() {
-      let toolTipText = this.tr("Empty") + " ";
-      if (this.isResourceType("study")) {
-        toolTipText += osparc.product.Utils.getStudyAlias();
-      } else if (this.isResourceType("template")) {
-        toolTipText += osparc.product.Utils.getTemplateAlias();
-      }
-      const control = new qx.ui.basic.Image().set({
-        source: "@FontAwesome5Solid/times-circle/14",
-        alignY: "bottom",
-        toolTipText
-      });
-      control.addListener("tap", e => {
-        e.stopPropagation();
-        this.setValue(false);
-        this.fireDataEvent("emptyStudyClicked", this.getUuid());
-      }, this);
-      return control;
-    },
+    // _getEmptyWorkbenchIcon: function() {
+    //   let toolTipText = this.tr("Empty") + " ";
+    //   if (this.isResourceType("study")) {
+    //     toolTipText += osparc.product.Utils.getStudyAlias();
+    //   } else if (this.isResourceType("template")) {
+    //     toolTipText += osparc.product.Utils.getTemplateAlias();
+    //   }
+    //   const control = new qx.ui.basic.Image().set({
+    //     source: "@FontAwesome5Solid/times-circle/14",
+    //     alignY: "bottom",
+    //     marginBottom: 10,
+    //     marginRight: 10,
+    //     toolTipText
+    //   });
+    //   control.addListener("tap", e => {
+    //     e.stopPropagation();
+    //     this.setValue(false);
+    //     this.fireDataEvent("emptyStudyClicked", this.getUuid());
+    //   }, this);
+    //   return control;
+    // },
 
     /**
      * Event handler for the pointer over event.

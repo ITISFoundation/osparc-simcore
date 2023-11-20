@@ -120,13 +120,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.HITS
           });
           break;
-        case "empty-workbench":
-          control = this._getEmptyWorkbenchIcon();
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.UPDATES
-          });
-          break;
         case "update-study":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
