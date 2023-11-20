@@ -2,22 +2,18 @@ import logging
 from contextlib import contextmanager
 from typing import Final
 
-import sqlalchemy as sa
 from aiohttp import ClientError, ClientResponseError, web
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
     ApiInvitationContentAndLink,
     ApiInvitationInputs,
 )
-from models_library.users import GroupID
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.error_codes import create_error_code
-from simcore_postgres_database.models.groups import user_to_groups
-from simcore_postgres_database.models.users import users
 
-from ..db.plugin import get_database_engine
 from ..products.api import Product
 from ._client import InvitationsServiceApi, get_invitations_service_api
+from ._db import is_user_registered_in_product
 from .errors import (
     MSG_INVALID_INVITATION_URL,
     MSG_INVITATION_ALREADY_USED,
@@ -27,31 +23,6 @@ from .errors import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-async def _is_user_registered_in_platform(app: web.Application, email: str) -> bool:
-    pg_engine = get_database_engine(app=app)
-    async with pg_engine.acquire() as conn:
-        user_id = await conn.scalar(sa.select(users.c.id).where(users.c.email == email))
-        return user_id is not None
-
-
-async def _is_user_registered_in_product(
-    app: web.Application, email: str, product_group_id: GroupID
-) -> bool:
-    pg_engine = get_database_engine(app=app)
-
-    async with pg_engine.acquire() as conn:
-        user_id = await conn.scalar(
-            sa.select(users.c.id)
-            .select_from(
-                sa.join(user_to_groups, users, user_to_groups.c.uid == users.c.id)
-            )
-            .where(
-                (users.c.email == email) & (user_to_groups.c.gid == product_group_id)
-            )
-        )
-        return user_id is not None
 
 
 @contextmanager
@@ -148,7 +119,7 @@ async def validate_invitation_url(
 
         # check invitation used
         assert invitation.product == current_product.name  # nosec
-        if await _is_user_registered_in_product(
+        if await is_user_registered_in_product(
             app=app, email=invitation.guest, product_group_id=current_product.group_id
         ):
             # NOTE: a user might be already registered but the invitation is for another product
