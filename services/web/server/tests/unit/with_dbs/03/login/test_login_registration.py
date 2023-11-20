@@ -14,7 +14,7 @@ from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
+from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
     MSG_EMAIL_EXISTS,
@@ -55,8 +55,9 @@ async def test_register_entrypoint(
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
+    assert url.path == "v0/auth/register"
     response = await client.post(
-        f"{url}",
+        url.path,
         json={
             "email": fake_user_email,
             "password": fake_user_password,
@@ -74,7 +75,7 @@ async def test_register_body_validation(
     assert client.app
     url = client.app.router["auth_register"].url_for()
     response = await client.post(
-        f"{url}",
+        url.path,
         json={
             "email": "not-an-email",
             "password": fake_user_password,
@@ -109,7 +110,7 @@ async def test_register_body_validation(
 async def test_registration_is_not_get(client: TestClient):
     assert client.app
     url = client.app.router["auth_register"].url_for()
-    response = await client.get(f"{url}")
+    response = await client.get(url.path)
     await assert_error(response, web.HTTPMethodNotAllowed)
 
 
@@ -122,52 +123,13 @@ async def test_registration_with_existing_email(
         # register
         url = client.app.router["auth_register"].url_for()
         response = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": user["email"],
                 "password": user["raw_password"],
                 "confirm": user["raw_password"],
             },
         )
-    await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
-
-
-@pytest.mark.skip("TODO: Feature still not implemented")
-async def test_registration_with_expired_confirmation(
-    client: TestClient,
-    db: AsyncpgStorage,
-    mocker: MockerFixture,
-    cleanup_db_tables: None,
-):
-    assert client.app
-    mocker.patch(
-        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
-        autospec=True,
-        return_value=LoginSettingsForProduct(
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <----- invitation REQUIRED
-            LOGIN_TWILIO=None,
-        ),
-    )
-
-    # a user pending confirmation
-    async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
-        confirmation = await db.create_confirmation(
-            user["id"], ConfirmationAction.REGISTRATION.name
-        )
-
-        # register
-        url = client.app.router["auth_register"].url_for()
-        response = await client.post(
-            f"{url}",
-            json={
-                "email": user["email"],
-                "password": user["raw_password"],
-                "confirm": user["raw_password"],
-            },
-        )
-        await db.delete_confirmation(confirmation)
-
     await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
 
 
@@ -212,7 +174,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         url = client.app.router["auth_register"].url_for()
 
         response = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": fake_user_email,
                 "password": fake_weak_password,
@@ -228,7 +190,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
             ),
         )
         response = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": fake_user_email,
                 "password": fake_user_password,
@@ -251,7 +213,7 @@ async def test_registration_with_weak_password_fails(
     url = client.app.router["auth_register"].url_for()
     session_settings = get_plugin_settings(client.app, product_name)
     response = await client.post(
-        f"{url}",
+        url.path,
         json={
             "email": fake_user_email,
             "password": fake_weak_password,
@@ -318,7 +280,7 @@ async def test_registration_without_confirmation(
 
     url = client.app.router["auth_register"].url_for()
     response = await client.post(
-        f"{url}",
+        url.path,
         json={
             "email": fake_user_email,
             "password": fake_user_password,
@@ -357,7 +319,7 @@ async def test_registration_with_confirmation(
     # login
     url = client.app.router["auth_register"].url_for()
     response = await client.post(
-        f"{url}",
+        url.path,
         json={
             "email": fake_user_email,
             "password": fake_user_password,
@@ -435,7 +397,7 @@ async def test_registration_with_invitation(
         url = client.app.router["auth_register"].url_for()
 
         response = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": fake_user_email,
                 "password": fake_user_password,
@@ -450,7 +412,7 @@ async def test_registration_with_invitation(
         # check optional fields in body
         if not has_valid_invitation and not is_invitation_required:
             response = await client.post(
-                f"{url}",
+                url.path,
                 json={
                     "email": "new-user" + fake_user_email,
                     "password": fake_user_password,
@@ -506,7 +468,7 @@ async def test_registraton_with_invitation_for_trial_account(
         # (3) use register using the invitation code
         url = client.app.router["auth_register"].url_for()
         response = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": fake_user_email,
                 "password": fake_user_password,
@@ -519,7 +481,7 @@ async def test_registraton_with_invitation_for_trial_account(
         # (4) login
         url = client.app.router["auth_login"].url_for()
         response = await client.post(
-            f"{url}",
+            url.path,
             json={
                 "email": fake_user_email,
                 "password": fake_user_password,
@@ -529,7 +491,7 @@ async def test_registraton_with_invitation_for_trial_account(
 
         # (5) get profile
         url = client.app.router["get_my_profile"].url_for()
-        response = await client.get(f"{url}")
+        response = await client.get(url.path)
         data, _ = await assert_status(response, web.HTTPOk)
         profile = ProfileGet.parse_obj(data)
 
