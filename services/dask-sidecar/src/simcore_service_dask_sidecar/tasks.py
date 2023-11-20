@@ -135,8 +135,7 @@ async def _run_computational_sidecar_async(  # pylint: disable=too-many-argument
         return output_data
 
 
-def run_computational_sidecar(
-    # pylint: disable=too-many-arguments
+def run_computational_sidecar(  # pylint: disable=too-many-arguments # noqa: PLR0913
     docker_auth: DockerBasicAuth,
     service_key: ContainerImage,
     service_version: ContainerTag,
