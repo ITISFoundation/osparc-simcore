@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr
+from pydantic import EmailStr, PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -256,13 +256,13 @@ async def get_payments_page(
     repo: PaymentsTransactionsRepo,
     *,
     user_id: UserID,
-    limit: int,
-    offset: int,
-) -> tuple[int, list[PaymentsTransactionsDB]]:
+    limit: PositiveInt | None = None,
+    offset: PositiveInt | None = None,
+) -> tuple[int, list[PaymentTransaction]]:
     """All payments associated to a user (i.e. including all the owned wallets)"""
 
     total_number_of_items, page = await repo.list_user_payment_transactions(
         user_id=user_id, offset=offset, limit=limit
     )
 
-    return total_number_of_items, page
+    return total_number_of_items, [t.to_api_model() for t in page]
