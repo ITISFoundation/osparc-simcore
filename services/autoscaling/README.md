@@ -1,16 +1,13 @@
 # autoscaling
 
-[![image-size]](https://microbadger.com/images/itisfoundation/autoscaling. "More on itisfoundation/autoscaling.:staging-latest image")
+Service to auto-scale swarm for both dynamic and computational services
 
-[![image-badge]](https://microbadger.com/images/itisfoundation/autoscaling "More on Auto scaling service image in registry")
-[![image-version]](https://microbadger.com/images/itisfoundation/autoscaling "More on Auto scaling service image in registry")
-[![image-commit]](https://microbadger.com/images/itisfoundation/autoscaling "More on Auto scaling service image in registry")
 
-Service to auto-scale swarm
+## development
 
-<!-- Add badges urls here-->
-[image-size]:https://img.shields.io/microbadger/image-size/itisfoundation/autoscaling./staging-latest.svg?label=autoscaling.&style=flat
-[image-badge]:https://images.microbadger.com/badges/image/itisfoundation/autoscaling.svg
-[image-version]https://images.microbadger.com/badges/version/itisfoundation/autoscaling.svg
-[image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/autoscaling.svg
-<!------------------------->
+```
+make install-dev
+make test-dev-unit
+
+# NOTE: there are manual tests that need access to AWS EC2 instances!
+```

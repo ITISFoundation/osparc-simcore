@@ -262,9 +262,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         ec2_client,
         num_reservations=1,
         num_instances=mock_machines_buffer,
-        instance_type=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            0
-        ],
+        instance_type=next(
+            iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+        ),
         instance_state="running",
     )
     _assert_rabbit_autoscaling_message_sent(
@@ -282,9 +282,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         ec2_client,
         num_reservations=1,
         num_instances=mock_machines_buffer,
-        instance_type=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            0
-        ],
+        instance_type=next(
+            iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+        ),
         instance_state="running",
     )
     assert fake_node.Description
@@ -315,9 +315,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         ec2_client,
         num_reservations=1,
         num_instances=mock_machines_buffer,
-        instance_type=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            0
-        ],
+        instance_type=next(
+            iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+        ),
         instance_state="running",
     )
 
