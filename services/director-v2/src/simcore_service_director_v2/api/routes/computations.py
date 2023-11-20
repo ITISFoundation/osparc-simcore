@@ -55,7 +55,7 @@ from ...core.errors import (
     SchedulerError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -148,6 +148,34 @@ async def _check_pipeline_startable(
             ) from exc
 
 
+async def _get_project_metadata(
+    project_repo: ProjectsRepository,
+    projects_metadata_repo: ProjectsMetadataRepository,
+    computation: ComputationCreate,
+) -> ProjectMetadataDict:
+    current_project_metadata = await projects_metadata_repo.get_metadata(
+        computation.project_id
+    )
+
+    if not current_project_metadata:
+        return {}
+    if "node_id" not in current_project_metadata:
+        return {}
+
+    parent_node_id = NodeID(current_project_metadata["node_id"])
+    parent_node_idstr = NodeIDStr(f"{parent_node_id}")
+    parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
+    parent_project = await project_repo.get_project(parent_project_id)
+    assert parent_node_idstr in parent_project.workbench
+
+    return ProjectMetadataDict(
+        parent_node_id=parent_node_id,
+        parent_node_name=parent_project.workbench[parent_node_idstr].label,
+        parent_project_id=parent_project_id,
+        parent_project_name=parent_project.name,
+    )
+
+
 async def _try_start_pipeline(
     *,
     project_repo: ProjectsRepository,
@@ -179,24 +207,6 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
-    current_project_metadata = await projects_metadata_repo.get_metadata(
-        computation.project_id
-    )
-
-    parent_project_metadata = {}
-    if current_project_metadata is not None and "node_id" in current_project_metadata:
-        parent_node_id = NodeID(current_project_metadata["node_id"])
-        parent_node_idstr = NodeIDStr(f"{parent_node_id}")
-        parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
-        parent_project = await project_repo.get_project(parent_project_id)
-        assert parent_node_idstr in parent_project.workbench
-        parent_project_metadata = {
-            "parent_node_id": parent_node_id,
-            "parent_node_name": parent_project.workbench[parent_node_idstr].label,
-            "parent_project_id": parent_project_id,
-            "parent_project_name": parent_project.name,
-        }
-
     await scheduler.run_new_pipeline(
         computation.user_id,
         computation.project_id,
@@ -212,7 +222,9 @@ async def _try_start_pipeline(
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-            project_metadata=parent_project_metadata,
+            project_metadata=await _get_project_metadata(
+                project_repo, projects_metadata_repo, computation
+            ),
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
