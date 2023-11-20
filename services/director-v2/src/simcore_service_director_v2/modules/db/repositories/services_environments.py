@@ -31,7 +31,9 @@ class ServicesEnvironmentsRepository(BaseRepository):
                 vendor_service_version=service_version,
                 normalize_names=True,
             )
-            assert all(self.is_vendor_secret_identifier(key) for key in vendor_secrets)
+            assert all(  # nosec
+                self.is_vendor_secret_identifier(key) for key in vendor_secrets
+            )
 
             return vendor_secrets
 
