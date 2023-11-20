@@ -149,6 +149,9 @@ class ComputationalSettings(BaseCustomSettings):
     COMPUTATIONAL_DASK_SCHEDULER_URL: AnyUrl = Field(
         ..., description="the url to the osparc-dask-scheduler"
     )
+    COMPUTATIONAL_MAX_NUMER_WORKERS: NonNegativeInt = Field(
+        ..., description="defines how many worker of the same type may be created"
+    )
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
