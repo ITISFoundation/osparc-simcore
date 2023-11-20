@@ -17,7 +17,7 @@ pytest_plugins = ["pytest_simcore.repository_paths", "pytest_simcore.docker_swar
 
 @pytest.fixture(scope="session")
 def package_dir(osparc_simcore_services_dir: Path):
-    package_folder = osparc_simcore_services_dir / "simcore-service-gateway-server"
+    package_folder = osparc_simcore_services_dir / "osparc-gateway-server"
     assert package_folder.exists()
     return package_folder
 
