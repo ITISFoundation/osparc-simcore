@@ -132,4 +132,4 @@ def test_validate_compose_file(
     )
 
     # About versioning https://docs.docker.com/compose/compose-file/compose-file-v3/
-    assert compose["version"] == "3.9"
+    assert compose["version"] == "3.8"
