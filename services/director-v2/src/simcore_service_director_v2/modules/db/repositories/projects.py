@@ -4,6 +4,7 @@ import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 
 from ....core.errors import ProjectNotFoundError
 from ..tables import projects
@@ -32,3 +33,9 @@ class ProjectsRepository(BaseRepository):
             return f"{node_uuid}" in project.workbench
         except ProjectNotFoundError:
             return False
+
+    async def get_project_id_from_node(self, node_id: NodeID) -> ProjectID:
+        async with self.db_engine.acquire() as conn:
+            return await ProjectNodesRepo.get_project_id_from_node_id(
+                conn, node_id=node_id
+            )

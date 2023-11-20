@@ -14,7 +14,7 @@ from models_library.osparc_variable_identifier import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import RunID, ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import BaseModel
@@ -189,6 +189,7 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
     product_name: ProductName,
     user_id: UserID,
     node_id: NodeID,
+    run_id: RunID,
     safe: bool = True,
 ) -> dict[str, Any]:
     registry: OsparcVariablesTable = app.state.service_lifespan_osparc_variables_table
@@ -206,6 +207,7 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
                     product_name=product_name,
                     user_id=user_id,
                     node_id=node_id,
+                    run_id=run_id,
                 ),
                 # NOTE: the api key and secret cannot be resolved in parallel
                 # due to race conditions
@@ -220,25 +222,35 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
 
 
 async def _get_or_create_api_key(
-    app: FastAPI, product_name: ProductName, user_id: UserID, node_id: NodeID
+    app: FastAPI,
+    product_name: ProductName,
+    user_id: UserID,
+    node_id: NodeID,
+    run_id: RunID,
 ) -> str:
     key_data = await get_or_create_api_key(
         app,
         product_name=product_name,
         user_id=user_id,
         node_id=node_id,
+        run_id=run_id,
     )
     return key_data.api_key  # type:ignore [no-any-return]
 
 
 async def _get_or_create_api_secret(
-    app: FastAPI, product_name: ProductName, user_id: UserID, node_id: NodeID
+    app: FastAPI,
+    product_name: ProductName,
+    user_id: UserID,
+    node_id: NodeID,
+    run_id: RunID,
 ) -> str:
     key_data = await get_or_create_api_key(
         app,
         product_name=product_name,
         user_id=user_id,
         node_id=node_id,
+        run_id=run_id,
     )
     return key_data.api_secret  # type:ignore [no-any-return]
 
