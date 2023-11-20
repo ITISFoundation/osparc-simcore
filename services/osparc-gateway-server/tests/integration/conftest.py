@@ -69,9 +69,9 @@ def _convert_to_dict(c: traitlets.config.Config | dict) -> dict[str, Any]:
 @pytest.fixture
 def mock_scheduler_cmd_modifications(mocker):
     """This mock is necessary since:
-    If the osparc-gateway-server is running in the host then:
+    If the simcore-service-gateway-server is running in the host then:
     - dask-scheduler must start with "" for --host, so the dask-scheduler defines its IP as being in docker_gw_bridge (172.18.0.X), accessible from the host
-    When the osparc-gateway-server is running as a docker container, then the --host must be set
+    When the simcore-service-gateway-server is running as a docker container, then the --host must be set
     as "cluster_X_scheduler" since this is the hostname of the container and resolves into the dask-gateway network
     """
     mocker.patch(

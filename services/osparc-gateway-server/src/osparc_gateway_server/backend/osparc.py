@@ -65,7 +65,7 @@ class OsparcBackend(DBBackendBase):
         self.settings = AppSettings()
         assert isinstance(self.log, logging.Logger)  # nosec
         self.log.info(
-            "osparc-gateway-server application settings:\n%s",
+            "simcore-service-gateway-server application settings:\n%s",
             self.settings.json(indent=2),
         )
 
@@ -82,7 +82,7 @@ class OsparcBackend(DBBackendBase):
     async def do_cleanup(self) -> None:
         assert isinstance(self.log, logging.Logger)  # nosec
         await self.docker_client.close()
-        self.log.info("osparc-gateway-server closed.")
+        self.log.info("simcore-service-gateway-server closed.")
 
     async def do_start_cluster(
         self, cluster: Cluster

@@ -58,6 +58,7 @@ SETUP = {
     "entry_points": {
         "console_scripts": [
             "simcore-service-dynamic-scheduler = simcore_service_dynamic_scheduler.cli:main",
+            "simcore-service = simcore_service_dynamic_scheduler.cli:main",
         ],
     },
 }

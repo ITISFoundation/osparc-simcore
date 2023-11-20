@@ -1,12 +1,11 @@
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 from setuptools import find_packages, setup
 
 
-def read_reqs(reqs_path: Path) -> Set[str]:
+def read_reqs(reqs_path: Path) -> set[str]:
     return {
         r
         for r in re.findall(
@@ -54,6 +53,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-storage = simcore_service_storage.cli:main",
+            "simcore-service = simcore_service_storage.cli:main",
         ],
     },
 )

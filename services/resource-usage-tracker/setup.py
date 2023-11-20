@@ -58,6 +58,7 @@ SETUP = {
     "entry_points": {
         "console_scripts": [
             "simcore-service-resource-usage-tracker = simcore_service_resource_usage_tracker.cli:app",
+            "simcore-service = simcore_service_resource_usage_tracker.cli:app",
         ],
     },
 }

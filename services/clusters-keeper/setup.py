@@ -60,6 +60,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-clusters-keeper = simcore_service_clusters_keeper.cli:main",
+            "simcore-service = simcore_service_clusters_keeper.cli:main",
         ],
     },
 )

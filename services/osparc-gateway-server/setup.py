@@ -48,7 +48,8 @@ SETUP = dict(
     extras_require={"test": TEST_REQUIREMENTS},
     entry_points={
         "console_scripts": [
-            "osparc-gateway-server=osparc_gateway_server.app:start",
+            "simcore-service-gateway-server=osparc_gateway_server.app:start",
+            "simcore-service=osparc_gateway_server.app:start",
         ]
     },
 )
