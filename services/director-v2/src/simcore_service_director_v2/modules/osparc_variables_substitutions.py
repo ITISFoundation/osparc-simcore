@@ -29,6 +29,7 @@ from ..utils.osparc_variables import (
 )
 from .api_keys_manager import get_or_create_api_key
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
+from .db.repositories.users import UsersRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -255,12 +256,12 @@ def _setup_service_lifespan_osparc_variables_table(app: FastAPI):
 
 
 async def _request_user_email(app: FastAPI, user_id: UserID) -> str:
-    repo = get_repository(app, ServicesEnvironmentsRepository)
+    repo = get_repository(app, UsersRepository)
     return await repo.get_user_email(user_id=user_id)
 
 
 async def _request_user_role(app: FastAPI, user_id: UserID) -> str:
-    repo = get_repository(app, ServicesEnvironmentsRepository)
+    repo = get_repository(app, UsersRepository)
     user_role: UserRole = await repo.get_user_role(user_id=user_id)
     return f"{user_role.value}"
 
