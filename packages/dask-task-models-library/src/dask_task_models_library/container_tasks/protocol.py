@@ -1,4 +1,4 @@
-from typing import Any, Protocol, TypeAlias
+from typing import Any, ClassVar, Protocol, TypeAlias
 
 from models_library.basic_types import EnvVarKey
 from models_library.docker import DockerLabelKey
@@ -39,6 +39,26 @@ class TaskOwner(BaseModel):
             msg = "either both parent_node_id and parent_project_id are None or both are set!"
             raise ValueError(msg)
         return values
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "user_id": 32,
+                    "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                    "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                    "parent_project_id": None,
+                    "parent_node_id": None,
+                },
+                {
+                    "user_id": 32,
+                    "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                    "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                    "parent_project_id": "887e595a-63ee-46a1-a04a-901b11b649f8",
+                    "parent_node_id": "aa467d89-b659-4914-9359-c40b1b6d1d6d",
+                },
+            ]
+        }
 
 
 class ContainerTaskParameters(BaseModel):
