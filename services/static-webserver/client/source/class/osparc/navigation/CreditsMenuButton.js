@@ -114,7 +114,6 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
 
         // const currentUsage = this.getCurrentUsage();
         // let used = null;
-        debugger
         // if (currentUsage) {
         //   used = currentUsage.getUsedCredits();
         // }
