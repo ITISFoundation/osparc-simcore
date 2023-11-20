@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Final
+from typing import Final, cast
 
 from pydantic.errors import PydanticErrorMixin
 from servicelib.logging_utils import log_catch, log_context
@@ -23,19 +23,41 @@ class PeriodicTaskCancellationError(PydanticErrorMixin, Exception):
     msg_template: str = "Could not cancel task '{task_name}'"
 
 
+class ContinueCondition:
+    def __init__(self) -> None:
+        self._can_continue: bool = True
+
+    def stop(self):
+        self._can_continue = False
+
+    @property
+    def can_continue(self) -> bool:
+        return self._can_continue
+
+
+class _ExtendedTask(asyncio.Task):
+    def __init__(self, coro, *, loop=None, name=None):
+        super().__init__(coro=coro, loop=loop, name=name)
+        self.continue_condition: ContinueCondition | None = None
+
+
 async def _periodic_scheduled_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
+    continue_condition: ContinueCondition,
     task_name: str,
     **task_kwargs,
 ) -> None:
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
+            if not continue_condition.can_continue:
+                logger.debug("'%s' finished periodic actions", task_name)
+                return
             with log_context(
                 logger,
-                logging.INFO,
+                logging.DEBUG,
                 msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
             ), log_catch(logger):
                 await task(**task_kwargs)
@@ -53,15 +75,22 @@ def start_periodic_task(
     with log_context(
         logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
-        return asyncio.create_task(
+        continue_condition = ContinueCondition()
+        new_periodic_task: asyncio.Task = asyncio.create_task(
             _periodic_scheduled_task(
                 task,
                 interval=interval,
+                continue_condition=continue_condition,
                 task_name=task_name,
                 **kwargs,
             ),
             name=task_name,
         )
+        # NOTE: adds an additional property to the task object
+        # which will be used when stopping the periodic task
+        new_periodic_task = cast(_ExtendedTask, new_periodic_task)
+        new_periodic_task.continue_condition = continue_condition
+        return new_periodic_task
 
 
 async def cancel_task(
@@ -99,9 +128,21 @@ async def stop_periodic_task(
     with log_context(
         logger,
         logging.DEBUG,
-        msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
+        msg=f"stop periodic background task '{asyncio_task.get_name()}'",
     ):
-        await cancel_task(asyncio_task, timeout=timeout)
+        asyncio_task = cast(_ExtendedTask, asyncio_task)
+        continue_condition: ContinueCondition | None = asyncio_task.continue_condition
+        if continue_condition:
+            continue_condition.stop()
+
+        _, pending = await asyncio.wait((asyncio_task,), timeout=timeout)
+        if pending:
+            with log_context(
+                logger,
+                logging.WARNING,
+                msg=f"could not gracefully stop task '{asyncio_task.get_name()}', cancelling it",
+            ):
+                await cancel_task(asyncio_task, timeout=timeout)
 
 
 @contextlib.asynccontextmanager
