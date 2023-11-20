@@ -22,7 +22,7 @@ up-devel: .init-swarm .stack-devel.yml ## starts local test application
 	# docker service logs --follow autoscaling_autoscaling
 
 up-computational-devel: .init-swarm .stack-computational-devel.yml ## starts local test application in computational mode
-	# DASK_MONITORING_URL set to $(DASK_MONITORING_URL)
+	# COMPUTATIONAL_DASK_SCHEDULER_URL set to $(COMPUTATIONAL_DASK_SCHEDULER_URL)
 	@docker stack deploy --with-registry-auth --compose-file=.stack-computational-devel.yml comp-autoscaling
 	# to follow logs of autoscaling, run
 	# docker service logs --follow comp-autoscaling_autoscaling

@@ -13,7 +13,7 @@ The dynamic mode is used directly with docker swarm facilities.
 
 ## computational mode
 
-When ```DASK_MONITORING_URL``` is set the computational mode is enabled.
+When ```COMPUTATIONAL_DASK_SCHEDULER_URL``` is set the computational mode is enabled.
 
 
 ### instructions

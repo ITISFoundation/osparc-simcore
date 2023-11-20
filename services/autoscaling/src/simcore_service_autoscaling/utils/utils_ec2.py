@@ -39,7 +39,7 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> dict[str, s
     return {
         "io.simcore.autoscaling.version": f"{VERSION}",
         "io.simcore.autoscaling.dask-scheduler_url": json.dumps(
-            app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL
+            app_settings.AUTOSCALING_DASK.COMPUTATIONAL_DASK_SCHEDULER_URL
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
         "Name": f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}",

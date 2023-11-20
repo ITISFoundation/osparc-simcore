@@ -207,7 +207,7 @@ def enabled_computational_mode(
         monkeypatch,
         {
             "AUTOSCALING_DASK": "{}",
-            "DASK_MONITORING_URL": faker.url(),
+            "COMPUTATIONAL_DASK_SCHEDULER_URL": faker.url(),
             "DASK_MONITORING_USER_NAME": faker.user_name(),
             "DASK_MONITORING_PASSWORD": faker.password(),
         },

@@ -58,7 +58,7 @@ def local_dask_scheduler_server_envs(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "DASK_MONITORING_URL": dask_spec_local_cluster.scheduler_address,
+            "COMPUTATIONAL_DASK_SCHEDULER_URL": dask_spec_local_cluster.scheduler_address,
         },
     )
 

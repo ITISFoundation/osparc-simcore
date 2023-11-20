@@ -126,6 +126,8 @@ class EC2InstancesSettings(BaseCustomSettings):
 
 
 class NodesMonitoringSettings(BaseCustomSettings):
+    # NOTE: these settings are required for Dynamic autoscaling
+
     NODES_MONITORING_NODE_LABELS: list[DockerLabelKey] = Field(
         ...,
         description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored), these labels will be added to the new created nodes by default",
@@ -142,8 +144,9 @@ class NodesMonitoringSettings(BaseCustomSettings):
     )
 
 
-class DaskMonitoringSettings(BaseCustomSettings):
-    DASK_MONITORING_URL: AnyUrl = Field(
+class ComputationalSettings(BaseCustomSettings):
+    # NOTE: these settings are required for Computational autoscaling
+    COMPUTATIONAL_DASK_SCHEDULER_URL: AnyUrl = Field(
         ..., description="the url to the osparc-dask-scheduler"
     )
 
@@ -214,7 +217,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_REGISTRY: RegistrySettings | None = Field(auto_default_from_env=True)
 
-    AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
+    AUTOSCALING_DASK: ComputationalSettings | None = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802

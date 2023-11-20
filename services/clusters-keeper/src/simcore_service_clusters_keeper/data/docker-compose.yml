@@ -46,7 +46,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      DASK_MONITORING_URL: tcp://dask-scheduler:8786
+      COMPUTATIONAL_DASK_SCHEDULER_URL: tcp://dask-scheduler:8786
       AUTOSCALING_EC2_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID}
       AUTOSCALING_EC2_ENDPOINT: ${CLUSTERS_KEEPER_EC2_ENDPOINT}
       AUTOSCALING_EC2_REGION_NAME: ${CLUSTERS_KEEPER_EC2_REGION_NAME}

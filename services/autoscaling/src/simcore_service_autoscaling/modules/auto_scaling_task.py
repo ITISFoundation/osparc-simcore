@@ -35,10 +35,12 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         elif app_settings.AUTOSCALING_DASK:
             lock_key_parts += [
                 "computational",
-                app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL,
+                app_settings.AUTOSCALING_DASK.COMPUTATIONAL_DASK_SCHEDULER_URL,
             ]
             lock_value = json.dumps(
-                {"scheduler_url": app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}
+                {
+                    "scheduler_url": app_settings.AUTOSCALING_DASK.COMPUTATIONAL_DASK_SCHEDULER_URL
+                }
             )
         lock_key = ":".join(f"{k}" for k in lock_key_parts)
         assert lock_key  # nosec

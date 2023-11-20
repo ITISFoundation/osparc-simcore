@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 def _scheduler_url(app: FastAPI) -> AnyUrl:
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_DASK  # nosec
-    return app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL
+    return app_settings.AUTOSCALING_DASK.COMPUTATIONAL_DASK_SCHEDULER_URL
 
 
 class ComputationalAutoscaling(BaseAutoscaling):
