@@ -8,6 +8,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import (
@@ -119,8 +120,11 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None
 
-    # POSTGRES
     API_SERVER_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
+
+    API_SERVER_RABBITMQ: RabbitSettings | None = Field(
+        auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
 
     # SERVICES with http API
     API_SERVER_WEBSERVER: WebServerSettings | None = Field(auto_default_from_env=True)

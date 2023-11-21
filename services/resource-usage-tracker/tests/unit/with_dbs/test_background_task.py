@@ -120,7 +120,7 @@ def resource_tracker_setup_db(
 
 
 async def test_process_event_functions(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
     resource_tracker_setup_db,

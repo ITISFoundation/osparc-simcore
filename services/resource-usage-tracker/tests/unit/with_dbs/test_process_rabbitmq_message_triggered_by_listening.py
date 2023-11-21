@@ -23,14 +23,14 @@ pytest_simcore_ops_services_selection = [
 
 
 async def test_process_events_via_rabbit(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
     initialized_app,
     resource_tracker_service_run_db,
 ):
-    publisher = rabbitmq_client("publisher")
+    publisher = create_rabbitmq_client("publisher")
     msg = random_rabbit_message_start(
         wallet_id=None,
         wallet_name=None,
