@@ -42,7 +42,7 @@ async def reconnect(app: FastAPI):
 def setup_rabbit(
     app: FastAPI,
     *,
-    settings: RabbitSettings,
+    settings: RabbitSettings | None,
     name: str,
 ) -> None:
     """Sets up rabbit in a given app
