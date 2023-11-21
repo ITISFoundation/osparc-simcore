@@ -29,11 +29,11 @@ async def message_handler(app: FastAPI, data: bytes) -> bool:
     if (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED
     ):
+        _logger.debug("Skipped shutting down services for wallet %s", message.wallet_id)
+    else:
         await scheduler.mark_all_services_in_wallet_for_removal(
             wallet_id=message.wallet_id
         )
-    else:
-        _logger.debug("Skipped shutting down services for wallet %s", message.wallet_id)
 
     return True
 
