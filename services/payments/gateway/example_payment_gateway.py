@@ -1,6 +1,6 @@
 """ This is a simple example of a payments-gateway service
 
-    - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects with
+    - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects
     - Also used as a fake payment-gateway for manual exploratory testing
 """
 
