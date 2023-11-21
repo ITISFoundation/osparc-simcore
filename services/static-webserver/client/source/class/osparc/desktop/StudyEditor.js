@@ -635,7 +635,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .catch(error => {
           if ("status" in error && error.status === 409) {
             console.log("Flash message blocked") // Workaround for osparc-issues #1189
-            // osparc.FlashMessenger.getInstance().logAs(error.message, "ERROR");
           } else {
             console.error(error);
             osparc.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
