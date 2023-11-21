@@ -1,8 +1,6 @@
 import logging
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import RabbitMessageBase
-from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
@@ -27,7 +25,3 @@ def setup_rabbitmq(app: FastAPI) -> None:
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
-
-
-async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    await get_rabbitmq_client(app).publish(message.channel_name, message)

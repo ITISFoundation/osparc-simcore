@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import RabbitMessageBase
 from settings_library.rabbit import RabbitSettings
 
 from ..rabbitmq import RabbitMQClient
@@ -79,3 +80,7 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
             msg="Rabbitmq service unavailable. Check app settings",
         )
     return app.state.rabbitmq_client
+
+
+async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
+    await get_rabbitmq_client(app).publish(message.channel_name, message)
