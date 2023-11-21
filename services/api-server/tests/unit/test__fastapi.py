@@ -114,7 +114,7 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
     }
 
 
-def test_fastapi_route_name_parsing(client: TestClient, faker: Faker):
+def test_fastapi_route_name_parsing(client: TestClient, app: FastAPI, faker: Faker):
     #
     # Ensures ':' is allowed in routes
     # SEE https://github.com/encode/starlette/pull/1657
@@ -125,7 +125,7 @@ def test_fastapi_route_name_parsing(client: TestClient, faker: Faker):
 
     # Checks whether parse correctly ":action" suffix
     for action in ("start", "stop"):
-        expected_path = client.app.router.url_path_for(
+        expected_path = app.router.url_path_for(
             f"{action}_job", solver_key=solver_key, version=version, job_id=job_id
         )
         resp = client.post(
