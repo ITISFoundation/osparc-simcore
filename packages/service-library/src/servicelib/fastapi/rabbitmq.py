@@ -79,7 +79,8 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
             state="rabbitmq_client",
             msg="Rabbitmq service unavailable. Check app settings",
         )
-    return app.state.rabbitmq_client
+    assert isinstance(rabbitmq_client := app.state.rabbitmq_client, RabbitMQClient)
+    return rabbitmq_client
 
 
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
