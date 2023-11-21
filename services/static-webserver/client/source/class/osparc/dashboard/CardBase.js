@@ -217,14 +217,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
-    // emptyWorkbench: {
-    //   check: "Boolean",
-    //   nullable: false,
-    //   init: null,
-    //   event: "changeEmptyWorkbench",
-    //   apply: "__applyEmptyWorkbench"
-    // },
-
     updatable: {
       check: [null, "retired", "deprecated", "updatable"],
       nullable: false,

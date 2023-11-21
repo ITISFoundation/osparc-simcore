@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true,
-            paddingLeft: 10
+            padding: 10
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;

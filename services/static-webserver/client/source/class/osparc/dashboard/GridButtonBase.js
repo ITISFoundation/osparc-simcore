@@ -137,6 +137,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             alignY: "middle",
             padding: this.self().PADDING
           });
+          control.set({
+            backgroundColor: "background-card-overlay"
+          });
           this._mainLayout.add(control, this.self().POS.TITLE);
           break;
         case "body":
@@ -145,8 +148,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             allowGrowY: true,
             allowGrowX: true,
             allowShrinkX: true,
-            paddingLeft: this.self().PADDING,
-            paddingRight: this.self().PADDING
+            padding: this.self().PADDING,
           });
           control.getContentElement().setStyles({
             "border-width": 0
@@ -155,6 +157,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         case "footer":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            visibility: "excluded",
             anonymous: true,
             allowGrowX: true,
             allowShrinkX: false,
@@ -162,6 +165,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             backgroundColor: "background-card-overlay"
           });
           control.setAlignY("bottom");
+          this._applyFooter();
           this._mainLayout.add(control, this.self().POS.FOOTER);
           break;
         case "title-row":
@@ -191,9 +195,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             anonymous: true
           });
           layout = this.getChildControl("header");
-          layout.set({
-            backgroundColor: "background-card-overlay"
-          });
           layout.addAt(control, 1, {
             flex: 1
           });
@@ -315,6 +316,14 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     // overridden
     _applyDescription: function() {
       return;
+    },
+
+    _applyFooter: function() {
+      debugger;
+      const footer = this.getChildControl("footer");
+      // const checkThis = ["tsr-rating", "project-status"];
+      const isVisible = this._mainLayout._getChildren().includes("tsr-rating" || "project-status")
+      footer.setVisibility(isVisible ? "visible" : "excluded");
     },
 
     __fitIconHeight: function() {
