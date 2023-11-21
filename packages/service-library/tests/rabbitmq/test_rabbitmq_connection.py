@@ -104,10 +104,10 @@ def random_rabbit_message(
 async def test_rabbit_client_with_paused_container(
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     async_docker_client: aiodocker.Docker,
 ):
-    rabbit_client = rabbitmq_client("pinger")
+    rabbit_client = create_rabbitmq_client("pinger")
     assert await rabbit_client.ping() is True
     exchange_name = random_exchange_name()
     message = random_rabbit_message()

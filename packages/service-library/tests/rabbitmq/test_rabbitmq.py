@@ -449,12 +449,12 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
 
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_unsubscribe_consumer(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
 ):
     exchange_name = f"{random_exchange_name()}"
-    client = rabbitmq_client("consumer")
+    client = create_rabbitmq_client("consumer")
     await client.subscribe(exchange_name, mocked_message_parser, exclusive_queue=False)
     # Unsubsribe just a consumer, the queue will be still there
     await client.unsubscribe_consumer(exchange_name)
