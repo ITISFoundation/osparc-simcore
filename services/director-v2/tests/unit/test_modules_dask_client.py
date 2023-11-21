@@ -32,11 +32,9 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from dask_task_models_library.container_tasks.protocol import (
-    ContainerCommands,
     ContainerEnvsDict,
-    ContainerImage,
     ContainerLabelsDict,
-    ContainerTag,
+    ContainerTaskParameters,
     LogFileUploadURL,
 )
 from distributed import Event, Scheduler
@@ -55,7 +53,6 @@ from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
-from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
@@ -523,17 +520,10 @@ async def test_send_computation_task(
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode,
         expected_annotations: dict[str, Any],
         expected_envs: ContainerEnvsDict,
         expected_labels: ContainerLabelsDict,
@@ -543,9 +533,9 @@ async def test_send_computation_task(
         task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
-        assert task_envs == expected_envs
-        assert task_labels == expected_labels
-        assert command == ["run"]
+        assert task_parameters.envs == expected_envs
+        assert task_parameters.labels == expected_labels
+        assert task_parameters.command == ["run"]
         event = distributed.Event(_DASK_EVENT_NAME)
         event.wait(timeout=25)
 
@@ -553,12 +543,10 @@ async def test_send_computation_task(
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
-    assert image_params.fake_tasks[node_id].node_requirements is not None
-    assert isinstance(
-        image_params.fake_tasks[node_id].node_requirements, NodeRequirements
-    )
-    assert image_params.fake_tasks[node_id].node_requirements.cpu
-    assert image_params.fake_tasks[node_id].node_requirements.ram
+    node_params = image_params.fake_tasks[node_id]
+    assert node_params.node_requirements is not None
+    assert node_params.node_requirements.cpu
+    assert node_params.node_requirements.ram
     assert "product_name" in comp_run_metadata
     assert "simcore_user_agent" in comp_run_metadata
     node_id_to_job_ids = await dask_client.send_computation_tasks(
@@ -649,17 +637,10 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -735,17 +716,10 @@ async def test_abort_computation_tasks(
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_remote_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -826,17 +800,10 @@ async def test_failed_task_returns_exceptions(
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_failing_sidecar_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         err_msg = "sadly we are failing to execute anything cause we are dumb..."
         raise ValueError(err_msg)
@@ -1099,17 +1066,10 @@ async def test_get_tasks_status(
     _DASK_EVENT_NAME = faker.pystr()
 
     def fake_remote_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
         start_event = Event(_DASK_EVENT_NAME)
@@ -1190,17 +1150,10 @@ async def test_dask_sub_handlers(
     _DASK_START_EVENT = "start"
 
     def fake_remote_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
         logs_pub = distributed.Pub(TaskLogEvent.topic_name())
@@ -1271,17 +1224,10 @@ async def test_get_cluster_details(
 
     # send a fct that uses resources
     def fake_sidecar_fct(
+        task_parameters: ContainerTaskParameters,
         docker_auth: DockerBasicAuth,
-        service_key: ContainerImage,
-        service_version: ContainerTag,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
         log_file_url: LogFileUploadURL,
-        command: ContainerCommands,
-        task_envs: ContainerEnvsDict,
-        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
-        boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
         # get the task data
@@ -1289,7 +1235,7 @@ async def test_get_cluster_details(
         task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
-        assert command == ["run"]
+        assert task_parameters.command == ["run"]
         event = distributed.Event(_DASK_EVENT_NAME)
         event.wait(timeout=25)
 
