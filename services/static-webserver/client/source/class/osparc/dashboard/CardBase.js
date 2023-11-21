@@ -217,6 +217,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    emptyWorkbench: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeEmptyWorkbench",
+      apply: "__applyEmptyWorkbench"
+    },
+
     updatable: {
       check: [null, "retired", "deprecated", "updatable"],
       nullable: false,
@@ -422,6 +430,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
+      }
       if (workbench === null) {
         // it is a service
         return;
@@ -454,6 +465,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__showBlockedCard(image, toolTipText);
           }
         });
+    },
+
+    __applyEmptyWorkbench: function(isEmpty) {
+      const emptyWorkbench = this.getChildControl("empty-workbench");
+      emptyWorkbench.setVisibility(isEmpty ? "visible" : "excluded");
     },
 
     __applyUpdatable: function(updatable) {
@@ -508,23 +524,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let border;
       switch (status) {
         case "STARTED":
-          icon = "@FontAwesome5Solid/spinner/12";
-          label = "Running";
+          icon = "@FontAwesome5Solid/spinner/8";
+          label = tr("Running");
           border = "info";
           break;
         case "SUCCESS":
-          icon = "@FontAwesome5Solid/check/12";
-          label = "Ran successfully";
+          icon = "@FontAwesome5Solid/check/8";
+          label = tr("Ran successfully");
           border = "success";
           break;
         case "ABORTED":
-          icon = "@FontAwesome5Solid/info/12";
-          label = "Run aborted";
+          icon = "@FontAwesome5Solid/info/8";
+          label = tr("Run aborted");
           border = "warning";
           break;
         case "FAILED":
-          icon = "@FontAwesome5Solid/times/12";
-          label = "Ran with error";
+          icon = "@FontAwesome5Solid/times/8";
+          label = tr("Ran with error");
           border = "error";
           break;
         default:
@@ -809,27 +825,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
-    // _getEmptyWorkbenchIcon: function() {
-    //   let toolTipText = this.tr("Empty") + " ";
-    //   if (this.isResourceType("study")) {
-    //     toolTipText += osparc.product.Utils.getStudyAlias();
-    //   } else if (this.isResourceType("template")) {
-    //     toolTipText += osparc.product.Utils.getTemplateAlias();
-    //   }
-    //   const control = new qx.ui.basic.Image().set({
-    //     source: "@FontAwesome5Solid/times-circle/14",
-    //     alignY: "bottom",
-    //     marginBottom: 10,
-    //     marginRight: 10,
-    //     toolTipText
-    //   });
-    //   control.addListener("tap", e => {
-    //     e.stopPropagation();
-    //     this.setValue(false);
-    //     this.fireDataEvent("emptyStudyClicked", this.getUuid());
-    //   }, this);
-    //   return control;
-    // },
+    _getEmptyWorkbenchIcon: function() {
+      let toolTipText = this.tr("Empty") + " ";
+      if (this.isResourceType("study")) {
+        toolTipText += osparc.product.Utils.getStudyAlias();
+      } else if (this.isResourceType("template")) {
+        toolTipText += osparc.product.Utils.getTemplateAlias();
+      }
+      const control = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/times-circle/14",
+        alignY: "bottom",
+        toolTipText
+      });
+      control.addListener("tap", e => {
+        e.stopPropagation();
+        this.setValue(false);
+        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+      }, this);
+      return control;
+    },
 
     /**
      * Event handler for the pointer over event.

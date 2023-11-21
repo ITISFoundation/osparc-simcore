@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     this.set({
       width: osparc.dashboard.ListButtonBase.ITEM_WIDTH,
       minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
-      allowGrowX: true
+      allowGrowX: true,
     });
 
     const layout = new qx.ui.layout.Grid();
@@ -68,11 +68,11 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       switch (id) {
         case "icon": {
           control = new osparc.ui.basic.Thumbnail(null, 40, this.self().ITEM_HEIGHT-2*5).set({
-            minHeight: 22,
+            minHeight: 40,
             minWidth: 40
           });
           control.getChildControl("image").set({
-            anonymous: true
+            anonymous: true,
           });
           this._add(control, {
             row: 0,

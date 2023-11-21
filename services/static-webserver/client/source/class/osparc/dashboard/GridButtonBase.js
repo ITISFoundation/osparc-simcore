@@ -54,6 +54,20 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       bottom: 0,
       left: 0
     });
+
+    const fgrid = new qx.ui.layout.Grid();
+    fgrid.setSpacing(2);
+    fgrid.setRowFlex(2, 1);
+    fgrid.setColumnFlex(0, 1);
+
+    const footerLayout = this._footerLayout = new qx.ui.container.Composite().set({
+      backgroundColor: "background-card-overlay",
+      padding: this.self().PADDING - 2,
+      maxWidth: this.self().ITEM_WIDTH,
+      maxHeight: this.self().ITEM_HEIGHT
+    });
+    footerLayout.setLayout(fgrid);
+    this._mainLayout.add(footerLayout, this.self().POS.FOOTER);
   },
 
   statics: {
@@ -83,16 +97,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         rowSpan: 1,
         colSpan: 4
       },
-      STATUS: {
-        row: 2,
-        column: 0
-      },
       TAGS: {
         row: 3,
-        column: 0
-      },
-      TSR: {
-        row: 4,
         column: 0
       },
       VIEWER_MODE: {
@@ -101,18 +107,41 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         rowSpan: 2,
         colSpan: 1
       },
-      UPDATES: {
-        row: 3,
-        column: 2,
-        rowSpan: 2,
-        colSpan: 1
-      },
       FOOTER: {
         row: 4,
         column: 0,
         rowSpan: 1,
         colSpan: 4
-      }
+      },
+    },
+    FPOS: {
+      TITLE: {
+        row: 0,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      },
+      STATUS: {
+        row: 1,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      },
+      TSR: {
+        row: 2,
+        column: 0,
+        colSpan: 2
+      },
+      HITS: {
+        row: 2,
+        column: 2,
+        colSpan: 2
+      },
+      UPDATES: {
+        row: 0,
+        column: 3,
+        colSpan: 1
+      },
     }
   },
 
@@ -123,6 +152,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
   members: {
     _mainLayout: null,
+    _footerLayout: null,
 
     // overridden
     _createChildControlImpl: function(id) {
@@ -148,25 +178,12 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             allowGrowY: true,
             allowGrowX: true,
             allowShrinkX: true,
-            padding: this.self().PADDING,
+            padding: this.self().PADDING
           });
           control.getContentElement().setStyles({
             "border-width": 0
           });
           this._mainLayout.add(control, this.self().POS.THUMBNAIL);
-          break;
-        case "footer":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            visibility: "excluded",
-            anonymous: true,
-            allowGrowX: true,
-            allowShrinkX: false,
-            padding: this.self().PADDING,
-            backgroundColor: "background-card-overlay"
-          });
-          control.setAlignY("bottom");
-          this._applyFooter();
-          this._mainLayout.add(control, this.self().POS.FOOTER);
           break;
         case "title-row":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
@@ -194,10 +211,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          layout = this.getChildControl("header");
-          layout.addAt(control, 1, {
-            flex: 1
-          });
+          this._footerLayout.add(control, this.self().FPOS.TITLE);
           break;
         case "subtitle-icon": {
           control = new qx.ui.basic.Image().set({
@@ -242,16 +256,15 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          layout = this.getChildControl("footer");
-          layout.add(control);
+          this._footerLayout.add(control, this.self().FPOS.STATUS);
           break;
         case "project-status-icon":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
             textColor: "status_icon",
-            height: 20,
-            width: 20,
-            padding: 3
+            height: 12,
+            width: 12,
+            padding: 1
           });
           layout = this.getChildControl("project-status");
           layout.addAt(control, 0);
@@ -318,21 +331,13 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       return;
     },
 
-    _applyFooter: function() {
-      debugger;
-      const footer = this.getChildControl("footer");
-      // const checkThis = ["tsr-rating", "project-status"];
-      const isVisible = this._mainLayout._getChildren().includes("tsr-rating" || "project-status")
-      footer.setVisibility(isVisible ? "visible" : "excluded");
-    },
-
     __fitIconHeight: function() {
       const iconLayout = this.getChildControl("icon");
       let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom() - 5;
       const checkThis = [
         "title",
-        "subtitle",
-        "tsr-rating",
+        "body",
+        "footer",
         "tags"
       ];
       // eslint-disable-next-line no-underscore-dangle

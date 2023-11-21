@@ -47,10 +47,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       switch (id) {
         case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
-          footerLayout = this.getChildControl("footer");
-          footerLayout.addAt(control, 1, {
-            flex: 1
-          });
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.TSR);
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
@@ -58,31 +55,31 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
+        case "empty-workbench": {
+          control = this._getEmptyWorkbenchIcon();
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
+          break;
+        }
         case "update-study":
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/16",
             visibility: "excluded",
-            alignY: "bottom",
-            marginRight: 10,
-            marginBottom: 10
+            alignY: "middle",
+            alignX: "center"
           });
           osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
           break;
         case "hits-service":
           control = new qx.ui.basic.Label().set({
             toolTipText: this.tr("Number of times you instantiated it"),
             alignY: "bottom"
           });
-          footerLayout = this.getChildControl("footer");
-          footerLayout.addAt(control, 1, {
-            flex: 1
-          });
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
           break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true,
-            padding: 10
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
