@@ -374,20 +374,20 @@ def image_params(
 @pytest.fixture
 def _mocked_node_ports(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.dask_client.create_node_ports",
+        "simcore_service_director_v2.modules.dask_client.dask_utils.create_node_ports",
         return_value=None,
     )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dask_client.compute_input_data",
+        "simcore_service_director_v2.modules.dask_client.dask_utils.compute_input_data",
         return_value=TaskInputData.parse_obj({}),
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dask_client.compute_output_data_schema",
+        "simcore_service_director_v2.modules.dask_client.dask_utils.compute_output_data_schema",
         return_value=TaskOutputDataSchema.parse_obj({}),
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dask_client.compute_service_log_file_upload_link",
+        "simcore_service_director_v2.modules.dask_client.dask_utils.compute_service_log_file_upload_link",
         return_value=parse_obj_as(AnyUrl, "file://undefined"),
     )
 
