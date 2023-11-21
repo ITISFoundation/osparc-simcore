@@ -9,12 +9,11 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.api.dependencies.authentication import (
-    get_current_user_id,
-)
-from simcore_service_api_server.api.dependencies.services import get_api_client
-from simcore_service_api_server.models.schemas.jobs import JobLog
-from simcore_service_api_server.services.director_v2 import DirectorV2Api
+
+from ...models.schemas.jobs import JobLog
+from ...services.director_v2 import DirectorV2Api
+from ..dependencies.authentication import get_current_user_id
+from ..dependencies.services import get_api_client
 
 _NEW_LINE: Final[str] = "\n"
 
@@ -26,7 +25,7 @@ def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQCl
 
 class LogListener:
     _queue: Queue[JobLog]
-    _queu_name: str
+    _queue_name: str
     _rabbit_consumer: RabbitMQClient
     _project_id: ProjectID
     _user_id: PositiveInt
@@ -50,17 +49,17 @@ class LogListener:
     ):
         self._project_id = project_id
 
-        self._queu_name = await self._rabbit_consumer.subscribe(
+        self._queue_name = await self._rabbit_consumer.subscribe(
             LoggerRabbitMessage.get_channel_name(),
-            self._add_logs_to_queu,
+            self._add_logs_to_queue,
             exclusive_queue=True,
             topics=[f"{self._project_id}.*"],
         )
 
     async def stop_listening(self):
-        await self._rabbit_consumer.unsubscribe(self._queu_name)
+        await self._rabbit_consumer.unsubscribe(self._queue_name)
 
-    async def _add_logs_to_queu(self, data: bytes):
+    async def _add_logs_to_queue(self, data: bytes):
         got = LoggerRabbitMessage.parse_raw(data)
         item = JobLog(
             job_id=got.project_id,

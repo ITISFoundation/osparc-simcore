@@ -16,7 +16,6 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
 from starlette.background import BackgroundTask
 
 from ...models.basic_types import VersionStr
@@ -33,6 +32,7 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.rabbitmq import LogListener
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
