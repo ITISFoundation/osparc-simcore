@@ -1,11 +1,11 @@
+from aws_library.ec2.models import EC2InstanceData
 from fastapi import FastAPI
-from models_library.rpc_schemas_clusters_keeper.clusters import OnDemandCluster
+from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 
 from ..core.errors import Ec2InstanceNotFoundError
-from ..models import EC2InstanceData
 from ..modules import clusters
 from ..modules.dask import ping_scheduler
 from ..modules.redis import get_redis_client

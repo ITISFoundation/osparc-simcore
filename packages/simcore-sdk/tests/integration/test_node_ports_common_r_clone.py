@@ -353,7 +353,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
-        r_clone.S3_PARALLELISM * 3,
+        r_clone_settings.R_CLONE_OPTION_TRANSFERS * 3,
         parse_obj_as(ByteSize, "1kib"),
     )
     assert len(generated_file_names) > 0

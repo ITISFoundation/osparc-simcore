@@ -4,12 +4,11 @@
 # pylint: disable=too-many-arguments
 
 import json
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_invitations.core.application import create_app
 
@@ -26,8 +25,8 @@ def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
 
 @pytest.fixture(params=["username", "password", "both", None])
 def invalid_basic_auth(
-    request: FixtureRequest, fake_user_name: str, fake_password: str
-) -> Optional[httpx.BasicAuth]:
+    request: pytest.FixtureRequest, fake_user_name: str, fake_password: str
+) -> httpx.BasicAuth | None:
     invalid_case = request.param
 
     if invalid_case is None:

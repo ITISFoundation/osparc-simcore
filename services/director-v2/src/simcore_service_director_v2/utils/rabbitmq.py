@@ -67,7 +67,7 @@ async def publish_service_stopped_metrics(
     await rabbitmq_client.publish(message.channel_name, message)
 
 
-async def publish_service_resource_tracking_started(  # noqa: PLR0913
+async def publish_service_resource_tracking_started(  # pylint: disable=too-many-arguments # noqa: PLR0913
     rabbitmq_client: RabbitMQClient,
     service_run_id: str,
     *,
@@ -135,6 +135,7 @@ async def publish_service_resource_tracking_heartbeat(
 
 async def publish_service_log(
     rabbitmq_client: RabbitMQClient,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -154,6 +155,7 @@ async def publish_service_log(
 
 async def publish_service_progress(
     rabbitmq_client: RabbitMQClient,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,

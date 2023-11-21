@@ -32,7 +32,7 @@ def test_make_docker_compose_meta(
     """
     docker-compose-build.yml: $(metatada)
         # Injects metadata from $< as labels
-        osparc-service-integrator compose --metadata $< --to-spec-file $@
+        simcore-service-integrator compose --metadata $< --to-spec-file $@
     """
 
     result = run_program_with_args(

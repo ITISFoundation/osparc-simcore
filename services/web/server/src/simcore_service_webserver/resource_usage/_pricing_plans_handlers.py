@@ -67,11 +67,19 @@ async def get_pricing_plan_unit(request: web.Request):
         _GetPricingPlanUnitPathParams, request
     )
 
-    pricing_unit_get: PricingUnitGet = await api.get_pricing_plan_unit(
+    pricing_unit_get = await api.get_pricing_plan_unit(
         app=request.app,
         product_name=req_ctx.product_name,
         pricing_plan_id=path_params.pricing_plan_id,
         pricing_unit_id=path_params.pricing_unit_id,
     )
 
-    return envelope_json_response(pricing_unit_get, web.HTTPOk)
+    webserver_pricing_unit_get = PricingUnitGet(
+        pricing_unit_id=pricing_unit_get.pricing_unit_id,
+        unit_name=pricing_unit_get.unit_name,
+        unit_extra_info=pricing_unit_get.unit_extra_info,
+        current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
+        default=pricing_unit_get.default,
+    )
+
+    return envelope_json_response(webserver_pricing_unit_get, web.HTTPOk)

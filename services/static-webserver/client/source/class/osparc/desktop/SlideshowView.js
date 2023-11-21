@@ -124,6 +124,14 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       nullable: false
     },
 
+    maximized: {
+      check: "Boolean",
+      init: null,
+      nullable: false,
+      apply: "__applyMaximized",
+      event: "changeMaximized"
+    },
+
     pageContext: {
       check: ["guided", "app"],
       nullable: false,
@@ -210,8 +218,8 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             iFrame
           ].forEach(widget => {
             if (widget) {
-              widget.addListener("maximize", () => this.__maximizeIframe(true), this);
-              widget.addListener("restore", () => this.__maximizeIframe(false), this);
+              widget.addListener("maximize", () => this.setMaximized(true), this);
+              widget.addListener("restore", () => this.setMaximized(false), this);
             }
           });
         }
@@ -334,7 +342,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       this.getStudy().getUi().setCurrentNodeId(nodeId);
     },
 
-    __maximizeIframe: function(maximize) {
+    __applyMaximized: function(maximized) {
       [
         this.__slideshowToolbar,
         this.__prevButton,
@@ -342,10 +350,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__runButton,
         this.__nodeView.getHeaderLayout(),
         this.__nodeView.getLoggerPanel()
-      ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
+      ].forEach(widget => widget.setVisibility(maximized ? "excluded" : "visible"));
 
       this.__nodeView.set({
-        margin: maximize ? 0 : this.self().CARD_MARGIN
+        margin: maximized ? 0 : this.self().CARD_MARGIN
       });
     },
 

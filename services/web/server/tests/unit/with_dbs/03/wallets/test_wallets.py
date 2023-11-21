@@ -11,10 +11,14 @@ from unittest import mock
 
 import arrow
 import pytest
-from aiohttp import web
+from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
+)
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletGetWithAvailableCredits,
 )
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
@@ -22,7 +26,12 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
+from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.wallets._events import (
+    _WALLET_DESCRIPTION_TEMPLATE,
+    _WALLET_NAME_TEMPLATE,
+)
 
 
 @pytest.fixture
@@ -52,20 +61,20 @@ async def test_wallets_full_workflow(
 
     # list user wallets
     url = client.app.router["list_wallets"].url_for()
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert data == []
 
     # create a new wallet
     url = client.app.router["create_wallet"].url_for()
     resp = await client.post(
-        f"{url}", json={"name": "My first wallet", "description": "Custom description"}
+        url.path, json={"name": "My first wallet", "description": "Custom description"}
     )
     added_wallet, _ = await assert_status(resp, web.HTTPCreated)
 
     # list user wallets
     url = client.app.router["list_wallets"].url_for()
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
     assert data[0]["walletId"] == added_wallet["walletId"]
@@ -82,7 +91,7 @@ async def test_wallets_full_workflow(
     url = client.app.router["get_wallet"].url_for(
         wallet_id=f"{added_wallet['walletId']}"
     )
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert data["walletId"] == added_wallet["walletId"]
 
@@ -91,7 +100,7 @@ async def test_wallets_full_workflow(
         wallet_id=f"{added_wallet['walletId']}"
     )
     resp = await client.put(
-        f"{url}",
+        url.path,
         json={
             "name": "My first wallet",
             "description": None,
@@ -109,7 +118,7 @@ async def test_wallets_full_workflow(
 
     # list user wallets and check the updated wallet
     url = client.app.router["list_wallets"].url_for()
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
     assert data[0]["walletId"] == added_wallet["walletId"]
@@ -121,10 +130,10 @@ async def test_wallets_full_workflow(
 
     # add two more wallets
     url = client.app.router["create_wallet"].url_for()
-    resp = await client.post(f"{url}", json={"name": "My second wallet"})
+    resp = await client.post(url.path, json={"name": "My second wallet"})
     await assert_status(resp, web.HTTPCreated)
     resp = await client.post(
-        f"{url}",
+        url.path,
         json={
             "name": "My third wallet",
             "description": "Custom description",
@@ -135,7 +144,7 @@ async def test_wallets_full_workflow(
 
     # list user wallets
     url = client.app.router["list_wallets"].url_for()
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 3
 
@@ -146,7 +155,7 @@ async def test_wallets_full_workflow(
             wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.put(
-            f"{url}",
+            url.path,
             json={
                 "name": "I dont have permisions to change this wallet",
                 "description": "-",
@@ -162,7 +171,7 @@ async def test_wallets_full_workflow(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
-async def test_auto_wallet_on_user_registration_confirmation(
+async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: type[web.HTTPException],
@@ -173,26 +182,73 @@ async def test_auto_wallet_on_user_registration_confirmation(
 ):
     assert client.app
 
-    mocker.patch(
+    product = get_product(client.app, osparc_product_name)
+    assert product.name == osparc_product_name
+
+    mock_add_credits_to_wallet = mocker.patch(
         "simcore_service_webserver.wallets._events.add_credits_to_wallet",
-        autospec=True,
+        spec=True,
         return_value=None,
     )
 
     url = client.app.router["list_wallets"].url_for()
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 0
 
     await notify_user_confirmation(
         client.app,
         user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        extra_credits=10,
+        product_name=product.name,
+        extra_credits_in_usd=10,
     )
 
-    resp = await client.get(f"{url}")
+    resp = await client.get(url.path)
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
-
+    wallet = WalletGet(**data[0])
+    user_name = logged_user["name"].capitalize()
+    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user_name)
+    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
+    assert mock_add_credits_to_wallet.called == product.is_payment_enabled
+
+    # Test whether default wallet was set in user preferences
+    url = client.app.router["get_default_wallet"].url_for()
+    resp = await client.get(url.path)
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data
+    wallet = WalletGetWithAvailableCredits(**data)
+    assert wallet.available_credits > Decimal(0)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+async def test_get_default_wallet_not_found(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: type[web.HTTPException],
+    wallets_clean_db: AsyncIterator[None],
+    mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
+):
+    url = client.app.router["get_default_wallet"].url_for()
+    resp = await client.get(url.path)
+    await assert_status(resp, web.HTTPNotFound)
+
+
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role < UserRole.USER]
+)
+async def test_get_default_wallet_access_rights(
+    client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
+):
+    url = client.app.router["get_default_wallet"].url_for()
+    response = await client.get(url.path)
+
+    with pytest.raises(ClientResponseError) as err_info:
+        response.raise_for_status()
+
+    error = err_info.value
+    assert error.status in (
+        web.HTTPUnauthorized.status_code,
+        web.HTTPForbidden.status_code,
+    ), f"{error}"

@@ -4,6 +4,7 @@
 
 import asyncio
 import collections
+import contextlib
 import datetime
 import logging
 import re
@@ -12,7 +13,12 @@ from pathlib import Path
 from typing import Final, cast
 
 import yaml
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from aws_library.ec2.models import EC2InstanceData, Resources
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerGenericTag,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
@@ -20,14 +26,14 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, ValidationError, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
-from ..models import Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -49,22 +55,29 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
+_NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
 
 
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
-    nodes = parse_obj_as(
+    return parse_obj_as(
         list[Node],
         await docker_client.nodes.list(
             filters={"node.label": [f"{label}=true" for label in node_labels]}
         ),
     )
-    return nodes
+
+
+async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
+    return parse_obj_as(
+        list[Node],
+        await docker_client.nodes.list(filters={"role": ["worker"]}),
+    )
 
 
 async def remove_nodes(
-    docker_client: AutoscalingDocker, nodes: list[Node], force: bool = False
+    docker_client: AutoscalingDocker, *, nodes: list[Node], force: bool = False
 ) -> list[Node]:
     """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 
@@ -94,18 +107,24 @@ async def remove_nodes(
 
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-    if (
-        not task.Status
-        or not task.Status.State
-        or not task.Status.Message
-        or not task.Status.Err
+    with log_context(
+        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task}"
     ):
-        return False
-    return (
-        task.Status.State == TaskState.pending
-        and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
-        and _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
-    )
+        if (
+            not task.Status
+            or not task.Status.State
+            or not task.Status.Message
+            or not task.Status.Err
+        ):
+            return False
+        return (
+            task.Status.State == TaskState.pending
+            and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
+            and (
+                _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+                or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.Status.Err
+            )
+        )
 
 
 async def _associated_service_has_no_node_placement_contraints(
@@ -171,8 +190,12 @@ async def pending_service_tasks_with_insufficient_resources(
     )
 
     sorted_tasks = sorted(tasks, key=_by_created_dt)
+    logger.debug(
+        "found following tasks that might trigger autoscaling: %s",
+        [task.ID for task in tasks],
+    )
 
-    pending_tasks = [
+    return [
         task
         for task in sorted_tasks
         if (
@@ -182,8 +205,6 @@ async def pending_service_tasks_with_insufficient_resources(
             )
         )
     ]
-
-    return pending_tasks
 
 
 def get_node_total_resources(node: Node) -> Resources:
@@ -249,6 +270,40 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
     return Resources(cpus=0, ram=ByteSize(0))
 
 
+async def get_task_instance_restriction(
+    docker_client: AutoscalingDocker, task: Task
+) -> InstanceTypeType | None:
+    with contextlib.suppress(ValidationError):
+        assert task.ServiceID  # nosec
+        service_inspect = parse_obj_as(
+            Service, await docker_client.services.inspect(task.ServiceID)
+        )
+        assert service_inspect.Spec  # nosec
+        assert service_inspect.Spec.TaskTemplate  # nosec
+
+        if (
+            not service_inspect.Spec.TaskTemplate.Placement
+            or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+        ):
+            return None
+        # parse the placement contraints
+        service_placement_constraints = (
+            service_inspect.Spec.TaskTemplate.Placement.Constraints
+        )
+        # should be node.labels.{}
+        node_label_to_find = (
+            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=="
+        )
+        for constraint in service_placement_constraints:
+            if constraint.startswith(node_label_to_find):
+                return parse_obj_as(
+                    InstanceTypeType, constraint.removeprefix(node_label_to_find)
+                )
+
+        return None
+    return None
+
+
 def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:
     total = Resources.create_as_empty()
     for t in tasks:
@@ -294,7 +349,7 @@ async def compute_cluster_used_resources(
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in Resources.__fields__.keys()})
+    counter = collections.Counter({k: 0 for k in Resources.__fields__})
     for result in list_of_used_resources:
         counter.update(result.dict())
 
@@ -318,16 +373,14 @@ async def get_docker_swarm_join_bash_command() -> str:
     await asyncio.wait_for(process.wait(), timeout=_COMMAND_TIMEOUT_S)
     assert process.returncode is not None  # nosec
     if process.returncode > 0:
-        raise RuntimeError(
-            f"unexpected error running '{' '.join(command)}': {stderr.decode()}"
-        )
+        msg = f"unexpected error running '{' '.join(command)}': {stderr.decode()}"
+        raise RuntimeError(msg)
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         capture = match.groupdict()
         return f"{capture['command']} --availability=drain {capture['token']} {capture['address']}"
-    raise RuntimeError(
-        f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
-    )
+    msg = f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
+    raise RuntimeError(msg)
 
 
 def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) -> str:
@@ -469,12 +522,18 @@ async def set_node_availability(
     )
 
 
-def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, str]:
+def get__new_node_docker_tags(
+    app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
+) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    return {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-    } | {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-    }
+    return (
+        {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        }
+        | {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        }
+        | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+    )

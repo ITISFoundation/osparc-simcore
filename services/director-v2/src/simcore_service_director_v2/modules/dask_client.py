@@ -19,6 +19,7 @@ from http.client import HTTPException
 from typing import Any
 
 import distributed
+from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
@@ -42,6 +43,7 @@ from models_library.api_schemas_directorv2.clusters import ClusterDetails, Sched
 from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.resource_tracker import HardwareInfo
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -209,11 +211,12 @@ class DaskClient:
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
         metadata: RunMetadataDict,
+        hardware_info: HardwareInfo,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _comp_sidecar_fct(  # noqa: PLR0913
+        def _comp_sidecar_fct(  # pylint: disable=too-many-arguments # noqa: PLR0913
             *,
             docker_auth: DockerBasicAuth,
             service_key: ContainerImage,
@@ -260,6 +263,10 @@ class DaskClient:
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
+            if hardware_info.aws_ec2_instances:
+                dask_resources[
+                    f"{DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY}:{hardware_info.aws_ec2_instances[0]}"
+                ] = 1
 
             check_scheduler_is_still_the_same(
                 self.backend.scheduler_id, self.backend.client

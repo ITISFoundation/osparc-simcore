@@ -38,6 +38,8 @@ async function runTutorial() {
       "log.tgz"
     ];
     await tutorial.checkNodeOutputs(1, outFiles);
+
+    await tutorial.checkNodeLogsFunctional();
   }
   catch(err) {
     await tutorial.setTutorialFailed(true);

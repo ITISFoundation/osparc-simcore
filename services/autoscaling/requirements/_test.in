@@ -26,4 +26,5 @@ pytest-cov
 pytest-mock
 pytest-runner
 python-dotenv
+pytest-icdiff
 respx

@@ -332,13 +332,13 @@ async def get_service_pricing_plan(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
-    service_pricing_plan: ServicePricingPlanGet = (
-        await get_default_service_pricing_plan(
-            app=request.app,
-            product_name=ctx.product_name,
-            service_key=path_params.service_key,
-            service_version=path_params.service_version,
-        )
+    service_pricing_plan = await get_default_service_pricing_plan(
+        app=request.app,
+        product_name=ctx.product_name,
+        service_key=path_params.service_key,
+        service_version=path_params.service_version,
     )
 
-    return envelope_json_response(service_pricing_plan)
+    return envelope_json_response(
+        parse_obj_as(ServicePricingPlanGet, service_pricing_plan)
+    )

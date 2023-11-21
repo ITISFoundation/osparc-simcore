@@ -46,6 +46,7 @@ SERVICES_NAMES_TO_BUILD := \
 	osparc-gateway-server \
 	payments \
 	resource-usage-tracker \
+	dynamic-scheduler \
   service-integration \
   static-webserver \
   storage \
@@ -70,6 +71,7 @@ export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERS
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
+export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
@@ -254,6 +256,17 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 		services/docker-compose.local.yml \
 		> $@
 
+
+.stack-simcore-development-frontend.yml: .env $(docker-compose-configs)
+	# Creating config for stack with 'local/{service}:production' (except of static-webserver -> static-webserver:development) to $@
+	@export DOCKER_REGISTRY=local && \
+	export DOCKER_IMAGE_TAG=production && \
+	scripts/docker/docker-compose-config.bash -e $< \
+		services/docker-compose.yml \
+		services/docker-compose.local.yml \
+		services/docker-compose.devel-frontend.yml \
+		> $@
+
 .stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
 	@scripts/docker/docker-compose-config.bash -e .env \
@@ -342,6 +355,15 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
+up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every service in production except static-webserver. For front-end development
+	# Start compile+watch front-end container [front-end]
+	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
+	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
+	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
+	@$(MAKE_C) services/static-webserver/client follow-dev-logs
+
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
@@ -375,9 +397,11 @@ down: ## Stops and removes stack
 	# Removing client containers (if any)
 	-@$(MAKE_C) services/static-webserver/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
+ifneq ($(wildcard .stack-*), )
 	-@rm $(wildcard .stack-*)
+endif
 	# Removing local registry if any
-	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
+	-@docker ps --all --quiet --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs --no-run-if-empty docker rm
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -549,6 +573,7 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/payments $@
+	@$(MAKE_C) services/dynamic-scheduler $@
 	@$(MAKE_C) services/storage $@
 	@$(MAKE_C) services/web/server $@
 

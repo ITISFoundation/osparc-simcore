@@ -33,7 +33,6 @@ qx.Class.define("osparc.Application", {
   members: {
     __current: null,
     __mainPage: null,
-    __openViewAfterLogin: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -99,8 +98,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __preloadCalls: async function() {
-      await osparc.data.Resources.get("config");
-      await osparc.data.Resources.get("statics");
+      await osparc.store.Store.getInstance().preloadCalls();
     },
 
     __initRouting: function() {
@@ -122,7 +120,6 @@ qx.Class.define("osparc.Application", {
     },
 
     __rerouteNav: function(urlFragment) {
-      this.__openViewAfterLogin = null;
       const page = urlFragment.nav[0];
       switch (page) {
         case "study": {
@@ -176,15 +173,6 @@ qx.Class.define("osparc.Application", {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__restart();
           }
-          break;
-        }
-        case "wallets": {
-          // Route: /#/wallets
-          this.__openViewAfterLogin = "wallets";
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          osparc.auth.Manager.getInstance().validateToken()
-            .then(() => this.__loadMainPage())
-            .catch(() => this.__loadLoginPage());
           break;
         }
         case "error": {
@@ -321,7 +309,7 @@ qx.Class.define("osparc.Application", {
         case "s4llite":
         case "s4lacad":
         case "s4ldesktop":
-        case "s4lacaddesktop":
+        case "s4ldesktopacad":
           view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;
@@ -342,11 +330,6 @@ qx.Class.define("osparc.Application", {
 
     __loadMainPage: async function(studyId = null) {
       // logged in
-
-      // Invalidate the entire cache
-      osparc.store.Store.getInstance().invalidateEntireCache();
-      await this.__preloadCalls();
-      await osparc.data.Resources.get("permissions");
       const profile = await osparc.data.Resources.getOne("profile");
       if (profile) {
         this.__connectWebSocket();
@@ -394,16 +377,18 @@ qx.Class.define("osparc.Application", {
           osparc.store.Store.getInstance().setCurrentStudyId(studyId);
         }
 
-        const mainPage = this.__mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
+        let mainPage = null;
+        if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
+          mainPage = new osparc.desktop.MainPageDesktop();
+        } else {
+          mainPage = new osparc.desktop.MainPage();
+        }
+        this.__mainPage = mainPage;
         this.__loadView(mainPage);
       }
     },
 
     __loadNodeViewerPage: async function(studyId, viewerNodeId) {
-      // Invalidate the entire cache
-      osparc.store.Store.getInstance().invalidateEntireCache();
-      await this.__preloadCalls();
-
       this.__connectWebSocket();
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
     },
@@ -443,11 +428,15 @@ qx.Class.define("osparc.Application", {
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.announcement.Tracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
-      if (this.__mainPage) {
+      if ("closeEditor" in this.__mainPage) {
         this.__mainPage.closeEditor();
       }
       osparc.utils.Utils.closeHangingWindows();
-      osparc.store.Store.getInstance().dispose();
+
+      // Remove all bindings and Invalidate the entire cache
+      const store = osparc.store.Store.getInstance();
+      store.removeAllBindings();
+      store.invalidateEntireCache();
 
       // back to the dark theme to make pretty forms
       const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();

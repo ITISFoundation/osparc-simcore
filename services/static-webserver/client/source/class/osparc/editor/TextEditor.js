@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -14,11 +14,6 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
-
-/**
- * Window that shows a text area with a given input text.
- * It can be used to dit a longer texts
- */
 
 qx.Class.define("osparc.editor.TextEditor", {
   extend: qx.ui.core.Widget,
@@ -31,8 +26,7 @@ qx.Class.define("osparc.editor.TextEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(2));
 
-    this.__textArea = this.getChildControl("text-area");
-    this.getChildControl("preview");
+    this.getChildControl("text-area");
     if (initText) {
       this.setText(initText);
     }
@@ -55,8 +49,6 @@ qx.Class.define("osparc.editor.TextEditor", {
   },
 
   members: {
-    __textArea: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -90,32 +82,10 @@ qx.Class.define("osparc.editor.TextEditor", {
             flex: 1
           });
           const subtitle = this.getChildControl("subtitle").set({
-            value: this.tr("Supports Markdown")
+            value: this.tr("Supports HTML")
           });
           writePage.add(subtitle);
           tabs.add(writePage);
-          break;
-        }
-        case "preview": {
-          control = new osparc.ui.markdown.Markdown().set({
-            padding: 3,
-            noMargin: true
-          });
-          const textArea = this.getChildControl("text-area");
-          textArea.bind("value", control, "value");
-          const tabs = this.getChildControl("tabs");
-          const previewPage = new qx.ui.tabview.Page(this.tr("Preview")).set({
-            layout: new qx.ui.layout.VBox(5)
-          });
-          previewPage.getChildControl("button").getChildControl("label").set({
-            font: "text-13"
-          });
-          const scrollContainer = new qx.ui.container.Scroll();
-          scrollContainer.add(control);
-          previewPage.add(scrollContainer, {
-            flex: 1
-          });
-          tabs.add(previewPage);
           break;
         }
         case "subtitle":
@@ -143,7 +113,7 @@ qx.Class.define("osparc.editor.TextEditor", {
           const buttons = this.getChildControl("buttons");
           control = new qx.ui.form.Button(this.tr("Save"));
           control.addListener("execute", () => {
-            const newText = this.__textArea.getValue();
+            const newText = this.getChildControl("text-area").getValue();
             this.fireDataEvent("textChanged", newText);
           }, this);
           buttons.add(control);

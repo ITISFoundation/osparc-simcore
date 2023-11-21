@@ -5,6 +5,7 @@ from typing import Any, Final
 
 import yaml
 from models_library.basic_types import PortInt
+from models_library.osparc_variable_identifier import raise_if_unresolved
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -13,7 +14,7 @@ from models_library.service_settings_nat_rule import NATRule
 from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
-from ...core.settings import DynamicSidecarEgressSettings
+from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
 
@@ -163,7 +164,7 @@ def _get_egress_proxy_network_name(egress_proxy_name: str) -> str:
 def _add_egress_proxy_network(
     service_spec: ComposeSpecLabelDict, egress_proxy_name: str
 ) -> None:
-    networks = service_spec.get("networks")
+    networks = service_spec.get("networks", {})
     networks[_get_egress_proxy_network_name(egress_proxy_name)] = {"internal": True}
     service_spec["networks"] = networks
 
@@ -171,7 +172,7 @@ def _add_egress_proxy_network(
 def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
     network_with_internet: str,
-    egress_proxy_settings: DynamicSidecarEgressSettings,
+    egress_proxy_settings: EgressProxySettings,
     egress_proxy_name: str,
 ) -> dict[str, Any]:
     network_aliases: set[str] = {x[0].hostname for x in egress_proxy_rules}
@@ -219,9 +220,13 @@ def _get_egress_proxy_dns_port_rules(
                 port_to_hostname[port] = OrderedSet()
             port_to_hostname[port].add(
                 _HostData(
-                    hostname=host_permit_list_policy.hostname,
-                    dns_resolver_address=host_permit_list_policy.dns_resolver.address,
-                    dns_resolver_port=host_permit_list_policy.dns_resolver.port,
+                    hostname=raise_if_unresolved(host_permit_list_policy.hostname),
+                    dns_resolver_address=raise_if_unresolved(
+                        host_permit_list_policy.dns_resolver.address
+                    ),
+                    dns_resolver_port=raise_if_unresolved(
+                        host_permit_list_policy.dns_resolver.port
+                    ),
                 )
             )
 
@@ -257,7 +262,7 @@ def _allow_outgoing_internet(
 def add_egress_configuration(
     service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
-    egress_proxy_settings: DynamicSidecarEgressSettings,
+    egress_proxy_settings: EgressProxySettings,
 ) -> None:
     """
     Each service defines rules to allow certain containers to gain access
@@ -304,7 +309,10 @@ def add_egress_configuration(
 
                 for port in host_permit_list_policy.iter_tcp_ports():
                     hostname_port_to_container_name[
-                        (host_permit_list_policy.hostname, port)
+                        (
+                            raise_if_unresolved(host_permit_list_policy.hostname),
+                            port,
+                        )
                     ] = container_name
 
         # assemble proxy configuration based on all HostPermitListPolicy entries

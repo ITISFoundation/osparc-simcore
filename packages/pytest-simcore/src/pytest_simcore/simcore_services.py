@@ -20,7 +20,8 @@ from yarl import URL
 
 from .helpers.constants import MINUTE
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_host import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
+    "dynamic-scheduler": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",

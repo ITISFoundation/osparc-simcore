@@ -213,11 +213,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_ANNOUNCEMENTS: bool = False
+    WEBSERVER_API_KEYS: bool = True
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
-    WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
+    WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True

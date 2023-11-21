@@ -25,7 +25,7 @@ simcore-service-invitations --help
 
 Create ``.env`` file
 ```
-simcore-service-invitations generate-dotenv --auto-password > .env
+simcore-service-invitations echo-dotenv --auto-password > .env
 set -o allexport; source .env; set +o allexport
 ```
 and modify the ``.env`` if needed
@@ -68,7 +68,7 @@ docker run -it itisfoundation/invitations:release-github-latest simcore-service-
 
 Create ``.env`` file
 ```
-docker run -it itisfoundation/invitations:release-github-latest simcore-service-invitations generate-dotenv --auto-password > .env
+docker run -it itisfoundation/invitations:release-github-latest simcore-service-invitations echo-dotenv --auto-password > .env
 ```
 and modify the ``.env`` if needed
 

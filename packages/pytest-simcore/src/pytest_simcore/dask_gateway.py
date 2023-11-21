@@ -10,6 +10,7 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed import Client
+from faker import Faker
 
 
 @pytest.fixture
@@ -71,16 +72,30 @@ async def local_dask_gateway_server(
 
 
 @pytest.fixture
+def gateway_username(faker: Faker) -> str:
+    return faker.user_name()
+
+
+@pytest.fixture
+def gateway_auth(
+    local_dask_gateway_server: DaskGatewayServer, gateway_username: str
+) -> auth.BasicAuth:
+    return auth.BasicAuth(gateway_username, local_dask_gateway_server.password)
+
+
+@pytest.fixture
 async def dask_gateway(
-    local_dask_gateway_server: DaskGatewayServer,
+    local_dask_gateway_server: DaskGatewayServer, gateway_auth: auth.BasicAuth
 ) -> Gateway:
     async with Gateway(
         local_dask_gateway_server.address,
         local_dask_gateway_server.proxy_address,
         asynchronous=True,
-        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
+        auth=gateway_auth,
     ) as gateway:
-        print(f"--> {gateway=} created")
+        print(
+            f"--> {gateway=} created, with {gateway_auth.username=}/{gateway_auth.password=}"
+        )
         cluster_options = await gateway.cluster_options()
         gateway_versions = await gateway.get_versions()
         clusters_list = await gateway.list_clusters()

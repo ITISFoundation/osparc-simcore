@@ -63,12 +63,14 @@ class UserStatus(Enum):
     active: user is confirmed and can use the platform
     expired: user is not authorized because it expired after a trial period
     banned: user is not authorized
+    deleted: this account is marked for deletion
     """
 
     CONFIRMATION_PENDING = "PENDING"
     ACTIVE = "ACTIVE"
     EXPIRED = "EXPIRED"
     BANNED = "BANNED"
+    DELETED = "DELETED"
 
 
 users = sa.Table(
@@ -97,6 +99,14 @@ users = sa.Table(
         sa.String,
         nullable=True,  # since 2FA can be configured optional
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
+    ),
+    sa.Column(
+        "two_factor_enabled",
+        sa.Boolean,
+        server_default=sa.sql.expression.true(),
+        nullable=False,
+        doc="Wheter 2FA is enabled at login by this user."
+        "NOTE that this is checked ONLY if application activates 2FA",
     ),
     sa.Column("password_hash", sa.String, nullable=False),
     sa.Column(
@@ -145,12 +155,6 @@ users = sa.Table(
         nullable=True,
         doc="Sets the expiration date for trial accounts."
         "If set to NULL then the account does not expire.",
-    ),
-    sa.Column(
-        "created_ip",
-        sa.String(),
-        nullable=True,
-        doc="User IP from which use was created",
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),

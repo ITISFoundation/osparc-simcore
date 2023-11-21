@@ -1,8 +1,9 @@
 from contextlib import suppress
 from typing import Any, ClassVar
 
-from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
+
+from ..emails import LowerCaseEmailStr
 
 #
 # GROUPS MODELS defined in OPENAPI specs

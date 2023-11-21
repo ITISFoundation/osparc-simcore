@@ -1,15 +1,17 @@
+from decimal import Decimal
 from pathlib import Path
 
 import aiofiles
 from aiohttp import web
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import ProductName
+from models_library.products import CreditResultGet, ProductName
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._resources import webserver_resources
 from ._db import ProductRepository
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from ._model import Product
+from .errors import ProductPriceNotDefinedError
 
 
 def get_product_name(request: web.Request) -> str:
@@ -17,15 +19,20 @@ def get_product_name(request: web.Request) -> str:
     return product_name
 
 
+def get_product(app: web.Application, product_name: ProductName) -> Product:
+    product: Product = app[APP_PRODUCTS_KEY][product_name]
+    return product
+
+
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
     product_name: ProductName = get_product_name(request)
-    current_product: Product = request.app[APP_PRODUCTS_KEY][product_name]
+    current_product: Product = get_product(request.app, product_name=product_name)
     return current_product
 
 
 def list_products(app: web.Application) -> list[Product]:
-    products: list[Product] = app[APP_PRODUCTS_KEY].values()
+    products: list[Product] = list(app[APP_PRODUCTS_KEY].values())
     return products
 
 
@@ -42,6 +49,30 @@ async def get_current_product_credit_price(
     current_product_name = get_product_name(request)
     repo = ProductRepository.create_from_request(request)
     return await repo.get_product_latest_credit_price_or_none(current_product_name)
+
+
+async def get_credit_amount(
+    app: web.Application, *, dollar_amount: Decimal, product_name: ProductName
+) -> CreditResultGet:
+    """For provided dollars and product gets credit amount.
+
+    NOTE: Contrary to other product api functions (e.g. get_current_product) this function
+    gets the latest update from the database. Otherwise, products are loaded
+    on startup and cached therefore in those cases would require a restart
+    of the service for the latest changes to take effect.
+    """
+    repo = ProductRepository.create_from_app(app)
+    usd_per_credit: NonNegativeDecimal | None = (
+        await repo.get_product_latest_credit_price_or_none(product_name)
+    )
+    if not usd_per_credit:
+        # '0 or None' should raise
+        raise ProductPriceNotDefinedError(
+            reason=f"Product {product_name} usd_per_credit is either not defined or zero"
+        )
+
+    credit_amount = dollar_amount / usd_per_credit
+    return CreditResultGet(product_name=product_name, credit_amount=credit_amount)
 
 
 #

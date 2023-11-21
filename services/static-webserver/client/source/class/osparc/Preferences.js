@@ -82,6 +82,22 @@ qx.Class.define("osparc.Preferences", {
       check: "Boolean",
       event: "changeSnapNodeToGrid",
       apply: "__patchPreference"
+    },
+
+    creditsWarningThreshold: {
+      check: "Number",
+      nullable: false,
+      init: 200,
+      event: "changeCreditsWarningThreshold",
+      apply: "__patchPreference"
+    },
+
+    walletIndicatorVisibility: {
+      check: ["always", "warning"],
+      nullable: false,
+      init: "always",
+      event: "changeWalletIndicatorVisibility",
+      apply: "__patchPreference"
     }
   },
 
@@ -117,9 +133,14 @@ qx.Class.define("osparc.Preferences", {
     requestChangePreferredWalletId: function(walletId) {
       this.self().patchPreference("preferredWalletId", walletId)
         .then(() => {
-          this.setPreferredWalletId(walletId);
-          const wallets = osparc.store.Store.getInstance().getWallets();
+          const store = osparc.store.Store.getInstance();
+          const wallets = store.getWallets();
+          const walletFound = wallets.find(wallet => wallet.getWalletId() === walletId);
+          if (walletFound) {
+            store.setPreferredWallet(walletFound);
+          }
           wallets.forEach(wallet => wallet.setPreferredWallet(wallet.getWalletId() === walletId));
+          this.setPreferredWalletId(walletId);
         })
         .catch(err => {
           console.error(err);

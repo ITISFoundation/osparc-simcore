@@ -9,7 +9,7 @@ import docker
 import yaml
 from tenacity import RetryError, Retrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 WAIT_BEFORE_RETRY = 10
-MAX_RETRY_COUNT = 20
-MAX_WAIT_TIME = 240
+MAX_WAIT_TIME = 5 * 60
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
@@ -115,7 +114,7 @@ def wait_for_services() -> int:
     client = docker.from_env()
     try:
         for attempt in Retrying(
-            stop=stop_after_attempt(MAX_RETRY_COUNT),
+            stop=stop_after_delay(MAX_WAIT_TIME),
             wait=wait_fixed(WAIT_BEFORE_RETRY),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
@@ -142,7 +141,6 @@ def wait_for_services() -> int:
         return os.EX_SOFTWARE
 
     for service in started_services:
-
         expected_replicas = (
             service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
             if "Replicated" in service.attrs["Spec"]["Mode"]
@@ -152,7 +150,7 @@ def wait_for_services() -> int:
 
         try:
             for attempt in Retrying(
-                stop=stop_after_attempt(MAX_RETRY_COUNT),
+                stop=stop_after_delay(MAX_WAIT_TIME),
                 wait=wait_fixed(WAIT_BEFORE_RETRY),
             ):
                 with attempt:

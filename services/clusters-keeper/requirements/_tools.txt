@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-astroid==2.15.6
+astroid==3.0.1
     # via pylint
-black==23.9.1
+black==23.11.0
     # via -r requirements/../../../requirements/devenv.txt
 build==1.0.3
     # via pip-tools
@@ -24,18 +24,14 @@ dill==0.3.7
     # via pylint
 distlib==0.3.7
     # via virtualenv
-filelock==3.12.4
+filelock==3.13.1
     # via virtualenv
-identify==2.5.28
+identify==2.5.31
     # via pre-commit
 isort==5.12.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
-lazy-object-proxy==1.9.0
-    # via
-    #   -c requirements/_test.txt
-    #   astroid
 mccabe==0.7.0
     # via pylint
 mypy-extensions==1.0.0
@@ -52,14 +48,14 @@ pathspec==0.11.2
     # via black
 pip-tools==7.3.0
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.4.0
+pre-commit==3.5.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.17.5
+pylint==3.0.2
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.0.0
     # via build
@@ -70,7 +66,7 @@ pyyaml==6.0.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.0.289
+ruff==0.1.4
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
@@ -80,25 +76,20 @@ tomli==2.0.1
     #   pip-tools
     #   pylint
     #   pyproject-hooks
-tomlkit==0.12.1
+tomlkit==0.12.2
     # via pylint
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   astroid
     #   black
-virtualenv==20.24.5
+virtualenv==20.24.6
     # via pre-commit
 watchdog==3.0.0
     # via -r requirements/_tools.in
-wheel==0.41.2
+wheel==0.41.3
     # via pip-tools
-wrapt==1.15.0
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
-    #   astroid
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

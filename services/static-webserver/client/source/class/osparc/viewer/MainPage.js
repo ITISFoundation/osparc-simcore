@@ -25,7 +25,7 @@ qx.Class.define("osparc.viewer.MainPage", {
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
-    const navBar = this.__createNavigationBar();
+    const navBar = new osparc.viewer.NavigationBar();
     this._add(navBar);
 
     // Some resources request before building the main stack
@@ -40,11 +40,6 @@ qx.Class.define("osparc.viewer.MainPage", {
 
   members: {
     __iframeLayout: null,
-
-    __createNavigationBar: function() {
-      const navBar = new osparc.viewer.NavigationBar();
-      return navBar;
-    },
 
     __createNodeViewer: function(studyId, viewerNodeId) {
       const nodeViewer = new osparc.viewer.NodeViewer(studyId, viewerNodeId);

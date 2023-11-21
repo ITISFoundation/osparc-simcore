@@ -19,7 +19,11 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.dynamic_services import (
+    GetProjectInactivityResponse,
+)
 from models_library.errors import ErrorDict
+from models_library.generics import Envelope
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -31,10 +35,16 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.resource_tracker import (
+    HardwareInfo,
+    PricingAndHardwareInfoTuple,
+    PricingInfo,
+)
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -63,6 +73,7 @@ from ..resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
+from ..resource_usage import api as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
@@ -76,14 +87,17 @@ from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
-    get_user_preference,
+    UserInactivityThresholdFrontendUserPreference,
+    get_frontend_user_preference,
 )
 from ..wallets import api as wallets_api
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
+    DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodesError,
@@ -217,6 +231,29 @@ def get_delete_project_task(
 #
 
 
+async def _get_default_pricing_and_hardware_info(
+    app, product_name, service_key, service_version, project_uuid, node_uuid
+) -> PricingAndHardwareInfoTuple:
+    service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
+        app,
+        product_name=product_name,
+        service_key=ServiceKey(service_key),
+        service_version=ServiceVersion(service_version),
+    )
+    for unit in service_pricing_plan_get.pricing_units:
+        if unit.default:
+            return PricingAndHardwareInfoTuple(
+                service_pricing_plan_get.pricing_plan_id,
+                unit.pricing_unit_id,
+                unit.current_cost_per_unit_id,
+                unit.specific_info.aws_ec2_instances,
+            )
+
+    raise DefaultPricingUnitNotFoundError(
+        project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
+    )
+
+
 async def _start_dynamic_service(
     request: web.Request,
     *,
@@ -231,6 +268,8 @@ async def _start_dynamic_service(
         return
 
     # this is a dynamic node, let's gather its resources and start it
+
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
 
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
@@ -270,19 +309,20 @@ async def _start_dynamic_service(
             service_version=service_version,
         )
 
-        # Get wallet information
-        wallet_info = None
+        # Get wallet/pricing/hardware information
+        wallet_info, pricing_info, hardware_info = None, None, None
         product = products_api.get_current_product(request)
         app_settings = get_settings(request.app)
         if (
             product.is_payment_enabled
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
+            # Deal with Wallet
             project_wallet = await get_project_wallet(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
-                user_default_wallet_preference = await get_user_preference(
+                user_default_wallet_preference = await get_frontend_user_preference(
                     request.app,
                     user_id=user_id,
                     product_name=product_name,
@@ -302,14 +342,61 @@ async def _start_dynamic_service(
                 )
             else:
                 project_wallet_id = project_wallet.wallet_id
-
             # Check whether user has access to the wallet
-            wallet = await wallets_api.get_wallet_by_user(
-                request.app, user_id, project_wallet_id, product_name
+            wallet = (
+                await wallets_api.get_wallet_with_available_credits_by_user_and_wallet(
+                    request.app,
+                    user_id=user_id,
+                    wallet_id=project_wallet_id,
+                    product_name=product_name,
+                )
             )
+            if wallet.available_credits <= ZERO_CREDITS:
+                raise WalletNotEnoughCreditsError(
+                    reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+                )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id, wallet_name=wallet.name
             )
+
+            # Deal with Pricing plan/unit
+            output = await db.get_project_node_pricing_unit_id(
+                project_uuid=project_uuid, node_uuid=node_uuid
+            )
+            if output:
+                pricing_plan_id, pricing_unit_id = output
+                pricing_unit_get = await rut_api.get_pricing_plan_unit(
+                    request.app, product_name, pricing_plan_id, pricing_unit_id
+                )
+                pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
+                aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
+            else:
+                (
+                    pricing_plan_id,
+                    pricing_unit_id,
+                    pricing_unit_cost_id,
+                    aws_ec2_instances,
+                ) = await _get_default_pricing_and_hardware_info(
+                    request.app,
+                    product_name,
+                    service_key,
+                    service_version,
+                    project_uuid,
+                    node_uuid,
+                )
+                await db.connect_pricing_unit_to_project_node(
+                    project_uuid,
+                    node_uuid,
+                    pricing_plan_id,
+                    pricing_unit_id,
+                )
+
+            pricing_info = PricingInfo(
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+                pricing_unit_cost_id=pricing_unit_cost_id,
+            )
+            hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
 
         await director_v2_api.run_dynamic_service(
             app=request.app,
@@ -327,6 +414,8 @@ async def _start_dynamic_service(
             ),
             service_resources=service_resources,
             wallet_info=wallet_info,
+            pricing_info=pricing_info,
+            hardware_info=hardware_info,
         )
 
 
@@ -1303,3 +1392,26 @@ async def lock_with_notification(
     finally:
         if notify_users:
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+
+
+async def get_project_inactivity(
+    app: web.Application, project_id: ProjectID, user_id: UserID, product_name: str
+) -> Envelope[GetProjectInactivityResponse]:
+    preference = await get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=UserInactivityThresholdFrontendUserPreference,
+    )
+
+    # preference not present in the DB, use the default value
+    if preference is None:
+        preference = UserInactivityThresholdFrontendUserPreference()
+
+    assert preference.value is not None  # nosec
+    max_inactivity_seconds: int = preference.value
+
+    project_inactivity = await director_v2_api.get_project_inactivity(
+        app, project_id, max_inactivity_seconds
+    )
+    return parse_obj_as(Envelope[GetProjectInactivityResponse], project_inactivity)

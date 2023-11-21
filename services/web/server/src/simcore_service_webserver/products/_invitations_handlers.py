@@ -33,7 +33,7 @@ class _ProductsRequestContext(RequestParams):
 
 @routes.post(f"/{VTAG}/invitation:generate", name="generate_invitation")
 @login_required
-@permission_required("product.invitations")
+@permission_required("product.invitations.create")
 async def generate_invitation(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
     body = await parse_request_body_as(GenerateInvitation, request)
@@ -48,20 +48,23 @@ async def generate_invitation(request: web.Request):
             issuer=user_email,
             trial_account_days=body.trial_account_days,
             guest=body.guest,
-            extra_credits=body.extra_credits,
+            extra_credits_in_usd=body.extra_credits_in_usd,
+            product=req_ctx.product_name,
         ),
     )
     assert request.url.host  # nosec
+    assert generated.product == req_ctx.product_name  # nosec
+    assert generated.guest == body.guest  # nosec
 
     url = URL(generated.invitation_url)
     invitation_link = request.url.with_path(url.path).with_fragment(url.raw_fragment)
 
     invitation = InvitationGenerated(
-        product_name=req_ctx.product_name,
+        product_name=generated.product,
         issuer=generated.issuer,
         guest=generated.guest,
         trial_account_days=generated.trial_account_days,
-        extra_credits=generated.extra_credits,
+        extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,
         invitation_link=f"{invitation_link}",
     )

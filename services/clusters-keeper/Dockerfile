@@ -37,7 +37,6 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   # only the cli is needed and we remove the unnecessary stuff again
   docker-ce-cli=${DOCKER_APT_VERSION} \
   && apt-get remove -y\
-  ca-certificates \
   gnupg \
   curl \
   lsb-release \
@@ -107,7 +106,7 @@ WORKDIR /build
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 RUN \
   --mount=type=bind,source=services/clusters-keeper/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement _base.txt
 

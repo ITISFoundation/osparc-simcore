@@ -12,6 +12,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services import ServicePortKey
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -81,7 +82,7 @@ async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
     return service_state
 
 
-async def run_dynamic_service(
+async def run_dynamic_service(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     app: web.Application,
     product_name: str,
@@ -96,6 +97,8 @@ async def run_dynamic_service(
     simcore_user_agent: str,
     service_resources: ServiceResourcesDict,
     wallet_info: WalletInfo | None,
+    pricing_info: PricingInfo | None,
+    hardware_info: HardwareInfo | None,
 ) -> DataType:
     """
     Requests to run (i.e. create and start) a dynamic service:
@@ -115,6 +118,8 @@ async def run_dynamic_service(
             service_resources
         ),
         "wallet_info": wallet_info,
+        "pricing_info": pricing_info,
+        "hardware_info": hardware_info,
     }
 
     headers = {
@@ -306,3 +311,20 @@ async def update_dynamic_service_networks_in_project(
     await request_director_v2(
         app, "PATCH", backend_url, expected_status=web.HTTPNoContent
     )
+
+
+@log_decorator(logger=_log)
+async def get_project_inactivity(
+    app: web.Application,
+    project_id: ProjectID,
+    max_inactivity_seconds: NonNegativeFloat,
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    backend_url = (
+        URL(settings.base_url) / f"dynamic_services/projects/{project_id}/inactivity"
+    ).update_query(max_inactivity_seconds=max_inactivity_seconds)
+    result = await request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+    assert isinstance(result, dict)  # nosec
+    return result

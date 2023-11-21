@@ -3,17 +3,25 @@ import hashlib
 from typing import Any, ClassVar, TypeAlias
 from uuid import UUID, uuid4
 
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import (
     BaseModel,
     ConstrainedInt,
+    Extra,
     Field,
     HttpUrl,
+    PositiveInt,
     StrictBool,
     StrictFloat,
     StrictInt,
+    ValidationError,
+    parse_obj_as,
     validator,
 )
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
+from starlette.datastructures import Headers
 
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
@@ -276,3 +284,25 @@ class JobStatus(BaseModel):
                 "stopped_at": None,
             }
         }
+
+
+class JobPricingSpecification(BaseModel):
+    pricing_plan: PositiveInt = Field(..., alias="x-pricing-plan")
+    pricing_unit: PositiveInt = Field(..., alias="x-pricing-unit")
+
+    class Config:
+        extra = Extra.ignore
+
+    @classmethod
+    def create_from_headers(cls, headers: Headers) -> "JobPricingSpecification | None":
+        try:
+            return parse_obj_as(JobPricingSpecification, headers)
+        except ValidationError:
+            return None
+
+
+class JobLog(BaseModel):
+    job_id: ProjectID
+    node_id: NodeID | None
+    log_level: LogLevelInt
+    messages: list[LogMessageStr]

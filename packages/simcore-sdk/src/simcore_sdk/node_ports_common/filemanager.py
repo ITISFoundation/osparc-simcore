@@ -21,6 +21,12 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
+from tenacity import AsyncRetrying
+from tenacity.after import after_log
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
@@ -284,6 +290,45 @@ async def upload_path(
     :raises exceptions.NodeportsException
     :return: stored id, S3 entity_tag
     """
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_random_exponential(),
+        stop=stop_after_attempt(
+            NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
+        ),
+        retry=retry_if_exception_type(exceptions.AwsS3BadRequestRequestTimeoutError),
+        before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+        after=after_log(_logger, log_level=logging.ERROR),
+    ):
+        with attempt:
+            result = await _upload_path(
+                user_id=user_id,
+                store_id=store_id,
+                store_name=store_name,
+                s3_object=s3_object,
+                path_to_upload=path_to_upload,
+                io_log_redirect_cb=io_log_redirect_cb,
+                client_session=client_session,
+                r_clone_settings=r_clone_settings,
+                progress_bar=progress_bar,
+                exclude_patterns=exclude_patterns,
+            )
+    return result
+
+
+async def _upload_path(
+    *,
+    user_id: UserID,
+    store_id: LocationID | None,
+    store_name: LocationName | None,
+    s3_object: StorageFileID,
+    path_to_upload: Path | UploadableFileObject,
+    io_log_redirect_cb: LogRedirectCB | None,
+    client_session: ClientSession | None,
+    r_clone_settings: RCloneSettings | None,
+    progress_bar: ProgressBarData | None,
+    exclude_patterns: set[str] | None,
+) -> UploadedFile | UploadedFolder:
     _logger.debug(
         "Uploading %s to %s:%s@%s",
         f"{path_to_upload=}",
@@ -341,7 +386,7 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
-async def _upload_to_s3(  # noqa: PLR0913
+async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     user_id: UserID,
     store_id: LocationID | None,
@@ -385,7 +430,6 @@ async def _upload_to_s3(  # noqa: PLR0913
             exclude_patterns=exclude_patterns,
         )
     else:
-        # uploading a file
         uploaded_parts = await upload_file_to_presigned_links(
             session,
             upload_links,

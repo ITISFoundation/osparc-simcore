@@ -1,17 +1,11 @@
 from functools import cached_property
 from typing import cast
 
-from pydantic import (
-    Field,
-    HttpUrl,
-    PositiveFloat,
-    PositiveInt,
-    SecretStr,
-    parse_obj_as,
-    validator,
-)
-from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from models_library.basic_types import NonNegativeDecimal
+from pydantic import Field, HttpUrl, PositiveFloat, SecretStr, parse_obj_as, validator
+from settings_library.application import BaseApplicationSettings
+from settings_library.basic_types import LogLevel, VersionTag
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -19,31 +13,13 @@ from settings_library.utils_logging import MixinLoggingSettings
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
 
 
-class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     """Base settings of any osparc service's app"""
 
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = PROJECT_NAME
     API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
-
-    # IMAGE BUILDTIME ------------------------------------------------------
-    # @Makefile
-    SC_BUILD_DATE: str | None = None
-    SC_BUILD_TARGET: BuildTargetEnum | None = None
-    SC_VCS_REF: str | None = None
-    SC_VCS_URL: str | None = None
-
-    # @Dockerfile
-    SC_BOOT_TARGET: BuildTargetEnum | None = None
-    SC_HEALTHCHECK_TIMEOUT: PositiveInt | None = Field(
-        default=None,
-        description="If a single run of the check takes longer than timeout seconds "
-        "then the check is considered to have failed."
-        "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
-    )
-    SC_USER_ID: int | None = None
-    SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
 
@@ -80,17 +56,18 @@ class ApplicationSettings(_BaseApplicationSettings):
         ..., description="Base url to the payment gateway"
     )
 
-    PAYMENTS_GATEWAY_API_KEY: SecretStr | None = None
-    PAYMENTS_GATEWAY_API_SECRET: SecretStr
+    PAYMENTS_GATEWAY_API_SECRET: SecretStr = Field(
+        ..., description="Credentials for payments-gateway api"
+    )
 
     PAYMENTS_USERNAME: str = Field(
         ...,
-        description="Username for HTTP Basic Auth. Required if started as a web app.",
+        description="Username for Auth. Required if started as a web app.",
         min_length=3,
     )
     PAYMENTS_PASSWORD: SecretStr = Field(
         ...,
-        description="Password for HTTP Basic Auth. Required if started as a web app.",
+        description="Password for Auth. Required if started as a web app.",
         min_length=10,
     )
 
@@ -101,8 +78,31 @@ class ApplicationSettings(_BaseApplicationSettings):
     )
     PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = Field(default=30)
 
+    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: NonNegativeDecimal = Field(
+        default=100,
+        description="Minimum balance in credits to top-up for auto-recharge",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
+        default=100,
+        description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
+    )
+
+    PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: NonNegativeDecimal | None = Field(
+        default=10000,
+        description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
+    )
+    PAYMENTS_AUTORECHARGE_ENABLED: bool = Field(
+        default=False,
+        description="Based on this variable is the auto recharge functionality in Payment service enabled",
+    )
+
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
+
+    PAYMENTS_POSTGRES: PostgresSettings = Field(
+        auto_default_from_env=True, description="settings for postgres service"
     )
 
     PAYMENTS_SWAGGER_API_DOC_ENABLED: bool = Field(

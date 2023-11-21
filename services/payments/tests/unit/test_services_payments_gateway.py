@@ -4,22 +4,21 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable
-from pathlib import Path
-
+import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pytest_simcore.helpers.utils_envs import (
-    EnvVarsDict,
-    load_dotenv,
-    setenvs_from_dict,
-)
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
-from simcore_service_payments.models.payments_gateway import InitPayment
+from simcore_service_payments.models.payments_gateway import (
+    InitPayment,
+    InitPaymentMethod,
+)
 from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
+    PaymentsGatewayError,
+    _raise_as_payments_gateway_error,
     setup_payments_gateway,
 )
 
@@ -37,38 +36,17 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 
 
 @pytest.fixture
-def external_secret_envs(project_tests_dir: Path) -> EnvVarsDict:
-    """
-    If a file under test prefixed `.env-secret` is present,
-    then some mocks are disabled and real external services are used.
-
-    This technique allows reusing the same tests to check against
-    external development/production servers
-    """
-    envs = {}
-    env_files = list(project_tests_dir.glob(".env-secret*"))
-    if env_files:
-        assert len(env_files) == 1
-        envs = load_dotenv(env_files[0])
-        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
-        assert "PAYMENTS_GATEWAY_URL" in envs
-    return envs
-
-
-@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    disable_rabbitmq_and_rpc_setup: Callable,
-    external_secret_envs: EnvVarsDict,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
+    external_environment: EnvVarsDict,
 ):
-    # mocks setup
-    disable_rabbitmq_and_rpc_setup()
-
     # set environs
     return setenvs_from_dict(
         monkeypatch,
-        {**app_environment, **external_secret_envs},
+        {**app_environment, **external_environment},
     )
 
 
@@ -97,25 +75,33 @@ async def test_payment_gateway_responsiveness(
     assert await payment_gateway_api.is_healhy()
 
 
+@pytest.fixture(
+    params=[
+        10,
+        999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
+    ],
+)
+def amount_dollars(request: pytest.FixtureRequest) -> float:
+    return request.param
+
+
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
-    mock_payments_gateway_service_api_base: MockRouter,
-    mock_payments_routes: Callable,
+    mock_payments_gateway_service_or_none: MockRouter | None,
+    amount_dollars: float,
 ):
-    mock_payments_routes(mock_payments_gateway_service_api_base)
-
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
     assert payment_gateway_api
 
     # init
     payment_initiated = await payment_gateway_api.init_payment(
         payment=InitPayment(
-            amount_dollars=100,
-            credits=100,
+            amount_dollars=amount_dollars,
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
             wallet_name=faker.word(),
@@ -131,8 +117,119 @@ async def test_one_time_payment_workflow(
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # cancel
-    await payment_gateway_api.cancel_payment(payment_initiated)
+    payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
+    assert payment_canceled is not None
 
     # check mock
-    assert mock_payments_gateway_service_api_base.routes["init_payment"].called
-    assert mock_payments_gateway_service_api_base.routes["cancel_payment"].called
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes["init_payment"].called
+        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
+
+
+@pytest.mark.can_run_against_external()
+async def test_payment_methods_workflow(
+    app: FastAPI,
+    faker: Faker,
+    mock_payments_gateway_service_or_none: MockRouter | None,
+    amount_dollars: float,
+):
+    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
+        app
+    )
+    assert payments_gateway_api
+
+    # init payment-method
+    initiated = await payments_gateway_api.init_payment_method(
+        InitPaymentMethod(
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            wallet_name=faker.word(),
+        )
+    )
+
+    # from url
+    form_link = payments_gateway_api.get_form_payment_method_url(
+        initiated.payment_method_id
+    )
+
+    app_settings: ApplicationSettings = app.state.settings
+    assert form_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
+
+    # CRUD
+    payment_method_id = initiated.payment_method_id
+
+    # get payment-method
+    got_payment_method = await payments_gateway_api.get_payment_method(
+        payment_method_id
+    )
+    assert got_payment_method.id == payment_method_id
+    print(got_payment_method.json(indent=2))
+
+    # list payment-methods
+    items = await payments_gateway_api.get_many_payment_methods([payment_method_id])
+
+    assert items
+    assert len(items) == 1
+    assert items[0] == got_payment_method
+
+    payment_with_payment_method = await payments_gateway_api.pay_with_payment_method(
+        id_=payment_method_id,
+        payment=InitPayment(
+            amount_dollars=amount_dollars,
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            wallet_name=faker.word(),
+        ),
+    )
+    assert payment_with_payment_method.success
+
+    # delete payment-method
+    await payments_gateway_api.delete_payment_method(payment_method_id)
+
+    with pytest.raises(PaymentsGatewayError) as err_info:
+        await payments_gateway_api.get_payment_method(payment_method_id)
+
+    assert str(err_info.value)
+    assert err_info.value.operation_id == "PaymentsGatewayApi.get_payment_method"
+
+    http_status_error = err_info.value.http_status_error
+    assert http_status_error.response.status_code == status.HTTP_404_NOT_FOUND
+
+    if mock_payments_gateway_service_or_none:
+        # all defined payment-methods
+        for route in mock_payments_gateway_service_or_none.routes:
+            if route.name and "payment_method" in route.name:
+                assert route.called
+
+
+async def test_payments_gateway_error_exception():
+    async def _go():
+        with _raise_as_payments_gateway_error(operation_id="foo"):
+            async with httpx.AsyncClient(
+                app=FastAPI(),
+                base_url="http://payments.testserver.io",
+            ) as client:
+                response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
+                response.raise_for_status()
+
+    with pytest.raises(PaymentsGatewayError) as err_info:
+        await _go()
+    err = err_info.value
+    assert isinstance(err, PaymentsGatewayError)
+
+    assert "curl -X POST" in err.get_detailed_message()
+
+
+async def test_payments_gateway_get_batch_with_no_items(
+    app: FastAPI,
+    mock_payments_gateway_service_or_none: MockRouter | None,
+):
+    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
+        app
+    )
+    assert payments_gateway_api
+
+    # tests issue found in https://github.com/ITISFoundation/appmotion-exchange/issues/16
+    empty_list = []
+    assert not await payments_gateway_api.get_many_payment_methods(empty_list)

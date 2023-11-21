@@ -21,7 +21,12 @@ from uuid import uuid4
 
 import faker
 from faker import Faker
+from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
@@ -65,7 +70,6 @@ def random_user(**overrides) -> dict[str, Any]:
         "email": FAKE.email().lower(),
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
-        "created_ip": FAKE.ipv4(),
     }
     assert set(data.keys()).issubset({c.name for c in users.columns})  # nosec
 
@@ -199,9 +203,91 @@ def random_payment_method(
         "user_id": FAKE.pyint(),
         "wallet_id": FAKE.pyint(),
         "initiated_at": utcnow(),
+        "state": InitPromptAckFlowState.PENDING,
+        "completed_at": None,
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_methods.columns})
 
     data.update(overrides)
+    return data
+
+
+def random_payment_transaction(
+    **overrides,
+) -> dict[str, Any]:
+    """Generates Metadata + concept/info (excludes state)"""
+    from simcore_postgres_database.models.payments_transactions import (
+        payments_transactions,
+    )
+
+    # initiated
+    data = {
+        "payment_id": FAKE.uuid4(),
+        "price_dollars": "123456.78",
+        "osparc_credits": "123456.78",
+        "product_name": "osparc",
+        "user_id": FAKE.pyint(),
+        "user_email": FAKE.email().lower(),
+        "wallet_id": 1,
+        "comment": "Free starting credits",
+        "initiated_at": utcnow(),
+        "state": PaymentTransactionState.PENDING,
+        "completed_at": None,
+    }
+    # state is not added on purpose
+    assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
+
+    data.update(overrides)
+    return data
+
+
+def random_payment_autorecharge(
+    primary_payment_method_id: str = FAKE.uuid4(),
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.payments_autorecharge import (
+        payments_autorecharge,
+    )
+
+    data = {
+        "wallet_id": FAKE.pyint(),
+        "enabled": True,
+        "primary_payment_method_id": primary_payment_method_id,
+        "top_up_amount_in_usd": 100,
+        "monthly_limit_in_usd": 1000,
+    }
+    assert set(data.keys()).issubset({c.name for c in payments_autorecharge.columns})
+
+    data.update(overrides)
+    return data
+
+
+def random_api_key(product_name: str, user_id: int, **overrides) -> dict[str, Any]:
+    data = {
+        "display_name": FAKE.word(),
+        "product_name": product_name,
+        "user_id": user_id,
+        "api_key": FAKE.password(),
+        "api_secret": FAKE.password(),
+        "expires_at": None,
+    }
+    assert set(data.keys()).issubset({c.name for c in api_keys.columns})  # nosec
+    data.update(**overrides)
+    return data
+
+
+def random_payment_method_data(**overrides) -> dict[str, Any]:
+    # Produces data for GetPaymentMethod
+    data = {
+        "id": FAKE.uuid4(),
+        "card_holder_name": FAKE.name(),
+        "card_number_masked": f"**** **** **** {FAKE.credit_card_number()[:4]}",
+        "card_type": FAKE.credit_card_provider(),
+        "expiration_month": FAKE.random_int(min=1, max=12),
+        "expiration_year": FAKE.future_date().year,
+        "created": utcnow(),
+    }
+    assert set(overrides.keys()).issubset(data.keys())
+    data.update(**overrides)
     return data

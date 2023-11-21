@@ -1,7 +1,8 @@
 import datetime
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -10,9 +11,14 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from . import errors
 from .models.payments_transactions import PaymentTransactionState, payments_transactions
 
-PaymentID: TypeAlias = str
+_logger = logging.getLogger(__name__)
 
+
+PaymentID: TypeAlias = str
 PaymentTransactionRow: TypeAlias = RowProxy
+
+
+UNSET: Final[str] = "__UNSET__"
 
 
 @dataclass
@@ -75,6 +81,7 @@ async def update_payment_transaction_state(
     payment_id: str,
     completion_state: PaymentTransactionState,
     state_message: str | None = None,
+    invoice_url: str | None = UNSET,
 ) -> PaymentTransactionRow | PaymentNotFound | PaymentAlreadyAcked:
     """ACKs payment by updating state with SUCCESS, ..."""
     if completion_state == PaymentTransactionState.PENDING:
@@ -84,6 +91,17 @@ async def update_payment_transaction_state(
     optional = {}
     if state_message:
         optional["state_message"] = state_message
+
+    if completion_state == PaymentTransactionState.SUCCESS and invoice_url is None:
+        _logger.warning(
+            "Payment %s completed as %s without invoice (%s)",
+            payment_id,
+            state_message,
+            f"{invoice_url=}",
+        )
+
+    if invoice_url != UNSET:
+        optional["invoice_url"] = invoice_url
 
     async with connection.begin():
         row = await (

@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
-      "simcore/services/dynamic/sim4life-dy": {
+      "simcore/services/dynamic/sim4life-8-0-0-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
         newStudyLabel: "New S4L project",
@@ -768,7 +768,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "delete", params, studyId);
           };
-          this._startStudyById(studyId, openCB, cancelCB);
+          const isStudyCreation = true;
+          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -795,7 +796,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "delete", params2, studyData["uuid"]);
           };
-          this._startStudyById(studyData["uuid"], openCB, cancelCB);
+          const isStudyCreation = true;
+          this._startStudyById(studyData["uuid"], openCB, cancelCB, isStudyCreation);
         })
         .catch(err => {
           this._hideLoadingPage();

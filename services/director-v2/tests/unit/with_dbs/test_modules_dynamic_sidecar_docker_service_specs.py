@@ -12,18 +12,23 @@ from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
+from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
@@ -77,6 +82,13 @@ def mock_env(
 @pytest.fixture
 def dynamic_sidecar_settings(mock_env: dict[str, str]) -> DynamicSidecarSettings:
     return DynamicSidecarSettings.create_from_envs()
+
+
+@pytest.fixture
+def dynamic_services_scheduler_settings(
+    mock_env: dict[str, str]
+) -> DynamicServicesSchedulerSettings:
+    return DynamicServicesSchedulerSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -153,6 +165,8 @@ def expected_dynamic_sidecar_spec(
                     "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
                     "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
+                    "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
+                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
                     "service_resources": {
@@ -200,11 +214,12 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_ID": "234",
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
+                    "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
                         '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
                         ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
-                        '"command": ["ls", "-lah"], "timeout": 1.0}]}'
+                        '"command": ["ls", "-lah"], "timeout": 1.0}], "inactivity": null}'
                     ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
@@ -228,6 +243,9 @@ def expected_dynamic_sidecar_spec(
                     "REGISTRY_SSL": "False",
                     "REGISTRY_URL": "foo.bar.com",
                     "REGISTRY_USER": "test",
+                    "R_CLONE_OPTION_BUFFER_SIZE": "0M",
+                    "R_CLONE_OPTION_RETRIES": "3",
+                    "R_CLONE_OPTION_TRANSFERS": "5",
                     "R_CLONE_PROVIDER": "MINIO",
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",
@@ -369,22 +387,18 @@ def test_get_dynamic_proxy_spec(
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
 
-    def _dict(model: BaseModel) -> dict[str, Any]:
-        dict_data = model.dict()
-        proxy_settings: dict[str, Any] = dict_data["DYNAMIC_SIDECAR_PROXY_SETTINGS"]
-        # remove key which always changes
-        del proxy_settings["DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT"]
-        return dict_data
-
-    assert _dict(dynamic_sidecar_settings) == _dict(
-        minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    assert (
+        dynamic_sidecar_settings
+        == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
+
     expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.parse_obj(
         expected_dynamic_sidecar_spec
     )
@@ -398,6 +412,7 @@ def test_get_dynamic_proxy_spec(
         dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
@@ -477,6 +492,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
@@ -486,6 +502,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
+        dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,

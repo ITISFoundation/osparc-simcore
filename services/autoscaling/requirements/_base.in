@@ -4,17 +4,18 @@
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
+--constraint ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
 # intra-repo required dependencies
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/aws-library/requirements/_base.in
 # service-library[fastapi]
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
-
+aiocache
 aiodocker
-aioboto3
+dask[distributed]
 fastapi
 packaging
-types-aiobotocore[ec2]

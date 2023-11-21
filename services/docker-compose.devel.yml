@@ -42,6 +42,15 @@ services:
       - ./payments:/devel/services/payments
       - ../packages:/devel/packages
 
+  dynamic-scheduler:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./dynamic-scheduler:/devel/services/dynamic-scheduler
+      - ../packages:/devel/packages
+
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd

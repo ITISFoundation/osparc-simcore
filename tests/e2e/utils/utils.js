@@ -72,6 +72,12 @@ function parseCommandLineArguments(args) {
     basicauthPassword = args[basicauthPasswordIdx + 1];
   }
   const enableDemoMode = (args.indexOf("--demo") > -1);
+  const serviceNameIdx = (args.indexOf("--service_name"));
+  let serviceName = "";
+  if (serviceNameIdx > -1) {
+    serviceName = args[serviceNameIdx + 1];
+  }
+
 
   let newUser = false;
   if (pass === null) {
@@ -92,7 +98,8 @@ function parseCommandLineArguments(args) {
     startTimeout,
     basicauthUsername,
     basicauthPassword,
-    enableDemoMode
+    enableDemoMode,
+    serviceName
   }
 }
 
@@ -529,7 +536,7 @@ function createScreenshotsDir() {
 
 async function takeScreenshot(page, captureName = "") {
   const event = new Date();
-  const time = event.toLocaleTimeString('de-CH');
+  const time = event.toLocaleTimeString('de-CH') + `.${event.getMilliseconds()}`;
   let filename = time + "_" + captureName;
   filename = filename.split(":").join("-")
   filename = filename + ".jpg";

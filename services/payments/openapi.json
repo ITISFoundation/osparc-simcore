@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-payments web API",
     "description": " Service that manages creation and validation of registration payments",
-    "version": "1.1.0"
+    "version": "1.4.0"
   },
   "paths": {
     "/": {
@@ -104,7 +104,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
+              "maxLength": 50,
+              "minLength": 1,
               "title": "Payment Id"
             },
             "name": "payment_id",
@@ -161,7 +162,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
+              "maxLength": 50,
+              "minLength": 1,
               "title": "Payment Method Id"
             },
             "name": "payment_method_id",
@@ -218,6 +220,21 @@
             "type": "string",
             "title": "Message"
           },
+          "provider_payment_id": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Provider Payment Id",
+            "description": "Payment ID from the provider (e.g. stripe payment ID)"
+          },
+          "invoice_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Invoice Url",
+            "description": "Link to invoice is required when success=true"
+          },
           "saved": {
             "allOf": [
               {
@@ -225,14 +242,23 @@
               }
             ],
             "title": "Saved",
-            "description": "If the user decided to save the payment methodafter payment it returns the payment-method acknoledgement response.Otherwise it defaults to None."
+            "description": "Gets the payment-method if user opted to save it during payment.If used did not opt to save of payment-method was already saved, then it defaults to None"
           }
         },
         "type": "object",
         "required": [
           "success"
         ],
-        "title": "AckPayment"
+        "title": "AckPayment",
+        "example": {
+          "success": true,
+          "provider_payment_id": "pi_123ABC",
+          "invoice_url": "https://invoices.com/id=12345",
+          "saved": {
+            "success": true,
+            "payment_method_id": "3FA85F64-5717-4562-B3FC-2C963F66AFA6"
+          }
+        }
       },
       "AckPaymentMethod": {
         "properties": {
@@ -311,6 +337,15 @@
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version"
           },
+          "released": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
+            "title": "Released",
+            "description": "Maps every route's path tag with a released version"
+          },
           "docs_url": {
             "type": "string",
             "maxLength": 2083,
@@ -344,7 +379,8 @@
           },
           "payment_method_id": {
             "type": "string",
-            "format": "uuid",
+            "maxLength": 50,
+            "minLength": 1,
             "title": "Payment Method Id"
           }
         },

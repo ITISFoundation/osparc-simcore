@@ -3,16 +3,15 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import datetime
 import decimal
 from collections.abc import Callable
-from typing import Any
 
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pytest_simcore.helpers.rawdata_fakers import FAKE
+from faker import Faker
+from pytest_simcore.helpers.rawdata_fakers import random_payment_transaction, utcnow
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
@@ -25,32 +24,6 @@ from simcore_postgres_database.utils_payments import (
     insert_init_payment_transaction,
     update_payment_transaction_state,
 )
-
-
-def utcnow() -> datetime.datetime:
-    return datetime.datetime.now(tz=datetime.timezone.utc)
-
-
-def random_payment_transaction(
-    **overrides,
-) -> dict[str, Any]:
-    """Generates Metadata + concept/info (excludes state)"""
-    data = {
-        "payment_id": FAKE.uuid4(),
-        "price_dollars": "123456.78",
-        "osparc_credits": "123456.78",
-        "product_name": "osparc",
-        "user_id": FAKE.pyint(),
-        "user_email": FAKE.email().lower(),
-        "wallet_id": 1,
-        "comment": "Free starting credits",
-        "initiated_at": utcnow(),
-    }
-    # state is not added on purpose
-    assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
-
-    data.update(overrides)
-    return data
 
 
 async def test_numerics_precission_and_scale(connection: SAConnection):
@@ -74,7 +47,9 @@ def init_transaction(connection: SAConnection):
     async def _init(payment_id: str):
         # get payment_id from payment-gateway
         values = random_payment_transaction(payment_id=payment_id)
-
+        # remove states
+        values.pop("state")
+        values.pop("completed_at")
         # init successful: set timestamp
         values["initiated_at"] = utcnow()
 
@@ -117,6 +92,13 @@ async def test_init_transaction_sets_it_as_pending(
     }
 
 
+@pytest.fixture
+def invoice_url(faker: Faker, expected_state: PaymentTransactionState) -> str | None:
+    if expected_state == PaymentTransactionState.SUCCESS:
+        return faker.url()
+    return None
+
+
 @pytest.mark.parametrize(
     "expected_state,expected_message",
     [
@@ -137,6 +119,7 @@ async def test_complete_transaction(
     payment_id: str,
     expected_state: PaymentTransactionState,
     expected_message: str | None,
+    invoice_url: str | None,
 ):
     await init_transaction(payment_id)
 
@@ -145,12 +128,14 @@ async def test_complete_transaction(
         payment_id=payment_id,
         completion_state=expected_state,
         state_message=expected_message,
+        invoice_url=invoice_url,
     )
 
     assert isinstance(payment_row, PaymentTransactionRow)
     assert payment_row.state_message == expected_message
     assert payment_row.state == expected_state
     assert payment_row.initiated_at < payment_row.completed_at
+    assert PaymentTransactionState(payment_row.state).is_completed()
 
 
 async def test_update_transaction_failures_and_exceptions(
@@ -195,6 +180,9 @@ def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Cal
         payment_ids = []
         for _ in range(expected_total):
             values = random_payment_transaction(user_id=user_id)
+            # remove states
+            values.pop("state")
+            values.pop("completed_at")
             payment_id = await insert_init_payment_transaction(connection, **values)
             assert payment_id
             payment_ids.append(payment_id)

@@ -8,32 +8,35 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from pprint import pformat
+from typing import AsyncGenerator
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
 import httpx
 import pytest
 import simcore_postgres_database.cli as pg_cli
-import simcore_service_api_server.db.tables as orm
 import sqlalchemy as sa
 import sqlalchemy.engine as sa_engine
 import yaml
-from aiopg.sa.result import RowProxy
-from faker import Faker
+from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
-from pytest import MonkeyPatch
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
+from pydantic import PositiveInt
+from pytest_simcore.helpers.rawdata_fakers import (
+    random_api_key,
+    random_product,
+    random_user,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.base import metadata
+from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
-from simcore_service_api_server.db.repositories import BaseRepository
-from simcore_service_api_server.db.repositories.users import UsersRepository
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 ## POSTGRES -----
 
@@ -62,7 +65,7 @@ def docker_compose_file(
     # configs
     subprocess.run(
         f'docker compose --file "{src_path}" config > "{dst_path}"',
-        shell=True,
+        shell=True,  # noqa: S602
         check=True,
         env=environ,
     )
@@ -144,7 +147,7 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
 
@@ -166,68 +169,105 @@ def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
     return init_app()
 
 
-## FAKE DATA injected at repositories interface ----------------------
+@pytest.fixture
+async def connection(app: FastAPI) -> AsyncIterator[SAConnection]:
+    assert app.state.engine
+    async with app.state.engine.acquire() as conn:
+        yield conn
 
 
-class _ExtendedUsersRepository(UsersRepository):
-    # pylint: disable=no-value-for-parameter
-
-    async def create(self, **user) -> int:
-        values = random_user(**user)
-        async with self.db_engine.acquire() as conn:
-            user_id = await conn.scalar(orm.users.insert().values(**values))
-
-        print("Created user ", pformat(values), f"with user_id={user_id}")
-        return user_id
-
-
-class _ExtendedApiKeysRepository(BaseRepository):
-    # pylint: disable=no-value-for-parameter
-
-    async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
-        values = {
-            "display_name": name,
-            "user_id": user_id,
-            "api_key": api_key,
-            "api_secret": api_secret,
-        }
-        async with self.db_engine.acquire() as conn:
-            _id = await conn.scalar(orm.api_keys.insert().values(**values))
-
-            # check inserted
-            row: RowProxy = await (
-                await conn.execute(
-                    orm.api_keys.select().where(orm.api_keys.c.id == _id)
+@pytest.fixture
+async def create_user_ids(
+    connection: SAConnection,
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
+    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
+        for _ in range(n):
+            while True:
+                user = random_user()
+                result = await connection.execute(
+                    users.select().where(users.c.name == user["name"])
                 )
-            ).first()
+                entry = await result.first()
+                if entry is None:
+                    break
+            uid = await connection.scalar(
+                users.insert().values(user).returning(users.c.id)
+            )
+            assert uid
+            _generate_user_ids.generated_ids.append(uid)
+            yield uid
 
-        return ApiKeyInDB.from_orm(row)
+    _generate_user_ids.generated_ids = []
+    yield _generate_user_ids
 
-
-@pytest.fixture
-async def fake_user_id(app: FastAPI, faker: Faker) -> int:
-    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    return await _ExtendedUsersRepository(app.state.engine).create(
-        email=faker.email(),
-        password=faker.password(),
-        name=faker.user_name(),
-    )
-
-
-@pytest.fixture
-async def fake_api_key(app: FastAPI, fake_user_id: int, faker: Faker) -> ApiKeyInDB:
-    # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    return await _ExtendedApiKeysRepository(app.state.engine).create(
-        "test-api-key",
-        api_key=faker.word(),
-        api_secret=faker.password(),
-        user_id=fake_user_id,
-    )
+    for uid in _generate_user_ids.generated_ids:
+        await connection.execute(users.delete().where(users.c.id == uid))
 
 
 @pytest.fixture
-def auth(fake_api_key: ApiKeyInDB) -> httpx.BasicAuth:
+async def create_product_names(
+    connection: SAConnection,
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str, None]], None]:
+    async def _generate_product_names(
+        n: PositiveInt,
+    ) -> AsyncGenerator[str, None]:
+        for _ in range(n):
+            while True:
+                product = random_product(group_id=None)
+                result = await connection.execute(
+                    products.select().where(products.c.name == product["name"])
+                )
+                entry = await result.first()
+                if entry is None:
+                    break
+            name = await connection.scalar(
+                products.insert().values(product).returning(products.c.name)
+            )
+            assert name
+            _generate_product_names.generated_names.append(name)
+            yield name
+
+    _generate_product_names.generated_names = []
+    yield _generate_product_names
+
+    for name in _generate_product_names.generated_names:
+        await connection.execute(products.delete().where(products.c.name == name))
+
+
+@pytest.fixture
+async def create_fake_api_keys(
+    connection: SAConnection,
+    create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
+    create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
+    async def _generate_fake_api_key(n: PositiveInt):
+        users = create_user_ids(n)
+        products = create_product_names(n)
+        for _ in range(n):
+            product = await anext(products)
+            user = await anext(users)
+            result = await connection.execute(
+                api_keys.insert()
+                .values(**random_api_key(product, user))
+                .returning(sa.literal_column("*"))
+            )
+            row = await result.fetchone()
+            assert row
+            _generate_fake_api_key.row_ids.append(row.id)
+            yield ApiKeyInDB.from_orm(row)
+
+    _generate_fake_api_key.row_ids = []
+    yield _generate_fake_api_key
+
+    for row_id in _generate_fake_api_key.row_ids:
+        await connection.execute(api_keys.delete().where(api_keys.c.id == row_id))
+
+
+@pytest.fixture
+async def auth(
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]]
+) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
-    return httpx.BasicAuth(
-        fake_api_key.api_key, fake_api_key.api_secret.get_secret_value()
-    )
+    async for key in create_fake_api_keys(1):
+        return httpx.BasicAuth(key.api_key, key.api_secret)
+    pytest.fail("Did not generate authentication")

@@ -1,11 +1,12 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
-
 
 from decimal import Decimal
 from typing import Any, TypeAlias
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
@@ -14,17 +15,19 @@ from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletGet,
-    WalletPaymentCreated,
+    WalletPaymentInitiated,
 )
 from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_webserver.payments._api import complete_payment
+from simcore_service_webserver.payments._onetime_api import (
+    _ack_creation_of_wallet_payment,
+)
 from simcore_service_webserver.payments.errors import PaymentCompletedError
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
@@ -35,7 +38,7 @@ OpenApiDict: TypeAlias = dict[str, Any]
 
 
 async def test_payment_on_invalid_wallet(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
@@ -58,11 +61,13 @@ async def test_payment_on_invalid_wallet(
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
-async def test_payments_worfklow(
-    new_osparc_price: Decimal,
+async def test_one_time_payment_worfklow(
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    faker: Faker,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -72,8 +77,9 @@ async def test_payments_worfklow(
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
-    mock_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.payments._api.add_credits_to_wallet", autospec=True
+    mock_rut_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        autospec=True,
     )
 
     wallet = logged_user_wallet
@@ -87,25 +93,28 @@ async def test_payments_worfklow(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    payment = WalletPaymentCreated.parse_obj(data)
+    payment = WalletPaymentInitiated.parse_obj(data)
 
     assert payment.payment_id
+    assert payment.payment_form_url
     assert payment.payment_form_url.host == "some-fake-gateway.com"
     assert payment.payment_form_url.query
     assert payment.payment_form_url.query.endswith(payment.payment_id)
+    assert mock_rpc_payments_service_api["init_payment"].called
 
     # Complete
-    await complete_payment(
+    await _ack_creation_of_wallet_payment(
         client.app,
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
+        invoice_url=faker.url(),
     )
 
-    # check notification to RUT
-    assert mock_add_credits_to_wallet.called
-    mock_add_credits_to_wallet.assert_called_once()
+    # check notification to RUT (fake)
+    assert mock_rut_add_credits_to_wallet.called
+    mock_rut_add_credits_to_wallet.assert_called_once()
 
-    # check notification
+    # check notification (fake)
     assert send_message.called
     send_message.assert_called_once()
 
@@ -125,13 +134,16 @@ async def test_payments_worfklow(
     # payment was completed successfully
     assert transaction.completed_at is not None
     assert transaction.created_at < transaction.completed_at
+    assert transaction.invoice_url is not None
 
 
 async def test_multiple_payments(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    faker: Faker,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -141,8 +153,9 @@ async def test_multiple_payments(
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
-    mock_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.payments._api.add_credits_to_wallet", autospec=True
+    mocker.patch(
+        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        autospec=True,
     )
 
     wallet = logged_user_wallet
@@ -164,13 +177,14 @@ async def test_multiple_payments(
         data, error = await assert_status(response, web.HTTPCreated)
         assert data
         assert not error
-        payment = WalletPaymentCreated.parse_obj(data)
+        payment = WalletPaymentInitiated.parse_obj(data)
 
         if n % 2:
-            transaction = await complete_payment(
+            transaction = await _ack_creation_of_wallet_payment(
                 client.app,
                 payment_id=payment.payment_id,
                 completion_state=PaymentTransactionState.SUCCESS,
+                invoice_url=faker.url(),
             )
             assert transaction.payment_id == payment.payment_id
             payments_successful.append(transaction.payment_id)
@@ -183,6 +197,8 @@ async def test_multiple_payments(
         f"/v0/wallets/{wallet.wallet_id}/payments/{pending_id}:cancel",
     )
     await assert_status(response, web.HTTPNoContent)
+    assert mock_rpc_payments_service_api["cancel_payment"].called
+
     payments_cancelled.append(pending_id)
 
     assert (
@@ -201,19 +217,33 @@ async def test_multiple_payments(
 
     for pid in payments_cancelled:
         assert all_transactions[pid].state == PaymentTransactionState.CANCELED
+        assert all_transactions[pid].invoice_url is None
+        assert not PaymentTransactionState(
+            all_transactions[pid].state
+        ).is_acknowledged()
+        assert PaymentTransactionState(all_transactions[pid].state).is_completed()
     for pid in payments_successful:
         assert all_transactions[pid].state == PaymentTransactionState.SUCCESS
+        assert all_transactions[pid].invoice_url is not None
+        assert PaymentTransactionState(all_transactions[pid].state).is_acknowledged()
+        assert PaymentTransactionState(all_transactions[pid].state).is_completed()
     for pid in payments_pending:
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
+        assert all_transactions[pid].invoice_url is None
+        assert not PaymentTransactionState(
+            all_transactions[pid].state
+        ).is_acknowledged()
+        assert not PaymentTransactionState(all_transactions[pid].state).is_completed()
 
     assert send_message.called
 
 
 async def test_complete_payment_errors(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
     send_message = mocker.patch(
@@ -227,12 +257,15 @@ async def test_complete_payment_errors(
         f"/v0/wallets/{wallet.wallet_id}/payments",
         json={"priceDollars": 25},
     )
+
+    assert mock_rpc_payments_service_api["init_payment"].called
+
     data, _ = await assert_status(response, web.HTTPCreated)
-    payment = WalletPaymentCreated.parse_obj(data)
+    payment = WalletPaymentInitiated.parse_obj(data)
 
     # Cannot complete as PENDING
     with pytest.raises(ValueError):
-        await complete_payment(
+        await _ack_creation_of_wallet_payment(
             client.app,
             payment_id=payment.payment_id,
             completion_state=PaymentTransactionState.PENDING,
@@ -240,7 +273,7 @@ async def test_complete_payment_errors(
     send_message.assert_not_called()
 
     # Complete w/ failures
-    await complete_payment(
+    await _ack_creation_of_wallet_payment(
         client.app,
         payment_id=payment.payment_id,
         completion_state=PaymentTransactionState.FAILED,
@@ -249,7 +282,7 @@ async def test_complete_payment_errors(
 
     # Cannot complete twice
     with pytest.raises(PaymentCompletedError):
-        await complete_payment(
+        await _ack_creation_of_wallet_payment(
             client.app,
             payment_id=payment.payment_id,
             completion_state=PaymentTransactionState.SUCCESS,
@@ -258,10 +291,11 @@ async def test_complete_payment_errors(
 
 
 async def test_payment_not_found(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     faker: Faker,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     wallet = logged_user_wallet
     payment_id = faker.uuid4()
@@ -270,6 +304,7 @@ async def test_payment_not_found(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments/{payment_id}:cancel",
     )
+    assert mock_rpc_payments_service_api["cancel_payment"].called
 
     data, error = await assert_status(response, web.HTTPNotFound)
     assert data is None
@@ -278,24 +313,26 @@ async def test_payment_not_found(
     assert ":cancel" not in error_msg
 
 
-def test_models_state_in_sync():
-    state_type = PaymentTransaction.__fields__["state"].type_
+def test_payment_transaction_state_and_literals_are_in_sync():
+    state_literals = PaymentTransaction.__fields__["state"].type_
     assert (
-        parse_obj_as(list[state_type], [f"{s}" for s in PaymentTransactionState])
+        parse_obj_as(list[state_literals], [f"{s}" for s in PaymentTransactionState])
         is not None
     )
 
 
 async def test_payment_on_wallet_without_access(
-    new_osparc_price: Decimal,
+    latest_osparc_price: Decimal,
+    logged_user: UserInfoDict,
     logged_user_wallet: WalletGet,
     client: TestClient,
 ):
-    other_wallet = logged_user_wallet
+    wallet = logged_user_wallet
 
-    async with LoggedUser(client) as new_logged_user:
+    async with LoggedUser(client) as other_user:
+        assert other_user["email"] != logged_user["email"]
         response = await client.post(
-            f"/v0/wallets/{other_wallet.wallet_id}/payments",
+            f"/v0/wallets/{wallet.wallet_id}/payments",
             json={
                 "priceDollars": 25,
             },
@@ -305,4 +342,59 @@ async def test_payment_on_wallet_without_access(
         assert error
 
         error_msg = error["errors"][0]["message"]
-        assert f"{other_wallet.wallet_id}" in error_msg
+        assert f"{wallet.wallet_id}" in error_msg
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/4897"
+)
+async def test_cannot_get_payment_info_in_shared_wallet(
+    latest_osparc_price: Decimal,
+    logged_user: UserInfoDict,
+    logged_user_wallet: WalletGet,
+    client: TestClient,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as new_user:
+        assert new_user["email"] != logged_user["email"]
+
+        # logged client adds new user to this wallet add read-only
+        await assert_status(
+            await client.post(
+                client.app.router["create_wallet_group"]
+                .url_for(
+                    wallet_id=f"{logged_user_wallet.wallet_id}",
+                    group_id=f"{new_user['primary_gid']}",
+                )
+                .path,
+                json={"read": True, "write": False, "delete": False},
+            ),
+            web.HTTPCreated,
+        )
+
+        # let's logout one user
+        await assert_status(
+            await client.post(client.app.router["auth_logout"].url_for().path),
+            web.HTTPOk,
+        )
+
+        # logs in
+        await assert_status(
+            await client.post(
+                client.app.router["auth_login"].url_for().path,
+                json={
+                    "email": new_user["email"],
+                    "password": new_user["raw_password"],
+                },
+            ),
+            web.HTTPOk,
+        )
+
+        # TEST auto-recharge must not be allowed!
+        await assert_status(
+            await client.get(
+                f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
+            ),
+            web.HTTPForbidden,
+        )

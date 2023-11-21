@@ -1,0 +1,10 @@
+# This gets used only after services/docker-compose.local.yml and overrides the definition of
+# the static-webserver to be the only one running the dev image
+version: "3.8"
+services:
+  static-webserver:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:development
+    volumes:
+      - ./static-webserver/client/source-output:/static-content
+    environment:
+      - SERVER_LOG_LEVEL=info

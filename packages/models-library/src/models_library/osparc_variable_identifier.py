@@ -14,8 +14,16 @@ class OsparcVariableIdentifier(BaseModel):
     # NOTE: When dealing with str types, to avoid unexpected behavior, the following
     # order is suggested `OsparcVariableIdentifier | str`
     __root__: str = Field(
-        ..., regex=rf"^\${{?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+}}?(:-.+)?$"
+        ...,
+        # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
+        regex=rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$",
     )
+
+    def __hash__(self):
+        return hash(str(self.__root__))
+
+    def __eq__(self, other):
+        return self.__root__ == other.__root__
 
     def _get_without_template_markers(self) -> str:
         # $VAR
@@ -23,9 +31,12 @@ class OsparcVariableIdentifier(BaseModel):
         # ${VAR:-}
         # ${VAR:-default}
         # ${VAR:-{}}
-        if self.__root__.startswith("${"):
-            return self.__root__.removeprefix("${").removesuffix("}")
-        return self.__root__.removeprefix("$")
+        return (
+            self.__root__.removeprefix("$$")
+            .removeprefix("$")
+            .removeprefix("{")
+            .removesuffix("}")
+        )
 
     @property
     def name(self) -> str:
@@ -64,6 +75,9 @@ def replace_osparc_variable_identifier(  # noqa: C901
     """Replaces mostly in place an instance of `OsparcVariableIdentifier` with the
     value provided inside `osparc_variables`.
 
+    NOTE: when using make sure that `obj` is of type `BaseModel` or
+    `OsparcVariableIdentifier` otherwise it will nto work as intended.
+
     NOTE: if the provided `obj` is instance of OsparcVariableIdentifier in place
     replacement cannot be done. You need to assign it to the previous handler.
 
@@ -73,7 +87,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
 
     Or like so:
     ```
-    obj.to_replace_attribute =r eplace_osparc_variable_identifier(obj.to_replace_attribute)
+    obj.to_replace_attribute = replace_osparc_variable_identifier(obj.to_replace_attribute)
     ```
     """
 
@@ -90,7 +104,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
             obj.__dict__[key] = replace_osparc_variable_identifier(
                 value, osparc_variables
             )
-    if isinstance(obj, list):
+    elif isinstance(obj, list):
         for i, item in enumerate(obj):
             obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
     elif isinstance(obj, tuple):
@@ -104,3 +118,26 @@ def replace_osparc_variable_identifier(  # noqa: C901
         }
         obj = new_set  # type: ignore
     return obj
+
+
+def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
+    """
+    NOTE: when using make sure that `obj` is of type `BaseModel` or
+    `OsparcVariableIdentifier` otherwise it will nto work as intended.
+
+    Raises:
+        UnresolvedOsparcVariableIdentifierError: if not all instances of
+        `OsparcVariableIdentifier` were replaced
+    """
+    if isinstance(obj, OsparcVariableIdentifier):
+        raise_if_unresolved(obj)
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            raise_if_unresolved_osparc_variable_identifier_found(key)
+            raise_if_unresolved_osparc_variable_identifier_found(value)
+    elif isinstance(obj, BaseModel):
+        for value in obj.__dict__.values():
+            raise_if_unresolved_osparc_variable_identifier_found(value)
+    elif isinstance(obj, list | tuple | set):
+        for item in obj:
+            raise_if_unresolved_osparc_variable_identifier_found(item)

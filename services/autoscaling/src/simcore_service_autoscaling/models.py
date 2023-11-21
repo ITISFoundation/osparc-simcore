@@ -1,56 +1,21 @@
-import datetime
 from dataclasses import dataclass, field
+from typing import Any, TypeAlias
 
+from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
 from models_library.generated_models.docker_rest_api import Node
-from pydantic import BaseModel, ByteSize, NonNegativeFloat, PositiveInt
-from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
-class Resources(BaseModel):
-    cpus: NonNegativeFloat
-    ram: ByteSize
-
-    @classmethod
-    def create_as_empty(cls) -> "Resources":
-        return cls(cpus=0, ram=ByteSize(0))
-
-    def __ge__(self, other: "Resources") -> bool:
-        return self.cpus >= other.cpus and self.ram >= other.ram
-
-    def __add__(self, other: "Resources") -> "Resources":
-        return Resources.construct(
-            **{
-                key: a + b
-                for (key, a), b in zip(self.dict().items(), other.dict().values())
-            }
-        )
-
-    def __sub__(self, other: "Resources") -> "Resources":
-        return Resources.construct(
-            **{
-                key: a - b
-                for (key, a), b in zip(self.dict().items(), other.dict().values())
-            }
-        )
+@dataclass(frozen=True, kw_only=True)
+class AssignedTasksToInstance:
+    instance: EC2InstanceData
+    available_resources: Resources
+    assigned_tasks: list
 
 
-@dataclass(frozen=True)
-class EC2InstanceType:
-    name: str
-    cpus: PositiveInt
-    ram: ByteSize
-
-
-InstancePrivateDNSName = str
-
-
-@dataclass(frozen=True)
-class EC2InstanceData:
-    launch_time: datetime.datetime
-    id: str
-    aws_private_dns: InstancePrivateDNSName
-    type: InstanceTypeType
-    state: InstanceStateNameType
+@dataclass(frozen=True, kw_only=True)
+class AssignedTasksToInstanceType:
+    instance_type: EC2InstanceType
+    assigned_tasks: list
 
 
 @dataclass(frozen=True)
@@ -87,3 +52,13 @@ class Cluster:
         }
     )
     terminated_instances: list[EC2InstanceData]
+
+
+DaskTaskId: TypeAlias = str
+DaskTaskResources: TypeAlias = dict[str, Any]
+
+
+@dataclass(frozen=True, kw_only=True)
+class DaskTask:
+    task_id: DaskTaskId
+    required_resources: DaskTaskResources

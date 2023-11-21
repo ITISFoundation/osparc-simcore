@@ -26,6 +26,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataOutEnveloped,
     RunningDynamicServiceDetails,
 )
+from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -37,7 +38,9 @@ from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
-from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
+from .....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
@@ -189,14 +192,14 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     async def remove_service_sidecar_proxy_docker_networks_and_volumes(
         self, task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
         await service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress=task_progress,
             app=self.app,
             node_uuid=node_uuid,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         )
 
     async def save_service_state(
@@ -344,17 +347,12 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 return
 
             # recreate new observation
-            dynamic_sidecar_settings: DynamicSidecarSettings = (
-                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-            )
             dynamic_scheduler: DynamicServicesSchedulerSettings = (
                 self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
             )
             self._service_observation_task[
                 service_name
-            ] = self.__create_observation_task(
-                dynamic_sidecar_settings, dynamic_scheduler, service_name
-            )
+            ] = self.__create_observation_task(dynamic_scheduler, service_name)
 
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
@@ -472,12 +470,18 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
 
         await sidecars_client.restart_containers(scheduler_data.endpoint)
 
+    async def get_service_inactivity(self, node_id: NodeID) -> InactivityResponse:
+        service_name: ServiceName = self._inverse_search_mapping[node_id]
+        scheduler_data: SchedulerData = self._to_observe[service_name]
+
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
+        return await sidecars_client.get_service_inactivity(scheduler_data.endpoint)
+
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
 
     def __create_observation_task(
         self,
-        dynamic_sidecar_settings: DynamicSidecarSettings,
         dynamic_scheduler: DynamicServicesSchedulerSettings,
         service_name: ServiceName,
     ) -> asyncio.Task:
@@ -487,7 +491,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 scheduler=self,
                 service_name=service_name,
                 scheduler_data=scheduler_data,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
                 dynamic_scheduler=dynamic_scheduler,
             ),
             name=f"{__name__}.observe_{service_name}",
@@ -503,9 +506,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
 
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
         dynamic_scheduler: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
@@ -524,9 +524,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 logger.info("Create observation task for service %s", service_name)
                 self._service_observation_task[
                     service_name
-                ] = self.__create_observation_task(
-                    dynamic_sidecar_settings, dynamic_scheduler, service_name
-                )
+                ] = self.__create_observation_task(dynamic_scheduler, service_name)
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
 

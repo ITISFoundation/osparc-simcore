@@ -21,15 +21,13 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__buildLayout();
 
     this.initTotalPrice();
-    const creditPrice = osparc.store.Store.getInstance().getCreditPrice();
-    if (creditPrice) {
-      this.setCreditPrice(creditPrice);
-    }
+    const store = osparc.store.Store.getInstance();
+    store.bind("creditPrice", this, "creditPrice");
   },
 
   properties: {
@@ -66,10 +64,13 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
   },
 
   events: {
+    "addNewPaymentMethod": "qx.event.type.Event",
     "transactionCompleted": "qx.event.type.Event"
   },
 
   members: {
+    __paymentMethodSB: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -89,12 +90,12 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
           });
           this._add(control);
           break;
-        case "amount-selector":
-          control = this.__getAmountSelector();
+        case "summary-view":
+          control = this.__getOneTimePaymentForm();
           this._add(control);
           break;
-        case "summary-view":
-          control = this.__getSummaryView();
+        case "payment-methods":
+          control = this.__getPaymentMethods();
           this._add(control);
           break;
         case "buy-button":
@@ -111,13 +112,21 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         myAccessRights = wallet.getMyAccessRights();
       }
       this.setEnabled(Boolean(myAccessRights && myAccessRights["write"]));
+
+      const paymentMethodSB = this.__paymentMethodSB;
+      osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB)
+        .then(() => {
+          const newItem = new qx.ui.form.ListItem("", null, null);
+          paymentMethodSB.addAt(newItem, 0);
+          paymentMethodSB.setSelection([newItem]);
+        });
     },
 
     __buildLayout: function() {
       this.getChildControl("one-time-payment-title");
       this.getChildControl("one-time-payment-description");
-      this.getChildControl("amount-selector");
       this.getChildControl("summary-view");
+      this.getChildControl("payment-methods");
       this.getChildControl("buy-button");
     },
 
@@ -129,83 +138,56 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       }
     },
 
-    __getAmountSelector: function() {
-      const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const label = new qx.ui.basic.Label().set({
-        value: this.tr("Payment amount ($):"),
-        font: "text-14"
-      });
-      vLayout.add(label);
-
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
-
-      const lessBtn = new qx.ui.form.Button().set({
-        label: this.tr("-"),
-        width: 25
-      });
-      lessBtn.addListener("execute", () => this.setTotalPrice(this.getTotalPrice()-1));
-      layout.add(lessBtn);
-
-      const paymentAmountField = new qx.ui.form.TextField().set({
-        width: 100,
-        textAlign: "center",
-        font: "text-14"
-      });
-      this.bind("totalPrice", paymentAmountField, "value", {
-        converter: val => val.toString()
-      });
-      paymentAmountField.addListener("changeValue", e => this.setTotalPrice(Number(e.getData())));
-      layout.add(paymentAmountField);
-
-      const moreBtn = new qx.ui.form.Button().set({
-        label: this.tr("+"),
-        width: 25
-      });
-      moreBtn.addListener("execute", () => this.setTotalPrice(this.getTotalPrice()+1));
-      layout.add(moreBtn);
-
-      vLayout.add(layout);
-
-      return vLayout;
-    },
-
-    __getSummaryView: function() {
-      const grid = new qx.ui.layout.Grid(15, 10);
-      grid.setColumnAlign(0, "right", "middle");
+    __getOneTimePaymentForm: function() {
+      const grid = new qx.ui.layout.Grid(25, 5);
+      grid.setColumnAlign(0, "center", "middle");
+      grid.setColumnAlign(1, "center", "middle");
+      grid.setColumnAlign(2, "center", "middle");
       const layout = new qx.ui.container.Composite(grid);
 
       let row = 0;
-      const totalPriceTitle = new qx.ui.basic.Label().set({
-        value: "Total price",
-        font: "text-16"
+      const totalTitle = new qx.ui.basic.Label().set({
+        value: this.tr("TOTAL (US$)"),
+        font: "text-14"
       });
-      layout.add(totalPriceTitle, {
+      layout.add(totalTitle, {
         row,
         column: 0
       });
-      const totalPriceLabel = new qx.ui.basic.Label().set({
-        font: "text-16"
-      });
-      this.bind("totalPrice", totalPriceLabel, "value", {
-        converter: totalPrice => (totalPrice ? totalPrice.toFixed(2) : 0).toString() + " $"
-      });
-      layout.add(totalPriceLabel, {
-        row,
-        column: 1
-      });
-      row++;
-
       const nCreditsTitle = new qx.ui.basic.Label().set({
-        value: "Total credits",
-        font: "text-16"
+        value: this.tr("CREDITS"),
+        font: "text-14"
       });
       layout.add(nCreditsTitle, {
         row,
+        column: 1
+      });
+      const creditPriceTitle = new qx.ui.basic.Label().set({
+        value: this.tr("CREDIT PRICE"),
+        font: "text-14"
+      });
+      layout.add(creditPriceTitle, {
+        row,
+        column: 2
+      });
+      row++;
+
+      const paymentTotalField = new qx.ui.form.Spinner().set({
+        width: 80,
+        font: "text-14",
+        minimum: 10,
+        maximum: 10000,
+        singleStep: 10
+      });
+      this.bind("totalPrice", paymentTotalField, "value");
+      paymentTotalField.addListener("changeValue", e => this.setTotalPrice(e.getData()));
+      layout.add(paymentTotalField, {
+        row,
         column: 0
       });
+
       const nCreditsLabel = new qx.ui.basic.Label().set({
-        font: "text-16"
+        font: "text-14"
       });
       this.bind("nCredits", nCreditsLabel, "value", {
         converter: nCredits => (nCredits ? nCredits.toFixed(2) : 0).toString()
@@ -214,47 +196,55 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         row,
         column: 1
       });
-      row++;
 
-      const creditPriceTitle = new qx.ui.basic.Label().set({
-        value: "Credit price",
-        font: "text-14"
-      });
-      layout.add(creditPriceTitle, {
-        row,
-        column: 0
-      });
       const creditPriceLabel = new qx.ui.basic.Label().set({
         font: "text-14"
       });
       this.bind("creditPrice", creditPriceLabel, "value", {
-        converter: nCredits => nCredits + " $"
+        converter: nCredits => nCredits + " US$"
       });
       layout.add(creditPriceLabel, {
         row,
-        column: 1
+        column: 2
       });
+
       row++;
 
-      const walletTitle = new qx.ui.basic.Label().set({
-        value: "Credit Account",
+      return layout;
+    },
+
+    __getPaymentMethods: function() {
+      const grid = new qx.ui.layout.Grid(25, 5);
+      const layout = new qx.ui.container.Composite(grid);
+
+      const title = new qx.ui.basic.Label().set({
+        value: this.tr("PAY WITH"),
         font: "text-14"
       });
-      layout.add(walletTitle, {
-        row,
+      layout.add(title, {
+        row: 0,
         column: 0
       });
-      const walletLabel = new qx.ui.basic.Label().set({
-        font: "text-14"
+
+      const paymentMethodSB = this.__paymentMethodSB = new qx.ui.form.SelectBox().set({
+        minWidth: 200,
+        maxWidth: 200
       });
-      this.bind("wallet", walletLabel, "value", {
-        converter: wallet => wallet ? wallet.getName() : this.tr("Select Credit Account")
+      layout.add(paymentMethodSB, {
+        row: 1,
+        column: 0
       });
-      layout.add(walletLabel, {
-        row,
-        column: 1
+
+      const addNewPaymentMethod = new qx.ui.basic.Label(this.tr("Add Payment Method")).set({
+        padding: 0,
+        cursor: "pointer",
+        font: "link-label-12"
       });
-      row++;
+      addNewPaymentMethod.addListener("tap", () => this.fireEvent("addNewPaymentMethod"));
+      layout.add(addNewPaymentMethod, {
+        row: 2,
+        column: 0
+      });
 
       return layout;
     },
@@ -267,137 +257,162 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
         maxWidth: 150,
         center: true
       });
+      buyBtn.addListener("execute", () => this.__startPayment());
+      return buyBtn;
+    },
 
-      const buyingBtn = () => {
-        buyBtn.set({
-          fetching: true,
-          label: this.tr("Buying...")
-        });
-      };
-      const buyCreditsBtn = () => {
-        buyBtn.set({
-          fetching: false,
-          label: this.tr("Buy Credits")
-        });
-      };
-      buyBtn.addListener("execute", () => {
-        const nCredits = this.getNCredits();
-        const totalPrice = this.getTotalPrice();
-        const wallet = this.getWallet();
-        buyingBtn();
+    __buyingCredits: function(isBuying) {
+      const buyBtn = this.getChildControl("buy-button");
+      buyBtn.set({
+        fetching: isBuying,
+        label: isBuying ? this.tr("Buying...") : this.tr("Buy Credits")
+      });
+    },
 
-        const params = {
-          url: {
-            walletId: wallet.getWalletId()
-          },
-          data: {
-            priceDollars: totalPrice,
-            osparcCredits: nCredits
-          }
-        };
+    __paymentCompleted: function(paymentData) {
+      this.__buyingCredits(false);
+
+      if (paymentData["completedStatus"]) {
+        const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
+        switch (paymentData["completedStatus"]) {
+          case "SUCCESS":
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+            break;
+          case "PENDING":
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            break;
+          case "CANCELED":
+          case "FAILED":
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            break;
+          default:
+            console.error("completedStatus unknown");
+            break;
+        }
+      }
+      this.fireEvent("transactionCompleted");
+    },
+
+    __cancelPayment: function(paymentId) {
+      this.__buyingCredits(false);
+
+      const wallet = this.getWallet();
+      // inform backend
+      const params = {
+        url: {
+          walletId: wallet.getWalletId(),
+          paymentId
+        }
+      };
+      osparc.data.Resources.fetch("payments", "cancelPayment", params);
+    },
+
+    __windowClosed: function(paymentId) {
+      const msg = this.tr("The window was closed. Try again and follow the instructions inside the opened window.");
+      osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      this.__cancelPayment(paymentId);
+    },
+
+    __startPayment: function() {
+      this.__buyingCredits(true);
+
+      const wallet = this.getWallet();
+      const nCredits = this.getNCredits();
+      const totalPrice = this.getTotalPrice();
+      const params = {
+        url: {
+          walletId: wallet.getWalletId()
+        },
+        data: {
+          priceDollars: totalPrice,
+          osparcCredits: nCredits
+        }
+      };
+      const paymentMethodId = this.__paymentMethodSB.getSelection()[0].getModel();
+      if (paymentMethodId) {
+        params.url["paymentMethodId"] = paymentMethodId;
+        osparc.data.Resources.fetch("payments", "payWithPaymentMethod", params)
+          .then(() => {
+            // Listen to socket event
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "paymentCompleted";
+            socket.on(slotName, jsonString => {
+              const paymentData = JSON.parse(jsonString);
+              this.__paymentCompleted(paymentData);
+              socket.removeSlot(slotName);
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          })
+          .finally(() => this.__buyingCredits(false));
+      } else {
         osparc.data.Resources.fetch("payments", "startPayment", params)
           .then(data => {
             const paymentId = data["paymentId"];
             const url = data["paymentFormUrl"];
-            const options = {
-              width: 400,
-              height: 400,
-              top: 200,
-              left: 100,
-              scrollbars: false
-            };
-            const modal = true;
-            const useNativeModalDialog = false; // this allow using the Blocker
-
-            const blocker = qx.bom.Window.getBlocker();
-            blocker.setBlockerColor("#FFF");
-            blocker.setBlockerOpacity(0.6);
-            let pgWindow = qx.bom.Window.open(
-              url,
-              "pgWindow",
-              options,
-              modal,
-              useNativeModalDialog
-            );
-
-            // enhance the blocker
-            const blockerDomEl = blocker.getBlockerElement();
-            blockerDomEl.style.cursor = "pointer";
-
-            // text on blocker
-            const label = document.createElement("h1");
-            label.innerHTML = "Don’t see the secure Payment Window?<br>Click here to complete your purchase";
-            label.style.position = "fixed";
-            const labelWidth = 550;
-            const labelHeight = 100;
-            label.style.width = labelWidth + "px";
-            label.style.height = labelHeight + "px";
-            const root = qx.core.Init.getApplication().getRoot();
-            if (root && root.getBounds()) {
-              label.style.left = Math.round(root.getBounds().width/2) - labelWidth/2 + "px";
-              label.style.top = Math.round(root.getBounds().height/2) - labelHeight/2 + "px";
-            }
-            blockerDomEl.appendChild(label);
-
-            blockerDomEl.addEventListener("click", () => pgWindow.focus());
+            const stayWithinApp = true;
+            const pgWindow = stayWithinApp ? this.__popUpPaymentGateway(paymentId, url) : this.__popUpPaymentGatewayOld(paymentId, url);
 
             // Listen to socket event
             const socket = osparc.wrapper.WebSocket.getInstance();
             const slotName = "paymentCompleted";
             socket.on(slotName, jsonString => {
               const paymentData = JSON.parse(jsonString);
-              if (paymentData["completedStatus"]) {
-                const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
-                switch (paymentData["completedStatus"]) {
-                  case "SUCCESS":
-                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-                    // demo purposes
-                    wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
-                    break;
-                  case "PENDING":
-                    osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-                    break;
-                  case "CANCELED":
-                  case "FAILED":
-                    osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                    break;
-                  default:
-                    console.error("completedStatus unknown");
-                    break;
-                }
-              }
+              this.__paymentCompleted(paymentData);
               socket.removeSlot(slotName);
-              buyCreditsBtn();
               pgWindow.close();
-              this.fireEvent("transactionCompleted");
             });
-
-            const cancelPayment = () => {
-              socket.removeSlot(slotName);
-              buyCreditsBtn();
-              // inform backend
-              const params2 = {
-                url: {
-                  walletId: wallet.getWalletId(),
-                  paymentId
-                }
-              };
-              osparc.data.Resources.fetch("payments", "cancelPayment", params2);
-            };
-            // Listen to close window event
-            pgWindow.onbeforeunload = () => {
-              const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
-              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-              cancelPayment();
-            };
           })
           .catch(err => {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");
-            buyCreditsBtn();
-          });
-      });
-      return buyBtn;
+          })
+          .finally(() => this.__buyingCredits(false));
+      }
+    },
+
+    __popUpPaymentGateway: function(paymentId, url) {
+      const options = {
+        width: 400,
+        height: 600
+      };
+
+      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
+        url,
+        "Buy Credits",
+        options
+      );
+      // listen to "tap" instead of "execute": the "execute" is not propagated
+      pgWindow.getChildControl("close-button").addListener("tap", () => this.__windowClosed(paymentId));
+
+      return pgWindow;
+    },
+
+    __popUpPaymentGatewayOld: function(paymentId, url) {
+      const options = {
+        width: 400,
+        height: 600,
+        top: 100,
+        left: 200,
+        scrollbars: false
+      };
+      const modal = true;
+      const useNativeModalDialog = false; // this allow using the Blocker
+
+      const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUpOld(
+        url,
+        "pgWindow",
+        options,
+        modal,
+        useNativeModalDialog
+      );
+
+      // Listen to close window event (Bug: it doesn't work)
+      pgWindow.onbeforeunload = () => this.__windowClosed(paymentId);
+
+      return pgWindow;
     }
   }
 });

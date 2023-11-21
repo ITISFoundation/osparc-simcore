@@ -1,3 +1,9 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import httpx
 import pytest
 from faker import Faker
@@ -18,7 +24,12 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
 
 @pytest.mark.parametrize("valid_credentials", [True, False])
 async def test_login_to_create_access_token(
-    client: httpx.AsyncClient, app: FastAPI, faker: Faker, valid_credentials: bool
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    faker: Faker,
+    valid_credentials: bool,
 ):
     # SEE fixture in conftest.py:auth_headers
     #

@@ -24,7 +24,7 @@ exclude_lines =
     if __name__ == .__main__.:
 
     # Don't complain about abstract methods, they aren't run:
-    @(abc\.)?abstractmethod
+    @(abc\.)?abstract(((class|static)?method)|property)
 
 ignore_errors = True
 show_missing = True

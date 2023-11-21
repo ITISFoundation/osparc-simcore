@@ -29,7 +29,7 @@ charset-normalizer==3.1.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.3.1
+coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -37,9 +37,9 @@ docker==6.1.3
     # via -r requirements/_test.in
 exceptiongroup==1.1.3
     # via pytest
-faker==19.6.1
+faker==19.13.0
     # via -r requirements/_test.in
-fakeredis==2.18.1
+fakeredis==2.20.0
     # via -r requirements/_test.in
 greenlet==2.0.2
     # via
@@ -78,7 +78,7 @@ markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
     #   mako
-mypy==1.5.1
+mypy==1.6.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -90,7 +90,7 @@ packaging==23.1
     #   pytest-sugar
 pluggy==1.3.0
     # via pytest
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -101,7 +101,7 @@ pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-mock==3.11.1
+pytest-mock==3.12.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -149,7 +149,7 @@ sqlalchemy==1.4.48
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a35
+sqlalchemy2-stubs==0.0.2a36
     # via sqlalchemy
 termcolor==2.3.0
     # via pytest-sugar
@@ -170,5 +170,5 @@ urllib3==2.0.2
     #   -c requirements/_base.txt
     #   docker
     #   requests
-websocket-client==1.6.3
+websocket-client==1.6.4
     # via docker

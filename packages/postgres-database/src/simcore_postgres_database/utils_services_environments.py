@@ -14,8 +14,9 @@ LATEST: Final[str] = "latest"
 
 async def get_vendor_secrets(
     conn: DBConnection,
-    vendor_service_key: str,  # NOTE: ServiceKey is defined in model_library
-    vendor_service_version: str = LATEST,  # NOTE: ServiceVersion is defined in model_library
+    product_name: str,  # NOTE: ProductName as defined in models_library
+    vendor_service_key: str,  # NOTE: ServiceKey is defined in models_library
+    vendor_service_version: str = LATEST,  # NOTE: ServiceVersion is defined in models_library
     *,
     normalize_names: bool = True,
 ) -> dict[str, VendorSecret]:
@@ -34,16 +35,24 @@ async def get_vendor_secrets(
         ).where(services_vendor_secrets.c.service_key == vendor_service_key)
 
         query = query.where(
-            services_vendor_secrets.c.service_base_version
-            == latest_version.scalar_subquery()
+            (services_vendor_secrets.c.product_name == product_name)
+            & (services_vendor_secrets.c.service_key == vendor_service_key)
+            & (
+                services_vendor_secrets.c.service_base_version
+                == latest_version.scalar_subquery()
+            )
         )
     else:
         assert len([int(p) for p in vendor_service_version.split(".")]) == 3  # nosec
 
         query = (
             query.where(
-                _version(services_vendor_secrets.c.service_base_version)
-                <= _version(vendor_service_version)
+                (services_vendor_secrets.c.product_name == product_name)
+                & (services_vendor_secrets.c.service_key == vendor_service_key)
+                & (
+                    _version(services_vendor_secrets.c.service_base_version)
+                    <= _version(vendor_service_version)
+                )
             )
             .order_by(_version(services_vendor_secrets.c.service_base_version).desc())
             .limit(1)

@@ -6,6 +6,7 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
@@ -83,7 +84,14 @@ async def get_project_node_pricing_unit(request: web.Request):
     pricing_unit_get = await rut_api.get_pricing_plan_unit(
         request.app, req_ctx.product_name, pricing_plan_id, pricing_unit_id
     )
-    return envelope_json_response(pricing_unit_get)
+    webserver_pricing_unit_get = PricingUnitGet(
+        pricing_unit_id=pricing_unit_get.pricing_unit_id,
+        unit_name=pricing_unit_get.unit_name,
+        unit_extra_info=pricing_unit_get.unit_extra_info,
+        current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
+        default=pricing_unit_get.default,
+    )
+    return envelope_json_response(webserver_pricing_unit_get)
 
 
 class _ProjectNodePricingUnitPathParams(BaseModel):

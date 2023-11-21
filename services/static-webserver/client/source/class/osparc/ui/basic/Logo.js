@@ -34,11 +34,14 @@ qx.Class.define("osparc.ui.basic.Logo", {
 
     const themeManager = qx.theme.manager.Meta.getInstance();
     themeManager.addListener("changeTheme", () => this.__resetSourcePath(), this);
+
+    osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__resetSourcePath(), this);
   },
 
   members: {
     __resetSourcePath: function() {
-      const sourcePath = osparc.product.Utils.getLogoPath();
+      const long = !osparc.WindowSizeTracker.getInstance().isCompactVersion();
+      const sourcePath = osparc.product.Utils.getLogoPath(long);
       this.set({
         source: sourcePath
       });

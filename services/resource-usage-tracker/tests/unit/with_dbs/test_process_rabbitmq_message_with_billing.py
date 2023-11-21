@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import Callable, Iterator
 from datetime import datetime, timezone
 from decimal import Decimal
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
@@ -9,7 +10,9 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
+    WalletCreditsLimitReachedMessage,
 )
+from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
@@ -34,6 +37,10 @@ from simcore_service_resource_usage_tracker.resource_tracker_process_messages im
     _process_start_event,
     _process_stop_event,
 )
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from .conftest import assert_credit_transactions_db_row
 
@@ -152,17 +159,29 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_credit_transactions.delete())
 
 
+@pytest.fixture
+async def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
+    return mocker.AsyncMock(return_value=True)
+
+
 async def test_process_event_functions(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
     resource_tracker_service_run_db,
     resource_tracker_pricing_tables_db,
     initialized_app,
+    mocked_message_parser,
 ):
     engine = initialized_app.state.engine
-    publisher = rabbitmq_client("publisher")
+    publisher = create_rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    await consumer.subscribe(
+        WalletCreditsLimitReachedMessage.get_channel_name(),
+        mocked_message_parser,
+        topics=["#"],
+    )
 
     msg = random_rabbit_message_start(
         wallet_id=1,
@@ -171,10 +190,10 @@ async def test_process_event_functions(
         pricing_unit_id=1,
         pricing_unit_cost_id=1,
     )
-    resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
+    resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=engine
     )
-    await _process_start_event(resource_tacker_repo, msg, publisher)
+    await _process_start_event(resource_tracker_repo, msg, publisher)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "PENDING"
@@ -186,7 +205,7 @@ async def test_process_event_functions(
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
     )
-    await _process_heartbeat_event(resource_tacker_repo, heartbeat_msg, publisher)
+    await _process_heartbeat_event(resource_tracker_repo, heartbeat_msg, publisher)
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
@@ -204,9 +223,18 @@ async def test_process_event_functions(
         created_at=datetime.now(tz=timezone.utc),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await _process_stop_event(resource_tacker_repo, stopped_msg, publisher)
+    await _process_stop_event(resource_tracker_repo, stopped_msg, publisher)
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
     assert output.osparc_credits < first_credits_used
     assert output.transaction_status == "BILLED"
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            mocked_message_parser.assert_called_once()

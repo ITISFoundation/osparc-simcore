@@ -35,7 +35,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        await stop_periodic_task(app.state.clusters_cleaning_task)
+        await stop_periodic_task(app.state.clusters_cleaning_task, timeout=5)
 
     return _stop
 
@@ -46,7 +46,7 @@ def setup(app: FastAPI):
         s is None
         for s in [
             app_settings.CLUSTERS_KEEPER_EC2_ACCESS,
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
         ]
     ):
         logger.warning(

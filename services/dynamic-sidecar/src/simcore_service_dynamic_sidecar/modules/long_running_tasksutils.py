@@ -35,7 +35,8 @@ async def run_before_shutdown_actions(
                 ContainerExecTimeoutError,
             ):
                 _logger.warning(
-                    "Could not run before_shutdown in container %s",
+                    "Could not run before_shutdown command %s in container %s",
+                    user_service_command.command,
                     container_name,
                     exc_info=True,
                 )

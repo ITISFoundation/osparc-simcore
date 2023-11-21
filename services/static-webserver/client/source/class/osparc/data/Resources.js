@@ -205,6 +205,15 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/errors"
           },
+          getPricingUnit: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/pricing-unit"
+          },
+          putPricingUnit: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/pricing-plan/{pricingPlanId}/pricing-unit/{pricingUnitId}"
+          },
           checkShareePermissions: {
             useCache: false,
             method: "GET",
@@ -693,6 +702,19 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "productMetadata": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/products/{productName}"
+          },
+          updateEmailTemplate: {
+            method: "PUT",
+            url: statics.API + "/products/{productName}/templates/{templateId}"
+          }
+        }
+      },
       "invitations": {
         endpoints: {
           post: {
@@ -717,6 +739,10 @@ qx.Class.define("osparc.data.Resources", {
           cancelPayment: {
             method: "POST",
             url: statics.API + "/wallets/{walletId}/payments/{paymentId}:cancel"
+          },
+          payWithPaymentMethod: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:pay"
           }
         }
       },
@@ -747,7 +773,7 @@ qx.Class.define("osparc.data.Resources", {
       /*
        * AUTO RECHARGE
        */
-      "auto-recharge": {
+      "autoRecharge": {
         useCache: false,
         endpoints: {
           get: {
@@ -846,9 +872,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/register"
           },
+          postRequestAccount: {
+            method: "POST",
+            url: statics.API + "/auth/request-account"
+          },
           checkInvitation: {
             method: "POST",
             url: statics.API + "/auth/register/invitations:check"
+          },
+          unregister: {
+            method: "POST",
+            url: statics.API + "/auth/unregister"
           },
           verifyPhoneNumber: {
             method: "POST",
@@ -1064,11 +1098,16 @@ qx.Class.define("osparc.data.Resources", {
           let message = null;
           let status = null;
           if (e.getData().error) {
-            const logs = e.getData().error.logs || null;
+            const errorData = e.getData().error;
+            const logs = errorData.logs || null;
             if (logs && logs.length) {
               message = logs[0].message;
             }
-            status = e.getData().error.status;
+            const errors = errorData.errors || [];
+            if (message === null && errors && errors.length) {
+              message = errors[0].message;
+            }
+            status = errorData.status;
           } else {
             const req = e.getRequest();
             message = req.getResponse();

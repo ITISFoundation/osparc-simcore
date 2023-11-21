@@ -72,6 +72,18 @@ class S3TransferError(NodeportsException):
         super().__init__(msg or "Error while transferring to/from S3 storage")
 
 
+class AwsS3BadRequestRequestTimeoutError(NodeportsException):
+    """Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
+    reason in the body will be received. For details regarding the error
+    see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+
+    In this case the entire multipart upload needs to be abandoned and retried.
+    """
+
+    def __init__(self, body: str):
+        super().__init__(f"S3 replied with 400 RequestTimeout: {body=}")
+
+
 class S3InvalidPathError(NodeportsException):
     """S3 transfer error"""
 

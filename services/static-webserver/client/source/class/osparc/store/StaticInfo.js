@@ -53,11 +53,14 @@ qx.Class.define("osparc.store.StaticInfo", {
       const rTag = this.getValue("vcsReleaseTag");
       const rDate = this.getValue("vcsReleaseDate");
       const rUrl = this.getValue("vcsReleaseUrl");
-      return {
-        "tag": rTag,
-        "date": rDate,
-        "url": rUrl
-      };
+      if (rTag && rDate && rUrl) {
+        return {
+          "tag": rTag,
+          "date": rDate,
+          "url": rUrl
+        };
+      }
+      return null;
     },
 
     getMaxNumberDyNodes: function() {

@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, TypeAlias
+from unittest import mock
 
 import aiohttp.test_utils
 import httpx
@@ -18,7 +19,6 @@ from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx._transports.asgi import ASGITransport
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
@@ -33,14 +33,15 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
-from pytest import MonkeyPatch  # noqa: PT013
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     PathDescription,
@@ -56,7 +57,7 @@ SideEffectCallback: TypeAlias = Callable[
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
 
@@ -67,6 +68,7 @@ def app_environment(
             "WEBSERVER_HOST": "webserver",
             "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
             "API_SERVER_POSTGRES": "null",
+            "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
         },
@@ -89,18 +91,14 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     #
     # Prefer this client instead of fastapi.testclient.TestClient
     #
-    async with LifespanManager(app):
-        # needed for app to trigger start/stop event handlers
-        async with httpx.AsyncClient(
-            app=app,
-            base_url="http://api.testserver.io",
-            headers={"Content-Type": "application/json"},
-        ) as client:
-            assert isinstance(client._transport, ASGITransport)
-            # rewires location test's app to client.app
-            client.app = client._transport.app
 
-            yield client
+    # LifespanManager will trigger app's startup&shutown event handlers
+    async with LifespanManager(app), httpx.AsyncClient(
+        app=app,
+        base_url="http://api.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as httpx_async_client:
+        yield httpx_async_client
 
 
 ## MOCKED Repositories --------------------------------------------------
@@ -121,14 +119,11 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         engine.maxsize = 10
         app.state.engine = engine
 
-    # patch authentication entry in repo
-    faker_user_id = faker.pyint()
-
     # NOTE: here, instead of using the database, we patch repositories interface
     mocker.patch(
-        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user_id",
+        "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user",
         autospec=True,
-        return_value=faker_user_id,
+        return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
@@ -136,14 +131,21 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         return_value=faker.email(),
     )
 
-    # patches simcore_postgres_database.utils_products.get_default_product_name
-    mocker.patch(
-        "simcore_service_api_server.api.dependencies.application.get_default_product_name",
-        autospec=True,
-        return_value="osparc",
+    return HTTPBasicAuth(faker.word(), faker.password())
+
+
+@pytest.fixture
+def mocked_groups_extra_properties(mocker: MockerFixture) -> mock.Mock:
+    from simcore_service_api_server.db.repositories.groups_extra_properties import (
+        GroupsExtraPropertiesRepository,
     )
 
-    return HTTPBasicAuth(faker.word(), faker.password())
+    return mocker.patch.object(
+        GroupsExtraPropertiesRepository,
+        "use_on_demand_clusters",
+        autospec=True,
+        return_value=True,
+    )
 
 
 ## MOCKED S3 service --------------------------------------------------
@@ -262,7 +264,6 @@ def mocked_webserver_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
             "name": "webserver",
@@ -475,54 +476,80 @@ def patch_webserver_long_running_project_tasks(
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def respx_mock_from_capture() -> (
-    Callable[[respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter]
+    Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]], list[respx.MockRouter]
+    ]
 ):
     def _generate_mock(
-        respx_mock: respx.MockRouter,
+        respx_mock: list[respx.MockRouter],
         capture_path: Path,
-        side_effects_callbacks: list[SideEffectCallback] | None = None,
-    ) -> respx.MockRouter:
-        assert capture_path.is_file() and capture_path.suffix == ".json"
-        assert (
-            respx_mock._bases
-        ), "the base_url must be set before the fixture is extended"
-
-        side_effects_callbacks = (
-            [] if side_effects_callbacks is None else side_effects_callbacks
-        )
+        side_effects_callbacks: list[SideEffectCallback],
+    ) -> list[respx.MockRouter]:
+        assert capture_path.is_file()
+        assert capture_path.suffix == ".json"
         captures: list[HttpApiCallCaptureModel] = parse_obj_as(
             list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
         )
 
-        capture_iter = iter(captures)
-        side_effect_callback_iter = iter(side_effects_callbacks)
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
+        assert isinstance(respx_mock, list)
+        for router in respx_mock:
+            assert (
+                router._bases
+            ), "the base_url must be set before the fixture is extended"
 
-        def _side_effect(request: httpx.Request, **kwargs):
-            capture = next(capture_iter)
-            assert isinstance(capture.path, PathDescription)
-            status_code: int = capture.status_code
-            response_body: dict[str, Any] | list | None = capture.response_body
-            assert {param.name for param in capture.path.path_parameters} == set(
-                kwargs.keys()
-            )
-            if len(side_effects_callbacks) > 0:
-                callback = next(side_effect_callback_iter)
-                response_body = callback(request, kwargs, capture)
-            return httpx.Response(status_code=status_code, json=response_body)
+        def _get_correct_mock_router_for_capture(
+            respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
+        ) -> respx.MockRouter:
+            for router in respx_mock:
+                if capture.host == router._bases["host"].value:
+                    return router
+            msg = f"Missing respx.MockRouter for capture with {capture.host}"
+            raise RuntimeError(msg)
 
-        for capture in captures:
+        class CaptureSideEffect:
+            def __init__(
+                self,
+                capture: HttpApiCallCaptureModel,
+                side_effect: SideEffectCallback | None,
+            ):
+                self._capture = capture
+                self._side_effect_callback = side_effect
+
+            def _side_effect(self, request: httpx.Request, **kwargs):
+                capture = self._capture
+                assert isinstance(capture.path, PathDescription)
+                status_code: int = capture.status_code
+                response_body: dict[str, Any] | list | None = capture.response_body
+                assert {param.name for param in capture.path.path_parameters} == set(
+                    kwargs.keys()
+                )
+                if self._side_effect_callback:
+                    response_body = self._side_effect_callback(request, kwargs, capture)
+                return httpx.Response(status_code=status_code, json=response_body)
+
+        side_effects: list[CaptureSideEffect] = []
+        for ii, capture in enumerate(captures):
             url_path: PathDescription | str = capture.path
             assert isinstance(url_path, PathDescription)
             path_regex: str = str(url_path.path)
+            side_effects.append(
+                CaptureSideEffect(
+                    capture=capture,
+                    side_effect=side_effects_callbacks[ii]
+                    if len(side_effects_callbacks)
+                    else None,
+                )
+            )
             for param in url_path.path_parameters:
                 path_regex = path_regex.replace(
                     "{" + param.name + "}", param.respx_lookup
                 )
-            respx_mock.request(
-                capture.method.upper(), url=None, path__regex=path_regex
-            ).mock(side_effect=_side_effect)
+            router = _get_correct_mock_router_for_capture(respx_mock, capture)
+            router.request(
+                capture.method.upper(), url=None, path__regex="^" + path_regex + "$"
+            ).mock(side_effect=side_effects[-1]._side_effect)
 
         return respx_mock
 

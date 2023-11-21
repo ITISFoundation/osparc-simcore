@@ -16,16 +16,16 @@ _logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def connect_to_db(app: FastAPI, cfg: PostgresSettings) -> None:
+async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
     with log_context(
-        _logger, logging.DEBUG, f"connection to db {cfg.dsn_with_async_sqlalchemy}"
+        _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
     ):
         engine: AsyncEngine = create_async_engine(
-            cfg.dsn_with_async_sqlalchemy,
-            pool_size=cfg.POSTGRES_MINSIZE,
-            max_overflow=cfg.POSTGRES_MAXSIZE - cfg.POSTGRES_MINSIZE,
+            settings.dsn_with_async_sqlalchemy,
+            pool_size=settings.POSTGRES_MINSIZE,
+            max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
             connect_args={
-                "server_settings": {"application_name": cfg.POSTGRES_CLIENT_NAME}
+                "server_settings": {"application_name": settings.POSTGRES_CLIENT_NAME}
             },
             pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
             future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released

@@ -8,9 +8,10 @@ class Deployment(str, Enum):
     master = "master"
     aws_staging = "aws-staging"
     dalco_staging = "dalco-staging"
-    aws_production = "aws-production"
+    aws_nih_production = "aws-nih-production"
     dalco_production = "dalco-production"
     tip_production = "tip-production"
+    aws_zmt_production = "aws-zmt-production"
 
 
 class RunningSidecar(BaseModel):

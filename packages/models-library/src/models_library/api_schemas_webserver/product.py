@@ -1,15 +1,15 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
-from models_library.products import ProductName
-from pydantic import Field, HttpUrl, PositiveInt
+from pydantic import ConstrainedInt, Field, HttpUrl, PositiveInt
 
-from ..basic_types import NonNegativeDecimal
+from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
+from ..products import ProductName
 from ._base import InputSchema, OutputSchema
 
 
-class CreditPriceGet(OutputSchema):
+class GetCreditPrice(OutputSchema):
     product_name: str
     usd_per_credit: NonNegativeDecimal | None = Field(
         ...,
@@ -26,10 +26,51 @@ class CreditPriceGet(OutputSchema):
         }
 
 
+class GetProductTemplate(OutputSchema):
+    id_: IDStr = Field(..., alias="id")
+    content: str
+
+
+class UpdateProductTemplate(InputSchema):
+    content: str
+
+
+class GetProduct(OutputSchema):
+    name: ProductName
+    display_name: str
+    short_name: str | None = Field(
+        default=None, description="Short display name for SMS"
+    )
+
+    vendor: dict | None = Field(default=None, description="vendor attributes")
+    issues: list[dict] | None = Field(
+        default=None, description="Reference to issues tracker"
+    )
+    manuals: list[dict] | None = Field(default=None, description="List of manuals")
+    support: list[dict] | None = Field(
+        default=None, description="List of support resources"
+    )
+
+    login_settings: dict
+    max_open_studies_per_user: PositiveInt | None
+    is_payment_enabled: bool
+    credits_per_usd: NonNegativeDecimal | None
+
+    templates: list[GetProductTemplate] = Field(
+        default_factory=list,
+        description="List of templates available to this product for communications (e.g. emails, sms, etc)",
+    )
+
+
+class ExtraCreditsUsdRangeInt(ConstrainedInt):
+    ge = 0
+    lt = 200
+
+
 class GenerateInvitation(InputSchema):
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
-    extra_credits: PositiveInt | None = None
+    extra_credits_in_usd: ExtraCreditsUsdRangeInt | None = None
 
 
 class InvitationGenerated(OutputSchema):
@@ -37,7 +78,7 @@ class InvitationGenerated(OutputSchema):
     issuer: LowerCaseEmailStr
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
-    extra_credits: PositiveInt | None = None
+    extra_credits_in_usd: PositiveInt | None = None
     created: datetime
     invitation_link: HttpUrl
 
@@ -49,7 +90,7 @@ class InvitationGenerated(OutputSchema):
                     "issuer": "john.doe@email.com",
                     "guest": "guest@example.com",
                     "trialAccountDays": 7,
-                    "extraCredits": 30,
+                    "extraCreditsInUsd": 30,
                     "created": "2023-09-27T15:30:00",
                     "invitationLink": "https://example.com/invitation#1234",
                 },

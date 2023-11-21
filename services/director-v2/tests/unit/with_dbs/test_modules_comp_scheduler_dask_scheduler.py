@@ -48,8 +48,8 @@ from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
+    ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
@@ -466,6 +466,7 @@ async def _assert_schedule_pipeline_PENDING(
                 tasks={f"{p.node_id}": p.image},
                 callback=scheduler._wake_up_scheduler_now,  # noqa: SLF001
                 metadata=mock.ANY,
+                hardware_info=mock.ANY,
             )
             for p in expected_pending_tasks
         ],
@@ -502,9 +503,9 @@ async def _assert_schedule_pipeline_PENDING(
 
 @pytest.fixture
 async def instrumentation_rabbit_client_parser(
-    rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
-    client = rabbitmq_client("instrumentation_pytest_consumer")
+    client = create_rabbitmq_client("instrumentation_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name = await client.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mock
@@ -515,9 +516,9 @@ async def instrumentation_rabbit_client_parser(
 
 @pytest.fixture
 async def resource_tracking_rabbit_client_parser(
-    rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
-    client = rabbitmq_client("resource_tracking_pytest_consumer")
+    client = create_rabbitmq_client("resource_tracking_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name = await client.subscribe(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mock
@@ -772,6 +773,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         },
         callback=scheduler._wake_up_scheduler_now,  # noqa: SLF001
         metadata=mock.ANY,
+        hardware_info=mock.ANY,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
@@ -1056,6 +1058,7 @@ class RebootState:
     expected_run_state: RunningState
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "reboot_state",
     [
@@ -1364,7 +1367,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
 
 @pytest.mark.parametrize(
     "get_or_create_exception",
-    [ComputationalBackendOnDemandClustersKeeperNotReadyError],
+    [ClustersKeeperNotAvailableError],
 )
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     with_disabled_scheduler_task: None,

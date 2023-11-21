@@ -2,7 +2,9 @@ from decimal import Decimal
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from simcore_postgres_database.models.products_prices import products_prices
+
+from .constants import QUANTIZE_EXP_ARG
+from .models.products_prices import products_prices
 
 
 async def get_product_latest_credit_price_or_none(
@@ -16,7 +18,7 @@ async def get_product_latest_credit_price_or_none(
         .limit(1)
     )
     if usd_per_credit is not None:
-        return Decimal(usd_per_credit)
+        return Decimal(usd_per_credit).quantize(QUANTIZE_EXP_ARG)
     return None
 
 

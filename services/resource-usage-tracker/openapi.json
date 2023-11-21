@@ -460,6 +460,22 @@
           }
         }
       },
+      "HardwareInfo": {
+        "title": "HardwareInfo",
+        "required": [
+          "aws_ec2_instances"
+        ],
+        "type": "object",
+        "properties": {
+          "aws_ec2_instances": {
+            "title": "Aws Ec2 Instances",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "LimitOffsetPage_ServiceRunGet_": {
         "title": "LimitOffsetPage[ServiceRunGet]",
         "required": [
@@ -577,8 +593,7 @@
             "type": "boolean"
           },
           "specific_info": {
-            "title": "Specific Info",
-            "type": "object"
+            "$ref": "#/components/schemas/HardwareInfo"
           }
         }
       },

@@ -34,6 +34,7 @@ MAKE_C := $(MAKE) --directory
 # requirements in packages and services
 _all-txt = $(shell find $(REPODIR) -path "*/requirements*.txt")
 _all-in := $(shell find ${REPODIR} -path "*/requirements*.in" | sort)
+_tools-in := $(shell find ${REPODIR} -path "*/requirements/*tools.in" | sort)
 _services-in := $(shell find ${SERVICES_DIR} -path "*/requirements*.in" | sort)
 
 
@@ -66,6 +67,10 @@ touch: ## touches all package requirement inputs
 	@$(foreach p,${_all-in},touch $(p);)
 	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
+
+only-tools: ## upgrades tools repo wide
+	# Upgrading ONLY _tools.in
+	@$(foreach p,${_tools-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 reqs: ## updates test & tooling requirements
 	# Upgrading $(upgrade) requirements

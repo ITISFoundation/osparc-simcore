@@ -2,7 +2,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -13,8 +13,19 @@ router = APIRouter()
 
 
 @router.get(
+    "/default",
+    response_model=WalletGetWithAvailableCredits,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_default_wallet(
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    return await webserver_api.get_default_wallet()
+
+
+@router.get(
     "/{wallet_id}",
-    response_model=WalletGet,
+    response_model=WalletGetWithAvailableCredits,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_wallet(

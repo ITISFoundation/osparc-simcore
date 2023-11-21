@@ -20,7 +20,7 @@ _FAST_POLL_INTERVAL = 1
 def app_environment(
     app_environment: EnvVarsDict,
     disabled_rabbitmq: None,
-    mocked_aws_server_envs: None,
+    mocked_ec2_server_envs: None,
     mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
@@ -32,15 +32,38 @@ def app_environment(
 
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
-    mocked_task = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.modules.auto_scaling_task.auto_scale_cluster",
         autospec=True,
     )
-    return mocked_task
 
 
-async def test_auto_scaling_task_created_and_deleted(
+async def test_auto_scaling_task_not_created_if_no_mode_defined(
     app_environment: EnvVarsDict,
+    mock_background_task: mock.Mock,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_POLL_INTERVAL.total_seconds() == _FAST_POLL_INTERVAL
+    assert not hasattr(initialized_app.state, "autoscaler_task")
+    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+    mock_background_task.assert_not_called()
+
+
+async def test_auto_scaling_task_created_and_deleted_with_dynamic_mode(
+    enabled_dynamic_mode: EnvVarsDict,
+    mock_background_task: mock.Mock,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_POLL_INTERVAL.total_seconds() == _FAST_POLL_INTERVAL
+    assert hasattr(initialized_app.state, "autoscaler_task")
+    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+    mock_background_task.assert_called()
+
+
+async def test_auto_scaling_task_created_and_deleted_with_computational_mode(
+    enabled_computational_mode: EnvVarsDict,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,

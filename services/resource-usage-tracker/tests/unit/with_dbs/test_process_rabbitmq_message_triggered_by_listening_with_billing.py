@@ -147,7 +147,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
 
 @pytest.mark.flaky(max_runs=3)
 async def test_process_events_via_rabbit(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
@@ -155,7 +155,7 @@ async def test_process_events_via_rabbit(
     resource_tracker_service_run_db,
     resource_tracker_pricing_tables_db,
 ):
-    publisher = rabbitmq_client("publisher")
+    publisher = create_rabbitmq_client("publisher")
     msg = random_rabbit_message_start(
         wallet_id=1,
         wallet_name="what ever",

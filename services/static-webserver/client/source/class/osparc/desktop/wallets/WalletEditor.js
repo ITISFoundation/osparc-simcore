@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.wallets.WalletEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newWallet = true) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(8));
@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
     manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
-    newWallet ? this.getChildControl("create") : this.getChildControl("save");
+    this.getChildControl("save");
   },
 
   properties: {
@@ -63,7 +63,6 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
   },
 
   events: {
-    "createWallet": "qx.event.type.Event",
     "updateWallet": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
@@ -106,20 +105,6 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
           this.bind("thumbnail", control, "value");
           control.bind("value", this, "thumbnail");
           this._add(control);
-          break;
-        }
-        case "create": {
-          const buttons = this.getChildControl("buttonsLayout");
-          control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
-            appearance: "strong-button"
-          });
-          control.addListener("execute", () => {
-            if (this.__validator.validate()) {
-              control.setFetching(true);
-              this.fireEvent("createWallet");
-            }
-          }, this);
-          buttons.addAt(control, 0);
           break;
         }
         case "save": {

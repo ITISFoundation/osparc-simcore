@@ -16,7 +16,8 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_host import get_localhost_ip
 
 _logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ async def rabbit_service(
 
 
 @pytest.fixture
-async def rabbitmq_client(
+async def create_rabbitmq_client(
     rabbit_service: RabbitSettings,
 ) -> AsyncIterator[Callable[[str], RabbitMQClient]]:
     created_clients = []
@@ -100,6 +101,7 @@ async def rabbitmq_client(
         return client
 
     yield _creator
+
     # cleanup, properly close the clients
     await asyncio.gather(*(client.close() for client in created_clients))
 
@@ -125,3 +127,11 @@ async def rabbitmq_rpc_client(
     yield _creator
     # cleanup, properly close the clients
     await asyncio.gather(*(client.close() for client in created_clients))
+
+
+
+async def rabbitmq_client(create_rabbitmq_client):
+    # NOTE: Legacy fixture
+    # Use create_rabbitmq_client instead of rabbitmq_client
+    # SEE docs/coding-conventions.md::CC4
+    return create_rabbitmq_client
