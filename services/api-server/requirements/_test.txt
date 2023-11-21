@@ -25,8 +25,6 @@ anyio==3.7.0
     #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-asgi-testclient==1.4.11
-    # via -r requirements/_test.in
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -206,7 +204,6 @@ multidict==6.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   async-asgi-testclient
     #   yarl
 mypy==1.7.0
     # via sqlalchemy
@@ -288,7 +285,6 @@ pyyaml==6.0.1
     #   responses
 requests==2.31.0
     # via
-    #   async-asgi-testclient
     #   docker
     #   moto
     #   responses
