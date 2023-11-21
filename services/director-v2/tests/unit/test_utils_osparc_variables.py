@@ -16,7 +16,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.auth import ApiKeyGet
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import RunID, ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
@@ -132,7 +132,7 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
     base = "simcore_service_director_v2.modules.db.repositories.users"
-    mocker.patch(f"{base}.UsersRepo.get_role", return_value="USER")
+    mocker.patch(f"{base}.UsersRepo.get_role", return_value=UserRole("USER"))
     mocker.patch(f"{base}.UsersRepo.get_email", return_value="e@ma.il")
 
 
@@ -196,6 +196,7 @@ async def test_resolve_and_substitute_service_lifetime_variables_in_specs(
         user_id=1,
         product_name="a_product",
         node_id=faker.uuid4(cast_to=None),
+        run_id=RunID.create(),
     )
     print("REPLACED SPECS\n", replaced_specs)
 
