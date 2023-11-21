@@ -1,5 +1,4 @@
 import logging
-from typing import Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -99,9 +98,9 @@ async def login(request: web.Request):
         product=product,
     )
 
-    # Some roles have login privileges
-    has_privileges: Final[bool] = UserRole(user["role"]) > UserRole.USER
-    if has_privileges or not settings.LOGIN_2FA_REQUIRED:
+    # By default expects all suers to have 2fa enabled
+    skip_2fa = not user.get("2fa_enabled", True)
+    if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
         return await login_granted_response(request, user=user)
 
     # no phone
