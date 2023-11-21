@@ -28,6 +28,10 @@ class TaskOwner(BaseModel):
     parent_project_id: ProjectID | None
     parent_node_id: NodeID | None
 
+    @property
+    def has_parent(self) -> bool:
+        return bool(self.parent_node_id and self.parent_project_id)
+
     @root_validator
     @classmethod
     def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
