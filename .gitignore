@@ -178,6 +178,5 @@ Untitled*
 
 # service settings.schemas.json
 services/**/settings-schema.json
-services/payments/scripts/openapi.json
 
 tests/public-api/osparc_python_wheels/*
