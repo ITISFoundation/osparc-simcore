@@ -24,4 +24,5 @@ pytest-mock
 pytest-runner
 pytest-sugar
 python-dotenv
+python-socketio[asyncio_client]
 respx
