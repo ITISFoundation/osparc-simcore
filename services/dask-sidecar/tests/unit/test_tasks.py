@@ -38,11 +38,8 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from faker import Faker
 from models_library.basic_types import EnvVarKey
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceDockerData
 from models_library.services_resources import BootMode
-from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl, SecretStr, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -192,9 +189,6 @@ def sleeper_task(
     boot_mode: BootMode,
     additional_envs: dict[EnvVarKey, str],
     faker: Faker,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
     task_owner: TaskOwner,
     s3_settings: S3Settings,
 ) -> ServiceExampleParam:
