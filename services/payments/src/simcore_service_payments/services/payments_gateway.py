@@ -1,7 +1,7 @@
 """ Interface to communicate with the payment's gateway
 
 - httpx client with base_url to PAYMENTS_GATEWAY_URL
-- Fake gateway service in services/payments/scripts/fake_payment_gateway.py
+- Fake gateway service in services/payments/scripts/example_payment_gateway.py
 
 """
 
