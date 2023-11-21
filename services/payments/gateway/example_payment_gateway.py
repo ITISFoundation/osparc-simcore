@@ -1,3 +1,9 @@
+""" This is a simply example of a payments-gateway service
+
+    - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects with
+    - Also used as a fake payment-gateway for manual exploratory testing
+"""
+
 import argparse
 import json
 import logging
@@ -46,6 +52,10 @@ from simcore_service_payments.models.schemas.acknowledgements import (
 from simcore_service_payments.models.schemas.auth import Token
 
 logging.basicConfig(level=logging.INFO)
+
+
+# NOTE: please change every time there is a change in the specs
+PAYMENTS_GATEWAY_SPECS_VERSION = "0.3.0"
 
 
 class Settings(BaseCustomSettings):
@@ -353,7 +363,7 @@ async def _app_lifespan(app: FastAPI):
 def create_app():
     app = FastAPI(
         title="osparc-compliant payment-gateway",
-        version="0.3.0",
+        version=PAYMENTS_GATEWAY_SPECS_VERSION,
         lifespan=_app_lifespan,
         debug=True,
     )
