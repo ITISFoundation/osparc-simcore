@@ -13,8 +13,13 @@ from settings_library.rabbit import RabbitSettings
 _logger = logging.getLogger(__name__)
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
+def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
     settings: RabbitSettings = app.state.settings.PAYMENTS_RABBITMQ
+    return settings
+
+
+def setup_rabbitmq(app: FastAPI) -> None:
+    settings: RabbitSettings = get_rabbitmq_settings(app)
     app.state.rabbitmq_client = None
     app.state.rabbitmq_rpc_server = None
 
