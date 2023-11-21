@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 services:
   osparc-gateway-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}

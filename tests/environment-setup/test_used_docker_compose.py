@@ -76,7 +76,7 @@ repo_dir = current_dir.parent.parent
 
 
 def _skip_osparc_gateway_server(p) -> bool:
-    return "simcore-service-gateway-server" not in f"{p}"
+    return "osparc-gateway-server" not in f"{p}"
 
 
 compose_paths = filter(
