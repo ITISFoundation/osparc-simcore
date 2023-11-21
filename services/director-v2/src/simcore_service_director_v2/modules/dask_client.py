@@ -24,17 +24,11 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
-    TaskInputData,
     TaskOutputData,
-    TaskOutputDataSchema,
 )
 from dask_task_models_library.container_tasks.protocol import (
-    ContainerCommands,
-    ContainerEnvsDict,
-    ContainerImage,
-    ContainerLabelsDict,
     ContainerRemoteFct,
-    ContainerTag,
+    ContainerTaskParameters,
     LogFileUploadURL,
 )
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
@@ -44,7 +38,6 @@ from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTyp
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
-from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
@@ -200,36 +193,22 @@ class DaskClient:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _comp_sidecar_fct(  # pylint: disable=too-many-arguments # noqa: PLR0913
+        def _comp_sidecar_fct(
             *,
+            task_parameters: ContainerTaskParameters,
             docker_auth: DockerBasicAuth,
-            service_key: ContainerImage,
-            service_version: ContainerTag,
-            input_data: TaskInputData,
-            output_data_keys: TaskOutputDataSchema,
             log_file_url: LogFileUploadURL,
-            command: ContainerCommands,
-            task_envs: ContainerEnvsDict,
-            task_labels: ContainerLabelsDict,
             s3_settings: S3Settings | None,
-            boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
             from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
             return run_computational_sidecar(
+                task_parameters=task_parameters,
                 docker_auth=docker_auth,
-                service_key=service_key,
-                service_version=service_version,
-                input_data=input_data,
-                output_data_keys=output_data_keys,
                 log_file_url=log_file_url,
-                command=command,
-                task_envs=task_envs,
-                task_labels=task_labels,
                 s3_settings=s3_settings,
-                boot_mode=boot_mode,
             )
 
         if remote_fct is None:
@@ -327,6 +306,9 @@ class DaskClient:
                 node_image=node_image,
                 metadata=metadata,
             )
+            task_owner = dask_utils.compute_task_owner(
+                user_id, project_id, node_id, metadata.get("project_metadata", {})
+            )
 
             try:
                 assert self.app.state  # nosec
@@ -334,21 +316,24 @@ class DaskClient:
                 settings: AppSettings = self.app.state.settings
                 task_future = self.backend.client.submit(
                     remote_fct,
+                    task_parameters=ContainerTaskParameters(
+                        image=node_image.name,
+                        tag=node_image.tag,
+                        input_data=input_data,
+                        output_data_keys=output_data_keys,
+                        command=node_image.command,
+                        envs=task_envs,
+                        labels=task_labels,
+                        boot_mode=node_image.boot_mode,
+                        task_owner=task_owner,
+                    ),
                     docker_auth=DockerBasicAuth(
                         server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
                         username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
                         password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
-                    service_key=node_image.name,
-                    service_version=node_image.tag,
-                    input_data=input_data,
-                    output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
-                    command=node_image.command,
-                    task_envs=task_envs,
-                    task_labels=task_labels,
                     s3_settings=s3_settings,
-                    boot_mode=node_image.boot_mode,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,

@@ -18,6 +18,7 @@ from dask_task_models_library.container_tasks.io import (
 from dask_task_models_library.container_tasks.protocol import (
     ContainerEnvsDict,
     ContainerLabelsDict,
+    TaskOwner,
 )
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
@@ -39,8 +40,8 @@ from simcore_sdk.node_ports_common.exceptions import (
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from simcore_sdk.node_ports_v2.ports_mapping import PortKey
-from simcore_service_director_v2.constants import UNDEFINED_DOCKER_LABEL
 
+from ..constants import UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -48,7 +49,7 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
-from ..models.comp_runs import RunMetadataDict
+from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
@@ -623,3 +624,18 @@ async def wrap_client_async_routine(
     a union of types. this wrapper makes both mypy and pylance happy"""
     assert client_coroutine  # nosec
     return await client_coroutine
+
+
+def compute_task_owner(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: ProjectID,
+    project_metadata: ProjectMetadataDict,
+) -> TaskOwner:
+    return TaskOwner(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        parent_node_id=project_metadata.get("parent_node_id"),
+        parent_project_id=project_metadata.get("parent_project_id"),
+    )
