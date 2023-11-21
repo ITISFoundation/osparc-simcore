@@ -58,7 +58,7 @@ def run_program_with_args() -> Callable:
     runner = CliRunner()
 
     def _invoke(*cmd):
-        print("RUNNING", "osparc-service-integrator", cmd)
+        print("RUNNING", "simcore-service-integrator", cmd)
         print(runner.make_env())
         return runner.invoke(cli.app, list(cmd))
 
