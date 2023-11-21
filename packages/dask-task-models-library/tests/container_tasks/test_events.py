@@ -14,6 +14,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.protocol import TaskOwner
+from faker import Faker
 from pytest_mock.plugin import MockerFixture
 
 
@@ -34,6 +35,11 @@ def test_events_models_examples(model_cls):
         assert model_instance
 
         assert model_instance.topic_name()
+
+
+@pytest.fixture
+def job_id(faker: Faker) -> str:
+    return faker.pystr()
 
 
 @pytest.fixture()
