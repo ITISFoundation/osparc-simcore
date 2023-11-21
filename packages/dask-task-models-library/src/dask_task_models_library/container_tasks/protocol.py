@@ -72,6 +72,25 @@ class ContainerTaskParameters(BaseModel):
     boot_mode: BootMode
     task_owner: TaskOwner
 
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "image": "ubuntu",
+                    "tag": "latest",
+                    "input_data": TaskInputData.Config.schema_extra["examples"][0],
+                    "output_data_keys": TaskOutputDataSchema.Config.schema_extra[
+                        "examples"
+                    ][0],
+                    "command": ["sleep 10", "echo hello"],
+                    "envs": {"MYENV": "is an env"},
+                    "labels": {"io.simcore.thelabel": "is amazing"},
+                    "boot_mode": BootMode.CPU.value,
+                    "task_owner": TaskOwner.Config.schema_extra["examples"][0],
+                },
+            ]
+        }
+
 
 class ContainerRemoteFct(Protocol):
     def __call__(
