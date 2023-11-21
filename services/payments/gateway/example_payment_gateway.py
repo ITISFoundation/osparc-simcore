@@ -295,7 +295,13 @@ def create_payment_method_router():
     @router.get(
         "/{id}",
         response_model=GetPaymentMethod,
-        responses=ERROR_RESPONSES,
+        responses={
+            "404": {
+                "model": ErrorModel,
+                "description": "Payment method not found: It was not added or incomplete (i.e. create flow failed or canceled)",
+            },
+            **ERROR_RESPONSES,
+        },
     )
     def get_payment_method(
         id: PaymentMethodID,
@@ -346,11 +352,12 @@ async def _app_lifespan(app: FastAPI):
 
 def create_app():
     app = FastAPI(
-        title="fake-payment-gateway",
+        title="osparc-compliant payment-gateway",
         version="0.3.0",
         lifespan=_app_lifespan,
         debug=True,
     )
+    app.openapi_version = "3.0.0"  # NOTE: small hack to allow current version of `42Crunch.vscode-openapi` to work with openapi
     override_fastapi_openapi_method(app)
 
     app.state.payments = {}
