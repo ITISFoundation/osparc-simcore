@@ -56,6 +56,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-dynamic-sidecar=simcore_service_dynamic_sidecar.cli:main",
+            "simcore-service=simcore_service_dynamic_sidecar.cli:main",
         ],
     },
 )

@@ -13,6 +13,13 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 from ..utils.db import DB_TO_RUNNING_STATE
 
 
+class ProjectMetadataDict(TypedDict, total=False):
+    parent_node_id: NodeID
+    parent_node_name: str
+    parent_project_id: ProjectID
+    parent_project_name: str
+
+
 class RunMetadataDict(TypedDict, total=False):
     node_id_names_map: dict[NodeID, str]
     project_name: str
@@ -21,6 +28,7 @@ class RunMetadataDict(TypedDict, total=False):
     user_email: str
     wallet_id: int | None
     wallet_name: str | None
+    project_metadata: ProjectMetadataDict
 
 
 class CompRunsAtDB(BaseModel):

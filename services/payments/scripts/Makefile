@@ -9,6 +9,6 @@ run-devel: ## runs fake_payment_gateway server
 	uvicorn fake_payment_gateway:the_app --reload
 
 
-openapi.json:
+openapi.json: ## creates OAS
 	@set -o allexport; source .env-secret; set +o allexport; \
 	python fake_payment_gateway.py openapi > $@

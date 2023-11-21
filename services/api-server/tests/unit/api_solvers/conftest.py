@@ -5,13 +5,18 @@
 
 from collections.abc import Callable
 from copy import deepcopy
-from typing import Any
+from datetime import datetime, timedelta
+from typing import Any, AsyncIterable, Final
 
+import httpx
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
+from models_library.projects_state import RunningState
 from pytest_simcore.helpers import faker_catalog
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 
 
 @pytest.fixture
@@ -82,3 +87,26 @@ def mocked_catalog_service_api(
     )
 
     return respx_mock
+
+
+@pytest.fixture
+async def mocked_directorv2_service(
+    mocked_directorv2_service_api_base,
+) -> AsyncIterable[MockRouter]:
+    stop_time: Final[datetime] = datetime.now() + timedelta(seconds=5)
+
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        task = ComputationTaskGet.parse_obj(
+            ComputationTaskGet.Config.schema_extra["examples"][0]
+        )
+        if datetime.now() > stop_time:
+            task.state = RunningState.SUCCESS
+            task.stopped = datetime.now()
+        return httpx.Response(
+            status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
+        )
+
+    mocked_directorv2_service_api_base.get(
+        path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+    ).mock(side_effect=_get_computation)
+    yield mocked_directorv2_service_api_base

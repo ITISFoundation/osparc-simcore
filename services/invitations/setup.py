@@ -57,6 +57,7 @@ SETUP = {
     "entry_points": {
         "console_scripts": [
             "simcore-service-invitations = simcore_service_invitations.cli:main",
+            "simcore-service = simcore_service_invitations.cli:main",
         ],
     },
 }

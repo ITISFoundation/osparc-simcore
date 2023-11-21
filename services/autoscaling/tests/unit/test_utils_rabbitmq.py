@@ -4,7 +4,8 @@
 # pylint:disable=too-many-arguments
 
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import aiodocker
 from faker import Faker
@@ -29,12 +30,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_TENACITY_RETRY_PARAMS = dict(
-    reraise=True,
-    retry=retry_if_exception_type(AssertionError),
-    stop=stop_after_delay(30),
-    wait=wait_fixed(0.1),
-)
+_TENACITY_RETRY_PARAMS = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(30),
+    "wait": wait_fixed(0.1),
+}
 
 
 # Selection of core and tool services started in this swarm fixture (integration)
@@ -51,7 +52,7 @@ async def test_post_task_log_message(
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
@@ -62,7 +63,7 @@ async def test_post_task_log_message(
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    client = rabbitmq_client("pytest_consumer")
+    client = create_rabbitmq_client("pytest_consumer")
     await client.subscribe(
         LoggerRabbitMessage.get_channel_name(),
         mocked_message_handler,
@@ -141,7 +142,7 @@ async def test_post_task_progress_message(
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
@@ -152,7 +153,7 @@ async def test_post_task_progress_message(
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    client = rabbitmq_client("pytest_consumer")
+    client = create_rabbitmq_client("pytest_consumer")
     await client.subscribe(
         ProgressRabbitMessageNode.get_channel_name(),
         mocked_message_handler,

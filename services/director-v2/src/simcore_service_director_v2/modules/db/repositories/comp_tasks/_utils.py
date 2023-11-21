@@ -5,7 +5,7 @@ from typing import Any, Final, cast
 import aiopg.sa
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceType
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
     ServiceExtras,
@@ -252,7 +252,7 @@ async def _update_project_node_resources_from_hardware_info(
         return
     try:
         unordered_list_ec2_instance_types: list[
-            EC2InstanceType
+            EC2InstanceTypeGet
         ] = await get_instance_type_details(
             rabbitmq_rpc_client,
             instance_type_names=set(hardware_info.aws_ec2_instances),
@@ -261,7 +261,7 @@ async def _update_project_node_resources_from_hardware_info(
         assert unordered_list_ec2_instance_types  # nosec
 
         # NOTE: with the current implementation, there is no use to get the instance past the first one
-        def _by_type_name(ec2: EC2InstanceType) -> bool:
+        def _by_type_name(ec2: EC2InstanceTypeGet) -> bool:
             return bool(ec2.name == hardware_info.aws_ec2_instances[0])
 
         selected_ec2_instance_type = next(

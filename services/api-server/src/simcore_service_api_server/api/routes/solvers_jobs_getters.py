@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from starlette.background import BackgroundTask
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -31,6 +32,7 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.rabbitmq import LogListener
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -353,4 +355,29 @@ async def get_job_pricing_unit(
         node_id: UUID = UUID(node_ids[0])
         return await webserver_api.get_project_node_pricing_unit(
             project_id=job_id, node_id=node_id
+        )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
+    response_class=StreamingResponse,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_log_stream(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    log_listener: Annotated[LogListener, Depends(LogListener)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    with log_context(_logger, logging.DEBUG, "Begin streaming logs"):
+        _logger.debug("job: %s", job_name)
+        project: ProjectGet = await webserver_api.get_project(project_id=job_id)
+        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+        await log_listener.listen(job_id)
+        return StreamingResponse(
+            log_listener.log_generator(),
+            media_type="application/x-ndjson",
+            background=BackgroundTask(log_listener.stop_listening),
         )

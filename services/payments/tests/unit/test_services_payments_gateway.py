@@ -17,6 +17,8 @@ from simcore_service_payments.models.payments_gateway import (
 )
 from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
+    PaymentsGatewayError,
+    _raise_as_payments_gateway_error,
     setup_payments_gateway,
 )
 
@@ -92,7 +94,6 @@ async def test_one_time_payment_workflow(
     mock_payments_gateway_service_or_none: MockRouter | None,
     amount_dollars: float,
 ):
-
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
     assert payment_gateway_api
 
@@ -125,13 +126,13 @@ async def test_one_time_payment_workflow(
         assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
 
 
+@pytest.mark.can_run_against_external()
 async def test_payment_methods_workflow(
     app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_or_none: MockRouter | None,
     amount_dollars: float,
 ):
-
     payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
         app
     )
@@ -161,7 +162,7 @@ async def test_payment_methods_workflow(
     got_payment_method = await payments_gateway_api.get_payment_method(
         payment_method_id
     )
-    assert got_payment_method.idr == payment_method_id
+    assert got_payment_method.id == payment_method_id
     print(got_payment_method.json(indent=2))
 
     # list payment-methods
@@ -171,8 +172,7 @@ async def test_payment_methods_workflow(
     assert len(items) == 1
     assert items[0] == got_payment_method
 
-    # init payments with payment-method (needs to be ACK to complete)
-    payment_initiated = await payments_gateway_api.init_payment_with_payment_method(
+    payment_with_payment_method = await payments_gateway_api.pay_with_payment_method(
         id_=payment_method_id,
         payment=InitPayment(
             amount_dollars=amount_dollars,
@@ -182,24 +182,40 @@ async def test_payment_methods_workflow(
             wallet_name=faker.word(),
         ),
     )
-
-    # cancel payment
-    payment_canceled = await payments_gateway_api.cancel_payment(payment_initiated)
-    assert payment_canceled is not None
+    assert payment_with_payment_method.success
 
     # delete payment-method
     await payments_gateway_api.delete_payment_method(payment_method_id)
 
-    with pytest.raises(httpx.HTTPStatusError) as err_info:
+    with pytest.raises(PaymentsGatewayError) as err_info:
         await payments_gateway_api.get_payment_method(payment_method_id)
 
-    http_status_error = err_info.value
+    assert str(err_info.value)
+    assert err_info.value.operation_id == "PaymentsGatewayApi.get_payment_method"
+
+    http_status_error = err_info.value.http_status_error
     assert http_status_error.response.status_code == status.HTTP_404_NOT_FOUND
 
     if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
-
         # all defined payment-methods
         for route in mock_payments_gateway_service_or_none.routes:
             if route.name and "payment_method" in route.name:
                 assert route.called
+
+
+async def test_payments_gateway_error_exception():
+    async def _go():
+        with _raise_as_payments_gateway_error(operation_id="foo"):
+            async with httpx.AsyncClient(
+                app=FastAPI(),
+                base_url="http://payments.testserver.io",
+            ) as client:
+                response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
+                response.raise_for_status()
+
+    with pytest.raises(PaymentsGatewayError) as err_info:
+        await _go()
+    err = err_info.value
+    assert isinstance(err, PaymentsGatewayError)
+
+    assert "curl -X POST" in err.get_detailed_message()

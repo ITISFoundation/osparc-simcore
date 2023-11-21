@@ -135,7 +135,6 @@ async def init_creation_of_wallet_payment(
     user_id: UserID,
     wallet_id: WalletID,
     comment: str | None,
-    payment_method_id: PaymentMethodID | None = None,
 ) -> WalletPaymentInitiated:
     """
 
@@ -157,38 +156,22 @@ async def init_creation_of_wallet_payment(
     user = await get_user_name_and_email(app, user_id=user_id)
     settings: PaymentsSettings = get_plugin_settings(app)
     payment_inited: WalletPaymentInitiated
-    if payment_method_id is None:
-        if settings.PAYMENTS_FAKE_COMPLETION:
-            payment_inited = await _fake_init_payment(
-                app,
-                price_dollars,
-                osparc_credits,
-                product_name,
-                wallet_id,
-                user_id,
-                user.email,
-                comment,
-            )
-        else:
-            # call to payment-service
-            assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-            payment_inited = await _rpc.init_payment(
-                app,
-                amount_dollars=price_dollars,
-                target_credits=osparc_credits,
-                product_name=product_name,
-                wallet_id=wallet_id,
-                wallet_name=user_wallet.name,
-                user_id=user_id,
-                user_name=user.name,
-                user_email=user.email,
-                comment=comment,
-            )
-    else:
-        assert payment_method_id is not None  # nosec
-        payment_inited = await _rpc.init_payment_with_payment_method(
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        payment_inited = await _fake_init_payment(
             app,
-            payment_method_id=payment_method_id,
+            price_dollars,
+            osparc_credits,
+            product_name,
+            wallet_id,
+            user_id,
+            user.email,
+            comment,
+        )
+    else:
+        # call to payment-service
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        payment_inited = await _rpc.init_payment(
+            app,
             amount_dollars=price_dollars,
             target_credits=osparc_credits,
             product_name=product_name,
@@ -210,6 +193,7 @@ async def _ack_creation_of_wallet_payment(
     completion_state: PaymentTransactionState,
     message: str | None = None,
     invoice_url: HttpUrl | None = None,
+    notify_enabled: bool = True,
 ) -> PaymentTransaction:
     #
     # NOTE: implements endpoint in payment service hit by the gateway
@@ -231,7 +215,10 @@ async def _ack_creation_of_wallet_payment(
     payment = _to_api_model(transaction)
 
     # notifying front-end via web-sockets
-    await notify_payment_completed(app, user_id=transaction.user_id, payment=payment)
+    if notify_enabled:
+        await notify_payment_completed(
+            app, user_id=transaction.user_id, payment=payment
+        )
 
     if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
@@ -285,6 +272,117 @@ async def cancel_payment_to_wallet(
         )
 
 
+async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-many-arguments
+    app,
+    amount_dollars,
+    target_credits,
+    product_name,
+    wallet_id,
+    wallet_name,
+    user_id,
+    user_name,
+    user_email,
+    payment_method_id: PaymentMethodID,
+    comment,
+) -> PaymentTransaction:
+
+    assert user_name  # nosec
+    assert wallet_name  # nosec
+
+    inited = await _fake_init_payment(
+        app,
+        amount_dollars,
+        target_credits,
+        product_name,
+        wallet_id,
+        user_id,
+        user_email,
+        comment,
+    )
+    return await _ack_creation_of_wallet_payment(
+        app,
+        payment_id=inited.payment_id,
+        completion_state=PaymentTransactionState.SUCCESS,
+        message=f"Fake payment completed with payment-id = {payment_method_id}",
+        invoice_url=f"https://fake-invoice.com/?id={inited.payment_id}",  # type: ignore
+        notify_enabled=False,
+    )
+
+
+async def pay_with_payment_method(
+    app: web.Application,
+    *,
+    price_dollars: Decimal,
+    osparc_credits: Decimal,
+    product_name: str,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_method_id: PaymentMethodID,
+    comment: str | None,
+) -> PaymentTransaction:
+
+    # wallet: check permissions
+    await raise_for_wallet_payments_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    user_wallet = await get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    assert user_wallet.wallet_id == wallet_id  # nosec
+
+    # user info
+    user = await get_user_name_and_email(app, user_id=user_id)
+
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        return await _fake_pay_with_payment_method(
+            app,
+            payment_method_id=payment_method_id,
+            amount_dollars=price_dollars,
+            target_credits=osparc_credits,
+            product_name=product_name,
+            wallet_id=wallet_id,
+            wallet_name=user_wallet.name,
+            user_id=user_id,
+            user_name=user.name,
+            user_email=user.email,
+            comment=comment,
+        )
+
+    assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+
+    return await _rpc.pay_with_payment_method(
+        app,
+        payment_method_id=payment_method_id,
+        amount_dollars=price_dollars,
+        target_credits=osparc_credits,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        wallet_name=user_wallet.name,
+        user_id=user_id,
+        user_name=user.name,
+        user_email=user.email,
+        comment=comment,
+    )
+
+
+async def _fake_get_payments_page(
+    app: web.Application,
+    user_id: UserID,
+    limit: int,
+    offset: int,
+):
+
+    (
+        total_number_of_items,
+        transactions,
+    ) = await _onetime_db.list_user_payment_transactions(
+        app, user_id=user_id, offset=offset, limit=limit
+    )
+
+    return total_number_of_items, [_to_api_model(t) for t in transactions]
+
+
 async def list_user_payments_page(
     app: web.Application,
     product_name: str,
@@ -297,11 +395,16 @@ async def list_user_payments_page(
     assert offset >= 0  # nosec
     assert product_name  # nosec
 
-    (
-        total_number_of_items,
-        transactions,
-    ) = await _onetime_db.list_user_payment_transactions(
-        app, user_id=user_id, offset=offset, limit=limit
-    )
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        total_number_of_items, payments = await _fake_get_payments_page(
+            app, user_id=user_id, offset=offset, limit=limit
+        )
 
-    return [_to_api_model(t) for t in transactions], total_number_of_items
+    else:
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        total_number_of_items, payments = await _rpc.get_payments_page(
+            app, user_id=user_id, offset=offset, limit=limit
+        )
+
+    return payments, total_number_of_items

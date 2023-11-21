@@ -168,10 +168,10 @@ async def delete_payment_method(
 @router.post(
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay",
     response_model=Envelope[WalletPaymentInitiated],
-    response_description="Payment initialized",
+    response_description="Pay with payment-method",
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def init_payment_with_payment_method(
+async def pay_with_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID, _body: CreateWalletPayment
 ):
     ...
