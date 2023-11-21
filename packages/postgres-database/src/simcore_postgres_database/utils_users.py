@@ -2,6 +2,7 @@
     i.e. models.users main table and all its relations
 """
 
+
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 
@@ -19,16 +20,22 @@ class UserNotFoundInRepoError(BaseUserRepoError):
 class UsersRepo:
     @staticmethod
     async def get_role(conn: SAConnection, user_id: int) -> UserRole:
-        if value := await conn.scalar(
+        value: UserRole | None = await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
-        ):
+        )
+        if value:
+            assert isinstance(value, UserRole)  # nosec
             return UserRole(value)
-        raise UserNotFoundInRepoError()
+
+        raise UserNotFoundInRepoError
 
     @staticmethod
     async def get_email(conn: SAConnection, user_id: int) -> str:
-        if value := await conn.scalar(
+        value: str | None = await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
-        ):
-            return f"{value}"
-        raise UserNotFoundInRepoError()
+        )
+        if value:
+            assert isinstance(value, str)  # nosec
+            return value
+
+        raise UserNotFoundInRepoError
