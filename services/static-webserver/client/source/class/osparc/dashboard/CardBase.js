@@ -525,22 +525,22 @@ qx.Class.define("osparc.dashboard.CardBase", {
       switch (status) {
         case "STARTED":
           icon = "@FontAwesome5Solid/spinner/8";
-          label = tr("Running");
+          label = this.tr("Running");
           border = "info";
           break;
         case "SUCCESS":
           icon = "@FontAwesome5Solid/check/8";
-          label = tr("Ran successfully");
+          label = this.tr("Ran successfully");
           border = "success";
           break;
         case "ABORTED":
           icon = "@FontAwesome5Solid/info/8";
-          label = tr("Run aborted");
+          label = this.tr("Run aborted");
           border = "warning";
           break;
         case "FAILED":
           icon = "@FontAwesome5Solid/times/8";
-          label = tr("Ran with error");
+          label = this.tr("Ran with error");
           border = "error";
           break;
         default:
