@@ -52,6 +52,7 @@ def setup(app: FastAPI) -> None:
         await app.state.rabbitmq_client.subscribe(
             WalletCreditsLimitReachedMessage.get_channel_name(),
             partial(message_handler, app),
+            exclusive_queue=False,
             topics=[f"*.{CreditsLimit.SHUTDOWN_SERVICES}"],
         )
 
