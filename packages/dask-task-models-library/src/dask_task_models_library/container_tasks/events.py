@@ -33,8 +33,11 @@ class TaskProgressEvent(BaseTaskEvent):
     def from_dask_worker(
         cls, progress: float, *, task_owner: TaskOwner
     ) -> "TaskProgressEvent":
+        worker = get_worker()
+        job_id = worker.get_current_task()
+
         return cls(
-            job_id=get_worker().get_current_task(),
+            job_id=job_id,
             progress=progress,
             task_owner=task_owner,
         )
@@ -91,8 +94,10 @@ class TaskLogEvent(BaseTaskEvent):
     def from_dask_worker(
         cls, log: str, log_level: LogLevelInt, *, task_owner: TaskOwner
     ) -> "TaskLogEvent":
+        worker = get_worker()
+        job_id = worker.get_current_task()
         return cls(
-            job_id=get_worker().get_current_task(),
+            job_id=job_id,
             log=log,
             log_level=log_level,
             task_owner=task_owner,

@@ -37,13 +37,12 @@ def test_events_models_examples(model_cls):
 
 
 @pytest.fixture()
-def mocked_dask_worker_job_id(mocker: MockerFixture) -> str:
+def mocked_dask_worker_job_id(mocker: MockerFixture, job_id: str) -> str:
     mock_get_worker = mocker.patch(
         "dask_task_models_library.container_tasks.events.get_worker", autospec=True
     )
-    fake_job_id = "some_fake_job_id"
-    mock_get_worker.return_value.get_current_task.return_value = fake_job_id
-    return fake_job_id
+    mock_get_worker.return_value.get_current_task.return_value = job_id
+    return job_id
 
 
 @pytest.fixture(params=TaskOwner.Config.schema_extra["examples"])

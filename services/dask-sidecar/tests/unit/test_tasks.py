@@ -65,26 +65,6 @@ from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def job_id() -> str:
-    return "some_incredible_string"
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return faker.uuid4(cast_to=None)
-
-
-@pytest.fixture
-def node_id(faker: Faker) -> NodeID:
-    return faker.uuid4(cast_to=None)
-
-
 @pytest.fixture()
 def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, mock.Mock]:
     # mock dask client
@@ -202,17 +182,6 @@ def integration_version(request: pytest.FixtureRequest) -> version.Version:
 @pytest.fixture
 def additional_envs(faker: Faker) -> dict[EnvVarKey, str]:
     return parse_obj_as(dict[EnvVarKey, str], faker.pydict(allowed_types=(str,)))
-
-
-@pytest.fixture
-def task_owner(user_id: UserID, project_id: ProjectID, node_id: NodeID) -> TaskOwner:
-    return TaskOwner(
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-        parent_project_id=None,
-        parent_node_id=None,
-    )
 
 
 @pytest.fixture

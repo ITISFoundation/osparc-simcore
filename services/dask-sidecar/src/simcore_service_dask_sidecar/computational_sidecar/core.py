@@ -14,7 +14,6 @@ from uuid import uuid4
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
-from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
 from packaging import version
@@ -24,7 +23,7 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..dask_utils import TaskPublisher, publish_event
+from ..dask_utils import TaskPublisher
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
@@ -152,10 +151,10 @@ class ComputationalSidecar:
     async def _publish_sidecar_log(
         self, log: LogMessageStr, log_level: LogLevelInt = logging.INFO
     ) -> None:
-        publish_event(
-            self.task_publishers.logs,
-            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}", log_level=log_level),
+        self.task_publishers.publish_logs(
+            message=f"[sidecar] {log}", log_level=log_level
         )
+
         logger.log(log_level, log)
 
     async def run(self, command: list[str]) -> TaskOutputData:

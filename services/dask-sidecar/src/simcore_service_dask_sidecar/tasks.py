@@ -88,7 +88,7 @@ async def _run_computational_sidecar_async(
     log_file_url: LogFileUploadURL,
     s3_settings: S3Settings | None,
 ) -> TaskOutputData:
-    task_publishers = TaskPublisher()
+    task_publishers = TaskPublisher(task_owner=task_parameters.task_owner)
 
     _logger.debug(
         "run_computational_sidecar %s",
@@ -97,7 +97,7 @@ async def _run_computational_sidecar_async(
     current_task = asyncio.current_task()
     assert current_task  # nosec
     async with monitor_task_abortion(
-        task_name=current_task.get_name(), log_publisher=task_publishers.logs
+        task_name=current_task.get_name(), task_publishers=task_publishers
     ):
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
