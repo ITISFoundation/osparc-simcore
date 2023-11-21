@@ -15,6 +15,7 @@ from servicelib.rabbitmq import (
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
+from ..core.settings import AppSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -23,8 +24,16 @@ async def message_handler(app: FastAPI, data: bytes) -> bool:
     message = WalletCreditsLimitReachedMessage.parse_raw(data)
 
     scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
+    settings: AppSettings = app.state.settings
 
-    await scheduler.mark_all_services_in_wallet_for_removal(wallet_id=message.wallet_id)
+    if (
+        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED
+    ):
+        await scheduler.mark_all_services_in_wallet_for_removal(
+            wallet_id=message.wallet_id
+        )
+    else:
+        _logger.debug("Skipped shutting down services for wallet %s", message.wallet_id)
 
     return True
 

@@ -144,16 +144,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     # DEVELOPMENT ONLY config
     #
 
-    DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
-        default=False,
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
+        default=True,
         description=(
-            "Limits concurrent service saves for a docker node. Guarantees "
-            "that no more than X services use a resource together. "
-            "NOTE: A node can end up with all the services from a single study. "
-            "When the study is closed/opened all the services will try to "
-            "upload/download their data. This causes a lot of disk "
-            "and network stress (especially for low power nodes like in AWS). "
-            "Some nodes collapse under load or behave unexpectedly."
+            "when there are any more credits left for a walled the Resource Usage Tracker "
+            "sends a message via RabbitMQ to shutdown the services."
         ),
     )
 

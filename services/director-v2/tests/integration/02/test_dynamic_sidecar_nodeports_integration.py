@@ -372,8 +372,6 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
             "REDIS_HOST": redis_service.REDIS_HOST,
             "REDIS_PORT": f"{redis_service.REDIS_PORT}",
-            # always test the node limit feature, by default is disabled
-            "DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED": "true",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
