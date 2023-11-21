@@ -162,6 +162,8 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     async def get_many_payment_methods(
         self, ids_: list[PaymentMethodID]
     ) -> list[GetPaymentMethod]:
+        if not ids_:
+            return []
         response = await self.client.post(
             "/payment-methods:batchGet",
             json=jsonable_encoder(BatchGetPaymentMethods(payment_methods_ids=ids_)),
