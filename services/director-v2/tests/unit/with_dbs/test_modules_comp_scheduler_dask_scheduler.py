@@ -503,9 +503,9 @@ async def _assert_schedule_pipeline_PENDING(
 
 @pytest.fixture
 async def instrumentation_rabbit_client_parser(
-    rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
-    client = rabbitmq_client("instrumentation_pytest_consumer")
+    client = create_rabbitmq_client("instrumentation_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name = await client.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mock
@@ -516,9 +516,9 @@ async def instrumentation_rabbit_client_parser(
 
 @pytest.fixture
 async def resource_tracking_rabbit_client_parser(
-    rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
-    client = rabbitmq_client("resource_tracking_pytest_consumer")
+    client = create_rabbitmq_client("resource_tracking_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name = await client.subscribe(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mock

@@ -17,8 +17,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID, ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from servicelib.logging_utils import log_context
+from simcore_postgres_database.models.users import UserRole
 
 from ..utils.db import get_repository
 from ..utils.osparc_variables import (
@@ -28,6 +29,7 @@ from ..utils.osparc_variables import (
 )
 from .api_keys_manager import get_or_create_api_key
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
+from .db.repositories.users import UsersRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -190,7 +192,7 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
     run_id: RunID,
     safe: bool = True,
 ) -> dict[str, Any]:
-    registry: OsparcVariablesTable = app.state.lifespan_osparc_variables_table
+    registry: OsparcVariablesTable = app.state.service_lifespan_osparc_variables_table
 
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
@@ -253,25 +255,27 @@ async def _get_or_create_api_secret(
     return key_data.api_secret  # type:ignore [no-any-return]
 
 
-def _setup_lifespan_osparc_variables_table(app: FastAPI):
-    app.state.lifespan_osparc_variables_table = table = OsparcVariablesTable()
+def _setup_service_lifespan_osparc_variables_table(app: FastAPI):
+    app.state.service_lifespan_osparc_variables_table = table = OsparcVariablesTable()
 
     table.register_from_handler("OSPARC_VARIABLE_API_KEY")(_get_or_create_api_key)
     table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(_get_or_create_api_secret)
 
     _logger.debug(
-        "Registered lifespan_osparc_variables_table=%s", sorted(table.variables_names())
+        "Registered service_lifespan_osparc_variables_table=%s",
+        sorted(table.variables_names()),
     )
 
 
-async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
-    repo = get_repository(app, ServicesEnvironmentsRepository)
+async def _request_user_email(app: FastAPI, user_id: UserID) -> str:
+    repo = get_repository(app, UsersRepository)
     return await repo.get_user_email(user_id=user_id)
 
 
-async def _request_user_role(app: FastAPI, user_id: UserID):
-    repo = get_repository(app, ServicesEnvironmentsRepository)
-    return await repo.get_user_role(user_id=user_id)
+async def _request_user_role(app: FastAPI, user_id: UserID) -> str:
+    repo = get_repository(app, UsersRepository)
+    user_role: UserRole = await repo.get_user_role(user_id=user_id)
+    return f"{user_role.value}"
 
 
 def _setup_session_osparc_variables(app: FastAPI):
@@ -283,6 +287,7 @@ def _setup_session_osparc_variables(app: FastAPI):
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
         ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
         ("OSPARC_VARIABLE_NODE_ID", "node_id"),
+        ("OSPARC_VARIABLE_USER_ID", "user_id"),
     ]:
         table.register_from_context(name, context_name)
 
@@ -304,6 +309,6 @@ def setup(app: FastAPI):
 
     def on_startup() -> None:
         _setup_session_osparc_variables(app)
-        _setup_lifespan_osparc_variables_table(app)
+        _setup_service_lifespan_osparc_variables_table(app)
 
     app.add_event_handler("startup", on_startup)

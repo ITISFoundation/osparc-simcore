@@ -110,14 +110,14 @@ def tasks(
 
 
 async def test_publish_service_started_metrics(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user: dict[str, Any],
     simcore_user_agent: str,
     tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
 ):
-    consumer = rabbitmq_client("consumer")
-    publisher = rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
 
     await consumer.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
@@ -134,14 +134,14 @@ async def test_publish_service_started_metrics(
 
 
 async def test_publish_service_stopped_metrics(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user: dict[str, Any],
     simcore_user_agent: str,
     tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
 ):
-    consumer = rabbitmq_client("consumer")
-    publisher = rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
 
     await consumer.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
@@ -159,7 +159,7 @@ async def test_publish_service_stopped_metrics(
 
 
 async def test_publish_service_resource_tracking_started(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user: dict[str, Any],
     project: ProjectAtDB,
     simcore_user_agent: str,
@@ -168,8 +168,8 @@ async def test_publish_service_resource_tracking_started(
     faker: Faker,
     osparc_product_name: str,
 ):
-    consumer = rabbitmq_client("consumer")
-    publisher = rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
 
     random_task = random.choice(tasks)  # noqa: S311
 
@@ -215,12 +215,12 @@ async def test_publish_service_resource_tracking_started(
 
 
 async def test_publish_service_resource_tracking_stopped(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
-    consumer = rabbitmq_client("consumer")
-    publisher = rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
 
     await consumer.subscribe(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
@@ -249,12 +249,12 @@ async def test_publish_service_resource_tracking_stopped(
 
 
 async def test_publish_service_resource_tracking_heartbeat(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_message_parser: mock.AsyncMock,
     faker: Faker,
 ):
-    consumer = rabbitmq_client("consumer")
-    publisher = rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
 
     await consumer.subscribe(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser

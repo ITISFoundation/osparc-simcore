@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import re
 import sys
@@ -59,6 +58,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-agent = simcore_service_agent.cli:main",
+            "simcore-service = simcore_service_agent.cli:main",
         ],
     },
 )

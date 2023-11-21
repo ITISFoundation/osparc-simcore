@@ -10,11 +10,18 @@ from pathlib import Path
 import dotenv
 import pytest
 
-from .typing_env import EnvVarsDict
+from .typing_env import EnvVarsDict, EnvVarsList
 
 #
 # monkeypatch using dict
 #
+
+
+def delenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: EnvVarsList):
+    for var in envs:
+        assert isinstance(var, str)
+        assert var is not None  # None keys cannot be is defined w/o value
+        monkeypatch.delenv(var)
 
 
 def setenvs_from_dict(

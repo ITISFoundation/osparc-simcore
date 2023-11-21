@@ -102,9 +102,9 @@ async def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
 async def test_process_message__called(
     mocked_message_parser: mock.AsyncMock,
     app: FastAPI,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
-    publisher = rabbitmq_client("publisher")
+    publisher = create_rabbitmq_client("publisher")
     msg = WalletCreditsMessage(wallet_id=1, credits=Decimal(80.5), product_name="s4l")
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
@@ -222,7 +222,7 @@ async def _assert_payments_transactions_db_row(postgres_db) -> PaymentsTransacti
 
 async def test_process_message__whole_autorecharge_flow_success(
     app: FastAPI,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     wallet_id: int,
     populate_test_db: None,
     mocked_pay_with_payment_method: mock.AsyncMock,
@@ -231,7 +231,7 @@ async def test_process_message__whole_autorecharge_flow_success(
     mock_resoruce_usage_tracker_service_api: MockRouter,
     postgres_db: sa.engine.Engine,
 ):
-    publisher = rabbitmq_client("publisher")
+    publisher = create_rabbitmq_client("publisher")
     msg = WalletCreditsMessage(
         wallet_id=wallet_id, credits=Decimal(80.5), product_name="s4l"
     )

@@ -58,10 +58,12 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 
 
 async def test_rabbit_client_lose_connection(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
     async_docker_client: aiodocker.Docker,
+    cleanup_check_rabbitmq_server_has_no_errors: None,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    docker_client: docker.client.DockerClient,
 ):
-    rabbit_client = rabbitmq_client("pinger")
+    rabbit_client = create_rabbitmq_client("pinger")
     assert await rabbit_client.ping() is True
     async with paused_container(async_docker_client, "rabbit"):
         # check that connection was lost
@@ -102,10 +104,10 @@ def random_rabbit_message(
 async def test_rabbit_client_with_paused_container(
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     async_docker_client: aiodocker.Docker,
 ):
-    rabbit_client = rabbitmq_client("pinger")
+    rabbit_client = create_rabbitmq_client("pinger")
     assert await rabbit_client.ping() is True
     exchange_name = random_exchange_name()
     message = random_rabbit_message()
@@ -192,11 +194,11 @@ async def _assert_rabbit_client_state(
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_server_closes_connection(
     rabbit_service: RabbitSettings,
-    rabbitmq_client: Callable[[str, int], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str, int], RabbitMQClient],
     docker_client: docker.client.DockerClient,
 ):
     _assert_rabbitmq_has_connections(rabbit_service, 0)
-    rabbit_client = rabbitmq_client("tester", heartbeat=2)
+    rabbit_client = create_rabbitmq_client("tester", heartbeat=2)
     message = PytestRabbitMessage(message="blahblah", topic="topic")
     await rabbit_client.publish("test", message)
     await asyncio.sleep(5)
