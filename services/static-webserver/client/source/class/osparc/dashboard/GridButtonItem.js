@@ -43,7 +43,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _createChildControlImpl: function(id) {
       let control;
-      let footerLayout;
       switch (id) {
         case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
@@ -79,7 +78,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true,
+            anonymous: true
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;

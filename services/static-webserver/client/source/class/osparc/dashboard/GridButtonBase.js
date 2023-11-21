@@ -112,7 +112,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         column: 0,
         rowSpan: 1,
         colSpan: 4
-      },
+      }
     },
     FPOS: {
       TITLE: {
@@ -141,7 +141,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         row: 0,
         column: 3,
         colSpan: 1
-      },
+      }
     }
   },
 
