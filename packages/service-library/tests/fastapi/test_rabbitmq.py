@@ -12,10 +12,10 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from pytest_mock.plugin import MockerFixture
+from servicelib.exceptions import InvalidConfig
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client, post_message
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_director_v2.core.errors import ConfigurationError
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -63,7 +63,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is None
-    with pytest.raises(ConfigurationError):
+    with pytest.raises(InvalidConfig):
         get_rabbitmq_client(initialized_app)
 
 

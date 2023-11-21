@@ -30,6 +30,7 @@ from pytest_simcore.helpers.utils_envs import (
     delenvs_from_dict,
     setenvs_from_dict,
 )
+from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
 from simcore_service_api_server.models.schemas.jobs import JobLog
@@ -37,7 +38,6 @@ from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
     DirectorV2Api,
 )
-from simcore_service_api_server.services.rabbitmq import get_rabbitmq_client
 
 pytest_simcore_core_services_selection = [
     "rabbit",
