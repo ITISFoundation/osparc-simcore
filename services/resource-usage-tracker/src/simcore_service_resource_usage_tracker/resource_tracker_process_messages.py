@@ -168,14 +168,17 @@ async def _process_heartbeat_event(
             running_service.product_name,
             running_service.wallet_id,
         )
-        if wallet_total_credits.available_osparc_credits < CreditsLimit.MIN_CREDITS:
+        if (
+            wallet_total_credits.available_osparc_credits
+            < CreditsLimit.SHUTDOWN_SERVICES
+        ):
             await publish_to_rabbitmq_wallet_credits_limit_reached(
                 resource_tracker_repo,
                 rabbitmq_client,
                 product_name=running_service.product_name,
                 wallet_id=running_service.wallet_id,
                 credits_=wallet_total_credits.available_osparc_credits,
-                credits_limit=CreditsLimit.MIN_CREDITS,
+                credits_limit=CreditsLimit.SHUTDOWN_SERVICES,
             )
 
 
@@ -188,7 +191,7 @@ async def _process_stop_event(
     if msg.simcore_platform_status is SimcorePlatformStatus.BAD:
         _run_status, _run_status_msg = (
             ServiceRunStatus.ERROR,
-            "Director-v2 or Sidecar consideres service as unhealthy",
+            "Director-v2 or Sidecar considers service as unhealthy",
         )
     update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=msg.service_run_id,
@@ -232,7 +235,7 @@ async def _process_stop_event(
         )
 
 
-RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] = {
+RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]]] = {
     RabbitResourceTrackingMessageType.TRACKING_STARTED: _process_start_event,
     RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT: _process_heartbeat_event,
     RabbitResourceTrackingMessageType.TRACKING_STOPPED: _process_stop_event,

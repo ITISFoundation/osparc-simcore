@@ -13,6 +13,7 @@ from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
@@ -38,8 +39,8 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
     async def shutdown(self):
         return await self._scheduler.shutdown()
 
-    def toggle_observation(self, node_uuid: NodeID, disable: bool) -> bool:
-        return self._scheduler.toggle_observation(node_uuid, disable)
+    def toggle_observation(self, node_uuid: NodeID, *, disable: bool) -> bool:
+        return self._scheduler.toggle_observation(node_uuid, disable=disable)
 
     async def push_service_outputs(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
@@ -73,16 +74,17 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        *,
         can_save: bool,
     ) -> None:
         return await self._scheduler.add_service(
-            service,
-            simcore_service_labels,
-            port,
-            request_dns,
-            request_scheme,
-            request_simcore_user_agent,
-            can_save,
+            service=service,
+            simcore_service_labels=simcore_service_labels,
+            port=port,
+            request_dns=request_dns,
+            request_scheme=request_scheme,
+            request_simcore_user_agent=request_simcore_user_agent,
+            can_save=can_save,
         )
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
@@ -97,11 +99,17 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         self,
         node_uuid: NodeID,
         can_save: bool | None,
+        *,
         skip_observation_recreation: bool = False,
     ) -> None:
         return await self._scheduler.mark_service_for_removal(
-            node_uuid, can_save, skip_observation_recreation
+            node_uuid, can_save, skip_observation_recreation=skip_observation_recreation
         )
+
+    async def mark_all_services_in_wallet_for_removal(
+        self, wallet_id: WalletID
+    ) -> None:
+        await self._scheduler.mark_all_services_in_wallet_for_removal(wallet_id)
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
         return await self._scheduler.is_service_awaiting_manual_intervention(node_uuid)

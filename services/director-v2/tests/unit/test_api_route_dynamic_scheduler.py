@@ -10,6 +10,7 @@ import respx
 from fastapi import status
 from httpx import Response
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
+from models_library.basic_types import PortInt
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -24,7 +25,7 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def mock_env(  # noqa: PT004
+def mock_env(
     disable_rabbitmq: None,
     disable_postgres: None,
     mock_env: EnvVarsDict,
@@ -48,11 +49,11 @@ def mock_env(  # noqa: PT004
 
 @pytest.fixture
 def dynamic_sidecar_scheduler(client: TestClient) -> DynamicSidecarsScheduler:
-    return client.app.state.dynamic_sidecar_scheduler
+    return client.app.state.dynamic_sidecar_scheduler  # type: ignore
 
 
 @pytest.fixture
-def mock_apply_observation_cycle(mocker: MockerFixture) -> None:  # noqa: PT004
+def mock_apply_observation_cycle(mocker: MockerFixture) -> None:
     module_base = (
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer"
     )
@@ -60,7 +61,7 @@ def mock_apply_observation_cycle(mocker: MockerFixture) -> None:  # noqa: PT004
 
 
 @pytest.fixture
-async def mock_sidecar_api(  # noqa: PT004
+async def mock_sidecar_api(
     scheduler_data: SchedulerData,
 ) -> AsyncIterator[None]:
     with respx.mock(
@@ -79,19 +80,19 @@ async def observed_service(
     dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
-    dynamic_sidecar_port: int,
+    dynamic_sidecar_port: PortInt,
     request_dns: str,
     request_scheme: str,
     can_save: bool,
 ) -> SchedulerData:
     await dynamic_sidecar_scheduler.add_service(
-        dynamic_service_create,
-        simcore_service_labels,
-        dynamic_sidecar_port,
-        request_dns,
-        request_scheme,
-        "",
-        can_save,
+        service=dynamic_service_create,
+        simcore_service_labels=simcore_service_labels,
+        port=dynamic_sidecar_port,
+        request_dns=request_dns,
+        request_scheme=request_scheme,
+        request_simcore_user_agent="",
+        can_save=can_save,
     )
     # pylint:disable=protected-access
     return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
@@ -100,7 +101,7 @@ async def observed_service(
 
 
 @pytest.fixture
-def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:  # noqa: PT004
+def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events_utils"
     mocker.patch(f"{module_base}.service_push_outputs", autospec=True)
     mocker.patch(f"{module_base}.service_remove_containers", autospec=True)
