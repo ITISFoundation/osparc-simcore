@@ -138,9 +138,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
             textColor: "status_icon",
-            height: 20,
-            width: 20,
-            padding: 3
+            height: 12,
+            width: 12,
+            padding: 1
           });
           titleRow = this.getChildControl("project-status");
           titleRow.addAt(control, 0);
