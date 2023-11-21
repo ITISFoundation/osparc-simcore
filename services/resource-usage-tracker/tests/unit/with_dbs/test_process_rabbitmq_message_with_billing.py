@@ -165,7 +165,7 @@ async def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
 
 
 async def test_process_event_functions(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
@@ -175,8 +175,8 @@ async def test_process_event_functions(
     mocked_message_parser,
 ):
     engine = initialized_app.state.engine
-    publisher = rabbitmq_client("publisher")
-    consumer = rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
     await consumer.subscribe(
         WalletCreditsLimitReachedMessage.get_channel_name(),
         mocked_message_parser,

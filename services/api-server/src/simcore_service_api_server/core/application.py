@@ -19,6 +19,7 @@ from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, remote_debug, storage, webserver
+from ..services.rabbitmq import setup_rabbitmq
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
@@ -75,6 +76,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # setup modules
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
+
+    if settings.API_SERVER_RABBITMQ:
+        setup_rabbitmq(app)
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
