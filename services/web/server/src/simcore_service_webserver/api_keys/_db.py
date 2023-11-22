@@ -77,7 +77,6 @@ class ApiKeyRepo:
 
             result: ResultProxy = await conn.execute(stmt)
             row: RowProxy | None = await result.fetchone()
-            _logger.error("debug %s", row)
             return ApiKeyInDB.from_orm(row) if row else None
 
     async def delete_by_name(
