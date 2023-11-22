@@ -225,8 +225,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
-        default="master-github-latest",
-        description="defines the image tag to use for the computational backend",
+        ...,
+        description="defines the image tag to use for the computational backend sidecar image (NOTE: it currently defaults to use itisfoundation organisation in Dockerhub)",
     )
 
     SWARM_STACK_NAME: str = Field(
