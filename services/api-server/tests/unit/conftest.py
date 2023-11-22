@@ -57,9 +57,12 @@ SideEffectCallback: TypeAlias = Callable[
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    default_app_env_vars: EnvVarsDict,
+    mocker: MockerFixture,
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
+    mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
 
     env_vars = setenvs_from_dict(
         monkeypatch,

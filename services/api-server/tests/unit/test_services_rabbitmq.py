@@ -56,6 +56,7 @@ def app_environment(
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     # do not init other services
+    mocker.stopall()
     mocker.patch("simcore_service_api_server.core.application.webserver.setup")
     mocker.patch("simcore_service_api_server.core.application.catalog.setup")
     mocker.patch("simcore_service_api_server.core.application.storage.setup")
