@@ -219,3 +219,17 @@ async def test_payments_gateway_error_exception():
     assert isinstance(err, PaymentsGatewayError)
 
     assert "curl -X POST" in err.get_detailed_message()
+
+
+async def test_payments_gateway_get_batch_with_no_items(
+    app: FastAPI,
+    mock_payments_gateway_service_or_none: MockRouter | None,
+):
+    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
+        app
+    )
+    assert payments_gateway_api
+
+    # tests issue found in https://github.com/ITISFoundation/appmotion-exchange/issues/16
+    empty_list = []
+    assert not await payments_gateway_api.get_many_payment_methods(empty_list)
