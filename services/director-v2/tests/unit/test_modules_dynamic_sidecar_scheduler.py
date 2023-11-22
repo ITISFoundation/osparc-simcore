@@ -27,6 +27,7 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
+    ServiceName,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -109,14 +110,16 @@ async def _assert_get_dynamic_services_mocked(
             scheduler_data.node_uuid, can_save=True
         )
         assert (
-            scheduler_data.service_name in scheduler.scheduler._to_observe
-        )  # noqa: SLF001
+            scheduler_data.service_name
+            in scheduler.scheduler._to_observe  # noqa: SLF001
+        )
         await scheduler.scheduler.remove_service_from_observation(
             scheduler_data.node_uuid
         )
         assert (
-            scheduler_data.service_name not in scheduler.scheduler._to_observe
-        )  # noqa: SLF001
+            scheduler_data.service_name
+            not in scheduler.scheduler._to_observe  # noqa: SLF001
+        )
 
 
 @pytest.fixture
@@ -174,8 +177,10 @@ def mocked_dynamic_scheduler_events(mocker: MockerFixture) -> None:
 
         @classmethod
         async def action(
-            cls, app: FastAPI, scheduler_data: SchedulerData
-        ) -> None:  # noqa: ARG003
+            cls,
+            app: FastAPI,  # noqa: ARG003
+            scheduler_data: SchedulerData,  # noqa: ARG003
+        ) -> None:
             message = f"{cls.__name__} action triggered"
             log.warning(message)
 
@@ -266,15 +271,16 @@ async def test_scheduler_add_remove(
         await manually_trigger_scheduler()
 
     assert (
-        scheduler_data.service_name in scheduler.scheduler._to_observe
-    )  # noqa: SLF001
+        scheduler_data.service_name in scheduler.scheduler._to_observe  # noqa: SLF001
+    )
 
     await scheduler.scheduler.remove_service_from_observation(scheduler_data.node_uuid)
     if with_observation_cycle:
         await manually_trigger_scheduler()
     assert (
-        scheduler_data.service_name not in scheduler.scheduler._to_observe
-    )  # noqa: SLF001
+        scheduler_data.service_name
+        not in scheduler.scheduler._to_observe  # noqa: SLF001
+    )
 
 
 @pytest.mark.flaky(max_runs=3)
@@ -328,8 +334,8 @@ async def test_adding_service_two_times_does_not_raise(
 ):
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert (
-        scheduler_data.service_name in scheduler.scheduler._to_observe
-    )  # noqa: SLF001
+        scheduler_data.service_name in scheduler.scheduler._to_observe  # noqa: SLF001
+    )
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
 
 
@@ -339,9 +345,9 @@ async def test_collition_at_global_level_raises(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ):
-    scheduler.scheduler._inverse_search_mapping[
+    scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
         scheduler_data.node_uuid
-    ] = "mock_service_name"
+    ] = ServiceName("mock_service_name")
     with pytest.raises(DynamicSidecarError) as execinfo:
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert "collide" in str(execinfo.value)
@@ -465,10 +471,10 @@ async def test_regression_remove_service_from_observation(
 
     # emulate service was previously added
     node_uuid = faker.uuid4(cast_to=None)
-    service_name = f"service_{node_uuid}"
-    scheduler._inverse_search_mapping[node_uuid] = service_name
+    service_name = ServiceName(f"service_{node_uuid}")
+    scheduler._inverse_search_mapping[node_uuid] = service_name  # noqa: SLF001
     if not missing_to_observe_entry:
-        scheduler._to_observe[service_name] = AsyncMock()
+        scheduler._to_observe[service_name] = AsyncMock()  # noqa: SLF001
 
     await scheduler.remove_service_from_observation(node_uuid)
     # check log message
