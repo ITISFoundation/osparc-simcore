@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     // spacer
     this.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
     this.set({
-      backgroundColor: "background-main-2",
+      backgroundColor: "window-popup-background",
       paddingTop: 5,
       paddingLeft: 15
     });

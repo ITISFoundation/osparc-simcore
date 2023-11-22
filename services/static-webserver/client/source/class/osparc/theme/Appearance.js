@@ -155,7 +155,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "service-window/captionbar": {
       include: "window/captionbar",
       style: state => ({
-        backgroundColor: "background-main-2",
+        backgroundColor: "navigation_bar_background_color",
         decorator: "workbench-small-cap-captionbar"
       })
     },

@@ -24,6 +24,8 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "default-button-focus": "rgba(10, 182, 255, 1)",
     "default-button-focus-border": "rgba(254, 233, 86, 1)",
 
+    "status_icon": "rgba(255, 255, 255, 1)",
+
     "visual-blue": "#007fd4", // Visual Studio blue
 
     "logger-warning-message": "warning-yellow",

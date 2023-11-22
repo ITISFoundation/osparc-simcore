@@ -30,14 +30,14 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-main-4": "c05",
     "background-main-5": "c06",
 
+    "background-card-overlay": "rgba(25, 33, 37, 0.8)",
+
     "primary-background-color": "rgba(0, 20, 46, 1)",
+    "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
     "modal-backdrop": "rgba(8, 9, 13, 1)",
     "fab_background": "rgba(47, 50, 69, 1)",
     "input_background": "rgba(46, 51, 55, 1)",
     "window-popup-background": "rgba(74, 79, 84, 1)",
-
-    // Opacity < 1
-    "background-card-header": "rgba(1, 18, 26, 0.8)",
 
     // text
     "text": "rgba(216, 216, 216, 1)",
