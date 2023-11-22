@@ -1,13 +1,16 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import TypeAlias, Union
+from typing import Any, ClassVar, TypeAlias
 
 from distributed.worker import get_worker
 from pydantic import BaseModel, Extra, validator
 
+from .protocol import TaskOwner
+
 
 class BaseTaskEvent(BaseModel, ABC):
     job_id: str
+    task_owner: TaskOwner
     msg: str | None = None
 
     @staticmethod
@@ -27,19 +30,42 @@ class TaskProgressEvent(BaseTaskEvent):
         return "task_progress"
 
     @classmethod
-    def from_dask_worker(cls, progress: float) -> "TaskProgressEvent":
-        return cls(job_id=get_worker().get_current_task(), progress=progress)
+    def from_dask_worker(
+        cls, progress: float, *, task_owner: TaskOwner
+    ) -> "TaskProgressEvent":
+        worker = get_worker()
+        job_id = worker.get_current_task()
+
+        return cls(
+            job_id=job_id,
+            progress=progress,
+            task_owner=task_owner,
+        )
 
     class Config(BaseTaskEvent.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
                     "progress": 0,
+                    "task_owner": {
+                        "user_id": 32,
+                        "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                        "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                        "parent_project_id": None,
+                        "parent_node_id": None,
+                    },
                 },
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
                     "progress": 1.0,
+                    "task_owner": {
+                        "user_id": 32,
+                        "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                        "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                        "parent_project_id": "887e595a-63ee-46a1-a04a-901b11b649f8",
+                        "parent_node_id": "aa467d89-b659-4914-9359-c40b1b6d1d6d",
+                    },
                 },
             ]
         }
@@ -65,19 +91,32 @@ class TaskLogEvent(BaseTaskEvent):
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, log: str, log_level: LogLevelInt) -> "TaskLogEvent":
-        return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
+    def from_dask_worker(
+        cls, log: str, log_level: LogLevelInt, *, task_owner: TaskOwner
+    ) -> "TaskLogEvent":
+        worker = get_worker()
+        job_id = worker.get_current_task()
+        return cls(
+            job_id=job_id,
+            log=log,
+            log_level=log_level,
+            task_owner=task_owner,
+        )
 
     class Config(BaseTaskEvent.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
                     "log": "some logs",
                     "log_level": logging.INFO,
+                    "task_owner": {
+                        "user_id": 32,
+                        "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
+                        "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
+                        "parent_project_id": None,
+                        "parent_node_id": None,
+                    },
                 },
             ]
         }
-
-
-DaskTaskEvents = type[Union[TaskLogEvent, TaskProgressEvent]]

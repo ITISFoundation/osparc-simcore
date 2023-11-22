@@ -8,15 +8,18 @@ import asyncio
 import concurrent.futures
 import logging
 import time
-from typing import Any, AsyncIterator, Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
+from typing import Any
 
 import distributed
 import pytest
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
+from dask_task_models_library.container_tasks.protocol import TaskOwner
 from simcore_service_dask_sidecar.dask_utils import (
     _DEFAULT_MAX_RESOURCES,
+    TaskPublisher,
     get_current_task_resources,
     is_current_task_aborted,
     monitor_task_abortion,
@@ -31,11 +34,16 @@ DASK_TASK_STARTED_EVENT = "task_started"
 DASK_TESTING_TIMEOUT_S = 25
 
 
-def test_publish_event(dask_client: distributed.Client):
+def test_publish_event(
+    dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
+):
     dask_pub = distributed.Pub("some_topic", client=dask_client)
     dask_sub = distributed.Sub("some_topic", client=dask_client)
     event_to_publish = TaskLogEvent(
-        job_id="some_fake_job_id", log="the log", log_level=logging.INFO
+        job_id=job_id,
+        log="the log",
+        log_level=logging.INFO,
+        task_owner=task_owner,
     )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
 
@@ -48,11 +56,13 @@ def test_publish_event(dask_client: distributed.Client):
     assert received_task_log_event == event_to_publish
 
 
-async def test_publish_event_async(async_dask_client: distributed.Client):
+async def test_publish_event_async(
+    async_dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
+):
     dask_pub = distributed.Pub("some_topic", client=async_dask_client)
     dask_sub = distributed.Sub("some_topic", client=async_dask_client)
     event_to_publish = TaskLogEvent(
-        job_id="some_fake_job_id", log="the log", log_level=logging.INFO
+        job_id=job_id, log="the log", log_level=logging.INFO, task_owner=task_owner
     )
     publish_event(dask_pub=dask_pub, event=event_to_publish)
 
@@ -86,6 +96,8 @@ async def asyncio_task() -> AsyncIterator[Callable[[Coroutine], asyncio.Task]]:
 async def test_publish_event_async_using_task(
     async_dask_client: distributed.Client,
     asyncio_task: Callable[[Coroutine], asyncio.Task],
+    job_id: str,
+    task_owner: TaskOwner,
 ):
     dask_pub = distributed.Pub("some_topic", client=async_dask_client)
     dask_sub = distributed.Sub("some_topic", client=async_dask_client)
@@ -106,7 +118,10 @@ async def test_publish_event_async_using_task(
         print("--> starting publisher task")
         for n in range(NUMBER_OF_MESSAGES):
             event_to_publish = TaskLogEvent(
-                job_id="some_fake_job_id", log=f"the log {n}", log_level=logging.INFO
+                job_id=job_id,
+                log=f"the log {n}",
+                log_level=logging.INFO,
+                task_owner=task_owner,
             )
             publish_event(dask_pub=pub, event=event_to_publish)
         print("<-- finished publisher task")
@@ -177,16 +192,20 @@ def test_task_is_aborted_using_event(dask_client: distributed.Client):
     assert result == -1
 
 
-def _some_long_running_task_with_monitoring() -> int:
+def _some_long_running_task_with_monitoring(task_owner: TaskOwner) -> int:
     assert is_current_task_aborted() is False
     # we are started now
     start_event = distributed.Event(DASK_TASK_STARTED_EVENT)
     start_event.set()
 
     async def _long_running_task_async() -> int:
-        log_publisher = distributed.Pub(TaskLogEvent.topic_name())
+        task_publishers = TaskPublisher(task_owner=task_owner)
         _notify_task_is_started_and_ready()
-        async with monitor_task_abortion(task_name=asyncio.current_task().get_name(), log_publisher=log_publisher):  # type: ignore
+        current_task = asyncio.current_task()
+        assert current_task
+        async with monitor_task_abortion(
+            task_name=current_task.get_name(), task_publishers=task_publishers
+        ):
             for i in range(300):
                 print("running iteration", i)
                 await asyncio.sleep(0.5)
@@ -201,9 +220,12 @@ def _some_long_running_task_with_monitoring() -> int:
     return asyncio.get_event_loop().run_until_complete(_long_running_task_async())
 
 
-def test_monitor_task_abortion(dask_client: distributed.Client):
-    job_id = "myfake_job_id"
-    future = dask_client.submit(_some_long_running_task_with_monitoring, key=job_id)
+def test_monitor_task_abortion(
+    dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
+):
+    future = dask_client.submit(
+        _some_long_running_task_with_monitoring, task_owner=task_owner, key=job_id
+    )
     _wait_for_task_to_start()
     # trigger cancellation
     dask_event = distributed.Event(TaskCancelEventName.format(job_id))
