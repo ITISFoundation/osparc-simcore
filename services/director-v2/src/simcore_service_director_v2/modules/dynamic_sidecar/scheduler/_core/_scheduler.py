@@ -365,7 +365,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     async def mark_all_services_in_wallet_for_removal(
         self, wallet_id: WalletID
     ) -> None:
-        # TODO: have a test that runs this multiple times in a row, should not do anything bad
         async with self._lock:
             to_remove: list[SchedulerData] = [
                 scheduler_data
@@ -389,7 +388,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         )
 
     async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
-        # TODO: this is used internally no need to be here exposed in the interface
         """
         directly invoked from RemoveMarkedService once it's finished
         and removes the service from the observation cycle
