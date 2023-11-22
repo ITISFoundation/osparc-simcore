@@ -1,8 +1,9 @@
 import asyncio
 import contextlib
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Final
+from typing import Final
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -12,6 +13,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
+from dask_task_models_library.container_tasks.protocol import TaskOwner
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
@@ -55,8 +57,9 @@ def get_current_task_resources() -> dict[str, float]:
     return current_task_resources
 
 
-@dataclass()
+@dataclass(slots=True, kw_only=True)
 class TaskPublisher:
+    task_owner: TaskOwner
     progress: distributed.Pub = field(init=False)
     _last_published_progress_value: float = -1
     logs: distributed.Pub = field(init=False)
@@ -68,11 +71,14 @@ class TaskPublisher:
     def publish_progress(self, value: float) -> None:
         rounded_value = round(value, ndigits=2)
         if rounded_value > self._last_published_progress_value:
-            publish_event(
-                self.progress,
-                TaskProgressEvent.from_dask_worker(progress=rounded_value),
-            )
-            self._last_published_progress_value = rounded_value
+            with log_catch(logger=logger, reraise=False):
+                publish_event(
+                    self.progress,
+                    TaskProgressEvent.from_dask_worker(
+                        progress=rounded_value, task_owner=self.task_owner
+                    ),
+                )
+                self._last_published_progress_value = rounded_value
 
     def publish_logs(
         self,
@@ -80,9 +86,13 @@ class TaskPublisher:
         message: LogMessageStr,
         log_level: LogLevelInt,
     ) -> None:
-        publish_event(
-            self.logs, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
-        )
+        with log_catch(logger=logger, reraise=False):
+            publish_event(
+                self.logs,
+                TaskLogEvent.from_dask_worker(
+                    log=message, log_level=log_level, task_owner=self.task_owner
+                ),
+            )
 
 
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
@@ -90,7 +100,7 @@ _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
 
 @contextlib.asynccontextmanager
 async def monitor_task_abortion(
-    task_name: str, log_publisher: distributed.Pub
+    task_name: str, task_publishers: TaskPublisher
 ) -> AsyncIterator[None]:
     """This context manager periodically checks whether the client cancelled the
     monitored task. If that is the case, the monitored task will be cancelled (e.g.
@@ -101,13 +111,9 @@ async def monitor_task_abortion(
         if task := next(
             (t for t in asyncio.all_tasks() if t.get_name() == task_name), None
         ):
-            publish_event(
-                log_publisher,
-                TaskLogEvent.from_dask_worker(
-                    log="[sidecar] cancelling task...", log_level=logging.INFO
-                ),
+            task_publishers.publish_logs(
+                message="[sidecar] cancelling task...", log_level=logging.INFO
             )
-            logger.debug("cancelling %s....................", f"{task=}")
             task.cancel()
 
     async def periodicaly_check_if_aborted(task_name: str) -> None:
@@ -125,12 +131,10 @@ async def monitor_task_abortion(
 
         yield
     except asyncio.CancelledError as exc:
-        publish_event(
-            log_publisher,
-            TaskLogEvent.from_dask_worker(
-                log="[sidecar] task run was aborted", log_level=logging.INFO
-            ),
+        task_publishers.publish_logs(
+            message="[sidecar] task run was aborted", log_level=logging.INFO
         )
+
         raise TaskCancelledError from exc
     finally:
         if periodically_checking_task:

@@ -55,11 +55,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    STUDY_ICON: "@FontAwesome5Solid/file-alt/",
-    TEMPLATE_ICON: "@FontAwesome5Solid/copy/",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/",
-    COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
-    DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
+    STUDY_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    TEMPLATE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    COMP_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    DYNAMIC_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -243,6 +243,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Object",
       nullable: false,
       apply: "_applyState"
+    },
+
+    projectState: {
+      check: ["NOT_STARTED", "STARTED", "SUCCESS", "FAILED", "UNKNOWN"],
+      nullable: false,
+      init: "UNKNOWN",
+      apply: "_applyProjectState"
     },
 
     locked: {
@@ -500,10 +507,71 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
+      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (locked) {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
+      if (projectState) {
+        this._applyProjectState(state["state"]);
+      }
       this.setLocked(locked);
+    },
+
+    _applyProjectState: function(projectStatus) {
+      const status = projectStatus["value"];
+      let icon;
+      let label;
+      let border;
+      switch (status) {
+        case "STARTED":
+          icon = "@FontAwesome5Solid/spinner/8";
+          label = this.tr("Running");
+          border = "info";
+          break;
+        case "SUCCESS":
+          icon = "@FontAwesome5Solid/check/8";
+          label = this.tr("Ran successfully");
+          border = "success";
+          break;
+        case "ABORTED":
+          icon = "@FontAwesome5Solid/info/8";
+          label = this.tr("Run aborted");
+          border = "warning";
+          break;
+        case "FAILED":
+          icon = "@FontAwesome5Solid/times/8";
+          label = this.tr("Ran with error");
+          border = "error";
+          break;
+        default:
+          icon = null;
+          label = null;
+          border = null;
+          break;
+      }
+      this.__applyProjectLabel(icon, label, border);
+    },
+
+    __applyProjectLabel: function(icn, lbl, bdr) {
+      const projectStatusLabel = this.getChildControl("project-status");
+      projectStatusLabel.setVisibility(icn && lbl && bdr ? "visible" : "excluded");
+      const border = new qx.ui.decoration.Decorator().set({
+        width: 1,
+        style: "solid",
+        color: bdr,
+        backgroundColor: bdr
+      });
+      const icon = this.getChildControl("project-status-icon");
+      const label = this.getChildControl("project-status-label");
+      icon.setSource(icn);
+      icon.set({
+        decorator: border
+      });
+      icon.getContentElement().setStyles({
+        "border-radius": "50%",
+        "background-clip": "border-box"
+      });
+      label.setValue(lbl);
     },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
@@ -545,7 +613,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         visibility: "visible"
       });
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
+      lockImageSrc += this.classname.includes("Grid") ? "32" : "22";
       lockImage.setSource(lockImageSrc);
       if (toolTipText) {
         this.set({
