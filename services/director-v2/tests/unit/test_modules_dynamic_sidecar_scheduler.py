@@ -19,6 +19,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceState
+from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -345,9 +346,11 @@ async def test_collition_at_global_level_raises(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ):
-    scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
+    scheduler.scheduler._inverse_search_mapping[
         scheduler_data.node_uuid
-    ] = ServiceName("mock_service_name")
+    ] = ServiceName(  # noqa: SLF001
+        "mock_service_name"
+    )
     with pytest.raises(DynamicSidecarError) as execinfo:
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert "collide" in str(execinfo.value)
@@ -482,3 +485,48 @@ async def test_regression_remove_service_from_observation(
 
     if missing_to_observe_entry:
         assert f"Unexpected: '{service_name}' not found in" in caplog_debug_level.text
+
+
+@pytest.mark.parametrize("call_count", [1, 10])
+async def test_mark_all_services_in_wallet_for_removal(
+    disabled_scheduler_background_task: None,
+    scheduler: DynamicSidecarsScheduler,
+    scheduler_data: SchedulerData,
+    mocked_dynamic_scheduler_events: None,
+    faker: Faker,
+    call_count: int,
+) -> None:
+    for wallet_id in [WalletID(1), WalletID(2)]:
+        for _ in range(2):
+            new_scheduler_data = scheduler_data.copy(deep=True)
+            new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
+            new_scheduler_data.service_name = ServiceName(
+                f"fake_{new_scheduler_data.node_uuid}"
+            )
+            assert new_scheduler_data.wallet_info
+            new_scheduler_data.wallet_info.wallet_id = wallet_id
+
+            await scheduler.scheduler.add_service_from_scheduler_data(
+                new_scheduler_data
+            )
+
+    assert len(scheduler.scheduler._to_observe) == 4  # noqa: SLF001
+    for scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
+        assert scheduler_data.dynamic_sidecar.service_removal_state.can_remove is False
+
+    for _ in range(call_count):
+        await scheduler.scheduler.mark_all_services_in_wallet_for_removal(
+            wallet_id=WalletID(1)
+        )
+
+    for scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
+        assert scheduler_data.wallet_info
+        wallet_id = scheduler_data.wallet_info.wallet_id
+        can_remove = scheduler_data.dynamic_sidecar.service_removal_state.can_remove
+        match wallet_id:
+            case WalletID(1):
+                assert can_remove is True
+            case WalletID(2):
+                assert can_remove is False
+            case _:
+                pytest.fail("unexpected case")
