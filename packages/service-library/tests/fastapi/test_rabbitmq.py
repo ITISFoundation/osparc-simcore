@@ -12,7 +12,6 @@ from fastapi import FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
-from pytest_simcore import is_pdb_enabled
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.fastapi.errors import ApplicationStateError
