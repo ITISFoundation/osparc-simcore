@@ -98,7 +98,8 @@ async def login(request: web.Request):
         product=product,
     )
 
-    skip_2fa = not user.get("two_factor_enabled", True)
+    # Some roles have login privileges
+    skip_2fa: bool = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
         return await login_granted_response(request, user=user)
 
