@@ -40,6 +40,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "input_background": "rgba(209, 214, 218, 1)",
     "window-popup-background": "rgba(250,250,250, 1)",
 
+    "flash_message_bg": "input_background",
+
     // text
     "text": "c13",
     "text-disabled": "c07",
