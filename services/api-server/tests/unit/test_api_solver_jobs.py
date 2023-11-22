@@ -324,7 +324,7 @@ async def test_stop_job(
         task = ComputationTaskGet.parse_obj(capture.response_body)
         task.id = UUID(_job_id)
 
-        return capture.response_body
+        return task.json()
 
     respx_mock = respx_mock_from_capture(
         [mocked_directorv2_service_api_base],
