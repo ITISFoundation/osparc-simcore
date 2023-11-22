@@ -147,8 +147,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
         default=True,
         description=(
-            "when there are any more credits left for a walled the Resource Usage Tracker "
-            "sends a message via RabbitMQ to shutdown the services."
+            "when the message indicating there are no more credits left in a wallet "
+            "the director-v2 will shutdown services if True"
         ),
     )
 
