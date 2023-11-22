@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
+from pytest_simcore import is_pdb_enabled
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.fastapi.errors import ApplicationStateError
@@ -67,14 +68,18 @@ def enabled_rabbitmq(
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI) -> AsyncIterable[FastAPI]:
+async def initialized_app(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterable[FastAPI]:
     rabbit_settings: RabbitSettings | None = None
     try:
         rabbit_settings = RabbitSettings.create_from_envs()
     except ValidationError:
         pass
     setup_rabbit(app=app, settings=rabbit_settings, name="my_rabbitmq_client")
-    async with LifespanManager(app=app):
+    async with LifespanManager(
+        app=app,
+        startup_timeout=None if is_pdb_enabled else 10,
+        shutdown_timeout=None if is_pdb_enabled else 10,
+    ):
         yield app
 
 
