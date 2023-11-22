@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from typing import Any, Awaitable, Callable, cast
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -12,6 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFound
 from simcore_service_director_v2.modules.db.repositories.projects import (
     ProjectsRepository,
 )
@@ -79,10 +81,7 @@ async def project(
 async def test_is_node_present_in_workbench(
     initialized_app: FastAPI, project: ProjectAtDB, faker: Faker
 ):
-    project_repository = cast(
-        ProjectsRepository,
-        get_repository(initialized_app, ProjectsRepository),
-    )
+    project_repository = get_repository(initialized_app, ProjectsRepository)
 
     for node_uuid in project.workbench:
         assert (
@@ -109,3 +108,18 @@ async def test_is_node_present_in_workbench(
         )
         is False
     )
+
+
+async def test_get_project_id_from_node(
+    initialized_app: FastAPI, project: ProjectAtDB, faker: Faker
+):
+    project_repository = get_repository(initialized_app, ProjectsRepository)
+    for node_uuid in project.workbench:
+        assert (
+            await project_repository.get_project_id_from_node(NodeID(node_uuid))
+            == project.uuid
+        )
+
+    not_existing_node_id = faker.uuid4(cast_to=None)
+    with pytest.raises(ProjectNodesNodeNotFound):
+        await project_repository.get_project_id_from_node(not_existing_node_id)

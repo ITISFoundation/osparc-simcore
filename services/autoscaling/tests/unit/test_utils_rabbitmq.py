@@ -52,7 +52,7 @@ async def test_post_task_log_message(
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
@@ -63,7 +63,7 @@ async def test_post_task_log_message(
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    client = rabbitmq_client("pytest_consumer")
+    client = create_rabbitmq_client("pytest_consumer")
     await client.subscribe(
         LoggerRabbitMessage.get_channel_name(),
         mocked_message_handler,
@@ -142,7 +142,7 @@ async def test_post_task_progress_message(
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
@@ -153,7 +153,7 @@ async def test_post_task_progress_message(
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    client = rabbitmq_client("pytest_consumer")
+    client = create_rabbitmq_client("pytest_consumer")
     await client.subscribe(
         ProgressRabbitMessageNode.get_channel_name(),
         mocked_message_handler,

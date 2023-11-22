@@ -56,6 +56,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-catalog=simcore_service_catalog.cli:main",
+            "simcore-service=simcore_service_catalog.cli:main",
         ],
     },
 )

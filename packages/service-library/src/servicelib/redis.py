@@ -21,9 +21,6 @@ from .background_task import periodic_task
 from .logging_utils import log_catch, log_context
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_CANCEL_TASK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=0.1)
-_MINUTE: Final[NonNegativeFloat] = 60
-_WAIT_SECS: Final[NonNegativeFloat] = 1
 
 
 logger = logging.getLogger(__name__)

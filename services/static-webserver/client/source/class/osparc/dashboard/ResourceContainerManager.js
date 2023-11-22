@@ -211,6 +211,19 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "emptyStudyClicked"
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
 
+      if (resourceData.resourceType === "study") {
+        card.setBackgroundColor("info_bg");
+      } else if (resourceData.resourceType === "service") {
+        if (resourceData.type === "computational") {
+          card.setBackgroundColor("info_bg");
+        } else if (resourceData.type === "dynamic") {
+          card.setBackgroundColor("success_bg");
+        } else {
+          card.setBackgroundColor("success_bg");
+        }
+      } else {
+        card.setBackgroundColor("warning_bg");
+      }
       return card;
     },
 

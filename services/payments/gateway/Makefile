@@ -3,12 +3,12 @@ include ../../../scripts/common.Makefile
 
 
 .PHONY: run-devel
-run-devel: ## runs fake_payment_gateway server
+run-devel: ## runs example_payment_gateway server
 	# SEE http://127.0.0.1:8000/docs
 	set -o allexport; source .env-secret; set +o allexport; \
-	uvicorn fake_payment_gateway:the_app --reload
+	uvicorn example_payment_gateway:the_app --reload
 
-
+.PHONY: openapi.json
 openapi.json: ## creates OAS
 	@set -o allexport; source .env-secret; set +o allexport; \
-	python fake_payment_gateway.py openapi > $@
+	python example_payment_gateway.py openapi > $@

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Final
 from uuid import UUID
 
 import httpx
@@ -7,12 +7,14 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.jobs import Job
+from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
 from simcore_service_api_server.models.schemas.solvers import Solver
+from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
@@ -297,3 +299,45 @@ async def test_get_solver_job_pricing_unit_no_payment(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["job_id"] == _job_id
+
+
+async def test_stop_job(
+    client: AsyncClient,
+    mocked_directorv2_service_api_base,
+    mocked_groups_extra_properties,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+
+    _solver_key: Final[str] = "simcore/services/comp/isolve"
+    _version: Final[str] = "2.1.24"
+    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+
+    def _stop_job_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        task = ComputationTaskGet.parse_obj(capture.response_body)
+        task.id = UUID(_job_id)
+
+        return jsonable_encoder(task)
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_directorv2_service_api_base],
+        project_tests_dir / "mocks" / "stop_job.json",
+        [_stop_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:stop",
+        auth=auth,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    status_ = JobStatus.parse_obj(response.json())
+    assert status_.job_id == UUID(_job_id)
