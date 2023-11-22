@@ -95,7 +95,7 @@ async def observed_service(
         can_save=can_save,
     )
     # pylint:disable=protected-access
-    return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
+    return dynamic_sidecar_scheduler.scheduler.get_scheduler_data(  # noqa: SLF001
         dynamic_service_create.node_uuid
     )
 

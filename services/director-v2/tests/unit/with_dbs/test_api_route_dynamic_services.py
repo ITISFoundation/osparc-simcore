@@ -501,7 +501,7 @@ def test_delete_service_waiting_for_manual_intervention(
 
     # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
-    scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access  # noqa: SLF001
+    scheduler_data = dynamic_sidecar_scheduler.scheduler.get_scheduler_data(  # pylint: disable=protected-access  # noqa: SLF001
         node_uuid
     )
     scheduler_data.dynamic_sidecar.status.update_failing_status("failed")

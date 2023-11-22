@@ -134,8 +134,7 @@ async def get_service_state(
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
 ):
-    # pylint: disable=protected-access
-    return dynamic_sidecars_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
+    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(  # noqa: SLF001
         node_uuid
     )
 

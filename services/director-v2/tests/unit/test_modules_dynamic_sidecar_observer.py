@@ -126,7 +126,7 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
-    await dynamic_sidecar_scheduler._scheduler._add_service(  # noqa: SLF001
+    await dynamic_sidecar_scheduler.scheduler._add_service(  # noqa: SLF001
         scheduler_data_from_http_request
     )
 

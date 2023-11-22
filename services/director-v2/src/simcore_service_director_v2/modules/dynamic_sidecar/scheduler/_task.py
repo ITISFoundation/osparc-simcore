@@ -31,40 +31,40 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
 
     def __init__(self, app: FastAPI) -> None:
         self.app: FastAPI = app
-        self._scheduler = Scheduler(app=app)
+        self.scheduler = Scheduler(app=app)
 
     async def start(self) -> None:
-        return await self._scheduler.start()
+        return await self.scheduler.start()
 
     async def shutdown(self):
-        return await self._scheduler.shutdown()
+        return await self.scheduler.shutdown()
 
     def toggle_observation(self, node_uuid: NodeID, *, disable: bool) -> bool:
-        return self._scheduler.toggle_observation(node_uuid, disable=disable)
+        return self.scheduler.toggle_observation(node_uuid, disable=disable)
 
     async def push_service_outputs(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        return await self._scheduler.push_service_outputs(node_uuid, progress_callback)
+        return await self.scheduler.push_service_outputs(node_uuid, progress_callback)
 
     async def remove_service_containers(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        return await self._scheduler.remove_service_containers(
+        return await self.scheduler.remove_service_containers(
             node_uuid, progress_callback
         )
 
     async def remove_service_sidecar_proxy_docker_networks_and_volumes(
         self, task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
-        return await self._scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
+        return await self.scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
             task_progress, node_uuid
         )
 
     async def save_service_state(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        return await self._scheduler.save_service_state(node_uuid, progress_callback)
+        return await self.scheduler.save_service_state(node_uuid, progress_callback)
 
     async def add_service(
         self,
@@ -77,7 +77,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         *,
         can_save: bool,
     ) -> None:
-        return await self._scheduler.add_service(
+        return await self.scheduler.add_service(
             service=service,
             simcore_service_labels=simcore_service_labels,
             port=port,
@@ -88,12 +88,12 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         )
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
-        return self._scheduler.is_service_tracked(node_uuid)
+        return self.scheduler.is_service_tracked(node_uuid)
 
     def list_services(
         self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[NodeID]:
-        return self._scheduler.list_services(user_id=user_id, project_id=project_id)
+        return self.scheduler.list_services(user_id=user_id, project_id=project_id)
 
     async def mark_service_for_removal(
         self,
@@ -102,43 +102,43 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         *,
         skip_observation_recreation: bool = False,
     ) -> None:
-        return await self._scheduler.mark_service_for_removal(
+        return await self.scheduler.mark_service_for_removal(
             node_uuid, can_save, skip_observation_recreation=skip_observation_recreation
         )
 
     async def mark_all_services_in_wallet_for_removal(
         self, wallet_id: WalletID
     ) -> None:
-        await self._scheduler.mark_all_services_in_wallet_for_removal(wallet_id)
+        await self.scheduler.mark_all_services_in_wallet_for_removal(wallet_id)
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
-        return await self._scheduler.is_service_awaiting_manual_intervention(node_uuid)
+        return await self.scheduler.is_service_awaiting_manual_intervention(node_uuid)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
-        return await self._scheduler.get_stack_status(node_uuid)
+        return await self.scheduler.get_stack_status(node_uuid)
 
     async def retrieve_service_inputs(
         self, node_uuid: NodeID, port_keys: list[str]
     ) -> RetrieveDataOutEnveloped:
-        return await self._scheduler.retrieve_service_inputs(node_uuid, port_keys)
+        return await self.scheduler.retrieve_service_inputs(node_uuid, port_keys)
 
     async def attach_project_network(
         self, node_id: NodeID, project_network: str, network_alias: DockerNetworkAlias
     ) -> None:
-        return await self._scheduler.attach_project_network(
+        return await self.scheduler.attach_project_network(
             node_id, project_network, network_alias
         )
 
     async def detach_project_network(
         self, node_id: NodeID, project_network: str
     ) -> None:
-        return await self._scheduler.detach_project_network(node_id, project_network)
+        return await self.scheduler.detach_project_network(node_id, project_network)
 
     async def restart_containers(self, node_uuid: NodeID) -> None:
-        return await self._scheduler.restart_containers(node_uuid)
+        return await self.scheduler.restart_containers(node_uuid)
 
     async def get_service_inactivity(self, node_id: NodeID) -> InactivityResponse:
-        return await self._scheduler.get_service_inactivity(node_id)
+        return await self.scheduler.get_service_inactivity(node_id)
 
 
 async def setup_scheduler(app: FastAPI):
