@@ -3,19 +3,23 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
 from pprint import pformat
-from typing import AsyncIterator, Callable, Iterator
 
 import dask
+import dask.config
 import distributed
 import fsspec
 import pytest
 import simcore_service_dask_sidecar
 from aiobotocore.session import AioBaseClient, get_session
+from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -72,7 +76,9 @@ def shared_data_folder(
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch, env_devel_dict: EnvVarsDict, shared_data_folder: Path
+    monkeypatch: pytest.MonkeyPatch,
+    env_devel_dict: EnvVarsDict,
+    shared_data_folder: Path,
 ) -> EnvVarsDict:
     # configured as worker
     envs = setenvs_from_dict(
@@ -99,10 +105,8 @@ def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalClu
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
-        **{
-            "resources": {"CPU": 10, "GPU": 10},
-            "preload": "simcore_service_dask_sidecar.tasks",
-        },
+        resources={"CPU": 10, "GPU": 10},
+        preload="simcore_service_dask_sidecar.tasks",
     ) as cluster:
         assert cluster
         assert isinstance(cluster, distributed.LocalCluster)
@@ -124,10 +128,8 @@ async def async_local_cluster(
     print(pformat(dask.config.get("distributed")))
     async with distributed.LocalCluster(
         worker_class=distributed.Worker,
-        **{
-            "resources": {"CPU": 10, "GPU": 10},
-            "preload": "simcore_service_dask_sidecar.tasks",
-        },
+        resources={"CPU": 10, "GPU": 10},
+        preload="simcore_service_dask_sidecar.tasks",
         asynchronous=True,
     ) as cluster:
         assert cluster
@@ -201,7 +203,7 @@ async def bucket(
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     bucket_name = response["Buckets"][0]["Name"]
-    yield bucket_name
+    return bucket_name
     # await _clean_bucket_content(aiobotocore_s3_client, bucket_name)
 
 
@@ -243,3 +245,44 @@ def file_on_s3_server(
     fs = fsspec.filesystem("s3", **s3_storage_kwargs)
     for file in list_of_created_files:
         fs.delete(file.partition(f"{file.scheme}://")[2])
+
+
+@pytest.fixture
+def job_id() -> str:
+    return "some_incredible_string"
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture(params=["no_parent_node", "with_parent_node"])
+def task_owner(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    request: pytest.FixtureRequest,
+    faker: Faker,
+) -> TaskOwner:
+    return TaskOwner(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        parent_project_id=None
+        if request.param == "no_parent_node"
+        else faker.uuid4(cast_to=None),
+        parent_node_id=None
+        if request.param == "no_parent_node"
+        else faker.uuid4(cast_to=None),
+    )

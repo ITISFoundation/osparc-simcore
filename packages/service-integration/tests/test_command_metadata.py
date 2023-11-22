@@ -50,7 +50,7 @@ def test_make_version(
     As Makefile recipe:
 
         version-service-patch version-service-minor version-service-major: $(metatada) ## kernel/service versioning as patch
-                osparc-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
+                simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
     """
     # ensures current_metadata fixture worked as expected
     assert current_metadata[target_version] == current_version
@@ -81,15 +81,15 @@ def test_make_version(
     "cmd,expected_output",
     [
         (
-            "osparc-service-integrator get-version --metadata-file tests/data/metadata.yml",
+            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml",
             "1.1.0",
         ),
         (
-            "osparc-service-integrator get-version --metadata-file tests/data/metadata.yml integration-version",
+            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml integration-version",
             "1.0.0",
         ),
         (
-            "osparc-service-integrator get-version --metadata-file tests/data/metadata.yml version",
+            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml version",
             "1.1.0",
         ),
     ],

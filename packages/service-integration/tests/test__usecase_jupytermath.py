@@ -75,7 +75,7 @@ def run_program_in_repo(tmp_path: Path, jupytermath_repo: Path) -> Iterable[Call
         def _invoke(*cmd) -> tuple[Path, Result]:
             print(
                 "RUNNING",
-                "osparc-service-integrator",
+                "simcore-service-integrator",
                 " ".join(cmd),
                 f"at {workdir=}",
             )

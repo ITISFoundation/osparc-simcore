@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, ClassVar, Union, cast
 
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
@@ -26,7 +26,7 @@ class PortSchema(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: dict[str, Any] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "required": True,
@@ -39,11 +39,11 @@ class PortSchema(BaseModel):
 
 
 class FilePortSchema(PortSchema):
-    mapping: Optional[str] = None
+    mapping: str | None = None
     url: AnyUrl
 
     class Config(PortSchema.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "mapping": "some_filename.txt",
@@ -60,17 +60,17 @@ class FilePortSchema(PortSchema):
 
 class FileUrl(BaseModel):
     url: AnyUrl
-    file_mapping: Optional[str] = Field(
+    file_mapping: str | None = Field(
         default=None,
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
-    file_mime_type: Optional[str] = Field(
+    file_mime_type: str | None = Field(
         default=None, description="the file MIME type", regex=MIME_TYPE_RE
     )
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"url": "https://some_file_url", "file_mime_type": "application/json"},
                 {
@@ -97,7 +97,7 @@ PortValue = Union[
 
 class TaskInputData(DictModel[PortKey, PortValue]):
     class Config(DictModel.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "boolean_input": False,
@@ -121,7 +121,7 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
     # sent as a json-schema instead of with a dynamically-created model class
     #
     class Config(DictModel.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "boolean_output": {"required": False},
@@ -159,8 +159,6 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
         for output_key, output_params in schema.items():
             if isinstance(output_params, FilePortSchema):
                 file_relpath = output_params.mapping or output_key
-                # TODO: file_path is built here, saved truncated in file_mapping and
-                # then rebuild again int _retrieve_output_data. Review.
                 file_path = output_folder / file_relpath
                 if file_path.exists():
                     data[output_key] = {
@@ -168,20 +166,17 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
                         "file_mapping": file_relpath,
                     }
                 elif output_params.required:
-                    raise ValueError(
-                        f"Could not locate '{file_path}' in {output_folder}"
-                    )
-            else:
-                if output_key not in data and output_params.required:
-                    raise ValueError(
-                        f"Could not locate '{output_key}' in {output_data_file}"
-                    )
+                    msg = f"Could not locate '{file_path}' in {output_folder}"
+                    raise ValueError(msg)
+            elif output_key not in data and output_params.required:
+                msg = f"Could not locate '{output_key}' in {output_data_file}"
+                raise ValueError(msg)
 
         # NOTE: this cast is necessary to make mypy happy
         return cast(TaskOutputData, cls.parse_obj(data))
 
     class Config(DictModel.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "boolean_output": False,

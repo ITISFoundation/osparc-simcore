@@ -57,6 +57,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-webserver=simcore_service_webserver.__main__:main",
+            "simcore-service=simcore_service_webserver.__main__:main",
         ]
     },
     python_requires="~=3.10",

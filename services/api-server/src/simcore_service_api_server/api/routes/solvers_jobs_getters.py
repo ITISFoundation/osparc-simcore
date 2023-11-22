@@ -13,21 +13,15 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
+from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from starlette.background import BackgroundTask
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.files import File
-from ...models.schemas.jobs import (
-    ArgumentTypes,
-    Job,
-    JobID,
-    JobLog,
-    JobMetadata,
-    JobOutputs,
-)
+from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
@@ -38,6 +32,7 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
+from ..dependencies.rabbitmq import LogListener
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -372,28 +367,17 @@ async def get_log_stream(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
+    log_listener: Annotated[LogListener, Depends(LogListener)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    async def _fake_generator(node_id: NodeIDStr):
-        for ii in range(100):
-            job_log: JobLog = JobLog(
-                job_id=job_id,
-                node_id=NodeID(node_id),
-                log_level=logging.DEBUG,
-                messages=[f"Hi Manuel. Gruss from the API-server {ii/100}"],
-            )
-            yield job_log.json() + "\n"
-
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-
-    with log_context(_logger, logging.DEBUG, f"Stream logs for {job_name=}"):
+    with log_context(_logger, logging.DEBUG, "Begin streaming logs"):
+        _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
-
-        node_ids = list(project.workbench.keys())
-        assert len(node_ids) == 1  # nosec
-
+        await log_listener.listen(job_id)
         return StreamingResponse(
-            _fake_generator(node_id=node_ids[0]),
+            log_listener.log_generator(),
             media_type="application/x-ndjson",
+            background=BackgroundTask(log_listener.stop_listening),
         )

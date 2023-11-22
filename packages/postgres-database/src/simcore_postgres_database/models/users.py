@@ -100,6 +100,14 @@ users = sa.Table(
         nullable=True,  # since 2FA can be configured optional
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
     ),
+    sa.Column(
+        "two_factor_enabled",
+        sa.Boolean,
+        server_default=sa.sql.expression.true(),
+        nullable=False,
+        doc="Wheter 2FA is enabled at login by this user."
+        "NOTE that this is checked ONLY if application activates 2FA",
+    ),
     sa.Column("password_hash", sa.String, nullable=False),
     sa.Column(
         "primary_gid",
