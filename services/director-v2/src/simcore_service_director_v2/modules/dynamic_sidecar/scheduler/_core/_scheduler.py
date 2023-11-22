@@ -236,9 +236,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
         )
-        await self._add_service(scheduler_data)
+        await self.add_service_from_scheduler_data(scheduler_data)
 
-    async def _add_service(self, scheduler_data: SchedulerData) -> None:
+    async def add_service_from_scheduler_data(
+        self, scheduler_data: SchedulerData
+    ) -> None:
         # NOTE: Because we do not have all items require to compute the
         # service_name the node_uuid is used to keep track of the service
         # for faster searches.

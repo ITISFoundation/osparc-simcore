@@ -242,7 +242,7 @@ async def test_skip_observation_cycle_after_error(
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
-    await scheduler.scheduler._add_service(scheduler_data)
+    await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     # check it is being tracked
     assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
 

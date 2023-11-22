@@ -98,9 +98,7 @@ async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ig
     logger.info("The following services need to be observed: %s", services_to_observe)
 
     for scheduler_data in services_to_observe:
-        await scheduler._add_service(  # pylint: disable=protected-access  # noqa: SLF001
-            scheduler_data
-        )
+        await scheduler.add_service_from_scheduler_data(scheduler_data)
 
 
 def create_model_from_scheduler_data(
