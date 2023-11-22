@@ -7,6 +7,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from pydantic import parse_obj_as
@@ -324,7 +325,7 @@ async def test_stop_job(
         task = ComputationTaskGet.parse_obj(capture.response_body)
         task.id = UUID(_job_id)
 
-        return task.json()
+        return jsonable_encoder(task)
 
     respx_mock = respx_mock_from_capture(
         [mocked_directorv2_service_api_base],
