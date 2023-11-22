@@ -24,17 +24,11 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
-    TaskInputData,
     TaskOutputData,
-    TaskOutputDataSchema,
 )
 from dask_task_models_library.container_tasks.protocol import (
-    ContainerCommands,
-    ContainerEnvsDict,
-    ContainerImage,
-    ContainerLabelsDict,
     ContainerRemoteFct,
-    ContainerTag,
+    ContainerTaskParameters,
     LogFileUploadURL,
 )
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
@@ -44,7 +38,6 @@ from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTyp
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
-from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
@@ -66,23 +59,7 @@ from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
 from ..models.dask_subsystem import DaskClientTaskState
 from ..modules.storage import StorageClient
-from ..utils.dask import (
-    check_communication_with_scheduler_is_open,
-    check_if_cluster_is_able_to_run_pipeline,
-    check_maximize_workers,
-    check_scheduler_is_still_the_same,
-    check_scheduler_status,
-    compute_input_data,
-    compute_output_data_schema,
-    compute_service_log_file_upload_link,
-    compute_task_envs,
-    compute_task_labels,
-    create_node_ports,
-    dask_sub_consumer_task,
-    from_node_reqs_to_dask_resources,
-    generate_dask_job_id,
-    wrap_client_async_routine,
-)
+from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
     DaskSubSystem,
     TaskHandlers,
@@ -158,7 +135,7 @@ class DaskClient:
                 backend = await create_internal_client_based_on_auth(
                     endpoint, authentication
                 )
-                check_scheduler_status(backend.client)
+                dask_utils.check_scheduler_status(backend.client)
                 instance = cls(
                     app=app,
                     backend=backend,
@@ -195,7 +172,7 @@ class DaskClient:
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
-                dask_sub_consumer_task(dask_sub, handler),
+                dask_utils.dask_sub_consumer_task(dask_sub, handler),
                 name=f"{dask_sub.name}_dask_sub_consumer_task",
             )
             for dask_sub, handler in _event_consumer_map
@@ -216,43 +193,29 @@ class DaskClient:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _comp_sidecar_fct(  # pylint: disable=too-many-arguments # noqa: PLR0913
+        def _comp_sidecar_fct(
             *,
+            task_parameters: ContainerTaskParameters,
             docker_auth: DockerBasicAuth,
-            service_key: ContainerImage,
-            service_version: ContainerTag,
-            input_data: TaskInputData,
-            output_data_keys: TaskOutputDataSchema,
             log_file_url: LogFileUploadURL,
-            command: ContainerCommands,
-            task_envs: ContainerEnvsDict,
-            task_labels: ContainerLabelsDict,
             s3_settings: S3Settings | None,
-            boot_mode: BootMode,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
             from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
             return run_computational_sidecar(
+                task_parameters=task_parameters,
                 docker_auth=docker_auth,
-                service_key=service_key,
-                service_version=service_version,
-                input_data=input_data,
-                output_data_keys=output_data_keys,
                 log_file_url=log_file_url,
-                command=command,
-                task_envs=task_envs,
-                task_labels=task_labels,
                 s3_settings=s3_settings,
-                boot_mode=boot_mode,
             )
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
         list_of_node_id_to_job_id: list[tuple[NodeID, str]] = []
         for node_id, node_image in tasks.items():
-            job_id = generate_dask_job_id(
+            job_id = dask_utils.generate_dask_job_id(
                 service_key=node_image.name,
                 service_version=node_image.tag,
                 user_id=user_id,
@@ -260,7 +223,7 @@ class DaskClient:
                 node_id=node_id,
             )
             assert node_image.node_requirements  # nosec
-            dask_resources = from_node_reqs_to_dask_resources(
+            dask_resources = dask_utils.from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
             if hardware_info.aws_ec2_instances:
@@ -268,12 +231,12 @@ class DaskClient:
                     f"{DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY}:{hardware_info.aws_ec2_instances[0]}"
                 ] = 1
 
-            check_scheduler_is_still_the_same(
+            dask_utils.check_scheduler_is_still_the_same(
                 self.backend.scheduler_id, self.backend.client
             )
-            check_communication_with_scheduler_is_open(self.backend.client)
-            check_scheduler_status(self.backend.client)
-            await check_maximize_workers(self.backend.gateway_cluster)
+            dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+            dask_utils.check_scheduler_status(self.backend.client)
+            await dask_utils.check_maximize_workers(self.backend.gateway_cluster)
             # NOTE: in case it's a gateway or it is an on-demand cluster
             # we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
@@ -283,7 +246,7 @@ class DaskClient:
                 self.backend.gateway is None
             ):
                 _logger.warning("cluster type: %s", self.cluster_type)
-                check_if_cluster_is_able_to_run_pipeline(
+                dask_utils.check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
                     scheduler_info=self.backend.client.scheduler_info(),
@@ -302,46 +265,49 @@ class DaskClient:
                     raise ComputationalBackendNoS3AccessError from err
 
             # This instance is created only once so it can be reused in calls below
-            node_ports = await create_node_ports(
+            node_ports = await dask_utils.create_node_ports(
                 db_engine=self.app.state.engine,
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
             )
             # NOTE: for download there is no need to go with S3 links
-            input_data = await compute_input_data(
+            input_data = await dask_utils.compute_input_data(
                 project_id=project_id,
                 node_id=node_id,
                 node_ports=node_ports,
                 file_link_type=FileLinkType.PRESIGNED,
             )
-            output_data_keys = await compute_output_data_schema(
+            output_data_keys = await dask_utils.compute_output_data_schema(
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
                 node_ports=node_ports,
                 file_link_type=self.tasks_file_link_type,
             )
-            log_file_url = await compute_service_log_file_upload_link(
+            log_file_url = await dask_utils.compute_service_log_file_upload_link(
                 user_id,
                 project_id,
                 node_id,
                 file_link_type=self.tasks_file_link_type,
             )
-            task_labels = compute_task_labels(
+            task_labels = dask_utils.compute_task_labels(
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
                 run_metadata=metadata,
                 node_requirements=node_image.node_requirements,
             )
-            task_envs = await compute_task_envs(
+            task_envs = await dask_utils.compute_task_envs(
                 self.app,
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
                 node_image=node_image,
                 metadata=metadata,
+            )
+            task_owner = dask_utils.compute_task_owner(
+                user_id, project_id, node_id, metadata.get("project_metadata", {})
             )
 
             try:
@@ -350,21 +316,24 @@ class DaskClient:
                 settings: AppSettings = self.app.state.settings
                 task_future = self.backend.client.submit(
                     remote_fct,
+                    task_parameters=ContainerTaskParameters(
+                        image=node_image.name,
+                        tag=node_image.tag,
+                        input_data=input_data,
+                        output_data_keys=output_data_keys,
+                        command=node_image.command,
+                        envs=task_envs,
+                        labels=task_labels,
+                        boot_mode=node_image.boot_mode,
+                        task_owner=task_owner,
+                    ),
                     docker_auth=DockerBasicAuth(
                         server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
                         username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
                         password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
                     ),
-                    service_key=node_image.name,
-                    service_version=node_image.tag,
-                    input_data=input_data,
-                    output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
-                    command=node_image.command,
-                    task_envs=task_envs,
-                    task_labels=task_labels,
                     s3_settings=s3_settings,
-                    boot_mode=node_image.boot_mode,
                     key=job_id,
                     resources=dask_resources,
                     retries=0,
@@ -373,7 +342,7 @@ class DaskClient:
                 task_future.add_done_callback(lambda _: callback())
 
                 list_of_node_id_to_job_id.append((node_id, job_id))
-                await wrap_client_async_routine(
+                await dask_utils.wrap_client_async_routine(
                     self.backend.client.publish_dataset(task_future, name=job_id)
                 )
 
@@ -384,17 +353,17 @@ class DaskClient:
                 )
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
-                check_scheduler_status(self.backend.client)
+                dask_utils.check_scheduler_status(self.backend.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
         return list_of_node_id_to_job_id
 
     async def get_tasks_status(self, job_ids: list[str]) -> list[DaskClientTaskState]:
-        check_scheduler_is_still_the_same(
+        dask_utils.check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
         )
-        check_communication_with_scheduler_is_open(self.backend.client)
-        check_scheduler_status(self.backend.client)
+        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+        dask_utils.check_scheduler_status(self.backend.client)
 
         # try to get the task from the scheduler
         def _get_pipeline_statuses(
@@ -405,7 +374,7 @@ class DaskClient:
             )
             return statuses
 
-        task_statuses = await wrap_client_async_routine(
+        task_statuses = await dask_utils.wrap_client_async_routine(
             self.backend.client.run_on_scheduler(_get_pipeline_statuses)
         )
         _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
@@ -415,7 +384,7 @@ class DaskClient:
             dask_status = task_statuses.get(job_id, "lost")
             if dask_status == "erred":
                 # find out if this was a cancellation
-                exception = await wrap_client_async_routine(
+                exception = await dask_utils.wrap_client_async_routine(
                     distributed.Future(job_id).exception(
                         timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
@@ -449,16 +418,18 @@ class DaskClient:
         # process, and report when it is finished and properly cancelled.
         _logger.debug("cancelling task with %s", f"{job_id=}")
         try:
-            task_future: distributed.Future = await wrap_client_async_routine(
-                self.backend.client.get_dataset(name=job_id)
+            task_future: distributed.Future = (
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.get_dataset(name=job_id)
+                )
             )
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(
                 name=TaskCancelEventName.format(job_id), client=self.backend.client
             )
-            await wrap_client_async_routine(cancel_event.set())
-            await wrap_client_async_routine(task_future.cancel())
+            await dask_utils.wrap_client_async_routine(cancel_event.set())
+            await dask_utils.wrap_client_async_routine(task_future.cancel())
             _logger.debug("Dask task %s cancelled", task_future.key)
         except KeyError:
             _logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
@@ -466,10 +437,12 @@ class DaskClient:
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         _logger.debug("getting result of %s", f"{job_id=}")
         try:
-            task_future: distributed.Future = await wrap_client_async_routine(
-                self.backend.client.get_dataset(name=job_id)
+            task_future: distributed.Future = (
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.get_dataset(name=job_id)
+                )
             )
-            return await wrap_client_async_routine(
+            return await dask_utils.wrap_client_async_routine(
                 task_future.result(timeout=_DASK_DEFAULT_TIMEOUT_S)
             )
         except KeyError as exc:
@@ -481,21 +454,21 @@ class DaskClient:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
             # first check if the key exists
-            await wrap_client_async_routine(
+            await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
-            await wrap_client_async_routine(
+            await dask_utils.wrap_client_async_routine(
                 self.backend.client.unpublish_dataset(name=job_id)
             )
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
-        check_scheduler_is_still_the_same(
+        dask_utils.check_scheduler_is_still_the_same(
             self.backend.scheduler_id, self.backend.client
         )
-        check_communication_with_scheduler_is_open(self.backend.client)
-        check_scheduler_status(self.backend.client)
+        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+        dask_utils.check_scheduler_status(self.backend.client)
         scheduler_info = self.backend.client.scheduler_info()
         scheduler_status = self.backend.client.status
         dashboard_link = self.backend.client.dashboard_link
@@ -512,7 +485,7 @@ class DaskClient:
             # NOTE: this runs directly on the dask-scheduler and may rise exceptions
             used_resources_per_worker: dict[
                 str, dict[str, Any]
-            ] = await wrap_client_async_routine(
+            ] = await dask_utils.wrap_client_async_routine(
                 self.backend.client.run_on_scheduler(_get_worker_used_resources)
             )
 
