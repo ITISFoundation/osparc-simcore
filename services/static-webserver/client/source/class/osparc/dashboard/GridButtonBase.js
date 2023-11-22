@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       },
       HITS: {
         row: 2,
-        column: 2,
+        column: 0,
         colSpan: 2
       },
       UPDATES: {
