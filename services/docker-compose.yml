@@ -116,6 +116,7 @@ services:
     networks:
       - default
     environment:
+      - CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG=${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}
       - CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION=${CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION}
       - CLUSTERS_KEEPER_TASK_INTERVAL=${CLUSTERS_KEEPER_TASK_INTERVAL}
       - CLUSTERS_KEEPER_LOGLEVEL=${LOG_LEVEL:-WARNING}
@@ -956,7 +957,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "6",
+        "7",
         "--appendonly",
         "yes"
       ]

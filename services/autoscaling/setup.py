@@ -62,6 +62,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-autoscaling = simcore_service_autoscaling.cli:main",
+            "simcore-service = simcore_service_autoscaling.cli:main",
         ],
     },
 )

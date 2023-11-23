@@ -5,16 +5,16 @@
 import asyncio
 import mimetypes
 import zipfile
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterable, cast
+from typing import Any, cast
 from unittest import mock
 
 import fsspec
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, parse_obj_as
-from pytest import FixtureRequest
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
@@ -79,7 +79,7 @@ class StorageParameters:
 
 @pytest.fixture(params=["ftp", "s3"])
 def remote_parameters(
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
     ftp_remote_file_url: AnyUrl,
     s3_remote_file_url: AnyUrl,
     s3_settings: S3Settings,
@@ -314,9 +314,8 @@ async def test_pull_compressed_zip_file_from_remote(
             mode="wb",
             **storage_kwargs,
         ),
-    ) as dest_fp:
-        with local_zip_file_path.open("rb") as src_fp:
-            dest_fp.write(src_fp.read())
+    ) as dest_fp, local_zip_file_path.open("rb") as src_fp:
+        dest_fp.write(src_fp.read())
 
     # now we want to download that file so it becomes the source
     src_url = destination_url

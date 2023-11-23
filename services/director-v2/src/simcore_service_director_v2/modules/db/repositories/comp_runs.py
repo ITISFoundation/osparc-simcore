@@ -137,6 +137,7 @@ class CompRunsRepository(BaseRepository):
 
     async def set_run_result(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         iteration: PositiveInt,

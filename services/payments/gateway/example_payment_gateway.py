@@ -1,3 +1,9 @@
+""" This is a simple example of a payments-gateway service
+
+    - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects
+    - Also used as a fake payment-gateway for manual exploratory testing
+"""
+
 import argparse
 import json
 import logging
@@ -46,6 +52,10 @@ from simcore_service_payments.models.schemas.acknowledgements import (
 from simcore_service_payments.models.schemas.auth import Token
 
 logging.basicConfig(level=logging.INFO)
+
+
+# NOTE: please change every time there is a change in the specs
+PAYMENTS_GATEWAY_SPECS_VERSION = "0.3.0"
 
 
 class Settings(BaseCustomSettings):
@@ -295,7 +305,13 @@ def create_payment_method_router():
     @router.get(
         "/{id}",
         response_model=GetPaymentMethod,
-        responses=ERROR_RESPONSES,
+        responses={
+            "404": {
+                "model": ErrorModel,
+                "description": "Payment method not found: It was not added or incomplete (i.e. create flow failed or canceled)",
+            },
+            **ERROR_RESPONSES,
+        },
     )
     def get_payment_method(
         id: PaymentMethodID,
@@ -346,11 +362,12 @@ async def _app_lifespan(app: FastAPI):
 
 def create_app():
     app = FastAPI(
-        title="fake-payment-gateway",
-        version="0.3.0",
+        title="osparc-compliant payment-gateway",
+        version=PAYMENTS_GATEWAY_SPECS_VERSION,
         lifespan=_app_lifespan,
         debug=True,
     )
+    app.openapi_version = "3.0.0"  # NOTE: small hack to allow current version of `42Crunch.vscode-openapi` to work with openapi
     override_fastapi_openapi_method(app)
 
     app.state.payments = {}
