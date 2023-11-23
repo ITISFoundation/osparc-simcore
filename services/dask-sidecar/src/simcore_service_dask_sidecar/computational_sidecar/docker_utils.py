@@ -183,6 +183,7 @@ async def _parse_and_publish_logs(
     progress_value = await _try_parse_progress(
         log_line, progress_regexp=progress_regexp
     )
+    assert 0 < container_processing_progress_weight <= 1.0  # nosec  # noqa: PLR2004
     if progress_value is not None:
         task_publishers.publish_progress(
             container_processing_progress_weight * progress_value
@@ -193,7 +194,7 @@ async def _parse_and_publish_logs(
     )
 
 
-async def _parse_container_log_file(  # noqa: PLR0913
+async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     *,
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
@@ -298,7 +299,7 @@ async def _parse_container_docker_logs(
             )
 
 
-async def _monitor_container_logs(  # noqa: PLR0913
+async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     *,
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
@@ -355,7 +356,7 @@ async def _monitor_container_logs(  # noqa: PLR0913
 
 
 @contextlib.asynccontextmanager
-async def managed_monitor_container_log_task(  # noqa: PLR0913
+async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
     service_key: ContainerImage,
