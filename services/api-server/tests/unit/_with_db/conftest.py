@@ -24,6 +24,7 @@ from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import (
     random_api_key,
     random_product,
@@ -147,9 +148,12 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    default_app_env_vars: EnvVarsDict,
+    mocker: MockerFixture,
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
+    mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
 
     envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
     assert "API_SERVER_POSTGRES" not in envs

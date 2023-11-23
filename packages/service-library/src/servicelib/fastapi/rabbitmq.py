@@ -59,9 +59,6 @@ def setup_rabbit(
     app.state.rabbitmq_client_name = name
     app.state.rabbitmq_settings = settings
 
-    if settings is None:
-        return
-
     async def on_startup() -> None:
         await connect(app)
 
