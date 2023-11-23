@@ -24,7 +24,7 @@ def try_assigning_task_to_node(
     instances_to_tasks: Iterable[tuple[AssociatedInstance, list[Task]]],
 ) -> bool:
     for instance, node_assigned_tasks in instances_to_tasks:
-        instance_total_resource = utils_docker.get_node_total_resources(instance.node)
+        instance_total_resource = instance.ec2_instance.resources
         tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
             node_assigned_tasks
         )
