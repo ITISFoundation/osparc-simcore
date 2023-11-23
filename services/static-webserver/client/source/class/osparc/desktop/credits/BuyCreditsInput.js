@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       })
       amountInput.addListener("input", e => {
         const value = Number(e.getData())
-        totalInput.setValue(!value ? '-' : String(value * this.__pricePerCredit) + this.__currencySymbol)
+        totalInput.setValue(!value ? '-' : 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol)
       })
       this._add(totalContainer)
       this.__totalInput = totalInput
