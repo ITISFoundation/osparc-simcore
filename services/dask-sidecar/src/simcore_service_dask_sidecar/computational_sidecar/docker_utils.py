@@ -178,14 +178,14 @@ async def _parse_and_publish_logs(
     *,
     task_publishers: TaskPublisher,
     progress_regexp: re.Pattern[str],
-    max_monitoring_progress_value: float,
+    container_processing_progress_weight: float,
 ) -> None:
     progress_value = await _try_parse_progress(
         log_line, progress_regexp=progress_regexp
     )
     if progress_value is not None:
         task_publishers.publish_progress(
-            max(progress_value, max_monitoring_progress_value)
+            container_processing_progress_weight * progress_value
         )
 
     task_publishers.publish_logs(
@@ -225,7 +225,7 @@ async def _parse_container_log_file(  # noqa: PLR0913
                         line,
                         task_publishers=task_publishers,
                         progress_regexp=progress_regexp,
-                        max_monitoring_progress_value=max_monitoring_progress_value,
+                        container_processing_progress_weight=max_monitoring_progress_value,
                     )
 
             # finish reading the logs if possible
@@ -239,7 +239,7 @@ async def _parse_container_log_file(  # noqa: PLR0913
                     line,
                     task_publishers=task_publishers,
                     progress_regexp=progress_regexp,
-                    max_monitoring_progress_value=max_monitoring_progress_value,
+                    container_processing_progress_weight=max_monitoring_progress_value,
                 )
 
             # copy the log file to the log_file_url
@@ -259,7 +259,7 @@ async def _parse_container_docker_logs(
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
-    max_monitoring_progress_value: float,
+    container_processing_progress_weight: float,
 ) -> None:
     with log_context(
         logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
@@ -289,7 +289,7 @@ async def _parse_container_docker_logs(
                         log_msg_without_timestamp,
                         task_publishers=task_publishers,
                         progress_regexp=progress_regexp,
-                        max_monitoring_progress_value=max_monitoring_progress_value,
+                        container_processing_progress_weight=container_processing_progress_weight,
                     )
 
             # copy the log file to the log_file_url
@@ -310,7 +310,7 @@ async def _monitor_container_logs(  # noqa: PLR0913
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
-    max_monitoring_progress_value: float,
+    container_processing_progress_weight: float,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -336,7 +336,7 @@ async def _monitor_container_logs(  # noqa: PLR0913
                     log_file_url=log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
-                    max_monitoring_progress_value=max_monitoring_progress_value,
+                    container_processing_progress_weight=container_processing_progress_weight,
                 )
             else:
                 await _parse_container_log_file(
@@ -350,7 +350,7 @@ async def _monitor_container_logs(  # noqa: PLR0913
                     log_file_url=log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
-                    max_monitoring_progress_value=max_monitoring_progress_value,
+                    max_monitoring_progress_value=container_processing_progress_weight,
                 )
 
 
@@ -366,7 +366,7 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
-    max_monitoring_progress_value: float,
+    container_processing_progress_weight: float,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -387,7 +387,7 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913
                     log_file_url=log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
-                    max_monitoring_progress_value=max_monitoring_progress_value,
+                    container_processing_progress_weight=container_processing_progress_weight,
                 ),
                 name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
             )

@@ -40,7 +40,7 @@ from .task_shared_volume import TaskSharedVolumes
 
 logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
-MAX_PROCESSING_PROGRESS_VALUE: Final[float] = 0.95
+_TASK_PROCESSING_PROGRESS_WEIGHT: Final[float] = 0.99
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -218,7 +218,7 @@ class ComputationalSidecar:
                 log_file_url=self.log_file_url,
                 log_publishing_cb=self._publish_sidecar_log,
                 s3_settings=self.s3_settings,
-                max_monitoring_progress_value=MAX_PROCESSING_PROGRESS_VALUE,
+                container_processing_progress_weight=_TASK_PROCESSING_PROGRESS_WEIGHT,
             ):
                 await container.start()
                 await self._publish_sidecar_log(
