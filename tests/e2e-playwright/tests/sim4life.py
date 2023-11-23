@@ -1,3 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
+
 import os
 
 import pytest
@@ -18,7 +24,7 @@ def on_web_socket(ws):
 
 
 @pytest.fixture
-def log_in_and_out(osparc_test_id_attribute, context: BrowserContext, page: Page):
+def log_in_and_out(osparc_test_id_attribute: None, context: BrowserContext, page: Page):
     print("Before test: Logging in starts")
     page.goto(PRODUCT_URL)
 
@@ -37,7 +43,7 @@ def log_in_and_out(osparc_test_id_attribute, context: BrowserContext, page: Page
     api_request_context.post(f"{PRODUCT_URL}v0/auth/logout")
 
 
-def test_billable_sim4life(page: Page, log_in_and_out) -> None:
+def test_billable_sim4life(page: Page, log_in_and_out):
     # connect and listen to websocket
     page.on("websocket", on_web_socket)
 
