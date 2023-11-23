@@ -649,6 +649,38 @@ qx.Theme.define("osparc.theme.Appearance", {
         padding: 10,
         decorator: "border-editable"
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Appmotion
+    ---------------------------------------------------------------------------
+    */
+    "appmotion-button": {
+      include: "lg-button",
+      alias: "lg-button",
+      style: state => ({
+        padding: [10, 25]
+      })
+    },
+
+    "appmotion-button/label": {
+      include: "lg-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    "appmotion-buy-credits-input": {
+      include: "textfield",
+      style: state => {
+        console.log(state)
+        return {
+          backgroundColor: state.readonly ? "transparent" : "background-main-1",
+          padding: [10, 25],
+          font: "text-18"
+        }
+      }
     }
   }
 });
