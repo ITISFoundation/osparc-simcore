@@ -63,7 +63,16 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       });
     this.__createMainViewLayout();
 
-    const buyView = new osparc.desktop.credits.BuyCredits2()
+    const buyView = new osparc.desktop.credits.BuyCredits2([{
+      id: 1,
+      label: "Method 1"
+    }, {
+      id: 2,
+      label: "Method 2"
+    }, {
+      id: 3,
+      label: "Method 3"
+    }])
     osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 550).set({
       resizable: false,
       movable: false

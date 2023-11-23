@@ -39,16 +39,20 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
 
       const [totalContainer, totalInput] = this.__getInputAndLabel("Total", {
         readOnly: true,
-        value: "1000$",
+        value: "-",
         paddingLeft: 0,
         paddingRight: 0
+      })
+      amountInput.addListener("input", e => {
+        const value = Number(e.getData())
+        totalInput.setValue(!value ? '-' : String(value * this.__pricePerCredit) + this.__currencySymbol)
       })
       this._add(totalContainer)
       this.__totalInput = totalInput
     },
 
     __getInputAndLabel: function(labelText, inputProps) {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignX: "center"
       }))
       const input = new qx.ui.form.TextField().set({

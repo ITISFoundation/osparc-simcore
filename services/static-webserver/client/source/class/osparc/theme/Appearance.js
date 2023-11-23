@@ -674,11 +674,32 @@ qx.Theme.define("osparc.theme.Appearance", {
     "appmotion-buy-credits-input": {
       include: "textfield",
       style: state => {
-        console.log(state)
         return {
           backgroundColor: state.readonly ? "transparent" : "background-main-1",
-          padding: [10, 25],
+          padding: [10, 15],
           font: "text-18"
+        }
+      }
+    },
+
+    "appmotion-buy-credits-select": {
+      include: "selectbox",
+      alias: "selectbox",
+      style: state => {
+        return {
+          backgroundColor: "background-main-1",
+          padding: [10, 15],
+          font: "text-14"
+        }
+      }
+    },
+
+    "appmotion-buy-credits-select/list": {
+      include: "selectbox/list",
+      alias: "selectbox/list",
+      style: state => {
+        return {
+          backgroundColor: "background-main-1"
         }
       }
     }
