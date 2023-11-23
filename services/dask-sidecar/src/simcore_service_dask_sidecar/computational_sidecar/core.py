@@ -38,7 +38,7 @@ from .errors import ServiceBadFormattedOutputError
 from .models import LEGACY_INTEGRATION_VERSION, ImageLabels
 from .task_shared_volume import TaskSharedVolumes
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 _TASK_PROCESSING_PROGRESS_WEIGHT: Final[float] = 0.99
 
@@ -102,12 +102,12 @@ class ComputationalSidecar:
     ) -> TaskOutputData:
         try:
             await self._publish_sidecar_log("Retrieving output data...")
-            logger.debug(
+            _logger.debug(
                 "following files are located in output folder %s:\n%s",
                 task_volumes.outputs_folder,
                 pformat(list(task_volumes.outputs_folder.rglob("*"))),
             )
-            logger.debug(
+            _logger.debug(
                 "following outputs will be searched for:\n%s",
                 self.task_parameters.output_data_keys.json(indent=1),
             )
@@ -139,7 +139,7 @@ class ComputationalSidecar:
             await asyncio.gather(*upload_tasks)
 
             await self._publish_sidecar_log("All the output data were uploaded.")
-            logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
+            _logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
             return output_data
 
         except (ValueError, ValidationError) as exc:
@@ -156,14 +156,11 @@ class ComputationalSidecar:
             message=f"[sidecar] {log}", log_level=log_level
         )
 
-        logger.log(log_level, log)
-
     async def run(self, command: list[str]) -> TaskOutputData:
         # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
             f"Starting task for {self.task_parameters.image}:{self.task_parameters.tag} on {socket.gethostname()}..."
         )
-        self.task_publishers.publish_progress(0)
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
@@ -250,6 +247,8 @@ class ComputationalSidecar:
             return results
 
     async def __aenter__(self) -> "ComputationalSidecar":
+        # ensure we start publishing progress
+        self.task_publishers.publish_progress(0)
         return self
 
     async def __aexit__(

@@ -18,30 +18,30 @@ from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _get_current_task_state() -> TaskState | None:
     worker = get_worker()
-    logger.debug("current worker %s", f"{worker=}")
+    _logger.debug("current worker %s", f"{worker=}")
     current_task = worker.get_current_task()
-    logger.debug("current task %s", f"{current_task=}")
+    _logger.debug("current task %s", f"{current_task=}")
     return worker.state.tasks.get(current_task)
 
 
 def is_current_task_aborted() -> bool:
     task: TaskState | None = _get_current_task_state()
-    logger.debug("found following TaskState: %s", task)
+    _logger.debug("found following TaskState: %s", task)
     if task is None:
         # the task was removed from the list of tasks this worker should work on, meaning it is aborted
         # NOTE: this does not work in distributed mode, hence we need to use Events, Variables,or PubSub
-        logger.debug("%s shall be aborted", f"{task=}")
+        _logger.debug("%s shall be aborted", f"{task=}")
         return True
 
     # NOTE: in distributed mode an event is necessary!
     cancel_event = distributed.Event(name=TaskCancelEventName.format(task.key))
     if cancel_event.is_set():
-        logger.debug("%s shall be aborted", f"{task=}")
+        _logger.debug("%s shall be aborted", f"{task=}")
         return True
     return False
 
@@ -71,7 +71,7 @@ class TaskPublisher:
     def publish_progress(self, value: float) -> None:
         rounded_value = round(value, ndigits=2)
         if rounded_value > self._last_published_progress_value:
-            with log_catch(logger=logger, reraise=False):
+            with log_catch(logger=_logger, reraise=False):
                 publish_event(
                     self.progress,
                     TaskProgressEvent.from_dask_worker(
@@ -86,13 +86,14 @@ class TaskPublisher:
         message: LogMessageStr,
         log_level: LogLevelInt,
     ) -> None:
-        with log_catch(logger=logger, reraise=False):
+        with log_catch(logger=_logger, reraise=False):
             publish_event(
                 self.logs,
                 TaskLogEvent.from_dask_worker(
                     log=message, log_level=log_level, task_owner=self.task_owner
                 ),
             )
+        _logger.log(log_level, message)
 
 
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
@@ -118,7 +119,7 @@ async def monitor_task_abortion(
 
     async def periodicaly_check_if_aborted(task_name: str) -> None:
         while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
-            logger.debug("checking if %s should be cancelled", f"{task_name=}")
+            _logger.debug("checking if %s should be cancelled", f"{task_name=}")
             if is_current_task_aborted():
                 await cancel_task(task_name)
 
@@ -138,7 +139,7 @@ async def monitor_task_abortion(
         raise TaskCancelledError from exc
     finally:
         if periodically_checking_task:
-            logger.debug(
+            _logger.debug(
                 "cancelling task cancellation checker for task '%s'",
                 task_name,
             )
@@ -149,5 +150,5 @@ async def monitor_task_abortion(
 
 def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
     """never reraises, only CancellationError"""
-    with log_catch(logger, reraise=False):
+    with log_catch(_logger, reraise=False):
         dask_pub.put(event.json())
