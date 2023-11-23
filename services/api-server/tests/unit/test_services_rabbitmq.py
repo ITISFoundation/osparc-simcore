@@ -56,10 +56,6 @@ def app_environment(
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     # do not init other services
-    mocker.stopall()
-    mocker.patch("simcore_service_api_server.core.application.webserver.setup")
-    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
-    mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
@@ -69,6 +65,13 @@ def app_environment(
             "API_SERVER_POSTGRES": "null",
         },
     )
+
+
+@pytest.fixture
+def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
+    mocker.patch("simcore_service_api_server.core.application.webserver.setup")
+    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
+    mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
 
 @pytest.fixture
