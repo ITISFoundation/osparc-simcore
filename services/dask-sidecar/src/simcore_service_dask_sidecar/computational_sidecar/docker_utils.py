@@ -151,6 +151,9 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     return float(value_str.strip())
 
 
+_OSPARC_LOG_NUM_PARTS: Final[int] = 2
+
+
 async def _try_parse_progress(
     line: str, *, progress_regexp: re.Pattern[str]
 ) -> float | None:
@@ -158,8 +161,10 @@ async def _try_parse_progress(
         # pattern might be like "timestamp log"
         log = line.strip("\n")
         splitted_log = log.split(" ", maxsplit=1)
-        with contextlib.suppress(arrow.ParserError):
-            if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
+        with contextlib.suppress(arrow.ParserError, ValueError):
+            if len(splitted_log) == _OSPARC_LOG_NUM_PARTS and arrow.get(
+                splitted_log[0]
+            ):
                 log = splitted_log[1]
         if match := re.search(progress_regexp, log):
             return _guess_progress_value(match)
