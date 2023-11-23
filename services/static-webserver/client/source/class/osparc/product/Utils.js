@@ -115,28 +115,28 @@ qx.Class.define("osparc.product.Utils", {
         case "s4l": {
           if (lightLogo) {
             if (longLogo) {
-              logosPath = "osparc/s4l_logo_white.svg";
+              logosPath = "osparc/Sim4Life_full_logo_white.svg";
             } else {
               logosPath = "osparc/s4l_logo_white_short.svg";
             }
           } else if (longLogo) {
-            logosPath = "osparc/s4l_logo_black.svg";
+            logosPath = "osparc/Sim4Life_full_logo_black.svg";
           } else {
             logosPath = "osparc/s4l_logo_black_short.svg";
           }
           break;
         }
         case "s4llite":
-          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
+          logosPath = lightLogo ? "osparc/s4llite-white.png" : "osparc/s4llite-black.png";
           break;
         case "s4lacad":
-          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
+          logosPath = lightLogo ? "osparc/Sim4Life_full_logo_white.svg" : "osparc/Sim4Life_full_logo_black.svg";
           break;
         case "s4ldesktop":
-          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
+          logosPath = lightLogo ? "osparc/Sim4Life_full_logo_white.svg" : "osparc/Sim4Life_full_logo_black.svg";
           break;
         case "s4ldesktopacad":
-          logosPath = lightLogo ? "osparc/s4l_logo_white.svg" : "osparc/s4l_logo_black.svg";
+          logosPath = lightLogo ? "osparc/Sim4Life_full_logo_white.svg" : "osparc/Sim4Life_full_logo_black.svg";
           break;
         case "tis":
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";

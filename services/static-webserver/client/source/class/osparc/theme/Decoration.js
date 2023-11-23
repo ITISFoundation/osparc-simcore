@@ -137,7 +137,6 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         width: 1,
         style: "solid",
-        // color: this.self().LOG_LEVEL_COLOR_MAP[level].color,
       }
     },
 
