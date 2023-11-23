@@ -33,19 +33,13 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(15));
 
-    const decorator = new qx.ui.decoration.Decorator().set({
-      width: 1,
-      style: "solid",
-      color: this.self().LOG_LEVEL_COLOR_MAP[level].color
-    });
-
     this.set({
       padding: 18,
       maxWidth: 400,
       allowStretchX: false,
       alignX: "center",
       backgroundColor: this.self().LOG_LEVEL_COLOR_MAP[level].backgroundColor,
-      decorator
+      decorator: `flash-${this.self().LOG_LEVEL_COLOR_MAP[level].color}`
     });
 
     this.getContentElement().setStyles({
