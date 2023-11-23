@@ -14,7 +14,6 @@ from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from servicelib.fastapi.errors import ApplicationStateError
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client, setup_rabbit
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
@@ -59,6 +58,15 @@ def rabbit_message(
 
 
 @pytest.fixture
+def disabled_rabbitmq(
+    rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    for key in rabbit_env_vars_dict:
+        rabbit_env_vars_dict[key] = "null"
+    setenvs_from_dict(monkeypatch, rabbit_env_vars_dict)
+
+
+@pytest.fixture
 def enabled_rabbitmq(
     rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> RabbitSettings:
@@ -71,9 +79,9 @@ async def initialized_app(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterable[F
     rabbit_settings: RabbitSettings | None = None
     try:
         rabbit_settings = RabbitSettings.create_from_envs()
+        setup_rabbit(app=app, settings=rabbit_settings, name="my_rabbitmq_client")
     except ValidationError:
         pass
-    setup_rabbit(app=app, settings=rabbit_settings, name="my_rabbitmq_client")
     async with LifespanManager(
         app=app,
         startup_timeout=None if is_pdb_enabled else 10,
@@ -83,11 +91,10 @@ async def initialized_app(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterable[F
 
 
 def test_rabbitmq_does_not_initialize_if_deactivated(
+    disabled_rabbitmq: None,
     initialized_app: FastAPI,
 ):
-    assert hasattr(initialized_app.state, "rabbitmq_client")
-    assert initialized_app.state.rabbitmq_client is None
-    with pytest.raises(ApplicationStateError):
+    with pytest.raises(AttributeError):
         get_rabbitmq_client(initialized_app)
 
 
