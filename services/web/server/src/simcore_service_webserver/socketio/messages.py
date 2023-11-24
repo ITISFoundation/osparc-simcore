@@ -4,9 +4,10 @@ This module takes care of sending events to the connected webclient through the 
 
 import logging
 from collections.abc import Sequence
-from typing import Any, Final, TypedDict
+from typing import Final
 
 from aiohttp.web import Application
+from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.json_serialization import json_dumps
@@ -27,16 +28,9 @@ SOCKET_IO_HEARTBEAT_EVENT: Final[str] = "set_heartbeat_emit_interval"
 SOCKET_IO_LOG_EVENT: Final[str] = "logger"
 SOCKET_IO_NODE_PROGRESS_EVENT: Final[str] = "nodeProgress"
 SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
-SOCKET_IO_PAYMENT_COMPLETED_EVENT: Final[str] = "paymentCompleted"
-SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT: Final[str] = "paymentMethodAcknoledged"
 SOCKET_IO_PROJECT_PROGRESS_EVENT: Final[str] = "projectProgress"
 SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
 SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
-
-
-class SocketMessageDict(TypedDict):
-    event_type: str
-    data: dict[str, Any]
 
 
 async def send_messages(

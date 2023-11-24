@@ -1,11 +1,14 @@
 import logging
 from collections.abc import Sequence
-from typing import Any, Final, TypedDict
 
 import socketio
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_payments.socketio import (
+    SOCKET_IO_PAYMENT_COMPLETED_EVENT,
+)
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
+from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
@@ -14,10 +17,6 @@ from settings_library.rabbit import RabbitSettings
 from .rabbitmq import get_rabbitmq_settings
 
 _logger = logging.getLogger(__name__)
-
-
-SOCKET_IO_PAYMENT_COMPLETED_EVENT: Final[str] = "paymentCompleted"
-SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT: Final[str] = "paymentMethodAcknoledged"
 
 
 def setup_socketio(app: FastAPI):
@@ -65,11 +64,6 @@ async def notify_payment_completed(
         }
     ]
     await send_messages(app, user_id, messages)
-
-
-class SocketMessageDict(TypedDict):
-    event_type: str
-    data: dict[str, Any]
 
 
 async def send_messages(

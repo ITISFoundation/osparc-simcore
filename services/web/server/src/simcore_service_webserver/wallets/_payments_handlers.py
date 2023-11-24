@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiohttp import web
@@ -342,8 +343,15 @@ async def _pay_with_payment_method(request: web.Request):
         #       we decided not to change the return value to avoid changing the front-end logic
         #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
 
+        async def _notify_payment_completed_after_response(app, user_id, payment):
+            # A small delay notify after response
+            await asyncio.sleep(1)
+            return (
+                await notify_payment_completed(app, user_id=user_id, payment=payment),
+            )
+
         fire_and_forget_task(
-            notify_payment_completed(
+            _notify_payment_completed_after_response(
                 request.app, user_id=req_ctx.user_id, payment=payment
             ),
             task_suffix_name=f"{__name__}._pay_with_payment_method",
