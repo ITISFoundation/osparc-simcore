@@ -78,6 +78,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
       switch (id) {
         case "url-field":
           control = new qx.ui.form.TextField().set({
+            // Fix me - sort colors
             textColor: "black",
             backgroundColor: "white"
           });

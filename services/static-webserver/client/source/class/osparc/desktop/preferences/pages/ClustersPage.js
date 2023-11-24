@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
       clustersList.addListener("changeSelection", e => {
         this.__clusterSelected(e.getData());

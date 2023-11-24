@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       const servicesUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
 
       const servicesModel = this.__servicesModel = new qx.data.Array();

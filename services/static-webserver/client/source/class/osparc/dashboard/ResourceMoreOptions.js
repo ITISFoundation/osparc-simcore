@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     createPage: function(title, widget, icon, id) {
       const tabPage = new qx.ui.tabview.Page().set({
-        backgroundColor: "background-main-2",
+        // backgroundColor: "background-main-2",
         paddingLeft: 20,
         layout: new qx.ui.layout.VBox(10),
         icon: icon + "/24"

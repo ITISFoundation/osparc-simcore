@@ -166,7 +166,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         contentPadding: 10
       });
       tabView.getChildControl("pane").set({
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");

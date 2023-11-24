@@ -125,7 +125,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
       orgsUIList.addListener("changeSelection", e => this.__organizationSelected(e.getData()), this);
 

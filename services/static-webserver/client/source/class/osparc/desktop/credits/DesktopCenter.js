@@ -26,7 +26,7 @@ qx.Class.define("osparc.desktop.credits.DesktopCenter", {
     this.base(arguments);
 
     this.set({
-      backgroundColor: "background-main-2"
+      // backgroundColor: "background-main-2"
     });
 
     const page = new osparc.desktop.credits.ProfilePage();

@@ -146,7 +146,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();

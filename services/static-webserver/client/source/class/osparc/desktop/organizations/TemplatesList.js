@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
       const templatesUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
 
       const templatesModel = this.__templatesModel = new qx.data.Array();

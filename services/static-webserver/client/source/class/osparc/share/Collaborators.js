@@ -251,7 +251,7 @@ qx.Class.define("osparc.share.Collaborators", {
         spacing: 3,
         width: 150,
         padding: 0,
-        backgroundColor: "background-main-2"
+        // backgroundColor: "background-main-2"
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();
