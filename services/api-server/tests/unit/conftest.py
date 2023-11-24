@@ -32,13 +32,14 @@ from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
+from settings_library.rabbit import RabbitSettings
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
@@ -57,10 +58,10 @@ SideEffectCallback: TypeAlias = Callable[
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    default_app_env_vars: EnvVarsDict,
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
-
     env_vars = setenvs_from_dict(
         monkeypatch,
         {
@@ -81,7 +82,16 @@ def app_environment(
 
 
 @pytest.fixture
-def app(app_environment: EnvVarsDict) -> FastAPI:
+def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
+    try:
+        RabbitSettings.create_from_envs()
+    except ValidationError:
+        mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
+    return app_environment
+
+
+@pytest.fixture
+def app(mock_missing_plugins: EnvVarsDict) -> FastAPI:
     """Inits app on a light environment"""
     return init_app()
 

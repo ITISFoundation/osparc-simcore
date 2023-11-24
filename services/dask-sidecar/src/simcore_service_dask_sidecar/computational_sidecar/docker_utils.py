@@ -3,9 +3,10 @@ import contextlib
 import logging
 import re
 import socket
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from pprint import pformat
-from typing import Any, AsyncGenerator, AsyncIterator, Awaitable, Callable, cast
+from typing import Any, Final, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -151,6 +152,9 @@ def _guess_progress_value(progress_match: re.Match[str]) -> float:
     return float(value_str.strip())
 
 
+_OSPARC_LOG_NUM_PARTS: Final[int] = 2
+
+
 async def _try_parse_progress(
     line: str, *, progress_regexp: re.Pattern[str]
 ) -> float | None:
@@ -158,8 +162,10 @@ async def _try_parse_progress(
         # pattern might be like "timestamp log"
         log = line.strip("\n")
         splitted_log = log.split(" ", maxsplit=1)
-        with contextlib.suppress(arrow.ParserError):
-            if len(splitted_log) == 2 and arrow.get(splitted_log[0]):
+        with contextlib.suppress(arrow.ParserError, ValueError):
+            if len(splitted_log) == _OSPARC_LOG_NUM_PARTS and arrow.get(
+                splitted_log[0]
+            ):
                 log = splitted_log[1]
         if match := re.search(progress_regexp, log):
             return _guess_progress_value(match)
@@ -172,19 +178,23 @@ async def _parse_and_publish_logs(
     *,
     task_publishers: TaskPublisher,
     progress_regexp: re.Pattern[str],
+    container_processing_progress_weight: float,
 ) -> None:
     progress_value = await _try_parse_progress(
         log_line, progress_regexp=progress_regexp
     )
+    assert 0 < container_processing_progress_weight <= 1.0  # nosec  # noqa: PLR2004
     if progress_value is not None:
-        task_publishers.publish_progress(progress_value)
+        task_publishers.publish_progress(
+            container_processing_progress_weight * progress_value
+        )
 
     task_publishers.publish_logs(
         message=log_line, log_level=guess_message_log_level(log_line)
     )
 
 
-async def _parse_container_log_file(
+async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     *,
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
@@ -196,6 +206,7 @@ async def _parse_container_log_file(
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    max_monitoring_progress_value: float,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     with log_context(
@@ -215,6 +226,7 @@ async def _parse_container_log_file(
                         line,
                         task_publishers=task_publishers,
                         progress_regexp=progress_regexp,
+                        container_processing_progress_weight=max_monitoring_progress_value,
                     )
 
             # finish reading the logs if possible
@@ -228,6 +240,7 @@ async def _parse_container_log_file(
                     line,
                     task_publishers=task_publishers,
                     progress_regexp=progress_regexp,
+                    container_processing_progress_weight=max_monitoring_progress_value,
                 )
 
             # copy the log file to the log_file_url
@@ -247,6 +260,7 @@ async def _parse_container_docker_logs(
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    container_processing_progress_weight: float,
 ) -> None:
     with log_context(
         logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
@@ -276,6 +290,7 @@ async def _parse_container_docker_logs(
                         log_msg_without_timestamp,
                         task_publishers=task_publishers,
                         progress_regexp=progress_regexp,
+                        container_processing_progress_weight=container_processing_progress_weight,
                     )
 
             # copy the log file to the log_file_url
@@ -284,7 +299,7 @@ async def _parse_container_docker_logs(
             )
 
 
-async def _monitor_container_logs(
+async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     *,
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
@@ -296,6 +311,7 @@ async def _monitor_container_logs(
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    container_processing_progress_weight: float,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -321,6 +337,7 @@ async def _monitor_container_logs(
                     log_file_url=log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
+                    container_processing_progress_weight=container_processing_progress_weight,
                 )
             else:
                 await _parse_container_log_file(
@@ -334,11 +351,12 @@ async def _monitor_container_logs(
                     log_file_url=log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
+                    max_monitoring_progress_value=container_processing_progress_weight,
                 )
 
 
 @contextlib.asynccontextmanager
-async def managed_monitor_container_log_task(
+async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
     service_key: ContainerImage,
@@ -349,6 +367,7 @@ async def managed_monitor_container_log_task(
     log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    container_processing_progress_weight: float,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -369,6 +388,7 @@ async def managed_monitor_container_log_task(
                     log_file_url=log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
+                    container_processing_progress_weight=container_processing_progress_weight,
                 ),
                 name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
             )
