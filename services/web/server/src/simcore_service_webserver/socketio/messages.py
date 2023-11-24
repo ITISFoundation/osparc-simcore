@@ -18,6 +18,10 @@ from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
 
+
+#
+# List of socket-io event names
+#
 SOCKET_IO_EVENT: Final[str] = "event"
 SOCKET_IO_HEARTBEAT_EVENT: Final[str] = "set_heartbeat_emit_interval"
 SOCKET_IO_LOG_EVENT: Final[str] = "logger"
