@@ -1,5 +1,6 @@
 import logging
 from contextlib import contextmanager
+from typing import Any, ClassVar
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -39,6 +40,16 @@ class ComputationTaskGet(ComputationTask):
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
             return PercentageInt(100)
         return PercentageInt(0)
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    **ComputationTask.Config.schema_extra["examples"][0],
+                    "url": "https://link-to-stop-computation",
+                }
+            ]
+        }
 
 
 class TaskLogFileGet(BaseModel):

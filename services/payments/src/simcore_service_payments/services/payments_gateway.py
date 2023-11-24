@@ -1,7 +1,7 @@
 """ Interface to communicate with the payment's gateway
 
 - httpx client with base_url to PAYMENTS_GATEWAY_URL
-- Fake gateway service in services/payments/scripts/fake_payment_gateway.py
+- Fake gateway service in services/payments/scripts/example_payment_gateway.py
 
 """
 
@@ -162,6 +162,8 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     async def get_many_payment_methods(
         self, ids_: list[PaymentMethodID]
     ) -> list[GetPaymentMethod]:
+        if not ids_:
+            return []
         response = await self.client.post(
             "/payment-methods:batchGet",
             json=jsonable_encoder(BatchGetPaymentMethods(payment_methods_ids=ids_)),
