@@ -1,11 +1,13 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Protocol, runtime_checkable
+from inspect import isawaitable
+from typing import Final, Optional, Protocol, runtime_checkable
 
 from servicelib.logging_utils import log_catch
 
 logger = logging.getLogger(__name__)
+_MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
 
 
 @runtime_checkable
@@ -14,7 +16,13 @@ class AsyncReportCB(Protocol):
         ...
 
 
-@dataclass
+@runtime_checkable
+class ReportCB(Protocol):
+    def __call__(self, progress_value: float) -> None:
+        ...
+
+
+@dataclass(slots=True, kw_only=True)
 class ProgressBarData:
     """A progress bar data allows to keep track of multiple progress(es) even in deeply nested processes.
 
@@ -50,7 +58,7 @@ class ProgressBarData:
     steps: int = field(
         metadata={"description": "Defines the number of steps in the progress bar"}
     )
-    progress_report_cb: Optional[AsyncReportCB] = None
+    progress_report_cb: AsyncReportCB | ReportCB | None = None
     _continuous_progress_value: float = 0
     _children: list = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
@@ -72,16 +80,20 @@ class ProgressBarData:
         if self._parent:
             await self._parent.update(value / self.steps)
 
-    async def _report_external(self, value: float, force: bool = False) -> None:
+    async def _report_external(self, value: float, *, force: bool = False) -> None:
         if not self.progress_report_cb:
             return
 
         with log_catch(logger, reraise=False):
             # NOTE: only report if at least a percent was increased
             if (force and value != self._last_report_value) or (
-                ((value - self._last_report_value) / self.steps) > 0.01
+                ((value - self._last_report_value) / self.steps)
+                > _MIN_PROGRESS_UPDATE_PERCENT
             ):
-                await self.progress_report_cb(value / self.steps)
+                if isawaitable(self.progress_report_cb):
+                    await self.progress_report_cb(value / self.steps)
+                else:
+                    self.progress_report_cb(value / self.steps)
                 self._last_report_value = value
 
     async def start(self) -> None:
@@ -112,9 +124,8 @@ class ProgressBarData:
 
     def sub_progress(self, steps: int) -> "ProgressBarData":
         if len(self._children) == self.steps:
-            raise RuntimeError(
-                "Too many sub progresses created already. Wrong usage of the progress bar"
-            )
+            msg = "Too many sub progresses created already. Wrong usage of the progress bar"
+            raise RuntimeError(msg)
         child = ProgressBarData(steps=steps, _parent=self)
         self._children.append(child)
         return child
