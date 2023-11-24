@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
 from servicelib.logging_utils import log_catch
@@ -20,6 +19,13 @@ class AsyncReportCB(Protocol):
 class ReportCB(Protocol):
     def __call__(self, progress_value: float) -> None:
         ...
+
+
+def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
+    total = sum(weights)
+    if total == 0:
+        return [1] * steps
+    return [weight / total for weight in weights]
 
 
 @dataclass(slots=True, kw_only=True)
@@ -58,6 +64,12 @@ class ProgressBarData:
     steps: int = field(
         metadata={"description": "Defines the number of steps in the progress bar"}
     )
+    step_weights: list[float] | None = field(
+        default=None,
+        metadata={
+            "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
+        },
+    )
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _continuous_progress_value: float = 0
     _children: list = field(default_factory=list)
@@ -68,6 +80,12 @@ class ProgressBarData:
     def __post_init__(self) -> None:
         self._continuous_value_lock = asyncio.Lock()
         self.steps = max(1, self.steps)
+        if self.step_weights:
+            if len(self.step_weights) != self.steps:
+                msg = f"{self.steps=} and {len(self.step_weights)} weights provided! Wrong usage of ProgressBarData"
+                raise RuntimeError(msg)
+            self.step_weights = _normalize_weights(self.steps, self.step_weights)
+            self.step_weights.append(0)  # NOTE: needed to compute reports
 
     async def __aenter__(self) -> "ProgressBarData":
         await self.start()
@@ -78,7 +96,7 @@ class ProgressBarData:
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:
-            await self._parent.update(value / self.steps)
+            await self._parent.update(value)
 
     async def _report_external(self, value: float, *, force: bool = False) -> None:
         if not self.progress_report_cb:
@@ -87,13 +105,12 @@ class ProgressBarData:
         with log_catch(logger, reraise=False):
             # NOTE: only report if at least a percent was increased
             if (force and value != self._last_report_value) or (
-                ((value - self._last_report_value) / self.steps)
-                > _MIN_PROGRESS_UPDATE_PERCENT
+                (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
             ):
-                if isawaitable(self.progress_report_cb):
-                    await self.progress_report_cb(value / self.steps)
+                if isinstance(self.progress_report_cb, AsyncReportCB):
+                    await self.progress_report_cb(value)
                 else:
-                    self.progress_report_cb(value / self.steps)
+                    self.progress_report_cb(value)
                 self._last_report_value = value
 
     async def start(self) -> None:
@@ -115,8 +132,17 @@ class ProgressBarData:
 
                 new_progress_value = self.steps
             self._continuous_progress_value = new_progress_value
-        await self._update_parent(value)
-        await self._report_external(new_progress_value)
+            weighted_value = self._continuous_progress_value / self.steps
+            if self.step_weights:
+                weight_index = int(self._continuous_progress_value)
+                weighted_value = (
+                    sum(self.step_weights[:weight_index])
+                    + self._continuous_progress_value
+                    % 1
+                    * self.step_weights[weight_index]
+                ) * self.steps
+        await self._update_parent(value / self.steps)
+        await self._report_external(weighted_value)
 
     async def set_progress(self, new_value: float) -> None:
         update_value = round(new_value - self._continuous_progress_value)
