@@ -26,6 +26,22 @@ async def test_progress_bar():
         assert root.steps == 2
 
 
+async def test_set_progress(
+    caplog: pytest.LogCaptureFixture,
+):
+    async with ProgressBarData(steps=50) as root:
+        assert root._continuous_progress_value == pytest.approx(0)  # noqa: SLF001
+        assert root.steps == 50
+        await root.set_progress(13)
+        assert root._continuous_progress_value == pytest.approx(13)  # noqa: SLF001
+        await root.set_progress(34)
+        assert root._continuous_progress_value == pytest.approx(34)  # noqa: SLF001
+        await root.set_progress(58)
+        assert root._continuous_progress_value == pytest.approx(50)  # noqa: SLF001
+        assert "already reached maximum" in caplog.messages[0]
+        assert "TIP:" in caplog.messages[0]
+
+
 async def test_concurrent_progress_bar():
     async def do_something(root: ProgressBarData):
         async with root.sub_progress(steps=50) as sub:

@@ -118,6 +118,10 @@ class ProgressBarData:
         await self._update_parent(value)
         await self._report_external(new_progress_value)
 
+    async def set_progress(self, new_value: float) -> None:
+        update_value = round(new_value - self._continuous_progress_value)
+        return await self.update(update_value)
+
     async def finish(self) -> None:
         await self.update(self.steps - self._continuous_progress_value)
         await self._report_external(self.steps, force=True)
