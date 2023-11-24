@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
+from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
 from servicelib.logging_utils import log_catch
@@ -75,7 +76,7 @@ class ProgressBarData:
     _children: list = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
-    _last_report_value: float = 0
+    _last_report_value: float = -1
 
     def __post_init__(self) -> None:
         self._continuous_value_lock = asyncio.Lock()
@@ -107,10 +108,9 @@ class ProgressBarData:
             if (force and value != self._last_report_value) or (
                 (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
             ):
-                if isinstance(self.progress_report_cb, AsyncReportCB):
-                    await self.progress_report_cb(value)
-                else:
-                    self.progress_report_cb(value)
+                call = self.progress_report_cb(value)
+                if isawaitable(call):
+                    await call
                 self._last_report_value = value
 
     async def start(self) -> None:
@@ -135,12 +135,13 @@ class ProgressBarData:
             weighted_value = self._continuous_progress_value / self.steps
             if self.step_weights:
                 weight_index = int(self._continuous_progress_value)
-                weighted_value = (
+                weighted_normalized_value = (
                     sum(self.step_weights[:weight_index])
                     + self._continuous_progress_value
                     % 1
                     * self.step_weights[weight_index]
-                ) * self.steps
+                )
+                weighted_value = weighted_normalized_value * self.steps
         await self._update_parent(value / self.steps)
         await self._report_external(weighted_value)
 
