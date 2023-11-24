@@ -79,6 +79,7 @@ class TaskPublisher:
                     ),
                 )
                 self._last_published_progress_value = rounded_value
+            _logger.debug("PROGRESS: %s", rounded_value)
 
     def publish_logs(
         self,
