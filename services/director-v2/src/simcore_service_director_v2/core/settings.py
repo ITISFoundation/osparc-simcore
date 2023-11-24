@@ -191,9 +191,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="forwarded to sidecars which use nodeports",
     )
 
-    # monitoring
-    MONITORING_ENABLED: bool = False
-
     # ptvsd settings
     DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
 
