@@ -20,6 +20,7 @@ from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
+from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 from yarl import URL
 
@@ -166,7 +167,10 @@ class ComputationalSidecar:
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
-        ) as task_volumes:
+        ) as task_volumes, ProgressBarData(
+            steps=3, progress_report_cb=self.task_publishers.publish_progress
+        ) as progress_bar:
+            # PRE-PROCESSING
             await pull_image(
                 docker_client,
                 self.docker_auth,
@@ -198,13 +202,15 @@ class ComputationalSidecar:
             await self._write_input_data(
                 task_volumes, image_labels.get_integration_version()
             )
-
-            # PROCESSING
+            await progress_bar.update()  # NOTE:  (1 step weighting 5%)
+            # PROCESSING (1 step weighted 90%)
             async with managed_container(
                 docker_client,
                 config,
                 name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
-            ) as container, managed_monitor_container_log_task(
+            ) as container, progress_bar.sub_progress(
+                100
+            ) as processing_progress_bar, managed_monitor_container_log_task(
                 container=container,
                 progress_regexp=image_labels.get_progress_regexp(),
                 service_key=self.task_parameters.image,
@@ -215,7 +221,7 @@ class ComputationalSidecar:
                 log_file_url=self.log_file_url,
                 log_publishing_cb=self._publish_sidecar_log,
                 s3_settings=self.s3_settings,
-                container_processing_progress_weight=_TASK_PROCESSING_PROGRESS_WEIGHT,
+                progress_bar=processing_progress_bar,
             ):
                 await container.start()
                 await self._publish_sidecar_log(
@@ -239,7 +245,7 @@ class ComputationalSidecar:
                     )
                 await self._publish_sidecar_log("Container ran successfully.")
 
-            # POST-PROCESSING
+            # POST-PROCESSING (1 step weighted 5%)
             results = await self._retrieve_output_data(
                 task_volumes, image_labels.get_integration_version()
             )

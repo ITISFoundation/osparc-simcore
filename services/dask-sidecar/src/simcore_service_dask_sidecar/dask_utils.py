@@ -68,8 +68,8 @@ class TaskPublisher:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
-    def publish_progress(self, value: float) -> None:
-        rounded_value = round(value, ndigits=2)
+    def publish_progress(self, progress_value: float) -> None:
+        rounded_value = round(progress_value, ndigits=2)
         if rounded_value > self._last_published_progress_value:
             with log_catch(logger=_logger, reraise=False):
                 publish_event(
