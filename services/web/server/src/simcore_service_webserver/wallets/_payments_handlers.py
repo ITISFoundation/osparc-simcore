@@ -344,8 +344,8 @@ async def _pay_with_payment_method(request: web.Request):
         #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
 
         async def _notify_payment_completed_after_response(app, user_id, payment):
-            # A small delay notify after response
-            await asyncio.sleep(1)
+            # A small delay to send notification just after the response
+            await asyncio.sleep(0.5)
             return (
                 await notify_payment_completed(app, user_id=user_id, payment=payment),
             )
