@@ -157,21 +157,19 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # for passing self-signed certificate to spawned services
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: str = Field(
-        "",
+        default="",
         description="ID of the docker secret containing the self-signed certificate",
     )
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: str = Field(
-        "",
+        default="",
         description="Name of the docker secret containing the self-signed certificate",
     )
     DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: str = Field(
-        "",
+        default="",
         description="Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it",
     )
 
     # extras
-    EXTRA_HOSTS_SUFFIX: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
-    PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
@@ -192,12 +190,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         default=NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
         description="forwarded to sidecars which use nodeports",
     )
-
-    # monitoring
-    MONITORING_ENABLED: bool = False
-
-    # fastappi app settings
-    DIRECTOR_V2_DEBUG: bool = False
 
     # ptvsd settings
     DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
