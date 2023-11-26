@@ -29,6 +29,9 @@ def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
     return [weight / total for weight in weights]
 
 
+_INITIAL_VALUE: Final[float] = -1
+
+
 @dataclass(slots=True, kw_only=True)
 class ProgressBarData:
     """A progress bar data allows to keep track of multiple progress(es) even in deeply nested processes.
@@ -72,11 +75,11 @@ class ProgressBarData:
         },
     )
     progress_report_cb: AsyncReportCB | ReportCB | None = None
-    _current_steps: float = 0
+    _current_steps: float = _INITIAL_VALUE
     _children: list = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
-    _last_report_value: float = -1
+    _last_report_value: float = _INITIAL_VALUE
 
     def __post_init__(self) -> None:
         self._continuous_value_lock = asyncio.Lock()
@@ -114,9 +117,10 @@ class ProgressBarData:
                 self._last_report_value = value
 
     async def start(self) -> None:
-        await self._report_external(0, force=True)
+        await self.set_(0)
 
     async def update(self, steps: float = 1) -> None:
+        parent_need_update = bool(self._current_steps != _INITIAL_VALUE)
         async with self._continuous_value_lock:
             new_steps_value = self._current_steps + steps
             if new_steps_value > self.num_steps:
@@ -131,8 +135,8 @@ class ProgressBarData:
                 )
 
                 new_steps_value = self.num_steps
-            self._current_steps = new_steps_value
 
+            self._current_steps = new_steps_value
             current_progress = self._current_steps / self.num_steps
             if self.step_weights:
                 weight_index = int(self._current_steps)
@@ -141,7 +145,8 @@ class ProgressBarData:
                     + self._current_steps % 1 * self.step_weights[weight_index]
                 )
                 current_progress = weighted_normalized_progress * self.num_steps
-        await self._update_parent(steps / self.num_steps)
+        if parent_need_update:
+            await self._update_parent(steps / self.num_steps)
         await self._report_external(current_progress)
 
     async def set_(self, new_value: float) -> None:
@@ -150,7 +155,6 @@ class ProgressBarData:
 
     async def finish(self) -> None:
         await self.set_(self.num_steps)
-        await self._report_external(self.num_steps, force=True)
 
     def sub_progress(self, steps: int) -> "ProgressBarData":
         if len(self._children) == self.num_steps:

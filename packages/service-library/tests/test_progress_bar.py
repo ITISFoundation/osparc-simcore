@@ -63,6 +63,8 @@ async def test_progress_bar(mocked_progress_bar_cb: mock.Mock):
         assert mocked_progress_bar_cb.call_count == 25
         assert mocked_progress_bar_cb.call_args_list[24].args[0] == pytest.approx(1)
         mocked_progress_bar_cb.reset_mock()
+    # we were already done here
+    mocked_progress_bar_cb.assert_not_called()
 
 
 async def test_set_progress(
