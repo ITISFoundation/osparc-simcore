@@ -140,21 +140,19 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock):
         mocked_progress_bar_cb.reset_mock()
         assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
         await root.update()
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5 * 3))
+        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5))
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
         await root.update()
-        mocked_progress_bar_cb.assert_called_once_with(
-            pytest.approx(1 / 5 * 3 + 3 / 5 * 3)
-        )
+        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5 + 3 / 5))
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
-    mocked_progress_bar_cb.assert_called_once_with(3)
+    mocked_progress_bar_cb.assert_called_once_with(1)
     mocked_progress_bar_cb.reset_mock()
     assert root._current_steps == pytest.approx(3)  # noqa: SLF001
 
 
-async def test_weighted_progress_bar_with_sub_progress(
+async def test_weighted_progress_bar_with_weighted_sub_progress(
     mocked_progress_bar_cb: mock.Mock,
 ):
     async with ProgressBarData(
@@ -167,28 +165,51 @@ async def test_weighted_progress_bar_with_sub_progress(
         assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
         # first step
         await root.update()
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5 * 3))
+        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5))
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
 
-        # 2nd step is a sub progress bar of 10 steps
-        async with root.sub_progress(steps=10) as sub:
+        # 2nd step is a sub progress bar of 5 steps
+        async with root.sub_progress(steps=5, step_weights=[2, 5, 1, 2, 3]) as sub:
+            assert sub.step_weights == [2 / 13, 5 / 13, 1 / 13, 2 / 13, 3 / 13, 0]
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(1)  # noqa: SLF001
-            for i in range(10):
-                await sub.update()
-                assert sub._current_steps == pytest.approx(float(i + 1))  # noqa: SLF001
-                assert root._current_steps == pytest.approx(  # noqa: SLF001
-                    1 + float(i + 1) / 10.0
-                )
+            # sub steps
+            # 1
+            await sub.update()
+            assert sub._current_steps == pytest.approx(1)  # noqa: SLF001
+            assert root._current_steps == pytest.approx(1 + 2 / 13)  # noqa: SLF001
+            # 2
+            await sub.update()
+            assert sub._current_steps == pytest.approx(2)  # noqa: SLF001
+            assert root._current_steps == pytest.approx(  # noqa: SLF001
+                1 + 2 / 13 + 5 / 13
+            )
+            # 3
+            await sub.update()
+            assert sub._current_steps == pytest.approx(3)  # noqa: SLF001
+            assert root._current_steps == pytest.approx(  # noqa: SLF001
+                1 + 2 / 13 + 5 / 13 + 1 / 13
+            )
+            # 4
+            await sub.update()
+            assert sub._current_steps == pytest.approx(4)  # noqa: SLF001
+            assert root._current_steps == pytest.approx(  # noqa: SLF001
+                1 + 2 / 13 + 5 / 13 + 1 / 13 + 2 / 13
+            )
+            # 5
+            await sub.update()
+            assert sub._current_steps == pytest.approx(5)  # noqa: SLF001
+            assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
         mocked_progress_bar_cb.assert_called()
-        assert mocked_progress_bar_cb.call_count == 10
-        assert mocked_progress_bar_cb.call_args_list[9].args[0] == pytest.approx(
-            1 / 5 * 3 + 3 / 5 * 3
+        assert mocked_progress_bar_cb.call_count == 5
+        assert mocked_progress_bar_cb.call_args_list[4].args[0] == pytest.approx(
+            1 / 5 + 3 / 5
         )
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
-    mocked_progress_bar_cb.assert_called_once_with(3)
+    mocked_progress_bar_cb.assert_called_once_with(1)
     mocked_progress_bar_cb.reset_mock()
     assert root._current_steps == pytest.approx(3)  # noqa: SLF001

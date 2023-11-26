@@ -123,11 +123,10 @@ class ProgressBarData:
         if not self.step_weights:
             return steps / self.num_steps
         weight_index = int(steps)
-        weighted_normalized_progress = (
+        return (
             sum(self.step_weights[:weight_index])
             + steps % 1 * self.step_weights[weight_index]
         )
-        return weighted_normalized_progress * self.num_steps
 
     async def update(self, steps: float = 1) -> None:
         parent_update_value = 0
@@ -163,10 +162,14 @@ class ProgressBarData:
     async def finish(self) -> None:
         await self.set_(self.num_steps)
 
-    def sub_progress(self, steps: int) -> "ProgressBarData":
+    def sub_progress(
+        self, steps: int, step_weights: list[float] | None = None
+    ) -> "ProgressBarData":
         if len(self._children) == self.num_steps:
             msg = "Too many sub progresses created already. Wrong usage of the progress bar"
             raise RuntimeError(msg)
-        child = ProgressBarData(num_steps=steps, _parent=self)
+        child = ProgressBarData(
+            num_steps=steps, step_weights=step_weights, _parent=self
+        )
         self._children.append(child)
         return child
