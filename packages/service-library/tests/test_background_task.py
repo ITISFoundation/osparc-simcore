@@ -70,7 +70,7 @@ async def test_background_task_created_and_deleted(
         [datetime.timedelta, Callable], Awaitable[asyncio.Task]
     ],
 ):
-    task = await create_background_task(
+    await create_background_task(
         task_interval,
         mock_background_task,
     )
@@ -87,7 +87,7 @@ async def test_background_task_raises_restarts(
     ],
 ):
     mock_background_task.side_effect = RuntimeError("pytest faked runtime error")
-    task = await create_background_task(
+    await create_background_task(
         task_interval,
         mock_background_task,
     )
@@ -104,7 +104,7 @@ async def test_background_task_correctly_cancels(
     ],
 ):
     mock_background_task.side_effect = asyncio.CancelledError
-    task = await create_background_task(
+    await create_background_task(
         task_interval,
         mock_background_task,
     )
@@ -127,4 +127,5 @@ async def test_periodic_task_context_manager(
         await asyncio.sleep(5 * task_interval.total_seconds())
         assert asyncio_task.cancelled() is False
         assert asyncio_task.done() is False
-    assert asyncio_task.cancelled() is True
+    # NOTE: task is no longer cancelled but gracefully stopped
+    assert asyncio_task.cancelled() is False

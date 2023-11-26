@@ -1,8 +1,9 @@
 import contextlib
 import datetime
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Final
+from typing import Final
 from uuid import uuid4
 
 import redis.asyncio as aioredis
@@ -88,18 +89,19 @@ class RedisClientSDK:
         lock_value: bytes | str | None = None,
         *,
         blocking: bool = False,
-        blocking_timeout_s: NonNegativeFloat = 5,
+        blocking_timeout_s: NonNegativeFloat | None = 5,
     ) -> AsyncIterator[Lock]:
         """Tries to acquire a lock.
 
         :param lock_key: unique name of the lock
         :param lock_value: content of the lock, defaults to None
         :param blocking: should block here while acquiring the lock, defaults to False
-        :param blocking_timeout_s: time to wait while acquire a lock before giving up, defaults to 5
+        :param blocking_timeout_s: time to wait while acquire a lock before giving up,
+            defaults to ``5``, when ``None`` it will continue forever
 
         :raises CouldNotAcquireLockError: reasons why lock acquisition fails:
-            1. `blocking==False` the lock was already acquired by some other entity
-            2. `blocking==True` timeouts out while waiting for lock to be free (another entity holds the lock)
+            1. ``blocking==False`` the lock was already acquired by some other entity
+            2. ``blocking==True`` timeouts out while waiting for lock to be free (another entity holds the lock)
         """
 
         total_lock_duration: datetime.timedelta = _DEFAULT_LOCK_TTL
