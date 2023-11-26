@@ -348,7 +348,7 @@ async def task_restore_state(
         log_level=logging.INFO,
     )
     async with ProgressBarData(
-        steps=len(state_paths),
+        num_steps=len(state_paths),
         progress_report_cb=functools.partial(
             post_progress_message, app, ProgressType.SERVICE_STATE_PULLING
         ),
@@ -399,7 +399,7 @@ async def task_save_state(
     progress.update(message="starting state save", percent=0.0)
     state_paths = list(mounted_volumes.disk_state_paths_iter())
     async with ProgressBarData(
-        steps=len(state_paths),
+        num_steps=len(state_paths),
         progress_report_cb=functools.partial(
             post_progress_message, app, ProgressType.SERVICE_STATE_PUSHING
         ),
@@ -435,7 +435,7 @@ async def task_ports_inputs_pull(
     )
     progress.update(message="pulling inputs", percent=0.1)
     async with ProgressBarData(
-        steps=1,
+        num_steps=1,
         progress_report_cb=functools.partial(
             post_progress_message, app, ProgressType.SERVICE_INPUTS_PULLING
         ),
@@ -468,7 +468,7 @@ async def task_ports_outputs_pull(
         app, f"Pulling output for {port_keys}", log_level=logging.INFO
     )
     async with ProgressBarData(
-        steps=1,
+        num_steps=1,
         progress_report_cb=functools.partial(
             post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PULLING
         ),

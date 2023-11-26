@@ -168,7 +168,7 @@ class ComputationalSidecar:
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes, ProgressBarData(
-            steps=3, progress_report_cb=self.task_publishers.publish_progress
+            num_steps=3, progress_report_cb=self.task_publishers.publish_progress
         ) as progress_bar:
             # PRE-PROCESSING
             await pull_image(

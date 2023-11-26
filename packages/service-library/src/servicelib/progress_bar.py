@@ -35,7 +35,7 @@ class ProgressBarData:
 
     - Simple example:
     async def main_fct():
-        async with ProgressBarData(steps=3) as root_progress_bar:
+        async with ProgressBarData(num_steps=3) as root_progress_bar:
             first_step()
             await root_progress_bar.update()
             second_step()
@@ -46,7 +46,7 @@ class ProgressBarData:
     - nested example:
 
     async def first_step(progress_bar: ProgressBarData):
-        async with progress_bar.sub_progress(steps=50) as sub_progress_bar:
+        async with progress_bar.sub_progress(num_steps=50) as sub_progress_bar:
             # we create a sub progress bar of 50 steps, that will be stacked into the root progress bar.
             # i.e. when the sub progress bar reaches 50, it will be equivalent of 1 step in the root progress bar.
             for n in range(50):
@@ -55,14 +55,14 @@ class ProgressBarData:
 
 
     async def main_fct():
-        async with ProgressBarData(steps=3) as root_progress_bar:
+        async with ProgressBarData(num_steps=3) as root_progress_bar:
             await first_step(root_progress_bar)
             await second_step()
             await root_progress_bar.update()
             await third_step()
     """
 
-    steps: int = field(
+    num_steps: int = field(
         metadata={"description": "Defines the number of steps in the progress bar"}
     )
     step_weights: list[float] | None = field(
@@ -72,7 +72,7 @@ class ProgressBarData:
         },
     )
     progress_report_cb: AsyncReportCB | ReportCB | None = None
-    _continuous_progress_value: float = 0
+    _current_steps: float = 0
     _children: list = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
@@ -80,12 +80,12 @@ class ProgressBarData:
 
     def __post_init__(self) -> None:
         self._continuous_value_lock = asyncio.Lock()
-        self.steps = max(1, self.steps)
+        self.num_steps = max(1, self.num_steps)
         if self.step_weights:
-            if len(self.step_weights) != self.steps:
-                msg = f"{self.steps=} and {len(self.step_weights)} weights provided! Wrong usage of ProgressBarData"
+            if len(self.step_weights) != self.num_steps:
+                msg = f"{self.num_steps=} and {len(self.step_weights)} weights provided! Wrong usage of ProgressBarData"
                 raise RuntimeError(msg)
-            self.step_weights = _normalize_weights(self.steps, self.step_weights)
+            self.step_weights = _normalize_weights(self.num_steps, self.step_weights)
             self.step_weights.append(0)  # NOTE: needed to compute reports
 
     async def __aenter__(self) -> "ProgressBarData":
@@ -116,47 +116,46 @@ class ProgressBarData:
     async def start(self) -> None:
         await self._report_external(0, force=True)
 
-    async def update(self, value: float = 1) -> None:
+    async def update(self, steps: float = 1) -> None:
         async with self._continuous_value_lock:
-            new_progress_value = self._continuous_progress_value + value
-            if new_progress_value > self.steps:
-                new_progress_value = round(new_progress_value)
-            if new_progress_value > self.steps:
+            new_steps_value = self._current_steps + steps
+            if new_steps_value > self.num_steps:
+                new_steps_value = round(new_steps_value)
+            if new_steps_value > self.num_steps:
                 logger.warning(
                     "%s",
-                    f"Progress already reached maximum of {self.steps=}, "
-                    f"cause: {self._continuous_progress_value=} is updated by {value=}"
+                    f"Progress already reached maximum of {self.num_steps=}, "
+                    f"cause: {self._current_steps=} is updated by {steps=}"
                     "TIP: sub progresses are not created correctly please check the stack trace",
                     stack_info=True,
                 )
 
-                new_progress_value = self.steps
-            self._continuous_progress_value = new_progress_value
-            weighted_value = self._continuous_progress_value / self.steps
-            if self.step_weights:
-                weight_index = int(self._continuous_progress_value)
-                weighted_normalized_value = (
-                    sum(self.step_weights[:weight_index])
-                    + self._continuous_progress_value
-                    % 1
-                    * self.step_weights[weight_index]
-                )
-                weighted_value = weighted_normalized_value * self.steps
-        await self._update_parent(value / self.steps)
-        await self._report_external(weighted_value)
+                new_steps_value = self.num_steps
+            self._current_steps = new_steps_value
 
-    async def set_progress(self, new_value: float) -> None:
-        update_value = round(new_value - self._continuous_progress_value)
-        return await self.update(update_value)
+            current_progress = self._current_steps / self.num_steps
+            if self.step_weights:
+                weight_index = int(self._current_steps)
+                weighted_normalized_progress = (
+                    sum(self.step_weights[:weight_index])
+                    + self._current_steps % 1 * self.step_weights[weight_index]
+                )
+                current_progress = weighted_normalized_progress * self.num_steps
+        await self._update_parent(steps / self.num_steps)
+        await self._report_external(current_progress)
+
+    async def set_(self, new_value: float) -> None:
+        if update_value := round(new_value - self._current_steps):
+            await self.update(update_value)
 
     async def finish(self) -> None:
-        await self.update(self.steps - self._continuous_progress_value)
-        await self._report_external(self.steps, force=True)
+        await self.set_(self.num_steps)
+        await self._report_external(self.num_steps, force=True)
 
     def sub_progress(self, steps: int) -> "ProgressBarData":
-        if len(self._children) == self.steps:
+        if len(self._children) == self.num_steps:
             msg = "Too many sub progresses created already. Wrong usage of the progress bar"
             raise RuntimeError(msg)
-        child = ProgressBarData(steps=steps, _parent=self)
+        child = ProgressBarData(num_steps=steps, _parent=self)
         self._children.append(child)
         return child

@@ -639,7 +639,7 @@ async def _fetch_data_via_data_manager(
         is True
     )
 
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,

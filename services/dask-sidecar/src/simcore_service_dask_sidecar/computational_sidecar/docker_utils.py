@@ -185,7 +185,7 @@ async def _parse_and_publish_logs(
         log_line, progress_regexp=progress_regexp
     )
     if progress_value is not None:
-        await progress_bar.set_progress(round(progress_value * 100.0))
+        await progress_bar.set_(round(progress_value * 100.0))
 
     task_publishers.publish_logs(
         message=log_line, log_level=guess_message_log_level(log_line)
