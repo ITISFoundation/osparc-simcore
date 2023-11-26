@@ -119,8 +119,18 @@ class ProgressBarData:
     async def start(self) -> None:
         await self.set_(0)
 
+    def _compute_progress(self, steps: float) -> float:
+        if not self.step_weights:
+            return steps / self.num_steps
+        weight_index = int(steps)
+        weighted_normalized_progress = (
+            sum(self.step_weights[:weight_index])
+            + steps % 1 * self.step_weights[weight_index]
+        )
+        return weighted_normalized_progress * self.num_steps
+
     async def update(self, steps: float = 1) -> None:
-        parent_need_update = bool(self._current_steps != _INITIAL_VALUE)
+        parent_update_value = 0
         async with self._continuous_value_lock:
             new_steps_value = self._current_steps + steps
             if new_steps_value > self.num_steps:
@@ -136,18 +146,15 @@ class ProgressBarData:
 
                 new_steps_value = self.num_steps
 
+            new_progress_value = self._compute_progress(new_steps_value)
+            if self._current_steps != _INITIAL_VALUE:
+                old_progress_value = self._compute_progress(self._current_steps)
+                parent_update_value = new_progress_value - old_progress_value
             self._current_steps = new_steps_value
-            current_progress = self._current_steps / self.num_steps
-            if self.step_weights:
-                weight_index = int(self._current_steps)
-                weighted_normalized_progress = (
-                    sum(self.step_weights[:weight_index])
-                    + self._current_steps % 1 * self.step_weights[weight_index]
-                )
-                current_progress = weighted_normalized_progress * self.num_steps
-        if parent_need_update:
-            await self._update_parent(steps / self.num_steps)
-        await self._report_external(current_progress)
+
+        if parent_update_value:
+            await self._update_parent(parent_update_value)
+        await self._report_external(new_progress_value)
 
     async def set_(self, new_value: float) -> None:
         if update_value := round(new_value - self._current_steps):

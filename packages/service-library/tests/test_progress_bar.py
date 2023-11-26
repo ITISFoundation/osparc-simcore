@@ -152,3 +152,43 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock):
     mocked_progress_bar_cb.assert_called_once_with(3)
     mocked_progress_bar_cb.reset_mock()
     assert root._current_steps == pytest.approx(3)  # noqa: SLF001
+
+
+async def test_weighted_progress_bar_with_sub_progress(
+    mocked_progress_bar_cb: mock.Mock,
+):
+    async with ProgressBarData(
+        num_steps=3,
+        step_weights=[1, 3, 1],
+        progress_report_cb=mocked_progress_bar_cb,
+    ) as root:
+        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(0))
+        mocked_progress_bar_cb.reset_mock()
+        assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
+        # first step
+        await root.update()
+        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5 * 3))
+        mocked_progress_bar_cb.reset_mock()
+        assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+
+        # 2nd step is a sub progress bar of 10 steps
+        async with root.sub_progress(steps=10) as sub:
+            assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
+            assert root._current_steps == pytest.approx(1)  # noqa: SLF001
+            for i in range(10):
+                await sub.update()
+                assert sub._current_steps == pytest.approx(float(i + 1))  # noqa: SLF001
+                assert root._current_steps == pytest.approx(  # noqa: SLF001
+                    1 + float(i + 1) / 10.0
+                )
+        assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+        mocked_progress_bar_cb.assert_called()
+        assert mocked_progress_bar_cb.call_count == 10
+        assert mocked_progress_bar_cb.call_args_list[9].args[0] == pytest.approx(
+            1 / 5 * 3 + 3 / 5 * 3
+        )
+        mocked_progress_bar_cb.reset_mock()
+        assert root._current_steps == pytest.approx(2)  # noqa: SLF001
+    mocked_progress_bar_cb.assert_called_once_with(3)
+    mocked_progress_bar_cb.reset_mock()
+    assert root._current_steps == pytest.approx(3)  # noqa: SLF001
