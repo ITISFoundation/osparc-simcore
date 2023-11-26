@@ -8,6 +8,7 @@ from models_library.api_schemas_payments.socketio import (
 )
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.users import GroupID
+from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq import get_rabbitmq_settings
@@ -31,7 +32,10 @@ def setup_socketio(app: FastAPI):
         )
 
     async def _on_shutdown() -> None:
-        ...
+        if app.state.external_sio:
+            await cleanup_socketio_async_pubsub_manager(
+                server_manager=app.state.external_sio
+            )
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
@@ -43,6 +47,9 @@ async def notify_payment_completed(
     user_primary_group_id: GroupID,
     payment: PaymentTransaction,
 ):
+    # We assume that the user has been added to all
+    # rooms associated to his groups
+    #
     assert payment.completed_at is not None  # nosec
 
     external_sio: socketio.AsyncAioPikaManager = app.state.external_sio
