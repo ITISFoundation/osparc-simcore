@@ -346,11 +346,9 @@ async def test_collition_at_global_level_raises(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ):
-    scheduler.scheduler._inverse_search_mapping[
+    scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
         scheduler_data.node_uuid
-    ] = ServiceName(  # noqa: SLF001
-        "mock_service_name"
-    )
+    ] = ServiceName("mock_service_name")
     with pytest.raises(DynamicSidecarError) as execinfo:
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert "collide" in str(execinfo.value)
@@ -511,6 +509,7 @@ async def test_mark_all_services_in_wallet_for_removal(
             )
 
     assert len(scheduler.scheduler._to_observe) == 4  # noqa: SLF001
+    # pylint: disable=redefined-argument-from-local
     for scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
         assert scheduler_data.dynamic_sidecar.service_removal_state.can_remove is False
 
