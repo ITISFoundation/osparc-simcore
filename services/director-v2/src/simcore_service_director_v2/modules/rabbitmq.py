@@ -53,7 +53,7 @@ def setup(app: FastAPI) -> None:
             WalletCreditsLimitReachedMessage.get_channel_name(),
             partial(handler_out_of_credits, app),
             exclusive_queue=False,
-            topics=[f"*.{CreditsLimit.SHUTDOWN_SERVICES}"],
+            topics=[f"*.{CreditsLimit.OUT_OF_CREDITS}"],
         )
 
     async def on_shutdown() -> None:
