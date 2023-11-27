@@ -161,9 +161,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         contentPadding: 10,
         backgroundColor: "transparent"
       });
-      tabView.getChildControl("pane").set({
-        // backgroundColor: "background-main-2"
-      });
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
       const membersList = this.__membersList = new osparc.desktop.wallets.MembersList();

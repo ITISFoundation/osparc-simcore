@@ -113,8 +113,7 @@ qx.Class.define("osparc.About", {
       layout.setColumnFlex(0, 1);
       layout.setColumnFlex(1, 1);
       const tabPage = new qx.ui.tabview.Page(title).set({
-        layout,
-        // backgroundColor: "background-main-2"
+        layout
       });
       return tabPage;
     },

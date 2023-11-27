@@ -38,8 +38,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
-    // PRIMARY_COL_BG_COLOR: "background-main-2",
-    PRIMARY_COL_BG_COLOR: "transparent_overlay",
+    PRIMARY_COL_BG_COLOR: "transparent",
     TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {

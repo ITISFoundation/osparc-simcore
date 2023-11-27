@@ -158,8 +158,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const membersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150,
-        // backgroundColor: "background-main-2"
+        width: 150
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();

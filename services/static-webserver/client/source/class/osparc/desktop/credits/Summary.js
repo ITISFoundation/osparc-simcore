@@ -86,8 +86,7 @@ qx.Class.define("osparc.desktop.credits.Summary", {
 
     __createOverviewCard: function(cardLabel, content, buttonLabel, signalName, signalData) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        padding: 15,
-        // backgroundColor: "background-main-1"
+        padding: 15
       });
       layout.getContentElement().setStyles({
         "border-radius": "4px"
