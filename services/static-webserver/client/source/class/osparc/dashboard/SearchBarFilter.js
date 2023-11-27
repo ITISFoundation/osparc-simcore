@@ -107,9 +107,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "reset-button":
           control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/12").set({
-            backgroundColor: "transparent",
+            appearance: "text-button",
             paddingLeft: 0,
-            paddingRight: 2,
+            paddingRight: 10,
             alignY: "middle",
             opacity: 0.7
           });
@@ -274,8 +274,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         alignY: "middle",
         toolTipText: chipLabel,
         maxHeight: 26,
-        maxWidth: 210,
-        backgroundColor: "background-main-1"
+        maxWidth: 210
       });
       chipButton.type = chipType;
       chipButton.id = chipId;

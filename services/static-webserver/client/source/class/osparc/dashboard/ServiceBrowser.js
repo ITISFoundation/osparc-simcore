@@ -184,6 +184,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __addSortingButtons: function() {
       const containerSortButtons = new osparc.service.SortServicesButtons();
+      containerSortButtons.set({
+        appearance: "form-button-outlined"
+      });
       containerSortButtons.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);

@@ -232,6 +232,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "credits-menu-button": {
           const currentUsage = new osparc.desktop.credits.CurrentUsage();
           control = new osparc.navigation.CreditsMenuButton().set({
+            appearance: "form-button",
             currentUsage,
             maxHeight: this.self().HEIGHT
           });
@@ -314,7 +315,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     _applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "dashboard":
-          this.getChildControl("dashboard-label").show();
+          this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("study-title-options").exclude();
           this.getChildControl("read-only-info").exclude();

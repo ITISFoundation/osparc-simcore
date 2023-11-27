@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 32
+    MENU_BTN_DIMENSIONS: 24
   },
 
   members: {
@@ -90,8 +90,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_DIMENSIONS
           });
           control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
+            padding: [0, 8, 0, 8],
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
@@ -101,8 +105,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: 5,
-            right: 5
+            top: 8,
+            right: 8
           });
           break;
         case "tick-unselected":

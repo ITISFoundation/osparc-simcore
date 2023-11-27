@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 25
+    MENU_BTN_DIMENSIONS: 24
   },
 
   members: {
@@ -165,8 +165,12 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         case "menu-button": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
+            padding: [0, 8, 0, 8],
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });

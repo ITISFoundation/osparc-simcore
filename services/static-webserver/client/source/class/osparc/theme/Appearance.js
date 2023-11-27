@@ -29,13 +29,119 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
       }
     },
+    "form-button": {
+      style: function(states) {
+        const style = {
+          decorator: "form-button",
+          textColor: "default-button-text",
+          padding: 5,
+          alignY: "middle",
+          alignX: "center",
+          backgroundColor: "default-button"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover";
+        }
+        if (states.focused) {
+          style.decorator = "default-button-focus";
+        }
+        if (states.disabled) {
+          style.decorator = "transparent";
+        }
+        return style;
+      }
+    },
+    "form-button-outlined": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "form-button-outlined",
+          padding: 5,
+          textColor: "default-button-text-outline",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hover";
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focus";
+          style.backgroundColor = "default-button-focus-background";
+        }
+        if (states.active) {
+          style.decorator = "form-button-focus";
+          style.backgroundColor = "default-button-focus-background";
+        }
+        if (states.disabled) {
+          style.decorator = "form-button-disabled";
+          style.textColor = "default-button-text-disabled";
+          style.backgroundColor = "transparent";
+        }
+        return style;
+      }
+    },
+
+    "text-button": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "text-button",
+          textColor: "default-button",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.textColor = "default-button-hover";
+        }
+        if (states.focused) {
+          style.textColor = "default-button-focus";
+        }
+        if (states.active) {
+          style.textColor = "default-button-active";
+        }
+        if (states.disabled) {
+          style.textColor = "default-button-text-disabled";
+        }
+        return style;
+      }
+    },
+
+    "form-input": {
+      style: function(states) {
+        const style = {
+          decorator: "form-input",
+          padding: 5,
+          backgroundColor: "input_background"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "info";
+        }
+        if (states.focused) {
+          style.decorator = "form-focus";
+        }
+        return style;
+      }
+    },
+    "form-password": {
+      include: "form-input",
+      style: function(states) {
+        const style = {
+          decorator: "form-input",
+          padding: 5,
+          backgroundColor: "input_background"
+        };
+        if (states.focused) {
+          style.backgroundColor = "success";
+        }
+        return style;
+      }
+    },
     "pb-listitem":  {
       include: "material-button",
       style: function(states) {
         const style = {
           decorator: "pb-listitem",
           padding: 5,
-          backgroundColor: "background-main-2"
+          backgroundColor: "transparent_overlay"
         };
         if (states.hovered) {
           style.backgroundColor = "background-main-3";
@@ -169,7 +275,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "dialog-window-content": {
       style: () => ({
-        backgroundColor: "background-main-2"
+        backgroundColor: "transparent_overlay"
       })
     },
     /*
@@ -213,7 +319,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     ---------------------------------------------------------------------------
     */
     "toolbar-textfield": {
-      include: "material-textfield",
+      include: "form-input",
       style: state => ({
         backgroundColor: "transparent",
         marginTop: 8
@@ -273,7 +379,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     sidepanel: {
       style: state => ({
-        backgroundColor: "background-main-1"
+        // backgroundColor: "background-main-1"
       })
     },
 
@@ -461,9 +567,8 @@ qx.Theme.define("osparc.theme.Appearance", {
     "danger-button": {
       include: "material-button",
       style: state => ({
-        decorator: "bordered-button",
-        backgroundColor: state.hovered || state.focused ? "danger-red" : null,
-        textColor: state.hovered || state.focused ? "#d2d8dc" : "danger-red" // dark theme's text color
+        backgroundColor: state.hovered || state.focused ? "info" : "error",
+        textColor: state.hovered || state.focused ? "default-button-text" : "default-button-text" // dark theme's text color
       })
     },
 
@@ -527,7 +632,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "atom",
       style: state => ({
         decorator: "chip",
-        backgroundColor: "background-main-1",
+        // backgroundColor: "background-main-1",
         padding: [3, 5]
       })
     },
