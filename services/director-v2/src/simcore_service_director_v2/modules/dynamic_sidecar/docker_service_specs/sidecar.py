@@ -352,9 +352,6 @@ def get_dynamic_sidecar_spec(
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
-                "CapabilityAdd": [
-                    "CAP_LINUX_IMMUTABLE",
-                ],
                 "Labels": standard_simcore_docker_labels,
                 "Mounts": mounts,
                 "Secrets": [
