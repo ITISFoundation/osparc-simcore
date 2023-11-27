@@ -1,7 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 
 import logging
-from contextlib import suppress
 from typing import Any, Final
 
 from fastapi import FastAPI
@@ -15,13 +14,11 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressType,
 )
-from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.core.errors import ResourceTrackerPricingUnitsError
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -41,9 +38,6 @@ from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
-from ....db.repositories.resource_tracker_pricing_units import (
-    ResourceTrackerPricingUnitsRepository,
-)
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
     BaseClientHTTPError,
@@ -72,6 +66,7 @@ from ._events_utils import (
     attach_project_networks,
     attempt_pod_removal_and_data_saving,
     get_director_v0_client,
+    get_hardware_info,
     parse_containers_inspect,
     prepare_services_environment,
     wait_for_sidecar_api,
@@ -189,18 +184,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
 
-        # get hardware info if present
-        hardware_info: HardwareInfo | None = None
-        if scheduler_data.wallet_info and scheduler_data.pricing_info:
-            resource_tracker_pricing_units_repo = get_repository(
-                app, ResourceTrackerPricingUnitsRepository
-            )
-            with suppress(ResourceTrackerPricingUnitsError):
-                hardware_info = (
-                    await resource_tracker_pricing_units_repo.get_hardware_info(
-                        scheduler_data.pricing_info.pricing_unit_id
-                    )
-                )
+        hardware_info = await get_hardware_info(app, scheduler_data)
 
         # start dynamic-sidecar and run the proxy on the same node
 

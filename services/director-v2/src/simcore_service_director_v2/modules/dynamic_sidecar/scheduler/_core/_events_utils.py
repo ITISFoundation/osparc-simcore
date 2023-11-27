@@ -2,6 +2,7 @@
 
 import json
 import logging
+from contextlib import suppress
 from typing import Any
 
 from fastapi import FastAPI
@@ -9,6 +10,7 @@ from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
@@ -30,6 +32,7 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
+from .....core.errors import ResourceTrackerPricingUnitsError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
@@ -40,6 +43,9 @@ from .....utils.db import get_repository
 from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
+from ....db.repositories.resource_tracker_pricing_units import (
+    ResourceTrackerPricingUnitsRepository,
+)
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
     BaseClientHTTPError,
@@ -444,3 +450,18 @@ async def prepare_services_environment(
     )
 
     scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+
+
+async def get_hardware_info(
+    app: FastAPI, scheduler_data: SchedulerData
+) -> HardwareInfo | None:
+    hardware_info: HardwareInfo | None = None
+    if scheduler_data.wallet_info and scheduler_data.pricing_info:
+        resource_tracker_pricing_units_repo = get_repository(
+            app, ResourceTrackerPricingUnitsRepository
+        )
+        with suppress(ResourceTrackerPricingUnitsError):
+            hardware_info = await resource_tracker_pricing_units_repo.get_hardware_info(
+                scheduler_data.pricing_info.pricing_unit_id
+            )
+    return hardware_info
