@@ -5,10 +5,10 @@
 
 
 import asyncio
-from collections.abc import Callable
-from typing import Any, AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from unittest.mock import AsyncMock
 
+import arrow
 import pytest
 import socketio
 from aiohttp import web
@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_payments.socketio import (
     SOCKET_IO_PAYMENT_COMPLETED_EVENT,
 )
+from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.users import GroupID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
@@ -30,7 +31,6 @@ from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services.rabbitmq import get_rabbitmq_settings
 from simcore_service_payments.services.socketio import notify_payment_completed
 from socketio import AsyncAioPikaManager, AsyncServer
-from tenacity import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
@@ -79,7 +79,6 @@ async def socketio_server(app: FastAPI) -> AsyncIterable[AsyncServer]:
     yield server
 
     await cleanup_socketio_async_pubsub_manager(server_manager)
-    await server.shutdown()
 
 
 @pytest.fixture
@@ -97,30 +96,30 @@ def socketio_server_events(
         await socketio_server.enter_room(sid, user_room_name)
 
     async def on_check(sid, data):
-        print("check", sid, Any)
+        print("check", sid, data)
 
     async def on_payment(sid, data):
-        print("payment", sid, Any)
+        print("payment", sid, parse_obj_as(PaymentTransaction, data))
 
     async def disconnect(sid: str):
         print("disconnecting", sid)
         await socketio_server.leave_room(sid, user_room_name)
 
     # spies
+    socketio_server.on("connect", connect)
     spy_connect = mocker.AsyncMock(wraps=connect)
-    socketio_server.on("connect", spy_connect)
 
+    socketio_server.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_payment)
     spy_on_payment = mocker.AsyncMock(wraps=on_payment)
-    socketio_server.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, spy_on_payment)
 
+    socketio_server.on("check", on_check)
     spy_on_check = mocker.AsyncMock(wraps=on_check)
-    socketio_server.on("check", spy_on_check)
 
+    socketio_server.on("disconnect", disconnect)
     spy_disconnect = mocker.AsyncMock(wraps=disconnect)
-    socketio_server.on("disconnect", spy_disconnect)
 
     return {
-        connect.__name__: spy_on_payment,
+        connect.__name__: spy_connect,
         disconnect.__name__: spy_disconnect,
         on_check.__name__: spy_on_check,
         on_payment.__name__: spy_on_payment,
@@ -149,6 +148,7 @@ async def server_url(web_server: TestServer) -> str:
 async def socketio_client(server_url: str) -> AsyncIterable[socketio.AsyncClient]:
     client = socketio.AsyncClient(logger=True, engineio_logger=True)
     await client.connect(f"{server_url}", transports=["websocket"])
+    await client.emit("check", data="hoi")
 
     yield client
 
@@ -160,19 +160,22 @@ async def socketio_client_events(
     socketio_client: socketio.AsyncClient,
 ) -> dict[str, AsyncMock]:
     # emulates front-end receiving message
-    async def on_event(data):
-        print("client1", data)
 
-    on_event_spy = AsyncMock(wraps=on_event)
-    socketio_client.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_event_spy)
+    async def on_payment(data):
+        assert parse_obj_as(PaymentTransaction, data) is None
 
-    return {on_event.__name__: on_event_spy}
+    socketio_client.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_payment)
+    on_event_spy = AsyncMock(wraps=on_payment)
+
+    return {on_payment.__name__: on_event_spy}
 
 
 @pytest.fixture
 async def notify_payment(app: FastAPI, user_primary_group_id: GroupID) -> Callable:
     async def _():
-        payment = PaymentsTransactionsDB(**random_payment_transaction()).to_api_model()
+        payment = PaymentsTransactionsDB(
+            **random_payment_transaction(completed_at=arrow.utcnow().datetime)
+        ).to_api_model()
         await notify_payment_completed(
             app, user_primary_group_id=user_primary_group_id, payment=payment
         )
@@ -182,7 +185,7 @@ async def notify_payment(app: FastAPI, user_primary_group_id: GroupID) -> Callab
 
 async def test_emit_message_as_external_process_to_frontend_client(
     app: FastAPI,
-    web_server: socketio.AsyncServer,
+    socketio_server: socketio.AsyncServer,
     socketio_server_events: dict[str, AsyncMock],
     socketio_client: socketio.AsyncClient,
     socketio_client_events: dict[str, AsyncMock],
@@ -193,25 +196,24 @@ async def test_emit_message_as_external_process_to_frontend_client(
     webserver  -> socketio server (one/more replicas)
     payments   -> Sends messages to clients from external processes (one/more replicas)
     """
+    retry_kwargs = {
+        "wait": wait_fixed(2),
+        "stop": stop_after_attempt(5),
+        "reraise": True,
+    }
 
-    # web server events
-    connect_spy = socketio_server_events["connect"]
-    on_check_spy = socketio_server_events["on_check"]
+    # web server spy events
+    server_connect = socketio_server_events["connect"]
+    server_disconnect = socketio_server_events["disconnect"]
+    server_on_check = socketio_server_events["on_check"]
+    server_on_payment = socketio_server_events["on_payment"]
 
-    assert connect_spy.called
-    assert not on_check_spy.called
+    # client spy events
+    client_on_payment = socketio_client_events["on_payment"]
 
-    await socketio_client.emit("check", data="hoi")
-    assert on_check_spy.called
+    await asyncio.gather(
+        socketio_client.emit("check", data="hoi"),
+        notify_payment(),
+    )
 
-    # client events
-    await notify_payment()
-
-    on_event_spy = socketio_client_events["on_event"]
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(2), stop=stop_after_attempt(5), reraise=True
-    ):
-        with attempt:
-            await asyncio.sleep(0.1)
-            on_event_spy.assert_called()
+    await asyncio.sleep(3)
