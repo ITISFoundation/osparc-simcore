@@ -26,12 +26,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this._setLayout(new qx.ui.layout.HBox(5));
 
     this.set({
-      backgroundColor: "background-main-2",
+      backgroundColor: "input_background",
       paddingLeft: 6,
       height: 36
     });
     this.getContentElement().setStyles({
-      "border-radius": "8px"
+      "border-radius": "5px"
     });
 
     this.__buildLayout();
@@ -92,11 +92,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "text-field":
           control = new qx.ui.form.TextField().set({
-            backgroundColor: "background-main-2",
+            backgroundColor: "input_background",
             font: "text-16",
             placeholder: this.tr("search"),
             alignY: "bottom",
             marginBottom: 4
+          });
+          control.getContentElement().setStyles({
+            "border-bottom": "none"
           });
           this._add(control, {
             flex: 1
