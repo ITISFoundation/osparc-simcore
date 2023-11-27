@@ -261,7 +261,7 @@ async def log_streamer(
     yield log_streamer
 
 
-async def test_log_listener(
+async def test_log_streamer(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,

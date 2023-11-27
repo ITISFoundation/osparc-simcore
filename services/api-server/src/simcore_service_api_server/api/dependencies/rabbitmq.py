@@ -56,10 +56,10 @@ class JobLogDistributor:
     async def register_streamer(
         self, job_id: JobID, callback: Callable[[JobLog], Awaitable[bool]]
     ):
+        self._log_queue_callbacks[job_id] = callback
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
-        self._log_queue_callbacks[job_id] = callback
 
     async def deregister_streamer(self, job_id: JobID):
         assert (
