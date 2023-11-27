@@ -23,13 +23,24 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
     // main
-    "background-main": "c01",
+
+    "background-main": "rgba(250,250,250, 1)", // Is manipulated
     "background-main-1": "c02",
     "background-main-2": "c03",
     "background-main-3": "c04",
     "background-main-4": "c05",
     "background-main-5": "c06",
+
     "background-card-overlay": "rgba(229, 229, 229, 0.8)",
+
+    "primary-background-color": "rgba(255, 255, 255, 1)",
+    "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
+    "modal-backdrop": "rgba(247, 248, 252, 0.4)",
+    "fab_background": "rgba(208, 211, 230, 1)",
+    "input_background": "rgba(209, 214, 218, 1)",
+    "window-popup-background": "rgba(255,255,255, 1)",
+
+    "flash_message_bg": "input_background",
 
     // text
     "text": "c13",

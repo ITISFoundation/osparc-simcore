@@ -17,6 +17,13 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "warning_bg": "rgba(255, 205, 108, 0.1)", // #FFCD6C1A
     "error": "rgba(255, 108, 108, 1)", // #FF6C6C
     "error_bg": "rgba(255, 108, 108, 0.1)", // #FF6C6C1A
+
+    "default-button": "rgba(10, 182, 255, 1)",
+    "default-button-hover": "rgba(4, 73, 102, 1)",
+    "default-button-active": "rgba(9, 89, 122, 1)",
+    "default-button-focus": "rgba(10, 182, 255, 1)",
+    "default-button-focus-border": "rgba(254, 233, 86, 1)",
+
     "status_icon": "rgba(255, 255, 255, 1)",
 
     "visual-blue": "#007fd4", // Visual Studio blue
