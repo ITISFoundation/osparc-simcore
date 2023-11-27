@@ -155,11 +155,3 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
         2, description="Amount of slots per resource on a node"
     )
-
-    DYNAMIC_SIDECAR_DOCKER_NODE_SAVES_LOCK_TIMEOUT_S: PositiveFloat = Field(
-        10,
-        description=(
-            "Lifetime of the lock. Allows the system to recover a lock "
-            "in case of crash, the lock will expire and result as released."
-        ),
-    )
