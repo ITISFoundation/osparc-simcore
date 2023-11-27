@@ -307,16 +307,8 @@ def get_dynamic_sidecar_spec(
         cpu_limit=0,  # this should get overwritten
     ).to_simcore_runtime_docker_labels()
 
-    if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
-        ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
-        standard_simcore_docker_labels[
-            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
-        ] = ec2_instance_type
-
-    #  -----------
-    create_service_params = {
-        "endpoint_spec": {"Ports": ports} if ports else {},
-        "labels": {
+    service_labels: dict[str, str] = (
+        {
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             to_simcore_runtime_docker_label_key("service_key"): scheduler_data.key,
             to_simcore_runtime_docker_label_key(
@@ -327,16 +319,20 @@ def get_dynamic_sidecar_spec(
             dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
             scheduler_data.callbacks_mapping,
         )
-        | StandardSimcoreDockerLabels(
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-            product_name=scheduler_data.product_name,
-            simcore_user_agent=scheduler_data.request_simcore_user_agent,
-            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            memory_limit=ByteSize(0),  # this should get overwritten
-            cpu_limit=0,  # this should get overwritten
-        ).to_simcore_runtime_docker_labels(),
+        | standard_simcore_docker_labels
+    )
+
+    # add autoscaling constraints if pricing plan is required
+    if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
+        ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
+        service_labels[
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
+        ] = ec2_instance_type
+
+    #  -----------
+    create_service_params = {
+        "endpoint_spec": {"Ports": ports} if ports else {},
+        "labels": service_labels,
         "name": scheduler_data.service_name,
         "networks": [
             {"Target": swarm_network_id},
