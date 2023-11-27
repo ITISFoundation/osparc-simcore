@@ -129,7 +129,7 @@ class ProgressBarData:
         )
 
     async def update(self, steps: float = 1) -> None:
-        parent_update_value = 0
+        parent_update_value = 0.0
         async with self._continuous_value_lock:
             new_steps_value = self._current_steps + steps
             if new_steps_value > self.num_steps:
