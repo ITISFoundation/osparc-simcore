@@ -32,7 +32,10 @@ from pytest_simcore.helpers.utils_envs import (
 )
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
+from simcore_service_api_server.api.dependencies.rabbitmq import (
+    LogStreamer,
+    get_job_log_distributor,
+)
 from simcore_service_api_server.models.schemas.jobs import JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
@@ -225,14 +228,14 @@ def computation_done() -> Iterable[Callable[[], bool]]:
 
 
 @pytest.fixture
-async def log_listener(
+async def log_streamer(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
     mocked_directorv2_service_api_base: respx.MockRouter,
     computation_done: Callable[[], bool],
-) -> AsyncIterable[LogListener]:
+) -> AsyncIterable[LogStreamer]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         task = ComputationTaskGet.parse_obj(
             ComputationTaskGet.Config.schema_extra["examples"][0]
@@ -249,13 +252,13 @@ async def log_listener(
     )
 
     assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
-    log_listener: LogListener = LogListener(
+    log_streamer: LogStreamer = LogStreamer(
         user_id=user_id,
-        rabbit_consumer=get_rabbitmq_client(app),
+        distributor=get_job_log_distributor(app),
         director2_api=d2_client,
     )
-    await log_listener.listen(project_id)
-    yield log_listener
+    await log_streamer.listen(project_id)
+    yield log_streamer
 
 
 async def test_log_listener(
@@ -264,7 +267,7 @@ async def test_log_listener(
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
-    log_listener: LogListener,
+    log_streamer: LogStreamer,
     faker: Faker,
     computation_done: Callable[[], bool],
 ):
@@ -280,7 +283,7 @@ async def test_log_listener(
     publish_task = asyncio.create_task(_log_publisher())
 
     collected_messages: list[str] = []
-    async for log in log_listener.log_generator():
+    async for log in log_streamer.log_generator():
         job_log: JobLog = JobLog.parse_raw(log)
         assert len(job_log.messages) == 1
         assert job_log.job_id == project_id
