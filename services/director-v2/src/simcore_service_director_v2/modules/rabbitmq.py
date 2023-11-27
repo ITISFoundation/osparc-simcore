@@ -20,7 +20,7 @@ from ..core.settings import AppSettings
 _logger = logging.getLogger(__name__)
 
 
-async def message_handler(app: FastAPI, data: bytes) -> bool:
+async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
     message = WalletCreditsLimitReachedMessage.parse_raw(data)
 
     scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
@@ -51,7 +51,7 @@ def setup(app: FastAPI) -> None:
 
         await app.state.rabbitmq_client.subscribe(
             WalletCreditsLimitReachedMessage.get_channel_name(),
-            partial(message_handler, app),
+            partial(handler_out_of_credits, app),
             exclusive_queue=False,
             topics=[f"*.{CreditsLimit.SHUTDOWN_SERVICES}"],
         )
