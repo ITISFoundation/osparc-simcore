@@ -277,7 +277,7 @@ async function getDashboardCardLabel(page, selector) {
   const cardLabel = await page.evaluate((selector) => {
     let label = null;
     const card = document.querySelector(selector);
-    if (card.children.length && card.children[0].children.length > 1) {
+    if (card && card.children.length && card.children[0].children.length > 1) {
       label = card.children[0].children[1].innerText;
     }
     return label;
