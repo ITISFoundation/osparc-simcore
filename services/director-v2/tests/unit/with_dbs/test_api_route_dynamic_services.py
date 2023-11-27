@@ -165,10 +165,10 @@ async def mock_retrieve_features(
             service_name = "service_name"
 
             # pylint: disable=protected-access
-            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping[  # noqa: SLF001
+            dynamic_sidecar_scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
                 node_uuid
             ] = service_name
-            dynamic_sidecar_scheduler._scheduler._to_observe[  # noqa: SLF001
+            dynamic_sidecar_scheduler.scheduler._to_observe[  # noqa: SLF001
                 service_name
             ] = scheduler_data_from_http_request
 
@@ -189,12 +189,12 @@ async def mock_retrieve_features(
 
             yield respx_mock
 
-            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping.pop(
+            dynamic_sidecar_scheduler.scheduler._inverse_search_mapping.pop(  # noqa: SLF001
                 node_uuid
-            )  # noqa: SLF001
-            dynamic_sidecar_scheduler._scheduler._to_observe.pop(
+            )
+            dynamic_sidecar_scheduler.scheduler._to_observe.pop(  # noqa: SLF001
                 service_name
-            )  # noqa: SLF001
+            )
 
 
 @pytest.fixture
