@@ -271,6 +271,7 @@ def expected_dynamic_sidecar_spec(
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
                 "Labels": {
+                    "ec2-instance-type": "c6a.4xlarge",
                     f"{to_simcore_runtime_docker_label_key('memory-limit')}": "8589934592",
                     f"{to_simcore_runtime_docker_label_key('cpu-limit')}": "4.0",
                     f"{to_simcore_runtime_docker_label_key('project-id')}": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -370,12 +371,7 @@ def expected_dynamic_sidecar_spec(
                     },
                 ],
             },
-            "Placement": {
-                "Constraints": [
-                    "ec2-instance-type == c6a.4xlarge",
-                    "node.platform.os == linux",
-                ]
-            },
+            "Placement": {"Constraints": ["node.platform.os == linux"]},
             "Resources": {
                 "Limits": {"MemoryBytes": 8589934592, "NanoCPUs": 4000000000},
                 "Reservations": {

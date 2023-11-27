@@ -6,6 +6,7 @@ from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerLabelKey,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
@@ -19,7 +20,7 @@ from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
-from ....core.settings import AppSettings, PlacementConstraintStr
+from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -293,17 +294,24 @@ def get_dynamic_sidecar_spec(
                 }
             )
 
-    # add placement constraints
-    placement_constraints: list[PlacementConstraintStr] = deepcopy(
-        app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
-    )
+    standard_simcore_docker_labels: dict[
+        DockerLabelKey, str
+    ] = StandardSimcoreDockerLabels(
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        product_name=scheduler_data.product_name,
+        simcore_user_agent=scheduler_data.request_simcore_user_agent,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        memory_limit=ByteSize(0),  # this should get overwritten
+        cpu_limit=0,  # this should get overwritten
+    ).to_simcore_runtime_docker_labels()
+
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
-        placement_constraints.append(
-            PlacementConstraintStr(
-                f"{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY} == {ec2_instance_type}"
-            )
-        )
+        standard_simcore_docker_labels[
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
+        ] = ec2_instance_type
 
     #  -----------
     create_service_params = {
@@ -351,16 +359,7 @@ def get_dynamic_sidecar_spec(
                 "CapabilityAdd": [
                     "CAP_LINUX_IMMUTABLE",
                 ],
-                "Labels": StandardSimcoreDockerLabels(
-                    user_id=scheduler_data.user_id,
-                    project_id=scheduler_data.project_id,
-                    node_id=scheduler_data.node_uuid,
-                    product_name=scheduler_data.product_name,
-                    simcore_user_agent=scheduler_data.request_simcore_user_agent,
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    memory_limit=ByteSize(0),  # this should get overwritten
-                    cpu_limit=0,  # this should get overwritten
-                ).to_simcore_runtime_docker_labels(),
+                "Labels": standard_simcore_docker_labels,
                 "Mounts": mounts,
                 "Secrets": [
                     {
@@ -382,7 +381,11 @@ def get_dynamic_sidecar_spec(
                 )
                 else None,
             },
-            "Placement": {"Constraints": placement_constraints},
+            "Placement": {
+                "Constraints": deepcopy(
+                    app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+                )
+            },
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten
             "Resources": {
