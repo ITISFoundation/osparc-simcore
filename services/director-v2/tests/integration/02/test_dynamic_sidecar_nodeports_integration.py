@@ -73,6 +73,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
@@ -714,7 +715,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     for service_uuid in workbench_dynamic_services:
         dynamic_service_url = await patch_dynamic_service_url(
             # pylint: disable=protected-access
-            app=director_v2_client._transport.app,  # type: ignore
+            app=director_v2_client._transport.app,  # type: ignore # noqa: SLF001
             node_uuid=service_uuid,
         )
         dynamic_services_urls[service_uuid] = dynamic_service_url
@@ -735,21 +736,24 @@ async def _wait_for_dy_services_to_fully_stop(
     director_v2_client: httpx.AsyncClient,
 ) -> None:
     # pylint: disable=protected-access
+    app: FastAPI = director_v2_client._transport.app  # type: ignore # noqa: SLF001
     to_observe = (
-        director_v2_client._transport.app.state.dynamic_sidecar_scheduler._scheduler._to_observe  # type: ignore
+        app.state.dynamic_sidecar_scheduler.scheduler._to_observe  # noqa: SLF001
     )
-    # TODO: ANE please use tenacity
-    for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
-        print(
-            f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
-            "seconds while waiting for removal of all dynamic-sidecars"
-        )
-        await asyncio.sleep(1)
-        if len(to_observe) == 0:
-            break
 
-        if i == TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED - 1:
-            assert False, "Timeout reached"
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED),
+        wait=wait_fixed(1),
+        reraise=True,
+        retry=retry_if_exception_type(TryAgain),
+    ):
+        with attempt:
+            print(
+                f"Sleeping for {attempt.retry_state.attempt_number}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
+                "seconds while waiting for removal of all dynamic-sidecars"
+            )
+            if len(to_observe) != 0:
+                raise TryAgain
 
 
 def _assert_same_set(*sets_to_compare: set[Any]) -> None:
@@ -760,7 +764,7 @@ def _assert_same_set(*sets_to_compare: set[Any]) -> None:
 def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
-        with open(path, "rb") as f:
+        with Path.open(path, "rb") as f:
             # Read and update hash string value in blocks of 4K
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
