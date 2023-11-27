@@ -18,16 +18,11 @@ from ..dependencies.services import get_api_client
 _NEW_LINE: Final[str] = "\n"
 
 
-def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQClient:
-    assert app.state.rabbitmq_client  # nosec
-    return cast(RabbitMQClient, app.state.rabbitmq_client)
-
-
 def get_job_log_distributor(
     app: Annotated[FastAPI, Depends(get_app)]
 ) -> "JobLogDistributor":
-    assert app.state.log_distributor  # nosec
-    return cast(JobLogDistributor, app.state.log_distibutor)
+    assert app.state.job_log_distributor  # nosec
+    return cast(JobLogDistributor, app.state.job_log_distibutor)
 
 
 class JobLogDistributor:
@@ -37,7 +32,7 @@ class JobLogDistributor:
 
     def __init__(
         self,
-        rabbit_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
+        rabbit_client: RabbitMQClient,
     ):
         self._log_queue_callbacks = {}
         self._rabbit_client = rabbit_client

@@ -19,7 +19,7 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
-from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_client
+from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 
 _logger = logging.getLogger(__name__)
