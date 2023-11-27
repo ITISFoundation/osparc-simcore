@@ -297,7 +297,7 @@ def get_dynamic_sidecar_spec(
     placement_constraints: list[PlacementConstraintStr] = deepcopy(
         app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
     )
-    if hardware_info:
+    if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
         placement_constraints.append(
             PlacementConstraintStr(
