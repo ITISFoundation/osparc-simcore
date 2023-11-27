@@ -4,14 +4,18 @@
 
 
 import json
-from typing import Any, Mapping, cast
+from collections.abc import Mapping
+from typing import Any, cast
 
 import pytest
 import respx
 from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
@@ -19,7 +23,6 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.wallets import WalletInfo
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
@@ -39,7 +42,7 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 @pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
@@ -201,6 +204,9 @@ def expected_dynamic_sidecar_spec(
             f"{to_simcore_runtime_docker_label_key('product-name')}": "osparc",
             f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": "python/test",
             f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "test_swarm_name",
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: hardware_info.aws_ec2_instances[
+                0
+            ],
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         "networks": [{"Target": "mocked_swarm_network_id"}],
@@ -271,7 +277,6 @@ def expected_dynamic_sidecar_spec(
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
                 "Labels": {
-                    "ec2-instance-type": "c6a.4xlarge",
                     f"{to_simcore_runtime_docker_label_key('memory-limit')}": "8589934592",
                     f"{to_simcore_runtime_docker_label_key('cpu-limit')}": "4.0",
                     f"{to_simcore_runtime_docker_label_key('project-id')}": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
