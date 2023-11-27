@@ -26,14 +26,14 @@ from models_library.projects_nodes_io import NodeID
 from pydantic.errors import PydanticErrorMixin
 
 
-class DirectorException(Exception):
+class DirectorError(Exception):
     """Basic exception"""
 
     def message(self) -> str:
         return f"{self.args[0]}"
 
 
-class ConfigurationError(DirectorException):
+class ConfigurationError(DirectorError):
     """An error in the director-v2 configuration"""
 
     def __init__(self, msg: str | None = None):
@@ -42,7 +42,7 @@ class ConfigurationError(DirectorException):
         )
 
 
-class GenericDockerError(DirectorException):
+class GenericDockerError(DirectorError):
     """Generic docker library error"""
 
     def __init__(self, msg: str, original_exception: Exception):
@@ -50,7 +50,7 @@ class GenericDockerError(DirectorException):
         self.original_exception = original_exception
 
 
-class ServiceNotAvailableError(DirectorException):
+class ServiceNotAvailableError(DirectorError):
     """Service not found"""
 
     def __init__(self, service_name: str, service_tag: str | None = None):
@@ -60,7 +60,7 @@ class ServiceNotAvailableError(DirectorException):
         self.service_tag = service_tag
 
 
-class ServiceUUIDNotFoundError(DirectorException):
+class ServiceUUIDNotFoundError(DirectorError):
     """Service not found"""
 
     def __init__(self, service_uuid: str):
@@ -68,7 +68,7 @@ class ServiceUUIDNotFoundError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class ServiceUUIDInUseError(DirectorException):
+class ServiceUUIDInUseError(DirectorError):
     """Service UUID is already in use"""
 
     def __init__(self, service_uuid: str):
@@ -76,7 +76,7 @@ class ServiceUUIDInUseError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class ServiceStartTimeoutError(DirectorException):
+class ServiceStartTimeoutError(DirectorError):
     """The service was created but never run (time-out)"""
 
     def __init__(self, service_name: str, service_uuid: str):
@@ -85,37 +85,43 @@ class ServiceStartTimeoutError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class ProjectNotFoundError(DirectorException):
+class ProjectNotFoundError(DirectorError):
     """Project not found error"""
 
     def __init__(self, project_id: ProjectID):
         super().__init__(f"project {project_id} not found")
 
 
-class PricingPlanUnitNotFoundError(DirectorException):
+class PricingPlanUnitNotFoundError(DirectorError):
     """Pricing plan unit not found error"""
 
     def __init__(self, msg: str):
         super().__init__(msg)
 
 
-class PipelineNotFoundError(DirectorException):
+class PipelineNotFoundError(DirectorError):
     """Pipeline not found error"""
 
     def __init__(self, pipeline_id: str):
         super().__init__(f"pipeline {pipeline_id} not found")
 
 
-class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorException):
+class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorError):
     msg_template = "Computational run not found"
 
 
-class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorException):
+class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorError):
     msg_template = "Computational task {node_id} not found"
 
 
-class NodeRightsAcquireError(PydanticErrorMixin, DirectorException):
+class NodeRightsAcquireError(PydanticErrorMixin, DirectorError):
     msg_template = "Could not acquire a lock for {docker_node_id} since all {slots} slots are used."
+
+
+class ResourceTrackerPricingUnitsError(PydanticErrorMixin, DirectorError):
+    msg_template = (
+        "Could not acquire find an entry for pricing_unit_id={pricing_unit_id}"
+    )
 
 
 #
@@ -123,7 +129,7 @@ class NodeRightsAcquireError(PydanticErrorMixin, DirectorException):
 #
 
 
-class SchedulerError(DirectorException):
+class SchedulerError(DirectorError):
     code = "scheduler_error"
 
     def __init__(self, msg: str | None = None):

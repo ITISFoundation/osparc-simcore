@@ -105,8 +105,16 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
+def hardware_info() -> HardwareInfo:
+    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+
+
+@pytest.fixture
 def expected_dynamic_sidecar_spec(
-    run_id: RunID, osparc_product_name: str, request_simcore_user_agent: str
+    run_id: RunID,
+    osparc_product_name: str,
+    request_simcore_user_agent: str,
+    hardware_info: HardwareInfo,
 ) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -166,7 +174,7 @@ def expected_dynamic_sidecar_spec(
                     "restart_policy": "on-inputs-downloaded",
                     "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
                     "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
-                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
+                    "hardware_info": hardware_info,
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
                     "service_resources": {
@@ -362,7 +370,12 @@ def expected_dynamic_sidecar_spec(
                     },
                 ],
             },
-            "Placement": {"Constraints": ["node.platform.os == linux"]},
+            "Placement": {
+                "Constraints": [
+                    "ec2-instance-type == c6a.4xlarge",
+                    "node.platform.os == linux",
+                ]
+            },
             "Resources": {
                 "Limits": {"MemoryBytes": 8589934592, "NanoCPUs": 4000000000},
                 "Reservations": {
@@ -391,6 +404,7 @@ def test_get_dynamic_proxy_spec(
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
+    hardware_info: HardwareInfo,
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
 
@@ -416,6 +430,7 @@ def test_get_dynamic_proxy_spec(
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
+            hardware_info=hardware_info,
             has_quota_support=False,
             allow_internet_access=False,
         )
@@ -497,6 +512,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
     mock_service_key_version: ServiceKeyVersion,
+    hardware_info: HardwareInfo,
     fake_service_specifications: dict[str, Any],
 ):
     dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
@@ -506,6 +522,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,
+        hardware_info=hardware_info,
         has_quota_support=False,
         allow_internet_access=False,
     )

@@ -5,9 +5,11 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
+from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
@@ -17,7 +19,7 @@ from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
-from ....core.settings import AppSettings
+from ....core.settings import AppSettings, PlacementConstraintStr
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -141,6 +143,7 @@ def get_dynamic_sidecar_spec(
     app_settings: AppSettings,
     has_quota_support: bool,
     allow_internet_access: bool,
+    hardware_info: HardwareInfo | None,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -290,6 +293,18 @@ def get_dynamic_sidecar_spec(
                 }
             )
 
+    # add placement constraints
+    placement_constraints: list[PlacementConstraintStr] = deepcopy(
+        app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    )
+    if hardware_info:
+        ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
+        placement_constraints.append(
+            PlacementConstraintStr(
+                f"{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY} == {ec2_instance_type}"
+            )
+        )
+
     #  -----------
     create_service_params = {
         "endpoint_spec": {"Ports": ports} if ports else {},
@@ -367,11 +382,7 @@ def get_dynamic_sidecar_spec(
                 )
                 else None,
             },
-            "Placement": {
-                "Constraints": deepcopy(
-                    app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
-                )
-            },
+            "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten
             "Resources": {
