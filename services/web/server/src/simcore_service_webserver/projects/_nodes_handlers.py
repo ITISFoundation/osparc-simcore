@@ -47,7 +47,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
-from ..director_v2 import api
+from ..director_v2 import api as director_v2_api
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -172,7 +172,7 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_data: dict[str, Any] = await api.get_dynamic_service(
+        service_data: dict[str, Any] = await director_v2_api.get_dynamic_service(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
@@ -235,7 +235,9 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await api.retrieve(request.app, f"{path_params.node_id}", retrieve.port_keys),
+        await director_v2_api.retrieve(
+            request.app, f"{path_params.node_id}", retrieve.port_keys
+        ),
         dumps=json_dumps,
     )
 
@@ -270,7 +272,7 @@ async def _stop_dynamic_service_with_progress(
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
-        await api.stop_dynamic_service(*args, **kwargs)
+        await director_v2_api.stop_dynamic_service(*args, **kwargs)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     except (ProjectNotFoundError, NodeNotFoundError) as exc:
@@ -329,9 +331,9 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await api.restart_dynamic_service(request.app, f"{path_params.node_id}")
+    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    raise web.HTTPNoContent()
+    raise web.HTTPNoContent
 
 
 #
@@ -544,7 +546,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
             nodes_previews.append(
                 _ProjectNodePreview(
                     project_id=path_params.project_id,
-                    node_id=node_id,
+                    node_id=NodeID(node_id),
                     screenshots=screenshots,
                 )
             )
@@ -572,7 +574,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
 
     project = Project.parse_obj(project_data)
 
-    node = project.workbench.get(f"{path_params.node_id}")
+    node = project.workbench.get(NodeIDStr(path_params.node_id))
     if node is None:
         raise NodeNotFoundError(
             project_uuid=f"{path_params.project_id}",
