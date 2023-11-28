@@ -53,7 +53,7 @@ def _toggle_observation_succeeded(
     is_disabled: bool,
 ) -> bool:
     # returns True if the `toggle_observation` operation succeeded
-    return dynamic_sidecars_scheduler.toggle_observation(node_uuid, is_disabled)
+    return dynamic_sidecars_scheduler.toggle_observation(node_uuid, disable=is_disabled)
 
 
 @router.patch(
@@ -134,10 +134,9 @@ async def get_service_state(
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
 ):
-    # pylint: disable=protected-access
-    return dynamic_sidecars_scheduler._scheduler.get_scheduler_data(
+    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(  # noqa: SLF001
         node_uuid
-    )  # noqa: SLF001
+    )
 
 
 @router.post(

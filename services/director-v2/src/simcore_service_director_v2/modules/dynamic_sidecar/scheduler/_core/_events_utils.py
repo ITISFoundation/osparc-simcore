@@ -91,9 +91,7 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
     )
     # pylint: disable=protected-access
     scheduler_data: SchedulerData = (
-        dynamic_sidecars_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
-            node_uuid
-        )
+        dynamic_sidecars_scheduler.scheduler.get_scheduler_data(node_uuid)
     )
     return scheduler_data
 
@@ -230,10 +228,8 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     # pylint: disable=protected-access
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
-    await (
-        app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(  # noqa: SLF001
-            scheduler_data.node_uuid
-        )
+    await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
+        scheduler_data.node_uuid
     )
     task_progress.update(message="finished removing resources", percent=1)
 

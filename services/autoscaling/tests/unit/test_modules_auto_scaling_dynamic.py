@@ -902,6 +902,8 @@ def create_associated_instance(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     app_settings: ApplicationSettings,
     faker: Faker,
+    host_cpu_count: int,
+    host_memory_total: ByteSize,
 ) -> Callable[[Node, bool], AssociatedInstance]:
     def _creator(node: Node, terminateable_time: bool) -> AssociatedInstance:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -924,7 +926,8 @@ def create_associated_instance(
                     days=faker.pyint(min_value=0, max_value=100),
                     hours=faker.pyint(min_value=0, max_value=100),
                 )
-                + seconds_delta
+                + seconds_delta,
+                resources=Resources(cpus=host_cpu_count, ram=host_memory_total),
             ),
         )
 

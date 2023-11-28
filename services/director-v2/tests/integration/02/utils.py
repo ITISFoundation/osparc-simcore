@@ -233,10 +233,10 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
     # pylint: disable=protected-access
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    service_name = scheduler._scheduler._inverse_search_mapping[  # noqa: SLF001
+    service_name = scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
         NodeID(node_uuid)
     ]
-    scheduler_data: SchedulerData = scheduler._scheduler._to_observe[  # noqa: SLF001
+    scheduler_data: SchedulerData = scheduler.scheduler._to_observe[  # noqa: SLF001
         service_name
     ]
 
@@ -265,7 +265,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
         )
         assert proxy_published_port is not None, f"{sidecar_settings.json()=}"
 
-        async with scheduler._scheduler._lock:  # noqa: SLF001
+        async with scheduler.scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()
 
             # use prot forwarded address for dy-sidecar

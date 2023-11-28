@@ -184,7 +184,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "background-main-2"
+        backgroundColor: "transparent_overlay"
       });
 
       const paymentMethodsModel = this.__paymentMethodsModel = new qx.data.Array();
