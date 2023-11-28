@@ -57,5 +57,5 @@ async def notify_payment_completed(
     return await external_sio.emit(
         SOCKET_IO_PAYMENT_COMPLETED_EVENT,
         data=jsonable_encoder(payment, by_alias=True),
-        room=user_primary_group_id,
+        room=f"{user_primary_group_id}",
     )

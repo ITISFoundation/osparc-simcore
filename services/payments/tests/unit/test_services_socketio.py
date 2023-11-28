@@ -5,7 +5,9 @@
 
 
 import asyncio
+import threading
 from collections.abc import AsyncIterable, Callable
+from typing import AsyncIterator
 from unittest.mock import AsyncMock
 
 import arrow
@@ -31,8 +33,10 @@ from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services.rabbitmq import get_rabbitmq_settings
 from simcore_service_payments.services.socketio import notify_payment_completed
 from socketio import AsyncAioPikaManager, AsyncServer
+from tenacity import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
+from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -106,17 +110,17 @@ def socketio_server_events(
         await socketio_server.leave_room(sid, user_room_name)
 
     # spies
-    socketio_server.on("connect", connect)
     spy_connect = mocker.AsyncMock(wraps=connect)
+    socketio_server.on("connect", spy_connect)
 
-    socketio_server.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_payment)
     spy_on_payment = mocker.AsyncMock(wraps=on_payment)
+    socketio_server.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, spy_on_payment)
 
-    socketio_server.on("check", on_check)
     spy_on_check = mocker.AsyncMock(wraps=on_check)
+    socketio_server.on("check", spy_on_check)
 
-    socketio_server.on("disconnect", disconnect)
     spy_disconnect = mocker.AsyncMock(wraps=disconnect)
+    socketio_server.on("disconnect", spy_disconnect)
 
     return {
         connect.__name__: spy_connect,
@@ -127,7 +131,9 @@ def socketio_server_events(
 
 
 @pytest.fixture
-async def web_server(socketio_server: AsyncServer, aiohttp_server: Callable):
+async def web_server(
+    socketio_server: AsyncServer, aiohttp_unused_port: Callable
+) -> AsyncIterator[URL]:
     """
     this emulates the webserver setup: socketio server with
     an aiopika manager that attaches an aiohttp web app
@@ -135,20 +141,39 @@ async def web_server(socketio_server: AsyncServer, aiohttp_server: Callable):
     aiohttp_app = web.Application()
     socketio_server.attach(aiohttp_app)
 
-    # starts server
-    return await aiohttp_server(aiohttp_app)
+    async def _lifespan(
+        server: TestServer, started: asyncio.Event, teardown: asyncio.Event
+    ):
+        # NOTE: this is necessary to avoid blocking comms between client and this server
+        await server.start_server()
+        started.set()  # notifies started
+        await teardown.wait()  # keeps test0server until needs to close
+        await server.close()
+
+    setup = asyncio.Event()
+    teardown = asyncio.Event()
+
+    server = TestServer(aiohttp_app, port=aiohttp_unused_port())
+    t = asyncio.create_task(_lifespan(server, setup, teardown), name="server-lifespan")
+
+    await setup.wait()
+
+    yield URL(server.make_url("/"))
+
+    assert t
+    teardown.set()
 
 
 @pytest.fixture
-async def server_url(web_server: TestServer) -> str:
-    return f'{web_server.make_url("/")}'
+async def server_url(web_server: URL) -> str:
+    return f'{web_server.with_path("/")}'
 
 
 @pytest.fixture
 async def socketio_client(server_url: str) -> AsyncIterable[socketio.AsyncClient]:
+    """This emulates a socketio client in the front-end"""
     client = socketio.AsyncClient(logger=True, engineio_logger=True)
     await client.connect(f"{server_url}", transports=["websocket"])
-    await client.emit("check", data="hoi")
 
     yield client
 
@@ -162,10 +187,10 @@ async def socketio_client_events(
     # emulates front-end receiving message
 
     async def on_payment(data):
-        assert parse_obj_as(PaymentTransaction, data) is None
+        assert parse_obj_as(PaymentTransaction, data) is not None
 
-    socketio_client.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_payment)
     on_event_spy = AsyncMock(wraps=on_payment)
+    socketio_client.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_event_spy)
 
     return {on_payment.__name__: on_event_spy}
 
@@ -184,8 +209,6 @@ async def notify_payment(app: FastAPI, user_primary_group_id: GroupID) -> Callab
 
 
 async def test_emit_message_as_external_process_to_frontend_client(
-    app: FastAPI,
-    socketio_server: socketio.AsyncServer,
     socketio_server_events: dict[str, AsyncMock],
     socketio_client: socketio.AsyncClient,
     socketio_client_events: dict[str, AsyncMock],
@@ -196,8 +219,9 @@ async def test_emit_message_as_external_process_to_frontend_client(
     webserver  -> socketio server (one/more replicas)
     payments   -> Sends messages to clients from external processes (one/more replicas)
     """
-    retry_kwargs = {
-        "wait": wait_fixed(2),
+    # Used iusntead of a fix asyncio.sleep
+    context_switch_retry_kwargs = {
+        "wait": wait_fixed(0.1),
         "stop": stop_after_attempt(5),
         "reraise": True,
     }
@@ -211,9 +235,28 @@ async def test_emit_message_as_external_process_to_frontend_client(
     # client spy events
     client_on_payment = socketio_client_events["on_payment"]
 
-    await asyncio.gather(
-        socketio_client.emit("check", data="hoi"),
-        notify_payment(),
-    )
+    # checks
+    assert server_connect.called
+    assert not server_disconnect.called
 
-    await asyncio.sleep(3)
+    # client emits
+    await socketio_client.emit("check", data="hoi")
+
+    async for attempt in AsyncRetrying(**context_switch_retry_kwargs):
+        with attempt:
+            assert server_on_check.called
+
+    # payment server emits
+    def _(lp):
+        asyncio.run_coroutine_threadsafe(notify_payment(), lp)
+
+    threading.Thread(
+        target=_,
+        args=(asyncio.get_event_loop(),),
+        daemon=False,
+    ).start()
+
+    async for attempt in AsyncRetrying(**context_switch_retry_kwargs):
+        with attempt:
+            assert client_on_payment.called
+            assert not server_on_payment.called
