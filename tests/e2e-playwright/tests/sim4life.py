@@ -30,6 +30,7 @@ def log_in_and_out(osparc_test_id_attribute: None, context: BrowserContext, page
     page.goto(PRODUCT_URL)
 
     # In case the accept cookies window shows up, we accept (ex. after new release)
+    page.wait_for_timeout(5000)
     acceptCookiesBtnLocator = page.get_by_test_id("acceptCookiesBtn")
     if acceptCookiesBtnLocator.is_visible():
         acceptCookiesBtnLocator.click()
