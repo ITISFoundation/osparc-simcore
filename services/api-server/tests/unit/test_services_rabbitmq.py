@@ -248,10 +248,9 @@ async def test_log_distributor_register_deregister(
 ):
     collected_logs: list[str] = []
 
-    async def callback(job_log: JobLog) -> bool:
+    async def callback(job_log: JobLog):
         for msg in job_log.messages:
             collected_logs.append(msg)
-        return True
 
     published_logs: list[str] = []
 
@@ -290,12 +289,11 @@ async def test_log_distributor_multiple_streams(
 
     collected_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
 
-    async def callback(job_log: JobLog) -> bool:
+    async def callback(job_log: JobLog):
         job_id = job_log.job_id
         assert (msgs := collected_logs.get(job_id)) is not None
         for msg in job_log.messages:
             msgs.append(msg)
-        return True
 
     published_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
 

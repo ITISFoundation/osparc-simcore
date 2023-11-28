@@ -1,10 +1,8 @@
 import asyncio
 from asyncio.queues import Queue
 from typing import Annotated, AsyncIterable, Awaitable, Callable, Final, cast
-from uuid import UUID
 
 from fastapi import Depends, FastAPI
-from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_app
@@ -24,7 +22,7 @@ def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQCl
 
 
 class LogDistributor:
-    _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[bool]]] = {}
+    _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[None]]] = {}
     _rabbit_client: RabbitMQClient
     _queue_name: str
 
@@ -52,10 +50,11 @@ class LogDistributor:
         )
         assert item.job_id in self._log_streamers
         callback = self._log_streamers[item.job_id]
-        return await callback(item)
+        await callback(item)
+        return True
 
     async def register(
-        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[bool]]
+        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
     ):
         assert (
             job_id not in self._log_streamers
@@ -76,54 +75,28 @@ class LogDistributor:
 class LogListener:
     _queue: Queue[JobLog]
     _queue_name: str
-    _rabbit_consumer: RabbitMQClient
-    _project_id: ProjectID
+    _job_id: JobID
     _user_id: PositiveInt
     _director2_api: DirectorV2Api
 
     def __init__(
         self,
         user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-        rabbit_consumer: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
         director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     ):
-
-        self._rabbit_consumer = rabbit_consumer
         self._user_id = user_id
         self._director2_api = director2_api
         self._queue: Queue[JobLog] = Queue(50)
 
-    async def listen(
-        self,
-        project_id: UUID,
-    ):
-        self._project_id = project_id
+    async def register(self, job_id: JobID, log_distributor: LogDistributor):
+        self._job_id = job_id
+        await log_distributor.register(job_id, self._queue.put)
 
-        self._queue_name = await self._rabbit_consumer.subscribe(
-            LoggerRabbitMessage.get_channel_name(),
-            self._add_logs_to_queue,
-            exclusive_queue=True,
-            topics=[f"{self._project_id}.*"],
-        )
-
-    async def stop_listening(self):
-        await self._rabbit_consumer.unsubscribe(self._queue_name)
-
-    async def _add_logs_to_queue(self, data: bytes):
-        got = LoggerRabbitMessage.parse_raw(data)
-        item = JobLog(
-            job_id=got.project_id,
-            node_id=got.node_id,
-            log_level=got.log_level,
-            messages=got.messages,
-        )
-        await self._queue.put(item)
-        return True
+    async def deregister(self, log_distributor: LogDistributor):
+        await log_distributor.deregister(self._job_id)
 
     async def _project_done(self) -> bool:
-        task = await self._director2_api.get_computation(
-            self._project_id, self._user_id
-        )
+        task = await self._director2_api.get_computation(self._job_id, self._user_id)
         return not task.stopped is None
 
     async def log_generator(self) -> AsyncIterable[str]:
@@ -131,6 +104,6 @@ class LogListener:
             while self._queue.empty():
                 if await self._project_done():
                     return
-                await asyncio.sleep(5)
+                await asyncio.sleep(15)
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
