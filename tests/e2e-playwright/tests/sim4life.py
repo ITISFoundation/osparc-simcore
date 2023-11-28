@@ -3,17 +3,18 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
+# pylint: disable=unnecessary-lambda
 
 import os
 
 import pytest
 from playwright.sync_api import BrowserContext, Page
 
-PRODUCT_URL = os.getenv("PRODUCT_URL")
-USER_NAME = os.getenv("USER_NAME")
-USER_PASSWORD = os.getenv("USER_PASSWORD")
-SERVICE_TEST_ID = os.getenv("SERVICE_TEST_ID")
-SERVICE_KEY = os.getenv("SERVICE_KEY")
+PRODUCT_URL = os.environ["PRODUCT_URL"]
+USER_NAME = os.environ["USER_NAME"]
+USER_PASSWORD = os.environ["USER_PASSWORD"]
+SERVICE_TEST_ID = os.environ["SERVICE_TEST_ID"]
+SERVICE_KEY = os.environ["SERVICE_KEY"]
 
 
 def on_web_socket(ws):
@@ -27,6 +28,11 @@ def on_web_socket(ws):
 def log_in_and_out(osparc_test_id_attribute: None, context: BrowserContext, page: Page):
     print("Before test: Logging in starts")
     page.goto(PRODUCT_URL)
+
+    # In case the accept cookies window shows up, we accept (ex. after new release)
+    acceptCookiesBtnLocator = page.get_by_test_id("acceptCookiesBtn")
+    if acceptCookiesBtnLocator.is_visible():
+        acceptCookiesBtnLocator.click()
 
     _user_email_box = page.get_by_test_id("loginUserEmailFld")
     _user_email_box.click()

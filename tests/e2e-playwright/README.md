@@ -8,7 +8,7 @@ Check test results output
 `playwright show-trace test-results/tests-sim4life-py-test-billable-sim4life-chromium/trace.zip`
 
 Run debug mode
-`PWDEBUG=1 pytest --s tests/sim4life.py`
+`PWDEBUG=1 pytest -s tests/sim4life.py`
 
 Run test in different browsers
 `pytest -s tests/sim4life.py --tracing on --html=report.html --browser chromium --browser firefox`

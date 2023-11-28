@@ -1,4 +1,3 @@
-import playwright
 import pytest
 
 
