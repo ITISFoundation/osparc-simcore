@@ -22,6 +22,7 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.core.errors import PricingPlanUnitNotFoundError
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -450,9 +451,12 @@ async def get_hardware_info(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> HardwareInfo | None:
     rut_client = ResourceUsageTrackerClient.get_from_state(app)
-    result = await rut_client.get_default_pricing_and_hardware_info(
-        product_name=scheduler_data.product_name,
-        service_key=scheduler_data.key,
-        service_version=scheduler_data.version,
-    )
-    return HardwareInfo(aws_ec2_instances=result.aws_ec2_instances)
+    try:
+        result = await rut_client.get_default_pricing_and_hardware_info(
+            product_name=scheduler_data.product_name,
+            service_key=scheduler_data.key,
+            service_version=scheduler_data.version,
+        )
+        return HardwareInfo(aws_ec2_instances=result.aws_ec2_instances)
+    except PricingPlanUnitNotFoundError:
+        return None
