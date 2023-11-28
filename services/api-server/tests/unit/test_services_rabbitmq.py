@@ -6,6 +6,7 @@
 
 import asyncio
 import logging
+import random
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
@@ -265,47 +266,104 @@ class LogDistributor:
 
 
 @pytest.fixture
-async def log_distributor(app: FastAPI) -> AsyncIterable[LogDistributor]:
+async def log_distributor(
+    client: httpx.AsyncClient, app: FastAPI
+) -> AsyncIterable[LogDistributor]:
     log_distributor = LogDistributor(get_rabbitmq_client(app))
     await log_distributor.setup()
     yield log_distributor
     await log_distributor.teardown()
 
 
-async def test_log_distributor(
-    client: httpx.AsyncClient,
+async def test_one_job_multiple_registrations(
+    log_distributor: LogDistributor, project_id: ProjectID
+):
+    async def _(job_log: JobLog) -> bool:
+        return True
+
+    with pytest.raises(AssertionError) as e_info:
+        await log_distributor.register(project_id, _)
+        await log_distributor.register(project_id, _)
+
+
+async def test_log_distributor_register_deregister(
     project_id: ProjectID,
     node_id: NodeID,
     log_distributor: LogDistributor,
     produce_logs: Callable,
     faker: Faker,
 ):
-    collected_logs: set[str] = set()
+    collected_logs: list[str] = []
 
     async def callback(job_log: JobLog) -> bool:
-        assert len(messages := job_log.messages) == 1
-        collected_logs.add(messages[0])
+        for msg in job_log.messages:
+            collected_logs.append(msg)
         return True
 
-    published_logs: set[str] = set()
+    published_logs: list[str] = []
 
     async def _log_publisher():
-        for _ in range(10):
+        for _ in range(5):
             msg: str = faker.text()
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
-            published_logs.add(msg)
+            published_logs.append(msg)
 
-    publisher_task = asyncio.create_task(_log_publisher())
     await log_distributor.register(project_id, callback)
-    await asyncio.sleep(2)
+    publisher_task = asyncio.create_task(_log_publisher())
+    await asyncio.sleep(0.1)
     await log_distributor.deregister(project_id)
-    await asyncio.sleep(2)
+    await asyncio.sleep(0.1)
     await log_distributor.register(project_id, callback)
     await asyncio.gather(publisher_task)
-    await asyncio.sleep(1)
+    await asyncio.sleep(0.5)
+    await log_distributor.deregister(project_id)
+
+    assert len(log_distributor._log_streamers.keys()) == 0
     assert len(collected_logs) > 0
-    assert collected_logs.issubset(published_logs)
+    assert set(collected_logs).issubset(
+        set(published_logs)
+    )  # some logs might get lost while being deregistered
+
+
+async def test_log_distributor_multiple_streams(
+    project_id: ProjectID,
+    node_id: NodeID,
+    log_distributor: LogDistributor,
+    produce_logs: Callable,
+    faker: Faker,
+):
+    job_ids: Final[list[JobID]] = [JobID(faker.uuid4()) for _ in range(2)]
+
+    collected_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
+
+    async def callback(job_log: JobLog) -> bool:
+        job_id = job_log.job_id
+        assert (msgs := collected_logs.get(job_id)) is not None
+        for msg in job_log.messages:
+            msgs.append(msg)
+        return True
+
+    published_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
+
+    async def _log_publisher():
+        for _ in range(5):
+            msg: str = faker.text()
+            await asyncio.sleep(0.1)
+            job_id: JobID = random.choice(job_ids)
+            await produce_logs("expected", job_id, node_id, [msg], logging.DEBUG)
+            published_logs[job_id].append(msg)
+
+    for job_id in job_ids:
+        await log_distributor.register(job_id, callback)
+    publisher_task = asyncio.create_task(_log_publisher())
+    await asyncio.gather(publisher_task)
+    await asyncio.sleep(0.5)
+    for job_id in job_ids:
+        await log_distributor.deregister(job_id)
+    for key in collected_logs:
+        assert key in published_logs
+        assert collected_logs[key] == published_logs[key]
 
 
 #
