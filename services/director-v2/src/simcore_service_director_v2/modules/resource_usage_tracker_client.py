@@ -109,9 +109,8 @@ class ResourceUsageTrackerClient:
                     unit.current_cost_per_unit_id,
                     unit.specific_info.aws_ec2_instances,
                 )
-        raise PricingPlanUnitNotFoundError(
-            "Default pricing plan and unit does not exist"
-        )
+        msg = "Default pricing plan and unit does not exist"
+        raise PricingPlanUnitNotFoundError(msg)
 
     async def get_pricing_unit(
         self,
