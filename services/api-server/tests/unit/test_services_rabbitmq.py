@@ -25,7 +25,7 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
     delenvs_from_dict,
@@ -398,3 +398,27 @@ async def test_log_streamer_with_distributor(
     publish_task.cancel()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
+
+
+async def test_log_generator(mocker: MockFixture, faker: Faker):
+    mocker.patch(
+        "simcore_service_api_server.api.dependencies.rabbitmq.LogStreamer._project_done",
+        return_value=True,
+    )
+    log_streamer = LogStreamer(3, None)  # type: ignore
+
+    published_logs: list[str] = []
+    for _ in range(10):
+        job_log = JobLog.parse_obj(JobLog.Config.schema_extra["example"])
+        msg = faker.text()
+        published_logs.append(msg)
+        job_log.messages = [msg]
+        await log_streamer._queue.put(job_log)
+
+    collected_logs: list[str] = []
+    async for log in log_streamer.log_generator():
+        job_log = JobLog.parse_raw(log)
+        assert len(job_log.messages) == 1
+        collected_logs.append(job_log.messages[0])
+
+    assert published_logs == collected_logs

@@ -104,6 +104,6 @@ class LogStreamer:
             while self._queue.empty():
                 if await self._project_done():
                     return
-                await asyncio.sleep(15)
+                await asyncio.sleep(10)
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
