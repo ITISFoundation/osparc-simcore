@@ -2,7 +2,6 @@
 
 import json
 import logging
-from contextlib import suppress
 from typing import Any
 
 from fastapi import FastAPI
@@ -32,20 +31,17 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.errors import ResourceTrackerPricingUnitsError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
 )
+from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.db import get_repository
 from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
-from ....db.repositories.resource_tracker_pricing_units import (
-    ResourceTrackerPricingUnitsRepository,
-)
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
     BaseClientHTTPError,
@@ -453,13 +449,10 @@ async def prepare_services_environment(
 async def get_hardware_info(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> HardwareInfo | None:
-    hardware_info: HardwareInfo | None = None
-    if scheduler_data.wallet_info and scheduler_data.pricing_info:
-        resource_tracker_pricing_units_repo = get_repository(
-            app, ResourceTrackerPricingUnitsRepository
-        )
-        with suppress(ResourceTrackerPricingUnitsError):
-            hardware_info = await resource_tracker_pricing_units_repo.get_hardware_info(
-                scheduler_data.pricing_info.pricing_unit_id
-            )
-    return hardware_info
+    rut_client = ResourceUsageTrackerClient.get_from_state(app)
+    result = await rut_client.get_default_pricing_and_hardware_info(
+        product_name=scheduler_data.product_name,
+        service_key=scheduler_data.key,
+        service_version=scheduler_data.version,
+    )
+    return HardwareInfo(aws_ec2_instances=result.aws_ec2_instances)

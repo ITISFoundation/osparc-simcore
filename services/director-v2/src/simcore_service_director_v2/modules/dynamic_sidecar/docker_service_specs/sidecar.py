@@ -323,11 +323,17 @@ def get_dynamic_sidecar_spec(
     )
 
     # add autoscaling constraints if pricing plan is required
-    if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
-        ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
-        service_labels[
-            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
-        ] = ec2_instance_type
+    if hardware_info and len(hardware_info.aws_ec2_instances) > 0:
+        if len(hardware_info.aws_ec2_instances) == 1:
+            ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
+            service_labels[
+                DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
+            ] = ec2_instance_type
+        else:
+            log.warning(
+                "Unexpected number oc aws_ec2_instances %s",
+                hardware_info.aws_ec2_instances,
+            )
 
     #  -----------
     create_service_params = {

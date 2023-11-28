@@ -7,9 +7,6 @@ from simcore_postgres_database.models.groups_extra_properties import (
 )
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_networks import projects_networks
-from simcore_postgres_database.models.resource_tracker_pricing_units import (
-    resource_tracker_pricing_units,
-)
 
 __all__ = [
     "comp_pipeline",
@@ -20,7 +17,6 @@ __all__ = [
     "projects_networks",
     "projects",
     "ProjectType",
-    "resource_tracker_pricing_units",
     "StateType",
     "user_to_groups",
 ]

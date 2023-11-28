@@ -114,12 +114,6 @@ class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorError):
     msg_template = "Computational task {node_id} not found"
 
 
-class ResourceTrackerPricingUnitsError(PydanticErrorMixin, DirectorError):
-    msg_template = (
-        "Could not acquire find an entry for pricing_unit_id={pricing_unit_id}"
-    )
-
-
 #
 # SCHEDULER ERRORS
 #
