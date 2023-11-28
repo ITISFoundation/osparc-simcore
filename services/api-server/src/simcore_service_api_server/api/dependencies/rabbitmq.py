@@ -21,6 +21,11 @@ def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQCl
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
+def get_log_distributor(app: Annotated[FastAPI, Depends(get_app)]) -> "LogDistributor":
+    assert app.state.log_distributor  # nosec
+    return cast(LogDistributor, app.state.log_distributor)
+
+
 class LogDistributor:
     _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[None]]] = {}
     _rabbit_client: RabbitMQClient
