@@ -249,6 +249,8 @@ async def attempt_pod_removal_and_data_saving(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
 
+    _logger.debug("removing service; scheduler_data=%s", scheduler_data)
+
     sidecars_client: SidecarsClient = get_sidecars_client(app, scheduler_data.node_uuid)
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
