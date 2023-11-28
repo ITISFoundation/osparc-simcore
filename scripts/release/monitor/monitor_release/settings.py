@@ -104,8 +104,8 @@ def get_settings(env_file, deployment):
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
-            starts_with="master-simcore_master",
-            swarm_stack_name="master-simcore",
+            starts_with="staging-simcore_staging",
+            swarm_stack_name="staging-simcore",
             portainer_endpoint_version=1,
         )
     else:
