@@ -67,10 +67,18 @@ qx.Class.define("osparc.desktop.credits.BuyCredits2", {
         width: 300,
         allowStretchX: false
       })
+      const unsavedCardOption = new qx.ui.form.ListItem('Enter card details in the next step...', null, -1)
+      paymentMethodSelect.add(unsavedCardOption)
       paymentMethods.forEach(({id, label}) => {
         const item = new qx.ui.form.ListItem(label, null, id)
         paymentMethodSelect.add(item)
       })
+      if (paymentMethods.length < 1) {
+        paymentMethodSelect.setReadOnly(true)
+        paymentMethodSelect.setValue(-1)
+      } else {
+        paymentMethodSelect.setValue(1)
+      }
       paymentMethodContainer.add(paymentMethodSelect)
       formContainer.add(paymentMethodContainer)
       return formContainer
