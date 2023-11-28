@@ -24,8 +24,8 @@ from models_library.resource_tracker import (
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
-from simcore_service_director_v2.core.errors import PricingPlanUnitNotFoundError
 
+from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
 
 _logger = logging.getLogger(__name__)
