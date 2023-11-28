@@ -171,7 +171,7 @@ async def unarchive_dir(
     ::raise ArchiveError
     """
     if not progress_bar:
-        progress_bar = ProgressBarData(steps=1)
+        progress_bar = ProgressBarData(num_steps=1)
     async with AsyncExitStack() as zip_stack:
         zip_file_handler = zip_stack.enter_context(
             zipfile.ZipFile(  # pylint: disable=consider-using-with
@@ -355,10 +355,9 @@ async def archive_dir(
     ::raise ArchiveError
     """
     if not progress_bar:
-        progress_bar = ProgressBarData(steps=1)
+        progress_bar = ProgressBarData(num_steps=1)
 
     async with AsyncExitStack() as stack:
-
         folder_size_bytes = sum(
             file.stat().st_size
             for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
