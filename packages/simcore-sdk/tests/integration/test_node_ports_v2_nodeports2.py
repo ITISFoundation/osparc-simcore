@@ -756,7 +756,7 @@ async def test_batch_update_inputs_outputs(
     )
     await check_config_valid(PORTS, config_dict)
 
-    async with ProgressBarData(steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2) as progress_bar:
         await PORTS.set_multiple(
             {
                 PortKey(port.key): (k, None)
@@ -765,7 +765,7 @@ async def test_batch_update_inputs_outputs(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(1)
+        assert progress_bar._current_steps == pytest.approx(1)
         await PORTS.set_multiple(
             {
                 PortKey(port.key): (k, None)
@@ -773,7 +773,7 @@ async def test_batch_update_inputs_outputs(
             },
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(2)
+        assert progress_bar._current_steps == pytest.approx(2)
 
     ports_outputs = await PORTS.outputs
     ports_inputs = await PORTS.inputs
@@ -789,9 +789,9 @@ async def test_batch_update_inputs_outputs(
 
     # test missing key raises error
     with pytest.raises(UnboundPortError):
-        async with ProgressBarData(steps=1) as progress_bar:
+        async with ProgressBarData(num_steps=1) as progress_bar:
             await PORTS.set_multiple(
                 {PortKey("missing_key_in_both"): (123132, None)},
                 progress_bar=progress_bar,
             )
-            assert progress_bar._continuous_progress_value == pytest.approx(0)
+            assert progress_bar._current_steps == pytest.approx(0)
