@@ -24,7 +24,7 @@ from ...docker_states import extract_containers_minimum_statuses
 from ...errors import DockerServiceNotFoundError
 from ._events_utils import service_push_outputs
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # NOTE: take care in changing this message, part of it is used by
 # graylog and it will break the notifications
@@ -56,7 +56,7 @@ async def service_awaits_manual_interventions(scheduler_data: SchedulerData) -> 
         and not scheduler_data.dynamic_sidecar.wait_for_manual_intervention_logged
     ):
         scheduler_data.dynamic_sidecar.wait_for_manual_intervention_logged = True
-        logger.warning(" %s %s", LOG_MSG_MANUAL_INTERVENTION, scheduler_data.node_uuid)
+        _logger.warning(" %s %s", LOG_MSG_MANUAL_INTERVENTION, scheduler_data.node_uuid)
     return service_awaits_intervention
 
 
@@ -65,7 +65,7 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
 
-    logger.debug(
+    _logger.debug(
         "dynamic-sidecars cleanup pending volume removal services every %s seconds",
         settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
     )
@@ -73,15 +73,15 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
         settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
         result=True,
     ):
-        logger.debug("Removing pending volume removal services...")
+        _logger.debug("Removing pending volume removal services...")
 
         try:
             await remove_pending_volume_removal_services(settings.SWARM_STACK_NAME)
         except asyncio.CancelledError:
-            logger.info("Stopped pending volume removal services task")
+            _logger.info("Stopped pending volume removal services task")
             raise
         except Exception:  # pylint: disable=broad-except
-            logger.exception(
+            _logger.exception(
                 "Unexpected error while cleaning up pending volume removal services"
             )
 
@@ -95,7 +95,7 @@ async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ig
         settings.SWARM_STACK_NAME
     )
 
-    logger.info("The following services need to be observed: %s", services_to_observe)
+    _logger.info("The following services need to be observed: %s", services_to_observe)
 
     for scheduler_data in services_to_observe:
         await scheduler.add_service_from_scheduler_data(scheduler_data)
@@ -131,6 +131,7 @@ async def get_stack_status_from_scheduler_data(
     # check if there was an error picked up by the scheduler
     # and marked this service as failed
     if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
+        _logger.debug("sidecar issue: sidecar_data=%s", scheduler_data.dynamic_sidecar)
         return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
@@ -140,6 +141,9 @@ async def get_stack_status_from_scheduler_data(
 
     # is the service stopping?
     if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
+        _logger.debug(
+            "stopping service sidecar_data=%s", scheduler_data.dynamic_sidecar
+        )
         return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
@@ -156,6 +160,9 @@ async def get_stack_status_from_scheduler_data(
         )
     except DockerServiceNotFoundError:
         # in this case, the service is starting, so state is pending
+        _logger.debug(
+            "docker service not found sidecar_data=%s", scheduler_data.dynamic_sidecar
+        )
         return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
@@ -165,6 +172,12 @@ async def get_stack_status_from_scheduler_data(
 
     # while the dynamic-sidecar state is not RUNNING report it's state
     if sidecar_state != ServiceState.RUNNING:
+        _logger.debug(
+            "sidecar NOT running sidecar_data=%s, state=%s, message=%s",
+            scheduler_data.dynamic_sidecar,
+            sidecar_state,
+            sidecar_message,
+        )
         return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
@@ -178,6 +191,9 @@ async def get_stack_status_from_scheduler_data(
     # wait for containers to start
     if len(scheduler_data.dynamic_sidecar.containers_inspect) == 0:
         # marks status as waiting for containers
+        _logger.debug(
+            "waiting for containers sidecar_data=%s", scheduler_data.dynamic_sidecar
+        )
         return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
@@ -189,6 +205,7 @@ async def get_stack_status_from_scheduler_data(
     container_state, container_message = extract_containers_minimum_statuses(
         scheduler_data.dynamic_sidecar.containers_inspect
     )
+    _logger.debug("status at runtime sidecar_data=%s", scheduler_data.dynamic_sidecar)
     return create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,

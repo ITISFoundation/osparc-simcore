@@ -27,6 +27,7 @@ def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:
         "HostConfig": {
             "Init": True,
             "AutoRemove": False,  # NOTE: this cannot be True as we need the logs of the container before removing it
+            "LogConfig": {"Type": "json-file"},
         },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
     }
 
