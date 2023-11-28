@@ -32,7 +32,7 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
-from ..dependencies.rabbitmq import LogListener
+from ..dependencies.rabbitmq import LogStreamer
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -367,7 +367,7 @@ async def get_log_stream(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    log_listener: Annotated[LogListener, Depends(LogListener)],
+    log_listener: Annotated[LogStreamer, Depends(LogStreamer)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)

@@ -72,7 +72,7 @@ class LogDistributor:
         del self._log_streamers[job_id]
 
 
-class LogListener:
+class LogStreamer:
     _queue: Queue[JobLog]
     _queue_name: str
     _job_id: JobID
