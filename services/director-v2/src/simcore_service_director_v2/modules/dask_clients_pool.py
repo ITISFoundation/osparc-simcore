@@ -80,7 +80,7 @@ class DaskClientsPool:
                         tasks_file_link_type = (
                             self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
                         )
-                    if cluster.type is ClusterTypeInModel.ON_DEMAND:
+                    if cluster.type == ClusterTypeInModel.ON_DEMAND.value:
                         tasks_file_link_type = (
                             self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
                         )
