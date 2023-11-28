@@ -133,6 +133,41 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "flash-message": {
+      style: {
+        width: 1,
+        style: "solid"
+      }
+    },
+
+    "flash-info": {
+      include: "flash-message",
+      style: {
+        color: "info"
+      }
+    },
+
+    "flash-success": {
+      include: "flash-message",
+      style: {
+        color: "success"
+      }
+    },
+
+    "flash-warning": {
+      include: "flash-message",
+      style: {
+        color: "warning"
+      }
+    },
+
+    "flash-error": {
+      include: "flash-message",
+      style: {
+        color: "error"
+      }
+    },
+
     "flash-badge": {
       style: {
         radius: 5

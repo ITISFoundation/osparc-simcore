@@ -91,7 +91,7 @@ async def test_push_folder(
     assert len(list(test_folder.glob("**/*"))) == files_number
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await data_manager._push_directory(
             user_id,
             project_id,
@@ -101,7 +101,7 @@ async def test_push_folder(
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)
 
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
@@ -138,7 +138,7 @@ async def test_push_file(
     assert file_path.exists()
 
     # test push file by file
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await data_manager._push_directory(
             user_id,
             project_id,
@@ -148,7 +148,7 @@ async def test_push_file(
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
@@ -212,7 +212,7 @@ async def test_pull_legacy_archive(
         test_compression_folder
     )
 
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await data_manager._pull_legacy_archive(
             user_id,
             project_id,
@@ -221,7 +221,7 @@ async def test_pull_legacy_archive(
             io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_path_from_s3.assert_called_once_with(
         user_id=user_id,
@@ -266,7 +266,7 @@ async def test_pull_directory(
     )
     mock_filemanager.download_path_from_s3.return_value = fake_download_folder
 
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await data_manager._pull_directory(
             user_id,
             project_id,
@@ -276,7 +276,7 @@ async def test_pull_directory(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)
     mock_filemanager.download_path_from_s3.assert_called_once_with(
         local_path=fake_download_folder,
         s3_object=f"{project_id}/{node_uuid}/{fake_download_folder.name}",
