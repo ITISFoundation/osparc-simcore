@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # pylint: disable=protected-access
 # pylint: disable=redefined-builtin
 # pylint: disable=redefined-outer-name
@@ -16,19 +18,26 @@ import datetime
 import json
 import logging
 import types
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Annotated, Any, cast
 from uuid import uuid4
 
 import httpx
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, Form, Header, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    status,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
-from pydantic import HttpUrl, SecretStr, parse_file_as
+from pydantic import HttpUrl, SecretStr
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (
@@ -193,7 +202,11 @@ def get_settings(request: Request) -> Settings:
 
 
 def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None) -> int:
-    return 1 if x_init_api_secret is not None else 0
+    if x_init_api_secret is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="api secret missing"
+        )
+    return 1
 
 
 #
@@ -214,7 +227,7 @@ def create_payment_router():
         response_model=PaymentInitiated,
         responses=ERROR_RESPONSES,
     )
-    async def _init_payment(
+    async def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -229,7 +242,7 @@ def create_payment_router():
         response_class=HTMLResponse,
         responses=ERROR_HTML_RESPONSES,
     )
-    async def _get_payment_form(
+    async def get_payment_form(
         id: PaymentID,
     ):
         assert id  # nosec
@@ -242,7 +255,7 @@ def create_payment_router():
         responses=ERROR_RESPONSES,
         include_in_schema=False,
     )
-    async def _pay(
+    async def pay(
         id: PaymentID,
         payment_form: Annotated[PaymentForm, Depends()],
         settings: Annotated[Settings, Depends(get_settings)],
@@ -261,7 +274,7 @@ def create_payment_router():
         response_model=PaymentCancelled,
         responses=ERROR_RESPONSES,
     )
-    async def _cancel_payment(
+    async def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -287,7 +300,7 @@ def create_payment_method_router():
         response_model=PaymentMethodInitiated,
         responses=ERROR_RESPONSES,
     )
-    async def _init_payment_method(
+    async def init_payment_method(
         payment_method: InitPaymentMethod,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -302,7 +315,7 @@ def create_payment_method_router():
         response_class=HTMLResponse,
         responses=ERROR_HTML_RESPONSES,
     )
-    async def _get_form_payment_method(
+    async def get_form_payment_method(
         id: PaymentMethodID,
     ):
         return FORM_HTML.format(f"/save?id={id}", "Save Payment")
@@ -313,7 +326,7 @@ def create_payment_method_router():
         responses=ERROR_RESPONSES,
         include_in_schema=False,
     )
-    async def _save(
+    async def save(
         id: PaymentMethodID,
         payment_form: Annotated[PaymentForm, Depends()],
         settings: Annotated[Settings, Depends(get_settings)],
@@ -332,7 +345,7 @@ def create_payment_method_router():
         response_model=PaymentMethodsBatch,
         responses=ERROR_RESPONSES,
     )
-    async def _batch_get_payment_methods(
+    async def batch_get_payment_methods(
         batch: BatchGetPaymentMethods,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -358,7 +371,7 @@ def create_payment_method_router():
             **ERROR_RESPONSES,
         },
     )
-    async def _get_payment_method(
+    async def get_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -374,7 +387,7 @@ def create_payment_method_router():
         status_code=status.HTTP_204_NO_CONTENT,
         responses=ERROR_RESPONSES,
     )
-    async def _delete_payment_method(
+    async def delete_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -386,7 +399,7 @@ def create_payment_method_router():
         response_model=AckPaymentWithPaymentMethod,
         responses=ERROR_RESPONSES,
     )
-    async def _pay_with_payment_method(
+    async def pay_with_payment_method(
         id: PaymentMethodID,
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
@@ -405,29 +418,15 @@ def create_payment_method_router():
     return router
 
 
-@asynccontextmanager
-async def _app_lifespan(app: FastAPI):
-    state_path = Path("app.state.keep.ignore.json")
-    app.state.keep = {}
-    if state_path.exists():
-        app.state.keep = parse_file_as(dict[str, Any], state_path)
-
-    yield
-
-    state_path.write_text(json.dumps(jsonable_encoder(app.state.keep), indent=1))
-
-
 def create_app():
     app = FastAPI(
         title="osparc-compliant payment-gateway",
         version=PAYMENTS_GATEWAY_SPECS_VERSION,
-        lifespan=_app_lifespan,
         debug=True,
     )
     app.openapi_version = "3.0.0"  # NOTE: small hack to allow current version of `42Crunch.vscode-openapi` to work with openapi
     override_fastapi_openapi_method(app)
 
-    app.state.keep = {}
     app.state.settings = Settings.create_from_envs()
     logging.info(app.state.settings.json(indent=2))
 
