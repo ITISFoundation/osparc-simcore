@@ -71,7 +71,7 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
     )
     while await asyncio.sleep(
         settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S,
-        True,
+        result=True,
     ):
         logger.debug("Removing pending volume removal services...")
 
@@ -86,7 +86,7 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
             )
 
 
-async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ignore
+async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ignore  # noqa: F821
     """discover all services which were started before and add them to the scheduler"""
     settings: DynamicServicesSchedulerSettings = (
         scheduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
@@ -98,7 +98,7 @@ async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ig
     logger.info("The following services need to be observed: %s", services_to_observe)
 
     for scheduler_data in services_to_observe:
-        await scheduler._add_service(scheduler_data)  # pylint: disable=protected-access
+        await scheduler.add_service_from_scheduler_data(scheduler_data)
 
 
 def create_model_from_scheduler_data(

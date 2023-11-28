@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.MainPage", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+    this._setLayout(new qx.ui.layout.VBox(null, null));
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             msg += "<br><br>";
             msg += this.tr("Make sure you saved your changes to:");
             msg += "<br>";
-            msg += this.tr("- current <b>smash file</b> (running <b>simulations</b>, if any, will be terminated)");
+            msg += this.tr("- current <b>smash file</b>");
             msg += "<br>";
             msg += this.tr("- current <b>notebooks</b> (<b>jupyterlab</b> session will be terminated)");
             win.set({
