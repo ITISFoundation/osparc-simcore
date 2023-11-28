@@ -140,7 +140,7 @@ async def _upload_local_dir_to_s3(
         progress_entries.append(progress_value)
 
     async with ProgressBarData(
-        steps=1, progress_report_cb=_report_progress_upload
+        num_steps=1, progress_report_cb=_report_progress_upload
     ) as progress_bar:
         await r_clone.sync_local_to_s3(
             r_clone_settings,
@@ -164,7 +164,7 @@ async def _download_from_s3_to_local_dir(
         print(">>>|", progress_value, "| ⏬")
 
     async with ProgressBarData(
-        steps=1, progress_report_cb=_report_progress_download
+        num_steps=1, progress_report_cb=_report_progress_download
     ) as progress_bar:
         await r_clone.sync_s3_to_local(
             r_clone_settings,

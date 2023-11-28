@@ -133,7 +133,7 @@ async def test_upload_file_to_presigned_links_raises_aws_s3_400_request_time_out
         side_effect=AwsS3BadRequestRequestTimeoutError(body="nothing"),
     )
 
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         with pytest.raises(AwsS3BadRequestRequestTimeoutError):
             await upload_file_to_presigned_links(
                 session=AsyncMock(),
@@ -269,7 +269,7 @@ async def test_upload_file_to_presigned_links(
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
             session=client_session,
             file_upload_links=upload_links,
@@ -278,5 +278,5 @@ async def test_upload_file_to_presigned_links(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)
     assert uploaded_parts
