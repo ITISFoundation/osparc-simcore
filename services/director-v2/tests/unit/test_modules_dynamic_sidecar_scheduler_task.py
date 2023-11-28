@@ -242,9 +242,9 @@ async def test_skip_observation_cycle_after_error(
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
-    await scheduler._scheduler._add_service(scheduler_data)
+    await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     # check it is being tracked
-    assert scheduler_data.node_uuid in scheduler._scheduler._inverse_search_mapping
+    assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
 
     # ensure observation cycle triggers a lot
     await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 10)
@@ -257,13 +257,13 @@ async def test_skip_observation_cycle_after_error(
         if use_case.outcome_service_removed:
             assert (
                 scheduler_data.node_uuid
-                not in scheduler._scheduler._inverse_search_mapping
+                not in scheduler.scheduler._inverse_search_mapping
             )
         else:
             assert (
-                scheduler_data.node_uuid in scheduler._scheduler._inverse_search_mapping
+                scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
             )
     else:
         assert (
-            scheduler_data.node_uuid not in scheduler._scheduler._inverse_search_mapping
+            scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping
         )

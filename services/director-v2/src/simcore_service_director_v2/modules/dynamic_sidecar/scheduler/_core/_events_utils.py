@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Final
+from typing import Any
 
 from fastapi import FastAPI
 from models_library.projects_networks import ProjectsNetworks
@@ -30,7 +30,6 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
@@ -42,11 +41,6 @@ from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
-from ....node_rights import (
-    NodeRightsManager,
-    ResourceName,
-    node_resource_limits_enabled,
-)
 from ...api_client import (
     BaseClientHTTPError,
     SidecarsClient,
@@ -65,13 +59,6 @@ from ...errors import EntrypointContainerNotFoundError
 from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 _logger = logging.getLogger(__name__)
-
-
-# Used to ensure no more that X services per node pull or push data
-# Locking is applied when:
-# - study is being opened (state and outputs are pulled)
-# - study is being closed (state and outputs are saved)
-RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
 def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
@@ -104,9 +91,7 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
     )
     # pylint: disable=protected-access
     scheduler_data: SchedulerData = (
-        dynamic_sidecars_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
-            node_uuid
-        )
+        dynamic_sidecars_scheduler.scheduler.get_scheduler_data(node_uuid)
     )
     return scheduler_data
 
@@ -243,10 +228,8 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     # pylint: disable=protected-access
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
-    await (
-        app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(  # noqa: SLF001
-            scheduler_data.node_uuid
-        )
+    await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
+        scheduler_data.node_uuid
     )
     task_progress.update(message="finished removing resources", percent=1)
 
@@ -260,98 +243,72 @@ async def attempt_pod_removal_and_data_saving(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
 
-    async def _remove_containers_save_state_and_outputs() -> None:
-        sidecars_client: SidecarsClient = get_sidecars_client(
-            app, scheduler_data.node_uuid
+    _logger.debug("removing service; scheduler_data=%s", scheduler_data)
+
+    sidecars_client: SidecarsClient = get_sidecars_client(app, scheduler_data.node_uuid)
+
+    await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
+
+    # only try to save the status if :
+    # - it is requested to save the state
+    # - the dynamic-sidecar has finished booting correctly
+
+    can_really_save: bool = False
+    if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+        # if node is not present in the workbench it makes no sense
+        # to try and save the data, nodeports will raise errors
+        # and sidecar will hang
+
+        projects_repository: ProjectsRepository = get_repository(
+            app, ProjectsRepository
         )
 
-        await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
+        can_really_save = await projects_repository.is_node_present_in_workbench(
+            project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
+        )
 
-        # only try to save the status if :
-        # - it is requested to save the state
-        # - the dynamic-sidecar has finished booting correctly
-
-        can_really_save: bool = False
-        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
-            # if node is not present in the workbench it makes no sense
-            # to try and save the data, nodeports will raise errors
-            # and sidecar will hang
-
-            projects_repository: ProjectsRepository = get_repository(
-                app, ProjectsRepository
-            )
-
-            can_really_save = await projects_repository.is_node_present_in_workbench(
-                project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
-            )
-
-        if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
-            _logger.info("Calling into dynamic-sidecar to save: state and output ports")
-            try:
-                tasks = [
-                    service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
-                ]
-
-                # When enabled no longer uploads state via nodeports
-                # It uses rclone mounted volumes for this task.
-                if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                    tasks.append(
-                        service_save_state(
-                            app, scheduler_data.node_uuid, sidecars_client
-                        )
-                    )
-
-                await logged_gather(*tasks, max_concurrency=2)
-                scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
-
-                _logger.info("dynamic-sidecar saved: state and output ports")
-            except (BaseClientHTTPError, TaskClientResultError) as e:
-                _logger.error(  # noqa: TRY400
-                    (
-                        "Could not contact dynamic-sidecar to save service "
-                        "state or output ports %s\n%s"
-                    ),
-                    scheduler_data.service_name,
-                    f"{e}",
-                )
-                # ensure dynamic-sidecar does not get removed
-                # user data can be manually saved and manual
-                # cleanup of the dynamic-sidecar is required
-
-                scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
-                    True
-                )
-                raise
-
-    if node_resource_limits_enabled(app):
-        node_rights_manager = await NodeRightsManager.instance(app)
-        assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
+    if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
+        _logger.info("Calling into dynamic-sidecar to save: state and output ports")
         try:
-            async with node_rights_manager.acquire(
-                scheduler_data.dynamic_sidecar.docker_node_id,
-                resource_name=RESOURCE_STATE_AND_INPUTS,
-            ):
-                await _remove_containers_save_state_and_outputs()
-        except NodeRightsAcquireError:
-            # Next observation cycle, the service will try again
-            _logger.debug(
-                "Skip saving service state for %s. Docker node %s is busy. Will try later.",
-                scheduler_data.node_uuid,
-                scheduler_data.dynamic_sidecar.docker_node_id,
+            tasks = [
+                service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
+            ]
+
+            # When enabled no longer uploads state via nodeports
+            # It uses rclone mounted volumes for this task.
+            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+                tasks.append(
+                    service_save_state(app, scheduler_data.node_uuid, sidecars_client)
+                )
+
+            await logged_gather(*tasks, max_concurrency=2)
+            scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
+
+            _logger.info("dynamic-sidecar saved: state and output ports")
+        except (BaseClientHTTPError, TaskClientResultError) as e:
+            _logger.error(  # noqa: TRY400
+                (
+                    "Could not contact dynamic-sidecar to save service "
+                    "state or output ports %s\n%s"
+                ),
+                scheduler_data.service_name,
+                f"{e}",
             )
-            return
-    else:
-        await _remove_containers_save_state_and_outputs()
+            # ensure dynamic-sidecar does not get removed
+            # user data can be manually saved and manual
+            # cleanup of the dynamic-sidecar is required
+
+            scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
+                True
+            )
+            raise
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
         TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
     )
 
     await safe_remove(
-        app,
-        node_id=scheduler_data.node_uuid,
-        product_name=scheduler_data.product_name,
-        user_id=scheduler_data.user_id,
+        app, node_id=scheduler_data.node_uuid, run_id=scheduler_data.run_id
     )
 
     # remove sidecar's api client
@@ -456,55 +413,32 @@ async def prepare_services_environment(
         )
     )
 
-    async def _pull_outputs_and_state():
-        tasks = [sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint)]
-        # When enabled no longer downloads state via nodeports
-        # S3 is used to store state paths
-        if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-            tasks.append(
-                sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
-            )
+    tasks = [sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint)]
+    # When enabled no longer downloads state via nodeports
+    # S3 is used to store state paths
+    if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+        tasks.append(sidecars_client.restore_service_state(dynamic_sidecar_endpoint))
 
-        await logged_gather(*tasks, max_concurrency=2)
+    await logged_gather(*tasks, max_concurrency=2)
 
-        # inside this directory create the missing dirs, fetch those form the labels
-        director_v0_client: DirectorV0Client = get_director_v0_client(app)
-        simcore_service_labels: SimcoreServiceLabels = (
-            await director_v0_client.get_service_labels(
-                service=ServiceKeyVersion(
-                    key=scheduler_data.key, version=scheduler_data.version
-                )
+    # inside this directory create the missing dirs, fetch those form the labels
+    director_v0_client: DirectorV0Client = get_director_v0_client(app)
+    simcore_service_labels: SimcoreServiceLabels = (
+        await director_v0_client.get_service_labels(
+            service=ServiceKeyVersion(
+                key=scheduler_data.key, version=scheduler_data.version
             )
         )
-        service_outputs_labels = json.loads(
-            simcore_service_labels.dict().get("io.simcore.outputs", "{}")
-        ).get("outputs", {})
-        _logger.debug(
-            "Creating dirs from service outputs labels: %s",
-            service_outputs_labels,
-        )
-        await sidecars_client.service_outputs_create_dirs(
-            dynamic_sidecar_endpoint, service_outputs_labels
-        )
+    )
+    service_outputs_labels = json.loads(
+        simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+    ).get("outputs", {})
+    _logger.debug(
+        "Creating dirs from service outputs labels: %s",
+        service_outputs_labels,
+    )
+    await sidecars_client.service_outputs_create_dirs(
+        dynamic_sidecar_endpoint, service_outputs_labels
+    )
 
-        scheduler_data.dynamic_sidecar.is_service_environment_ready = True
-
-    if node_resource_limits_enabled(app):
-        node_rights_manager = await NodeRightsManager.instance(app)
-        assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
-        try:
-            async with node_rights_manager.acquire(
-                scheduler_data.dynamic_sidecar.docker_node_id,
-                resource_name=RESOURCE_STATE_AND_INPUTS,
-            ):
-                await _pull_outputs_and_state()
-        except NodeRightsAcquireError:
-            # Next observation cycle, the service will try again
-            _logger.debug(
-                "Skip saving service state for %s. Docker node %s is busy. Will try later.",
-                scheduler_data.node_uuid,
-                scheduler_data.dynamic_sidecar.docker_node_id,
-            )
-            return
-    else:
-        await _pull_outputs_and_state()
+    scheduler_data.dynamic_sidecar.is_service_environment_ready = True

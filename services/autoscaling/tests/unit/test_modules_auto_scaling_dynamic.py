@@ -262,9 +262,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         ec2_client,
         num_reservations=1,
         num_instances=mock_machines_buffer,
-        instance_type=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            0
-        ],
+        instance_type=next(
+            iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+        ),
         instance_state="running",
     )
     _assert_rabbit_autoscaling_message_sent(
@@ -282,9 +282,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         ec2_client,
         num_reservations=1,
         num_instances=mock_machines_buffer,
-        instance_type=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            0
-        ],
+        instance_type=next(
+            iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+        ),
         instance_state="running",
     )
     assert fake_node.Description
@@ -315,9 +315,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         ec2_client,
         num_reservations=1,
         num_instances=mock_machines_buffer,
-        instance_type=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            0
-        ],
+        instance_type=next(
+            iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+        ),
         instance_state="running",
     )
 
@@ -902,6 +902,8 @@ def create_associated_instance(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     app_settings: ApplicationSettings,
     faker: Faker,
+    host_cpu_count: int,
+    host_memory_total: ByteSize,
 ) -> Callable[[Node, bool], AssociatedInstance]:
     def _creator(node: Node, terminateable_time: bool) -> AssociatedInstance:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -924,7 +926,8 @@ def create_associated_instance(
                     days=faker.pyint(min_value=0, max_value=100),
                     hours=faker.pyint(min_value=0, max_value=100),
                 )
-                + seconds_delta
+                + seconds_delta,
+                resources=Resources(cpus=host_cpu_count, ram=host_memory_total),
             ),
         )
 

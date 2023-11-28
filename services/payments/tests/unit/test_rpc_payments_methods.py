@@ -201,6 +201,7 @@ async def test_webserver_pay_with_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
+    mock_resoruce_usage_tracker_service_api: None,
     mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
     product_name: ProductName,

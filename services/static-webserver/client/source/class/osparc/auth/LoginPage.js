@@ -62,7 +62,7 @@ qx.Class.define("osparc.auth.LoginPage", {
           control = new osparc.ui.basic.LogoWPlatform();
           control.setSize({
             width: 300,
-            height: 120
+            height: 90
           });
           control.setFont("text-18");
           this.getChildControl("main-layout").add(control);
@@ -133,7 +133,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       this.getContentElement().setStyles({
         "background-image": backgroundImage,
         "background-repeat": "no-repeat",
-        "background-size": "auto 85%", // auto width, 85% height
+        "background-size": "auto 100%", // auto width, 85% height
         "background-position": "0% 100%" // left bottom
       });
     },

@@ -20,7 +20,7 @@ def test_make_service_cli_run(run_program_with_args, metadata_file_path: Path):
     """
     service.cli/run: $(metatada)
         # Updates adapter script from metadata in $<
-        osparc-service-integrator run-creator --metadata $< --runscript $@
+        simcore-service-integrator run-creator --metadata $< --runscript $@
     """
     run_script_path: Path = metadata_file_path.parent / "run"
 

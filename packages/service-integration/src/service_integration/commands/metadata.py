@@ -71,5 +71,5 @@ def get_version(
 
     # MUST have no new line so that we can produce a VERSION file with no extra new-line
     # VERSION: $(METADATA)
-    #    @osparc-service-integrator get-version --metadata-file $< > $@
+    #    @simcore-service-integrator get-version --metadata-file $< > $@
     rich.print(current_version, end="")

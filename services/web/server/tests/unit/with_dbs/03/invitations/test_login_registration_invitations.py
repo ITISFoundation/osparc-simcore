@@ -100,7 +100,7 @@ async def test_check_registration_invitation_and_get_email(
     client: TestClient,
     mocker: MockerFixture,
     mock_invitations_service_http_api: AioResponsesMock,
-    expected_invitation: ApiInvitationContent,
+    fake_osparc_invitation: ApiInvitationContent,
 ):
     assert client.app
     mocker.patch(
@@ -118,4 +118,4 @@ async def test_check_registration_invitation_and_get_email(
     data, _ = await assert_status(response, web.HTTPOk)
 
     invitation = InvitationInfo.parse_obj(data)
-    assert invitation.email == expected_invitation.guest
+    assert invitation.email == fake_osparc_invitation.guest

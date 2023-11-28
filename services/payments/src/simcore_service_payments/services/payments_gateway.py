@@ -1,7 +1,7 @@
 """ Interface to communicate with the payment's gateway
 
 - httpx client with base_url to PAYMENTS_GATEWAY_URL
-- Fake gateway service in services/payments/scripts/fake_payment_gateway.py
+- Fake gateway service in services/payments/scripts/example_payment_gateway.py
 
 """
 
@@ -16,9 +16,9 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_raw_as
 from pydantic.errors import PydanticErrorMixin
-from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
+from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi, to_curl_command
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPaymentWithPaymentMethod,
 )
@@ -39,38 +39,58 @@ from ..models.payments_gateway import (
 _logger = logging.getLogger(__name__)
 
 
-class PaymentsGatewayError(PydanticErrorMixin, ValueError):
-    msg_template = "Payment-gateway got {status_code} for {operation_id}: {reason}"
-
-
-def _parse_raw_or_none(text: str | None):
+def _parse_raw_as_or_none(cls: type, text: str | None):
     if text:
         with suppress(ValidationError):
-            return ErrorModel.parse_raw(text)
+            return parse_raw_as(cls, text)
     return None
 
 
-@contextlib.contextmanager
-def _raise_if_error(operation_id: str):
-    try:
+class PaymentsGatewayError(PydanticErrorMixin, ValueError):
+    msg_template = "{operation_id} error {status_code}: {reason}"
 
+    @classmethod
+    def from_http_status_error(
+        cls, err: HTTPStatusError, operation_id: str
+    ) -> "PaymentsGatewayError":
+        return cls(
+            operation_id=f"PaymentsGatewayApi.{operation_id}",
+            reason=f"{err}",
+            status_code=err.response.status_code,
+            # extra context for details
+            http_status_error=err,
+            model=_parse_raw_as_or_none(ErrorModel, err.response.text),
+        )
+
+    def get_detailed_message(self) -> str:
+        err_json = "null"
+        if model := getattr(self, "model", None):
+            err_json = model.json(indent=1)
+
+        curl_cmd = "null"
+        if http_status_error := getattr(self, "http_status_error", None):
+            curl_cmd = to_curl_command(http_status_error.request)
+
+        return f"{self}\nREQ: '{curl_cmd}'\nRESP: {err_json}"
+
+
+@contextlib.contextmanager
+def _raise_as_payments_gateway_error(operation_id: str):
+    try:
         yield
 
     except HTTPStatusError as err:
-        model = _parse_raw_or_none(err.response.text)
-
-        raise PaymentsGatewayError(
-            operation_id=f"PaymentsGatewayApi.{operation_id}",
-            reason=model.message if model else f"{err}",
-            http_status_error=err,
-            model=model,
-        ) from err
+        error = PaymentsGatewayError.from_http_status_error(
+            err, operation_id=operation_id
+        )
+        _logger.warning(error.get_detailed_message())
+        raise error from err
 
 
 def _handle_status_errors(coro: Callable):
     @functools.wraps(coro)
     async def _wrapper(self, *args, **kwargs):
-        with _raise_if_error(operation_id=coro.__name__):
+        with _raise_as_payments_gateway_error(operation_id=coro.__name__):
             return await coro(self, *args, **kwargs)
 
     return _wrapper
@@ -142,6 +162,8 @@ class PaymentsGatewayApi(BaseHttpApi, AppStateMixin):
     async def get_many_payment_methods(
         self, ids_: list[PaymentMethodID]
     ) -> list[GetPaymentMethod]:
+        if not ids_:
+            return []
         response = await self.client.post(
             "/payment-methods:batchGet",
             json=jsonable_encoder(BatchGetPaymentMethods(payment_methods_ids=ids_)),

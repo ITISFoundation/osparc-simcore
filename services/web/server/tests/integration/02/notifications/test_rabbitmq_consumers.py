@@ -170,9 +170,9 @@ def client(
 
 @pytest.fixture
 async def rabbitmq_publisher(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ) -> RabbitMQClient:
-    return rabbitmq_client("pytest_publisher")
+    return create_rabbitmq_client("pytest_publisher")
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)

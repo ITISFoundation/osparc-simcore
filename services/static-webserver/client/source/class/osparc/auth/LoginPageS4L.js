@@ -29,7 +29,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       const layout = new qx.ui.layout.HBox();
       this._setLayout(layout);
 
-      this.setBackgroundColor("#025887");
+      this.setBackgroundColor("primary-background-color");
 
       this._removeAll();
 
@@ -54,20 +54,20 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       let backgroundImage = "";
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
-          backgroundImage = "url(resource/osparc/s4llite_splitimage.png)";
+          backgroundImage = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
           break;
         case "s4lacad":
-          backgroundImage = "url(resource/osparc/s4lacad_splitimage.png)";
+          backgroundImage = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
           break;
         case "s4ldesktop":
-          backgroundImage = "url(resource/osparc/s4ldesktop_splitimage.png)";
+          backgroundImage = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
           break;
         case "s4ldesktopacad":
-          backgroundImage = "url(resource/osparc/s4ldesktopacad_splitimage.png)";
+          backgroundImage = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
           break;
         case "s4l":
         default:
-          backgroundImage = "url(resource/osparc/s4l_splitimage.png)";
+          backgroundImage = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
           break;
       }
       this._setBackgroundImage(backgroundImage);

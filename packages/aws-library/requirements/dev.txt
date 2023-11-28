@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 --editable ../pytest-simcore/
+--editable ../models-library/
 --editable ../service-library/
 --editable ../settings-library/
 

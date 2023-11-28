@@ -23,22 +23,33 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
     // main
-    "background-main": "c01",
+    "background-main": "#222",
     "background-main-1": "c02",
     "background-main-2": "c03",
     "background-main-3": "c04",
     "background-main-4": "c05",
     "background-main-5": "c06",
 
+    "background-card-overlay": "rgba(25, 33, 37, 0.8)",
+
+    "primary-background-color": "rgba(0, 20, 46, 1)",
+    "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
+    "modal-backdrop": "rgba(8, 9, 13, 1)",
+    "fab_background": "rgba(47, 50, 69, 1)",
+    "input_background": "rgba(46, 51, 55, 1)",
+    "window-popup-background": "rgba(66, 66, 66, 1)",
+
+    "flash_message_bg": "input_background",
+
     // text
-    "text": "c13",
-    "text-disabled": "c07",
-    "text-selected": "c12",
-    "text-placeholder": "c07",
-    "text-darker": "c07",
-    "contrasted-text-dark": "c01",
-    "contrasted-text-light": "c13",
-    "link": "c11",
+    "text": "rgba(216, 216, 216, 1)",
+    "text-disabled": "rgba(113, 157, 181, 1)",
+    "text-selected": "rgba(10, 182, 255, 1)",
+    "text-placeholder": "rgba(174, 191, 207, 1)",
+    "text-darker": "rgba(255, 255, 255, 1)",
+    "contrasted-text-dark": "rgba(255, 255, 255, 1)",
+    "contrasted-text-light": "rgba(255, 255, 255, 1)",
+    "link": "rgba(10, 182, 255, 1)",
 
     // shadows
     "bg-shadow": "c06",

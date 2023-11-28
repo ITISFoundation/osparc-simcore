@@ -94,7 +94,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         } else if (ar[myGID]["write"]) {
           permissions = qx.locale.Manager.tr("Editor");
         } else if (ar[myGID]["read"]) {
-          permissions = qx.locale.Manager.tr("Viewer");
+          permissions = qx.locale.Manager.tr("User");
         }
       }
       accessRights.setValue(permissions);

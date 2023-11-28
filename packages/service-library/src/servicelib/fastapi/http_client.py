@@ -3,6 +3,7 @@ import logging
 
 import httpx
 from fastapi import FastAPI
+from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 
 _logger = logging.getLogger(__name__)
 
@@ -51,6 +52,13 @@ class BaseHttpApi:
         except httpx.HTTPError:
             return False
 
+    async def check_liveness(self) -> LivenessResult:
+        try:
+            response = await self.client.get("/")
+            return IsResponsive(elapsed=response.elapsed)
+        except httpx.RequestError as err:
+            return IsNonResponsive(reason=f"{err}")
+
 
 class AppStateMixin:
     """
@@ -77,3 +85,34 @@ class AppStateMixin:
         old = getattr(app.state, cls.app_state_name, None)
         delattr(app.state, cls.app_state_name)
         return old
+
+
+def to_curl_command(request: httpx.Request, *, use_short_options: bool = True) -> str:
+    """Composes a curl command from a given request
+
+    Can be used to reproduce a request in a separate terminal (e.g. debugging)
+    """
+    # Adapted from https://github.com/marcuxyz/curlify2/blob/master/curlify2/curlify.py
+    method = request.method
+    url = request.url
+
+    # https://curl.se/docs/manpage.html#-X
+    # -X, --request {method}
+    _x = "-X" if use_short_options else "--request"
+    request_option = f"{_x} {method}"
+
+    # https://curl.se/docs/manpage.html#-d
+    # -d, --data <data>          HTTP POST data
+    data_option = ""
+    if body := request.read().decode():
+        _d = "-d" if use_short_options else "--data"
+        data_option = f"{_d} '{body}'"
+
+    # https://curl.se/docs/manpage.html#-H
+    # H, --header <header/@file> Pass custom header(s) to server
+    headers_option = ""
+    if headers := [f'"{k}: {v}"' for k, v in request.headers.items()]:
+        _h = "-H" if use_short_options else "--header"
+        headers_option = f"{_h} {f' {_h} '.join(headers)}"
+
+    return f"curl {request_option} {headers_option} {data_option} {url}"
