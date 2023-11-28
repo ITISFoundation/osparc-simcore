@@ -9,7 +9,7 @@ import logging
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Final, Iterable
+from typing import Awaitable, Final, Iterable
 from unittest.mock import AsyncMock
 
 import httpx
@@ -33,7 +33,7 @@ from pytest_simcore.helpers.utils_envs import (
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
-from simcore_service_api_server.models.schemas.jobs import JobLog
+from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
     DirectorV2Api,
@@ -207,6 +207,105 @@ async def test_multiple_producers_and_single_consumer(
     assert received_message.project_id == project_id
     assert received_message.node_id == node_id
     assert received_message.messages == ["expected message"] * 3
+
+
+#
+# --------------------
+#
+
+
+class LogDistributor:
+    _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[bool]]] = {}
+    _rabbit_client: RabbitMQClient
+    _queue_name: str
+
+    def __init__(self, rabbitmq_client: RabbitMQClient):
+        self._rabbit_client = rabbitmq_client
+
+    async def setup(self):
+        self._queue_name = await self._rabbit_client.subscribe(
+            LoggerRabbitMessage.get_channel_name(),
+            self._distribute_logs,
+            exclusive_queue=True,
+            topics=[],
+        )
+
+    async def teardown(self):
+        await self._rabbit_client.unsubscribe(self._queue_name)
+
+    async def _distribute_logs(self, data: bytes):
+        got = LoggerRabbitMessage.parse_raw(data)
+        item = JobLog(
+            job_id=got.project_id,
+            node_id=got.node_id,
+            log_level=got.log_level,
+            messages=got.messages,
+        )
+        assert item.job_id in self._log_streamers
+        callback = self._log_streamers[item.job_id]
+        return await callback(item)
+
+    async def register(
+        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[bool]]
+    ):
+        assert (
+            job_id not in self._log_streamers
+        ), f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
+        self._log_streamers[job_id] = callback
+        await self._rabbit_client.add_topics(
+            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
+        )
+
+    async def deregister(self, job_id: JobID):
+        assert job_id in self._log_streamers, f"No stream was connected to {job_id=}."
+        await self._rabbit_client.remove_topics(
+            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
+        )
+        del self._log_streamers[job_id]
+
+
+@pytest.fixture
+async def log_distributor(app: FastAPI) -> AsyncIterable[LogDistributor]:
+    log_distributor = LogDistributor(get_rabbitmq_client(app))
+    await log_distributor.setup()
+    yield log_distributor
+    await log_distributor.teardown()
+
+
+async def test_log_distributor(
+    client: httpx.AsyncClient,
+    project_id: ProjectID,
+    node_id: NodeID,
+    log_distributor: LogDistributor,
+    produce_logs: Callable,
+    faker: Faker,
+):
+    collected_logs: set[str] = set()
+
+    async def callback(job_log: JobLog) -> bool:
+        assert len(messages := job_log.messages) == 1
+        collected_logs.add(messages[0])
+        return True
+
+    published_logs: set[str] = set()
+
+    async def _log_publisher():
+        for _ in range(10):
+            msg: str = faker.text()
+            await asyncio.sleep(1)
+            await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
+            published_logs.add(msg)
+
+    publisher_task = asyncio.create_task(_log_publisher())
+    await log_distributor.register(project_id, callback)
+    await asyncio.sleep(2)
+    await log_distributor.deregister(project_id)
+    await asyncio.sleep(2)
+    await log_distributor.register(project_id, callback)
+    await asyncio.gather(publisher_task)
+    await asyncio.sleep(1)
+    assert len(collected_logs) > 0
+    assert collected_logs.issubset(published_logs)
 
 
 #
