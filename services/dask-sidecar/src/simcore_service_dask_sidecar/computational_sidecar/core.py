@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import cast
+from typing import Final, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -40,6 +40,7 @@ from .task_shared_volume import TaskSharedVolumes
 
 logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
+_TASK_PROCESSING_PROGRESS_WEIGHT: Final[float] = 0.99
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -217,6 +218,7 @@ class ComputationalSidecar:
                 log_file_url=self.log_file_url,
                 log_publishing_cb=self._publish_sidecar_log,
                 s3_settings=self.s3_settings,
+                container_processing_progress_weight=_TASK_PROCESSING_PROGRESS_WEIGHT,
             ):
                 await container.start()
                 await self._publish_sidecar_log(

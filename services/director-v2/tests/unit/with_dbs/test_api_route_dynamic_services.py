@@ -165,10 +165,10 @@ async def mock_retrieve_features(
             service_name = "service_name"
 
             # pylint: disable=protected-access
-            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping[  # noqa: SLF001
+            dynamic_sidecar_scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
                 node_uuid
             ] = service_name
-            dynamic_sidecar_scheduler._scheduler._to_observe[  # noqa: SLF001
+            dynamic_sidecar_scheduler.scheduler._to_observe[  # noqa: SLF001
                 service_name
             ] = scheduler_data_from_http_request
 
@@ -189,12 +189,12 @@ async def mock_retrieve_features(
 
             yield respx_mock
 
-            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping.pop(
+            dynamic_sidecar_scheduler.scheduler._inverse_search_mapping.pop(  # noqa: SLF001
                 node_uuid
-            )  # noqa: SLF001
-            dynamic_sidecar_scheduler._scheduler._to_observe.pop(
+            )
+            dynamic_sidecar_scheduler.scheduler._to_observe.pop(  # noqa: SLF001
                 service_name
-            )  # noqa: SLF001
+            )
 
 
 @pytest.fixture
@@ -501,9 +501,7 @@ def test_delete_service_waiting_for_manual_intervention(
 
     # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
-    scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access  # noqa: SLF001
-        node_uuid
-    )
+    scheduler_data = dynamic_sidecar_scheduler.scheduler.get_scheduler_data(node_uuid)
     scheduler_data.dynamic_sidecar.status.update_failing_status("failed")
     scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = True
 

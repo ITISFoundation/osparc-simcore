@@ -23,7 +23,7 @@ qx.Class.define("osparc.ui.window.Window", {
 
     this.set({
       appearance: "service-window",
-      backgroundColor: "background-main-2"
+      backgroundColor: "window-popup-background"
     });
 
     // Enable closing when clicking outside the modal
