@@ -10,7 +10,7 @@ import random
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Awaitable, Final, Iterable
+from typing import Final, Iterable
 from unittest.mock import AsyncMock
 
 import httpx
@@ -33,7 +33,10 @@ from pytest_simcore.helpers.utils_envs import (
 )
 from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
+from simcore_service_api_server.api.dependencies.rabbitmq import (
+    LogDistributor,
+    LogListener,
+)
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
@@ -213,56 +216,6 @@ async def test_multiple_producers_and_single_consumer(
 #
 # --------------------
 #
-
-
-class LogDistributor:
-    _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[bool]]] = {}
-    _rabbit_client: RabbitMQClient
-    _queue_name: str
-
-    def __init__(self, rabbitmq_client: RabbitMQClient):
-        self._rabbit_client = rabbitmq_client
-
-    async def setup(self):
-        self._queue_name = await self._rabbit_client.subscribe(
-            LoggerRabbitMessage.get_channel_name(),
-            self._distribute_logs,
-            exclusive_queue=True,
-            topics=[],
-        )
-
-    async def teardown(self):
-        await self._rabbit_client.unsubscribe(self._queue_name)
-
-    async def _distribute_logs(self, data: bytes):
-        got = LoggerRabbitMessage.parse_raw(data)
-        item = JobLog(
-            job_id=got.project_id,
-            node_id=got.node_id,
-            log_level=got.log_level,
-            messages=got.messages,
-        )
-        assert item.job_id in self._log_streamers
-        callback = self._log_streamers[item.job_id]
-        return await callback(item)
-
-    async def register(
-        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[bool]]
-    ):
-        assert (
-            job_id not in self._log_streamers
-        ), f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
-        self._log_streamers[job_id] = callback
-        await self._rabbit_client.add_topics(
-            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
-        )
-
-    async def deregister(self, job_id: JobID):
-        assert job_id in self._log_streamers, f"No stream was connected to {job_id=}."
-        await self._rabbit_client.remove_topics(
-            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
-        )
-        del self._log_streamers[job_id]
 
 
 @pytest.fixture

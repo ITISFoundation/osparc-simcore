@@ -1,6 +1,6 @@
 import asyncio
 from asyncio.queues import Queue
-from typing import Annotated, AsyncIterable, Final, cast
+from typing import Annotated, AsyncIterable, Awaitable, Callable, Final, cast
 from uuid import UUID
 
 from fastapi import Depends, FastAPI
@@ -10,7 +10,7 @@ from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...models.schemas.jobs import JobLog
+from ...models.schemas.jobs import JobID, JobLog
 from ...services.director_v2 import DirectorV2Api
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -21,6 +21,56 @@ _NEW_LINE: Final[str] = "\n"
 def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQClient:
     assert app.state.rabbitmq_client  # nosec
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+class LogDistributor:
+    _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[bool]]] = {}
+    _rabbit_client: RabbitMQClient
+    _queue_name: str
+
+    def __init__(self, rabbitmq_client: RabbitMQClient):
+        self._rabbit_client = rabbitmq_client
+
+    async def setup(self):
+        self._queue_name = await self._rabbit_client.subscribe(
+            LoggerRabbitMessage.get_channel_name(),
+            self._distribute_logs,
+            exclusive_queue=True,
+            topics=[],
+        )
+
+    async def teardown(self):
+        await self._rabbit_client.unsubscribe(self._queue_name)
+
+    async def _distribute_logs(self, data: bytes):
+        got = LoggerRabbitMessage.parse_raw(data)
+        item = JobLog(
+            job_id=got.project_id,
+            node_id=got.node_id,
+            log_level=got.log_level,
+            messages=got.messages,
+        )
+        assert item.job_id in self._log_streamers
+        callback = self._log_streamers[item.job_id]
+        return await callback(item)
+
+    async def register(
+        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[bool]]
+    ):
+        assert (
+            job_id not in self._log_streamers
+        ), f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
+        self._log_streamers[job_id] = callback
+        await self._rabbit_client.add_topics(
+            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
+        )
+
+    async def deregister(self, job_id: JobID):
+        assert job_id in self._log_streamers, f"No stream was connected to {job_id=}."
+        await self._rabbit_client.remove_topics(
+            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
+        )
+        del self._log_streamers[job_id]
 
 
 class LogListener:
