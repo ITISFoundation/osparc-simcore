@@ -8,18 +8,17 @@
 import asyncio
 import logging
 from pprint import pprint
-from typing import Final, Iterable
+from typing import Awaitable, Callable, Final, Iterable
 
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter
-from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_client
+from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 
 _logger = logging.getLogger(__name__)
@@ -27,36 +26,38 @@ _faker = Faker()
 
 
 @pytest.fixture
-async def fake_rabbit_consumer(app: FastAPI):
-    class FakeRabbitConsumer:
+async def fake_log_distributor(app: FastAPI):
+    class FakeLogDistributor:
         _queue_name: Final[str] = "my_queue"
         _n_logs: int = 0
         _total_n_logs: int
         _produced_logs: list[str] = []
 
-        async def subscribe(self, channel_name, callback, exclusive_queue, topics):
+        async def register(
+            self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
+        ):
             async def produce_log():
                 for _ in range(5):
                     txt = _faker.text()
                     self._produced_logs.append(txt)
-                    msg = LoggerRabbitMessage(
-                        user_id=_faker.pyint(),
-                        project_id=_faker.uuid4(),
+                    msg = JobLog(
+                        job_id=job_id,
                         node_id=_faker.uuid4(),
+                        log_level=logging.INFO,
                         messages=[txt],
                     )
-                    await callback(msg.json())
-                    await asyncio.sleep(0.2)
+                    await callback(msg)
+                    await asyncio.sleep(0.1)
 
             asyncio.create_task(produce_log())
             return self._queue_name
 
-        async def unsubscribe(self, queue_name):
-            assert queue_name == self._queue_name
+        async def deregister(self, job_id):
+            pass
 
-    fake_rabbit_consumer = FakeRabbitConsumer()
-    app.dependency_overrides[get_rabbitmq_client] = lambda: fake_rabbit_consumer
-    yield fake_rabbit_consumer
+    fake_log_distributor = FakeLogDistributor()
+    app.dependency_overrides[get_log_distributor] = lambda: fake_log_distributor
+    yield fake_log_distributor
 
 
 @pytest.fixture
@@ -85,7 +86,7 @@ async def test_log_streaming(
     client: httpx.AsyncClient,
     solver_key: str,
     solver_version: str,
-    fake_rabbit_consumer,
+    fake_log_distributor,
     fake_project_for_streaming: ProjectGet,
     mocked_directorv2_service: MockRouter,
 ):
@@ -106,5 +107,5 @@ async def test_log_streaming(
 
     assert (
         collected_messages
-        == fake_rabbit_consumer._produced_logs[: len(collected_messages)]
+        == fake_log_distributor._produced_logs[: len(collected_messages)]
     )

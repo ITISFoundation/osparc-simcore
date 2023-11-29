@@ -32,15 +32,15 @@ from pytest_simcore.helpers.utils_envs import (
     setenvs_from_dict,
 )
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.api.dependencies.rabbitmq import (
-    LogDistributor,
-    LogStreamer,
-    get_log_distributor,
-)
+from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
     DirectorV2Api,
+)
+from simcore_service_api_server.services.log_streaming import (
+    LogDistributor,
+    LogStreamer,
 )
 
 pytest_simcore_core_services_selection = [
@@ -384,7 +384,7 @@ async def test_log_streamer_with_distributor(
 
 async def test_log_generator(mocker: MockFixture, faker: Faker):
     mocker.patch(
-        "simcore_service_api_server.api.dependencies.rabbitmq.LogStreamer._project_done",
+        "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
     log_streamer = LogStreamer(3, None)  # type: ignore
