@@ -2,7 +2,7 @@ import asyncio
 from asyncio import Queue
 from typing import Annotated, AsyncIterable, Awaitable, Callable, Final
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQClient
@@ -13,6 +13,18 @@ from ..models.schemas.jobs import JobID, JobLog
 from .director_v2 import DirectorV2Api
 
 _NEW_LINE: Final[str] = "\n"
+
+
+class LogDistributionBaseException(Exception):
+    pass
+
+
+class LogStreamerNotRegistered(LogDistributionBaseException):
+    pass
+
+
+class LogStreamerRegistionConflict(LogDistributionBaseException):
+    pass
 
 
 class LogDistributor:
@@ -44,9 +56,8 @@ class LogDistributor:
         )
         callback = self._log_streamers.get(item.job_id)
         if callback is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered",
+            raise LogStreamerNotRegistered(
+                f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
             )
         await callback(item)
         return True
@@ -55,9 +66,8 @@ class LogDistributor:
         self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
     ):
         if job_id in self._log_streamers:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time",
+            raise LogStreamerRegistionConflict(
+                f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
             )
         self._log_streamers[job_id] = callback
         await self._rabbit_client.add_topics(
@@ -66,10 +76,7 @@ class LogDistributor:
 
     async def deregister(self, job_id: JobID):
         if job_id not in self._log_streamers:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"No stream was connected to {job_id=}.",
-            )
+            raise LogStreamerNotRegistered(f"No stream was connected to {job_id=}.")
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
