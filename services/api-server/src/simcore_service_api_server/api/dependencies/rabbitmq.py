@@ -2,7 +2,7 @@ import asyncio
 from asyncio.queues import Queue
 from typing import Annotated, AsyncIterable, Awaitable, Callable, Final, cast
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException, status
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_app
@@ -53,24 +53,33 @@ class LogDistributor:
             log_level=got.log_level,
             messages=got.messages,
         )
-        assert item.job_id in self._log_streamers
-        callback = self._log_streamers[item.job_id]
+        if (callback := self._log_streamers.get(item.job_id)) is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered",
+            )
         await callback(item)
         return True
 
     async def register(
         self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
     ):
-        assert (
-            job_id not in self._log_streamers
-        ), f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
+        if job_id in self._log_streamers:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time",
+            )
         self._log_streamers[job_id] = callback
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
 
     async def deregister(self, job_id: JobID):
-        assert job_id in self._log_streamers, f"No stream was connected to {job_id=}."
+        if not job_id in self._log_streamers:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"No stream was connected to {job_id=}.",
+            )
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
