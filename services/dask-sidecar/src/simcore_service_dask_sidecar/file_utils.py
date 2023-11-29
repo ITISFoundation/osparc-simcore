@@ -241,7 +241,7 @@ async def push_file_to_remote(
                 logging.INFO,
             )
             with zipfile.ZipFile(
-                archive_file_path, mode="w", compression=zipfile.ZIP_DEFLATED
+                archive_file_path, mode="w", compression=zipfile.ZIP_STORED
             ) as zfp:
                 await asyncio.get_event_loop().run_in_executor(
                     None, zfp.write, src_path, src_path.name

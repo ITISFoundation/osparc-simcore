@@ -921,33 +921,33 @@ class SimcoreS3DataManager(BaseDataManager):
                 list_of_valid_upload_ids.append(upload_id)
 
         _logger.debug("found the following %s", f"{list_of_valid_upload_ids=}")
-        list_of_invalid_uploads = [
+        if list_of_invalid_uploads := [
             (
                 upload_id,
                 file_id,
             )
             for upload_id, file_id in current_multipart_uploads
             if upload_id not in list_of_valid_upload_ids
-        ]
-        _logger.debug(
-            "the following %s was found and will now be aborted",
-            f"{list_of_invalid_uploads=}",
-        )
-        await logged_gather(
-            *(
-                get_s3_client(self.app).abort_multipart_upload(
-                    self.simcore_bucket_name, file_id, upload_id
-                )
-                for upload_id, file_id in list_of_invalid_uploads
-            ),
-            max_concurrency=MAX_CONCURRENT_S3_TASKS,
-        )
-        _logger.warning(
-            "Dangling multipart uploads '%s', were aborted. "
-            "TIP: There were multipart uploads active on S3 with no counter-part in the file_meta_data database. "
-            "This might indicate that something went wrong in how storage handles multipart uploads!!",
-            f"{list_of_invalid_uploads}",
-        )
+        ]:
+            _logger.debug(
+                "the following %s was found and will now be aborted",
+                f"{list_of_invalid_uploads=}",
+            )
+            await logged_gather(
+                *(
+                    get_s3_client(self.app).abort_multipart_upload(
+                        self.simcore_bucket_name, file_id, upload_id
+                    )
+                    for upload_id, file_id in list_of_invalid_uploads
+                ),
+                max_concurrency=MAX_CONCURRENT_S3_TASKS,
+            )
+            _logger.warning(
+                "Dangling multipart uploads '%s', were aborted. "
+                "TIP: There were multipart uploads active on S3 with no counter-part in the file_meta_data database. "
+                "This might indicate that something went wrong in how storage handles multipart uploads!!",
+                f"{list_of_invalid_uploads}",
+            )
 
     async def clean_expired_uploads(self) -> None:
         await self._clean_expired_uploads()
