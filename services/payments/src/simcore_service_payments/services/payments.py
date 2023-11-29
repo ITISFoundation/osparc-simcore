@@ -155,7 +155,6 @@ async def on_payment_completed(
     if notify_enabled:
         _logger.debug(
             "Notify front-end of payment -> sio SOCKET_IO_PAYMENT_COMPLETED_EVENT "
-            "socketio.notify_payment_completed(sio, user_primary_group_id=gid, payment=transaction)"
         )
 
     if transaction.state == PaymentTransactionState.SUCCESS:
@@ -254,7 +253,8 @@ async def pay_with_payment_method(  # noqa: PLR0913
         invoice_url=ack.invoice_url,
     )
 
-    # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
+    # NOTE: notifications here are done as background-task after responding
+    # POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay
     await on_payment_completed(transaction, rut, notify_enabled=False)
 
     return transaction.to_api_model()
