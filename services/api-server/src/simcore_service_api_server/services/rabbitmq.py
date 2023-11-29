@@ -3,7 +3,8 @@ import logging
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
-from simcore_service_api_server.api.dependencies.rabbitmq import LogDistributor
+
+from ..services.log_streaming import LogDistributor
 
 _logger = logging.getLogger(__name__)
 
