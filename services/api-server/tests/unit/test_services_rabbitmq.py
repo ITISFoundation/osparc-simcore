@@ -17,7 +17,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -36,6 +36,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import (
     LogDistributor,
     LogStreamer,
+    get_log_distributor,
 )
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
@@ -93,6 +94,13 @@ def node_id(faker: Faker) -> NodeID:
     return parse_obj_as(NodeID, faker.uuid4())
 
 
+@pytest.fixture
+async def log_distributor(
+    client: httpx.AsyncClient, app: FastAPI
+) -> AsyncIterable[LogDistributor]:
+    yield get_log_distributor(app)
+
+
 async def test_subscribe_publish_receive_logs(
     client: httpx.AsyncClient,
     app: FastAPI,
@@ -101,21 +109,15 @@ async def test_subscribe_publish_receive_logs(
     project_id: ProjectID,
     node_id: NodeID,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    log_distributor: LogDistributor,
+    mocker: MockerFixture,
 ):
-    async def _consumer_message_handler(data, **kwargs):
+    async def _consumer_message_handler(job_log: JobLog):
         _consumer_message_handler.called = True
-        _consumer_message_handler.data = data
-        _ = LoggerRabbitMessage.parse_raw(data)
-        return True
+        _consumer_message_handler.job_log = job_log
+        assert isinstance(job_log, JobLog)
 
-    # create consumer & subscribe
-    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
-    queue_name = await rabbit_consumer.subscribe(
-        LoggerRabbitMessage.get_channel_name(),
-        _consumer_message_handler,
-        exclusive_queue=False,  # this instance should receive the incoming messages
-        topics=[f"{project_id}.*"],
-    )
+    await log_distributor.register(project_id, _consumer_message_handler)
 
     # log producer
     rabbitmq_producer = create_rabbitmq_client("pytest_producer")
@@ -133,12 +135,8 @@ async def test_subscribe_publish_receive_logs(
     await asyncio.sleep(1)
 
     assert _consumer_message_handler.called
-    data = _consumer_message_handler.data
-    assert isinstance(data, bytes)
-    assert LoggerRabbitMessage.parse_raw(data) == log_message
-
-    # unsuscribe
-    await rabbit_consumer.remove_topics(queue_name, topics=[f"{project_id}.*"])
+    job_log: JobLog = _consumer_message_handler.job_log
+    assert job_log.job_id == log_message.project_id
 
 
 @asynccontextmanager
@@ -218,23 +216,13 @@ async def test_multiple_producers_and_single_consumer(
 #
 
 
-@pytest.fixture
-async def log_distributor(
-    client: httpx.AsyncClient, app: FastAPI
-) -> AsyncIterable[LogDistributor]:
-    log_distributor = LogDistributor(get_rabbitmq_client(app))
-    await log_distributor.setup()
-    yield log_distributor
-    await log_distributor.teardown()
-
-
 async def test_one_job_multiple_registrations(
     log_distributor: LogDistributor, project_id: ProjectID
 ):
-    async def _(job_log: JobLog) -> bool:
-        return True
+    async def _(job_log: JobLog):
+        pass
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(HTTPException) as e_info:
         await log_distributor.register(project_id, _)
         await log_distributor.register(project_id, _)
 
