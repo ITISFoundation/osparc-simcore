@@ -91,7 +91,7 @@ class LogStreamer:
     ):
         self._user_id = user_id
         self._director2_api = director2_api
-        self._queue: Queue[JobLog] = Queue(50)
+        self._queue: Queue[JobLog] = Queue()
 
     async def register(self, job_id: JobID, log_distributor: LogDistributor):
         self._job_id = job_id
