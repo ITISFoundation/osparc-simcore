@@ -128,7 +128,7 @@ async def test_subscribe_publish_receive_logs(
         messages=[faker.text() for _ in range(10)],
     )
     _consumer_message_handler.called = False
-    _consumer_message_handler.data = None
+    _consumer_message_handler.job_log = None
     await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     # check it received
