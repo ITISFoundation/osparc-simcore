@@ -98,19 +98,26 @@ class LogStreamer:
         self._queue: Queue[JobLog] = Queue()
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
+        self._is_registered: bool = False
 
     async def __aenter__(self):
         await self._log_distributor.register(self._job_id, self._queue.put)
+        self._is_registered = True
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
         await self._log_distributor.deregister(self._job_id)
+        self._is_registered = False
 
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
         return not task.stopped is None
 
     async def log_generator(self) -> AsyncIterable[str]:
+        if not self._is_registered:
+            raise LogStreamerNotRegistered(
+                f"LogStreamer for job_id={self._job_id} is not correctly registered"
+            )
         while True:
             while self._queue.empty():
                 if await self._project_done():

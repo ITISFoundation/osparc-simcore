@@ -41,6 +41,7 @@ from simcore_service_api_server.services.director_v2 import (
 from simcore_service_api_server.services.log_streaming import (
     LogDistributor,
     LogStreamer,
+    LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
 
@@ -392,6 +393,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         return_value=True,
     )
     log_streamer = LogStreamer(3, None, None, None)  # type: ignore
+    log_streamer._is_registered = True
 
     published_logs: list[str] = []
     for _ in range(10):
@@ -408,3 +410,10 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         collected_logs.append(job_log.messages[0])
 
     assert published_logs == collected_logs
+
+
+async def test_log_generator_context(mocker: MockFixture, faker: Faker):
+    log_streamer = LogStreamer(3, None, None, None)  # type: ignore
+    with pytest.raises(LogStreamerNotRegistered):
+        async for log in log_streamer.log_generator():
+            print(log)
