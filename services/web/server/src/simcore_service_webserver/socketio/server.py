@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from aiohttp import web
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager

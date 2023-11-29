@@ -27,14 +27,14 @@ def setup_socketio(app: FastAPI):
         #
         # Connect to the as an external process in write-only mode
         #
-        app.state.external_sio = socketio.AsyncAioPikaManager(
+        app.state.external_socketio = socketio.AsyncAioPikaManager(
             url=settings.dsn, logger=_logger, write_only=True
         )
 
     async def _on_shutdown() -> None:
-        if app.state.external_sio:
+        if app.state.external_socketio:
             await cleanup_socketio_async_pubsub_manager(
-                server_manager=app.state.external_sio
+                server_manager=app.state.external_socketio
             )
 
     app.add_event_handler("startup", _on_startup)
@@ -47,14 +47,13 @@ async def notify_payment_completed(
     user_primary_group_id: GroupID,
     payment: PaymentTransaction,
 ):
-    # We assume that the user has been added to all
+    # NOTE: We assume that the user has been added to all
     # rooms associated to his groups
-    #
     assert payment.completed_at is not None  # nosec
 
-    external_sio: socketio.AsyncAioPikaManager = app.state.external_sio
+    external_socketio: socketio.AsyncAioPikaManager = app.state.external_socketio
 
-    return await external_sio.emit(
+    return await external_socketio.emit(
         SOCKET_IO_PAYMENT_COMPLETED_EVENT,
         data=jsonable_encoder(payment, by_alias=True),
         room=f"{user_primary_group_id}",
