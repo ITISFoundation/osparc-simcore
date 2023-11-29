@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     columnModel.setDataCellRenderer(cols.cost.pos, new qx.ui.table.cellrenderer.Number());
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      columnModel.setColumnVisible(cols.cost.pos,  false);
       columnModel.setColumnVisible(cols.user.pos, false);
     }
   },
