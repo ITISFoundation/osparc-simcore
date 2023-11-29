@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 
 import socketio
 from fastapi import FastAPI
@@ -13,6 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
 )
 from models_library.users import GroupID
+from servicelib.fastapi.http_client import AppStateMixin
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from settings_library.rabbit import RabbitSettings
 
@@ -21,9 +21,11 @@ from .rabbitmq import get_rabbitmq_settings
 _logger = logging.getLogger(__name__)
 
 
-@dataclass
-class Notifier:
-    _sio_manager: socketio.AsyncAioPikaManager
+class Notifier(AppStateMixin):
+    app_state_name: str = "notifier"
+
+    def __init__(self, sio_manager: socketio.AsyncAioPikaManager):
+        self._sio_manager = sio_manager
 
     async def notify_payment_completed(
         self,
@@ -68,7 +70,9 @@ def setup_socketio(app: FastAPI):
         )
 
         # NOTE: this might be moved somewhere else when notifier incorporates emails etc
-        app.state.notifier = Notifier(_sio_manager=app.state.external_socketio)
+        notifier = Notifier(sio_manager=app.state.external_socketio)
+        notifier.set_to_app_state(app)
+        assert Notifier.get_from_app_state(app) == notifier  # nosec
 
     async def _on_shutdown() -> None:
         if app.state.external_socketio:
@@ -78,17 +82,3 @@ def setup_socketio(app: FastAPI):
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
-
-
-async def notify_payment_completed(
-    app: FastAPI,
-    *,
-    user_primary_group_id: GroupID,
-    payment: PaymentTransaction,
-):
-
-    notifier: Notifier = app.state.notifier
-
-    return await notifier.notify_payment_completed(
-        user_primary_group_id=user_primary_group_id, payment=payment
-    )

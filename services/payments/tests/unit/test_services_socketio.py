@@ -31,7 +31,7 @@ from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from settings_library.rabbit import RabbitSettings
 from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services.rabbitmq import get_rabbitmq_settings
-from simcore_service_payments.services.socketio import notify_payment_completed
+from simcore_service_payments.services.socketio import Notifier
 from socketio import AsyncAioPikaManager, AsyncServer
 from tenacity import AsyncRetrying
 from tenacity.stop import stop_after_attempt
@@ -201,8 +201,10 @@ async def notify_payment(app: FastAPI, user_primary_group_id: GroupID) -> Callab
         payment = PaymentsTransactionsDB(
             **random_payment_transaction(completed_at=arrow.utcnow().datetime)
         ).to_api_model()
-        await notify_payment_completed(
-            app, user_primary_group_id=user_primary_group_id, payment=payment
+
+        notifier: Notifier = Notifier.get_from_app_state(app)
+        await notifier.notify_payment_completed(
+            user_primary_group_id=user_primary_group_id, payment=payment
         )
 
     return _
