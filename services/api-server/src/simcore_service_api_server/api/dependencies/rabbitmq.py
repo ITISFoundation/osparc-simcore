@@ -58,7 +58,8 @@ class LogDistributor:
             log_level=got.log_level,
             messages=got.messages,
         )
-        if (callback := self._log_streamers.get(item.job_id)) is None:
+        callback = self._log_streamers.get(item.job_id)
+        if callback is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered",
