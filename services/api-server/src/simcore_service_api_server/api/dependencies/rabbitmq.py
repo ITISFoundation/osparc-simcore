@@ -81,7 +81,7 @@ class LogDistributor:
         )
 
     async def deregister(self, job_id: JobID):
-        if not job_id in self._log_streamers:
+        if job_id not in self._log_streamers:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"No stream was connected to {job_id=}.",
