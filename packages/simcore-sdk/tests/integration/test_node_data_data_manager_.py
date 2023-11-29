@@ -155,7 +155,7 @@ async def test_valid_upload_download(
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
 ):
-    async with ProgressBarData(steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -166,9 +166,7 @@ async def test_valid_upload_download(
             r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
-            1.0
-        )
+        assert progress_bar._current_steps == pytest.approx(1.0)  # noqa: SLF001
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -183,9 +181,7 @@ async def test_valid_upload_download(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
-            2.0
-        )
+        assert progress_bar._current_steps == pytest.approx(2.0)  # noqa: SLF001
 
     downloaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -210,7 +206,7 @@ async def test_valid_upload_download_saved_to(
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
 ):
-    async with ProgressBarData(steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -221,9 +217,7 @@ async def test_valid_upload_download_saved_to(
             r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
-            1
-        )
+        assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -241,9 +235,7 @@ async def test_valid_upload_download_saved_to(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
-            2
-        )
+        assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)
 
@@ -267,7 +259,7 @@ async def test_delete_legacy_archive(
     r_clone_settings: RCloneSettings,
     temp_dir: Path,
 ):
-    async with ProgressBarData(steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2) as progress_bar:
         # NOTE: legacy archives can no longer be crated
         # generating a "legacy style archive"
         archive_into_dir = temp_dir / f"legacy-archive-dir-{uuid4()}"
@@ -289,9 +281,7 @@ async def test_delete_legacy_archive(
         )
 
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
-            1
-        )
+        assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 
         assert (
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
