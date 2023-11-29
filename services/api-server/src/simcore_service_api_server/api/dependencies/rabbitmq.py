@@ -5,7 +5,7 @@ from typing import Annotated, AsyncIterable, Awaitable, Callable, Final, cast
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import StreamingResponse
 from models_library.rabbitmq_messages import LoggerRabbitMessage
-from pydantic import PositiveInt
+from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
 
@@ -96,12 +96,12 @@ class LogStreamer:
     _queue: Queue[JobLog]
     _queue_name: str
     _job_id: JobID
-    _user_id: PositiveInt
+    _user_id: UserID
     _director2_api: DirectorV2Api
 
     def __init__(
         self,
-        user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+        user_id: Annotated[UserID, Depends(get_current_user_id)],
         director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     ):
         self._user_id = user_id
