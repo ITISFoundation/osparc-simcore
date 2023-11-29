@@ -155,7 +155,6 @@ async def on_payment_completed(
     if notify_enabled:
         _logger.debug(
             "Notify front-end of payment -> sio SOCKET_IO_PAYMENT_COMPLETED_EVENT "
-            "socketio.notify_payment_completed(sio, user_primary_group_id=gid, payment=transaction)"
         )
 
     if transaction.state == PaymentTransactionState.SUCCESS:

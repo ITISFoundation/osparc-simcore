@@ -57,15 +57,16 @@ from toolz.dicttoolz import get_in
 
 @pytest.fixture
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
-    def _do():
+    def _():
         # The following services are affected if rabbitmq is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_socketio")
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
         mocker.patch(
             "simcore_service_payments.core.application.setup_auto_recharge_listener"
         )
 
-    return _do
+    return _
 
 
 @pytest.fixture
@@ -92,7 +93,7 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
             Mock()
         )  # NOTE: avoids error in api._dependencies::get_db_engine
 
-    def _do():
+    def _():
         # The following services are affected if postgres is not in place
         mocker.patch(
             "simcore_service_payments.core.application.setup_postgres",
@@ -100,7 +101,7 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
             side_effect=_setup,
         )
 
-    return _do
+    return _
 
 
 @pytest.fixture
