@@ -6,6 +6,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+
 """ This is a simple example of a payments-gateway service
 
     - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects
