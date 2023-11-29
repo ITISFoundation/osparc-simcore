@@ -74,10 +74,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits2", {
         paymentMethodSelect.add(item)
       })
       if (paymentMethods.length < 1) {
-        paymentMethodSelect.setReadOnly(true)
-        paymentMethodSelect.setValue(-1)
+        paymentMethodSelect.setEnabled(false)
+        paymentMethodSelect.setSelection([unsavedCardOption])
       } else {
-        paymentMethodSelect.setValue(1)
+        paymentMethodSelect.setSelection([paymentMethodSelect.getChildren()[1]])
       }
       paymentMethodContainer.add(paymentMethodSelect)
       formContainer.add(paymentMethodContainer)
