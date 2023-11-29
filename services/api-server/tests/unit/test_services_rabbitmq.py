@@ -132,6 +132,7 @@ async def test_subscribe_publish_receive_logs(
 
     # check it received
     await asyncio.sleep(1)
+    await log_distributor.deregister(project_id)
 
     assert _consumer_message_handler.called
     job_log: JobLog = _consumer_message_handler.job_log
