@@ -1,14 +1,11 @@
 import asyncio
 from asyncio import Queue
-from typing import Annotated, AsyncIterable, Awaitable, Callable, Final
+from typing import AsyncIterable, Awaitable, Callable, Final
 
-from fastapi import Depends
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQClient
 
-from ..api.dependencies.authentication import get_current_user_id
-from ..api.dependencies.services import get_api_client
 from ..models.schemas.jobs import JobID, JobLog
 from .director_v2 import DirectorV2Api
 
@@ -28,12 +25,10 @@ class LogStreamerRegistionConflict(LogDistributionBaseException):
 
 
 class LogDistributor:
-    _log_streamers: dict[JobID, Callable[[JobLog], Awaitable[None]]] = {}
-    _rabbit_client: RabbitMQClient
-    _queue_name: str
-
     def __init__(self, rabbitmq_client: RabbitMQClient):
         self._rabbit_client = rabbitmq_client
+        self._log_streamers: dict[JobID, Callable[[JobLog], Awaitable[None]]] = {}
+        self._queue_name: str
 
     async def setup(self):
         self._queue_name = await self._rabbit_client.subscribe(
@@ -45,6 +40,12 @@ class LogDistributor:
 
     async def teardown(self):
         await self._rabbit_client.unsubscribe(self._queue_name)
+
+    async def __aenter__(self):
+        await self.setup()
+
+    async def __aexit__(self):
+        await self.teardown()
 
     async def _distribute_logs(self, data: bytes):
         got = LoggerRabbitMessage.parse_raw(data)
@@ -84,27 +85,24 @@ class LogDistributor:
 
 
 class LogStreamer:
-    _queue: Queue[JobLog]
-    _queue_name: str
-    _job_id: JobID
-    _user_id: UserID
-    _director2_api: DirectorV2Api
-
     def __init__(
         self,
-        user_id: Annotated[UserID, Depends(get_current_user_id)],
-        director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+        user_id: UserID,
+        director2_api: DirectorV2Api,
+        job_id: JobID,
+        log_distributor: LogDistributor,
     ):
         self._user_id = user_id
         self._director2_api = director2_api
         self._queue: Queue[JobLog] = Queue()
+        self._job_id: JobID = job_id
+        self._log_distributor: LogDistributor = log_distributor
 
-    async def register(self, job_id: JobID, log_distributor: LogDistributor):
-        self._job_id = job_id
-        await log_distributor.register(job_id, self._queue.put)
+    async def __aenter__(self):
+        await self._log_distributor.register(self._job_id, self._queue.put)
 
-    async def deregister(self, log_distributor: LogDistributor):
-        await log_distributor.deregister(self._job_id)
+    async def __aexit__(self):
+        await self._log_distributor.deregister(self._job_id)
 
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
