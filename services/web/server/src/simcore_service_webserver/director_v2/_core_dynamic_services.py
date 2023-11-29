@@ -213,7 +213,7 @@ async def stop_dynamic_services_in_project(
     async with AsyncExitStack() as stack:
         progress_bar = await stack.enter_async_context(
             ProgressBarData(
-                steps=len(running_dynamic_services),
+                num_steps=len(running_dynamic_services),
                 progress_report_cb=partial(
                     _post_progress_message,
                     get_rabbitmq_client(app),
