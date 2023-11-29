@@ -15,6 +15,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 PRODUCT_URL = os.environ["PRODUCT_URL"]
+PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
 USER_NAME = os.environ["USER_NAME"]
 USER_PASSWORD = os.environ["USER_PASSWORD"]
 SERVICE_TEST_ID = os.environ["SERVICE_TEST_ID"]
@@ -62,7 +63,7 @@ def log_in_and_out(osparc_test_id_attribute: None, api_request_context: APIReque
     print("After test cleaning: Logging out starts")
     api_request_context.post(f"{PRODUCT_URL}v0/auth/logout")
 
-@pytest.mark.testit
+
 def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context: APIRequestContext):
     # connect and listen to websocket
     page.on("websocket", on_web_socket)
@@ -83,8 +84,9 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     with page.expect_response(re.compile(r'/projects/')) as response_info:
         # Project detail view pop-ups shows
         page.get_by_test_id("openResource").click()
-        # Open project with default resources
-        page.get_by_test_id("openWithResources").click()
+        if PRODUCT_BILLABLE == "true":
+            # Open project with default resources
+            page.get_by_test_id("openWithResources").click()
         page.wait_for_timeout(1000)
 
     # Get project uuid, will be used to delete this project in the end
@@ -92,11 +94,10 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     match = uuid_pattern.search(response_info.value.url)
     extracted_uuid = match.group(1)
 
-    # Wait until grid is shown and click on the similation button
+    # Wait until grid is shown
     page.frame_locator(".qx-main-dark").get_by_role("img", name="Remote render").click(
         button="right", timeout=600000
     )
-    page.frame_locator(".qx-main-dark").get_by_text("Simulation").click()
     page.wait_for_timeout(1000)
 
     # Going back to dashboard
