@@ -119,13 +119,11 @@ async def acknowledge_creation_of_payment_method(
 
 
 async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
-    assert payment_method.state == InitPromptAckFlowState.SUCCESS  # nosec
     assert payment_method.completed_at is not None  # nosec
     assert payment_method.initiated_at < payment_method.completed_at  # nosec
 
-    _logger.debug(
-        "Notify front-end of payment -> sio (SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT) "
-    )
+    if payment_method.state == InitPromptAckFlowState.SUCCESS:
+        _logger.debug("Notify front-end of payment-method created! ")
 
 
 async def create_payment_method(

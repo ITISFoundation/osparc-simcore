@@ -3,7 +3,6 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from servicelib.logging_utils import log_context
-from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 
 from ..._constants import ACKED, PGDB
 from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
@@ -102,6 +101,5 @@ async def acknowledge_payment_method(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if acked.state == InitPromptAckFlowState.SUCCESS:
         assert f"{payment_method_id}" == f"{acked.payment_method_id}"  # nosec
         background_tasks.add_task(payments_methods.on_payment_method_completed, acked)
