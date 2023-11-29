@@ -152,6 +152,8 @@ async def upload_file(request: web.Request) -> web.Response:
     """creates upload file links:
 
     This function covers v1 and v2 versions of the handler.
+    Note: calling this entrypoint on an already existing file will overwrite that file. That file will be deleted
+    before the upload takes place.
 
     v1 rationale:
         - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
@@ -182,6 +184,8 @@ async def upload_file(request: web.Request) -> web.Response:
     )
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
+    # ensure file is deleted first in case it already exists
+    await dsm.delete_file(user_id=query_params.user_id, file_id=path_params.file_id)
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
         file_id=path_params.file_id,
