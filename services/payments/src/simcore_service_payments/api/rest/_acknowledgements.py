@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Final
+from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from servicelib.logging_utils import log_context
@@ -59,9 +59,8 @@ async def acknowledge_payment(
             ) from err
 
     assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
-    notify_enabled: Final = True
     background_tasks.add_task(
-        payments.on_payment_completed, transaction, rut_api, notify_enabled
+        payments.on_payment_completed, transaction, rut_api, notify_enabled=True
     )
 
     if ack.saved:
