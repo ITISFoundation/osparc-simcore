@@ -14,9 +14,9 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from starlette.background import BackgroundTask
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -369,15 +369,15 @@ async def get_log_stream(
     version: VersionStr,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     log_distributor: Annotated[LogDistributor, Depends(get_log_distributor)],
-    log_streamer: Annotated[LogStreamer, Depends(LogStreamer)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(_logger, logging.DEBUG, f"Streaming logs for {job_name=}"):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
-        await log_streamer.register(job_id, log_distributor)
-        return LogStreamingResponse(
-            log_streamer.log_generator(),
-            background=BackgroundTask(log_streamer.deregister, log_distributor),
-        )
+        async with LogStreamer(
+            user_id, director2_api, job_id, log_distributor
+        ) as streamer:
+            return LogStreamingResponse(streamer.log_generator())

@@ -43,8 +43,9 @@ class LogDistributor:
 
     async def __aenter__(self):
         await self.setup()
+        return self
 
-    async def __aexit__(self):
+    async def __aexit__(self, exc_type, exc, tb):
         await self.teardown()
 
     async def _distribute_logs(self, data: bytes):
@@ -100,8 +101,9 @@ class LogStreamer:
 
     async def __aenter__(self):
         await self._log_distributor.register(self._job_id, self._queue.put)
+        return self
 
-    async def __aexit__(self):
+    async def __aexit__(self, exc_type, exc, tb):
         await self._log_distributor.deregister(self._job_id)
 
     async def _project_done(self) -> bool:
