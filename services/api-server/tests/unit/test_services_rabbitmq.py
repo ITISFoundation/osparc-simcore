@@ -17,7 +17,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -41,6 +41,7 @@ from simcore_service_api_server.services.director_v2 import (
 from simcore_service_api_server.services.log_streaming import (
     LogDistributor,
     LogStreamer,
+    LogStreamerRegistionConflict,
 )
 
 pytest_simcore_core_services_selection = [
@@ -135,7 +136,8 @@ async def test_subscribe_publish_receive_logs(
     await log_distributor.deregister(project_id)
 
     assert _consumer_message_handler.called
-    job_log: JobLog = _consumer_message_handler.job_log
+    job_log = _consumer_message_handler.job_log
+    assert isinstance(job_log, JobLog)
     assert job_log.job_id == log_message.project_id
 
 
@@ -216,7 +218,7 @@ async def test_one_job_multiple_registrations(
         pass
 
     await log_distributor.register(project_id, _)
-    with pytest.raises(HTTPException) as e_info:
+    with pytest.raises(LogStreamerRegistionConflict) as e_info:
         await log_distributor.register(project_id, _)
     await log_distributor.deregister(project_id)
 
@@ -340,13 +342,15 @@ async def log_streamer_with_distributor(
     )
 
     assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
-    log_streamer: LogStreamer = LogStreamer(
+    async with LogStreamer(
         user_id=user_id,
         director2_api=d2_client,
-    )
-    await log_streamer.register(project_id, log_distributor)
-    yield log_streamer
-    await log_streamer.deregister(log_distributor)
+        job_id=project_id,
+        log_distributor=log_distributor,
+    ) as log_streamer:
+        yield log_streamer
+
+    assert len(log_distributor._log_streamers.keys()) == 0
 
 
 async def test_log_streamer_with_distributor(
@@ -387,7 +391,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(3, None)  # type: ignore
+    log_streamer = LogStreamer(3, None, None, None)  # type: ignore
 
     published_logs: list[str] = []
     for _ in range(10):
