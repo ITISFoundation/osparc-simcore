@@ -3,6 +3,7 @@ from asyncio.queues import Queue
 from typing import Annotated, AsyncIterable, Awaitable, Callable, Final, cast
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.responses import StreamingResponse
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pydantic import PositiveInt
 from servicelib.fastapi.dependencies import get_app
@@ -24,6 +25,10 @@ def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQCl
 def get_log_distributor(app: Annotated[FastAPI, Depends(get_app)]) -> "LogDistributor":
     assert app.state.log_distributor  # nosec
     return cast(LogDistributor, app.state.log_distributor)
+
+
+class LogStreamingResponse(StreamingResponse):
+    media_type = "application/x-ndjson"
 
 
 class LogDistributor:

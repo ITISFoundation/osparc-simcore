@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
@@ -32,7 +32,12 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
-from ..dependencies.rabbitmq import LogDistributor, LogStreamer, get_log_distributor
+from ..dependencies.rabbitmq import (
+    LogDistributor,
+    LogStreamer,
+    LogStreamingResponse,
+    get_log_distributor,
+)
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -360,7 +365,7 @@ async def get_job_pricing_unit(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
-    response_class=StreamingResponse,
+    response_class=LogStreamingResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_log_stream(
@@ -372,13 +377,11 @@ async def get_log_stream(
     log_streamer: Annotated[LogStreamer, Depends(LogStreamer)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    with log_context(_logger, logging.DEBUG, "Begin streaming logs"):
-        _logger.debug("job: %s", job_name)
+    with log_context(_logger, logging.DEBUG, f"Streaming logs for {job_name=}"):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
         await log_streamer.register(job_id, log_distributor)
-        return StreamingResponse(
+        return LogStreamingResponse(
             log_streamer.log_generator(),
-            media_type="application/x-ndjson",
             background=BackgroundTask(log_streamer.deregister, log_distributor),
         )
