@@ -68,7 +68,7 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     page.on("websocket", on_web_socket)
 
     # Welcome to Sim4Life
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(5000)
     welcomeToSim4LifeLocator = page.get_by_text("Welcome to Sim4Life")
     if welcomeToSim4LifeLocator.is_visible():
         page.get_by_text("").nth(1).click()  # There is missing osparc-test-id for this button
