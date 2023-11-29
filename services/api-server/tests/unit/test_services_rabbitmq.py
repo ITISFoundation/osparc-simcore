@@ -31,7 +31,6 @@ from pytest_simcore.helpers.utils_envs import (
     delenvs_from_dict,
     setenvs_from_dict,
 )
-from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import (
     LogDistributor,
@@ -144,19 +143,14 @@ async def rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
-    consumer_message_handler = AsyncMock(return_value=True)
+    consumer_message_handler = AsyncMock()
 
-    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
-    queue_name = await rabbit_consumer.subscribe(
-        LoggerRabbitMessage.get_channel_name(),
-        consumer_message_handler,
-        exclusive_queue=True,
-        topics=[f"{project_id}.*"],
-    )
+    log_distributor: LogDistributor = get_log_distributor(app)
+    await log_distributor.register(project_id, consumer_message_handler)
 
     yield consumer_message_handler
 
-    await rabbit_consumer.unsubscribe(queue_name)
+    await log_distributor.deregister(project_id)
 
 
 @pytest.fixture
@@ -201,14 +195,12 @@ async def test_multiple_producers_and_single_consumer(
 
     # check it received
     assert consumer_message_handler.await_count == 1
-    (data,) = consumer_message_handler.call_args[0]
-    assert isinstance(data, bytes)
-    received_message = LoggerRabbitMessage.parse_raw(data)
+    (job_log,) = consumer_message_handler.call_args[0]
+    assert isinstance(job_log, JobLog)
 
-    assert received_message.user_id == user_id
-    assert received_message.project_id == project_id
-    assert received_message.node_id == node_id
-    assert received_message.messages == ["expected message"] * 3
+    assert job_log.job_id == project_id
+    assert job_log.node_id == node_id
+    assert job_log.messages == ["expected message"] * 3
 
 
 #
