@@ -408,14 +408,14 @@ def create_payment_method_router():
         assert payment  # nosec
         assert auth  # nosec
 
-        return AckPaymentWithPaymentMethod(
+        return AckPaymentWithPaymentMethod(  # nosec
             success=True,
             invoice_url="https://fakeimg.pl/300/",
             payment_id=f"{uuid4()}",
             message=f"Payed with payment-method {id}",
         )
 
-    return router
+    return router  # nosec
 
 
 def create_app():
