@@ -65,7 +65,7 @@ async def acknowledge_payment(
     )
 
     if ack.saved:
-        created = await payments_methods.create_payment_method(
+        created = await payments_methods.insert_payment_method(
             repo=repo_methods,
             payment_method_id=ack.saved.payment_method_id,
             user_id=transaction.user_id,

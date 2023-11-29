@@ -126,7 +126,7 @@ async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
         _logger.debug("Notify front-end of payment-method created! ")
 
 
-async def create_payment_method(
+async def insert_payment_method(
     repo: PaymentsMethodsRepo,
     *,
     payment_method_id: PaymentMethodID,
@@ -134,7 +134,10 @@ async def create_payment_method(
     wallet_id: WalletID,
     ack: AckPaymentMethod,
 ) -> PaymentsMethodsDB:
-    """Direct creation of payment-method"""
+    """Direct creation of payment-method.
+    NOTE: that this does NOT communicates with the gateway.
+    Used e.g. when gateway saved payment method after one-time payment
+    """
     return await repo.insert_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
