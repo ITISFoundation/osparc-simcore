@@ -214,9 +214,10 @@ async def test_one_job_multiple_registrations(
     async def _(job_log: JobLog):
         pass
 
+    await log_distributor.register(project_id, _)
     with pytest.raises(HTTPException) as e_info:
         await log_distributor.register(project_id, _)
-        await log_distributor.register(project_id, _)
+    await log_distributor.deregister(project_id)
 
 
 async def test_log_distributor_register_deregister(
