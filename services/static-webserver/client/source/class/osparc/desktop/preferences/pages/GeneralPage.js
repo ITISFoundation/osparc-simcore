@@ -24,11 +24,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     const title = this.tr("General Settings");
     this.base(arguments, title, iconSrc);
 
-    const walletIndicatorSettings = this.__createCreditsIndicatorSettings();
-    this.add(walletIndicatorSettings);
-
+    this.add(this.__createCreditsIndicatorSettings());
     this.add(this.__createInactivitySetting());
     this.add(this.__createJobConcurrencySetting());
+    this.add(this.__createUserPrivacySettings());
   },
 
   statics: {
@@ -142,6 +141,21 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
+      return box;
+    },
+    __createUserPrivacySettings: function() {
+      const box = this._createSectionBox("Privacy settings");
+
+      const label = this._createHelpLabel(this.tr("Help improve user experience."));
+      box.add(label);
+
+      const preferencesSettings = osparc.Preferences.getInstance();
+
+      const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Allow collection of usage data."));
+      preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
+      cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
+      box.add(cbAllowMetricsCollection);
+
       return box;
     }
   }
