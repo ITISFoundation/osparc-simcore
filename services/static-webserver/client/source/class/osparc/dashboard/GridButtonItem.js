@@ -110,17 +110,41 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           break;
         case "tick-unselected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
+          control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button-outlined",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            alignX: "center",
+            alignY: "middle",
+            focusable: false
+          });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
           this._add(control, {
-            top: 4,
-            right: 4
+            top: 8,
+            right: 8
           });
           break;
         case "tick-selected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
+          control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            padding: 5,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/check/12",
+            focusable: false
+          });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
           this._add(control, {
-            top: 4,
-            right: 4
+            top: 8,
+            right: 8
           });
           break;
         case "lock-status":

@@ -272,7 +272,19 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "pb-listitem": {
       style: {
-        radius: 5
+        radius: 5,
+        width: 1,
+        style: "solid",
+        color: "transparent"
+      }
+    },
+
+    "pb-selected": {
+      includes: "pb-listitem",
+      style: {
+        width: 2,
+        style: "solid",
+        color: "success"
       }
     },
 

@@ -29,6 +29,10 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
+    this.set({
+      appearance: "pb-new"
+    });
+
     this._buildLayout();
 
     if (title) {

@@ -141,17 +141,92 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "pb-listitem",
           padding: 5,
-          backgroundColor: "transparent_overlay"
+          backgroundColor: "background-card-overlay"
         };
         if (states.hovered) {
-          style.backgroundColor = "background-main-3";
+          style.backgroundColor = "default-button-hover";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "background-main-4";
+          style.padding = 3;
+          style.backgroundColor = "default-button-active";
         }
         return style;
       }
     },
+
+    "pb-new":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "success_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover";
+        }
+        if (states.actived) {
+          style.backgroundColor = "info";
+        }
+        return style;
+      }
+    },
+
+    "pb-study":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "success_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover";
+        }
+        if (states.selected || states.checked) {
+          style.decorator = "pb-selected";
+          style.backgroundColor = "info";
+        }
+        return style;
+      }
+    },
+
+    "pb-template":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "warning_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover";
+        }
+
+        return style;
+      }
+    },
+
+    "pb-dynamic":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "info_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover";
+        }
+        return style;
+      }
+    },
+
+    "pb-computational":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "success_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover";
+        }
+        return style;
+      }
+    },
+
     "selectable": {
       include: "material-button",
       style: function(states) {
