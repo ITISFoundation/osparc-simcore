@@ -26,6 +26,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.exceptions import (
     S3AccessError,
@@ -42,13 +43,15 @@ from tests.helpers.file_utils import (
     parametrized_file_size,
     upload_file_to_presigned_link,
 )
-from types_aiobotocore_s3.type_defs import DeleteTypeDef, ObjectTypeDef
+from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
 
 @pytest.fixture
-def mock_config(mocked_s3_server_envs, monkeypatch: pytest.MonkeyPatch):
+def mock_config(
+    mocked_s3_server_envs: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # NOTE: override services/storage/tests/conftest.py::mock_config
     monkeypatch.setenv("STORAGE_POSTGRES", "null")
 
@@ -66,55 +69,6 @@ async def test_storage_storage_s3_client_creation(app_settings: Settings):
         assert not response["Buckets"]
     with pytest.raises(botocore.exceptions.HTTPClientError):
         await storage_s3_client.client.list_buckets()
-
-
-async def _clean_bucket_content(
-    storage_s3_client: StorageS3Client, bucket: S3BucketName
-):
-    response = await storage_s3_client.client.list_object_versions(Bucket=bucket)
-    while "Versions" in response or "DeleteMarkers" in response:
-        version_to_delete = DeleteTypeDef(
-            Objects=[
-                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
-                for obj in response["Versions"]
-                if "Key" in obj and "VersionId" in obj
-            ]
-        )
-        delete_markers_to_delete = DeleteTypeDef(
-            Objects=[
-                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
-                for obj in response["DeleteMarkers"]
-                if "Key" in obj and "VersionId" in obj
-            ]
-        )
-        await asyncio.gather(
-            storage_s3_client.client.delete_objects(
-                Bucket=bucket, Delete=version_to_delete
-            ),
-            storage_s3_client.client.delete_objects(
-                Bucket=bucket, Delete=delete_markers_to_delete
-            ),
-        )
-        response = await storage_s3_client.client.list_object_versions(Bucket=bucket)
-
-
-async def _remove_all_buckets(storage_s3_client: StorageS3Client):
-    response = await storage_s3_client.client.list_buckets()
-    bucket_names = [
-        bucket["Name"] for bucket in response["Buckets"] if "Name" in bucket
-    ]
-    await asyncio.gather(
-        *(
-            _clean_bucket_content(storage_s3_client, S3BucketName(bucket))
-            for bucket in bucket_names
-        )
-    )
-    await asyncio.gather(
-        *(
-            storage_s3_client.client.delete_bucket(Bucket=bucket)
-            for bucket in bucket_names
-        )
-    )
 
 
 @pytest.fixture
@@ -135,8 +89,6 @@ async def storage_s3_client(
             "Buckets"
         ], f"for testing puproses, there should be no bucket lying around! {response=}"
         yield storage_s3_client
-        # cleanup
-        await _remove_all_buckets(storage_s3_client)
 
 
 async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
@@ -159,9 +111,7 @@ async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
 
 
 @pytest.fixture
-async def storage_s3_bucket(
-    storage_s3_client: StorageS3Client, faker: Faker
-) -> AsyncIterator[str]:
+async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) -> str:
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket_name = faker.pystr()
@@ -172,15 +122,7 @@ async def storage_s3_bucket(
         bucket_struct.get("Name") for bucket_struct in response["Buckets"]
     ], f"failed creating {bucket_name}"
 
-    yield bucket_name
-    # cleanup the bucket
-    await _clean_bucket_content(storage_s3_client, bucket_name)
-    # remove bucket
-    await storage_s3_client.client.delete_bucket(Bucket=bucket_name)
-    response = await storage_s3_client.client.list_buckets()
-    assert bucket_name not in [
-        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
-    ], f"{bucket_name} is already in S3, please check why"
+    return bucket_name
 
 
 async def test_create_single_presigned_upload_link(
