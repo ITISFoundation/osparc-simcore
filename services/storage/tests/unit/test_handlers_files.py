@@ -778,6 +778,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     client: TestClient,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    with_versioning_enabled: None,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
