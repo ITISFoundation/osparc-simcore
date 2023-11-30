@@ -349,8 +349,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 await self._update_database_from_storage(conn, fmd)
             except S3KeyNotFoundError:
                 # the file does not exist, so we delete the entry in the db
-                async with self.engine.acquire() as conn:
-                    await db_file_meta_data.delete(conn, [fmd.file_id])
+                await db_file_meta_data.delete(conn, [fmd.file_id])
 
     async def complete_file_upload(
         self,
