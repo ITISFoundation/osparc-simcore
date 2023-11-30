@@ -84,7 +84,7 @@ def setup_socketio(app: FastAPI):
         # NOTE: this might be moved somewhere else when notifier incorporates emails etc
         notifier = Notifier(
             sio_manager=app.state.external_socketio,
-            users_repo=PaymentsUsersRepo(engine=get_engine(app)),
+            users_repo=PaymentsUsersRepo(get_engine(app)),
         )
         notifier.set_to_app_state(app)
         assert Notifier.get_from_app_state(app) == notifier  # nosec
