@@ -10,9 +10,10 @@ import asyncio
 import sys
 import urllib.parse
 import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 from time import perf_counter
-from typing import AsyncIterator, Awaitable, Callable, Iterator, cast
+from typing import cast
 
 import dotenv
 import pytest
@@ -57,6 +58,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from tests.helpers.file_utils import upload_file_to_presigned_link
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
+from types_aiobotocore_s3.type_defs import DeleteTypeDef
 from yarl import URL
 
 pytest_plugins = [
@@ -203,24 +205,39 @@ async def mocked_s3_server_envs(
     async with session.create_client(
         "s3",
         endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
-        aws_secret_access_key="xxx",
+        aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
     ) as client:
         await _remove_all_buckets(client)
 
 
-async def _clean_bucket_content(aiobotore_s3_client, bucket: S3BucketName):
-    response = await aiobotore_s3_client.list_objects_v2(Bucket=bucket)
-    while response["KeyCount"] > 0:
-        await aiobotore_s3_client.delete_objects(
-            Bucket=bucket,
-            Delete={
-                "Objects": [
-                    {"Key": obj["Key"]} for obj in response["Contents"] if "Key" in obj
+async def _clean_bucket_content(aiobotore_s3_client, bucket: S3BucketName) -> None:
+    response = await aiobotore_s3_client.list_object_versions(Bucket=bucket)
+    while "Versions" in response or "DeleteMarkers" in response:
+        if "Versions" in response:
+            version_to_delete = DeleteTypeDef(
+                Objects=[
+                    {"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                    for obj in response["Versions"]
+                    if "Key" in obj and "VersionId" in obj
                 ]
-            },
-        )
-        response = await aiobotore_s3_client.list_objects_v2(Bucket=bucket)
+            )
+            await aiobotore_s3_client.delete_objects(
+                Bucket=bucket, Delete=version_to_delete
+            )
+        if "DeleteMarkers" in response:
+            delete_markers_to_delete = DeleteTypeDef(
+                Objects=[
+                    {"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                    for obj in response["DeleteMarkers"]
+                    if "Key" in obj and "VersionId" in obj
+                ]
+            )
+            await aiobotore_s3_client.delete_objects(
+                Bucket=bucket, Delete=delete_markers_to_delete
+            )
+
+        response = await aiobotore_s3_client.list_object_versions(Bucket=bucket)
 
 
 async def _remove_all_buckets(aiobotore_s3_client):

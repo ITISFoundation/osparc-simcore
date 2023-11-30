@@ -374,12 +374,11 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     client: TestClient,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    with_versioning_enabled: None,
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
     file_size: ByteSize,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    user_id: UserID,
-    location_id: LocationID,
 ):
     assert client.app
     # create upload file link
