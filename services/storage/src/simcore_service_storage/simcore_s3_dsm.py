@@ -346,6 +346,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     file_id=fmd.file_id,
                     upload_id=fmd.upload_id,
                 )
+            # try to recover a file if it existed
+            await get_s3_client(self.app).undelete_file(
+                bucket=fmd.bucket_name, file_id=fmd.file_id
+            )
 
             try:
                 # try to revert to what we had in storage if any
