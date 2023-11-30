@@ -4,12 +4,14 @@ from typing import AsyncIterable, Awaitable, Callable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
+from pydantic import PositiveInt
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
 from .director_v2 import DirectorV2Api
 
 _NEW_LINE: Final[str] = "\n"
+_SLEEP_SECONDS_BEFORE_CHECK_JOB_STATUS: Final[PositiveInt] = 10
 
 
 class LogDistributionBaseException(Exception):
@@ -128,6 +130,6 @@ class LogStreamer:
             while self._queue.empty():
                 if await self._project_done():
                     return
-                await asyncio.sleep(10)
+                await asyncio.sleep(_SLEEP_SECONDS_BEFORE_CHECK_JOB_STATUS)
             log: JobLog = await self._queue.get()
             yield log.json() + _NEW_LINE
