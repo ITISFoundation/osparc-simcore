@@ -805,12 +805,13 @@ class SimcoreS3DataManager(BaseDataManager):
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
             )
+
+        if not list_of_expired_uploads:
+            return
         _logger.debug(
             "found following pending uploads: [%s]",
             [fmd.file_id for fmd in list_of_expired_uploads],
         )
-        if not list_of_expired_uploads:
-            return
 
         # try first to upload these from S3 (conservative)
         updated_fmds = await logged_gather(
