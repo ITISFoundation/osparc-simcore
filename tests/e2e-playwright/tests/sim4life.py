@@ -84,7 +84,7 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     with page.expect_response(re.compile(r'/projects/')) as response_info:
         # Project detail view pop-ups shows
         page.get_by_test_id("openResource").click()
-        if bool(PRODUCT_BILLABLE):
+        if bool(int(PRODUCT_BILLABLE)):
             # Open project with default resources
             page.get_by_test_id("openWithResources").click()
         page.wait_for_timeout(1000)
