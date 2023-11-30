@@ -39,7 +39,7 @@ class Notifier(AppStateMixin):
         payment: PaymentTransaction,
     ):
         if payment.completed_at is None:
-            raise ValueError("This payment is not complete")
+            raise ValueError("Incomplete payment")
 
         user_primary_group_id = await self._users_repo.get_primary_group_id(user_id)
 
