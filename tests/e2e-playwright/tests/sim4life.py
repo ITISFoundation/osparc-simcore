@@ -14,12 +14,19 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-PRODUCT_URL = os.environ["PRODUCT_URL"]
-PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
-USER_NAME = os.environ["USER_NAME"]
-USER_PASSWORD = os.environ["USER_PASSWORD"]
-SERVICE_TEST_ID = os.environ["SERVICE_TEST_ID"]
-SERVICE_KEY = os.environ["SERVICE_KEY"]
+# PRODUCT_URL = os.environ["PRODUCT_URL"]
+# PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
+# USER_NAME = os.environ["USER_NAME"]
+# USER_PASSWORD = os.environ["USER_PASSWORD"]
+# SERVICE_TEST_ID = os.environ["SERVICE_TEST_ID"]
+# SERVICE_KEY = os.environ["SERVICE_KEY"]
+
+PRODUCT_URL = 'https://s4l-lite.speag.com/'
+PRODUCT_BILLABLE = 0
+USER_NAME = 'playwright_testing_user@itis.testing'
+USER_PASSWORD = 'skCnTc#mh#gGP7^wng#cU7a!6Fz9*a'
+SERVICE_TEST_ID = 'studyBrowserListItem_simcore/services/dynamic/sim4life-lite'
+SERVICE_KEY = 'simcore/services/dynamic/sim4life-lite'
 
 
 def on_web_socket(ws):
@@ -73,6 +80,10 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     welcomeToSim4LifeLocator = page.get_by_text("Welcome to Sim4Life")
     if welcomeToSim4LifeLocator.is_visible():
         page.get_by_text("").nth(1).click()  # There is missing osparc-test-id for this button
+    # Quick start window
+    quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
+    if quickStartWindowCloseBtnLocator.is_visible():
+        quickStartWindowCloseBtnLocator.click()
 
     # open services tab and filter for sim4life service
     page.get_by_test_id("servicesTabBtn").click()
