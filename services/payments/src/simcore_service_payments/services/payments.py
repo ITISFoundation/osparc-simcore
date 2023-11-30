@@ -27,6 +27,7 @@ from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRep
 from tenacity import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
+from test_models_payments_transactions import payment_id
 
 from .._constants import RUT
 from ..core.errors import (
@@ -152,13 +153,6 @@ async def on_payment_completed(
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
 
-    # TODO: fire and forget! should not block credit transaction.
-    # Do it the right way though!!! Perhaps notifier should contain integrated the the f&f mechanism??
-    if notifier:
-        await notifier.notify_payment_completed(
-            user_id=transaction.user_id, payment=transaction.to_api_model()
-        )
-
     if transaction.state == PaymentTransactionState.SUCCESS:
         with log_context(
             _logger,
@@ -180,12 +174,16 @@ async def on_payment_completed(
                 created_at=transaction.completed_at,
             )
 
-        # TODO: copy credit_transaction_id into coments?
         _logger.debug(
             "%s: Response to %s was %s",
             RUT,
             f"{transaction.payment_id=}",
             f"{credit_transaction_id=}",
+        )
+
+    if notifier:
+        await notifier.notify_payment_completed(
+            user_id=transaction.user_id, payment=transaction.to_api_model()
         )
 
 
