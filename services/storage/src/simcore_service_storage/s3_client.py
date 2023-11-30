@@ -20,6 +20,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
+from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -266,9 +267,24 @@ class StorageS3Client:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
     @s3_exception_handler(_logger)
-    async def undelete(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
-        # await self.client.
-        ...
+    async def undelete_file(
+        self, bucket: S3BucketName, file_id: SimcoreS3FileID
+    ) -> None:
+        response = await self.client.list_object_versions(
+            Bucket=bucket, Prefix=file_id, MaxKeys=1
+        )
+
+        if "Versions" not in response:
+            raise S3KeyNotFoundError(key=file_id, bucket=bucket)
+
+        if "DeleteMarkers" in response:
+            latest_version = response["DeleteMarkers"][0]
+            assert "IsLatest" in latest_version  # nosec
+            assert "VersionId" in latest_version  # nosec
+            if latest_version["IsLatest"]:
+                await self.client.delete_object(
+                    Bucket=bucket, Key=file_id, VersionId=latest_version["VersionId"]
+                )
 
     async def list_all_objects_gen(
         self, bucket: S3BucketName, *, prefix: str

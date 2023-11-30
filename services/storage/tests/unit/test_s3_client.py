@@ -42,7 +42,7 @@ from tests.helpers.file_utils import (
     parametrized_file_size,
     upload_file_to_presigned_link,
 )
-from types_aiobotocore_s3.type_defs import ObjectTypeDef
+from types_aiobotocore_s3.type_defs import DeleteTypeDef, ObjectTypeDef
 
 DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
@@ -71,17 +71,31 @@ async def test_storage_storage_s3_client_creation(app_settings: Settings):
 async def _clean_bucket_content(
     storage_s3_client: StorageS3Client, bucket: S3BucketName
 ):
-    response = await storage_s3_client.client.list_objects_v2(Bucket=bucket)
-    while response["KeyCount"] > 0:
-        await storage_s3_client.client.delete_objects(
-            Bucket=bucket,
-            Delete={
-                "Objects": [
-                    {"Key": obj["Key"]} for obj in response["Contents"] if "Key" in obj
-                ]
-            },
+    response = await storage_s3_client.client.list_object_versions(Bucket=bucket)
+    while "Versions" in response or "DeleteMarkers" in response:
+        version_to_delete = DeleteTypeDef(
+            Objects=[
+                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                for obj in response["Versions"]
+                if "Key" in obj and "VersionId" in obj
+            ]
         )
-        response = await storage_s3_client.client.list_objects_v2(Bucket=bucket)
+        delete_markers_to_delete = DeleteTypeDef(
+            Objects=[
+                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                for obj in response["DeleteMarkers"]
+                if "Key" in obj and "VersionId" in obj
+            ]
+        )
+        await asyncio.gather(
+            storage_s3_client.client.delete_objects(
+                Bucket=bucket, Delete=version_to_delete
+            ),
+            storage_s3_client.client.delete_objects(
+                Bucket=bucket, Delete=delete_markers_to_delete
+            ),
+        )
+        response = await storage_s3_client.client.list_object_versions(Bucket=bucket)
 
 
 async def _remove_all_buckets(storage_s3_client: StorageS3Client):
@@ -167,6 +181,16 @@ async def storage_s3_bucket(
     assert bucket_name not in [
         bucket_struct.get("Name") for bucket_struct in response["Buckets"]
     ], f"{bucket_name} is already in S3, please check why"
+
+
+@pytest.fixture
+async def with_versioning_enabled(
+    storage_s3_client: StorageS3Client, storage_s3_bucket: str
+) -> None:
+    await storage_s3_client.client.put_bucket_versioning(
+        Bucket=storage_s3_bucket,
+        VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
+    )
 
 
 async def test_create_single_presigned_upload_link(
@@ -629,11 +653,62 @@ async def test_delete_files_in_project_node(
     )
 
 
-async def test_delete_files_in_project_node_invalid_raises(
+async def test_undelete_file_raises_if_file_does_not_exists(
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    faker: Faker,
+):
+    file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
+    with pytest.raises(S3BucketInvalidError):
+        await storage_s3_client.delete_file(
+            S3BucketName("pytestinvalidbucket"), file_id
+        )
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.undelete_file(storage_s3_bucket, file_id)
+
+
+async def test_undelete_file_with_no_versioning_raises(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     upload_file_single_presigned_link: Callable[..., Awaitable[SimcoreS3FileID]],
-    faker: Faker,
+):
+    file_id = await upload_file_single_presigned_link()
+    await storage_s3_client.delete_file(storage_s3_bucket, file_id)
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.undelete_file(storage_s3_bucket, file_id)
+
+
+async def test_undelete_file(
+    storage_s3_client: StorageS3Client,
+    with_versioning_enabled: None,
+    storage_s3_bucket: S3BucketName,
+    upload_file_single_presigned_link: Callable[..., Awaitable[SimcoreS3FileID]],
+):
+    file_id = await upload_file_single_presigned_link()
+
+    # delete the file
+    await storage_s3_client.delete_file(storage_s3_bucket, file_id)
+
+    # check it is not available
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
+
+    # undelete the file
+    await storage_s3_client.undelete_file(storage_s3_bucket, file_id)
+    # check the file is back
+    await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
+
+    # delete the file again
+    await storage_s3_client.delete_file(storage_s3_bucket, file_id)
+    # check it is not available
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_file_metadata(storage_s3_bucket, file_id)
+
+
+async def test_delete_files_in_project_node_invalid_raises(
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
 ):
     with pytest.raises(S3BucketInvalidError):
         await storage_s3_client.delete_files_in_project_node(
