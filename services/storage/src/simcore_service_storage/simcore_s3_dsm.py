@@ -261,6 +261,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
 
+            # ensure file is deleted first in case it already exists
+            await self.delete_file(user_id=user_id, file_id=file_id)
+
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(
                 conn,

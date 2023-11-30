@@ -184,8 +184,6 @@ async def upload_file(request: web.Request) -> web.Response:
     )
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
-    # ensure file is deleted first in case it already exists
-    await dsm.delete_file(user_id=query_params.user_id, file_id=path_params.file_id)
     links: UploadLinks = await dsm.create_file_upload_links(
         user_id=query_params.user_id,
         file_id=path_params.file_id,
