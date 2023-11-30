@@ -17,6 +17,7 @@ from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from starlette.background import BackgroundTask
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -377,7 +378,9 @@ async def get_log_stream(
     with log_context(_logger, logging.DEBUG, f"Streaming logs for {job_name=}"):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
-        async with LogStreamer(
-            user_id, director2_api, job_id, log_distributor
-        ) as streamer:
-            return LogStreamingResponse(streamer.log_generator())
+        log_streamer = LogStreamer(user_id, director2_api, job_id, log_distributor)
+        await log_streamer.setup()
+        return LogStreamingResponse(
+            log_streamer.log_generator(),
+            background=BackgroundTask(log_streamer.teardown),
+        )

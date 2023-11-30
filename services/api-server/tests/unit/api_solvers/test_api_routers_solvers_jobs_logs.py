@@ -12,6 +12,7 @@ from typing import Awaitable, Callable, Final, Iterable
 
 import httpx
 import pytest
+from attr import dataclass
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.projects import ProjectGet
@@ -26,16 +27,18 @@ _faker = Faker()
 
 
 @pytest.fixture
-async def fake_log_distributor(app: FastAPI):
+async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
+    @dataclass
     class FakeLogDistributor:
         _queue_name: Final[str] = "my_queue"
         _n_logs: int = 0
-        _total_n_logs: int
         _produced_logs: list[str] = []
 
         async def register(
             self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
         ):
+            self._job_id = job_id
+
             async def produce_log():
                 for _ in range(5):
                     txt = _faker.text()
@@ -53,11 +56,14 @@ async def fake_log_distributor(app: FastAPI):
             return self._queue_name
 
         async def deregister(self, job_id):
-            pass
+            assert self._job_id == job_id
+            FakeLogDistributor.deregister.is_called = True
 
     fake_log_distributor = FakeLogDistributor()
     app.dependency_overrides[get_log_distributor] = lambda: fake_log_distributor
+    FakeLogDistributor.deregister.is_called = False
     yield fake_log_distributor
+    assert FakeLogDistributor.deregister.is_called
 
 
 @pytest.fixture

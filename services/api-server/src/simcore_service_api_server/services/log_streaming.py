@@ -100,13 +100,19 @@ class LogStreamer:
         self._log_distributor: LogDistributor = log_distributor
         self._is_registered: bool = False
 
-    async def __aenter__(self):
+    async def setup(self):
         await self._log_distributor.register(self._job_id, self._queue.put)
         self._is_registered = True
+
+    async def teardown(self):
+        await self._log_distributor.deregister(self._job_id)
+
+    async def __aenter__(self):
+        await self.setup()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        await self._log_distributor.deregister(self._job_id)
+        await self.teardown()
         self._is_registered = False
 
     async def _project_done(self) -> bool:
