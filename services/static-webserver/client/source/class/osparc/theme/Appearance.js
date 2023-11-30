@@ -374,17 +374,6 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     /*
     ---------------------------------------------------------------------------
-      SidePanel
-    ---------------------------------------------------------------------------
-    */
-    sidepanel: {
-      style: state => ({
-        // backgroundColor: "background-main-1"
-      })
-    },
-
-    /*
-    ---------------------------------------------------------------------------
       Splitpane
     ---------------------------------------------------------------------------
     */
@@ -632,7 +621,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "atom",
       style: state => ({
         decorator: "chip",
-        // backgroundColor: "background-main-1",
+        backgroundColor: "background-main-1",
         padding: [3, 5]
       })
     },
