@@ -6,6 +6,7 @@
 
 
 import pytest
+import sqlalchemy as sa
 from fastapi import FastAPI
 from models_library.basic_types import IDStr
 from models_library.users import GroupID, UserID
@@ -47,31 +48,41 @@ def app_environment(
 
 
 @pytest.fixture
-async def user_in_db(
-    app: FastAPI, user_email: EmailStr, user_name: IDStr
-) -> tuple[UserID, GroupID]:
+async def user(
+    app: FastAPI,
+    user_email: EmailStr,
+    user_name: IDStr,
+    user_id: UserID,
+):
     async with get_engine(app).begin() as conn:
-        row = await conn.execute(
-            users.insert(**random_user(email=user_email, name=user_name)).returning(
-                users.c.id, users.c.primary_gid
+        result = await conn.execute(
+            users.insert()
+            .values(
+                **random_user(email=user_email, name=user_name),
+                id=user_id,
             )
-        ).first()
+            .returning(users.c.id)
+        )
+        row = result.first()
         assert row
-        return UserID(row.id), GroupID(row.primary_gid)
+        # NOTE: groupid is triggered afterwards
+        result = await conn.execute(sa.select(users).where(users.c.id == row.id))
+        row = result.first()
+
+    assert row
+    yield row
+
+    async with get_engine(app).begin() as conn:
+        await conn.execute(users.delete().where(users.c.id == row.id))
 
 
 @pytest.fixture
-def user_id(user_in_db: tuple[UserID, GroupID]) -> UserID:
-    # Overrides user_id fixture
-    return user_in_db[0]
+def user_primary_gid(user) -> GroupID:
+    return user.primary_gid
 
 
-@pytest.fixture
-def user_primary_gid(user_in_db: tuple[UserID, GroupID]) -> GroupID:
-    # Overrides user_primary_gid fixture
-    return user_in_db[1]
-
-
-def test_payments_user_repo(app: FastAPI, user_id: UserID, user_primary_gid: GroupID):
+async def test_payments_user_repo(
+    app: FastAPI, user_id: UserID, user_primary_gid: GroupID
+):
     repo = PaymentsUsersRepo(get_engine(app))
-    assert repo.get_primary_group_id(user_id) == user_primary_gid
+    assert await repo.get_primary_group_id(user_id) == user_primary_gid

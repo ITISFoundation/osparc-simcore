@@ -17,5 +17,6 @@ class PaymentsUsersRepo(BaseRepository):
             )
             row = result.first()
             if row is None:
-                raise ValueError(user_id)
+                msg = f"{user_id=} not found"
+                raise ValueError(msg)
             return GroupID(row.primary_gid)

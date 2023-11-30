@@ -101,11 +101,16 @@ def random_project(**overrides) -> dict[str, Any]:
 
 
 def random_group(**overrides) -> dict[str, Any]:
+    from simcore_postgres_database.models.groups import groups
+
     data = {
         "name": FAKE.company(),
         "description": FAKE.text(),
         "type": GroupType.STANDARD.name,
     }
+
+    assert set(data.keys()).issubset({c.name for c in groups.columns})  # nosec
+
     data.update(overrides)
     return data
 
