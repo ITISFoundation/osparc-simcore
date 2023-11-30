@@ -265,6 +265,11 @@ class StorageS3Client:
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
+    @s3_exception_handler(_logger)
+    async def undelete(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
+        # await self.client.
+        ...
+
     async def list_all_objects_gen(
         self, bucket: S3BucketName, *, prefix: str
     ) -> AsyncGenerator[list[ObjectTypeDef], None]:
