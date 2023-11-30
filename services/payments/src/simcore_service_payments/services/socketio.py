@@ -1,3 +1,4 @@
+import contextlib
 import logging
 
 import socketio
@@ -72,16 +73,12 @@ def setup_socketio(app: FastAPI):
     async def _on_startup() -> None:
         assert app.state.rabbitmq_client  # nosec
 
-        #
-        # https://python-socketio.readthedocs.io/en/stable/server.html#emitting-from-external-processes
-        #
         # Connect to the as an external process in write-only mode
-        #
+        # SEE https://python-socketio.readthedocs.io/en/stable/server.html#emitting-from-external-processes
         app.state.external_socketio = socketio.AsyncAioPikaManager(
             url=settings.dsn, logger=_logger, write_only=True
         )
 
-        # NOTE: this might be moved somewhere else when notifier incorporates emails etc
         notifier = Notifier(
             sio_manager=app.state.external_socketio,
             users_repo=PaymentsUsersRepo(get_engine(app)),
@@ -90,10 +87,14 @@ def setup_socketio(app: FastAPI):
         assert Notifier.get_from_app_state(app) == notifier  # nosec
 
     async def _on_shutdown() -> None:
+
         if app.state.external_socketio:
             await cleanup_socketio_async_pubsub_manager(
                 server_manager=app.state.external_socketio
             )
+
+        with contextlib.suppress(AttributeError):
+            Notifier.pop_from_app_state(app)
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

@@ -19,9 +19,9 @@ from ...services import payments, payments_methods
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 from ...services.socketio import Notifier
 from ._dependencies import (
+    create_repository,
     get_current_session,
-    get_notifier,
-    get_repository,
+    get_from_app_state,
     get_rut_api,
 )
 
@@ -37,13 +37,13 @@ async def acknowledge_payment(
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
     repo_pay: Annotated[
-        PaymentsTransactionsRepo, Depends(get_repository(PaymentsTransactionsRepo))
+        PaymentsTransactionsRepo, Depends(create_repository(PaymentsTransactionsRepo))
     ],
     repo_methods: Annotated[
-        PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))
+        PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
     ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
-    notifier: Annotated[Notifier, Depends(get_notifier)],
+    notifier: Annotated[Notifier, Depends(get_from_app_state(Notifier))],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/init` on the payments-gateway API"""
@@ -86,7 +86,9 @@ async def acknowledge_payment_method(
     payment_method_id: PaymentMethodID,
     ack: AckPaymentMethod,
     _session: Annotated[SessionData, Depends(get_current_session)],
-    repo: Annotated[PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))],
+    repo: Annotated[
+        PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
+    ],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
