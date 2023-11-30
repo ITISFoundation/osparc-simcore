@@ -108,6 +108,7 @@ class LogStreamer:
 
     async def teardown(self):
         await self._log_distributor.deregister(self._job_id)
+        self._is_registered = False
 
     async def __aenter__(self):
         await self.setup()
@@ -115,7 +116,6 @@ class LogStreamer:
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.teardown()
-        self._is_registered = False
 
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
