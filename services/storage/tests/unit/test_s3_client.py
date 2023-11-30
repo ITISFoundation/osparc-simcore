@@ -183,16 +183,6 @@ async def storage_s3_bucket(
     ], f"{bucket_name} is already in S3, please check why"
 
 
-@pytest.fixture
-async def with_versioning_enabled(
-    storage_s3_client: StorageS3Client, storage_s3_bucket: str
-) -> None:
-    await storage_s3_client.client.put_bucket_versioning(
-        Bucket=storage_s3_bucket,
-        VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
-    )
-
-
 async def test_create_single_presigned_upload_link(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
