@@ -791,7 +791,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return file_ids_to_remove
 
-    async def _clean_pending_upload(self, conn: SAConnection, file_id: SimcoreS3FileID):
+    async def _clean_pending_upload(
+        self, conn: SAConnection, file_id: SimcoreS3FileID
+    ) -> None:
         with suppress(FileMetaDataNotFoundError):
             fmd = await db_file_meta_data.get(conn, file_id)
             if is_valid_managed_multipart_upload(fmd.upload_id):
@@ -802,7 +804,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     upload_id=fmd.upload_id,
                 )
 
-    async def _clean_expired_uploads(self):
+    async def _clean_expired_uploads(self) -> None:
         """this method will check for all incomplete updates by checking
         the upload_expires_at entry in file_meta_data table.
         1. will try to update the entry from S3 backend if exists
@@ -817,11 +819,11 @@ class SimcoreS3DataManager(BaseDataManager):
         if not list_of_expired_uploads:
             return
         _logger.debug(
-            "found following pending uploads: [%s]",
+            "found following expired uploads: [%s]",
             [fmd.file_id for fmd in list_of_expired_uploads],
         )
 
-        # try first to upload these from S3 (conservative)
+        # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
         updated_fmds = await logged_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
@@ -838,6 +840,30 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             if not isinstance(updated_fmd, FileMetaDataAtDB)
         ]
+
+        # try to revert the files if they exist
+        async def _revert_file(
+            conn: SAConnection, fmd: FileMetaDataAtDB
+        ) -> FileMetaDataAtDB:
+            await s3_client.undelete_file(fmd.bucket_name, fmd.file_id)
+            return await self._update_database_from_storage(conn, fmd)
+
+        s3_client = get_s3_client(self.app)
+        async with self.engine.acquire() as conn:
+            reverted_fmds = await logged_gather(
+                *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
+                reraise=False,
+                log=_logger,
+                max_concurrency=MAX_CONCURRENT_DB_TASKS,
+            )
+        list_of_fmds_to_delete = [
+            fmd
+            for fmd, reverted_fmd in zip(
+                list_of_fmds_to_delete, reverted_fmds, strict=True
+            )
+            if not isinstance(reverted_fmd, FileMetaDataAtDB)
+        ]
+
         if list_of_fmds_to_delete:
             # delete the remaining ones
             _logger.debug(

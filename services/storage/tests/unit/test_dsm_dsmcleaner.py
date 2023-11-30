@@ -191,6 +191,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     file_size: ByteSize,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    with_versioning_enabled: None,
     checksum: SHA256Str | None,
 ):
     """In this test we first upload a file to have a valid entry, then we trigger
