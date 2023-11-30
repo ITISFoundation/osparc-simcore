@@ -32,7 +32,7 @@ from simcore_service_payments.models.db import (
     PaymentTransactionState,
 )
 from simcore_service_payments.models.schemas.acknowledgements import AckPaymentMethod
-from simcore_service_payments.services.payments_methods import create_payment_method
+from simcore_service_payments.services.payments_methods import insert_payment_method
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -215,7 +215,7 @@ async def test_webserver_pay_with_payment_method_workflow(
     assert app
 
     # faking Payment method
-    created = await create_payment_method(
+    created = await insert_payment_method(
         repo=PaymentsMethodsRepo(app.state.engine),
         payment_method_id=faker.uuid4(),
         user_id=user_id,

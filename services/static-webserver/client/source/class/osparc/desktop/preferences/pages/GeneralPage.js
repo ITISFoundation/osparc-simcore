@@ -26,6 +26,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     const walletIndicatorSettings = this.__createCreditsIndicatorSettings();
     this.add(walletIndicatorSettings);
+
+    this.add(this.__createInactivitySetting());
+    this.add(this.__createJobConcurrencySetting());
   },
 
   statics: {
@@ -100,6 +103,45 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
       box.add(new qx.ui.form.renderer.Single(form));
 
+      return box;
+    },
+    __createInactivitySetting: function() {
+      const box = this._createSectionBox(this.tr("Inactivity shutdown"));
+      const label = this._createHelpLabel(this.tr("Choose after how long should inactive studies be closed. A value of zero disables this function."));
+      box.add(label);
+      const form = new qx.ui.form.Form();
+      const inactivitySpinner = new qx.ui.form.Spinner().set({
+        minimum: 0,
+        maximum: Number.MAX_SAFE_INTEGER,
+        singleStep: 1,
+        allowGrowX: false
+      });
+      const preferences = osparc.Preferences.getInstance();
+      preferences.bind("userInactivityThreshold", inactivitySpinner, "value", {
+        converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
+      });
+      inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
+      form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
+      box.add(new qx.ui.form.renderer.Single(form));
+      return box;
+    },
+    __createJobConcurrencySetting: function() {
+      const box = this._createSectionBox(this.tr("Job concurrency"));
+      const label = this._createHelpLabel(this.tr("Choose how many jobs can run at the same time."));
+      box.add(label);
+      const form = new qx.ui.form.Form();
+      const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
+        minimum: 1,
+        maximum: 10,
+        singleStep: 1,
+        allowGrowX: false,
+        enabled: false
+      });
+      const preferences = osparc.Preferences.getInstance();
+      preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
+      jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
+      form.add(jobConcurrencySpinner, this.tr("Maximum concurrent jobs"));
+      box.add(new qx.ui.form.renderer.Single(form));
       return box;
     }
   }

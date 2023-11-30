@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiohttp import web
@@ -299,6 +300,9 @@ async def _delete_payment_method(request: web.Request):
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
+_TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH = 0.1
+
+
 @routes.post(
     f"/{VTAG}/wallets/{{wallet_id}}/payments-methods/{{payment_method_id}}:pay",
     name="pay_with_payment_method",
@@ -342,8 +346,15 @@ async def _pay_with_payment_method(request: web.Request):
         #       we decided not to change the return value to avoid changing the front-end logic
         #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
 
+        async def _notify_payment_completed_after_response(app, user_id, payment):
+            # NOTE: A small delay to send notification just after the response
+            await asyncio.sleep(_TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH)
+            return (
+                await notify_payment_completed(app, user_id=user_id, payment=payment),
+            )
+
         fire_and_forget_task(
-            notify_payment_completed(
+            _notify_payment_completed_after_response(
                 request.app, user_id=req_ctx.user_id, payment=payment
             ),
             task_suffix_name=f"{__name__}._pay_with_payment_method",
