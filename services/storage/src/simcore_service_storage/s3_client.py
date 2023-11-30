@@ -86,7 +86,7 @@ async def _list_objects_v2_paginated_gen(
 
 
 @dataclass
-class StorageS3Client:
+class StorageS3Client:  # pylint: disable=too-many-public-methods
     session: aioboto3.Session
     client: S3Client
     transfer_max_concurrency: int
