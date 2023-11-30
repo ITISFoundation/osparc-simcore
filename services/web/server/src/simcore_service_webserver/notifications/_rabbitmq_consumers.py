@@ -13,6 +13,7 @@ from models_library.rabbitmq_messages import (
     ProgressType,
     WalletCreditsMessage,
 )
+from models_library.socketio import SocketMessageDict
 from pydantic import parse_raw_as
 from servicelib.aiohttp.monitor_services import (
     MONITOR_SERVICE_STARTED_LABELS,
@@ -34,7 +35,6 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-    SocketMessageDict,
     send_group_messages,
     send_messages,
 )

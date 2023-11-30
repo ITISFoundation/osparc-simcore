@@ -193,10 +193,9 @@ async def upload_file(request: web.Request) -> web.Response:
     if query_params.file_size is None and not query_params.is_directory:
         # return v1 response
         assert len(links.urls) == 1  # nosec
-        return web.json_response(
-            {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}},
-            dumps=json_dumps,
-        )
+        response = {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}}
+        log.debug("Returning v1 response: %s", response)
+        return web.json_response(response, dumps=json_dumps)
 
     # v2 response
     abort_url = request.url.join(
@@ -226,7 +225,7 @@ async def upload_file(request: web.Request) -> web.Response:
             ),
         ),
     )
-
+    log.debug("returning v2 response: %s", response)
     return jsonable_encoder(response, by_alias=True)
 
 
