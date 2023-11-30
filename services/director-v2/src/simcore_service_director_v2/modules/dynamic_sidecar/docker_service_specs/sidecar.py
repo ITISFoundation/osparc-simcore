@@ -27,7 +27,7 @@ from .settings import (
     update_service_params_from_settings,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def extract_service_port_service_settings(
@@ -57,7 +57,7 @@ def _get_environment_variables(
     callbacks_mapping: CallbacksMapping = deepcopy(scheduler_data.callbacks_mapping)
 
     if not metrics_collection_allowed:
-        log.info(
+        _logger.info(
             "user=%s disabled metrics collection, disable prometheus metrics for node_id=%s",
             scheduler_data.user_id,
             scheduler_data.node_uuid,
