@@ -375,7 +375,9 @@ async def get_log_stream(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
-    with log_context(_logger, logging.DEBUG, f"Streaming logs for {job_name=}"):
+    with log_context(
+        _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
+    ):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
         log_streamer = LogStreamer(user_id, director2_api, job_id, log_distributor)
