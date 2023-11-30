@@ -6,8 +6,7 @@
 
 import asyncio
 import threading
-from collections.abc import AsyncIterable, Callable
-from typing import AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from unittest.mock import AsyncMock
 
 import arrow
@@ -15,13 +14,12 @@ import pytest
 import socketio
 from aiohttp import web
 from aiohttp.test_utils import TestServer
-from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_payments.socketio import (
     SOCKET_IO_PAYMENT_COMPLETED_EVENT,
 )
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
-from models_library.users import GroupID
+from models_library.users import GroupID, UserID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_payment_transaction
@@ -45,11 +43,21 @@ pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
+def mock_db_payments_users_repo(mocker: MockerFixture, user_primary_group_id: GroupID):
+    mocker.patch(
+        "simcore_service_payments.db.payment_users_repo.UsersRepo.get_primary_group_id",
+        return_value=user_primary_group_id,
+    )
+
+
+@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    with_disabled_postgres: None,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
+    # db layer is mocked
+    with_disabled_postgres: None,
+    mock_db_payments_users_repo: None,
 ):
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
@@ -61,11 +69,6 @@ def app_environment(
             **rabbit_env_vars_dict,
         },
     )
-
-
-@pytest.fixture
-def user_primary_group_id(faker: Faker) -> GroupID:
-    return parse_obj_as(GroupID, faker.pyint())
 
 
 @pytest.fixture
@@ -196,15 +199,16 @@ async def socketio_client_events(
 
 
 @pytest.fixture
-async def notify_payment(app: FastAPI, user_primary_group_id: GroupID) -> Callable:
+async def notify_payment(app: FastAPI, user_id: UserID) -> Callable:
     async def _():
-        payment = PaymentsTransactionsDB(
-            **random_payment_transaction(completed_at=arrow.utcnow().datetime)
-        ).to_api_model()
-
+        transaction = PaymentsTransactionsDB(
+            **random_payment_transaction(
+                user_id=user_id, completed_at=arrow.utcnow().datetime
+            )
+        )
         notifier: Notifier = Notifier.get_from_app_state(app)
         await notifier.notify_payment_completed(
-            user_primary_group_id=user_primary_group_id, payment=payment
+            user_id=transaction.user_id, payment=transaction.to_api_model()
         )
 
     return _

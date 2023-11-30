@@ -17,7 +17,13 @@ from ...models.schemas.acknowledgements import (
 )
 from ...services import payments, payments_methods
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
-from ._dependencies import get_current_session, get_repository, get_rut_api
+from ...services.socketio import Notifier
+from ._dependencies import (
+    get_current_session,
+    get_notifier,
+    get_repository,
+    get_rut_api,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -37,6 +43,7 @@ async def acknowledge_payment(
         PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))
     ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
+    notifier: Annotated[Notifier, Depends(get_notifier)],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/init` on the payments-gateway API"""
@@ -60,7 +67,7 @@ async def acknowledge_payment(
 
     assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
     background_tasks.add_task(
-        payments.on_payment_completed, transaction, rut_api, notify_enabled=True
+        payments.on_payment_completed, transaction, rut_api, notifier
     )
 
     if ack.saved:
