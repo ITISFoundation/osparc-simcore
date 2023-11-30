@@ -67,18 +67,22 @@ async def acknowledge_payment(
 
     assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
     background_tasks.add_task(
-        payments.on_payment_completed, transaction, rut_api, notifier
+        payments.on_payment_completed, transaction, rut_api, notifier=notifier
     )
 
     if ack.saved:
-        created = await payments_methods.insert_payment_method(
+        inserted = await payments_methods.insert_payment_method(
             repo=repo_methods,
             payment_method_id=ack.saved.payment_method_id,
             user_id=transaction.user_id,
             wallet_id=transaction.wallet_id,
             ack=ack.saved,
         )
-        background_tasks.add_task(payments_methods.on_payment_method_completed, created)
+        background_tasks.add_task(
+            payments_methods.on_payment_method_completed,
+            payment_method=inserted,
+            notifier=notifier,
+        )
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")
@@ -89,6 +93,7 @@ async def acknowledge_payment_method(
     repo: Annotated[
         PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
     ],
+    notifier: Annotated[Notifier, Depends(get_from_app_state(Notifier))],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
@@ -110,4 +115,8 @@ async def acknowledge_payment_method(
             ) from err
 
         assert f"{payment_method_id}" == f"{acked.payment_method_id}"  # nosec
-        background_tasks.add_task(payments_methods.on_payment_method_completed, acked)
+        background_tasks.add_task(
+            payments_methods.on_payment_method_completed,
+            payment_method=acked,
+            notifier=notifier,
+        )

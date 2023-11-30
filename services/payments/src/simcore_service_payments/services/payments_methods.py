@@ -35,6 +35,7 @@ from ..models.payments_gateway import GetPaymentMethod, InitPaymentMethod
 from ..models.schemas.acknowledgements import AckPaymentMethod
 from ..models.utils import merge_models
 from .payments_gateway import PaymentsGatewayApi
+from .socketio import Notifier
 
 _logger = logging.getLogger(__name__)
 
@@ -118,12 +119,16 @@ async def acknowledge_creation_of_payment_method(
     )
 
 
-async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
+async def on_payment_method_completed(
+    payment_method: PaymentsMethodsDB, notifier: Notifier
+):
     assert payment_method.completed_at is not None  # nosec
     assert payment_method.initiated_at < payment_method.completed_at  # nosec
 
     if payment_method.state == InitPromptAckFlowState.SUCCESS:
-        _logger.debug("Notify front-end of payment-method created! ")
+        await notifier.notify_payment_method_acked(
+            user_id=payment_method.user_id, payment_method=payment_method.to_api_model()
+        )
 
 
 async def insert_payment_method(

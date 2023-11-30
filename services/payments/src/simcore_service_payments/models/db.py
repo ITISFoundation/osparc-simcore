@@ -5,6 +5,7 @@ from typing import Any, ClassVar
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
+    PaymentMethodTransaction,
     PaymentTransaction,
 )
 from models_library.emails import LowerCaseEmailStr
@@ -120,3 +121,10 @@ class PaymentsMethodsDB(BaseModel):
                 },
             ]
         }
+
+    def to_api_model(self) -> PaymentMethodTransaction:
+        return PaymentMethodTransaction(
+            wallet_id=self.wallet_id,
+            payment_method_id=self.payment_method_id,
+            state=self.state.value,
+        )
