@@ -14,19 +14,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-# PRODUCT_URL = os.environ["PRODUCT_URL"]
-# PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
-# USER_NAME = os.environ["USER_NAME"]
-# USER_PASSWORD = os.environ["USER_PASSWORD"]
-# SERVICE_TEST_ID = os.environ["SERVICE_TEST_ID"]
-# SERVICE_KEY = os.environ["SERVICE_KEY"]
-
-PRODUCT_URL = 'https://s4l-lite.speag.com/'
-PRODUCT_BILLABLE = 0
-USER_NAME = 'playwright_testing_user@itis.testing'
-USER_PASSWORD = 'skCnTc#mh#gGP7^wng#cU7a!6Fz9*a'
-SERVICE_TEST_ID = 'studyBrowserListItem_simcore/services/dynamic/sim4life-lite'
-SERVICE_KEY = 'simcore/services/dynamic/sim4life-lite'
+PRODUCT_URL = os.environ["PRODUCT_URL"]
+PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
+USER_NAME = os.environ["USER_NAME"]
+USER_PASSWORD = os.environ["USER_PASSWORD"]
+SERVICE_TEST_ID = os.environ["SERVICE_TEST_ID"]
+SERVICE_KEY = os.environ["SERVICE_KEY"]
 
 
 def on_web_socket(ws):
@@ -128,5 +121,6 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
         reraise=True,
     ):
         with attempt:
+            print(attempt)
             resp = api_request_context.delete(f"{PRODUCT_URL}v0/projects/{extracted_uuid}")
             assert resp.status == 204
