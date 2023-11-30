@@ -32,6 +32,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
   },
 
+  properties: {
+    multiSelection: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelection",
+      apply: "__applyMultiSelection"
+    }
+  },
+
   members: {
     __servicesAll: null,
     __sortBy: null,
@@ -105,6 +115,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("servicesList");
       cards.forEach(card => {
+        card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("execute", () => this.__itemClicked(card), this);
         this._populateCardMenu(card);
       });
@@ -193,9 +204,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }, this);
       this._toolbar.add(containerSortButtons);
     },
-    // LAYOUT //
 
-    // MENU //
     _populateCardMenu: function(card) {
       const menu = card.getMenu();
       const serviceData = card.getResourceData();

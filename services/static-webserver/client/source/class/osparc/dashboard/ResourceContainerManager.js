@@ -23,6 +23,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.set({
+      paddingBottom: 60
+    });
+
     this.__resourcesList = [];
 
     const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
