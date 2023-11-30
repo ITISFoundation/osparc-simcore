@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
 from models_library.products import ProductName
@@ -464,6 +464,11 @@ async def get_allow_metrics_collection(
     )
 
     if preference is None:
-        return AllowMetricsCollectionFrontendUserPreference.get_default_value()
+        return cast(
+            bool, AllowMetricsCollectionFrontendUserPreference.get_default_value()
+        )
 
-    return AllowMetricsCollectionFrontendUserPreference.parse_obj(preference).value
+    allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.parse_obj(
+        preference
+    )
+    return cast(bool, allow_metrics_collection.value)
