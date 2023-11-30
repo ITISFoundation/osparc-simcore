@@ -27,7 +27,6 @@ from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRep
 from tenacity import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
-from test_models_payments_transactions import payment_id
 
 from .._constants import RUT
 from ..core.errors import (

@@ -44,11 +44,11 @@ def get_rut_api(request: Request) -> ResourceUsageTrackerApi:
     )
 
 
-def get_from_app_state(cls: type[AppStateMixin]) -> Callable:
+def get_from_app_state(app_state_mixin_subclass: type[AppStateMixin]) -> Callable:
     """Generic getter of app.state objects"""
 
     def _(app: Annotated[FastAPI, Depends(get_app)]):
-        return cast(cls, cls.get_from_app_state(app))
+        return app_state_mixin_subclass.get_from_app_state(app)
 
     return _
 
