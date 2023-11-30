@@ -1,4 +1,6 @@
+import sqlalchemy as sa
 from models_library.users import GroupID, UserID
+from simcore_postgres_database.models.users import users
 
 from .base import BaseRepository
 
@@ -9,7 +11,11 @@ class PaymentsUsersRepo(BaseRepository):
     # when databases are separated. The latter will be a subset copy of the former.
     #
     async def get_primary_group_id(self, user_id: UserID) -> GroupID:
-        raise NotImplementedError
-
-    async def get_billing_address(self, user_id: UserID):
-        raise NotImplementedError
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                sa.select(users.c.primary_gid).where(users.c.id == user_id)
+            )
+            row = result.first()
+            if row is None:
+                raise ValueError(user_id)
+            return GroupID(row.primary_gid)
