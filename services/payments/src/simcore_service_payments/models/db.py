@@ -2,12 +2,7 @@ import datetime
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from models_library.api_schemas_webserver.wallets import (
-    PaymentID,
-    PaymentMethodID,
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -64,28 +59,6 @@ class PaymentsTransactionsDB(BaseModel):
             ]
         }
 
-    def to_api_model(self) -> PaymentTransaction:
-        data: dict[str, Any] = {
-            "payment_id": self.payment_id,
-            "price_dollars": self.price_dollars,
-            "osparc_credits": self.osparc_credits,
-            "wallet_id": self.wallet_id,
-            "created_at": self.initiated_at,
-            "state": self.state,
-            "completed_at": self.completed_at,
-        }
-
-        if self.comment:
-            data["comment"] = self.comment
-
-        if self.state_message:
-            data["state_message"] = self.state_message
-
-        if self.invoice_url:
-            data["invoice_url"] = self.invoice_url
-
-        return PaymentTransaction.parse_obj(data)
-
 
 _EXAMPLE_AFTER_INIT_PAYMENT_METHOD = {
     "payment_method_id": "12345",
@@ -121,10 +94,3 @@ class PaymentsMethodsDB(BaseModel):
                 },
             ]
         }
-
-    def to_api_model(self) -> PaymentMethodTransaction:
-        return PaymentMethodTransaction(
-            wallet_id=self.wallet_id,
-            payment_method_id=self.payment_method_id,
-            state=self.state.value,
-        )

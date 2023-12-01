@@ -31,6 +31,7 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 
 from ..db.payments_methods_repo import PaymentsMethodsRepo
 from ..models.db import PaymentsMethodsDB
+from ..models.db_to_api import to_payment_method_api_model
 from ..models.payments_gateway import GetPaymentMethod, InitPaymentMethod
 from ..models.schemas.acknowledgements import AckPaymentMethod
 from ..models.utils import merge_models
@@ -127,7 +128,8 @@ async def on_payment_method_completed(
 
     if payment_method.state == InitPromptAckFlowState.SUCCESS:
         await notifier.notify_payment_method_acked(
-            user_id=payment_method.user_id, payment_method=payment_method.to_api_model()
+            user_id=payment_method.user_id,
+            payment_method=to_payment_method_api_model(payment_method),
         )
 
 
