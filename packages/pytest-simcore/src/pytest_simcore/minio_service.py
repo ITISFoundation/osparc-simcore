@@ -27,11 +27,11 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
     if client.bucket_exists(bucket_name):
         # remove content
         objs: Iterator[Object] = client.list_objects(
-            bucket_name, prefix=None, recursive=True
+            bucket_name, prefix=None, recursive=True, include_version=True
         )
 
         # FIXME: minio 7.1.0 does NOT remove all objects!? Added in requirements/constraints.txt
-        to_delete = [DeleteObject(o.object_name) for o in objs]
+        to_delete = [DeleteObject(o.object_name, o.version_id) for o in objs]
         errors: Iterator[DeleteError] = client.remove_objects(bucket_name, to_delete)
 
         list_of_errors = list(errors)
