@@ -122,7 +122,7 @@ qx.Class.define("osparc.Preferences", {
       check: "Boolean",
       event: "changeAllowMetricsCollection",
       apply: "__patchPreference"
-    },
+    }
   },
 
   statics: {
