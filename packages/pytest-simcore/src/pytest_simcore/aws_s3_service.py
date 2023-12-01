@@ -38,7 +38,7 @@ async def s3_bucket(s3_client: S3Client, faker: Faker) -> str:
     response = await s3_client.list_buckets()
     assert not response["Buckets"]
     bucket_name = faker.pystr()
-    await s3_client.create_bucket(Bucket=bucket)
+    await s3_client.create_bucket(Bucket=bucket_name)
     response = await s3_client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [
