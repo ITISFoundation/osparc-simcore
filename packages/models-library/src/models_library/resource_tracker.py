@@ -70,9 +70,8 @@ class HardwareInfo(BaseModel):
     @classmethod
     def warn_if_too_many_instances_are_present(cls, v) -> list[str]:
         if len(v) > 1:
-            _logger.warning(
-                "Unexpected number o ec2 instances! aws_ec2_instances=%s", v
-            )
+            msg = f"Only 1 entry is supported at the moment, received {v}"
+            raise ValueError(msg)
         return v
 
 
