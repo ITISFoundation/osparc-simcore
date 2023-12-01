@@ -5,6 +5,7 @@ import aioboto3
 import pytest
 from aiobotocore.session import ClientCreatorContext
 from botocore.client import Config
+from faker import Faker
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 
@@ -30,3 +31,18 @@ async def s3_client(
     yield client
 
     await exit_stack.aclose()
+
+
+@pytest.fixture
+async def s3_bucket(s3_client: S3Client, faker: Faker) -> str:
+    response = await s3_client.list_buckets()
+    assert not response["Buckets"]
+    bucket_name = faker.pystr()
+    await s3_client.create_bucket(Bucket=bucket)
+    response = await s3_client.list_buckets()
+    assert response["Buckets"]
+    assert bucket_name in [
+        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
+    ], f"failed creating {bucket_name}"
+
+    return bucket_name
