@@ -1,4 +1,3 @@
-import logging
 from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -29,8 +28,6 @@ from .settings import (
     extract_service_port_from_settings,
     update_service_params_from_settings,
 )
-
-log = logging.getLogger(__name__)
 
 
 def extract_service_port_service_settings(
@@ -322,18 +319,12 @@ def get_dynamic_sidecar_spec(
         | standard_simcore_docker_labels
     )
 
-    # add autoscaling constraints if pricing plan is required
-    if hardware_info and len(hardware_info.aws_ec2_instances) > 0:
-        if len(hardware_info.aws_ec2_instances) == 1:
-            ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
-            service_labels[
-                DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
-            ] = ec2_instance_type
-        else:
-            log.warning(
-                "Unexpected number oc aws_ec2_instances %s",
-                hardware_info.aws_ec2_instances,
-            )
+    # if service has a pricing plan apply constraints for autoscaling
+    if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
+        ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
+        service_labels[
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
+        ] = ec2_instance_type
 
     #  -----------
     create_service_params = {
