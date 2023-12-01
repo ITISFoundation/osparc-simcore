@@ -42,7 +42,6 @@ from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_plugins = [
-    "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.simcore_storage_service",
 ]

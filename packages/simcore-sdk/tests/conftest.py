@@ -22,7 +22,6 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.file_extra",
-    "pytest_simcore.minio_service",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",

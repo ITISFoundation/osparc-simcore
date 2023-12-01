@@ -8,7 +8,6 @@ from copy import deepcopy
 import aiohttp
 import pytest
 import tenacity
-from minio import Minio
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import parse_obj_as
@@ -40,9 +39,7 @@ def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable
 
 
 @pytest.fixture()
-async def storage_service(
-    minio_service: Minio, storage_endpoint: URL, docker_stack: dict
-) -> URL:
+async def storage_service(storage_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
     return storage_endpoint
