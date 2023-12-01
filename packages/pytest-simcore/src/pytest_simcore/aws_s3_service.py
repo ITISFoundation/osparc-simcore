@@ -25,10 +25,8 @@ async def s3_client(
         config=Config(signature_version="s3v4"),
     )
     assert isinstance(session_client, ClientCreatorContext)
-    s3_client = typing.cast(
-        S3Client, await exit_stack.enter_async_context(session_client)
-    )
+    client = typing.cast(S3Client, await exit_stack.enter_async_context(session_client))
 
-    yield s3_client
+    yield client
 
     await exit_stack.aclose()
