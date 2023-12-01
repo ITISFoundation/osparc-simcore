@@ -88,12 +88,12 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     /**
      * Common layout for tooltip label
      */
-    _createHelpLabel: function(message=null) {
+    _createHelpLabel: function(message=null, italic=false) {
       const label = new qx.ui.basic.Label().set({
         value: message,
         alignX: "left",
         rich: true,
-        font: "text-13"
+        font: italic ? "text-13-italic": "text-13"
       });
       return label;
     }
