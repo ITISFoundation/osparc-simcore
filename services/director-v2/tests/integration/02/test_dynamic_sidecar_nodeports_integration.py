@@ -46,6 +46,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
@@ -330,7 +331,7 @@ def mock_env(
     dev_feature_r_clone_enabled: str,
     rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
-    minio_config: dict[str, Any],
+    minio_s3_settings_envs: EnvVarsDict,
     storage_service: URL,
 ) -> None:
     # Works as below line in docker.compose.yml
@@ -364,11 +365,6 @@ def mock_env(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "R_CLONE_PROVIDER": "MINIO",
-            "S3_ENDPOINT": minio_config["client"]["endpoint"],
-            "S3_ACCESS_KEY": minio_config["client"]["access_key"],
-            "S3_SECRET_KEY": minio_config["client"]["secret_key"],
-            "S3_BUCKET_NAME": minio_config["bucket_name"],
-            "S3_SECURE": f"{minio_config['client']['secure']}",
             "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
             "REDIS_HOST": redis_service.REDIS_HOST,
