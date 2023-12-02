@@ -86,7 +86,7 @@ def mocked_s3_server_settings(
 
 
 @pytest.fixture
-async def mocked_s3_server_envs(
+def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
