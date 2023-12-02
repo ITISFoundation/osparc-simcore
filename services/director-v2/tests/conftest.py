@@ -34,7 +34,6 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.minio_service",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -141,7 +140,7 @@ def dynamic_sidecar_docker_image_name() -> str:
     return f"{registry}/dynamic-sidecar:{image_tag}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_env(
     monkeypatch: pytest.MonkeyPatch, dynamic_sidecar_docker_image_name: str
 ) -> EnvVarsDict:
