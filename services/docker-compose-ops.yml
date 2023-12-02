@@ -58,17 +58,17 @@ services:
     networks:
       - simcore_default
       - interactive_services_subnet
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD",
-    #       "curl",
-    #       "--head",
-    #       "http://localhost:9000/minio/health/live"
-    #     ]
-    #   interval: 5s
-    #   timeout: 20s
-    #   retries: 5
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mc",
+          "ready",
+          "local"
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
   filestash:
     image: machines/filestash:3a01b70
