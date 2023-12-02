@@ -63,7 +63,6 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def minimal_configuration(
-    mock_env: EnvVarsDict,
     redis_settings: RedisSettings,
     postgres_db,
     postgres_host_config: dict[str, str],
@@ -75,10 +74,8 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    monkeypatch.setenv("RABBIT_USER", "admin")
-    monkeypatch.setenv("RABBIT_PASSWORD", "adminadmin")
-    return mock_env | {"RABBIT_USER": "admin", "RABBIT_PASSWORD": "adminadmin"}
+def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None:
+    ...
 
 
 @pytest.fixture
@@ -150,7 +147,6 @@ def start_request_data(
 
 @pytest.fixture
 async def director_v2_client(
-    minimal_configuration: None,
     mock_env: EnvVarsDict,
     network_name: str,
     redis_settings: RedisSettings,
