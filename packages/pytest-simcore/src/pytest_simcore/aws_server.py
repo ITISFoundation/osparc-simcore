@@ -90,5 +90,5 @@ async def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_s3_server_settings.dict()
+    changed_envs: EnvVarsDict = mocked_s3_server_settings.dict(exclude_unset=True)
     return setenvs_from_dict(monkeypatch, changed_envs)
