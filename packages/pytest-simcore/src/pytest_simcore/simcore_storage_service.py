@@ -11,7 +11,7 @@ import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import parse_obj_as
-from servicelib.minio_utils import MinioRetryPolicyUponInitialization
+from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
@@ -46,7 +46,7 @@ async def storage_service(storage_endpoint: URL, docker_stack: dict) -> URL:
 
 
 # TODO: this can be used by ANY of the simcore services!
-@tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_storage_responsive(storage_endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(storage_endpoint.with_path("/v0/")) as resp:
