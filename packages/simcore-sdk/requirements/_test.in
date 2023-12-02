@@ -17,7 +17,6 @@ coverage
 docker
 faker
 flaky
-minio
 moto[server]
 pytest
 pytest-aiohttp
