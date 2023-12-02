@@ -270,21 +270,27 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
     async def undelete_file(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> None:
-        response = await self.client.list_object_versions(
-            Bucket=bucket, Prefix=file_id, MaxKeys=1
-        )
+        with log_context(_logger, logging.DEBUG, msg=f"undeleting {bucket}/{file_id}"):
+            response = await self.client.list_object_versions(
+                Bucket=bucket, Prefix=file_id, MaxKeys=1
+            )
+            _logger.debug("%s", f"{response=}")
 
-        if "Versions" not in response:
-            raise S3KeyNotFoundError(key=file_id, bucket=bucket)
+            if all(k not in response for k in ["Versions", "DeleteMarkers"]):
+                # that means there is no such file_id
+                raise S3KeyNotFoundError(key=file_id, bucket=bucket)
 
-        if "DeleteMarkers" in response:
-            latest_version = response["DeleteMarkers"][0]
-            assert "IsLatest" in latest_version  # nosec
-            assert "VersionId" in latest_version  # nosec
-            if latest_version["IsLatest"]:
-                await self.client.delete_object(
-                    Bucket=bucket, Key=file_id, VersionId=latest_version["VersionId"]
-                )
+            if "DeleteMarkers" in response:
+                latest_version = response["DeleteMarkers"][0]
+                assert "IsLatest" in latest_version  # nosec
+                assert "VersionId" in latest_version  # nosec
+                if latest_version["IsLatest"]:
+                    await self.client.delete_object(
+                        Bucket=bucket,
+                        Key=file_id,
+                        VersionId=latest_version["VersionId"],
+                    )
+                    _logger.debug("restored %s", f"{bucket}/{file_id}")
 
     async def list_all_objects_gen(
         self, bucket: S3BucketName, *, prefix: str
