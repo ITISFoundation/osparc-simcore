@@ -1,18 +1,27 @@
+#!/usr/bin/env python
+
+# pylint: disable=protected-access
+# pylint: disable=redefined-builtin
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 """ This is a simple example of a payments-gateway service
 
     - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects
     - Also used as a fake payment-gateway for manual exploratory testing
 """
 
+
 import argparse
+import datetime
 import json
 import logging
 import types
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Annotated, Any, cast
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import httpx
 import uvicorn
@@ -29,7 +38,7 @@ from fastapi import (
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
-from pydantic import HttpUrl, SecretStr, parse_file_as
+from pydantic import HttpUrl, SecretStr
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (
@@ -47,6 +56,7 @@ from simcore_service_payments.models.payments_gateway import (
 )
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPayment,
+    AckPaymentMethod,
     AckPaymentWithPaymentMethod,
 )
 from simcore_service_payments.models.schemas.auth import Token
@@ -64,7 +74,7 @@ class Settings(BaseCustomSettings):
     PAYMENTS_PASSWORD: SecretStr = "replace-with-password"
 
 
-def set_operation_id_as_handler_function_name(router: APIRouter):
+def _set_operation_id_as_handler_function_name(router: APIRouter):
     for route in router.routes:
         if isinstance(route, APIRoute):
             assert isinstance(route.endpoint, types.FunctionType)  # nosec
@@ -76,7 +86,7 @@ ERROR_HTML_RESPONSES: dict[str, Any] = {
     "4XX": {"content": {"text/html": {"schema": {"type": "string"}}}}
 }
 
-PAYMENT_HTML = """
+FORM_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -84,7 +94,7 @@ PAYMENT_HTML = """
 </head>
 <body>
     <h1>Enter Credit Card Information</h1>
-    <form action="/pay?id={0}" method="POST">
+    <form action="{0}" method="POST">
         <label for="cardNumber">Credit Card Number:</label>
         <input type="text" id="cardNumber" name="cardNumber" required>
         <br><br>
@@ -101,8 +111,20 @@ PAYMENT_HTML = """
         <input type="text" id="expirationDate" name="expirationDate" placeholder="MM/YY" required>
         <br><br>
 
-        <input type="submit" value="Submit Payment">
+        <input type="submit" value="{1}">
     </form>
+</body>
+</html>
+"""
+
+ERROR_HTTP = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error {0}</title>
+</head>
+<body>
+    <h1>{0}</h1>
 </body>
 </html>
 """
@@ -145,17 +167,47 @@ class PaymentsAuth(httpx.Auth):
             yield request
 
 
+async def ack_payment(id_: PaymentID, acked: AckPayment, settings: Settings):
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments/{id_}:ack",
+            json=acked.dict(),
+            auth=PaymentsAuth(
+                username=settings.PAYMENTS_USERNAME,
+                password=settings.PAYMENTS_PASSWORD.get_secret_value(),
+            ),
+        )
+
+
+async def ack_payment_method(
+    id_: PaymentMethodID, acked: AckPaymentMethod, settings: Settings
+):
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments-methods/{id_}:ack",
+            json=acked.dict(),
+            auth=PaymentsAuth(
+                username=settings.PAYMENTS_USERNAME,
+                password=settings.PAYMENTS_PASSWORD.get_secret_value(),
+            ),
+        )
+
+
 #
 # Dependencies
 #
 
 
-def get_payments(request: Request) -> dict[str, Any]:
-    return request.app.state.payments
-
-
 def get_settings(request: Request) -> Settings:
     return cast(Settings, request.app.state.settings)
+
+
+def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None) -> int:
+    if x_init_api_secret is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="api secret missing"
+        )
+    return 1
 
 
 #
@@ -176,34 +228,27 @@ def create_payment_router():
         response_model=PaymentInitiated,
         responses=ERROR_RESPONSES,
     )
-    def init_payment(
+    async def init_payment(
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
-        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert payment  # nosec
         assert auth  # nosec
 
-        payment_id = uuid4()
-        all_payments[payment_id] = {"init": InitPayment}
-
-        return PaymentInitiated(payment_id=payment_id)
+        id_ = f"{uuid4()}"
+        return PaymentInitiated(payment_id=id_)
 
     @router.get(
         "/pay",
         response_class=HTMLResponse,
         responses=ERROR_HTML_RESPONSES,
     )
-    def get_payment_form(
+    async def get_payment_form(
         id: PaymentID,
-        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert id  # nosec
 
-        if id not in all_payments:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-        return PAYMENT_HTML.format(f"{id}")
+        return FORM_HTML.format(f"/pay?id={id}", "Submit Payment")
 
     @router.post(
         "/pay",
@@ -211,53 +256,35 @@ def create_payment_router():
         responses=ERROR_RESPONSES,
         include_in_schema=False,
     )
-    def pay(
+    async def pay(
         id: PaymentID,
         payment_form: Annotated[PaymentForm, Depends()],
-        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
         settings: Annotated[Settings, Depends(get_settings)],
     ):
-        assert id  # nosec
-
-        if id not in all_payments:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-        all_payments[id]["form"] = payment_form
-
-        # request ACK
-        httpx.post(
-            f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments/{id}:ack",
-            json=AckPayment.Config.schema_extra["example"],  # one-time success
-            auth=PaymentsAuth(
-                username=settings.PAYMENTS_USERNAME,
-                password=settings.PAYMENTS_PASSWORD.get_secret_value(),
-            ),
+        """WARNING: this is only for faking pay. DO NOT EXPOSE TO openapi.json"""
+        acked = AckPayment(
+            success=True,
+            message=f"Fake Payment {id}",
+            invoice_url="https://fakeimg.pl/300/",
+            saved=None,
         )
+        await ack_payment(id_=id, acked=acked, settings=settings)
 
     @router.post(
         "/cancel",
         response_model=PaymentCancelled,
         responses=ERROR_RESPONSES,
     )
-    def cancel_payment(
+    async def cancel_payment(
         payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
-        all_payments: Annotated[dict[UUID, Any], Depends(get_payments)],
     ):
         assert payment  # nosec
         assert auth  # nosec
 
-        try:
-            all_payments[payment.payment_id] = "CANCELLED"
-            return PaymentCancelled(message="CANCELLED")
-        except KeyError as exc:
-            raise HTTPException(status.HTTP_404_NOT_FOUND) from exc
+        return PaymentCancelled(message=f"CANCELLED {payment.payment_id}")
 
     return router
-
-
-def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None) -> int:
-    return 1 if x_init_api_secret is not None else 0
 
 
 def create_payment_method_router():
@@ -274,20 +301,44 @@ def create_payment_method_router():
         response_model=PaymentMethodInitiated,
         responses=ERROR_RESPONSES,
     )
-    def init_payment_method(
+    async def init_payment_method(
         payment_method: InitPaymentMethod,
         auth: Annotated[int, Depends(auth_session)],
     ):
         assert payment_method  # nosec
         assert auth  # nosec
 
+        id_ = f"{uuid4()}"
+        return PaymentMethodInitiated(payment_method_id=id_)
+
     @router.get(
         "/form",
         response_class=HTMLResponse,
         responses=ERROR_HTML_RESPONSES,
     )
-    def get_form_payment_method(id: PaymentMethodID):
-        assert id  # nosec
+    async def get_form_payment_method(
+        id: PaymentMethodID,
+    ):
+        return FORM_HTML.format(f"/save?id={id}", "Save Payment")
+
+    @router.post(
+        "/save",
+        response_class=HTMLResponse,
+        responses=ERROR_RESPONSES,
+        include_in_schema=False,
+    )
+    async def save(
+        id: PaymentMethodID,
+        payment_form: Annotated[PaymentForm, Depends()],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        """WARNING: this is only for faking save. DO NOT EXPOSE TO openapi.json"""
+        card_number_masked = f"**** **** **** {payment_form.card_number[-4:]}"
+        acked = AckPaymentMethod(
+            success=True,
+            message=f"Fake Payment-method saved {card_number_masked}",
+        )
+        await ack_payment_method(id_=id, acked=acked, settings=settings)
 
     # CRUD payment-methods
     @router.post(
@@ -295,12 +346,20 @@ def create_payment_method_router():
         response_model=PaymentMethodsBatch,
         responses=ERROR_RESPONSES,
     )
-    def batch_get_payment_methods(
+    async def batch_get_payment_methods(
         batch: BatchGetPaymentMethods,
         auth: Annotated[int, Depends(auth_session)],
     ):
         assert auth  # nosec
         assert batch  # nosec
+        return PaymentMethodsBatch(
+            items=[
+                GetPaymentMethod(
+                    id=id_, created=datetime.datetime.now(tz=datetime.timezone.utc)
+                )
+                for id_ in batch.payment_methods_ids
+            ]
+        )
 
     @router.get(
         "/{id}",
@@ -313,19 +372,23 @@ def create_payment_method_router():
             **ERROR_RESPONSES,
         },
     )
-    def get_payment_method(
+    async def get_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
     ):
         assert id  # nosec
         assert auth  # nosec
 
+        return GetPaymentMethod(
+            id=id, created=datetime.datetime.now(tz=datetime.timezone.utc)
+        )
+
     @router.delete(
         "/{id}",
         status_code=status.HTTP_204_NO_CONTENT,
         responses=ERROR_RESPONSES,
     )
-    def delete_payment_method(
+    async def delete_payment_method(
         id: PaymentMethodID,
         auth: Annotated[int, Depends(auth_session)],
     ):
@@ -337,7 +400,7 @@ def create_payment_method_router():
         response_model=AckPaymentWithPaymentMethod,
         responses=ERROR_RESPONSES,
     )
-    def pay_with_payment_method(
+    async def pay_with_payment_method(
         id: PaymentMethodID,
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
@@ -346,31 +409,25 @@ def create_payment_method_router():
         assert payment  # nosec
         assert auth  # nosec
 
-    return router
+        return AckPaymentWithPaymentMethod(  # nosec
+            success=True,
+            invoice_url="https://fakeimg.pl/300/",
+            payment_id=f"{uuid4()}",
+            message=f"Payed with payment-method {id}",
+        )
 
-
-@asynccontextmanager
-async def _app_lifespan(app: FastAPI):
-    state_path = Path("app.state.payments.ignore.json")
-    if state_path.exists():
-        app.state.payments = parse_file_as(dict[str, Any], state_path)
-
-    yield
-
-    state_path.write_text(json.dumps(jsonable_encoder(app.state.payments), indent=1))
+    return router  # nosec
 
 
 def create_app():
     app = FastAPI(
         title="osparc-compliant payment-gateway",
         version=PAYMENTS_GATEWAY_SPECS_VERSION,
-        lifespan=_app_lifespan,
         debug=True,
     )
     app.openapi_version = "3.0.0"  # NOTE: small hack to allow current version of `42Crunch.vscode-openapi` to work with openapi
     override_fastapi_openapi_method(app)
 
-    app.state.payments = {}
     app.state.settings = Settings.create_from_envs()
     logging.info(app.state.settings.json(indent=2))
 
@@ -379,7 +436,7 @@ def create_app():
         create_payment_method_router,
     ):
         router = factory()
-        set_operation_id_as_handler_function_name(router)
+        _set_operation_id_as_handler_function_name(router)
         app.include_router(router)
 
     return app

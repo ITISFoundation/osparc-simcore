@@ -44,7 +44,7 @@ class S3AccessError(StorageRuntimeError):
 
 class S3BucketInvalidError(S3AccessError):
     code = "s3_bucket.invalid_error"
-    msg_template: str = "The {bucket} is invalid"
+    msg_template: str = "The bucket '{bucket}' is invalid"
 
 
 class S3KeyNotFoundError(S3AccessError):

@@ -3,10 +3,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from servicelib.logging_utils import log_context
-from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_postgres_database.models.payments_transactions import (
-    PaymentTransactionState,
-)
 
 from ..._constants import ACKED, PGDB
 from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
@@ -54,27 +50,21 @@ async def acknowledge_payment(
         f"{payment_id=}",
     ):
         try:
-            transaction = await repo_pay.update_ack_payment_transaction(
-                payment_id=payment_id,
-                completion_state=(
-                    PaymentTransactionState.SUCCESS
-                    if ack.success
-                    else PaymentTransactionState.FAILED
-                ),
-                state_message=ack.message,
-                invoice_url=ack.invoice_url,
+            transaction = await payments.acknowledge_one_time_payment(
+                repo_pay, payment_id=payment_id, ack=ack
             )
         except PaymentNotFoundError as err:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if transaction.state == PaymentTransactionState.SUCCESS:
-        assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
-        background_tasks.add_task(payments.on_payment_completed, transaction, rut_api)
+    assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
+    background_tasks.add_task(
+        payments.on_payment_completed, transaction, rut_api, notify_enabled=True
+    )
 
     if ack.saved:
-        created = await payments_methods.create_payment_method(
+        created = await payments_methods.insert_payment_method(
             repo=repo_methods,
             payment_method_id=ack.saved.payment_method_id,
             user_id=transaction.user_id,
@@ -102,7 +92,6 @@ async def acknowledge_payment_method(
         f"{payment_method_id=}",
     ):
         try:
-
             acked = await payments_methods.acknowledge_creation_of_payment_method(
                 repo=repo, payment_method_id=payment_method_id, ack=ack
             )
@@ -111,6 +100,5 @@ async def acknowledge_payment_method(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if acked.state == InitPromptAckFlowState.SUCCESS:
         assert f"{payment_method_id}" == f"{acked.payment_method_id}"  # nosec
         background_tasks.add_task(payments_methods.on_payment_method_completed, acked)
