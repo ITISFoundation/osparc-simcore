@@ -365,9 +365,8 @@ def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
 @pytest.fixture
 def node_ports_config(
     node_ports_config,
+    with_bucket_versioning_enabled: str,
     simcore_services_ready,
     cleanup_file_meta_data: None,
-    bucket: str,
-    with_bucket_versioning: None,
 ) -> None:
     return None
