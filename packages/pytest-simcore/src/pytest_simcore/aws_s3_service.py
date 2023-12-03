@@ -40,28 +40,7 @@ async def s3_client(s3_settings: S3Settings) -> typing.AsyncIterator[S3Client]:
     await exit_stack.aclose()
 
 
-@pytest.fixture
-async def s3_bucket(
-    s3_settings: S3Settings, s3_client: S3Client
-) -> typing.AsyncIterator[str]:
-    bucket_name = s3_settings.S3_BUCKET_NAME
-    # check this bucket does not exist
-    response = await s3_client.list_buckets()
-    for bucket in response["Buckets"]:
-        assert "Name" in bucket
-        assert (
-            bucket["Name"] != bucket_name
-        ), f"a bucket with the test {bucket_name=} already exists, TIP: this might be from an earlier test or you are testing against a local bucket?"
-
-    await s3_client.create_bucket(Bucket=bucket_name)
-    response = await s3_client.list_buckets()
-    assert response["Buckets"]
-    assert bucket_name in [
-        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
-    ], f"failed creating {bucket_name}"
-
-    yield bucket_name
-
+async def _empty_bucket(s3_client: S3Client, bucket_name: str) -> None:
     # List object versions
     response = await s3_client.list_object_versions(Bucket=bucket_name)
 
@@ -87,8 +66,31 @@ async def s3_bucket(
         assert "Key" in obj
         await s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
 
-    # Delete the bucket itself
-    await s3_client.delete_bucket(Bucket=bucket_name)
+
+@pytest.fixture
+async def s3_bucket(
+    s3_settings: S3Settings, s3_client: S3Client
+) -> typing.AsyncIterator[str]:
+    bucket_name = s3_settings.S3_BUCKET_NAME
+
+    response = await s3_client.list_buckets()
+    bucket_exists = bucket_name in [
+        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
+    ]
+    if bucket_exists:
+        await _empty_bucket(s3_client, bucket_name)
+
+    if not bucket_exists:
+        await s3_client.create_bucket(Bucket=bucket_name)
+    response = await s3_client.list_buckets()
+    assert response["Buckets"]
+    assert bucket_name in [
+        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
+    ], f"failed creating {bucket_name}"
+
+    yield bucket_name
+
+    await _empty_bucket(s3_client, bucket_name)
 
 
 @pytest.fixture

@@ -82,6 +82,9 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     if "DOCKER_IMAGE_TAG" not in os.environ:
         env_devel["DOCKER_IMAGE_TAG"] = "production"
 
+    # ensure we do not use the bucket of simcore or so
+    env_devel["S3_BUCKET_NAME"] = "pytestbucket"
+
     return {key: value for key, value in env_devel.items() if value is not None}
 
 

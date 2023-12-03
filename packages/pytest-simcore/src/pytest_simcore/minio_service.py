@@ -23,7 +23,7 @@ def minio_s3_settings(
         S3_SECRET_KEY=testing_environ_vars["S3_SECRET_KEY"],
         S3_ENDPOINT=f"{get_localhost_ip()}:{get_service_published_port('minio')}",
         S3_SECURE=parse_obj_as(bool, testing_environ_vars["S3_SECURE"]),
-        S3_BUCKET_NAME=f"pytest{faker.pystr().lower()}",
+        S3_BUCKET_NAME=testing_environ_vars["S3_BUCKET_NAME"],
     )
 
 
