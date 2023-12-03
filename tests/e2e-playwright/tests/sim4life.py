@@ -8,7 +8,8 @@
 import os
 import re
 import pytest
-from playwright.sync_api import BrowserContext, Page, APIRequestContext
+from http import HTTPStatus
+from playwright.sync_api import  Page, APIRequestContext
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -30,49 +31,16 @@ def on_web_socket(ws):
 
 
 @pytest.fixture
-def api_request_context(context: BrowserContext):
-
-    yield context.request
-
-
-@pytest.fixture
-def log_in_and_out(osparc_test_id_attribute: None, api_request_context: APIRequestContext, page: Page):
-    print("Before test: Logging in starts")
-    page.goto(PRODUCT_URL)
-
-    # In case the accept cookies or new release window shows up, we accept
-    page.wait_for_timeout(2000)
-    acceptCookiesBtnLocator = page.get_by_test_id("acceptCookiesBtn")
-    if acceptCookiesBtnLocator.is_visible():
-        acceptCookiesBtnLocator.click()
-        page.wait_for_timeout(1000)
-        newReleaseCloseBtnLocator = page.get_by_test_id("newReleaseCloseBtn")
-        if newReleaseCloseBtnLocator.is_visible():
-            newReleaseCloseBtnLocator.click()
-
-    _user_email_box = page.get_by_test_id("loginUserEmailFld")
-    _user_email_box.click()
-    _user_email_box.fill(USER_NAME)
-    _user_password_box = page.get_by_test_id("loginPasswordFld")
-    _user_password_box.click()
-    _user_password_box.fill(USER_PASSWORD)
-    page.get_by_test_id("loginSubmitBtn").click()
-
-    yield
-
-    print("After test cleaning: Logging out starts")
-    api_request_context.post(f"{PRODUCT_URL}v0/auth/logout")
+def product_and_user() -> tuple:
+    product_url = PRODUCT_URL
+    user_name = USER_NAME
+    user_password = USER_PASSWORD
+    return (product_url, user_name, user_password)
 
 
-def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context: APIRequestContext):
+def test_sim4life(page: Page, log_in_and_out: None, api_request_context: APIRequestContext):
     # connect and listen to websocket
     page.on("websocket", on_web_socket)
-
-    # Welcome to Sim4Life
-    page.wait_for_timeout(5000)
-    welcomeToSim4LifeLocator = page.get_by_text("Welcome to Sim4Life")
-    if welcomeToSim4LifeLocator.is_visible():
-        page.get_by_text("").nth(1).click()  # There is missing osparc-test-id for this button
 
     # open services tab and filter for sim4life service
     page.get_by_test_id("servicesTabBtn").click()
@@ -84,7 +52,7 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     with page.expect_response(re.compile(r'/projects/')) as response_info:
         # Project detail view pop-ups shows
         page.get_by_test_id("openResource").click()
-        if PRODUCT_BILLABLE == "true":
+        if bool(int(PRODUCT_BILLABLE)):
             # Open project with default resources
             page.get_by_test_id("openWithResources").click()
         page.wait_for_timeout(1000)
@@ -118,4 +86,4 @@ def test_billable_sim4life(page: Page, log_in_and_out: None, api_request_context
     ):
         with attempt:
             resp = api_request_context.delete(f"{PRODUCT_URL}v0/projects/{extracted_uuid}")
-            assert resp.status == 204
+            assert resp.status == HTTPStatus.NO_CONTENT
