@@ -46,6 +46,8 @@ python-slugify==8.0.1
     # via pytest-playwright
 requests==2.31.0
     # via pytest-base-url
+tenacity==8.2.3
+    # via -r _test.in
 text-unidecode==1.3
     # via python-slugify
 tomli==2.0.1
