@@ -38,23 +38,10 @@ def product_and_user() -> tuple:
     return (product_url, user_name, user_password)
 
 
-def test_sim4life(page: Page, log_in_and_out: None, api_request_context: APIRequestContext):
+def test_sim4life(page: Page, log_in_and_out: None, api_request_context: APIRequestContext, product_and_user: tuple):
     # connect and listen to websocket
     page.on("websocket", on_web_socket)
 
-<<<<<<< HEAD
-=======
-    # Welcome to Sim4Life
-    page.wait_for_timeout(5000)
-    welcomeToSim4LifeLocator = page.get_by_text("Welcome to Sim4Life")
-    if welcomeToSim4LifeLocator.is_visible():
-        page.get_by_text("").nth(1).click()  # There is missing osparc-test-id for this button
-    # Quick start window
-    quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
-    if quickStartWindowCloseBtnLocator.is_visible():
-        quickStartWindowCloseBtnLocator.click()
-
->>>>>>> 8d534da9a561a346c9c9ff4d9b8f9f7b75e09ca9
     # open services tab and filter for sim4life service
     page.get_by_test_id("servicesTabBtn").click()
     _textbox = page.get_by_role("textbox", name="search")
@@ -98,6 +85,5 @@ def test_sim4life(page: Page, log_in_and_out: None, api_request_context: APIRequ
         reraise=True,
     ):
         with attempt:
-            print(attempt)
             resp = api_request_context.delete(f"{PRODUCT_URL}v0/projects/{extracted_uuid}")
             assert resp.status == HTTPStatus.NO_CONTENT

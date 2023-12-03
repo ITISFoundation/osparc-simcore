@@ -43,6 +43,10 @@ def log_in_and_out(osparc_test_id_attribute: None, api_request_context: APIReque
     welcomeToSim4LifeLocator = page.get_by_text("Welcome to Sim4Life")
     if welcomeToSim4LifeLocator.is_visible():
         page.get_by_text("").nth(1).click()  # There is missing osparc-test-id for this button
+    # Quick start window
+    quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
+    if quickStartWindowCloseBtnLocator.is_visible():
+        quickStartWindowCloseBtnLocator.click()
 
     yield
 
