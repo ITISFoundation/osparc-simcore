@@ -30,3 +30,4 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 requests
+types-aiobotocore[s3] # s3 storage
