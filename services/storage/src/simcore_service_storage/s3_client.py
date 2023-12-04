@@ -20,6 +20,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
+from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -85,7 +86,7 @@ async def _list_objects_v2_paginated_gen(
 
 
 @dataclass
-class StorageS3Client:
+class StorageS3Client:  # pylint: disable=too-many-public-methods
     session: aioboto3.Session
     client: S3Client
     transfer_max_concurrency: int
@@ -264,6 +265,32 @@ class StorageS3Client:
     @s3_exception_handler(_logger)
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
+
+    @s3_exception_handler(_logger)
+    async def undelete_file(
+        self, bucket: S3BucketName, file_id: SimcoreS3FileID
+    ) -> None:
+        with log_context(_logger, logging.DEBUG, msg=f"undeleting {bucket}/{file_id}"):
+            response = await self.client.list_object_versions(
+                Bucket=bucket, Prefix=file_id, MaxKeys=1
+            )
+            _logger.debug("%s", f"{response=}")
+
+            if all(k not in response for k in ["Versions", "DeleteMarkers"]):
+                # that means there is no such file_id
+                raise S3KeyNotFoundError(key=file_id, bucket=bucket)
+
+            if "DeleteMarkers" in response:
+                latest_version = response["DeleteMarkers"][0]
+                assert "IsLatest" in latest_version  # nosec
+                assert "VersionId" in latest_version  # nosec
+                if latest_version["IsLatest"]:
+                    await self.client.delete_object(
+                        Bucket=bucket,
+                        Key=file_id,
+                        VersionId=latest_version["VersionId"],
+                    )
+                    _logger.debug("restored %s", f"{bucket}/{file_id}")
 
     async def list_all_objects_gen(
         self, bucket: S3BucketName, *, prefix: str
