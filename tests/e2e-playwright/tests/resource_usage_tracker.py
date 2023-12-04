@@ -58,7 +58,7 @@ def test_resource_usage_tracker(
 
     for attempt in Retrying(
         wait=wait_fixed(60),
-        stop=stop_after_delay(1000),
+        stop=stop_after_delay(800),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
