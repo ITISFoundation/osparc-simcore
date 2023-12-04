@@ -1414,4 +1414,4 @@ async def get_project_inactivity(
     project_inactivity = await director_v2_api.get_project_inactivity(
         app, project_id, max_inactivity_seconds
     )
-    return parse_obj_as(Envelope[GetProjectInactivityResponse], project_inactivity)
+    return parse_obj_as(GetProjectInactivityResponse, project_inactivity)
