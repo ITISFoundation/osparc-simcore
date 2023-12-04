@@ -23,6 +23,7 @@ import faker
 from faker import Faker
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.groups import groups
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -101,7 +102,6 @@ def random_project(**overrides) -> dict[str, Any]:
 
 
 def random_group(**overrides) -> dict[str, Any]:
-    from simcore_postgres_database.models.groups import groups
 
     data = {
         "name": FAKE.company(),
