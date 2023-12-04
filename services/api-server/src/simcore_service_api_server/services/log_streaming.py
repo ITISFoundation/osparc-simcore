@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Queue
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import AsyncIterable, Awaitable, Callable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
@@ -139,10 +139,10 @@ class LogStreamer:
                     0.2
                     if last_log_time is None
                     else min(
-                        (datetime.now() - last_log_time).total_seconds(),
+                        (datetime.now(tz=timezone.utc) - last_log_time).total_seconds(),
                         self._max_log_check_seconds,
                     )
                 )
             log: JobLog = await self._queue.get()
-            last_log_time = datetime.now()
+            last_log_time = datetime.now(tz=timezone.utc)
             yield log.json() + _NEW_LINE
