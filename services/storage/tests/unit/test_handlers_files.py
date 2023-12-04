@@ -10,10 +10,11 @@ import filecmp
 import json
 import urllib.parse
 from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import AsyncContextManager, Literal
+from typing import Literal
 from uuid import uuid4
 
 import pytest
@@ -96,7 +97,7 @@ async def assert_multipart_uploads_in_progress(
 @dataclass
 class SingleLinkParam:
     url_query: dict[str, str]
-    expected_link_scheme: Literal["s3"] | Literal["http"]
+    expected_link_scheme: Literal["s3", "http"]
     expected_link_query_keys: list[str]
     expected_chunk_size: ByteSize
 
@@ -316,7 +317,7 @@ class MultiPartParam:
         ),
     ],
 )
-async def test_create_upload_file_presigned_with_file_size_returns_multipart_links_if_bigger_than_99MiB(
+async def test_create_upload_file_presigned_with_file_size_returns_multipart_links_if_bigger_than_99MiB(  # noqa: N802
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
@@ -373,12 +374,11 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     client: TestClient,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    with_versioning_enabled: None,
     simcore_file_id: SimcoreS3FileID,
     link_type: LinkType,
     file_size: ByteSize,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    user_id: UserID,
-    location_id: LocationID,
 ):
     assert client.app
     # create upload file link
@@ -650,6 +650,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     file_upload_link = await create_upload_file_link_v2(
         simcore_file_id, link_type="s3", file_size=file_size
     )
+    assert file_upload_link
     # let's use the storage s3 internal client to upload
     with file.open("rb") as fp:
         response = await storage_s3_client.client.put_object(
@@ -736,7 +737,8 @@ async def test_upload_real_file_with_s3_client(
             assert data
             future = FileUploadCompleteFutureResponse.parse_obj(data)
             if future.state != FileUploadCompleteState.OK:
-                raise ValueError(f"{data=}")
+                msg = f"{data=}"
+                raise ValueError(msg)
             assert future.state == FileUploadCompleteState.OK
             assert future.e_tag is not None
             completion_etag = future.e_tag
@@ -775,6 +777,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     client: TestClient,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    with_versioning_enabled: None,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
@@ -1154,6 +1157,7 @@ async def __list_files(
     path: str,
     expand_dirs: bool,
 ) -> list[FileMetaDataGet]:
+    assert client.app
     get_url = (
         client.app.router["get_files_metadata"]
         .url_for(
@@ -1174,6 +1178,7 @@ async def _list_files_legacy(
     location_id: LocationID,
     directory_file_upload: FileUploadSchema,
 ) -> list[FileMetaDataGet]:
+    assert directory_file_upload.urls[0].path
     directory_file_id = directory_file_upload.urls[0].path.strip("/")
     return await __list_files(
         client, user_id, location_id, path=directory_file_id, expand_dirs=True
@@ -1186,6 +1191,7 @@ async def _list_files_and_directories(
     location_id: LocationID,
     directory_file_upload: FileUploadSchema,
 ) -> list[FileMetaDataGet]:
+    assert directory_file_upload.urls[0].path
     directory_parent_path = Path(directory_file_upload.urls[0].path).parent
     directory_file_id = f"{directory_parent_path}".strip("/")
     return await __list_files(
@@ -1244,6 +1250,7 @@ async def test_ensure_expand_dirs_defaults_true(
         autospec=True,
     )
 
+    assert client.app
     get_url = (
         client.app.router["get_files_metadata"]
         .url_for(
@@ -1325,7 +1332,7 @@ async def test_upload_file_is_directory_and_remove_content(
 
 @pytest.mark.parametrize("files_in_dir", [1002])
 async def test_listing_more_than_1000_objects_in_bucket(
-    directory_with_files: Callable[..., AsyncContextManager[FileUploadSchema]],
+    directory_with_files: Callable[..., AbstractAsyncContextManager[FileUploadSchema]],
     client: TestClient,
     location_id: LocationID,
     user_id: UserID,
