@@ -28,7 +28,7 @@ def to_payments_api_model(transaction: PaymentsTransactionsDB) -> PaymentTransac
     if transaction.invoice_url:
         data["invoice_url"] = transaction.invoice_url
 
-    return PaymentTransaction.parse_obj(data)
+    return PaymentTransaction(**data)
 
 
 def to_payment_method_api_model(
