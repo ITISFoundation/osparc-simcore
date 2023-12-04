@@ -10,8 +10,8 @@ import pytest
 from minio import Minio
 from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
+from minio.versioningconfig import ENABLED, VersioningConfig
 from pydantic import parse_obj_as
-from pytest import MonkeyPatch
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -27,11 +27,11 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
     if client.bucket_exists(bucket_name):
         # remove content
         objs: Iterator[Object] = client.list_objects(
-            bucket_name, prefix=None, recursive=True
+            bucket_name, prefix=None, recursive=True, include_version=True
         )
 
         # FIXME: minio 7.1.0 does NOT remove all objects!? Added in requirements/constraints.txt
-        to_delete = [DeleteObject(o.object_name) for o in objs]
+        to_delete = [DeleteObject(o.object_name, o.version_id) for o in objs]
         errors: Iterator[DeleteError] = client.remove_objects(bucket_name, to_delete)
 
         list_of_errors = list(errors)
@@ -45,7 +45,9 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 
 @pytest.fixture(scope="module")
 def minio_config(
-    docker_stack: dict, testing_environ_vars: dict, monkeypatch_module: MonkeyPatch
+    docker_stack: dict,
+    testing_environ_vars: dict,
+    monkeypatch_module: pytest.MonkeyPatch,
 ) -> dict[str, Any]:
     assert "pytest-ops_minio" in docker_stack["services"]
 
@@ -80,7 +82,6 @@ def minio_service(minio_config: dict[str, str]) -> Iterator[Minio]:
         reraise=True,
     ):
         with attempt:
-            # TODO: improve as https://docs.min.io/docs/minio-monitoring-guide.html
             if not client.bucket_exists("pytest"):
                 client.make_bucket("pytest")
             client.remove_bucket("pytest")
@@ -109,3 +110,8 @@ def bucket(minio_config: dict[str, str], minio_service: Minio) -> Iterator[str]:
     yield bucket_name
 
     _ensure_remove_bucket(minio_service, bucket_name)
+
+
+@pytest.fixture
+def with_bucket_versioning(minio_service: Minio, bucket: str) -> None:
+    minio_service.set_bucket_versioning(bucket, VersioningConfig(ENABLED))
