@@ -445,6 +445,14 @@ async def _find_needed_instances(
 async def _cap_needed_instances(
     app: FastAPI, needed_instances: dict[EC2InstanceType, int], ec2_tags: EC2Tags
 ) -> dict[EC2InstanceType, int]:
+    """caps the needed instances dict[EC2InstanceType, int] to the maximal allowed number of instances by
+    1. limiting to 1 per asked type
+    2. increasing each by 1 until the maximum allowed number of instances is reached
+    NOTE: the maximum allowed number of instances contains the current number of running/pending machines
+
+    Raises:
+        Ec2TooManyInstancesError: raised when the maximum of machines is already running/pending
+    """
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
