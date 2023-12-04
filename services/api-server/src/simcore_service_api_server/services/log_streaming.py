@@ -91,6 +91,7 @@ class LogDistributor:
 class LogStreamer:
     def __init__(
         self,
+        *,
         user_id: UserID,
         director2_api: DirectorV2Api,
         job_id: JobID,

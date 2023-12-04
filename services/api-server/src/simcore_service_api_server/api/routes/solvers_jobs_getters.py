@@ -385,7 +385,11 @@ async def get_log_stream(
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
         log_streamer = LogStreamer(
-            user_id, director2_api, job_id, log_distributor, max_log_check_seconds
+            user_id=user_id,
+            director2_api=director2_api,
+            job_id=job_id,
+            log_distributor=log_distributor,
+            max_log_check_seconds=max_log_check_seconds,
         )
         await log_streamer.setup()
         return LogStreamingResponse(
