@@ -204,11 +204,6 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...,]] = (
         {"topics": []},
     ),
     SubcribeArgumentsTuple(
-        InstrumentationRabbitMessage.get_channel_name(),
-        _instrumentation_message_parser,
-        {"exclusive_queue": False},
-    ),
-    SubcribeArgumentsTuple(
         EventRabbitMessage.get_channel_name(),
         _events_message_parser,
         {},
