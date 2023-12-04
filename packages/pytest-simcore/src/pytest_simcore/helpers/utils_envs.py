@@ -31,13 +31,13 @@ def setenvs_from_dict(
         assert isinstance(key, str)
         assert (
             value is not None
-        ), f"{key=}{value=}"  # None keys cannot be is defined w/o value
+        ), f"{key=},{value=}"  # None keys cannot be is defined w/o value
         converted_value = value
         if isinstance(value, bool):
             converted_value = f"{'true' if value else 'false'}"
         assert isinstance(
             converted_value, str
-        ), f"client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values. problematic {key=}{value=}"
+        ), f"client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values. problematic {key=},{value=}"
 
         monkeypatch.setenv(key, converted_value)
     return deepcopy(envs)
