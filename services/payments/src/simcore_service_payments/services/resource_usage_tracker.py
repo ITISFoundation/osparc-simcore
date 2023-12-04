@@ -29,10 +29,6 @@ _logger = logging.getLogger(__name__)
 class ResourceUsageTrackerApi(BaseHttpApi, AppStateMixin):
     app_state_name: str = "source_usage_tracker_api"
 
-    #
-    # api
-    #
-
     async def create_credit_transaction(
         self,
         product_name: ProductName,

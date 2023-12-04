@@ -157,7 +157,7 @@ def create_store_link(
             ) as resp:
                 resp.raise_for_status()
 
-        # FIXME: that at this point, S3 and pg have some data that is NOT cleaned up
+        # NOTE: that at this point, S3 and pg have some data that is NOT cleaned up
         return {"store": s3_simcore_location, "path": file_id}
 
     return _create
@@ -373,6 +373,10 @@ def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
 
 @pytest.fixture
 def node_ports_config(
-    node_ports_config, simcore_services_ready, cleanup_file_meta_data: None, bucket: str
+    node_ports_config,
+    simcore_services_ready,
+    cleanup_file_meta_data: None,
+    bucket: str,
+    with_bucket_versioning: None,
 ) -> None:
     return None

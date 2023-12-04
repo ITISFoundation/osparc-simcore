@@ -6,9 +6,8 @@ import asyncio
 import urllib.parse
 from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
-from typing import AsyncContextManager
 
 import openapi_core
 import pytest
@@ -184,7 +183,7 @@ async def directory_with_files(
     create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
     populate_directory: Callable[..., Awaitable[None]],
     delete_directory: Callable[..., Awaitable[None]],
-) -> Callable[..., AsyncContextManager[FileUploadSchema]]:
+) -> Callable[..., AbstractAsyncContextManager[FileUploadSchema]]:
     @asynccontextmanager
     async def _context_manager(
         dir_name: str, file_size_in_dir: ByteSize, subdir_count: int, file_count: int
@@ -205,3 +204,13 @@ async def directory_with_files(
         await delete_directory(directory_file_upload=directory_file_upload)
 
     return _context_manager
+
+
+@pytest.fixture
+async def with_versioning_enabled(
+    storage_s3_client: StorageS3Client, storage_s3_bucket: str
+) -> None:
+    await storage_s3_client.client.put_bucket_versioning(
+        Bucket=storage_s3_bucket,
+        VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
+    )
