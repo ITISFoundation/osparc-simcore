@@ -462,36 +462,39 @@ async def _cap_needed_instances(
             num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         )
 
-    total_original_number_of_needed_machines = sum(needed_instances.values())
+    total_number_of_needed_instances = sum(needed_instances.values())
     if (
-        current_number_of_instances + total_original_number_of_needed_machines
+        current_number_of_instances + total_number_of_needed_instances
         <= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     ):
-        # ok
+        # ok that fits no need to do anything here
         return needed_instances
 
-    possible_number_of_instances_to_create = (
+    # this is asking for too many, so let's cap them
+    max_number_of_creatable_instances = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         - current_number_of_instances
     )
 
-    # we need to filter a bit here, we start with 1 of each type
+    # we start with 1 machine of each type until the max
     capped_needed_instances = {
         k: 1
         for count, k in enumerate(needed_instances)
-        if count <= possible_number_of_instances_to_create
+        if (count + 1) <= max_number_of_creatable_instances
     }
-    # TODO: this is wrong and must be changeD!!
 
-    if sum(capped_needed_instances.values()) < sum(needed_instances.values()):
+    if len(capped_needed_instances) < len(needed_instances):
         # there were too many types for the number of possible instances
         return capped_needed_instances
 
     # all instance types were added, now create more of them if possible
-    while (
-        sum(capped_needed_instances.values()) < possible_number_of_instances_to_create
-    ):
+    while sum(capped_needed_instances.values()) < max_number_of_creatable_instances:
         for instance_type, num_to_create in needed_instances.items():
+            if (
+                sum(capped_needed_instances.values())
+                == max_number_of_creatable_instances
+            ):
+                break
             if num_to_create > capped_needed_instances[instance_type]:
                 capped_needed_instances[instance_type] += 1
 
