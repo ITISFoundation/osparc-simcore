@@ -13,6 +13,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from datetime import datetime, timezone
+from http import HTTPStatus
 
 PRODUCT_URL = os.environ["PRODUCT_URL"]
 PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
@@ -30,9 +31,8 @@ def product_and_user() -> tuple:
     user_password = USER_PASSWORD
     return (product_url, user_name, user_password)
 
-@pytest.mark.testit
+
 def test_resource_usage_tracker(
-    page: Page,
     log_in_and_out: None,
     api_request_context: APIRequestContext,
     product_and_user: tuple,
@@ -41,7 +41,7 @@ def test_resource_usage_tracker(
     rut_before = api_request_context.get(
         f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
     )
-    assert rut_before.status == 200
+    assert rut_before.status == HTTPStatus.OK
     service_runs_before = rut_before.json()['data']
     service_run_ids_before = set()
     for service_run in service_runs_before:
@@ -54,7 +54,7 @@ def test_resource_usage_tracker(
         f"{PRODUCT_URL}v0/computations/{STUDY_ID}:start",
         data=data,
     )
-    assert resp.status == 201
+    assert resp.status == HTTPStatus.CREATED
 
     for attempt in Retrying(
         wait=wait_fixed(60),
@@ -67,9 +67,9 @@ def test_resource_usage_tracker(
             output = api_request_context.get(
                 f"{PRODUCT_URL}v0/projects/{STUDY_ID}"
             )
-            assert output.status == 200
+            assert output.status == HTTPStatus.OK
             workbench = output.json()['data']['workbench']
-            assert len(workbench.keys()) == NUM_OF_SLEEPERS
+            assert len(workbench.keys()) == int(NUM_OF_SLEEPERS)
             status_check = set()
             for node in list(workbench.keys()):
                 node_label = workbench[node]['label']
@@ -81,9 +81,12 @@ def test_resource_usage_tracker(
 
     # 3. Check Resource usage after
     rut_after = api_request_context.get(f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}")
+    assert rut_after.status == HTTPStatus.OK
     service_runs_after = rut_after.json()['data']
     service_run_ids_after = set()
     for service_run in service_runs_after:
         service_run_ids_after.add(service_run['service_run_id'])
 
+    # If there is an intersection with old service run id, that means that
+    # RUT didn't created a new service run id
     assert service_run_ids_before.intersection(service_run_ids_after) == {}
