@@ -393,7 +393,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(3, None, None, None)  # type: ignore
+    log_streamer = LogStreamer(3, None, None, None, 1)  # type: ignore
     log_streamer._is_registered = True
 
     published_logs: list[str] = []
@@ -414,7 +414,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
 
 async def test_log_generator_context(mocker: MockFixture, faker: Faker):
-    log_streamer = LogStreamer(3, None, None, None)  # type: ignore
+    log_streamer = LogStreamer(3, None, None, None, 1)  # type: ignore
     with pytest.raises(LogStreamerNotRegistered):
         async for log in log_streamer.log_generator():
             print(log)
