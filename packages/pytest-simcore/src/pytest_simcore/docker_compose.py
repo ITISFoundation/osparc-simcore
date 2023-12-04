@@ -13,7 +13,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 from collections.abc import Iterator
 from copy import deepcopy
@@ -170,38 +169,11 @@ def simcore_docker_compose(
 
 
 @pytest.fixture(scope="module")
-def inject_filestash_config_path_env(
-    osparc_simcore_scripts_dir: Path,
-    env_file_for_testing: Path,
-) -> EnvVarsDict:
-    create_filestash_config_py = (
-        osparc_simcore_scripts_dir / "filestash" / "create_config.py"
-    )
-
-    # ensures .env at git_root_dir, which will be used as current directory
-    assert env_file_for_testing.exists()
-    env_values = dotenv_values(env_file_for_testing)
-
-    process = subprocess.run(
-        ["python3", f"{create_filestash_config_py}"],
-        shell=False,
-        check=True,
-        stdout=subprocess.PIPE,
-        env=env_values,
-    )
-    filestash_config_json_path = Path(process.stdout.decode("utf-8").strip())
-    assert filestash_config_json_path.exists()
-
-    return {"TMP_PATH_TO_FILESTASH_CONFIG": f"{filestash_config_json_path}"}
-
-
-@pytest.fixture(scope="module")
 def ops_docker_compose(
     osparc_simcore_root_dir: Path,
     osparc_simcore_scripts_dir: Path,
     env_file_for_testing: Path,
     temp_folder: Path,
-    inject_filestash_config_path_env: dict[str, str],
 ) -> dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 
@@ -222,7 +194,6 @@ def ops_docker_compose(
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
-        additional_envs=inject_filestash_config_path_env,
     )
     # NOTE: do not add indent. Copy&Paste log into editor instead
     print(
@@ -280,7 +251,7 @@ def ops_docker_compose_file(
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
     # these services are useless when running in the CI
-    ops_view_only_services = ["adminer", "redis-commander", "portainer", "filestash"]
+    ops_view_only_services = ["adminer", "redis-commander", "portainer"]
     if "CI" in os.environ:
         print(
             f"WARNING: Services such as {ops_view_only_services!r} are removed from the stack when running in the CI"
