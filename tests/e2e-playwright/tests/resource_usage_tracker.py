@@ -89,4 +89,4 @@ def test_resource_usage_tracker(
 
     # If there is an intersection with old service run id, that means that
     # RUT didn't created a new service run id
-    assert service_run_ids_before.intersection(service_run_ids_after) == {}
+    assert service_run_ids_before.intersection(service_run_ids_after) == set()
