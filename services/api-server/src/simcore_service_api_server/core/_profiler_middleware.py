@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from fastapi import FastAPI
 from pyinstrument import Profiler
@@ -9,7 +10,10 @@ def _check_response_headers(
     response_headers: dict[bytes, bytes]
 ) -> list[tuple[bytes, bytes]]:
     original_content_type: str = response_headers[b"content-type"].decode()
-    assert original_content_type in {"application/x-ndjson", "application/json"}
+    assert original_content_type in {
+        "application/x-ndjson",
+        "application/json",
+    }  # nosec
     headers: dict = dict()
     headers[b"content-type"] = b"application/x-ndjson"
     return list(headers.items())
@@ -23,6 +27,16 @@ def _append_profile(body: str, profile: str) -> str:
         pass
     body += json.dumps({"profile": profile})
     return body
+
+
+def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
+    if (
+        content_type := response_headers.get(b"content-type")
+    ) and content_type == b"application/json":
+        return True
+    elif more_body := message.get("more_body"):
+        return not more_body
+    raise RuntimeError("Could not determine if last response")
 
 
 class ApiServerProfilerMiddleware:
@@ -60,10 +74,7 @@ class ApiServerProfilerMiddleware:
                     response_headers = dict(message.get("headers"))
                     message["headers"] = _check_response_headers(response_headers)
                 elif message["type"] == "http.response.body":
-                    if (
-                        response_headers.get(b"content-type") == b"application/json"
-                        or message.get("more_body") == False
-                    ):
+                    if is_last_response(response_headers, message):
                         profiler.stop()
                         message["body"] = _append_profile(
                             message["body"].decode(),
