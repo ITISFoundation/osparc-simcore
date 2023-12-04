@@ -135,7 +135,7 @@ class LogStreamer:
                 if await self._project_done():
                     return
                 await asyncio.sleep(
-                    1
+                    0.2
                     if last_log_time is None
                     else min(
                         (datetime.now() - last_log_time).total_seconds(),
