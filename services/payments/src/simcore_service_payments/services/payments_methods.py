@@ -31,9 +31,11 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 
 from ..db.payments_methods_repo import PaymentsMethodsRepo
 from ..models.db import PaymentsMethodsDB
+from ..models.db_to_api import to_payment_method_api_model
 from ..models.payments_gateway import GetPaymentMethod, InitPaymentMethod
 from ..models.schemas.acknowledgements import AckPaymentMethod
 from ..models.utils import merge_models
+from .notifier import Notifier
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -118,12 +120,17 @@ async def acknowledge_creation_of_payment_method(
     )
 
 
-async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
+async def on_payment_method_completed(
+    payment_method: PaymentsMethodsDB, notifier: Notifier
+):
     assert payment_method.completed_at is not None  # nosec
     assert payment_method.initiated_at < payment_method.completed_at  # nosec
 
     if payment_method.state == InitPromptAckFlowState.SUCCESS:
-        _logger.debug("Notify front-end of payment-method created! ")
+        await notifier.notify_payment_method_acked(
+            user_id=payment_method.user_id,
+            payment_method=to_payment_method_api_model(payment_method),
+        )
 
 
 async def insert_payment_method(

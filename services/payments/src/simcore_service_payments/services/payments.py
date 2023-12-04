@@ -36,9 +36,11 @@ from ..core.errors import (
 )
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
+from ..models.db_to_api import to_payments_api_model
 from ..models.payments_gateway import InitPayment, PaymentInitiated
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
+from .notifier import Notifier
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger()
@@ -146,16 +148,10 @@ async def acknowledge_one_time_payment(
 async def on_payment_completed(
     transaction: PaymentsTransactionsDB,
     rut_api: ResourceUsageTrackerApi,
-    *,
-    notify_enabled: bool,
+    notifier: Notifier | None,
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
-
-    if notify_enabled:
-        _logger.debug(
-            "Notify front-end of payment -> sio SOCKET_IO_PAYMENT_COMPLETED_EVENT "
-        )
 
     if transaction.state == PaymentTransactionState.SUCCESS:
         with log_context(
@@ -183,6 +179,11 @@ async def on_payment_completed(
             RUT,
             f"{transaction.payment_id=}",
             f"{credit_transaction_id=}",
+        )
+
+    if notifier:
+        await notifier.notify_payment_completed(
+            user_id=transaction.user_id, payment=to_payments_api_model(transaction)
         )
 
 
@@ -254,9 +255,9 @@ async def pay_with_payment_method(  # noqa: PLR0913
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
-    await on_payment_completed(transaction, rut, notify_enabled=False)
+    await on_payment_completed(transaction, rut, notifier=None)
 
-    return transaction.to_api_model()
+    return to_payments_api_model(transaction)
 
 
 async def get_payments_page(
@@ -272,4 +273,4 @@ async def get_payments_page(
         user_id=user_id, offset=offset, limit=limit
     )
 
-    return total_number_of_items, [t.to_api_model() for t in page]
+    return total_number_of_items, [to_payments_api_model(t) for t in page]

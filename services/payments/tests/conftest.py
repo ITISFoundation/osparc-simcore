@@ -13,7 +13,7 @@ import yaml
 from faker import Faker
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
-from models_library.users import UserID
+from models_library.users import GroupID, UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -131,6 +131,11 @@ def product_name(faker: Faker) -> ProductName:
 @pytest.fixture
 def user_id(faker: Faker) -> UserID:
     return parse_obj_as(UserID, faker.pyint())
+
+
+@pytest.fixture
+def user_primary_group_id(faker: Faker) -> GroupID:
+    return parse_obj_as(GroupID, faker.pyint())
 
 
 @pytest.fixture

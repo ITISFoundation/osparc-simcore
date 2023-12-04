@@ -59,6 +59,7 @@ from toolz.dicttoolz import get_in
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     def _():
         # The following services are affected if rabbitmq is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_notifier")
         mocker.patch("simcore_service_payments.core.application.setup_socketio")
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
