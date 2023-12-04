@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import asyncio
 from decimal import Decimal
 from unittest.mock import MagicMock
 
@@ -376,7 +377,8 @@ async def test_one_time_payment_with_payment_method(
     assert mock_rut_add_credits_to_wallet.called
     mock_rut_add_credits_to_wallet.assert_called_once()
 
-    # check notification (fake)
+    # check notification after response
+    await asyncio.sleep(0.1)
     assert send_message.called
     send_message.assert_called_once()
 

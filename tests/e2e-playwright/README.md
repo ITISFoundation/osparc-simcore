@@ -1,8 +1,8 @@
 Auto generate new test
-`playwright codegen sim4life.py`
+`playwright codegen sim4life.io`
 
 Run test locally with headed mode
-`pytest -s test sim4life.py --tracing on --headed `
+`pytest -s tests/sim4life.py --tracing on --headed `
 
 Check test results output
 `playwright show-trace test-results/tests-sim4life-py-test-billable-sim4life-chromium/trace.zip`

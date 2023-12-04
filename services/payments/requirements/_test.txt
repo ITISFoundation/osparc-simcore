@@ -4,12 +4,34 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aiohttp==3.8.6
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   pytest-aiohttp
+    #   python-socketio
+aiosignal==1.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 anyio==4.0.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+async-timeout==4.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+attrs==23.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+bidict==0.22.1
+    # via
+    #   -c requirements/_base.txt
+    #   python-socketio
 certifi==2023.7.22
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -20,6 +42,7 @@ certifi==2023.7.22
 charset-normalizer==3.3.2
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   requests
 coverage==7.3.2
     # via
@@ -34,10 +57,16 @@ exceptiongroup==1.1.3
     #   pytest
 faker==19.13.0
     # via -r requirements/_test.in
+frozenlist==1.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   aiosignal
 h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+    #   wsproto
 httpcore==0.18.0
     # via
     #   -c requirements/_base.txt
@@ -55,10 +84,16 @@ idna==3.4
     #   anyio
     #   httpx
     #   requests
+    #   yarl
 iniconfig==2.0.0
     # via pytest
 jsonref==1.1.0
     # via -r requirements/_test.in
+multidict==6.0.4
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   yarl
 packaging==23.2
     # via
     #   -c requirements/_base.txt
@@ -72,13 +107,18 @@ pprintpp==0.4.0
 pytest==7.4.3
     # via
     #   -r requirements/_test.in
+    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.21.1
+pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
+pytest-asyncio==0.21.1
+    # via
+    #   -r requirements/_test.in
+    #   pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.8
@@ -97,10 +137,22 @@ python-dotenv==1.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+python-engineio==4.8.0
+    # via
+    #   -c requirements/_base.txt
+    #   python-socketio
+python-socketio==5.10.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 requests==2.31.0
     # via docker
 respx==0.20.2
     # via -r requirements/_test.in
+simple-websocket==1.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   python-engineio
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -125,3 +177,11 @@ urllib3==2.0.7
     #   requests
 websocket-client==1.6.4
     # via docker
+wsproto==1.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   simple-websocket
+yarl==1.9.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp

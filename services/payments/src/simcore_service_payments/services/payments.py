@@ -36,9 +36,11 @@ from ..core.errors import (
 )
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
+from ..models.db_to_api import to_payments_api_model
 from ..models.payments_gateway import InitPayment, PaymentInitiated
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
+from .notifier import Notifier
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger()
@@ -144,40 +146,45 @@ async def acknowledge_one_time_payment(
 
 
 async def on_payment_completed(
-    transaction: PaymentsTransactionsDB, rut_api: ResourceUsageTrackerApi
+    transaction: PaymentsTransactionsDB,
+    rut_api: ResourceUsageTrackerApi,
+    notifier: Notifier | None,
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
 
-    _logger.debug(
-        "Notify front-end of payment -> sio SOCKET_IO_PAYMENT_COMPLETED_EVENT "
-    )
+    if transaction.state == PaymentTransactionState.SUCCESS:
+        with log_context(
+            _logger,
+            logging.INFO,
+            "%s: Top-up %s credits for %s",
+            RUT,
+            f"{transaction.osparc_credits}",
+            f"{transaction.payment_id=}",
+        ):
+            assert transaction.state == PaymentTransactionState.SUCCESS  # nosec
+            credit_transaction_id = await rut_api.create_credit_transaction(
+                product_name=transaction.product_name,
+                wallet_id=transaction.wallet_id,
+                wallet_name=f"id={transaction.wallet_id}",
+                user_id=transaction.user_id,
+                user_email=transaction.user_email,
+                osparc_credits=transaction.osparc_credits,
+                payment_transaction_id=transaction.payment_id,
+                created_at=transaction.completed_at,
+            )
 
-    with log_context(
-        _logger,
-        logging.INFO,
-        "%s: Top-up %s credits for %s",
-        RUT,
-        f"{transaction.osparc_credits}",
-        f"{transaction.payment_id=}",
-    ):
-        credit_transaction_id = await rut_api.create_credit_transaction(
-            product_name=transaction.product_name,
-            wallet_id=transaction.wallet_id,
-            wallet_name=f"id={transaction.wallet_id}",
-            user_id=transaction.user_id,
-            user_email=transaction.user_email,
-            osparc_credits=transaction.osparc_credits,
-            payment_transaction_id=transaction.payment_id,
-            created_at=transaction.completed_at,
+        _logger.debug(
+            "%s: Response to %s was %s",
+            RUT,
+            f"{transaction.payment_id=}",
+            f"{credit_transaction_id=}",
         )
 
-    _logger.debug(
-        "%s: Response to %s was %s",
-        RUT,
-        f"{transaction.payment_id=}",
-        f"{credit_transaction_id=}",
-    )
+    if notifier:
+        await notifier.notify_payment_completed(
+            user_id=transaction.user_id, payment=to_payments_api_model(transaction)
+        )
 
 
 async def pay_with_payment_method(  # noqa: PLR0913
@@ -247,9 +254,10 @@ async def pay_with_payment_method(  # noqa: PLR0913
         invoice_url=ack.invoice_url,
     )
 
-    await on_payment_completed(transaction, rut)
+    # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
+    await on_payment_completed(transaction, rut, notifier=None)
 
-    return transaction.to_api_model()
+    return to_payments_api_model(transaction)
 
 
 async def get_payments_page(
@@ -265,4 +273,4 @@ async def get_payments_page(
         user_id=user_id, offset=offset, limit=limit
     )
 
-    return total_number_of_items, [t.to_api_model() for t in page]
+    return total_number_of_items, [to_payments_api_model(t) for t in page]

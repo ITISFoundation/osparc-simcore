@@ -59,29 +59,30 @@ plugins:
         - .js
 
 exclude_patterns:
-  - "config/"
-  - "db/"
-  - "dist/"
-  - "features/"
+  - ".venv/"
+  - "**/.venv/"
+  - "**/*.d.ts"
+  - "**/*.js"
+  - "**/client-sdk/"
+  - "**/generated_code/"
+  - "**/healthcheck.py"
+  - "**/migrations/"
   - "**/node_modules/"
-  - "script"
+  - "**/pytest_plugin/"
+  - "**/pytest-simcore/"
+  - "**/sandbox/"
   - "**/spec/"
   - "**/test/"
   - "**/tests/"
   - "**/vendor/"
-  - "**/*.d.ts"
-  - "**/.venv/"
-  - ".venv/"
-  - "**/healthcheck.py"
-  - "**/client-sdk/"
-  - "**/generated_code/"
-  - "**/migrations/"
-  - "**/*.js"
-  - "**/pytest-simcore/"
-  - "**/pytest_plugin/"
-  - "**/sandbox/"
+  - "config/"
+  - "db/"
+  - "dist/"
+  - "features/"
+  - "script"
+  - "scripts/"
   - packages/models-library/src/models_library/utils/_original_fastapi_encoders.py
+  - services/payments/scripts/example_payment_gateway.py
   - services/resource-usage-tracker/src/simcore_service_resource_usage_tracker/modules/db/repositories/resource_tracker.py
   - services/web/server/src/simcore_service_webserver/exporter/formatters/sds/xlsx/templates/code_description.py
   - services/web/server/src/simcore_service_webserver/projects/db.py
-  - "scripts/"
