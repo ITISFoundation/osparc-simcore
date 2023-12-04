@@ -348,7 +348,7 @@ async def log_streamer_with_distributor(
         director2_api=d2_client,
         job_id=project_id,
         log_distributor=log_distributor,
-        max_log_check_seconds=60,
+        max_log_check_seconds=1,
     ) as log_streamer:
         yield log_streamer
 
