@@ -481,6 +481,8 @@ async def _cap_needed_instances(
         for count, k in enumerate(needed_instances)
         if count <= possible_number_of_instances_to_create
     }
+    # TODO: this is wrong and must be changeD!!
+
     if sum(capped_needed_instances.values()) < sum(needed_instances.values()):
         # there were too many types for the number of possible instances
         return capped_needed_instances
