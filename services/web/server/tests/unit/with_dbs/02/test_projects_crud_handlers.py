@@ -730,7 +730,7 @@ def mock_director_v2_inactivity(
         get_services_pattern,
         status=web.HTTPOk.status_code,
         repeat=True,
-        payload={"data": {"is_inactive": is_inactive}},
+        payload={"is_inactive": is_inactive},
     )
 
 
