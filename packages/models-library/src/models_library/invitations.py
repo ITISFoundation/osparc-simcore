@@ -4,7 +4,7 @@ from typing import Final
 from models_library.products import ProductName
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
 
-_MAX_LEN: Final = 10
+_MAX_LEN: Final = 40
 
 
 class InvitationInputs(BaseModel):
