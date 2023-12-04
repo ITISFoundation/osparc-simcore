@@ -77,12 +77,13 @@ async def user(
 
 
 @pytest.fixture
-def user_primary_gid(user) -> GroupID:
+def user_primary_group_id(user) -> GroupID:
+    # Overrides `user_primary_group_id`
     return user.primary_gid
 
 
 async def test_payments_user_repo(
-    app: FastAPI, user_id: UserID, user_primary_gid: GroupID
+    app: FastAPI, user_id: UserID, user_primary_group_id: GroupID
 ):
     repo = PaymentsUsersRepo(get_engine(app))
-    assert await repo.get_primary_group_id(user_id) == user_primary_gid
+    assert await repo.get_primary_group_id(user_id) == user_primary_group_id

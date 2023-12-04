@@ -134,7 +134,7 @@ def user_id(faker: Faker) -> UserID:
 
 
 @pytest.fixture
-def user_primary_gid(faker: Faker) -> GroupID:
+def user_primary_group_id(faker: Faker) -> GroupID:
     return parse_obj_as(GroupID, faker.pyint())
 
 

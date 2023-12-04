@@ -46,7 +46,7 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 def mock_db_payments_users_repo(mocker: MockerFixture, user_primary_group_id: GroupID):
     mocker.patch(
-        "simcore_service_payments.db.payment_users_repo.UsersRepo.get_primary_group_id",
+        "simcore_service_payments.db.payment_users_repo.PaymentsUsersRepo.get_primary_group_id",
         return_value=user_primary_group_id,
     )
 
