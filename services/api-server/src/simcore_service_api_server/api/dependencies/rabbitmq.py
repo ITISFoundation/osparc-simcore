@@ -1,6 +1,7 @@
 from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI
+from pydantic import NonNegativeInt
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
 
@@ -15,3 +16,10 @@ def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQCl
 def get_log_distributor(app: Annotated[FastAPI, Depends(get_app)]) -> LogDistributor:
     assert app.state.log_distributor  # nosec
     return cast(LogDistributor, app.state.log_distributor)
+
+
+def get_max_log_check_seconds(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> NonNegativeInt:
+    assert app.state.settings  # nosec
+    return app.state.settings.API_SERVER_MAX_LOG_CHECK_SECONDS

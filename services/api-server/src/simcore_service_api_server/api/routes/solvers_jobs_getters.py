@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
@@ -34,7 +35,7 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
-from ..dependencies.rabbitmq import get_log_distributor
+from ..dependencies.rabbitmq import get_log_distributor, get_max_log_check_seconds
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -373,6 +374,9 @@ async def get_log_stream(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     log_distributor: Annotated[LogDistributor, Depends(get_log_distributor)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
+    max_log_check_seconds: Annotated[
+        NonNegativeInt, Depends(get_max_log_check_seconds)
+    ],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(
@@ -380,7 +384,9 @@ async def get_log_stream(
     ):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
         _raise_if_job_not_associated_with_solver(solver_key, version, project)
-        log_streamer = LogStreamer(user_id, director2_api, job_id, log_distributor)
+        log_streamer = LogStreamer(
+            user_id, director2_api, job_id, log_distributor, max_log_check_seconds
+        )
         await log_streamer.setup()
         return LogStreamingResponse(
             log_streamer.log_generator(),
