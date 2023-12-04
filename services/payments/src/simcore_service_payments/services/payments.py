@@ -40,8 +40,8 @@ from ..models.db_to_api import to_payments_api_model
 from ..models.payments_gateway import InitPayment, PaymentInitiated
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
+from .notifier import Notifier
 from .payments_gateway import PaymentsGatewayApi
-from .socketio import Notifier
 
 _logger = logging.getLogger()
 

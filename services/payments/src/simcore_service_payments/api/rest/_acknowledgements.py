@@ -16,8 +16,8 @@ from ...models.schemas.acknowledgements import (
     PaymentMethodID,
 )
 from ...services import payments, payments_methods
+from ...services.notifier import Notifier
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
-from ...services.socketio import Notifier
 from ._dependencies import (
     create_repository,
     get_current_session,

@@ -35,8 +35,8 @@ from ..models.db_to_api import to_payment_method_api_model
 from ..models.payments_gateway import GetPaymentMethod, InitPaymentMethod
 from ..models.schemas.acknowledgements import AckPaymentMethod
 from ..models.utils import merge_models
+from .notifier import Notifier
 from .payments_gateway import PaymentsGatewayApi
-from .socketio import Notifier
 
 _logger = logging.getLogger(__name__)
 
