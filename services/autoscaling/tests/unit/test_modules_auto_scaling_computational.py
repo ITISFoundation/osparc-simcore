@@ -306,6 +306,34 @@ def mock_dask_get_worker_used_resources(mocker: MockerFixture) -> mock.Mock:
     )
 
 
+async def _create_task_with_resources(
+    ec2_client: EC2Client,
+    dask_task_imposed_ec2_type: InstanceTypeType | None,
+    dask_ram: ByteSize | None,
+    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+) -> distributed.Future:
+    if dask_task_imposed_ec2_type and not dask_ram:
+        instance_types = await ec2_client.describe_instance_types(
+            InstanceTypes=[dask_task_imposed_ec2_type]
+        )
+        assert instance_types
+        assert "InstanceTypes" in instance_types
+        assert instance_types["InstanceTypes"]
+        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
+        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+        dask_ram = parse_obj_as(
+            ByteSize,
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        )
+    dask_task_resources = create_dask_task_resources(
+        dask_task_imposed_ec2_type, dask_ram
+    )
+    dask_future = create_dask_task(dask_task_resources)
+    assert dask_future
+    return dask_future
+
+
 @pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
@@ -362,24 +390,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    if dask_task_imposed_ec2_type and not dask_ram:
-        instance_types = await ec2_client.describe_instance_types(
-            InstanceTypes=[dask_task_imposed_ec2_type]
-        )
-        assert instance_types
-        assert "InstanceTypes" in instance_types
-        assert instance_types["InstanceTypes"]
-        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
-        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = parse_obj_as(
-            ByteSize,
-            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
-        )
-    dask_task_resources = create_dask_task_resources(
-        dask_task_imposed_ec2_type, dask_ram
+    dask_future = await _create_task_with_resources(
+        ec2_client,
+        dask_task_imposed_ec2_type,
+        dask_ram,
+        create_dask_task_resources,
+        create_dask_task,
     )
-    dask_future = create_dask_task(dask_task_resources)
-    assert dask_future
 
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
@@ -764,23 +781,18 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     num_tasks = 3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
 
     # create the tasks
-    if dask_task_imposed_ec2_type and not dask_ram:
-        instance_types = await ec2_client.describe_instance_types(
-            InstanceTypes=[dask_task_imposed_ec2_type]
+    task_futures = await asyncio.gather(
+        *(
+            _create_task_with_resources(
+                ec2_client,
+                dask_task_imposed_ec2_type,
+                dask_ram,
+                create_dask_task_resources,
+                create_dask_task,
+            )
+            for _ in range(num_tasks)
         )
-        assert instance_types
-        assert "InstanceTypes" in instance_types
-        assert instance_types["InstanceTypes"]
-        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
-        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = parse_obj_as(
-            ByteSize,
-            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
-        )
-    dask_task_resources = create_dask_task_resources(
-        dask_task_imposed_ec2_type, dask_ram
     )
-    task_futures = [create_dask_task(dask_task_resources) for task in range(num_tasks)]
     assert all(task_futures)
 
     # this should trigger a scaling up as we have no nodes
