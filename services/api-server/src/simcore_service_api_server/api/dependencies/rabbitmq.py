@@ -22,4 +22,4 @@ def get_max_log_check_seconds(
     app: Annotated[FastAPI, Depends(get_app)]
 ) -> NonNegativeInt:
     assert app.state.settings  # nosec
-    return app.state.settings.API_SERVER_MAX_LOG_CHECK_SECONDS
+    return cast(NonNegativeInt, app.state.settings.API_SERVER_MAX_LOG_CHECK_SECONDS)
