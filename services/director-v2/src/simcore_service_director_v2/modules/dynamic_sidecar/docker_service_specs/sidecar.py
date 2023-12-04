@@ -54,7 +54,7 @@ def _get_environment_variables(
     if scheduler_data.paths_mapping.state_exclude is not None:
         state_exclude = scheduler_data.paths_mapping.state_exclude
 
-    callbacks_mapping: CallbacksMapping = deepcopy(scheduler_data.callbacks_mapping)
+    callbacks_mapping: CallbacksMapping = scheduler_data.callbacks_mapping
 
     if not metrics_collection_allowed:
         _logger.info(
