@@ -726,6 +726,107 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
+@pytest.mark.parametrize(
+    "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
+    [
+        pytest.param(
+            "r5n.8xlarge",
+            None,
+            "r5n.8xlarge",
+            id="Ask more instances than EC2_INSTANCES_MAX_INSTANCES",
+        ),
+    ],
+)
+async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    ec2_client: EC2Client,
+    dask_spec_local_cluster: distributed.SpecCluster,
+    create_dask_task_resources: Callable[..., DaskTaskResources],
+    dask_task_imposed_ec2_type: InstanceTypeType | None,
+    dask_ram: ByteSize | None,
+    expected_ec2_type: InstanceTypeType,
+    mock_docker_tag_node: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+    mock_docker_find_node_with_name: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_docker_compute_node_used_resources: mock.Mock,
+    mock_dask_get_worker_has_results_in_memory: mock.Mock,
+    mock_dask_get_worker_used_resources: mock.Mock,
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES > 0
+    num_tasks = 3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+
+    # create the tasks
+    if dask_task_imposed_ec2_type and not dask_ram:
+        instance_types = await ec2_client.describe_instance_types(
+            InstanceTypes=[dask_task_imposed_ec2_type]
+        )
+        assert instance_types
+        assert "InstanceTypes" in instance_types
+        assert instance_types["InstanceTypes"]
+        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
+        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+        dask_ram = parse_obj_as(
+            ByteSize,
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        )
+    dask_task_resources = create_dask_task_resources(
+        dask_task_imposed_ec2_type, dask_ram
+    )
+    task_futures = [create_dask_task(dask_task_resources) for task in range(num_tasks)]
+    assert all(task_futures)
+
+    # this should trigger a scaling up as we have no nodes
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+        instance_type=expected_ec2_type,
+        instance_state="running",
+    )
+    # as the new node is already running, but is not yet connected, hence not tagged and drained
+    mock_docker_find_node_with_name.assert_not_called()
+    mock_docker_tag_node.assert_not_called()
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_compute_node_used_resources.assert_not_called()
+    mock_dask_get_worker_has_results_in_memory.assert_not_called()
+    mock_dask_get_worker_used_resources.assert_not_called()
+    # check rabbit messages were sent
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        dask_spec_local_cluster.scheduler_address,
+        instances_running=0,
+        instances_pending=10,
+    )
+    mock_rabbitmq_post_message.reset_mock()
+
+    # 2. calling this multiple times should do nothing
+    num_useless_calls = 10
+    for _ in range(num_useless_calls):
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    await _assert_ec2_instances(
+        ec2_client,
+        num_reservations=1,
+        num_instances=10,
+        instance_type=expected_ec2_type,
+        instance_state="running",
+    )
+
+
 @pytest.fixture
 def fake_associated_host_instance(
     host_node: DockerNode,
