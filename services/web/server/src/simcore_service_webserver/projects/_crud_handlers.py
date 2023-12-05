@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectUpdate,
 )
+from models_library.generics import Envelope
 from models_library.projects import Project
 from models_library.projects_state import ProjectLocked
 from models_library.rest_pagination import Page
@@ -302,7 +303,7 @@ async def get_project_inactivity(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
-    return web.json_response({"data": project_inactivity}, dumps=json_dumps)
+    return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
 
 
 #
