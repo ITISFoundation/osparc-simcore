@@ -21,7 +21,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._base import
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     ClientHttpError,
     UnexpectedStatusError,
-    _WrongReturnType,
+    WrongReturnTypeError,
 )
 
 # UTILS
@@ -156,14 +156,14 @@ async def test_methods_do_not_return_response(
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
-    with pytest.raises(_WrongReturnType):
+    with pytest.raises(WrongReturnTypeError):
         FailWrongAnnotationTestClient(request_timeout=request_timeout)
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
-    with pytest.raises(_WrongReturnType):
+    with pytest.raises(WrongReturnTypeError):
         FailNoAnnotationTestClient(request_timeout=request_timeout)
 
 
