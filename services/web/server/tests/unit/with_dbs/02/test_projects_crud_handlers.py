@@ -765,5 +765,4 @@ async def test_get_project_inactivity(
 
     assert data
     assert error is None
-
-    assert data["data"]["is_inactive"] is is_inactive
+    assert data["is_inactive"] is is_inactive
