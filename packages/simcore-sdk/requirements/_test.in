@@ -17,7 +17,6 @@ coverage
 docker
 faker
 flaky
-minio
 moto[server]
 pytest
 pytest-aiohttp
@@ -31,3 +30,4 @@ pytest-sugar
 pytest-xdist
 python-dotenv
 requests
+types-aiobotocore[s3] # s3 storage

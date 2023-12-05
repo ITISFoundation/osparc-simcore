@@ -7,8 +7,10 @@ from collections.abc import Iterator
 import pytest
 import requests
 from aiohttp.test_utils import unused_port
+from faker import Faker
 from moto.server import ThreadedMotoServer
 from settings_library.ec2 import EC2Settings
+from settings_library.s3 import S3Settings
 
 from .helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from .helpers.utils_host import get_localhost_ip
@@ -71,16 +73,22 @@ def mocked_ec2_server_envs(
 
 
 @pytest.fixture
-async def mocked_s3_server_envs(
-    mocked_aws_server: ThreadedMotoServer,
-    reset_aws_server_state: None,
+def mocked_s3_server_settings(
+    mocked_aws_server: ThreadedMotoServer, reset_aws_server_state: None, faker: Faker
+) -> S3Settings:
+    return S3Settings(
+        S3_ACCESS_KEY="xxx",
+        S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
+        S3_SECRET_KEY="xxx",  # noqa: S106
+        S3_BUCKET_NAME=f"pytest{faker.pystr().lower()}",
+        S3_SECURE=False,
+    )
+
+
+@pytest.fixture
+def mocked_s3_server_envs(
+    mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs = {
-        "S3_SECURE": "false",
-        "S3_ENDPOINT": f"{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
-        "S3_ACCESS_KEY": "xxx",
-        "S3_SECRET_KEY": "xxx",
-        "S3_BUCKET_NAME": "pytestbucket",
-    }
+    changed_envs: EnvVarsDict = mocked_s3_server_settings.dict(exclude_unset=True)
     return setenvs_from_dict(monkeypatch, changed_envs)
