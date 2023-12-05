@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -18,7 +19,7 @@ from ..groups.api import list_user_groups
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
-from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
+from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_messages
 
 _logger = logging.getLogger(__name__)
 

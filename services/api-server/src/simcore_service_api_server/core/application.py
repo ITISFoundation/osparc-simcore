@@ -6,6 +6,12 @@ from fastapi_pagination import add_pagination
 from httpx import HTTPStatusError
 from models_library.basic_types import BootModeEnum
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_api_server.api.errors.log_handling_error import (
+    log_handling_error_handler,
+)
+from simcore_service_api_server.services.log_streaming import (
+    LogDistributionBaseException,
+)
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -19,6 +25,7 @@ from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, remote_debug, storage, webserver
+from ..services.rabbitmq import setup_rabbitmq
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
@@ -76,6 +83,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
+    setup_rabbitmq(app)
+
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
 
@@ -95,6 +104,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     app.add_exception_handler(HTTPStatusError, httpx_client_error_handler)
+    app.add_exception_handler(LogDistributionBaseException, log_handling_error_handler)
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(

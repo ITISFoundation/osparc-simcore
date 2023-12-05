@@ -1,0 +1,4 @@
+
+pytest-playwright
+pytest-html
+tenacity

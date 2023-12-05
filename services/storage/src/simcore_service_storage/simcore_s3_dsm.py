@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import logging
 import tempfile
@@ -7,7 +8,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Coroutine, Final, cast
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -167,31 +168,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     data.append(convert_db_to_model(metadata))
                     continue
                 with suppress(S3KeyNotFoundError):
-                    # 1. this was uploaded using the legacy file upload that relied on
-                    # a background task checking the S3 backend unreliably, the file eventually
-                    # will be uploaded and this will lazily update the database
-                    # 2. this is still in upload and the file is missing and it will raise
                     updated_fmd = await self._update_database_from_storage(
                         conn, metadata
                     )
                     data.append(convert_db_to_model(updated_fmd))
-
-            # try to expand directories the max number of files to return was not reached
-            for metadata in file_and_directory_meta_data:
-                if (
-                    expand_dirs
-                    and metadata.is_directory
-                    and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
-                ):
-                    max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
-                    data.extend(
-                        await expand_directory(
-                            self.app,
-                            self.simcore_bucket_name,
-                            metadata,
-                            max_items_to_include,
-                        )
-                    )
 
             # now parse the project to search for node/project names
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
@@ -203,10 +183,31 @@ class SimcoreS3DataManager(BaseDataManager):
                     for node_id, node_data in proj_data.workbench.items()
                 }
 
-        # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
-        #        with information from the projects table!
-        # also all this stuff with projects should be done in the client code not here
-        # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
+        # expand directories until the max number of files to return is reached
+        directory_expands: list[Coroutine] = []
+        for metadata in file_and_directory_meta_data:
+            if (
+                expand_dirs
+                and metadata.is_directory
+                and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
+            ):
+                max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
+                directory_expands.append(
+                    expand_directory(
+                        self.app,
+                        self.simcore_bucket_name,
+                        metadata,
+                        max_items_to_include,
+                    )
+                )
+        for files_in_directory in await logged_gather(
+            *directory_expands, max_concurrency=_MAX_PARALLEL_S3_CALLS
+        ):
+            data.extend(files_in_directory)
+
+        # artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+        #   with information from the projects table!
+        # NOTE: This part with the projects, should be done in the client code not here!
         clean_data: list[FileMetaData] = []
         for d in data:
             if d.project_id not in prj_names_mapping:
@@ -260,6 +261,9 @@ class SimcoreS3DataManager(BaseDataManager):
             await self._clean_pending_upload(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
             )
+
+            # ensure file is deleted first in case it already exists
+            await self.delete_file(user_id=user_id, file_id=file_id)
 
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(
@@ -343,14 +347,18 @@ class SimcoreS3DataManager(BaseDataManager):
                     file_id=fmd.file_id,
                     upload_id=fmd.upload_id,
                 )
+            # try to recover a file if it existed
+            with contextlib.suppress(S3KeyNotFoundError):
+                await get_s3_client(self.app).undelete_file(
+                    bucket=fmd.bucket_name, file_id=fmd.file_id
+                )
 
             try:
                 # try to revert to what we had in storage if any
                 await self._update_database_from_storage(conn, fmd)
             except S3KeyNotFoundError:
                 # the file does not exist, so we delete the entry in the db
-                async with self.engine.acquire() as conn:
-                    await db_file_meta_data.delete(conn, [fmd.file_id])
+                await db_file_meta_data.delete(conn, [fmd.file_id])
 
     async def complete_file_upload(
         self,
@@ -783,7 +791,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return file_ids_to_remove
 
-    async def _clean_pending_upload(self, conn: SAConnection, file_id: SimcoreS3FileID):
+    async def _clean_pending_upload(
+        self, conn: SAConnection, file_id: SimcoreS3FileID
+    ) -> None:
         with suppress(FileMetaDataNotFoundError):
             fmd = await db_file_meta_data.get(conn, file_id)
             if is_valid_managed_multipart_upload(fmd.upload_id):
@@ -794,7 +804,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     upload_id=fmd.upload_id,
                 )
 
-    async def _clean_expired_uploads(self):
+    async def _clean_expired_uploads(self) -> None:
         """this method will check for all incomplete updates by checking
         the upload_expires_at entry in file_meta_data table.
         1. will try to update the entry from S3 backend if exists
@@ -805,14 +815,15 @@ class SimcoreS3DataManager(BaseDataManager):
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
             )
-        _logger.debug(
-            "found following pending uploads: [%s]",
-            [fmd.file_id for fmd in list_of_expired_uploads],
-        )
+
         if not list_of_expired_uploads:
             return
+        _logger.debug(
+            "found following expired uploads: [%s]",
+            [fmd.file_id for fmd in list_of_expired_uploads],
+        )
 
-        # try first to upload these from S3 (conservative)
+        # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
         updated_fmds = await logged_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
@@ -829,6 +840,30 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             if not isinstance(updated_fmd, FileMetaDataAtDB)
         ]
+
+        # try to revert the files if they exist
+        async def _revert_file(
+            conn: SAConnection, fmd: FileMetaDataAtDB
+        ) -> FileMetaDataAtDB:
+            await s3_client.undelete_file(fmd.bucket_name, fmd.file_id)
+            return await self._update_database_from_storage(conn, fmd)
+
+        s3_client = get_s3_client(self.app)
+        async with self.engine.acquire() as conn:
+            reverted_fmds = await logged_gather(
+                *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
+                reraise=False,
+                log=_logger,
+                max_concurrency=MAX_CONCURRENT_DB_TASKS,
+            )
+        list_of_fmds_to_delete = [
+            fmd
+            for fmd, reverted_fmd in zip(
+                list_of_fmds_to_delete, reverted_fmds, strict=True
+            )
+            if not isinstance(reverted_fmd, FileMetaDataAtDB)
+        ]
+
         if list_of_fmds_to_delete:
             # delete the remaining ones
             _logger.debug(
@@ -921,33 +956,33 @@ class SimcoreS3DataManager(BaseDataManager):
                 list_of_valid_upload_ids.append(upload_id)
 
         _logger.debug("found the following %s", f"{list_of_valid_upload_ids=}")
-        list_of_invalid_uploads = [
+        if list_of_invalid_uploads := [
             (
                 upload_id,
                 file_id,
             )
             for upload_id, file_id in current_multipart_uploads
             if upload_id not in list_of_valid_upload_ids
-        ]
-        _logger.debug(
-            "the following %s was found and will now be aborted",
-            f"{list_of_invalid_uploads=}",
-        )
-        await logged_gather(
-            *(
-                get_s3_client(self.app).abort_multipart_upload(
-                    self.simcore_bucket_name, file_id, upload_id
-                )
-                for upload_id, file_id in list_of_invalid_uploads
-            ),
-            max_concurrency=MAX_CONCURRENT_S3_TASKS,
-        )
-        _logger.warning(
-            "Dangling multipart uploads '%s', were aborted. "
-            "TIP: There were multipart uploads active on S3 with no counter-part in the file_meta_data database. "
-            "This might indicate that something went wrong in how storage handles multipart uploads!!",
-            f"{list_of_invalid_uploads}",
-        )
+        ]:
+            _logger.debug(
+                "the following %s was found and will now be aborted",
+                f"{list_of_invalid_uploads=}",
+            )
+            await logged_gather(
+                *(
+                    get_s3_client(self.app).abort_multipart_upload(
+                        self.simcore_bucket_name, file_id, upload_id
+                    )
+                    for upload_id, file_id in list_of_invalid_uploads
+                ),
+                max_concurrency=MAX_CONCURRENT_S3_TASKS,
+            )
+            _logger.warning(
+                "Dangling multipart uploads '%s', were aborted. "
+                "TIP: There were multipart uploads active on S3 with no counter-part in the file_meta_data database. "
+                "This might indicate that something went wrong in how storage handles multipart uploads!!",
+                f"{list_of_invalid_uploads}",
+            )
 
     async def clean_expired_uploads(self) -> None:
         await self._clean_expired_uploads()

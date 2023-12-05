@@ -26,7 +26,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observ
 
 
 @pytest.fixture
-def disable_observation(mocker: MockerFixture) -> None:  # noqa: PT004
+def disable_observation(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler.start",
         autospec=True,
@@ -34,7 +34,7 @@ def disable_observation(mocker: MockerFixture) -> None:  # noqa: PT004
 
 
 @pytest.fixture
-def mock_are_sidecar_and_proxy_services_present(  # noqa: PT004
+def mock_are_sidecar_and_proxy_services_present(
     mocker: MockerFixture,
 ) -> None:
     mocker.patch(
@@ -45,7 +45,7 @@ def mock_are_sidecar_and_proxy_services_present(  # noqa: PT004
 
 
 @pytest.fixture
-def mock_events(mocker: MockerFixture) -> None:  # noqa: PT004
+def mock_events(mocker: MockerFixture) -> None:
     for event_to_mock in (
         "CreateSidecars",
         "WaitForSidecarAPI",
@@ -64,7 +64,7 @@ def mock_events(mocker: MockerFixture) -> None:  # noqa: PT004
 
 
 @pytest.fixture
-def mock_env(  # noqa: PT004
+def mock_env(
     disable_postgres: None,
     docker_swarm: None,
     mock_env: EnvVarsDict,
@@ -112,7 +112,7 @@ def _is_observation_task_present(
 ) -> bool:
     return (
         scheduler_data_from_http_request.service_name
-        in dynamic_sidecar_scheduler._scheduler._service_observation_task  # noqa: SLF001
+        in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
     )
 
 
@@ -126,7 +126,7 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
-    await dynamic_sidecar_scheduler._scheduler._add_service(  # noqa: SLF001
+    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(
         scheduler_data_from_http_request
     )
 

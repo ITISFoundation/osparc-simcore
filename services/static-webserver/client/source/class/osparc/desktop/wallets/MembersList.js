@@ -132,7 +132,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         serializedData["resourceType"] = "wallet";
         const showOrganizations = false;
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
-        collaboratorsManager.addListener("addCollaborators", e => {
+        collaboratorsManager.addListener("addEditors", e => {
           const cb = () => collaboratorsManager.close();
           this.__addMembers(e.getData(), cb);
         }, this);
@@ -158,8 +158,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const membersUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        width: 150,
-        backgroundColor: "background-main-2"
+        width: 150
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();

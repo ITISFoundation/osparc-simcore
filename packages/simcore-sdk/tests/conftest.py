@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 import simcore_sdk
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
@@ -18,12 +19,12 @@ sys.path.append(str(current_dir / "helpers"))
 
 
 pytest_plugins = [
-    "pytest_simcore.aws_services",
+    "pytest_simcore.aws_server",
+    "pytest_simcore.aws_s3_service",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.file_extra",
     "pytest_simcore.minio_service",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -87,7 +88,7 @@ def empty_configuration_file() -> Path:
 
 @pytest.fixture
 def node_ports_config(
-    postgres_host_config: PostgresTestConfig, minio_config: dict[str, str]
+    postgres_host_config: PostgresTestConfig, minio_s3_settings_envs: EnvVarsDict
 ) -> None:
     ...
 

@@ -848,7 +848,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Job"
+                  "$ref": "#/components/schemas/JobStatus"
                 }
               }
             }
@@ -1580,6 +1580,7 @@
       "Profile": {
         "title": "Profile",
         "required": [
+          "id",
           "login",
           "role"
         ],
@@ -1594,6 +1595,12 @@
             "title": "Last Name",
             "type": "string",
             "example": "Maxwell"
+          },
+          "id": {
+            "title": "Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
           },
           "login": {
             "title": "Login",
@@ -1614,6 +1621,7 @@
           }
         },
         "example": {
+          "id": "20",
           "first_name": "James",
           "last_name": "Maxwell",
           "login": "james-maxwell@itis.swiss",

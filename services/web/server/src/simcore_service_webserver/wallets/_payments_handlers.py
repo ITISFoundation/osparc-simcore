@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiohttp import web
@@ -11,8 +12,10 @@ from models_library.api_schemas_webserver.wallets import (
     ReplaceWalletAutoRecharge,
     WalletPaymentInitiated,
 )
+from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -20,6 +23,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -33,12 +37,13 @@ from ..payments.api import (
     init_creation_of_wallet_payment_method,
     list_user_payments_page,
     list_wallet_payment_methods,
+    notify_payment_completed,
+    pay_with_payment_method,
     replace_wallet_payment_autorecharge,
 )
-from ..products.api import get_current_product_credit_price
+from ..products.api import get_credit_amount
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
 from ._handlers import (
     WalletsPathParams,
     WalletsRequestContext,
@@ -73,21 +78,20 @@ async def _create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # Conversion
-        usd_per_credit = await get_current_product_credit_price(request)
-        if not usd_per_credit:
-            # '0 or None' should raise
-            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
+        credit_result: CreditResultGet = await get_credit_amount(
+            request.app,
+            dollar_amount=body_params.price_dollars,
+            product_name=req_ctx.product_name,
+        )
 
         payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=body_params.price_dollars / usd_per_credit,
+            osparc_credits=credit_result.credit_amount,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
-            payment_method_id=None,
         )
 
         return envelope_json_response(payment, web.HTTPCreated)
@@ -296,17 +300,17 @@ async def _delete_payment_method(request: web.Request):
     return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
+_TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH = 0.1
+
+
 @routes.post(
     f"/{VTAG}/wallets/{{wallet_id}}/payments-methods/{{payment_method_id}}:pay",
-    name="init_payment_with_payment_method",
+    name="pay_with_payment_method",
 )
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-async def _init_payment_with_payment_method(request: web.Request):
-    """Triggers the creation of a new payment method.
-    Note that creating a payment-method follows the init-prompt-ack flow
-    """
+async def _pay_with_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
     body_params = await parse_request_body_as(CreateWalletPayment, request)
@@ -321,24 +325,49 @@ async def _init_payment_with_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # Conversion
-        usd_per_credit = await get_current_product_credit_price(request)
-        if not usd_per_credit:
-            # '0 or None' should raise
-            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
+        credit_result: CreditResultGet = await get_credit_amount(
+            request.app,
+            dollar_amount=body_params.price_dollars,
+            product_name=req_ctx.product_name,
+        )
 
-        payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
+        payment: PaymentTransaction = await pay_with_payment_method(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credits=body_params.price_dollars / usd_per_credit,
+            payment_method_id=path_params.payment_method_id,
+            osparc_credits=credit_result.credit_amount,
             comment=body_params.comment,
             price_dollars=body_params.price_dollars,
-            payment_method_id=path_params.payment_method_id,
         )
 
-        return envelope_json_response(payment, web.HTTPAccepted)
+        # NOTE: Due to the design change in https://github.com/ITISFoundation/osparc-simcore/pull/5017
+        #       we decided not to change the return value to avoid changing the front-end logic
+        #       instead we emulate a init-prompt-ack workflow by firing a background task that acks payment
+
+        async def _notify_payment_completed_after_response(app, user_id, payment):
+            # NOTE: A small delay to send notification just after the response
+            await asyncio.sleep(_TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH)
+            return (
+                await notify_payment_completed(app, user_id=user_id, payment=payment),
+            )
+
+        fire_and_forget_task(
+            _notify_payment_completed_after_response(
+                request.app, user_id=req_ctx.user_id, payment=payment
+            ),
+            task_suffix_name=f"{__name__}._pay_with_payment_method",
+            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
+        return envelope_json_response(
+            WalletPaymentInitiated(
+                payment_id=payment.payment_id,
+                payment_form_url=None,
+            ),
+            web.HTTPAccepted,
+        )
 
 
 #

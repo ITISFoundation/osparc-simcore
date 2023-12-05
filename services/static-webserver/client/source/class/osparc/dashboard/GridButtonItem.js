@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   },
 
   statics: {
-    MENU_BTN_WIDTH: 32
+    MENU_BTN_DIMENSIONS: 32
   },
 
   members: {
@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       switch (id) {
         case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TSR);
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.TSR);
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
@@ -56,49 +56,53 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "empty-workbench": {
           control = this._getEmptyWorkbenchIcon();
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
           break;
         }
         case "update-study":
           control = new qx.ui.basic.Image().set({
             source: "@MaterialIcons/update/16",
             visibility: "excluded",
-            alignY: "bottom"
+            alignY: "middle",
+            alignX: "center"
           });
           osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
           break;
         case "hits-service":
           control = new qx.ui.basic.Label().set({
             toolTipText: this.tr("Number of times you instantiated it"),
             alignY: "bottom"
           });
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
+          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
           break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true
+            anonymous: true,
+            paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
+            paddingRight: osparc.dashboard.GridButtonBase.PADDING,
+            paddingBottom: osparc.dashboard.GridButtonBase.PADDING / 2
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-button":
           this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_WIDTH
+            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_DIMENSIONS
           });
           control = new qx.ui.form.MenuButton().set({
-            width: this.self().MENU_BTN_WIDTH,
-            height: this.self().MENU_BTN_WIDTH,
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
           control.getContentElement().setStyles({
-            "border-radius": parseInt(this.self().MENU_BTN_WIDTH/2) + "px"
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: -2,
-            right: -2
+            top: 5,
+            right: 5
           });
           break;
         case "tick-unselected":

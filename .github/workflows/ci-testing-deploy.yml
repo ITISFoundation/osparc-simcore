@@ -50,6 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     # Set job outputs to values from filter step
     outputs:
+      aws-library: ${{ steps.filter.outputs.aws-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
@@ -87,6 +88,12 @@ jobs:
         id: filter
         with:
           filters: |
+            aws-library:
+              - 'packages/aws-library/**'
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             dask-task-models-library:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
@@ -261,7 +268,7 @@ jobs:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
@@ -800,6 +807,45 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
+      - uses: codecov/codecov-action@v3.1.4
+        with:
+          flags: unittests #optional
+
+  unit-test-aws-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.aws-library == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] aws-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/aws-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/aws-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/aws-library.bash typecheck
+      - name: test
+        if: always()
+        run: ./ci/github/unit-testing/aws-library.bash test
       - uses: codecov/codecov-action@v3.1.4
         with:
           flags: unittests #optional
@@ -1447,6 +1493,7 @@ jobs:
         unit-test-catalog,
         unit-test-clusters-keeper,
         unit-test-dask-sidecar,
+        unit-test-aws-library,
         unit-test-dask-task-models-library,
         unit-test-datcore-adapter,
         unit-test-director-v2,
@@ -1560,7 +1607,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1614,7 +1661,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1670,7 +1717,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1726,7 +1773,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1783,7 +1830,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1929,7 +1976,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "tests/public-api/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1982,7 +2029,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -2046,7 +2093,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
       - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
+        uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
         uses: actions/download-artifact@v3
         with:

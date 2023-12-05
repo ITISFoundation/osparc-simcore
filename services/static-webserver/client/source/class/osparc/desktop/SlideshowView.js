@@ -231,7 +231,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         "border-radius": "12px"
       });
       view.set({
-        backgroundColor: "background-main-2",
         maxWidth: node.isDynamic() ? null : 800,
         margin: this.self().CARD_MARGIN
       });

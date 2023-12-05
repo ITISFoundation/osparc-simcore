@@ -95,6 +95,7 @@ async def get_default_service_pricing_plan(
     )
     with handle_client_exceptions(app) as session:
         async with session.get(url) as response:
+            response.raise_for_status()
             body: dict = await response.json()
             return parse_obj_as(ServicePricingPlanGet, body)
 
@@ -119,6 +120,7 @@ async def get_pricing_plan_unit(
     )
     with handle_client_exceptions(app) as session:
         async with session.get(url) as response:
+            response.raise_for_status()
             body: dict = await response.json()
             return parse_obj_as(PricingUnitGet, body)
 
@@ -139,6 +141,7 @@ async def sum_total_available_credits_in_the_wallet(
     )
     with handle_client_exceptions(app) as session:
         async with session.post(url) as response:
+            response.raise_for_status()
             body: dict = await response.json()
             return WalletTotalCredits.construct(**body)
 
@@ -168,6 +171,7 @@ async def add_credits_to_wallet(
     }
     with handle_client_exceptions(app) as session:
         async with session.post(url, json=body) as response:
+            response.raise_for_status()
             output: dict = await response.json()
             return output
 

@@ -19,7 +19,6 @@ from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx._transports.asgi import ASGITransport
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
@@ -34,10 +33,9 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
-from pytest import MonkeyPatch  # noqa: PT013
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
@@ -59,10 +57,10 @@ SideEffectCallback: TypeAlias = Callable[
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    default_app_env_vars: EnvVarsDict,
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
-
     env_vars = setenvs_from_dict(
         monkeypatch,
         {
@@ -70,6 +68,7 @@ def app_environment(
             "WEBSERVER_HOST": "webserver",
             "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
             "API_SERVER_POSTGRES": "null",
+            "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
         },
@@ -82,7 +81,15 @@ def app_environment(
 
 
 @pytest.fixture
-def app(app_environment: EnvVarsDict) -> FastAPI:
+def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
+    settings = ApplicationSettings.create_from_envs()
+    if settings.API_SERVER_RABBITMQ is None:
+        mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
+    return app_environment
+
+
+@pytest.fixture
+def app(mock_missing_plugins: EnvVarsDict) -> FastAPI:
     """Inits app on a light environment"""
     return init_app()
 
@@ -92,18 +99,14 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     #
     # Prefer this client instead of fastapi.testclient.TestClient
     #
-    async with LifespanManager(app):
-        # needed for app to trigger start/stop event handlers
-        async with httpx.AsyncClient(
-            app=app,
-            base_url="http://api.testserver.io",
-            headers={"Content-Type": "application/json"},
-        ) as client:
-            assert isinstance(client._transport, ASGITransport)
-            # rewires location test's app to client.app
-            client.app = client._transport.app
 
-            yield client
+    # LifespanManager will trigger app's startup&shutown event handlers
+    async with LifespanManager(app), httpx.AsyncClient(
+        app=app,
+        base_url="http://api.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as httpx_async_client:
+        yield httpx_async_client
 
 
 ## MOCKED Repositories --------------------------------------------------
@@ -269,7 +272,6 @@ def mocked_webserver_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
             "name": "webserver",
@@ -491,7 +493,8 @@ def respx_mock_from_capture() -> (
         capture_path: Path,
         side_effects_callbacks: list[SideEffectCallback],
     ) -> list[respx.MockRouter]:
-        assert capture_path.is_file() and capture_path.suffix == ".json"
+        assert capture_path.is_file()
+        assert capture_path.suffix == ".json"
         captures: list[HttpApiCallCaptureModel] = parse_obj_as(
             list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
         )
@@ -510,9 +513,8 @@ def respx_mock_from_capture() -> (
             for router in respx_mock:
                 if capture.host == router._bases["host"].value:
                     return router
-            raise RuntimeError(
-                f"Missing respx.MockRouter for capture with {capture.host}"
-            )
+            msg = f"Missing respx.MockRouter for capture with {capture.host}"
+            raise RuntimeError(msg)
 
         class CaptureSideEffect:
             def __init__(

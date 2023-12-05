@@ -49,6 +49,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-datcore-adapter=simcore_service_datcore_adapter.cli:main",
+            "simcore-service=simcore_service_datcore_adapter.cli:main",
         ],
     },
 )

@@ -10,8 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
+../../packages/aws-library
 ../../packages/models-library
 ../../packages/service-library[fastapi]
 ../../packages/settings-library
+../../packages/dask-task-models-library
 # installs current package
 .

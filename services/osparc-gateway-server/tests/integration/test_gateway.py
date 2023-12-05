@@ -9,7 +9,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway_server.app import DaskGateway
 from faker import Faker
 from osparc_gateway_server.backend.osparc import OsparcBackend
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 
 
 @pytest.fixture(

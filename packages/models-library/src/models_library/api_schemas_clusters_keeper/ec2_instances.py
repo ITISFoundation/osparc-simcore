@@ -4,7 +4,7 @@ from pydantic import ByteSize, PositiveInt
 
 
 @dataclass(frozen=True)
-class EC2InstanceType:
+class EC2InstanceTypeGet:
     name: str
     cpus: PositiveInt
     ram: ByteSize

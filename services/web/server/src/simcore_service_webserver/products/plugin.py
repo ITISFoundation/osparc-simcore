@@ -15,7 +15,8 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_SETTINGS_KEY
-from . import _handlers, _invitations_handlers
+from ..rabbitmq import setup_rabbitmq
+from . import _handlers, _invitations_handlers, _rpc
 from ._events import (
     auto_create_products_groups,
     load_products_on_startup,
@@ -42,6 +43,11 @@ def setup_products(app: web.Application):
     # routes
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_invitations_handlers.routes)
+
+    # rpc api
+    setup_rabbitmq(app)
+    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+        app.on_startup.append(_rpc.register_rpc_routes_on_startup)
 
     # events
     app.on_startup.append(

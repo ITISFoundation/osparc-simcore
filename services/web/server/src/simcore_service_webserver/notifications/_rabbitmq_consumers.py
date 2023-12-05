@@ -1,7 +1,7 @@
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable, Coroutine
-from typing import Any, Final
+from typing import Any, Final, NamedTuple
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -13,6 +13,7 @@ from models_library.rabbitmq_messages import (
     ProgressType,
     WalletCreditsMessage,
 )
+from models_library.socketio import SocketMessageDict
 from pydantic import parse_raw_as
 from servicelib.aiohttp.monitor_services import (
     MONITOR_SERVICE_STARTED_LABELS,
@@ -34,7 +35,6 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-    SocketMessageDict,
     send_group_messages,
     send_messages,
 )
@@ -186,37 +186,34 @@ async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> b
     return True
 
 
-EXCHANGE_TO_PARSER_CONFIG: Final[
-    tuple[
-        tuple[
-            str,
-            Callable[[web.Application, bytes], Coroutine[Any, Any, bool]],
-            dict[str, Any],
-        ],
-        ...,
-    ]
-] = (
-    (
+class SubcribeArgumentsTuple(NamedTuple):
+    exchange_name: str
+    parser_fct: Callable[[web.Application, bytes], Coroutine[Any, Any, bool]]
+    queue_kwargs: dict[str, Any]
+
+
+_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...,]] = (
+    SubcribeArgumentsTuple(
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
         {"topics": []},
     ),
-    (
+    SubcribeArgumentsTuple(
         ProgressRabbitMessageNode.get_channel_name(),
         _progress_message_parser,
         {"topics": []},
     ),
-    (
+    SubcribeArgumentsTuple(
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,
         {"exclusive_queue": False},
     ),
-    (
+    SubcribeArgumentsTuple(
         EventRabbitMessage.get_channel_name(),
         _events_message_parser,
         {},
     ),
-    (
+    SubcribeArgumentsTuple(
         WalletCreditsMessage.get_channel_name(),
         _osparc_credits_message_parser,
         {"topics": []},
@@ -230,16 +227,18 @@ async def _subscribe_to_rabbitmq(app) -> dict[str, str]:
         subscribed_queues = await logged_gather(
             *(
                 rabbit_client.subscribe(
-                    exchange_name, functools.partial(parser_fct, app), **queue_kwargs
+                    p.exchange_name,
+                    functools.partial(p.parser_fct, app),
+                    **p.queue_kwargs,
                 )
-                for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG
+                for p in _EXCHANGE_TO_PARSER_CONFIG
             ),
             reraise=False,
         )
     return {
         exchange_name: queue_name
         for (exchange_name, *_), queue_name in zip(
-            EXCHANGE_TO_PARSER_CONFIG, subscribed_queues
+            _EXCHANGE_TO_PARSER_CONFIG, subscribed_queues, strict=True
         )
     }
 

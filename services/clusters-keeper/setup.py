@@ -30,6 +30,7 @@ README = (CURRENT_DIR / "README.md").read_text()
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
+        "simcore-aws-library",
         "simcore-models-library",
         "simcore-service-library[fastapi]",
         "simcore-settings-library",
@@ -59,6 +60,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-clusters-keeper = simcore_service_clusters_keeper.cli:main",
+            "simcore-service = simcore_service_clusters_keeper.cli:main",
         ],
     },
 )

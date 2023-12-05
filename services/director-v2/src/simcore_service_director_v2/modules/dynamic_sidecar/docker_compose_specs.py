@@ -12,7 +12,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import RunID, ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -26,7 +26,9 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
+from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ...modules.osparc_variables_substitutions import (
+    resolve_and_substitute_service_lifetime_variables_in_specs,
     resolve_and_substitute_session_variables_in_model,
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_model,
@@ -273,6 +275,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     node_id: NodeID,
     simcore_user_agent: str,
     swarm_stack_name: str,
+    run_id: RunID,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -284,11 +287,11 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
 
     docker_compose_version = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
     )
 
-    egress_proxy_settings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
+    egress_proxy_settings: EgressProxySettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
     )
 
     # when no compose yaml file was provided
@@ -375,12 +378,21 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         app=app,
         specs=service_spec,
         user_id=user_id,
-        # NOTE: at this point all OsparcIdentifiers have to be replaced
-        # an error will be raised otherwise
-        safe=False,
+        safe=True,
         product_name=product_name,
         project_id=project_id,
         node_id=node_id,
+    )
+    service_spec = await resolve_and_substitute_service_lifetime_variables_in_specs(
+        app=app,
+        specs=service_spec,
+        # NOTE: at this point all OsparcIdentifiers have to be replaced
+        # an error will be raised otherwise
+        safe=True,
+        product_name=product_name,
+        user_id=user_id,
+        node_id=node_id,
+        run_id=run_id,
     )
 
     stringified_service_spec: str = replace_env_vars_in_compose_spec(

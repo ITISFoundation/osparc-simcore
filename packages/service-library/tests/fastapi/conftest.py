@@ -3,17 +3,15 @@
 # pylint: disable=unused-variable
 
 import socket
-from datetime import datetime
-from typing import AsyncIterable, Callable, cast
+from collections.abc import AsyncIterator, Callable
+from typing import cast
 
+import arrow
 import pytest
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.params import Query
-from fastapi.routing import APIRouter
 from httpx import AsyncClient
 from pydantic.types import PositiveFloat
-from pytest import FixtureRequest
-from servicelib.fastapi import long_running_tasks
 
 
 @pytest.fixture
@@ -23,7 +21,7 @@ def app() -> FastAPI:
 
     @api_router.get("/")
     def _get_root():
-        return {"name": __name__, "timestamp": datetime.utcnow().isoformat()}
+        return {"name": __name__, "timestamp": arrow.utcnow().datetime.isoformat()}
 
     @api_router.get("/data")
     def _get_data(x: PositiveFloat, y: int = Query(..., gt=3, lt=4)):
@@ -35,27 +33,15 @@ def app() -> FastAPI:
     return _app
 
 
-@pytest.fixture(params=["", "/base-path", "/nested/path"])
-def router_prefix(request: FixtureRequest) -> str:
-    return request.param
-
-
 @pytest.fixture
-async def bg_task_app(router_prefix: str) -> AsyncIterable[FastAPI]:
-    app = FastAPI()
-
-    long_running_tasks.server.setup(app, router_prefix=router_prefix)
-    yield app
-
-
-@pytest.fixture(scope="function")
-async def async_client(bg_task_app: FastAPI) -> AsyncIterable[AsyncClient]:
-    async with AsyncClient(
-        app=bg_task_app,
-        base_url="http://backgroud.testserver.io",
-        headers={"Content-Type": "application/json"},
-    ) as client:
+async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
+
+
+@pytest.fixture(params=["", "/base-path", "/nested/path"])
+def router_prefix(request: pytest.FixtureRequest) -> str:
+    return request.param
 
 
 @pytest.fixture

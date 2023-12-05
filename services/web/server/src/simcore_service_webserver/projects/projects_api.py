@@ -23,7 +23,6 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
 from models_library.errors import ErrorDict
-from models_library.generics import Envelope
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -42,6 +41,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
+from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
@@ -77,7 +77,6 @@ from ..resource_usage import api as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    SocketMessageDict,
     send_group_messages,
     send_messages,
 )
@@ -1396,7 +1395,7 @@ async def lock_with_notification(
 
 async def get_project_inactivity(
     app: web.Application, project_id: ProjectID, user_id: UserID, product_name: str
-) -> Envelope[GetProjectInactivityResponse]:
+) -> GetProjectInactivityResponse:
     preference = await get_frontend_user_preference(
         app,
         user_id=user_id,
@@ -1414,4 +1413,4 @@ async def get_project_inactivity(
     project_inactivity = await director_v2_api.get_project_inactivity(
         app, project_id, max_inactivity_seconds
     )
-    return parse_obj_as(Envelope[GetProjectInactivityResponse], project_inactivity)
+    return parse_obj_as(GetProjectInactivityResponse, project_inactivity)

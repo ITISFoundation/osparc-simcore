@@ -1,5 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-import
+
 import asyncio
-from typing import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from unittest.mock import AsyncMock
 
 import httpx
@@ -9,6 +13,7 @@ from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from starlette import status
@@ -20,9 +25,15 @@ from yarl import URL
 
 
 @pytest.fixture
+def mock_env(mock_env: EnvVarsDict, minio_s3_settings_envs: EnvVarsDict) -> EnvVarsDict:
+    # overwrite to add minio real settings
+    return mock_env
+
+
+@pytest.fixture
 def update_project_workbench_with_comp_tasks(
     postgres_db: sa.engine.Engine,
-) -> Iterator[Callable]:
+) -> Callable:
     def updator(project_uuid: str):
         with postgres_db.connect() as con:
             result = con.execute(
@@ -47,7 +58,7 @@ def update_project_workbench_with_comp_tasks(
                 .where(projects.c.uuid == project_uuid)
             )
 
-    yield updator
+    return updator
 
 
 @pytest.fixture(scope="session")
@@ -138,7 +149,8 @@ async def wait_for_catalog_service(
         @retry(
             wait=wait_fixed(1),
             stop=stop_after_delay(60),
-            retry=retry_if_exception_type(AssertionError),
+            retry=retry_if_exception_type(AssertionError)
+            | retry_if_exception_type(httpx.HTTPError),
         )
         async def _ensure_catalog_services_answers() -> None:
             print("--> checking catalog is up and ready...")
@@ -146,6 +158,7 @@ async def wait_for_catalog_service(
                 f"{catalog_endpoint}/v0/services",
                 params={"details": False, "user_id": user_id},
                 headers={"x-simcore-products-name": product_name},
+                timeout=1,
             )
             assert (
                 response.status_code == status.HTTP_200_OK

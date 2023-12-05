@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from simcore_service_payments.services.notifier import setup_notifier
+from simcore_service_payments.services.socketio import setup_socketio
 
 from .._meta import (
     API_VERSION,
@@ -11,6 +13,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.auto_recharge_listener import setup_auto_recharge_listener
 from ..services.payments_gateway import setup_payments_gateway
 from ..services.postgres import setup_postgres
 from ..services.rabbitmq import setup_rabbitmq
@@ -50,6 +53,11 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # APIs w/ RUT
     setup_resource_usage_tracker(app)
+
+    # Listening to Rabbitmq
+    setup_auto_recharge_listener(app)
+    setup_socketio(app)
+    setup_notifier(app)
 
     # ERROR HANDLERS
     # ... add here ...

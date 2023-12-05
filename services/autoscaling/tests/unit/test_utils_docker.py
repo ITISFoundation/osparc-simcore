@@ -6,11 +6,13 @@ import asyncio
 import datetime
 import itertools
 import random
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import aiodocker
 import pytest
+from aws_library.ec2.models import Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.docker import DockerGenericTag, DockerLabelKey
@@ -24,7 +26,6 @@ from models_library.generated_models.docker_rest_api import (
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.docker_utils import to_datetime
-from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     Node,
@@ -72,7 +73,6 @@ async def create_node_labels(
                 "Labels": {f"{label}": "true" for label in labels},
             },
         )
-        return
 
     yield _creator
     # revert labels
@@ -145,14 +145,14 @@ async def test_worker_nodes(
 async def test_remove_monitored_down_nodes_with_empty_list_does_nothing(
     autoscaling_docker: AutoscalingDocker,
 ):
-    assert await remove_nodes(autoscaling_docker, []) == []
+    assert await remove_nodes(autoscaling_docker, nodes=[]) == []
 
 
 async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
 ):
-    assert await remove_nodes(autoscaling_docker, [host_node]) == []
+    assert await remove_nodes(autoscaling_docker, nodes=[host_node]) == []
 
 
 @pytest.fixture
@@ -174,7 +174,7 @@ async def test_remove_monitored_down_nodes_of_down_node(
     assert fake_docker_node.Status
     fake_docker_node.Status.State = NodeState.down
     assert fake_docker_node.Status.State == NodeState.down
-    assert await remove_nodes(autoscaling_docker, [fake_docker_node]) == [
+    assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == [
         fake_docker_node
     ]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
@@ -190,7 +190,7 @@ async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
     assert fake_docker_node.Status
     fake_docker_node.Status = None
     assert not fake_docker_node.Status
-    assert await remove_nodes(autoscaling_docker, [fake_docker_node]) == []
+    assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == []
 
 
 async def test_pending_service_task_with_insufficient_resources_with_no_service(
@@ -605,7 +605,7 @@ async def test_compute_node_used_resources_with_service(
     faker: Faker,
 ):
     # 1. if we have services with no defined reservations, then we cannot know what they use...
-    service_with_no_resources = await create_service(task_template, {}, "running")
+    await create_service(task_template, {}, "running")
     node_used_resources = await compute_node_used_resources(
         autoscaling_docker, host_node
     )
@@ -638,7 +638,7 @@ async def test_compute_node_used_resources_with_service(
     node_used_resources = await compute_node_used_resources(
         autoscaling_docker,
         host_node,
-        service_labels=[random.choice(list(service_labels.keys()))],
+        service_labels=[random.choice(list(service_labels.keys()))],  # noqa: S311
     )
     assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
     # 4. if we look for services with all the correct labels, they should then become visible again
@@ -899,7 +899,7 @@ async def test_tag_node_out_of_sequence_error(
             'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
             " > /docker-pull.compose.yml"
             " && "
-            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --file=/docker-pull.compose.yml pull" > /docker-pull-script.sh'
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "

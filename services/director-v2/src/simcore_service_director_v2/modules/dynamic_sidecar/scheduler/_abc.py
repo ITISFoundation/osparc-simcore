@@ -11,6 +11,7 @@ from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
@@ -27,7 +28,7 @@ class SchedulerInternalsInterface(ABC):
 
 class SchedulerPublicInterface(ABC):
     @abstractmethod
-    def toggle_observation(self, node_uuid: NodeID, disable: bool) -> bool:
+    def toggle_observation(self, node_uuid: NodeID, *, disable: bool) -> bool:
         """
         Enables/disables the observation of the service temporarily.
         NOTE: Used by director-v2 cli.
@@ -78,6 +79,7 @@ class SchedulerPublicInterface(ABC):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        *,
         can_save: bool,
     ) -> None:
         """
@@ -88,6 +90,7 @@ class SchedulerPublicInterface(ABC):
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         """returns True if service is being actively observed"""
 
+    @abstractmethod
     def list_services(
         self,
         *,
@@ -101,9 +104,18 @@ class SchedulerPublicInterface(ABC):
         self,
         node_uuid: NodeID,
         can_save: bool | None,
+        *,
         skip_observation_recreation: bool = False,
     ) -> None:
         """The service will be removed as soon as possible"""
+
+    @abstractmethod
+    async def mark_all_services_in_wallet_for_removal(
+        self, wallet_id: WalletID
+    ) -> None:
+        """When a certain threshold is reached a message for removing all the
+        services running under a certain wallet_id will be received.
+        """
 
     @abstractmethod
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:

@@ -31,9 +31,11 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 
 from ..db.payments_methods_repo import PaymentsMethodsRepo
 from ..models.db import PaymentsMethodsDB
+from ..models.db_to_api import to_payment_method_api_model
 from ..models.payments_gateway import GetPaymentMethod, InitPaymentMethod
 from ..models.schemas.acknowledgements import AckPaymentMethod
 from ..models.utils import merge_models
+from .notifier import Notifier
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -118,17 +120,20 @@ async def acknowledge_creation_of_payment_method(
     )
 
 
-async def on_payment_method_completed(payment_method: PaymentsMethodsDB):
-    assert payment_method.state == InitPromptAckFlowState.SUCCESS  # nosec
+async def on_payment_method_completed(
+    payment_method: PaymentsMethodsDB, notifier: Notifier
+):
     assert payment_method.completed_at is not None  # nosec
     assert payment_method.initiated_at < payment_method.completed_at  # nosec
 
-    _logger.debug(
-        "Notify front-end of payment -> sio (SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT) "
-    )
+    if payment_method.state == InitPromptAckFlowState.SUCCESS:
+        await notifier.notify_payment_method_acked(
+            user_id=payment_method.user_id,
+            payment_method=to_payment_method_api_model(payment_method),
+        )
 
 
-async def create_payment_method(
+async def insert_payment_method(
     repo: PaymentsMethodsRepo,
     *,
     payment_method_id: PaymentMethodID,
@@ -136,7 +141,10 @@ async def create_payment_method(
     wallet_id: WalletID,
     ack: AckPaymentMethod,
 ) -> PaymentsMethodsDB:
-    """Direct creation of payment-method"""
+    """Direct creation of payment-method.
+    NOTE: that this does NOT communicates with the gateway.
+    Used e.g. when gateway saved payment method after one-time payment
+    """
     return await repo.insert_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
@@ -148,7 +156,7 @@ async def create_payment_method(
     )
 
 
-async def list_payments_methods(
+async def list_payment_methods(
     gateway: PaymentsGatewayApi,
     repo: PaymentsMethodsRepo,
     *,

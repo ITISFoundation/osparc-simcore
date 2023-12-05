@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import asyncio
 from decimal import Decimal
 from unittest.mock import MagicMock
 
@@ -26,14 +27,8 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_postgres_database.models.payments_transactions import (
-    PaymentTransactionState,
-)
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
-)
-from simcore_service_webserver.payments._onetime_api import (
-    _ack_creation_of_wallet_payment,
 )
 from simcore_service_webserver.payments.settings import PaymentsSettings
 from simcore_service_webserver.payments.settings import (
@@ -334,7 +329,6 @@ async def wallet_payment_method_id(
     return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
 
 
-@pytest.mark.testit
 async def test_one_time_payment_with_payment_method(
     latest_osparc_price: Decimal,
     client: TestClient,
@@ -355,7 +349,7 @@ async def test_one_time_payment_with_payment_method(
     )
 
     assert (
-        client.app.router["init_payment_with_payment_method"]
+        client.app.router["pay_with_payment_method"]
         .url_for(
             wallet_id=f"{logged_user_wallet.wallet_id}",
             payment_method_id=wallet_payment_method_id,
@@ -374,26 +368,17 @@ async def test_one_time_payment_with_payment_method(
     data, error = await assert_status(response, web.HTTPAccepted)
     assert error is None
     payment = WalletPaymentInitiated.parse_obj(data)
-    assert mock_rpc_payments_service_api["init_payment_with_payment_method"].called
+    assert mock_rpc_payments_service_api["pay_with_payment_method"].called
 
     assert payment.payment_id
-    assert payment.payment_form_url
-    assert payment.payment_form_url.host == "some-fake-gateway.com"
-    assert payment.payment_form_url.query
-    assert payment.payment_form_url.query.endswith(payment.payment_id)
+    assert payment.payment_form_url is None
 
-    # Complete
-    await _ack_creation_of_wallet_payment(
-        client.app,
-        payment_id=payment.payment_id,
-        completion_state=PaymentTransactionState.SUCCESS,
-        invoice_url=faker.url(),
-    )
     # check notification to RUT (fake)
     assert mock_rut_add_credits_to_wallet.called
     mock_rut_add_credits_to_wallet.assert_called_once()
 
-    # check notification (fake)
+    # check notification after response
+    await asyncio.sleep(0.1)
     assert send_message.called
     send_message.assert_called_once()
 

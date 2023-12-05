@@ -10,11 +10,18 @@ from pathlib import Path
 import dotenv
 import pytest
 
-from .typing_env import EnvVarsDict
+from .typing_env import EnvVarsDict, EnvVarsList
 
 #
 # monkeypatch using dict
 #
+
+
+def delenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: EnvVarsList):
+    for var in envs:
+        assert isinstance(var, str)
+        assert var is not None  # None keys cannot be is defined w/o value
+        monkeypatch.delenv(var)
 
 
 def setenvs_from_dict(
@@ -22,12 +29,17 @@ def setenvs_from_dict(
 ) -> EnvVarsDict:
     for key, value in envs.items():
         assert isinstance(key, str)
-        assert value is not None  # None keys cannot be is defined w/o value
+        assert (
+            value is not None
+        ), f"{key=},{value=}"  # None keys cannot be is defined w/o value
+        converted_value = value
+        if isinstance(value, bool):
+            converted_value = f"{'true' if value else 'false'}"
         assert isinstance(
-            value, str
-        ), "client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values"
+            converted_value, str
+        ), f"client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values. problematic {key=},{value=}"
 
-        monkeypatch.setenv(key, value)
+        monkeypatch.setenv(key, converted_value)
     return deepcopy(envs)
 
 
@@ -65,7 +77,7 @@ def delenvs_from_envfile(
     monkeypatch: pytest.MonkeyPatch,
     content_or_path: str | Path,
     raising: bool,
-    **dotenv_kwags
+    **dotenv_kwags,
 ) -> EnvVarsDict:
     """Batch monkeypatch.delenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)

@@ -130,7 +130,7 @@ async def test_node_ports_accessors(
         await node_ports.set(port.key, port.value)
 
     # test batch add
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await node_ports.set_multiple(
             {
                 port.key: (port.value, None)
@@ -139,7 +139,7 @@ async def test_node_ports_accessors(
             },
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)
 
 
 @pytest.fixture(scope="session")

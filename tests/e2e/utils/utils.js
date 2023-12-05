@@ -72,6 +72,12 @@ function parseCommandLineArguments(args) {
     basicauthPassword = args[basicauthPasswordIdx + 1];
   }
   const enableDemoMode = (args.indexOf("--demo") > -1);
+  const serviceNameIdx = (args.indexOf("--service_name"));
+  let serviceName = "";
+  if (serviceNameIdx > -1) {
+    serviceName = args[serviceNameIdx + 1];
+  }
+
 
   let newUser = false;
   if (pass === null) {
@@ -92,7 +98,8 @@ function parseCommandLineArguments(args) {
     startTimeout,
     basicauthUsername,
     basicauthPassword,
-    enableDemoMode
+    enableDemoMode,
+    serviceName
   }
 }
 
@@ -270,12 +277,9 @@ async function getDashboardCardLabel(page, selector) {
   const cardLabel = await page.evaluate((selector) => {
     let label = null;
     const card = document.querySelector(selector);
-    if (card.children.length) {
-      // first child is the card layout
-      const cardLayout = card.children[0];
-      if (cardLayout.children.length) {
-        // first child is the label
-        label = cardLayout.children[0].innerText;
+    if (card && card.children && card.children.length) {
+      if (card.children[0].children && card.children[0].children.length > 1) {
+        label = card.children[0].children[1].innerText;
       }
     }
     return label;

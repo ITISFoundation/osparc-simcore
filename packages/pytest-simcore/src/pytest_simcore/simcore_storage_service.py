@@ -2,20 +2,20 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import os
+from collections.abc import Callable, Iterable
 from copy import deepcopy
-from typing import Callable, Iterable
 
 import aiohttp
 import pytest
 import tenacity
-from minio import Minio
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import parse_obj_as
-from servicelib.minio_utils import MinioRetryPolicyUponInitialization
+from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
-from .helpers.utils_docker import get_localhost_ip, get_service_published_port
+from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_host import get_localhost_ip
 
 
 @pytest.fixture(scope="module")
@@ -38,17 +38,15 @@ def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable
     os.environ = old_environ
 
 
-@pytest.fixture(scope="function")
-async def storage_service(
-    minio_service: Minio, storage_endpoint: URL, docker_stack: dict
-) -> URL:
+@pytest.fixture()
+async def storage_service(storage_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
     return storage_endpoint
 
 
 # TODO: this can be used by ANY of the simcore services!
-@tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_storage_responsive(storage_endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(storage_endpoint.with_path("/v0/")) as resp:

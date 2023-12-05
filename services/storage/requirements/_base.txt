@@ -4,14 +4,16 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aio-pika==9.2.2
+aio-pika==9.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aioboto3==11.3.0
+aioboto3==12.0.0
     # via -r requirements/_base.in
-aiobotocore==2.6.0
-    # via aioboto3
+aiobotocore==2.7.0
+    # via
+    #   aioboto3
+    #   aiobotocore
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -25,7 +27,7 @@ aiofiles==23.2.1
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.8.5
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -57,9 +59,9 @@ aiosignal==1.3.1
     # via aiohttp
 aiozipkin==1.1.1
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
-alembic==1.11.3
+alembic==1.12.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-arrow==1.2.3
+arrow==1.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -72,8 +74,9 @@ async-timeout==4.0.3
     # via
     #   aiohttp
     #   aiopg
+    #   asyncpg
     #   redis
-asyncpg==0.28.0
+asyncpg==0.29.0
     # via sqlalchemy
 attrs==23.1.0
     # via
@@ -81,14 +84,14 @@ attrs==23.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.28.17
+boto3==1.28.64
     # via aiobotocore
-botocore==1.31.17
+botocore==1.31.64
     # via
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.31.38
+botocore-stubs==1.31.80
     # via types-aiobotocore
 certifi==2023.7.22
     # via
@@ -103,7 +106,7 @@ certifi==2023.7.22
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.2
     # via
     #   aiohttp
     #   requests
@@ -111,13 +114,13 @@ click==8.1.7
     # via typer
 dnspython==2.4.2
     # via email-validator
-email-validator==2.0.0.post2
+email-validator==2.1.0.post1
     # via pydantic
 frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
-greenlet==2.0.2
+greenlet==3.0.1
     # via sqlalchemy
 idna==3.4
     # via
@@ -143,7 +146,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsonschema==4.19.0
+jsonschema==4.19.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -152,10 +155,10 @@ jsonschema==4.19.0
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
+jsonschema-path==0.3.1
+    # via openapi-spec-validator
 jsonschema-spec==0.2.4
-    # via
-    #   openapi-core
-    #   openapi-spec-validator
+    # via openapi-core
 jsonschema-specifications==2023.7.1
     # via
     #   jsonschema
@@ -190,15 +193,15 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.18.0
+openapi-core==0.18.2
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
-openapi-schema-validator==0.6.0
+openapi-schema-validator==0.6.2
     # via
     #   openapi-core
     #   openapi-spec-validator
-openapi-spec-validator==0.6.0
+openapi-spec-validator==0.7.1
     # via openapi-core
-orjson==3.9.5
+orjson==3.9.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -208,14 +211,16 @@ pamqp==3.2.1
 parse==1.19.1
     # via openapi-core
 pathable==0.4.3
-    # via jsonschema-spec
-prometheus-client==0.17.1
+    # via
+    #   jsonschema-path
+    #   jsonschema-spec
+prometheus-client==0.18.0
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
-psycopg2-binary==2.9.7
+psycopg2-binary==2.9.9
     # via
     #   aiopg
     #   sqlalchemy
-pydantic==1.10.12
+pydantic==1.10.13
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -237,7 +242,7 @@ pydantic==1.10.12
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.16.1
     # via rich
-pyinstrument==4.5.1
+pyinstrument==4.6.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -260,8 +265,9 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
+    #   jsonschema-path
     #   jsonschema-spec
-redis==5.0.0
+redis==5.0.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -280,22 +286,25 @@ referencing==0.29.3
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
+    #   jsonschema-path
     #   jsonschema-spec
     #   jsonschema-specifications
 requests==2.31.0
-    # via jsonschema-spec
+    # via
+    #   jsonschema-path
+    #   jsonschema-spec
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rich==13.5.2
+rich==13.6.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-rpds-py==0.10.0
+rpds-py==0.12.0
     # via
     #   jsonschema
     #   referencing
-s3transfer==0.6.2
+s3transfer==0.7.0
     # via boto3
 semantic-version==2.10.0
     # via -r requirements/_base.in
@@ -304,7 +313,7 @@ six==1.16.0
     #   isodate
     #   python-dateutil
     #   rfc3339-validator
-sqlalchemy==1.4.49
+sqlalchemy==1.4.50
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -338,13 +347,15 @@ typer==0.9.0
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-types-aiobotocore==2.6.0
+types-aiobotocore==2.7.0
     # via -r requirements/_base.in
-types-aiobotocore-s3==2.6.0
+types-aiobotocore-s3==2.7.0
     # via types-aiobotocore
-types-awscrt==0.19.1
+types-awscrt==0.19.8
     # via botocore-stubs
-typing-extensions==4.7.1
+types-python-dateutil==2.8.19.14
+    # via arrow
+typing-extensions==4.8.0
     # via
     #   aiodebug
     #   aiodocker
@@ -352,6 +363,8 @@ typing-extensions==4.7.1
     #   asgiref
     #   pydantic
     #   typer
+    #   types-aiobotocore
+    #   types-aiobotocore-s3
 ujson==5.8.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -365,7 +378,7 @@ ujson==5.8.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiohttp-swagger
-urllib3==1.26.16
+urllib3==2.0.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -379,7 +392,7 @@ urllib3==1.26.16
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   requests
-werkzeug==2.3.7
+werkzeug==3.0.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-core

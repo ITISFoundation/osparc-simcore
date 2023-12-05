@@ -206,7 +206,7 @@ async def start_job(
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop",
-    response_model=Job,
+    response_model=JobStatus,
 )
 async def stop_job(
     solver_key: SolverKeyId,

@@ -6,15 +6,14 @@
 import random
 
 import pytest
+from aws_library.ec2.models import EC2InstanceType, Resources
 from faker import Faker
 from pydantic import ByteSize
 from simcore_service_autoscaling.core.errors import (
     ConfigurationError,
     Ec2InstanceNotFoundError,
 )
-from simcore_service_autoscaling.models import Resources
-from simcore_service_autoscaling.utils.ec2 import (
-    EC2InstanceType,
+from simcore_service_autoscaling.utils.utils_ec2 import (
     closest_instance_policy,
     compose_user_data,
     find_best_fitting_ec2_instance,
@@ -60,10 +59,11 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
     [
         (
             Resources(cpus=n, ram=ByteSize(n)),
-            EC2InstanceType(name="fake", cpus=n, ram=ByteSize(n)),
+            EC2InstanceType(name="c5ad.12xlarge", cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)
     ],
+    ids=str,
 )
 async def test_find_best_fitting_ec2_instance_closest_instance_policy(
     needed_resources: Resources,
@@ -77,7 +77,7 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy(
     )
 
     SKIPPED_KEYS = ["name"]
-    for k in found_instance.__dict__.keys():
+    for k in found_instance.__dict__:
         if k not in SKIPPED_KEYS:
             assert getattr(found_instance, k) == getattr(expected_ec2_instance, k)
 

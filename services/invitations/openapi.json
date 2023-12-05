@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "paths": {
     "/": {
@@ -163,7 +163,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 40,
             "minLength": 1,
             "title": "Issuer",
             "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
@@ -187,6 +187,11 @@
             "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "This invitations can only be used for this product."
           },
           "created": {
             "type": "string",
@@ -199,6 +204,7 @@
         "required": [
           "issuer",
           "guest",
+          "product",
           "created"
         ],
         "title": "ApiInvitationContent",
@@ -207,6 +213,7 @@
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
+          "product": "osparc",
           "created": "2023-01-11 13:11:47.293595"
         }
       },
@@ -214,7 +221,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 40,
             "minLength": 1,
             "title": "Issuer",
             "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
@@ -238,6 +245,11 @@
             "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "This invitations can only be used for this product."
           },
           "created": {
             "type": "string",
@@ -258,6 +270,7 @@
         "required": [
           "issuer",
           "guest",
+          "product",
           "created",
           "invitation_url"
         ],
@@ -267,7 +280,8 @@
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
           "trial_account_days": 2,
-          "created": "2023-01-11 12:11:47.293595",
+          "product": "osparc",
+          "created": "2023-01-11 13:11:47.293595",
           "invitation_url": "https://foo.com/#/registration?invitation=1234"
         }
       },
@@ -275,7 +289,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 40,
             "minLength": 1,
             "title": "Issuer",
             "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
@@ -299,6 +313,11 @@
             "title": "Extra Credits In Usd",
             "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
             "minimum": 0
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "If None, it will use INVITATIONS_DEFAULT_PRODUCT"
           }
         },
         "type": "object",

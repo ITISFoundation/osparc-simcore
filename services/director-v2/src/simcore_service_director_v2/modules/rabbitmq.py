@@ -1,7 +1,12 @@
 import logging
+from functools import partial
 from typing import cast
 
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import (
+    CreditsLimit,
+    WalletCreditsLimitReachedMessage,
+)
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
@@ -10,8 +15,27 @@ from servicelib.rabbitmq import (
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
+from ..core.settings import AppSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
+    message = WalletCreditsLimitReachedMessage.parse_raw(data)
+
+    scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
+    settings: AppSettings = app.state.settings
+
+    if (
+        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED
+    ):
+        _logger.debug("Skipped shutting down services for wallet %s", message.wallet_id)
+    else:
+        await scheduler.mark_all_services_in_wallet_for_removal(
+            wallet_id=message.wallet_id
+        )
+
+    return True
 
 
 def setup(app: FastAPI) -> None:
@@ -23,6 +47,13 @@ def setup(app: FastAPI) -> None:
         )
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
             client_name="director-v2", settings=settings
+        )
+
+        await app.state.rabbitmq_client.subscribe(
+            WalletCreditsLimitReachedMessage.get_channel_name(),
+            partial(handler_out_of_credits, app),
+            exclusive_queue=False,
+            topics=[f"*.{CreditsLimit.OUT_OF_CREDITS}"],
         )
 
     async def on_shutdown() -> None:

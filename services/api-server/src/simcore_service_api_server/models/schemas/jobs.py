@@ -1,8 +1,11 @@
 import datetime
 import hashlib
+import logging
 from typing import Any, ClassVar, TypeAlias
 from uuid import UUID, uuid4
 
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import (
     BaseModel,
@@ -18,6 +21,7 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
 from ...models.schemas.files import File
@@ -296,3 +300,20 @@ class JobPricingSpecification(BaseModel):
             return parse_obj_as(JobPricingSpecification, headers)
         except ValidationError:
             return None
+
+
+class JobLog(BaseModel):
+    job_id: ProjectID
+    node_id: NodeID | None
+    log_level: LogLevelInt
+    messages: list[LogMessageStr]
+
+    class Config(BaseConfig):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
+                "node_id": "3742215e-6756-48d2-8b73-4d043065309f",
+                "log_level": logging.DEBUG,
+                "messages": ["PROGRESS: 5/10"],
+            }
+        }

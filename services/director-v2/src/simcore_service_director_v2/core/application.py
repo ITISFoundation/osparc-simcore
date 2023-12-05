@@ -17,6 +17,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
+    api_keys_manager,
     catalog,
     comp_scheduler,
     dask_clients_pool,
@@ -24,7 +25,6 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
-    node_rights,
     osparc_variables_substitutions,
     rabbitmq,
     remote_debug,
@@ -166,6 +166,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if dynamic_scheduler_enabled:
         dynamic_sidecar.setup(app)
+        api_keys_manager.setup(app)
 
     if (
         settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
@@ -177,8 +178,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
         resource_usage_tracker_client.setup(app)
-
-    node_rights.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

@@ -58,8 +58,10 @@ SETUP = {
     "entry_points": {
         "console_scripts": [
             "simcore-service-payments = simcore_service_payments.cli:main",
+            "simcore-service = simcore_service_payments.cli:main",
         ],
     },
+    "scripts": ["scripts/example_payment_gateway.py"],
 }
 
 if __name__ == "__main__":

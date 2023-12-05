@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
-      "simcore/services/dynamic/sim4life-dy": {
+      "simcore/services/dynamic/sim4life-8-0-0-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
         newStudyLabel: "New S4L project",

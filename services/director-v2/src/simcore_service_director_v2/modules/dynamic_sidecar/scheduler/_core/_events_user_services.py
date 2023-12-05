@@ -13,7 +13,9 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .....core.dynamic_sidecar_settings import DynamicSidecarSettings
+from .....core.dynamic_services_settings.scheduler import (
+    DynamicServicesSchedulerSettings,
+)
 from .....models.dynamic_services_scheduler import SchedulerData
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
@@ -33,9 +35,6 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         "Getting docker compose spec for service %s", scheduler_data.service_name
     )
 
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
     sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
@@ -76,6 +75,10 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
     )
 
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+    )
+
     compose_spec: str = await assemble_spec(
         app=app,
         service_key=scheduler_data.key,
@@ -86,7 +89,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
         swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
         service_resources=scheduler_data.service_resources,
-        has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+        has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
         simcore_service_labels=simcore_service_labels,
         allow_internet_access=allow_internet_access,
         product_name=scheduler_data.product_name,
@@ -94,7 +97,8 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         project_id=scheduler_data.project_id,
         node_id=scheduler_data.node_uuid,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
-        swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        run_id=scheduler_data.run_id,
     )
 
     _logger.debug(
@@ -170,7 +174,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
 
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
         ),
         wait=wait_fixed(1),
         retry_error_cls=EntrypointContainerNotFoundError,

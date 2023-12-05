@@ -22,7 +22,9 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
+from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import (
     random_api_key,
     random_product,
@@ -36,7 +38,6 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import PostgresSettings
-from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 ## POSTGRES -----
 
@@ -147,9 +148,12 @@ def migrated_db(postgres_service: dict, make_engine: Callable):
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    default_app_env_vars: EnvVarsDict,
+    mocker: MockerFixture,
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
+    mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
 
     envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
     assert "API_SERVER_POSTGRES" not in envs
@@ -269,5 +273,5 @@ async def auth(
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
-        return httpx.BasicAuth(key.api_key, key.api_secret.get_secret_value())
-    assert False, "Did not generate authentication"
+        return httpx.BasicAuth(key.api_key, key.api_secret)
+    pytest.fail("Did not generate authentication")
