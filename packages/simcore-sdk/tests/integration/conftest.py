@@ -20,6 +20,7 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
+from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
@@ -333,21 +334,11 @@ def _assign_config(
 
 @pytest.fixture
 async def r_clone_settings_factory(
-    minio_config: dict[str, Any], storage_service: URL
+    minio_s3_settings: S3Settings, storage_service: URL
 ) -> Awaitable[RCloneSettings]:
     async def _factory() -> RCloneSettings:
-        client = minio_config["client"]
-        settings = RCloneSettings.parse_obj(
-            {
-                "R_CLONE_S3": {
-                    "S3_ENDPOINT": client["endpoint"],
-                    "S3_ACCESS_KEY": client["access_key"],
-                    "S3_SECRET_KEY": client["secret_key"],
-                    "S3_BUCKET_NAME": minio_config["bucket_name"],
-                    "S3_SECURE": client["secure"],
-                },
-                "R_CLONE_PROVIDER": S3Provider.MINIO,
-            }
+        settings = RCloneSettings(
+            R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.MINIO
         )
         if not await is_r_clone_available(settings):
             pytest.skip("rclone not installed")
@@ -374,9 +365,8 @@ def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
 @pytest.fixture
 def node_ports_config(
     node_ports_config,
+    with_bucket_versioning_enabled: str,
     simcore_services_ready,
     cleanup_file_meta_data: None,
-    bucket: str,
-    with_bucket_versioning: None,
 ) -> None:
     return None

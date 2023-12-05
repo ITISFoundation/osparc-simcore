@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
+from typing import Final
 
 from models_library.products import ProductName
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
+
+_MAX_LEN: Final = 40
 
 
 class InvitationInputs(BaseModel):
@@ -11,7 +14,7 @@ class InvitationInputs(BaseModel):
         ...,
         description="Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum",
         min_length=1,
-        max_length=30,
+        max_length=_MAX_LEN,
     )
     guest: EmailStr = Field(
         ...,
@@ -35,7 +38,7 @@ class InvitationInputs(BaseModel):
     @classmethod
     def trim_long_issuers_to_max_length(cls, v):
         if v and isinstance(v, str):
-            return v[:29]
+            return v[: _MAX_LEN - 1]
         return v
 
 
