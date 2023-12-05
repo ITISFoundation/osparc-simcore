@@ -101,8 +101,14 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         };
         osparc.data.Resources.fetch("paymentMethods", "init", params)
           .then(data => {
-            this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
-            this.__fetchPaymentMethods();
+            const gatewayWindow = this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
+            osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentMethodAcknoledged", wsData => {
+              const { paymentMethodId } = JSON.parse(wsData)
+              if (paymentMethodId === data.paymentMethodId) {
+                gatewayWindow.close()
+                this.__fetchPaymentMethods();
+              }
+            })
           });
       }
     },
