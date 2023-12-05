@@ -193,7 +193,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
       groupByButton.set({
-        appearance: "form-button-outlined"
+        appearance: "form-button-outlined",
+        marginRight: 14
       });
       osparc.utils.Utils.setIdToWidget(groupByButton, "groupByButton");
 

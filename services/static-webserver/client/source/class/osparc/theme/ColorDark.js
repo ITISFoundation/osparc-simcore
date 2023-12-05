@@ -35,7 +35,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "primary-background-color": "rgba(0, 20, 46, 1)",
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
     "modal-backdrop": "rgba(8, 9, 13, 1)",
-    "fab_text": "rgba(216, 216, 216, 1)",
+    "fab_text": "contrasted-text-dark",
     "fab_background": "rgba(47, 50, 69, 1)",
     "input_background": "#213248",
     "window-popup-background": "rgba(66, 66, 66, 1)",
@@ -54,10 +54,10 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "link": "rgba(10, 182, 255, 1)",
 
     // button
-    "default-button-text": "rgba(255, 255, 255, 1)",
-    "default-button-text-outline": "rgba(229, 229, 229, 1)",
-    "default-button-text-action": "rgba(229, 229, 229, 1)",
-    "default-button-text-disabled": "rgba(113, 157, 181, 1)",
+    "default-button-text": "contrasted-text-light",
+    "default-button-text-outline": "contrasted-text-dark",
+    "default-button-text-action": "contrasted-text-dark",
+    "default-button-text-disabled": "text-disabled",
     "default-button": "rgba(10, 182, 255, 1)",
     "default-button-hover": "rgba(4, 73, 102, 1)",
     "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
@@ -93,9 +93,9 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "invalid": "error",
 
     // backgrounds
-    "background-selected":  "default-button-focus",
+    "background-selected": "success_bg",
     "background-selected-disabled":  "default-button-text-disabled",
-    "background-selected-dark":  "background-main-3",
+    "background-selected-dark":  "success_bg",
     "background-disabled": "background-main",
     "background-disabled-checked":  "background-main-1",
     "background-pane": "background-main",

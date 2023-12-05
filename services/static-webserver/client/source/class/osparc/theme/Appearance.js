@@ -279,7 +279,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "window", // redirect kids to window/kid
       style: function(states) {
         return {
-          backgroundColor: states.selected ? "node-selected-background" : "background-selected-dark",
+          backgroundColor: states.selected ? "node-selected-background" : "background-card-overlay",
           decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }

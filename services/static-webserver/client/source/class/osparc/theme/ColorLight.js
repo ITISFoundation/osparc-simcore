@@ -36,7 +36,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "primary-background-color": "rgba(255, 255, 255, 1)",
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
     "modal-backdrop": "rgba(247, 248, 252, 0.4)",
-    "fab_text": "rgba(216, 216, 216, 1)",
+    "fab_text": "contrasted-text-dark",
     "fab_background": "rgba(230, 235, 255, 1)",
     "input_background": "rgba(209, 214, 218, 1)",
     "window-popup-background": "rgba(255,255,255, 1)",
@@ -46,7 +46,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     // text
     "text": "rgba(40, 40, 40, 1)",
-    "text-disabled": "rgba(100, 120, 140, 1)",
+    "text-disabled": "rgba(113, 157, 181, 1)",
     "text-selected": "rgba(10, 182, 255, 1)",
     "text-placeholder": "rgba(90, 100, 110, 1)",
     "text-darker": "rgba(20, 20, 20, 1)",
@@ -55,10 +55,10 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "link": "rgba(10, 182, 255, 1)",
 
     // button
-    "default-button-text": "text",
-    "default-button-text-outline": "text",
-    "default-button-text-action": "text-selected",
-    "default-button-text-disabled": "rgba(113, 157, 181, 1)",
+    "default-button-text": "contrasted-text-light",
+    "default-button-text-outline": "contrasted-text-dark",
+    "default-button-text-action": "contrasted-text-dark",
+    "default-button-text-disabled": "text-disabled",
     "default-button": "rgba(10, 182, 255, 1)",
     "default-button-hover": "rgba(4, 73, 102, 1)",
     "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
@@ -94,9 +94,9 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "invalid": "error",
 
     // backgrounds
-    "background-selected":  "background-main-4",
-    "background-selected-disabled":  "background-main-1",
-    "background-selected-dark":  "background-main-3",
+    "background-selected": "success_bg",
+    "background-selected-disabled":  "default-button-text-disabled",
+    "background-selected-dark":  "success_bg",
     "background-disabled": "background-main",
     "background-disabled-checked":  "background-main-1",
     "background-pane": "background-main",
@@ -181,7 +181,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-selected-background": "background-main-4",
+    "node-selected-background": "success_bg",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 
