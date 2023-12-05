@@ -34,7 +34,7 @@ def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, An
         content_type := response_headers.get(b"content-type")
     ) and content_type == b"application/json":
         return True
-    elif (more_body := message.get("more_body")) is not None:
+    if (more_body := message.get("more_body")) is not None:
         return not more_body
     raise RuntimeError("Could not determine if last response")
 
