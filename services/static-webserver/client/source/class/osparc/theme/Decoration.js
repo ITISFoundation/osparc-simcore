@@ -272,19 +272,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "pb-listitem": {
       style: {
-        radius: 5,
-        width: 1,
-        style: "solid",
-        color: "transparent"
-      }
-    },
-
-    "pb-selected": {
-      includes: "pb-listitem",
-      style: {
-        width: 2,
-        style: "solid",
-        color: "success"
+        radius: 5
       }
     },
 
@@ -380,6 +368,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         radius: 0
       }
     },
+
     "toolbar-button": {
       include: "form-button-outlined",
       style: {
@@ -391,6 +380,15 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button-outlined",
       style: {
         backgroundColor: "default-button-hover-background"
+      }
+    },
+
+    "fab-button": {
+      include: "form-button",
+      style: {
+        width: 1,
+        color: "transparent",
+        backgroundColor: "background-card-overlay"
       }
     }
   }

@@ -189,6 +189,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
+      addServiceButton.set({
+        appearance: "form-button-outlined"
+      });
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._toolbar.add(addServiceButton);
     },

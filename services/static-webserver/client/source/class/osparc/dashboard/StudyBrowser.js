@@ -581,6 +581,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeSelection", e => {
         const selection = e.getData();
         studiesDeleteButton.set({
+          appearance: "danger-button",
           visibility: selection.length ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
         });

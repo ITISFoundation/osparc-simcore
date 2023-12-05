@@ -110,12 +110,10 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           break;
         case "tick-unselected":
-          control = new qx.ui.form.MenuButton().set({
+          control = new qx.ui.basic.Atom().set({
             appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
-            alignX: "center",
-            alignY: "middle",
             focusable: false
           });
           // make it circular
@@ -128,14 +126,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           break;
         case "tick-selected":
-          control = new qx.ui.form.MenuButton().set({
+          control = new qx.ui.basic.Image().set({
             appearance: "form-button",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
             padding: 5,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/check/12",
+            source: "@FontAwesome5Solid/check/12",
             focusable: false
           });
           // make it circular

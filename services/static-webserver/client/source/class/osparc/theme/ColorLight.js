@@ -36,7 +36,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "primary-background-color": "rgba(255, 255, 255, 1)",
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
     "modal-backdrop": "rgba(247, 248, 252, 0.4)",
-    "fab_background": "rgba(208, 211, 230, 1)",
+    "fab_text": "rgba(216, 216, 216, 1)",
+    "fab_background": "rgba(230, 235, 255, 1)",
     "input_background": "rgba(209, 214, 218, 1)",
     "window-popup-background": "rgba(255,255,255, 1)",
     "transparent_overlay": "rgba(1, 18, 26, 0.1)",
@@ -44,14 +45,14 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "flash_message_bg": "input_background",
 
     // text
-    "text": "c13",
-    "text-disabled": "c07",
-    "text-selected": "c12",
-    "text-placeholder": "c07",
-    "text-darker": "c07",
-    "contrasted-text-dark": "c01",
-    "contrasted-text-light": "c13",
-    "link": "c11",
+    "text": "rgba(40, 40, 40, 1)",
+    "text-disabled": "rgba(100, 120, 140, 1)",
+    "text-selected": "rgba(10, 182, 255, 1)",
+    "text-placeholder": "rgba(90, 100, 110, 1)",
+    "text-darker": "rgba(20, 20, 20, 1)",
+    "contrasted-text-dark": "rgba(20, 20, 20, 1)",
+    "contrasted-text-light": "rgba(40, 40, 40, 1)",
+    "link": "rgba(10, 182, 255, 1)",
 
     // button
     "default-button-text": "text",
@@ -78,17 +79,17 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background":  "default-button",
+    "material-button-background":  "fab_background",
     "material-button-background-disabled":  "transparent",
     "material-button-background-hovered":  "default-button-hover",
     "material-button-background-pressed":  "default-button-active",
     "material-button-text-disabled": "default-button-text-disabled",
-    "material-button-text": "default-button-text",
+    "material-button-text": "text",
 
     // material-textfield
-    "material-textfield": "c07",
+    "material-textfield": "input_background",
     "material-textfield-focused": "success",
-    "material-textfield-disabled":  "info",
+    "material-textfield-disabled": "default-button-text-disabled",
     "material-textfield-invalid": "error",
     "invalid": "error",
 
@@ -137,8 +138,9 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-separator": "c07",
 
     // tooltip
-    "tooltip": "c07",
-    "tooltip-text": "c12",
+    "tooltip": "flash_message_bg",
+    "tooltip-text": "text",
+
 
     // table
     "table-header": "background-main",

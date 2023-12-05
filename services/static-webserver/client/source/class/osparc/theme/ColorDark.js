@@ -35,6 +35,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "primary-background-color": "rgba(0, 20, 46, 1)",
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
     "modal-backdrop": "rgba(8, 9, 13, 1)",
+    "fab_text": "rgba(216, 216, 216, 1)",
     "fab_background": "rgba(47, 50, 69, 1)",
     "input_background": "#213248",
     "window-popup-background": "rgba(66, 66, 66, 1)",
@@ -48,7 +49,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "text-selected": "rgba(10, 182, 255, 1)",
     "text-placeholder": "rgba(174, 191, 207, 1)",
     "text-darker": "rgba(255, 255, 255, 1)",
-    "contrasted-text-dark": "rgba(255, 255, 255, 1)",
+    "contrasted-text-dark": "rgba(216, 216, 216, 1)",
     "contrasted-text-light": "rgba(255, 255, 255, 1)",
     "link": "rgba(10, 182, 255, 1)",
 
@@ -62,7 +63,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
     "default-button-active": "rgba(9, 89, 122, 1)",
     "default-button-active-background": "rgba(4, 73, 102, 0.04)",
-    "default-button-focus": "rgba(10, 182, 255, 1)",
+    "default-button-focus": "rgba(10, 182, 255, 0.5)",
     "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
     "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
@@ -77,7 +78,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background":  "default-button",
+    "material-button-background":  "fab_background",
     "material-button-background-disabled":  "transparent",
     "material-button-background-hovered":  "default-button-hover",
     "material-button-background-pressed":  "default-button-active",
@@ -85,15 +86,15 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "material-button-text": "default-button-text",
 
     // material-textfield
-    "material-textfield": "c07",
+    "material-textfield": "input_background",
     "material-textfield-focused": "success",
-    "material-textfield-disabled":  "info",
+    "material-textfield-disabled": "default-button-text-disabled",
     "material-textfield-invalid": "error",
     "invalid": "error",
 
     // backgrounds
-    "background-selected":  "background-main-4",
-    "background-selected-disabled":  "background-main-1",
+    "background-selected":  "default-button-focus",
+    "background-selected-disabled":  "default-button-text-disabled",
     "background-selected-dark":  "background-main-3",
     "background-disabled": "background-main",
     "background-disabled-checked":  "background-main-1",
@@ -136,8 +137,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "border-separator": "c07",
 
     // tooltip
-    "tooltip": "c07",
-    "tooltip-text": "c12",
+    "tooltip": "flash_message_bg",
+    "tooltip-text": "text",
 
     // table
     "table-header": "background-main",
