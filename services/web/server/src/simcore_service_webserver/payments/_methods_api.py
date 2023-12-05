@@ -75,9 +75,7 @@ async def _fake_init_creation_of_wallet_payment_method(
     # FAKE -----
     _logger.debug("FAKE Payments Gateway: /payment-methods:init")
     await asyncio.sleep(1)
-    payment_method_id = PaymentMethodID(
-        f"{_FAKE_PAYMENT_METHOD_ID_PREFIX}_{uuid4()}".upper()
-    )
+    payment_method_id = PaymentMethodID(f"{_FAKE_PAYMENT_METHOD_ID_PREFIX}_{uuid4()}")
     form_link = (
         URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
         .with_path("/payment-methods/form")
