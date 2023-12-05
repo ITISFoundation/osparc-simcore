@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         };
         osparc.data.Resources.fetch("paymentMethods", "init", params)
           .then(data => {
-            this.__popUpPaymentGateway(data["paymentMethodId"], data["paymentMethodFormUrl"]);
+            this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
             this.__fetchPaymentMethods();
           });
       }
@@ -127,7 +127,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     __popUpPaymentGateway: function(paymentMethodId, url) {
       const options = {
-        width: 400,
+        width: 450,
         height: 600
       };
 
@@ -184,7 +184,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "transparent_overlay"
+        backgroundColor: "transparent"
       });
 
       const paymentMethodsModel = this.__paymentMethodsModel = new qx.data.Array();
@@ -207,7 +207,6 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         }
       });
 
-      paymentMethodsModel.removeAll();
       allPaymentMethods.forEach(paymentMethod => {
         const paymentMethodModel = qx.data.marshal.Json.createModel(paymentMethod);
         paymentMethodsModel.append(paymentMethodModel);
