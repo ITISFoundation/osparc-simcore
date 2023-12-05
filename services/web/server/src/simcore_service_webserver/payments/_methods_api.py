@@ -37,7 +37,7 @@ from .settings import PaymentsSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
-_FAKE_PAYMENT_METHOD_ID_PREFIX = "fpm_"
+_FAKE_PAYMENT_METHOD_ID_PREFIX = "fpm"
 
 
 def _get_payment_methods_from_fake_gateway(fake: Faker):
