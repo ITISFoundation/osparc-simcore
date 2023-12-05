@@ -2,7 +2,7 @@ from functools import cached_property
 from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, SecretStr, parse_obj_as
+from pydantic import Field, NonNegativeInt, SecretStr, parse_obj_as
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
@@ -133,7 +133,7 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True
     )
-
+    API_SERVER_MAX_LOG_CHECK_SECONDS: NonNegativeInt = 30
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
         default=None,
