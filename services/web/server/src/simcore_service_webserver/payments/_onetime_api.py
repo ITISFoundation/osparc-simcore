@@ -197,7 +197,7 @@ async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-ma
         app,
         payment_id=inited.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
-        message=f"Fake payment completed with payment-id = {payment_method_id}",
+        message=f"Fake payment completed with {payment_method_id=}",
         invoice_url=f"https://fake-invoice.com/?id={inited.payment_id}",  # type: ignore
         notify_enabled=False,
     )
