@@ -13,14 +13,12 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.exception_utils import _SKIPS_MESSAGE
+from servicelib.fastapi.http_client_thin import BaseClientHTTPError
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     ContainerState,
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
-    BaseClientHTTPError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import _events
 
