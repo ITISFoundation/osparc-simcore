@@ -6,6 +6,7 @@
 # pylint: disable=unnecessary-lambda
 
 import os
+from typing import Iterator
 import pytest
 from playwright.sync_api import APIRequestContext, Page
 from tenacity import Retrying
@@ -32,20 +33,28 @@ def product_and_user() -> tuple:
     return (product_url, user_name, user_password)
 
 
+def stop_pipeline(api_request_context) -> Iterator[None]:
+
+    yield
+
+    api_request_context.post(f"{PRODUCT_URL}v0/computations/{STUDY_ID}:stop")
+
+
 def test_resource_usage_tracker(
     log_in_and_out: None,
     api_request_context: APIRequestContext,
     product_and_user: tuple,
+    stop_pipeline: None,
 ):
     # 1. Resource usage before
     rut_before = api_request_context.get(
         f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
     )
     assert rut_before.status == HTTPStatus.OK
-    service_runs_before = rut_before.json()['data']
+    service_runs_before = rut_before.json()["data"]
     service_run_ids_before = set()
     for service_run in service_runs_before:
-        service_run_ids_before.add(service_run['service_run_id'])
+        service_run_ids_before.add(service_run["service_run_id"])
     print(f"Service runs after: {service_run_ids_before}")
 
     # 2. Start computations
@@ -63,29 +72,31 @@ def test_resource_usage_tracker(
         reraise=True,
     ):
         with attempt:
-            print(f"====================={datetime.now(tz=timezone.utc)}=============================")
-            output = api_request_context.get(
-                f"{PRODUCT_URL}v0/projects/{STUDY_ID}"
+            print(
+                f"====================={datetime.now(tz=timezone.utc)}============================="
             )
+            output = api_request_context.get(f"{PRODUCT_URL}v0/projects/{STUDY_ID}")
             assert output.status == HTTPStatus.OK
-            workbench = output.json()['data']['workbench']
+            workbench = output.json()["data"]["workbench"]
             assert len(workbench.keys()) == int(NUM_OF_SLEEPERS)
             status_check = set()
             for node in list(workbench.keys()):
-                node_label = workbench[node]['label']
-                node_current_status = workbench[node]['state']['currentStatus']
+                node_label = workbench[node]["label"]
+                node_current_status = workbench[node]["state"]["currentStatus"]
                 print((node_label, node_current_status, node))
                 status_check.add(node_current_status)
 
             assert len(status_check.union({"SUCCESS", "FAILED"})) == 2
 
     # 3. Check Resource usage after
-    rut_after = api_request_context.get(f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}")
+    rut_after = api_request_context.get(
+        f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
+    )
     assert rut_after.status == HTTPStatus.OK
-    service_runs_after = rut_after.json()['data']
+    service_runs_after = rut_after.json()["data"]
     service_run_ids_after = set()
     for service_run in service_runs_after:
-        service_run_ids_after.add(service_run['service_run_id'])
+        service_run_ids_after.add(service_run["service_run_id"])
     print(f"Service runs after: {service_run_ids_after}")
 
     # If there is an intersection with old service run id, that means that
