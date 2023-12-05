@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
     __createInactivitySetting: function() {
       const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
-      const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), true);
+      const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
       box.add(label);
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     __createUserPrivacySettings: function() {
       const box = this._createSectionBox("Privacy settings");
 
-      const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), true);
+      const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
       box.add(label);
 
       const preferencesSettings = osparc.Preferences.getInstance();
