@@ -33,6 +33,7 @@ def product_and_user() -> tuple:
     return (product_url, user_name, user_password)
 
 
+@pytest.fixture
 def stop_pipeline(api_request_context) -> Iterator[None]:
 
     yield
