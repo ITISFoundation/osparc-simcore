@@ -528,7 +528,8 @@ async def _start_instances(
         await auto_scaling_mode.log_message_from_tasks(
             app,
             tasks,
-            "The maximum number of machines in the cluster was reached. Please wait for your running jobs to complete and try again later or contact osparc support if this issue does not resolve.",
+            "The maximum number of machines in the cluster was reached. Please wait for your running jobs "
+            "to complete and try again later or contact osparc support if this issue does not resolve.",
             level=logging.ERROR,
         )
         return []
@@ -578,7 +579,10 @@ async def _start_instances(
         else:
             new_pending_instances.append(r)
 
-    log_message = f"{sum(n for n in capped_needed_machines.values())} new machines launched, it might take up to 3 minutes to start, Please wait..."
+    log_message = (
+        f"{sum(n for n in capped_needed_machines.values())} new machines launched"
+        ", it might take up to 3 minutes to start, Please wait..."
+    )
     await auto_scaling_mode.log_message_from_tasks(
         app, tasks, log_message, level=logging.INFO
     )
