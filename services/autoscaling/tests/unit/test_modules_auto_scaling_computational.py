@@ -10,6 +10,7 @@ import asyncio
 import base64
 import datetime
 import logging
+from collections import defaultdict
 from collections.abc import Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
@@ -874,15 +875,31 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
 
     # one of each type is created with some that will have 2 instances
     all_instances = await ec2_client.describe_instances()
-    expected_instances_by_type = [2, 2, 2, 1, 1, 1, 1]
+    expected_instances_by_type = {
+        "g4dn.8xlarge": 2,
+        "g3.4xlarge": 2,
+        "g4dn.2xlarge": 1,
+        "t2.2xlarge": 1,
+        "r5n.4xlarge": 1,
+        "r5n.8xlarge": 2,
+        "t2.xlarge": 1,
+    }
+    assert (
+        sum(expected_instances_by_type.values())
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
     assert len(all_instances["Reservations"]) == len(
         aws_allowed_ec2_instance_type_names
     )
-    for reservation, expected_num_instances in zip(
-        all_instances["Reservations"], expected_instances_by_type, strict=True
-    ):
+    instances_found = defaultdict(int)
+    for reservation in all_instances["Reservations"]:
         assert "Instances" in reservation
-        assert len(reservation["Instances"]) == expected_num_instances
+        for instance in reservation["Instances"]:
+            assert "InstanceType" in instance
+            instance_type = instance["InstanceType"]
+            instances_found[instance_type] += 1
+
+    assert instances_found == expected_instances_by_type
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
     mock_docker_find_node_with_name.assert_not_called()
