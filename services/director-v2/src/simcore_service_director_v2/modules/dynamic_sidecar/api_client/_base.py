@@ -31,8 +31,9 @@ def _log_pool_status(client: AsyncClient, event_name: str) -> None:
         ],
         len(client._transport._pool.connections),  # noqa: SLF001
         [
-            (id(c), c.__dict__) for c in client._transport._pool.connections
-        ],  # noqa: SLF001
+            (id(c), c.__dict__)
+            for c in client._transport._pool.connections  # noqa: SLF001
+        ],
     )
 
 
