@@ -5,6 +5,7 @@ from typing import Any, Final, TypeAlias
 
 import distributed
 from aws_library.ec2.models import EC2InstanceData, Resources
+from dask_task_models_library.resource_constraints import DaskTaskResources
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 
 from ..core.errors import (
@@ -12,7 +13,7 @@ from ..core.errors import (
     DaskSchedulerNotFoundError,
     DaskWorkerNotFoundError,
 )
-from ..models import AssociatedInstance, DaskTask, DaskTaskId, DaskTaskResources
+from ..models import AssociatedInstance, DaskTask, DaskTaskId
 from ..utils.auto_scaling_core import (
     node_host_name_from_ec2_private_dns,
     node_ip_from_ec2_private_dns,
