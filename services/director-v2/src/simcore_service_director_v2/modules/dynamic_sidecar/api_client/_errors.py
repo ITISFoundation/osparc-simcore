@@ -17,7 +17,7 @@ class BaseClientError(Exception):
     """
 
 
-class _WrongReturnType(BaseClientError):
+class WrongReturnTypeError(BaseClientError):
     """
     used internally to signal the user that the defined method
     has an invalid return time annotation
@@ -25,10 +25,8 @@ class _WrongReturnType(BaseClientError):
 
     def __init__(self, method, return_annotation) -> None:
         super().__init__(
-            (
-                f"{method=} should return an instance "
-                f"of {Response}, not '{return_annotation}'!"
-            )
+            f"{method=} should return an instance "
+            f"of {Response}, not '{return_annotation}'!"
         )
 
 

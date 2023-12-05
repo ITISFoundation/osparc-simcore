@@ -2,7 +2,8 @@ import asyncio
 import functools
 import inspect
 import logging
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any, ClassVar
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
@@ -13,7 +14,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from ._errors import ClientHttpError, UnexpectedStatusError, _WrongReturnType
+from ._errors import ClientHttpError, UnexpectedStatusError, WrongReturnTypeError
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +24,15 @@ def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     logger.warning(
         "Pool status @ '%s': requests(%s)=%s, connections(%s)=%s",
         event_name.upper(),
-        len(client._transport._pool._requests),
+        len(client._transport._pool._requests),  # noqa: SLF001
         [
             (id(r), r.request.method, r.request.url, r.request.headers)
-            for r in client._transport._pool._requests
+            for r in client._transport._pool._requests  # noqa: SLF001
         ],
-        len(client._transport._pool.connections),
-        [(id(c), c.__dict__) for c in client._transport._pool.connections],
+        len(client._transport._pool.connections),  # noqa: SLF001
+        [
+            (id(c), c.__dict__) for c in client._transport._pool.connections
+        ],  # noqa: SLF001
     )
 
 
@@ -61,8 +64,6 @@ def retry_on_errors(
     """
     assert asyncio.iscoroutinefunction(request_func)
 
-    RETRY_ERRORS = (ConnectError, PoolTimeout)
-
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
         # pylint: disable=protected-access
@@ -70,7 +71,7 @@ def retry_on_errors(
             async for attempt in AsyncRetrying(
                 stop=stop_after_delay(zelf.request_timeout),
                 wait=wait_exponential(min=1),
-                retry=retry_if_exception_type(RETRY_ERRORS),
+                retry=retry_if_exception_type((ConnectError, PoolTimeout)),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
                 after=_after_log(logger),
                 reraise=True,
@@ -116,7 +117,7 @@ def expect_status(expected_code: int):
 
 
 class BaseThinClient:
-    SKIP_METHODS: set[str] = {"close"}
+    SKIP_METHODS: ClassVar[set[str]] = {"close"}
 
     def __init__(
         self,
@@ -153,7 +154,7 @@ class BaseThinClient:
         for method in public_methods:
             signature = inspect.signature(method)
             if signature.return_annotation != Response:
-                raise _WrongReturnType(method, signature.return_annotation)
+                raise WrongReturnTypeError(method, signature.return_annotation)
 
     async def close(self) -> None:
         _log_pool_status(self.client, "closing")
