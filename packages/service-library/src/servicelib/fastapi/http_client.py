@@ -1,14 +1,11 @@
 import contextlib
-import logging
 
 import httpx
 from fastapi import FastAPI
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 
-_logger = logging.getLogger(__name__)
 
-
-class BaseHttpApi:
+class BaseHTTPClient:
     def __init__(self, client: httpx.AsyncClient):
         self._client = client
         # Controls all resources lifespan in sync
@@ -32,9 +29,8 @@ class BaseHttpApi:
         app.add_event_handler("startup", self._start)
         app.add_event_handler("shutdown", self._close)
 
-    #
-    # service diagnostics
-    #
+
+class BaseHttpApi(BaseHTTPClient):
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
