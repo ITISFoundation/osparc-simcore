@@ -338,7 +338,7 @@ async def _upload_path(
     )
 
     if not progress_bar:
-        progress_bar = ProgressBarData(steps=1)
+        progress_bar = ProgressBarData(num_steps=1)
 
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
@@ -354,11 +354,23 @@ async def _upload_path(
     async with ClientSessionContextManager(client_session) as session:
         upload_links: FileUploadSchema | None = None
         try:
-            store_id, e_tag, upload_links = await _upload_to_s3(
+            store_id, upload_links = await get_upload_links_from_s3(
                 user_id=user_id,
-                store_id=store_id,
                 store_name=store_name,
+                store_id=store_id,
                 s3_object=s3_object,
+                client_session=session,
+                link_type=LinkType.S3 if is_directory else LinkType.PRESIGNED,
+                file_size=ByteSize(
+                    path_to_upload.stat().st_size
+                    if isinstance(path_to_upload, Path)
+                    else path_to_upload.file_size
+                ),
+                is_directory=is_directory,
+                sha256_checksum=checksum,
+            )
+            e_tag, upload_links = await _upload_to_s3(
+                upload_links=upload_links,
                 path_to_upload=path_to_upload,
                 io_log_redirect_cb=io_log_redirect_cb,
                 r_clone_settings=r_clone_settings,
@@ -366,7 +378,6 @@ async def _upload_path(
                 is_directory=is_directory,
                 session=session,
                 exclude_patterns=exclude_patterns,
-                sha256_checksum=checksum,
             )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
@@ -386,37 +397,17 @@ async def _upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
-async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
+async def _upload_to_s3(
     *,
-    user_id: UserID,
-    store_id: LocationID | None,
-    store_name: LocationName | None,
-    s3_object: StorageFileID,
+    upload_links,
     path_to_upload: Path | UploadableFileObject,
     io_log_redirect_cb: LogRedirectCB | None,
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
     is_directory: bool,
-    sha256_checksum: SHA256Str | None,
     session: ClientSession,
     exclude_patterns: set[str] | None,
-) -> tuple[LocationID, ETag | None, FileUploadSchema]:
-    store_id, upload_links = await get_upload_links_from_s3(
-        user_id=user_id,
-        store_name=store_name,
-        store_id=store_id,
-        s3_object=s3_object,
-        client_session=session,
-        link_type=LinkType.S3 if is_directory else LinkType.PRESIGNED,
-        file_size=ByteSize(
-            path_to_upload.stat().st_size
-            if isinstance(path_to_upload, Path)
-            else path_to_upload.file_size
-        ),
-        is_directory=is_directory,
-        sha256_checksum=sha256_checksum,
-    )
-
+) -> tuple[ETag | None, FileUploadSchema]:
     uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert r_clone_settings  # nosec
@@ -445,7 +436,7 @@ async def _upload_to_s3(  # pylint: disable=too-many-arguments # noqa: PLR0913
         uploaded_parts,
         is_directory=is_directory,
     )
-    return store_id, e_tag, upload_links
+    return e_tag, upload_links
 
 
 async def _get_file_meta_data(

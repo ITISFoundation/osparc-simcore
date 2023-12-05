@@ -84,13 +84,6 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
-# NOTE: this is only for WSL1 as /etc/hostname is not accessible there
-ifeq ($(IS_WSL),WSL)
-ETC_HOSTNAME = $(CURDIR)/.fake_hostname_file
-export ETC_HOSTNAME
-host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
-endif
-
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
@@ -276,23 +269,15 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 
 .stack-ops.yml: .env $(docker-compose-configs)
-	# Compiling config file for filestash
-	$(eval TMP_PATH_TO_FILESTASH_CONFIG=$(shell set -o allexport && \
-	source $(CURDIR)/.env && \
-	set +o allexport && \
-	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
-	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 ifdef ops_ci
 	@$(shell \
-		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
 		scripts/docker/docker-compose-config.bash -e .env \
 		services/docker-compose-ops-ci.yml \
 		> $@ \
 	)
 else
 	@$(shell \
-		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
 		scripts/docker/docker-compose-config.bash -e .env \
 		services/docker-compose-ops.yml \
 		> $@ \
@@ -306,7 +291,6 @@ endif
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
 ifndef ops_disabled
-	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 	docker stack deploy --with-registry-auth -c $< ops
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
@@ -335,7 +319,6 @@ printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVIT
 printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
-printf "$$rows" "Storage S3 Filestash" "http://$(get_my_ip).nip.io:9002" 12345678 12345678;\
 printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
 
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\

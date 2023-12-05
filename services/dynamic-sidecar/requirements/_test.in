@@ -9,7 +9,6 @@ async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) be
 docker
 faker
 flaky
-minio
 pytest
 pytest-asyncio
 pytest-cov

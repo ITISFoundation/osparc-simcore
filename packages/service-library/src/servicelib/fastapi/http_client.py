@@ -82,7 +82,11 @@ class AppStateMixin:
 
     @classmethod
     def pop_from_app_state(cls, app: FastAPI):
-        old = getattr(app.state, cls.app_state_name, None)
+        """
+        Raises:
+            AttributeError: if instance is not in app.state
+        """
+        old = getattr(app.state, cls.app_state_name)
         delattr(app.state, cls.app_state_name)
         return old
 

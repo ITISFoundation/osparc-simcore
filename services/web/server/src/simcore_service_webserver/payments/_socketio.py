@@ -1,17 +1,17 @@
 from aiohttp import web
+from models_library.api_schemas_payments.socketio import (
+    SOCKET_IO_PAYMENT_COMPLETED_EVENT,
+    SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
+)
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodTransaction,
     PaymentTransaction,
 )
+from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from ..socketio.messages import (
-    SOCKET_IO_PAYMENT_COMPLETED_EVENT,
-    SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
-    SocketMessageDict,
-    send_messages,
-)
+from ..socketio.messages import send_messages
 
 
 async def notify_payment_completed(

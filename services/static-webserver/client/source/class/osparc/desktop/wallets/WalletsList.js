@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "background-main-2"
+        backgroundColor: "transparent"
       });
       walletsUIList.addListener("changeSelection", e => this.__walletSelected(e.getData()), this);
 

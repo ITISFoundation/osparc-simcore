@@ -272,7 +272,7 @@ class WalletCreditsMessage(RabbitMessageBase):
 
 
 class CreditsLimit(IntEnum):
-    MIN_CREDITS = 0
+    OUT_OF_CREDITS = 0
 
 
 class WalletCreditsLimitReachedMessage(RabbitMessageBase):

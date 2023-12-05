@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any, NamedTuple
 from unittest.mock import Mock
@@ -20,6 +20,9 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
+from models_library.users import UserID
+from models_library.wallets import WalletID
+from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -29,6 +32,8 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
+from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
+from simcore_service_payments.models.db import PaymentsMethodsDB
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
     GetPaymentMethod,
@@ -39,17 +44,11 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodsBatch,
 )
 from simcore_service_payments.models.schemas.acknowledgements import (
+    AckPaymentMethod,
     AckPaymentWithPaymentMethod,
 )
+from simcore_service_payments.services import payments_methods
 from toolz.dicttoolz import get_in
-
-
-@pytest.fixture(scope="session")
-def is_pdb_enabled(request: pytest.FixtureRequest):
-    """Returns true if tests are set to use interactive debugger, i.e. --pdb"""
-    options = request.config.option
-    return options.usepdb
-
 
 #
 # rabbit-MQ
@@ -58,15 +57,17 @@ def is_pdb_enabled(request: pytest.FixtureRequest):
 
 @pytest.fixture
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
-    def _do():
+    def _():
         # The following services are affected if rabbitmq is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_notifier")
+        mocker.patch("simcore_service_payments.core.application.setup_socketio")
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
         mocker.patch(
             "simcore_service_payments.core.application.setup_auto_recharge_listener"
         )
 
-    return _do
+    return _
 
 
 @pytest.fixture
@@ -93,7 +94,7 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
             Mock()
         )  # NOTE: avoids error in api._dependencies::get_db_engine
 
-    def _do():
+    def _():
         # The following services are affected if postgres is not in place
         mocker.patch(
             "simcore_service_payments.core.application.setup_postgres",
@@ -101,7 +102,7 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
             side_effect=_setup,
         )
 
-    return _do
+    return _
 
 
 @pytest.fixture
@@ -131,7 +132,41 @@ def payments_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
         con.execute(payments_transactions.delete())
 
 
-#
+@pytest.fixture
+async def create_fake_payment_method_in_db(
+    app: FastAPI,
+) -> AsyncIterable[
+    Callable[[PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]]
+]:
+    _repo = PaymentsMethodsRepo(app.state.engine)
+    _created = []
+
+    async def _(
+        payment_method_id: PaymentMethodID,
+        wallet_id: WalletID,
+        user_id: UserID,
+    ) -> PaymentsMethodsDB:
+        acked = await payments_methods.insert_payment_method(
+            repo=_repo,
+            payment_method_id=payment_method_id,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            ack=AckPaymentMethod(
+                success=True,
+                message=f"Created with {create_fake_payment_method_in_db.__name__}",
+            ),
+        )
+        _created.append(acked)
+        return acked
+
+    yield _
+
+    for acked in _created:
+        await _repo.delete_payment_method(
+            acked.payment_method_id, user_id=acked.user_id, wallet_id=acked.wallet_id
+        )
+
+
 MAX_TIME_FOR_APP_TO_STARTUP = 10
 MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
@@ -203,7 +238,19 @@ def mock_payments_routes(faker: Faker) -> Callable:
 
 
 @pytest.fixture
-def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
+def no_funds_payment_method_id(faker: Faker) -> PaymentMethodID:
+    """Fake Paymets-Gateway will decline payments with this payment-method id due to insufficient -funds
+
+    USE create_fake_payment_method_in_db to inject this payment-method in DB
+    Emulates https://stripe.com/docs/testing#declined-payments
+    """
+    return parse_obj_as(PaymentMethodID, "no_funds_payment_method_id")
+
+
+@pytest.fixture
+def mock_payments_methods_routes(
+    faker: Faker, no_funds_payment_method_id: PaymentMethodID
+) -> Iterator[Callable]:
     class PaymentMethodInfoTuple(NamedTuple):
         init: InitPaymentMethod
         get: GetPaymentMethod
@@ -267,6 +314,21 @@ def mock_payments_methods_routes(faker: Faker) -> Iterator[Callable]:
             _get(request, pm_id)
 
             payment_id = faker.uuid4()
+
+            if pm_id == no_funds_payment_method_id:
+                # SEE https://stripe.com/docs/testing#declined-payments
+                return httpx.Response(
+                    status.HTTP_200_OK,
+                    json=jsonable_encoder(
+                        AckPaymentWithPaymentMethod(
+                            success=False,
+                            message=f"Insufficient Fonds '{pm_id}'",
+                            invoice_url=None,
+                            payment_id=payment_id,
+                        )
+                    ),
+                )
+
             return httpx.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(

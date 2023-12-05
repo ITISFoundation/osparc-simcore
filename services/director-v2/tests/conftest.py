@@ -6,9 +6,10 @@
 import json
 import logging
 import os
+from collections.abc import AsyncIterable, AsyncIterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Iterable
+from typing import Any
 from unittest.mock import AsyncMock
 
 import httpx
@@ -25,15 +26,14 @@ from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
 
 pytest_plugins = [
-    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.dask_gateway",
     "pytest_simcore.dask_scheduler",
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.minio_service",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -140,7 +140,7 @@ def dynamic_sidecar_docker_image_name() -> str:
     return f"{registry}/dynamic-sidecar:{image_tag}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_env(
     monkeypatch: pytest.MonkeyPatch, dynamic_sidecar_docker_image_name: str
 ) -> EnvVarsDict:
@@ -177,7 +177,7 @@ def mock_env(
 
 
 @pytest.fixture()
-async def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
+async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", settings.json(indent=2))
@@ -226,8 +226,7 @@ def fake_workbench(fake_workbench_file: Path) -> NodesDict:
 
 @pytest.fixture
 def fake_workbench_as_dict(fake_workbench_file: Path) -> dict[str, Any]:
-    workbench_dict = json.loads(fake_workbench_file.read_text())
-    return workbench_dict
+    return json.loads(fake_workbench_file.read_text())
 
 
 @pytest.fixture
@@ -236,7 +235,7 @@ def fake_workbench_without_outputs(
 ) -> dict[str, Any]:
     workbench = deepcopy(fake_workbench_as_dict)
     # remove all the outputs from the workbench
-    for _, data in workbench.items():
+    for data in workbench.values():
         data["outputs"] = {}
 
     return workbench
@@ -257,12 +256,23 @@ def fake_workbench_complete_adjacency(
 
 
 @pytest.fixture
-def disable_rabbitmq(mocker) -> None:
+def disable_rabbitmq(mocker: MockerFixture) -> None:
     def mock_setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = AsyncMock()
 
     mocker.patch(
         "simcore_service_director_v2.modules.rabbitmq.setup", side_effect=mock_setup
+    )
+
+
+@pytest.fixture
+def disable_api_keys_manager(mocker: MockerFixture) -> None:
+    def mock_setup(app: FastAPI) -> None:
+        app.state.api_keys_manager = AsyncMock()
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.api_keys_manager.setup",
+        side_effect=mock_setup,
     )
 
 

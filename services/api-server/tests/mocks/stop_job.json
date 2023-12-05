@@ -1,0 +1,118 @@
+[
+ {
+  "name": "POST /v2/computations/4989fa99-b567-43bd-978a-68c2b95fdabc:stop",
+  "description": "<Request('POST', 'http://director-v2:8000/v2/computations/4989fa99-b567-43bd-978a-68c2b95fdabc:stop')>",
+  "method": "POST",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}:stop",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": {
+   "user_id": 1
+  },
+  "response_body": {
+   "id": "4989fa99-b567-43bd-978a-68c2b95fdabc",
+   "state": "NOT_STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "0c8b627e-2d3e-5560-a4de-f6cbc8ebca2f": []
+    },
+    "progress": 0.0,
+    "node_states": {
+     "0c8b627e-2d3e-5560-a4de-f6cbc8ebca2f": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": null
+     }
+    }
+   },
+   "iteration": null,
+   "cluster_id": null,
+   "started": null,
+   "stopped": null,
+   "submitted": "2023-11-17T13:04:59.327557+00:00",
+   "url": "http://director-v2:8000/v2/computations/4989fa99-b567-43bd-978a-68c2b95fdabc:stop",
+   "stop_url": null
+  },
+  "status_code": 202
+ },
+ {
+  "name": "GET /v2/computations/4989fa99-b567-43bd-978a-68c2b95fdabc",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/4989fa99-b567-43bd-978a-68c2b95fdabc?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "request_payload": null,
+  "response_body": {
+   "id": "4989fa99-b567-43bd-978a-68c2b95fdabc",
+   "state": "NOT_STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "0c8b627e-2d3e-5560-a4de-f6cbc8ebca2f": []
+    },
+    "progress": 0.0,
+    "node_states": {
+     "0c8b627e-2d3e-5560-a4de-f6cbc8ebca2f": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": null
+     }
+    }
+   },
+   "iteration": null,
+   "cluster_id": null,
+   "started": null,
+   "stopped": null,
+   "submitted": "2023-11-17T13:04:59.327557+00:00",
+   "url": "http://director-v2:8000/v2/computations/4989fa99-b567-43bd-978a-68c2b95fdabc?user_id=1",
+   "stop_url": null
+  },
+  "status_code": 200
+ }
+]

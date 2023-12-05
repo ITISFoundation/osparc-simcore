@@ -6,6 +6,7 @@
 
 import asyncio
 import logging
+import random
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
@@ -24,19 +25,24 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
     delenvs_from_dict,
     setenvs_from_dict,
 )
-from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.api.dependencies.rabbitmq import LogListener
-from simcore_service_api_server.models.schemas.jobs import JobLog
+from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
     DirectorV2Api,
+)
+from simcore_service_api_server.services.log_streaming import (
+    LogDistributor,
+    LogStreamer,
+    LogStreamerNotRegistered,
+    LogStreamerRegistionConflict,
 )
 
 pytest_simcore_core_services_selection = [
@@ -56,9 +62,6 @@ def app_environment(
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     # do not init other services
-    mocker.patch("simcore_service_api_server.core.application.webserver.setup")
-    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
-    mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
     return setenvs_from_dict(
@@ -68,6 +71,13 @@ def app_environment(
             "API_SERVER_POSTGRES": "null",
         },
     )
+
+
+@pytest.fixture
+def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
+    mocker.patch("simcore_service_api_server.core.application.webserver.setup")
+    mocker.patch("simcore_service_api_server.core.application.catalog.setup")
+    mocker.patch("simcore_service_api_server.core.application.storage.setup")
 
 
 @pytest.fixture
@@ -85,6 +95,13 @@ def node_id(faker: Faker) -> NodeID:
     return parse_obj_as(NodeID, faker.uuid4())
 
 
+@pytest.fixture
+async def log_distributor(
+    client: httpx.AsyncClient, app: FastAPI
+) -> AsyncIterable[LogDistributor]:
+    yield get_log_distributor(app)
+
+
 async def test_subscribe_publish_receive_logs(
     client: httpx.AsyncClient,
     app: FastAPI,
@@ -93,21 +110,15 @@ async def test_subscribe_publish_receive_logs(
     project_id: ProjectID,
     node_id: NodeID,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    log_distributor: LogDistributor,
+    mocker: MockerFixture,
 ):
-    async def _consumer_message_handler(data, **kwargs):
+    async def _consumer_message_handler(job_log: JobLog):
         _consumer_message_handler.called = True
-        _consumer_message_handler.data = data
-        _ = LoggerRabbitMessage.parse_raw(data)
-        return True
+        _consumer_message_handler.job_log = job_log
+        assert isinstance(job_log, JobLog)
 
-    # create consumer & subscribe
-    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
-    queue_name = await rabbit_consumer.subscribe(
-        LoggerRabbitMessage.get_channel_name(),
-        _consumer_message_handler,
-        exclusive_queue=False,  # this instance should receive the incoming messages
-        topics=[f"{project_id}.*"],
-    )
+    await log_distributor.register(project_id, _consumer_message_handler)
 
     # log producer
     rabbitmq_producer = create_rabbitmq_client("pytest_producer")
@@ -118,19 +129,17 @@ async def test_subscribe_publish_receive_logs(
         messages=[faker.text() for _ in range(10)],
     )
     _consumer_message_handler.called = False
-    _consumer_message_handler.data = None
+    _consumer_message_handler.job_log = None
     await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     # check it received
     await asyncio.sleep(1)
+    await log_distributor.deregister(project_id)
 
     assert _consumer_message_handler.called
-    data = _consumer_message_handler.data
-    assert isinstance(data, bytes)
-    assert LoggerRabbitMessage.parse_raw(data) == log_message
-
-    # unsuscribe
-    await rabbit_consumer.remove_topics(queue_name, topics=[f"{project_id}.*"])
+    job_log = _consumer_message_handler.job_log
+    assert isinstance(job_log, JobLog)
+    assert job_log.job_id == log_message.project_id
 
 
 @asynccontextmanager
@@ -138,19 +147,14 @@ async def rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
-    consumer_message_handler = AsyncMock(return_value=True)
+    consumer_message_handler = AsyncMock()
 
-    rabbit_consumer: RabbitMQClient = get_rabbitmq_client(app)
-    queue_name = await rabbit_consumer.subscribe(
-        LoggerRabbitMessage.get_channel_name(),
-        consumer_message_handler,
-        exclusive_queue=True,
-        topics=[f"{project_id}.*"],
-    )
+    log_distributor: LogDistributor = get_log_distributor(app)
+    await log_distributor.register(project_id, consumer_message_handler)
 
     yield consumer_message_handler
 
-    await rabbit_consumer.unsubscribe(queue_name)
+    await log_distributor.deregister(project_id)
 
 
 @pytest.fixture
@@ -195,14 +199,107 @@ async def test_multiple_producers_and_single_consumer(
 
     # check it received
     assert consumer_message_handler.await_count == 1
-    (data,) = consumer_message_handler.call_args[0]
-    assert isinstance(data, bytes)
-    received_message = LoggerRabbitMessage.parse_raw(data)
+    (job_log,) = consumer_message_handler.call_args[0]
+    assert isinstance(job_log, JobLog)
 
-    assert received_message.user_id == user_id
-    assert received_message.project_id == project_id
-    assert received_message.node_id == node_id
-    assert received_message.messages == ["expected message"] * 3
+    assert job_log.job_id == project_id
+    assert job_log.node_id == node_id
+    assert job_log.messages == ["expected message"] * 3
+
+
+#
+# --------------------
+#
+
+
+async def test_one_job_multiple_registrations(
+    log_distributor: LogDistributor, project_id: ProjectID
+):
+    async def _(job_log: JobLog):
+        pass
+
+    await log_distributor.register(project_id, _)
+    with pytest.raises(LogStreamerRegistionConflict) as e_info:
+        await log_distributor.register(project_id, _)
+    await log_distributor.deregister(project_id)
+
+
+async def test_log_distributor_register_deregister(
+    project_id: ProjectID,
+    node_id: NodeID,
+    log_distributor: LogDistributor,
+    produce_logs: Callable,
+    faker: Faker,
+):
+    collected_logs: list[str] = []
+
+    async def callback(job_log: JobLog):
+        for msg in job_log.messages:
+            collected_logs.append(msg)
+
+    published_logs: list[str] = []
+
+    async def _log_publisher():
+        for _ in range(5):
+            msg: str = faker.text()
+            await asyncio.sleep(0.1)
+            await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
+            published_logs.append(msg)
+
+    await log_distributor.register(project_id, callback)
+    publisher_task = asyncio.create_task(_log_publisher())
+    await asyncio.sleep(0.1)
+    await log_distributor.deregister(project_id)
+    await asyncio.sleep(0.1)
+    await log_distributor.register(project_id, callback)
+    await asyncio.gather(publisher_task)
+    await asyncio.sleep(0.5)
+    await log_distributor.deregister(project_id)
+
+    assert len(log_distributor._log_streamers.keys()) == 0
+    assert len(collected_logs) > 0
+    assert set(collected_logs).issubset(
+        set(published_logs)
+    )  # some logs might get lost while being deregistered
+
+
+async def test_log_distributor_multiple_streams(
+    project_id: ProjectID,
+    node_id: NodeID,
+    log_distributor: LogDistributor,
+    produce_logs: Callable,
+    faker: Faker,
+):
+    job_ids: Final[list[JobID]] = [JobID(faker.uuid4()) for _ in range(2)]
+
+    collected_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
+
+    async def callback(job_log: JobLog):
+        job_id = job_log.job_id
+        assert (msgs := collected_logs.get(job_id)) is not None
+        for msg in job_log.messages:
+            msgs.append(msg)
+
+    published_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
+
+    async def _log_publisher():
+        for _ in range(5):
+            msg: str = faker.text()
+            await asyncio.sleep(0.1)
+            job_id: JobID = random.choice(job_ids)
+            await produce_logs("expected", job_id, node_id, [msg], logging.DEBUG)
+            published_logs[job_id].append(msg)
+
+    for job_id in job_ids:
+        await log_distributor.register(job_id, callback)
+    publisher_task = asyncio.create_task(_log_publisher())
+    await asyncio.gather(publisher_task)
+    await asyncio.sleep(0.5)
+    for job_id in job_ids:
+        await log_distributor.deregister(job_id)
+    for key in collected_logs:
+        assert key in published_logs
+        assert collected_logs[key] == published_logs[key]
 
 
 #
@@ -212,7 +309,7 @@ async def test_multiple_producers_and_single_consumer(
 
 @pytest.fixture
 def computation_done() -> Iterable[Callable[[], bool]]:
-    stop_time: Final[datetime] = datetime.now() + timedelta(seconds=5)
+    stop_time: Final[datetime] = datetime.now() + timedelta(seconds=2)
 
     def _job_done() -> bool:
         return datetime.now() >= stop_time
@@ -221,14 +318,15 @@ def computation_done() -> Iterable[Callable[[], bool]]:
 
 
 @pytest.fixture
-async def log_listener(
+async def log_streamer_with_distributor(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
     mocked_directorv2_service_api_base: respx.MockRouter,
     computation_done: Callable[[], bool],
-) -> AsyncIterable[LogListener]:
+    log_distributor: LogDistributor,
+) -> AsyncIterable[LogStreamer]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
         task = ComputationTaskGet.parse_obj(
             ComputationTaskGet.Config.schema_extra["examples"][0]
@@ -245,22 +343,24 @@ async def log_listener(
     )
 
     assert isinstance(d2_client := DirectorV2Api.get_instance(app), DirectorV2Api)
-    log_listener: LogListener = LogListener(
+    async with LogStreamer(
         user_id=user_id,
-        rabbit_consumer=get_rabbitmq_client(app),
         director2_api=d2_client,
-    )
-    await log_listener.listen(project_id)
-    yield log_listener
+        job_id=project_id,
+        log_distributor=log_distributor,
+    ) as log_streamer:
+        yield log_streamer
+
+    assert len(log_distributor._log_streamers.keys()) == 0
 
 
-async def test_log_listener(
+async def test_log_streamer_with_distributor(
     client: httpx.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
-    log_listener: LogListener,
+    log_streamer_with_distributor: LogStreamer,
     faker: Faker,
     computation_done: Callable[[], bool],
 ):
@@ -269,14 +369,14 @@ async def test_log_listener(
     async def _log_publisher():
         while not computation_done():
             msg: str = faker.text()
-            await asyncio.sleep(faker.pyfloat(min_value=0.0, max_value=5.0))
+            await asyncio.sleep(0.2)
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
             published_logs.append(msg)
 
     publish_task = asyncio.create_task(_log_publisher())
 
     collected_messages: list[str] = []
-    async for log in log_listener.log_generator():
+    async for log in log_streamer_with_distributor.log_generator():
         job_log: JobLog = JobLog.parse_raw(log)
         assert len(job_log.messages) == 1
         assert job_log.job_id == project_id
@@ -285,3 +385,35 @@ async def test_log_listener(
     publish_task.cancel()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
+
+
+async def test_log_generator(mocker: MockFixture, faker: Faker):
+    mocker.patch(
+        "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
+        return_value=True,
+    )
+    log_streamer = LogStreamer(3, None, None, None)  # type: ignore
+    log_streamer._is_registered = True
+
+    published_logs: list[str] = []
+    for _ in range(10):
+        job_log = JobLog.parse_obj(JobLog.Config.schema_extra["example"])
+        msg = faker.text()
+        published_logs.append(msg)
+        job_log.messages = [msg]
+        await log_streamer._queue.put(job_log)
+
+    collected_logs: list[str] = []
+    async for log in log_streamer.log_generator():
+        job_log = JobLog.parse_raw(log)
+        assert len(job_log.messages) == 1
+        collected_logs.append(job_log.messages[0])
+
+    assert published_logs == collected_logs
+
+
+async def test_log_generator_context(mocker: MockFixture, faker: Faker):
+    log_streamer = LogStreamer(3, None, None, None)  # type: ignore
+    with pytest.raises(LogStreamerNotRegistered):
+        async for log in log_streamer.log_generator():
+            print(log)

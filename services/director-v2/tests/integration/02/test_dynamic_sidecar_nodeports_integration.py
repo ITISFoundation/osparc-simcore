@@ -46,6 +46,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
@@ -73,6 +74,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
@@ -153,6 +155,7 @@ async def minimal_configuration(
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
+    minio_s3_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
@@ -323,14 +326,12 @@ def dev_feature_r_clone_enabled(request) -> str:
 
 @pytest.fixture
 def mock_env(
+    mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    redis_service: RedisSettings,
     network_name: str,
     dev_feature_r_clone_enabled: str,
-    rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
-    minio_config: dict[str, Any],
-    storage_service: URL,
+    minimal_configuration: None,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -363,17 +364,10 @@ def mock_env(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "R_CLONE_PROVIDER": "MINIO",
-            "S3_ENDPOINT": minio_config["client"]["endpoint"],
-            "S3_ACCESS_KEY": minio_config["client"]["access_key"],
-            "S3_SECRET_KEY": minio_config["client"]["secret_key"],
-            "S3_BUCKET_NAME": minio_config["bucket_name"],
-            "S3_SECURE": f"{minio_config['client']['secure']}",
             "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
+            "COMPUTATIONAL_BACKEND_ENABLED": "true",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
-            "REDIS_HOST": redis_service.REDIS_HOST,
-            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
-            # always test the node limit feature, by default is disabled
-            "DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED": "true",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
@@ -640,7 +634,7 @@ async def _fetch_data_via_data_manager(
         is True
     )
 
-    async with ProgressBarData(steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1) as progress_bar:
         await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
@@ -716,7 +710,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     for service_uuid in workbench_dynamic_services:
         dynamic_service_url = await patch_dynamic_service_url(
             # pylint: disable=protected-access
-            app=director_v2_client._transport.app,  # type: ignore
+            app=director_v2_client._transport.app,  # type: ignore # noqa: SLF001
             node_uuid=service_uuid,
         )
         dynamic_services_urls[service_uuid] = dynamic_service_url
@@ -737,21 +731,24 @@ async def _wait_for_dy_services_to_fully_stop(
     director_v2_client: httpx.AsyncClient,
 ) -> None:
     # pylint: disable=protected-access
+    app: FastAPI = director_v2_client._transport.app  # type: ignore # noqa: SLF001
     to_observe = (
-        director_v2_client._transport.app.state.dynamic_sidecar_scheduler._scheduler._to_observe  # type: ignore
+        app.state.dynamic_sidecar_scheduler.scheduler._to_observe  # noqa: SLF001
     )
-    # TODO: ANE please use tenacity
-    for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
-        print(
-            f"Sleeping for {i+1}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
-            "seconds while waiting for removal of all dynamic-sidecars"
-        )
-        await asyncio.sleep(1)
-        if len(to_observe) == 0:
-            break
 
-        if i == TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED - 1:
-            assert False, "Timeout reached"
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED),
+        wait=wait_fixed(1),
+        reraise=True,
+        retry=retry_if_exception_type(TryAgain),
+    ):
+        with attempt:
+            print(
+                f"Sleeping for {attempt.retry_state.attempt_number}/{TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED} "
+                "seconds while waiting for removal of all dynamic-sidecars"
+            )
+            if len(to_observe) != 0:
+                raise TryAgain
 
 
 def _assert_same_set(*sets_to_compare: set[Any]) -> None:
@@ -762,7 +759,7 @@ def _assert_same_set(*sets_to_compare: set[Any]) -> None:
 def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
-        with open(path, "rb") as f:
+        with Path.open(path, "rb") as f:
             # Read and update hash string value in blocks of 4K
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
@@ -858,7 +855,6 @@ async def _assert_retrieve_completed(
 
 @pytest.mark.flaky(max_runs=3)
 async def test_nodeports_integration(
-    minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
     mocked_service_awaits_manual_interventions: None,

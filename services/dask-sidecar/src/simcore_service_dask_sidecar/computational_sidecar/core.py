@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import cast
+from typing import Final, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -20,6 +20,7 @@ from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
+from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 from yarl import URL
 
@@ -38,8 +39,9 @@ from .errors import ServiceBadFormattedOutputError
 from .models import LEGACY_INTEGRATION_VERSION, ImageLabels
 from .task_shared_volume import TaskSharedVolumes
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
+_TASK_PROCESSING_PROGRESS_WEIGHT: Final[float] = 0.99
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -101,12 +103,12 @@ class ComputationalSidecar:
     ) -> TaskOutputData:
         try:
             await self._publish_sidecar_log("Retrieving output data...")
-            logger.debug(
+            _logger.debug(
                 "following files are located in output folder %s:\n%s",
                 task_volumes.outputs_folder,
                 pformat(list(task_volumes.outputs_folder.rglob("*"))),
             )
-            logger.debug(
+            _logger.debug(
                 "following outputs will be searched for:\n%s",
                 self.task_parameters.output_data_keys.json(indent=1),
             )
@@ -138,7 +140,7 @@ class ComputationalSidecar:
             await asyncio.gather(*upload_tasks)
 
             await self._publish_sidecar_log("All the output data were uploaded.")
-            logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
+            _logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
             return output_data
 
         except (ValueError, ValidationError) as exc:
@@ -155,20 +157,22 @@ class ComputationalSidecar:
             message=f"[sidecar] {log}", log_level=log_level
         )
 
-        logger.log(log_level, log)
-
     async def run(self, command: list[str]) -> TaskOutputData:
         # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
             f"Starting task for {self.task_parameters.image}:{self.task_parameters.tag} on {socket.gethostname()}..."
         )
-        self.task_publishers.publish_progress(0)
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
-        ) as task_volumes:
+        ) as task_volumes, ProgressBarData(
+            num_steps=3,
+            step_weights=[5 / 100, 90 / 100, 5 / 100],
+            progress_report_cb=self.task_publishers.publish_progress,
+        ) as progress_bar:
+            # PRE-PROCESSING
             await pull_image(
                 docker_client,
                 self.docker_auth,
@@ -200,13 +204,15 @@ class ComputationalSidecar:
             await self._write_input_data(
                 task_volumes, image_labels.get_integration_version()
             )
-
-            # PROCESSING
+            await progress_bar.update()  # NOTE:  (1 step weighting 5%)
+            # PROCESSING (1 step weighted 90%)
             async with managed_container(
                 docker_client,
                 config,
                 name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
-            ) as container, managed_monitor_container_log_task(
+            ) as container, progress_bar.sub_progress(
+                100
+            ) as processing_progress_bar, managed_monitor_container_log_task(
                 container=container,
                 progress_regexp=image_labels.get_progress_regexp(),
                 service_key=self.task_parameters.image,
@@ -217,6 +223,7 @@ class ComputationalSidecar:
                 log_file_url=self.log_file_url,
                 log_publishing_cb=self._publish_sidecar_log,
                 s3_settings=self.s3_settings,
+                progress_bar=processing_progress_bar,
             ):
                 await container.start()
                 await self._publish_sidecar_log(
@@ -240,7 +247,7 @@ class ComputationalSidecar:
                     )
                 await self._publish_sidecar_log("Container ran successfully.")
 
-            # POST-PROCESSING
+            # POST-PROCESSING (1 step weighted 5%)
             results = await self._retrieve_output_data(
                 task_volumes, image_labels.get_integration_version()
             )
@@ -248,6 +255,8 @@ class ComputationalSidecar:
             return results
 
     async def __aenter__(self) -> "ComputationalSidecar":
+        # ensure we start publishing progress
+        self.task_publishers.publish_progress(0)
         return self
 
     async def __aexit__(

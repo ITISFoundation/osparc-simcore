@@ -57,10 +57,10 @@ SideEffectCallback: TypeAlias = Callable[
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: pytest.MonkeyPatch, default_app_env_vars: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    default_app_env_vars: EnvVarsDict,
 ) -> EnvVarsDict:
     """Config that disables many plugins e.g. database or tracing"""
-
     env_vars = setenvs_from_dict(
         monkeypatch,
         {
@@ -81,7 +81,15 @@ def app_environment(
 
 
 @pytest.fixture
-def app(app_environment: EnvVarsDict) -> FastAPI:
+def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
+    settings = ApplicationSettings.create_from_envs()
+    if settings.API_SERVER_RABBITMQ is None:
+        mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
+    return app_environment
+
+
+@pytest.fixture
+def app(mock_missing_plugins: EnvVarsDict) -> FastAPI:
     """Inits app on a light environment"""
     return init_app()
 
