@@ -11,6 +11,7 @@ from aws_library.ec2.models import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
+    EC2Tags,
     Resources,
 )
 from fastapi import FastAPI
@@ -441,6 +442,73 @@ async def _find_needed_instances(
     return num_instances_per_type
 
 
+async def _cap_needed_instances(
+    app: FastAPI, needed_instances: dict[EC2InstanceType, int], ec2_tags: EC2Tags
+) -> dict[EC2InstanceType, int]:
+    """caps the needed instances dict[EC2InstanceType, int] to the maximal allowed number of instances by
+    1. limiting to 1 per asked type
+    2. increasing each by 1 until the maximum allowed number of instances is reached
+    NOTE: the maximum allowed number of instances contains the current number of running/pending machines
+
+    Raises:
+        Ec2TooManyInstancesError: raised when the maximum of machines is already running/pending
+    """
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    current_instances = await ec2_client.get_instances(
+        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+        tags=ec2_tags,
+    )
+    current_number_of_instances = len(current_instances)
+    if (
+        current_number_of_instances
+        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ):
+        # ok that is already too much
+        raise Ec2TooManyInstancesError(
+            num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        )
+
+    total_number_of_needed_instances = sum(needed_instances.values())
+    if (
+        current_number_of_instances + total_number_of_needed_instances
+        <= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ):
+        # ok that fits no need to do anything here
+        return needed_instances
+
+    # this is asking for too many, so let's cap them
+    max_number_of_creatable_instances = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        - current_number_of_instances
+    )
+
+    # we start with 1 machine of each type until the max
+    capped_needed_instances = {
+        k: 1
+        for count, k in enumerate(needed_instances)
+        if (count + 1) <= max_number_of_creatable_instances
+    }
+
+    if len(capped_needed_instances) < len(needed_instances):
+        # there were too many types for the number of possible instances
+        return capped_needed_instances
+
+    # all instance types were added, now create more of them if possible
+    while sum(capped_needed_instances.values()) < max_number_of_creatable_instances:
+        for instance_type, num_to_create in needed_instances.items():
+            if (
+                sum(capped_needed_instances.values())
+                == max_number_of_creatable_instances
+            ):
+                break
+            if num_to_create > capped_needed_instances[instance_type]:
+                capped_needed_instances[instance_type] += 1
+
+    return capped_needed_instances
+
+
 async def _start_instances(
     app: FastAPI,
     needed_instances: dict[EC2InstanceType, int],
@@ -450,14 +518,28 @@ async def _start_instances(
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    new_instance_tags = auto_scaling_mode.get_ec2_tags(app)
+    capped_needed_machines = {}
+    try:
+        capped_needed_machines = await _cap_needed_instances(
+            app, needed_instances, new_instance_tags
+        )
+    except Ec2TooManyInstancesError:
+        await auto_scaling_mode.log_message_from_tasks(
+            app,
+            tasks,
+            "The maximum number of machines in the cluster was reached. Please wait for your running jobs "
+            "to complete and try again later or contact osparc support if this issue does not resolve.",
+            level=logging.ERROR,
+        )
+        return []
 
-    instance_tags = auto_scaling_mode.get_ec2_tags(app)
     results = await asyncio.gather(
         *[
             ec2_client.start_aws_instance(
                 EC2InstanceConfig(
                     type=instance_type,
-                    tags=instance_tags,
+                    tags=new_instance_tags,
                     startup_script=await ec2_startup_script(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
                             instance_type.name
@@ -474,7 +556,7 @@ async def _start_instances(
                 number_of_instances=instance_num,
                 max_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
             )
-            for instance_type, instance_num in needed_instances.items()
+            for instance_type, instance_num in capped_needed_machines.items()
         ],
         return_exceptions=True,
     )
@@ -497,7 +579,10 @@ async def _start_instances(
         else:
             new_pending_instances.append(r)
 
-    log_message = f"{sum(n for n in needed_instances.values())} new machines launched, it might take up to 3 minutes to start, Please wait..."
+    log_message = (
+        f"{sum(n for n in capped_needed_machines.values())} new machines launched"
+        ", it might take up to 3 minutes to start, Please wait..."
+    )
     await auto_scaling_mode.log_message_from_tasks(
         app, tasks, log_message, level=logging.INFO
     )

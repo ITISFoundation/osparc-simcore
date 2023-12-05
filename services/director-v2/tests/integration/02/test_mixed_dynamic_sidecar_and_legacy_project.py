@@ -61,7 +61,7 @@ def mock_env(
     rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    minio_config: dict[str, Any],
+    minio_s3_settings_envs: EnvVarsDict,
     storage_service: URL,
     network_name: str,
 ) -> EnvVarsDict:
