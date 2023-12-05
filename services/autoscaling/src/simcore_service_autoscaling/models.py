@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any, TypeAlias
+from typing import TypeAlias
 
 from aws_library.ec2.models import EC2InstanceData, EC2InstanceType, Resources
+from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.generated_models.docker_rest_api import Node
 
 
@@ -55,7 +56,6 @@ class Cluster:
 
 
 DaskTaskId: TypeAlias = str
-DaskTaskResources: TypeAlias = dict[str, Any]
 
 
 @dataclass(frozen=True, kw_only=True)

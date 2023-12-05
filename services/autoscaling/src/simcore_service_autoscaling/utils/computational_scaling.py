@@ -4,10 +4,11 @@ from collections.abc import Iterable
 from typing import Final
 
 from aws_library.ec2.models import Resources
-from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
+from dask_task_models_library.resource_constraints import (
+    get_ec2_instance_type_from_resources,
+)
 from fastapi import FastAPI
 from servicelib.utils_formatting import timedelta_as_minute_second
-from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
 from ..models import (
@@ -30,8 +31,8 @@ def get_max_resources_from_dask_task(task: DaskTask) -> Resources:
     )
 
 
-def get_task_instance_restriction(task: DaskTask) -> InstanceTypeType | None:
-    return task.required_resources.get(DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY)
+def get_task_instance_restriction(task: DaskTask) -> str | None:
+    return get_ec2_instance_type_from_resources(task.required_resources)
 
 
 def _compute_tasks_needed_resources(tasks: list[DaskTask]) -> Resources:
