@@ -450,7 +450,7 @@ the_app = create_app()
 
 
 def run_command(args):
-    uvicorn.run(the_app, port=8000, host="0.0.0.0")  # nosec # NOSOLAR
+    uvicorn.run(the_app, port=8000, host="0.0.0.0")  # nosec # NOSONAR
 
 
 def openapi_command(args):
