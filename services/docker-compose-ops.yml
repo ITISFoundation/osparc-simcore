@@ -43,14 +43,16 @@ services:
       - portainer_data:/data
 
   minio:
-    image: minio/minio:RELEASE.2020-05-16T01-33-21Z
+    image: minio/minio:RELEASE.2023-12-02T10-51-33Z
     init: true
     environment:
-      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY:?access_key_required}
-      - MINIO_SECRET_KEY=${S3_SECRET_KEY:?secret_key_required}
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY:?access_key_required}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY:?secret_key_required}
+      - MINIO_VOLUMES="/data"
     ports:
       - "9001:9000"
-    command: server /data
+      - "9090:9090"
+    command: server --console-address ":9090"
     volumes:
       - minio_data:/data
     networks:
@@ -60,27 +62,13 @@ services:
       test:
         [
           "CMD",
-          "curl",
-          "--fail",
-          "http://localhost:9000/minio/health/live"
+          "mc",
+          "ready",
+          "local"
         ]
       interval: 5s
-      timeout: 20s
+      timeout: 10s
       retries: 5
-
-  filestash:
-    image: machines/filestash:3a01b70
-    ports:
-      - "9002:8334"
-    volumes:
-      - ${TMP_PATH_TO_FILESTASH_CONFIG}:/app/data/state/config/config.json
-    networks:
-      - simcore_default
-
-  onlyoffice:
-    image: onlyoffice/documentserver:7.0.0.132
-    networks:
-      - simcore_default
 
   redis-commander:
     image: rediscommander/redis-commander:latest

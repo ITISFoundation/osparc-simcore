@@ -75,7 +75,7 @@ async def test_bad_health_status_if_bucket_missing(
 
 
 async def test_bad_health_status_if_s3_server_missing(
-    client: TestClient, mocked_s3_server: ThreadedMotoServer
+    client: TestClient, mocked_aws_server: ThreadedMotoServer
 ):
     assert client.app
     url = client.app.router["get_status"].url_for()
@@ -86,7 +86,7 @@ async def test_bad_health_status_if_s3_server_missing(
     app_status_check = AppStatusCheck.parse_obj(data)
     assert app_status_check.services["s3"]["healthy"] == "connected"
     # now disable the s3 server
-    mocked_s3_server.stop()
+    mocked_aws_server.stop()
     # check again the health
     response = await client.get(f"{url}")
     data, error = await assert_status(response, web.HTTPOk)
@@ -95,7 +95,7 @@ async def test_bad_health_status_if_s3_server_missing(
     app_status_check = AppStatusCheck.parse_obj(data)
     assert app_status_check.services["s3"]["healthy"] == "failed"
     # start the server again
-    mocked_s3_server.start()
+    mocked_aws_server.start()
     # should be good again
     response = await client.get(f"{url}")
     data, error = await assert_status(response, web.HTTPOk)

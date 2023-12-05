@@ -152,6 +152,8 @@ async def upload_file(request: web.Request) -> web.Response:
     """creates upload file links:
 
     This function covers v1 and v2 versions of the handler.
+    Note: calling this entrypoint on an already existing file will overwrite that file. That file will be deleted
+    before the upload takes place.
 
     v1 rationale:
         - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
@@ -193,10 +195,9 @@ async def upload_file(request: web.Request) -> web.Response:
     if query_params.file_size is None and not query_params.is_directory:
         # return v1 response
         assert len(links.urls) == 1  # nosec
-        return web.json_response(
-            {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}},
-            dumps=json_dumps,
-        )
+        response = {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}}
+        log.debug("Returning v1 response: %s", response)
+        return web.json_response(response, dumps=json_dumps)
 
     # v2 response
     abort_url = request.url.join(
@@ -226,7 +227,7 @@ async def upload_file(request: web.Request) -> web.Response:
             ),
         ),
     )
-
+    log.debug("returning v2 response: %s", response)
     return jsonable_encoder(response, by_alias=True)
 
 

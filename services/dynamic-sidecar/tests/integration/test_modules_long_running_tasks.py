@@ -7,7 +7,7 @@ import filecmp
 import shutil
 from collections.abc import AsyncIterable, Iterable
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 from unittest.mock import AsyncMock
 
 import aioboto3
@@ -42,7 +42,6 @@ from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_plugins = [
-    "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.simcore_storage_service",
 ]
@@ -89,7 +88,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
 def mock_environment(
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
-    minio_config: dict[str, Any],
+    minio_s3_settings_envs: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
@@ -102,11 +101,6 @@ def mock_environment(
         "STORAGE_PORT": f"{storage_endpoint.port}",
         "DY_SIDECAR_USER_ID": f"{user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "S3_ENDPOINT": minio_config["client"]["endpoint"],
-        "S3_ACCESS_KEY": minio_config["client"]["access_key"],
-        "S3_SECRET_KEY": minio_config["client"]["secret_key"],
-        "S3_BUCKET_NAME": minio_config["bucket_name"],
-        "S3_SECURE": f"{minio_config['client']['secure']}",
         "R_CLONE_PROVIDER": "MINIO",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         **base_mock_envs,

@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
         // eslint-disable-next-line no-underscore-dangle
         const userMenuEntries = userMenu._getCreatedChildControls();
         Object.entries(userMenuEntries).forEach(([id, userMenuEntry]) => {
-          if (!["mini-profile-view", "log-out"].includes(id)) {
+          if (!["mini-profile-view", "po-center", "log-out"].includes(id)) {
             userMenuEntry.exclude();
           }
         });
@@ -92,4 +92,3 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
     }
   }
 });
-

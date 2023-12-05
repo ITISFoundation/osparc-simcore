@@ -75,7 +75,7 @@ def fire_and_forget_task(
     task = asyncio.create_task(obj, name=f"fire_and_forget_task_{task_suffix_name}")
     fire_and_forget_tasks_collection.add(task)
 
-    def log_exception_callback(fut: asyncio.Future):
+    def _log_exception_callback(fut: asyncio.Future):
         try:
             fut.result()
         except asyncio.CancelledError:
@@ -83,7 +83,7 @@ def fire_and_forget_task(
         except Exception:  # pylint: disable=broad-except
             _logger.exception("Error occurred while running task %s!", task.get_name())
 
-    task.add_done_callback(log_exception_callback)
+    task.add_done_callback(_log_exception_callback)
     task.add_done_callback(fire_and_forget_tasks_collection.discard)
     return task
 

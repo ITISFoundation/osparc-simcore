@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import logging
 from typing import Any, ClassVar, TypeAlias
 from uuid import UUID, uuid4
 
@@ -306,3 +307,13 @@ class JobLog(BaseModel):
     node_id: NodeID | None
     log_level: LogLevelInt
     messages: list[LogMessageStr]
+
+    class Config(BaseConfig):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
+                "node_id": "3742215e-6756-48d2-8b73-4d043065309f",
+                "log_level": logging.DEBUG,
+                "messages": ["PROGRESS: 5/10"],
+            }
+        }
