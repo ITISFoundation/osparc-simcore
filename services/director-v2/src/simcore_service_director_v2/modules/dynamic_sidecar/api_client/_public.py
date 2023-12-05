@@ -14,6 +14,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
+from servicelib.fastapi.http_client_thin import (
+    BaseClientHTTPError,
+    UnexpectedStatusError,
+)
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressCallback,
@@ -31,7 +35,6 @@ from ....core.dynamic_services_settings.scheduler import (
 from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
-from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinSidecarsClient
 
 _logger = logging.getLogger(__name__)
@@ -152,8 +155,8 @@ class SidecarsClient:
             return container_name
         except UnexpectedStatusError as e:
             if e.response.status_code == status.HTTP_404_NOT_FOUND:
-                raise EntrypointContainerNotFoundError() from e
-            raise e
+                raise EntrypointContainerNotFoundError from e
+            raise
 
     async def _attach_container_to_network(
         self,
@@ -496,7 +499,7 @@ async def shutdown(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
         await logged_gather(
             *(
-                x._thin_client.close()  # pylint: disable=protected-access
+                x._thin_client._close()  # pylint: disable=protected-access  # noqa: SLF001
                 for x in app.state.sidecars_api_clients.values()
             ),
             reraise=False,
@@ -523,7 +526,4 @@ async def get_dynamic_sidecar_service_health(
     api_client = get_sidecars_client(app, scheduler_data.node_uuid)
 
     # update service health
-    is_healthy = await api_client.is_healthy(
-        scheduler_data.endpoint, with_retry=with_retry
-    )
-    return is_healthy
+    return await api_client.is_healthy(scheduler_data.endpoint, with_retry=with_retry)

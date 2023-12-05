@@ -16,6 +16,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
+from servicelib.fastapi.http_client_thin import BaseClientHTTPError
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -39,11 +40,7 @@ from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
-from ...api_client import (
-    BaseClientHTTPError,
-    get_dynamic_sidecar_service_health,
-    get_sidecars_client,
-)
+from ...api_client import get_dynamic_sidecar_service_health, get_sidecars_client
 from ...docker_api import (
     constrain_service_to_node,
     create_network,

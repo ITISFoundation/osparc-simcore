@@ -12,6 +12,7 @@ from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
+from servicelib.fastapi.http_client_thin import BaseClientHTTPError
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -42,7 +43,6 @@ from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
-    BaseClientHTTPError,
     SidecarsClient,
     get_dynamic_sidecar_service_health,
     get_sidecars_client,
