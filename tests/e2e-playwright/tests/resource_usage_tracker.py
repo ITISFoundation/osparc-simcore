@@ -56,7 +56,7 @@ def test_resource_usage_tracker(
     service_run_ids_before = set()
     for service_run in service_runs_before:
         service_run_ids_before.add(service_run["service_run_id"])
-    print(f"Service runs after: {service_run_ids_before}")
+    print(f"Service runs before: {service_run_ids_before}")
 
     # 2. Start computations
     data = {"subgraph": [], "force_restart": True}
