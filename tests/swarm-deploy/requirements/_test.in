@@ -12,7 +12,6 @@ alembic
 click
 docker
 jsonschema
-minio
 pytest
 pytest-aiohttp
 pytest-instafail
