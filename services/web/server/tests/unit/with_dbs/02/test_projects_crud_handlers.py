@@ -730,7 +730,7 @@ def mock_director_v2_inactivity(
         get_services_pattern,
         status=web.HTTPOk.status_code,
         repeat=True,
-        payload={"data": {"is_inactive": is_inactive}},
+        payload={"is_inactive": is_inactive},
     )
 
 
@@ -765,5 +765,4 @@ async def test_get_project_inactivity(
 
     assert data
     assert error is None
-
-    assert data["data"]["is_inactive"] is is_inactive
+    assert data["is_inactive"] is is_inactive

@@ -6,7 +6,7 @@
 import aiohttp
 import pytest
 import tenacity
-from servicelib.minio_utils import MinioRetryPolicyUponInitialization
+from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
@@ -42,7 +42,7 @@ async def traefik_service(
 
 
 # TODO: this can be used by ANY of the simcore services!
-@tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_traefik_responsive(api_endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(api_endpoint.with_path("/api/http/routers")) as resp:

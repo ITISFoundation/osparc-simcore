@@ -29,9 +29,6 @@ updates:
       - dependency-name: httpx
         versions:
           - 0.17.0
-      - dependency-name: minio
-        versions:
-          - 7.0.0
   - package-ecosystem: pip
     directory: "/packages/service-library"
     schedule:

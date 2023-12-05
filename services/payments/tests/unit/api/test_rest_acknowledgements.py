@@ -10,7 +10,8 @@ from collections.abc import AsyncIterator
 import httpx
 import pytest
 from faker import Faker
-from fastapi import status
+from fastapi import FastAPI, status
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_payments.core.errors import (
@@ -52,6 +53,15 @@ def app_environment(
             "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
         },
     )
+
+
+@pytest.fixture
+def app(
+    app: FastAPI,
+    mocker: MockerFixture,
+) -> FastAPI:
+    app.state.notifier = mocker.MagicMock()
+    return app
 
 
 @pytest.fixture

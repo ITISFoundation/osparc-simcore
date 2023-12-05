@@ -19,7 +19,6 @@ dask[distributed,diagnostics]
 docker
 Faker
 flaky
-minio
 pytest
 pytest-aiohttp
 pytest-cov
