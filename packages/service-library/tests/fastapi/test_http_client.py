@@ -97,7 +97,7 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
         assert not api.client.is_closed
 
         assert await api.ping()
-        assert await api.is_healhy()
+        assert await api.is_healthy()
 
         alive = await api.check_liveness()
         assert bool(alive)
@@ -109,7 +109,6 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
 
 
 async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str):
-
     mock_server_api.post(path__startswith="/foo").respond(status.HTTP_200_OK)
     mock_server_api.get(path__startswith="/foo").respond(status.HTTP_200_OK)
     mock_server_api.delete(path__startswith="/foo").respond(status.HTTP_200_OK)

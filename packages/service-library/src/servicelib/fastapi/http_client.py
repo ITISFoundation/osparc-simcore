@@ -43,7 +43,7 @@ class BaseHttpApi:
         except httpx.RequestError:
             return False
 
-    async def is_healhy(self) -> bool:
+    async def is_healthy(self) -> bool:
         """Service is reachable and ready"""
         try:
             response = await self.client.get("/")
