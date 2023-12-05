@@ -20,7 +20,9 @@ from unittest import mock
 import distributed
 import pytest
 from aws_library.ec2.models import Resources
-from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
+from dask_task_models_library.resource_constraints import (
+    create_ec2_resource_constraint_key,
+)
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
@@ -283,7 +285,7 @@ def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
             }
         )
         if ec2_instance_type is not None:
-            resources[DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY] = ec2_instance_type
+            resources[create_ec2_resource_constraint_key(ec2_instance_type)] = 1
         return resources
 
     return _do
