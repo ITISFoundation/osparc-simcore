@@ -5,7 +5,7 @@ from servicelib.fastapi.exceptions_utils import (
 )
 
 from ..._meta import API_VTAG
-from . import _health, _meta
+from . import _health, _meta, _services
 
 
 def setup_rest_api(app: FastAPI):
@@ -13,6 +13,7 @@ def setup_rest_api(app: FastAPI):
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")
     api_router.include_router(_meta.router, tags=["meta"])
+    api_router.include_router(_services.router, tags=["services"], prefix="/services")
     app.include_router(api_router)
 
     app.add_exception_handler(Exception, handle_errors_as_500)
