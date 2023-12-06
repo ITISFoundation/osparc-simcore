@@ -83,20 +83,17 @@ async def _fake_init_payment(
     )
     # (2) Annotate INIT transaction
     async with get_database_engine(app).acquire() as conn:
-        assert (  # nosec
-            await insert_init_payment_transaction(
-                conn,
-                payment_id=payment_id,
-                price_dollars=amount_dollars,
-                osparc_credits=target_credits,
-                product_name=product_name,
-                user_id=user_id,
-                user_email=user_email,
-                wallet_id=wallet_id,
-                comment=comment,
-                initiated_at=arrow.utcnow().datetime,
-            )
-            == payment_id
+        await insert_init_payment_transaction(
+            conn,
+            payment_id=payment_id,
+            price_dollars=amount_dollars,
+            osparc_credits=target_credits,
+            product_name=product_name,
+            user_id=user_id,
+            user_email=user_email,
+            wallet_id=wallet_id,
+            comment=comment,
+            initiated_at=arrow.utcnow().datetime,
         )
     return WalletPaymentInitiated(
         payment_id=payment_id, payment_form_url=f"{external_form_link}"
