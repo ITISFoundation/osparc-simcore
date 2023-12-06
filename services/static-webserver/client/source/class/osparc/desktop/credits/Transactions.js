@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
     },
 
     refresh: function() {
-      this.__buildLayout()
+      this.__buildLayout();
     }
   }
 });
