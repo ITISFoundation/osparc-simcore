@@ -23,4 +23,6 @@ class DirectorV2ThinClient(BaseThinClient):
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
     async def get_status(self, node_id: NodeID) -> Response:
-        return await self.client.get(f"/dynamic-services/{node_id}")
+        return await self.client.get(
+            f"/dynamic_services/{node_id}", follow_redirects=True
+        )
