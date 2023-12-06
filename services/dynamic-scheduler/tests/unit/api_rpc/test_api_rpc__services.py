@@ -26,7 +26,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def service_state() -> DynamicServiceGet:
+def service_status() -> DynamicServiceGet:
     return DynamicServiceGet.parse_obj(
         DynamicServiceGet.Config.schema_extra["examples"][1]
     )
@@ -34,15 +34,15 @@ def service_state() -> DynamicServiceGet:
 
 @pytest.fixture
 def mock_director_v2(
-    node_id: NodeID, service_state: DynamicServiceGet
+    node_id: NodeID, service_status: DynamicServiceGet
 ) -> Iterator[None]:
     with respx.mock(
-        base_url="http://director-v2:8000/v1",
+        base_url="http://director-v2:8000/v2",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.get(f"/dynamic-services/{node_id}").respond(
-            status.HTTP_200_OK, text=service_state.json()
+        mock.get(f"/dynamic_services/{node_id}").respond(
+            status.HTTP_200_OK, text=service_status.json()
         )
         yield None
 
@@ -67,11 +67,11 @@ async def rpc_client(
 async def test_get_state(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
-    service_state: DynamicServiceGet,
+    service_status: DynamicServiceGet,
 ):
     result = await rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         RPCMethodName("get_service_status"),
         node_id=node_id,
     )
-    assert result == service_state
+    assert result == service_status
