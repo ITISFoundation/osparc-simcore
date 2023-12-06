@@ -1,7 +1,7 @@
 import datetime
 import logging
-from typing import cast
 
+from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
     EC2InstanceBootSpecific,
     EC2InstanceConfig,
@@ -12,7 +12,6 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.logging_utils import log_context
-from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import ApplicationSettings, get_application_settings
@@ -29,9 +28,9 @@ from .ec2 import get_ec2_client
 _logger = logging.getLogger(__name__)
 
 
-def _get_primary_ec2_params(
-    app_settings: ApplicationSettings,
-) -> tuple[InstanceTypeType, EC2InstanceBootSpecific]:
+async def _get_primary_ec2_params(
+    app_settings: ApplicationSettings, ec2_client: SimcoreEC2API
+) -> tuple[EC2InstanceType, EC2InstanceBootSpecific]:
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     assert (
         len(
@@ -44,7 +43,14 @@ def _get_primary_ec2_params(
             app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.items()
         )
     )
-    return cast(InstanceTypeType, ec2_type_name), ec2_boot_specs
+    ec2_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
+        instance_type_names=[ec2_type_name]
+    )
+    assert ec2_instance_types  # nosec
+    assert len(ec2_instance_types) == 1  # nosec
+    return ec2_instance_types[0], ec2_boot_specs
 
 
 async def create_cluster(
@@ -54,17 +60,12 @@ async def create_cluster(
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
 
-    ec2_instance_type_name, ec2_instance_boot_specs = _get_primary_ec2_params(
-        app_settings
+    ec2_instance_type, ec2_instance_boot_specs = await _get_primary_ec2_params(
+        app_settings, ec2_client
     )
-    ec2_instance_types: list[
-        EC2InstanceType
-    ] = await ec2_client.get_ec2_instance_capabilities(
-        instance_type_names=[ec2_instance_type_name]
-    )
-    assert len(ec2_instance_types) == 1  # nosec
+
     instance_config = EC2InstanceConfig(
-        type=ec2_instance_types[0],
+        type=ec2_instance_type,
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
         startup_script=create_startup_script(
             app_settings,
