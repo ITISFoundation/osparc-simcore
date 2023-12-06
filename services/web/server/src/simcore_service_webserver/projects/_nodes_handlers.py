@@ -5,12 +5,12 @@
 import asyncio
 import functools
 import logging
-from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -49,6 +49,7 @@ from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..director_v2.exceptions import DirectorServiceError
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_role
@@ -151,52 +152,36 @@ async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    try:
-        # ensure the project exists
-        project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
+    # ensure the project exists
+    project = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+
+    if await projects_api.is_project_node_deprecated(
+        request.app,
+        req_ctx.user_id,
+        project,
+        path_params.node_id,
+        req_ctx.product_name,
+    ):
+        project_node = project["workbench"][f"{path_params.node_id}"]
+        raise web.HTTPNotAcceptable(
+            reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
         )
 
-        if await projects_api.is_project_node_deprecated(
-            request.app,
-            req_ctx.user_id,
-            project,
-            path_params.node_id,
-            req_ctx.product_name,
-        ):
-            project_node = project["workbench"][f"{path_params.node_id}"]
-            raise web.HTTPNotAcceptable(
-                reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
-            )
-
-        # NOTE: for legacy services a redirect to director-v0 is made
-        service_data: dict[str, Any] = await director_v2_api.get_dynamic_service(
-            app=request.app, node_uuid=f"{path_params.node_id}"
+    service_data: NodeGetIdle | DynamicServiceGet | NodeGet = (
+        await dynamic_scheduler_api.get_dynamic_service(
+            app=request.app, node_id=path_params.node_id
         )
+    )
 
-        if "data" not in service_data:
-            # dynamic-service NODE STATE
-            assert (  # nosec
-                parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None
-            )
-            return envelope_json_response(service_data)
-
-        # LEGACY-service NODE STATE
-        assert parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None  # nosec
-        return envelope_json_response(service_data["data"])
-
-    except DirectorServiceError as exc:
-        if exc.status == web.HTTPNotFound.status_code:
-            # the service was not started, so it's state is not started or idle
-            return envelope_json_response(
-                {
-                    "service_state": "idle",
-                    "service_uuid": f"{path_params.node_id}",
-                }
-            )
-        raise
+    return envelope_json_response(
+        service_data.dict(by_alias=True)
+        if isinstance(service_data, DynamicServiceGet)
+        else service_data.dict()
+    )
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
