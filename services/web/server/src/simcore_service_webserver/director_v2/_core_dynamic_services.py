@@ -70,18 +70,6 @@ async def list_dynamic_services(
     return services
 
 
-async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
-
-    service_state = await request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-    assert isinstance(service_state, dict)  # nosec
-    return service_state
-
-
 async def run_dynamic_service(  # pylint: disable=too-many-arguments # noqa: PLR0913
     *,
     app: web.Application,

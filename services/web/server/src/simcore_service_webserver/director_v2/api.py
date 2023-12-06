@@ -24,7 +24,6 @@ from ._core_computations import (
     update_cluster,
 )
 from ._core_dynamic_services import (
-    get_dynamic_service,
     get_project_inactivity,
     list_dynamic_services,
     request_retrieve_dyn_service,
@@ -55,7 +54,6 @@ __all__: tuple[str, ...] = (
     "get_cluster_details",
     "get_cluster",
     "get_computation_task",
-    "get_dynamic_service",
     "get_project_inactivity",
     "get_project_run_policy",
     "is_healthy",
