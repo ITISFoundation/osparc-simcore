@@ -11,7 +11,7 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.projects_nodes import NodeGet
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -30,6 +30,11 @@ def node_id_new_style(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def node_id_legacy(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def node_not_found(faker: Faker) -> NodeID:
     return faker.uuid4(cast_to=None)
 
 
@@ -54,6 +59,7 @@ def director_v0_base_url() -> str:
 def mock_director_v0(
     director_v0_base_url: str,
     node_id_legacy: NodeID,
+    node_not_found: NodeID,
     service_status_legacy: NodeGet,
 ) -> Iterator[None]:
     with respx.mock(
@@ -61,10 +67,13 @@ def mock_director_v0(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.get(f"/faker-status/{node_id_legacy}").respond(
+        mock.get(f"/fake-status/{node_id_legacy}").respond(
             status.HTTP_200_OK,
             text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
         )
+
+        # service was not found response
+        mock.get(f"fake-status/{node_not_found}").respond(status.HTTP_404_NOT_FOUND)
 
         yield None
 
@@ -73,6 +82,7 @@ def mock_director_v0(
 def mock_director_v2(
     node_id_new_style: NodeID,
     node_id_legacy: NodeID,
+    node_not_found: NodeID,
     service_status_new_style: DynamicServiceGet,
     director_v0_base_url: str,
 ) -> Iterator[None]:
@@ -86,10 +96,20 @@ def mock_director_v2(
         )
 
         # emulate redirect response to director-v0
+
+        # this will provide a reply
         mock.get(f"/dynamic_services/{node_id_legacy}").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={
-                "Location": f"{director_v0_base_url}/faker-status/{node_id_legacy}"
+                "Location": f"{director_v0_base_url}/fake-status/{node_id_legacy}"
+            },
+        )
+
+        # will result in not being found
+        mock.get(f"/dynamic_services/{node_not_found}").respond(
+            status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={
+                "Location": f"{director_v0_base_url}/fake-status/{node_not_found}"
             },
         )
 
@@ -118,6 +138,7 @@ async def test_get_state(
     rpc_client: RabbitMQRPCClient,
     node_id_new_style: NodeID,
     node_id_legacy: NodeID,
+    node_not_found: NodeID,
     service_status_new_style: DynamicServiceGet,
     service_status_legacy: NodeGet,
 ):
@@ -136,3 +157,11 @@ async def test_get_state(
         node_id=node_id_legacy,
     )
     assert result == service_status_legacy
+
+    # node not tracked both services
+    result = await rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        RPCMethodName("get_service_status"),
+        node_id=node_not_found,
+    )
+    assert result == NodeGetIdle(service_state="idle", service_uuid=node_not_found)
