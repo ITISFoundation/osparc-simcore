@@ -51,19 +51,19 @@ def service_status_legacy() -> NodeGet:
 
 
 @pytest.fixture
-def director_v0_base_url() -> str:
+def fake_director_v0_base_url() -> str:
     return "http://fake-director-v0"
 
 
 @pytest.fixture
 def mock_director_v0(
-    director_v0_base_url: str,
+    fake_director_v0_base_url: str,
     node_id_legacy: NodeID,
     node_not_found: NodeID,
     service_status_legacy: NodeGet,
 ) -> Iterator[None]:
     with respx.mock(
-        base_url=director_v0_base_url,
+        base_url=fake_director_v0_base_url,
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
@@ -84,7 +84,7 @@ def mock_director_v2(
     node_id_legacy: NodeID,
     node_not_found: NodeID,
     service_status_new_style: DynamicServiceGet,
-    director_v0_base_url: str,
+    fake_director_v0_base_url: str,
 ) -> Iterator[None]:
     with respx.mock(
         base_url="http://director-v2:8000/v2",
@@ -101,7 +101,7 @@ def mock_director_v2(
         mock.get(f"/dynamic_services/{node_id_legacy}").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={
-                "Location": f"{director_v0_base_url}/fake-status/{node_id_legacy}"
+                "Location": f"{fake_director_v0_base_url}/fake-status/{node_id_legacy}"
             },
         )
 
@@ -109,7 +109,7 @@ def mock_director_v2(
         mock.get(f"/dynamic_services/{node_not_found}").respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={
-                "Location": f"{director_v0_base_url}/fake-status/{node_not_found}"
+                "Location": f"{fake_director_v0_base_url}/fake-status/{node_not_found}"
             },
         )
 
@@ -158,7 +158,7 @@ async def test_get_state(
     )
     assert result == service_status_legacy
 
-    # node not tracked both services
+    # node not tracked any of the two directors
     result = await rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         RPCMethodName("get_service_status"),
