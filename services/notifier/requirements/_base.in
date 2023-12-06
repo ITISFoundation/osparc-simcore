@@ -6,7 +6,6 @@
 --constraint ./constraints.txt
 
 # intra-repo required dependencies
---requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 # service-library[fastapi]
@@ -14,7 +13,9 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+apprise
 fastapi
+faststream[rabbit]
 python-socketio
 typer[all]
 uvicorn[standard]
