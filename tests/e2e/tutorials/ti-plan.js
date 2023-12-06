@@ -55,7 +55,7 @@ async function runTutorial() {
     await tutorial.takeScreenshot("electrodeSelector_before");
     const electrodeSelectorIframe = await tutorial.getIframe(esId);
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
-    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
+    await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_(Targets_combined) Hypothalamus"]');
     const selection = [
       ["E1+", "FT9"],
       ["E1-", "FT7"],
