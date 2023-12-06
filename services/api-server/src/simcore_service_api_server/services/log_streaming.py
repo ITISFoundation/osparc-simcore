@@ -1,10 +1,11 @@
 import asyncio
 from asyncio import Queue
+from datetime import datetime, timezone
 from typing import AsyncIterable, Awaitable, Callable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic import NonNegativeInt, PositiveInt
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
@@ -90,10 +91,12 @@ class LogDistributor:
 class LogStreamer:
     def __init__(
         self,
+        *,
         user_id: UserID,
         director2_api: DirectorV2Api,
         job_id: JobID,
         log_distributor: LogDistributor,
+        max_log_check_seconds: NonNegativeInt,
     ):
         self._user_id = user_id
         self._director2_api = director2_api
@@ -101,6 +104,7 @@ class LogStreamer:
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
         self._is_registered: bool = False
+        self._max_log_check_seconds: NonNegativeInt = max_log_check_seconds
 
     async def setup(self):
         await self._log_distributor.register(self._job_id, self._queue.put)
@@ -126,10 +130,19 @@ class LogStreamer:
             raise LogStreamerNotRegistered(
                 f"LogStreamer for job_id={self._job_id} is not correctly registered"
             )
+        last_log_time: datetime | None = None
         while True:
             while self._queue.empty():
                 if await self._project_done():
                     return
-                await asyncio.sleep(_SLEEP_SECONDS_BEFORE_CHECK_JOB_STATUS)
+                await asyncio.sleep(
+                    0.2
+                    if last_log_time is None
+                    else min(
+                        (datetime.now(tz=timezone.utc) - last_log_time).total_seconds(),
+                        self._max_log_check_seconds,
+                    )
+                )
             log: JobLog = await self._queue.get()
+            last_log_time = datetime.now(tz=timezone.utc)
             yield log.json() + _NEW_LINE
