@@ -72,6 +72,7 @@ async def create_cluster(
             get_cluster_name(
                 app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
             ),
+            ec2_instance_boot_specs,
         ),
         ami_id=ec2_instance_boot_specs.ami_id,
         key_name=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME,

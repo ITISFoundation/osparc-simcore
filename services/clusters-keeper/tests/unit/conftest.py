@@ -106,9 +106,11 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    random.choice(ec2_instances): random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
-                    )
+                    random.choice(  # noqa: S311
+                        ec2_instances
+                    ): EC2InstanceBootSpecific.Config.schema_extra["examples"][
+                        1
+                    ]  # NOTE: we use example with custom script
                 }
             ),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
