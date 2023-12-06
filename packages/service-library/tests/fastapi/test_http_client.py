@@ -114,34 +114,42 @@ async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str)
     mock_server_api.delete(path__startswith="/foo").respond(status.HTTP_200_OK)
 
     async with httpx.AsyncClient(base_url=base_url) as client:
-        response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
+        response = await client.post(
+            "/foo",
+            params={"x": "3"},
+            json={"y": 12},
+            headers={"x-secret": "this should not display"},
+        )
         assert response.status_code == 200
 
-        cmd = to_curl_command(response.request)
+        cmd_short = to_curl_command(response.request)
 
         assert (
-            cmd
-            == 'curl -X POST -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0" -H "content-length: 9" -H "content-type: application/json" -d \'{"y": 12}\' https://test_base_http_api/foo?x=3'
+            cmd_short
+            == 'curl -X POST -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0" -H "x-secret: *****" -H "content-length: 9" -H "content-type: application/json" -d \'{"y": 12}\' https://test_base_http_api/foo?x=3'
         )
 
-        cmd = to_curl_command(response.request, use_short_options=False)
-        assert (
-            cmd
-            == 'curl --request POST --header "host: test_base_http_api" --header "accept: */*" --header "accept-encoding: gzip, deflate" --header "connection: keep-alive" --header "user-agent: python-httpx/0.25.0" --header "content-length: 9" --header "content-type: application/json" --data \'{"y": 12}\' https://test_base_http_api/foo?x=3'
+        cmd_long = to_curl_command(response.request, use_short_options=False)
+        assert cmd_long == cmd_short.replace("-X", "--request",).replace(
+            "-H",
+            "--header",
+        ).replace(
+            "-d",
+            "--data",
         )
 
         # with GET
         response = await client.get("/foo", params={"x": "3"})
-        cmd = to_curl_command(response.request)
+        cmd_long = to_curl_command(response.request)
 
         assert (
-            cmd
+            cmd_long
             == 'curl -X GET -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0"  https://test_base_http_api/foo?x=3'
         )
 
         # with DELETE
         response = await client.delete("/foo", params={"x": "3"})
-        cmd = to_curl_command(response.request)
+        cmd_long = to_curl_command(response.request)
 
-        assert "DELETE" in cmd
-        assert " -d " not in cmd
+        assert "DELETE" in cmd_long
+        assert " -d " not in cmd_long

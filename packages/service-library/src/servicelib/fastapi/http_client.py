@@ -110,8 +110,16 @@ def to_curl_command(request: httpx.Request, *, use_short_options: bool = True) -
 
     # https://curl.se/docs/manpage.html#-H
     # H, --header <header/@file> Pass custom header(s) to server
+
     headers_option = ""
-    if headers := [f'"{k}: {v}"' for k, v in request.headers.items()]:
+    headers = []
+    for key, value in request.headers.items():
+        if "secret" in key.lower() or "pass" in key.lower():
+            headers.append(f'"{key}: *****"')
+        else:
+            headers.append(f'"{key}: {value}"')
+
+    if headers:
         _h = "-H" if use_short_options else "--header"
         headers_option = f"{_h} {f' {_h} '.join(headers)}"
 

@@ -375,7 +375,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
 
     __popUpPaymentGateway: function(paymentId, url) {
       const options = {
-        width: 400,
+        width: 450,
         height: 600
       };
 
@@ -392,7 +392,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
 
     __popUpPaymentGatewayOld: function(paymentId, url) {
       const options = {
-        width: 400,
+        width: 450,
         height: 600,
         top: 100,
         left: 200,
