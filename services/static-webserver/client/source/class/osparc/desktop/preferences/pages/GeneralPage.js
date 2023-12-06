@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         const selectable = e.getData();
         this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
       });
-      form.add(walletIndicatorVisibilitySB, this.tr("Show Indicator"));
+      form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
       const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
         minimum: 100,
@@ -93,7 +93,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
       creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
-      form.add(creditsWarningThresholdField, this.tr("Show Warning When Credits Below"));
+      form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
 
       box.add(new qx.ui.form.renderer.Single(form));
 
@@ -115,12 +115,12 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
       });
       inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
-      form.add(inactivitySpinner, this.tr("Idle Time Before Closing (in minutes)"));
+      form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
       box.add(new qx.ui.form.renderer.Single(form));
       return box;
     },
     __createJobConcurrencySetting: function() {
-      const box = this._createSectionBox(this.tr("Job concurrency"));
+      const box = this._createSectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
@@ -132,12 +132,12 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
-      form.add(jobConcurrencySpinner, this.tr("Maximum Number of Concurrent Jobs"));
+      form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
       return box;
     },
     __createUserPrivacySettings: function() {
-      const box = this._createSectionBox("Privacy settings");
+      const box = this._createSectionBox("Privacy Settings");
 
       const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
       box.add(label);
