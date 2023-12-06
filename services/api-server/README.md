@@ -11,9 +11,19 @@ Open the following sites and use the test credentials user=key, password=secret 
     http://127.0.0.1.nip.io:8006/dev/doc: swagger type of documentation
 
 ### Profiling requests to the api server
-When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENABLED` is =1 in the running container) one can profile calls to the API server directly from the client side. On the server, the profiling is done using [Pyinstrument](https://github.com/joerick/pyinstrument). If we have our request in the form of a curl command, one simply adds the custom header `x-profile-api-server:true` to the command, in which case the profile is received under the `profile` key of the response body. This makes it easy to visualise the profiling report directly in bash:
-```bash
-<curl_command> -H 'x-profile-api-server: true' | jq -r .profile
+When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENABLED` is =1 in the running container) one can profile calls to the API server directly from the client side. This is done by setting the custom header `x-profile-api-server` equal to `true` in the request. In that case the the reponse will be of media type `application/x-ndjson` and the final line of the response will be a json object whose `profile` key holds the profile. Here's an example of how the "/v0/me" endpoint of the api server can be profiled
+:
+```python
+from httpx import AsyncClient, BasicAuth
+headers: dict[str, str] = {"x-profile-api-server": "true"}
+async with AsyncClient(base_url="<host>", auth=BasicAuth(username="<username>", password="<password>")) as client:
+    async with client.stream("GET", f"/v0/me", timeout=20, headers=headers) as response:
+        async for ll in response.aiter_lines():
+            line = json.loads(ll)
+            if profile := line.get("profile"):
+                print(profile)
+            else:
+                pprint(line)
 ```
 
 ## Clients
