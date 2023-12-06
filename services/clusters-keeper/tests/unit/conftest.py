@@ -104,8 +104,13 @@ def app_environment(
                 faker.pylist(allowed_types=(str,))
             ),
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    random.choice(ec2_instances): random.choice(  # noqa: S311
+                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                    )
+                }
+            ),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
