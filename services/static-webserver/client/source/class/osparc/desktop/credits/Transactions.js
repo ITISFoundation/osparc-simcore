@@ -65,15 +65,8 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       }
     },
 
-    __fetchData: function() {
-      osparc.data.Resources.fetch("payments", "get")
-        .then(transactions => {
-          if ("data" in transactions) {
-            const table = this.getChildControl("usage-table");
-            table.addData(transactions["data"]);
-          }
-        })
-        .catch(err => console.error(err));
+    refresh: function() {
+      this.__buildLayout();
     }
   }
 });

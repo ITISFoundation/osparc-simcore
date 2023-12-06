@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __openTransactions: function(fetchTransactions = false) {
       if (fetchTransactions) {
-        this.__transactionsTable.refetchData();
+        this.__transactionsTable.refresh();
         this.__openPage(this.__transactionsPage);
       } else {
         this.__openPage(this.__transactionsPage);
