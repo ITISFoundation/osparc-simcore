@@ -1,4 +1,5 @@
 import datetime
+import re
 import tempfile
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypeAlias
@@ -8,6 +9,7 @@ from models_library.docker import DockerGenericTag
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConstrainedStr,
     Extra,
     Field,
     NonNegativeFloat,
@@ -60,7 +62,17 @@ class EC2InstanceType:
 
 
 InstancePrivateDNSName: TypeAlias = str
-EC2Tags: TypeAlias = dict[str, str]
+
+
+class AWSTagKey(ConstrainedStr):
+    regex = re.compile(r"^(?!.*(\.{1,2}|_index))[a-zA-Z0-9\+\-=\._:@]{1,128}$")
+
+
+class AWSTagValue(ConstrainedStr):
+    regex = re.compile(r"^[a-zA-Z0-9\s\+\-=\._:/@]{0,256}$")
+
+
+EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
 
 
 @dataclass(frozen=True)
