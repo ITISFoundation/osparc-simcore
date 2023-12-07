@@ -1,6 +1,7 @@
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.projects_nodes_io import NodeID
+from servicelib.fastapi.http_client import AttachLifespanMixin
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     expect_status,
@@ -10,7 +11,7 @@ from servicelib.fastapi.http_client_thin import (
 from ...core.settings import ApplicationSettings
 
 
-class DirectorV2ThinClient(BaseThinClient):
+class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
 

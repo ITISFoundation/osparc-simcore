@@ -3,7 +3,7 @@
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, AsyncIterable
 
 import pytest
 from fastapi import FastAPI, status
@@ -52,8 +52,9 @@ def mocked_app(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> FastAP
 
 
 @pytest.fixture
-def thin_client(mocked_app: FastAPI) -> ThinSidecarsClient:
-    return ThinSidecarsClient(mocked_app)
+async def thin_client(mocked_app: FastAPI) -> AsyncIterable[ThinSidecarsClient]:
+    async with ThinSidecarsClient(mocked_app) as client:
+        yield client
 
 
 @pytest.fixture

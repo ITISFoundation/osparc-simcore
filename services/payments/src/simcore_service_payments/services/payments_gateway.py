@@ -20,6 +20,7 @@ from pydantic import ValidationError, parse_raw_as
 from pydantic.errors import PydanticErrorMixin
 from servicelib.fastapi.http_client import (
     AppStateMixin,
+    AttachLifespanMixin,
     BaseHTTPApi,
     HealthMixinMixin,
     to_curl_command,
@@ -110,7 +111,9 @@ class _GatewayApiAuth(httpx.Auth):
         yield request
 
 
-class PaymentsGatewayApi(BaseHTTPApi, HealthMixinMixin, AppStateMixin):
+class PaymentsGatewayApi(
+    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, AppStateMixin
+):
     app_state_name: str = "payment_gateway_api"
 
     #

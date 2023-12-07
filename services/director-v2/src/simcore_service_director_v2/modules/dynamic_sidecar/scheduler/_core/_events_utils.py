@@ -245,7 +245,9 @@ async def attempt_pod_removal_and_data_saving(
 
     _logger.debug("removing service; scheduler_data=%s", scheduler_data)
 
-    sidecars_client: SidecarsClient = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client: SidecarsClient = await get_sidecars_client(
+        app, scheduler_data.node_uuid
+    )
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
 
@@ -333,7 +335,7 @@ async def attempt_pod_removal_and_data_saving(
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     _logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     projects_networks_repository: ProjectsNetworksRepository = get_repository(
@@ -387,7 +389,7 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     # Before starting, update the volume states. It is not always

@@ -48,6 +48,9 @@ async def _debug_progress_callback(
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
+# TODO: finish up the initialization of all the thing clients! setp and teardown
+
+
 class SidecarsClient:
     """
     API client used for talking with:
@@ -59,8 +62,11 @@ class SidecarsClient:
         self._app = app
         self._thin_client = ThinSidecarsClient(app)
 
-    async def close(self) -> None:
-        await self._thin_client.close()
+    async def teardown(self) -> None:
+        await self._thin_client.teardown_client()
+
+    async def setup(self) -> None:
+        await self._thin_client.setup_client()
 
     @cached_property
     def _async_client(self) -> AsyncClient:
@@ -501,18 +507,19 @@ async def setup(app: FastAPI) -> None:
 async def shutdown(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
         await logged_gather(
-            *(client.close() for client in app.state.sidecars_api_clients.values()),
+            *(client.teardown() for client in app.state.sidecars_api_clients.values()),
             reraise=False,
         )
 
 
-def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsClient:
+async def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsClient:
     str_node_id = f"{node_id}"
 
     if str_node_id not in app.state.sidecars_api_clients:
         app.state.sidecars_api_clients[str_node_id] = SidecarsClient(app)
 
     client: SidecarsClient = app.state.sidecars_api_clients[str_node_id]
+    await client.setup()
     return client
 
 
@@ -523,7 +530,7 @@ def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
 async def get_dynamic_sidecar_service_health(
     app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
-    api_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    api_client = await get_sidecars_client(app, scheduler_data.node_uuid)
 
     # update service health
     return await api_client.is_healthy(scheduler_data.endpoint, with_retry=with_retry)

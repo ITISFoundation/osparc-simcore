@@ -4,17 +4,27 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from servicelib.fastapi.http_client import AppStateMixin
+from servicelib.fastapi.http_client import (
+    AppStateMixin,
+    AttachLifespanMixin,
+    HasClientSetupProtocol,
+)
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 
 from ._thin_client import DirectorV2ThinClient
 
 
-class DirectorV2Client(AppStateMixin):
+class DirectorV2Client(AppStateMixin, AttachLifespanMixin, HasClientSetupProtocol):
     app_state_name: str = "director_v2_client"
 
     def __init__(self, app: FastAPI) -> None:
         self.thin_client = DirectorV2ThinClient(app)
+
+    async def setup_client(self) -> None:
+        return await self.thin_client.setup_client()
+
+    async def teardown_client(self) -> None:
+        return await self.thin_client.teardown_client()
 
     async def get_status(
         self, node_id: NodeID

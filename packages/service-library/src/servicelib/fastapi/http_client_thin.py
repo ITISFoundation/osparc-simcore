@@ -206,7 +206,7 @@ class BaseThinClient(BaseHTTPApi):
 
         super().__init__(client=AsyncClient(**client_args))
 
-    async def __aenter__(self) -> "BaseThinClient":
+    async def __aenter__(self):
         await self.setup_client()
         return self
 

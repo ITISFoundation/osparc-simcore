@@ -62,7 +62,7 @@ async def sidecars_client(
 
     # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
     await api_client_setup(app)
-    yield get_sidecars_client(app, faker.uuid4())
+    yield await get_sidecars_client(app, faker.uuid4())
     await shutdown(app)
 
 
