@@ -50,6 +50,10 @@ services:
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
+    # NOTE: if the service needs to be debugged, put replicas to 1
+    # or `docker service update master-simcore_dynamic-scheduler --replicas 1`
+    deploy:
+      replicas: 2
 
   catalog:
     environment:

@@ -68,11 +68,9 @@ services:
       - "8011:8000"
 
   dynamic-scheduler:
-    # ports:
-    #  - "8012:8000"
-    # NOTE: if the service needs to be debugged, put replicas to 1 and uncomment above
-    deploy:
-      replicas: 2
+    ports:
+     - "8012:8000"
+     - "3016:3000"
 
   resource-usage-tracker:
     ports:
