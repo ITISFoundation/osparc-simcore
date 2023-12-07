@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from collections.abc import Iterable
+from collections.abc import AsyncIterable, Iterable
 
 import pytest
 from httpx import (
@@ -19,7 +19,6 @@ from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     ClientHttpError,
     UnexpectedStatusError,
-    WrongReturnTypeError,
     expect_status,
     retry_on_errors,
 )
@@ -63,8 +62,9 @@ def request_timeout() -> int:
 
 
 @pytest.fixture
-def thick_client(request_timeout: int) -> FakeThickClient:
-    return FakeThickClient(request_timeout=request_timeout)
+async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
+    async with FakeThickClient(request_timeout=request_timeout) as client:
+        yield client
 
 
 @pytest.fixture
@@ -156,14 +156,14 @@ async def test_methods_do_not_return_response(
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
-    with pytest.raises(WrongReturnTypeError):
+    with pytest.raises(AssertionError, match="should return an instance"):
         FailWrongAnnotationTestClient(request_timeout=request_timeout)
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
-    with pytest.raises(WrongReturnTypeError):
+    with pytest.raises(AssertionError, match="should return an instance"):
         FailNoAnnotationTestClient(request_timeout=request_timeout)
 
 

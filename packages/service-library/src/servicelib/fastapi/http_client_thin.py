@@ -3,7 +3,7 @@ import functools
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any, ClassVar
+from typing import Any, Final
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
@@ -26,7 +26,6 @@ Exception hierarchy:
   x BaseRequestError
     + ClientHttpError
     + UnexpectedStatusError
-  x WrongReturnType
 """
 
 
@@ -34,19 +33,6 @@ class BaseClientError(Exception):
     """
     Used as based for all the raised errors
     """
-
-
-class WrongReturnTypeError(BaseClientError):
-    """
-    used internally to siWrongReturnTypeErrorgnal the user that the defined method
-    has an invalid return time annotation
-    """
-
-    def __init__(self, method, return_annotation) -> None:
-        super().__init__(
-            f"{method=} should return an instance "
-            f"of {Response}, not '{return_annotation}'!"
-        )
 
 
 class BaseClientHTTPError(BaseClientError):
@@ -75,19 +61,17 @@ class UnexpectedStatusError(BaseClientHTTPError):
 
 def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
+    pool = client._transport._pool  # noqa: SLF001
     _logger.warning(
         "Pool status @ '%s': requests(%s)=%s, connections(%s)=%s",
         event_name.upper(),
-        len(client._transport._pool._requests),  # noqa: SLF001
+        len(pool._requests),  # noqa: SLF001
         [
             (id(r), r.request.method, r.request.url, r.request.headers)
-            for r in client._transport._pool._requests  # noqa: SLF001
+            for r in pool._requests  # noqa: SLF001
         ],
-        len(client._transport._pool.connections),  # noqa: SLF001
-        [
-            (id(c), c.__dict__)
-            for c in client._transport._pool.connections  # noqa: SLF001
-        ],
+        len(pool.connections),
+        [(id(c), c.__dict__) for c in pool.connections],
     )
 
 
@@ -106,6 +90,29 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
         )
 
     return log_it
+
+
+def _assert_public_interface(obj: object) -> None:
+    # makes sure all user public defined methods return `httpx.Response`
+
+    _allowed_names: Final[set[str]] = {
+        "setup_client",
+        "teardown_client",
+        "from_client_kwargs",
+    }
+
+    public_methods = [
+        t[1]
+        for t in inspect.getmembers(obj, predicate=inspect.ismethod)
+        if not (t[0].startswith("_") or t[0] in _allowed_names)
+    ]
+
+    for method in public_methods:
+        signature = inspect.signature(method)
+        assert signature.return_annotation == Response, (
+            f"{method=} should return an instance "
+            f"of {Response}, not '{signature.return_annotation}'!"
+        )
 
 
 def retry_on_errors(
@@ -172,12 +179,6 @@ def expect_status(expected_code: int):
 
 
 class BaseThinClient(BaseHTTPApi):
-    SKIP_METHODS: ClassVar[set[str]] = {
-        "close",
-        "attach_lifespan_to",
-        "from_client_kwargs",
-    }
-
     def __init__(
         self,
         *,
@@ -185,6 +186,8 @@ class BaseThinClient(BaseHTTPApi):
         base_url: URLTypes | None = None,
         timeout: TimeoutTypes | None = None,
     ) -> None:
+        _assert_public_interface(self)
+
         self.request_timeout: float = request_timeout
 
         client_args: dict[str, Any] = {
@@ -203,19 +206,10 @@ class BaseThinClient(BaseHTTPApi):
 
         super().__init__(client=AsyncClient(**client_args))
 
-        # ensure all user defined public methods return `httpx.Response`
-        # NOTE: ideally these checks should be ran at import time!
-        public_methods = [
-            t[1]
-            for t in inspect.getmembers(self, predicate=inspect.ismethod)
-            if not (t[0].startswith("_") or t[0] in self.SKIP_METHODS)
-        ]
+    async def __aenter__(self) -> "BaseThinClient":
+        await self.setup_client()
+        return self
 
-        for method in public_methods:
-            signature = inspect.signature(method)
-            if signature.return_annotation != Response:
-                raise WrongReturnTypeError(method, signature.return_annotation)
-
-    async def close(self):
-        _log_pool_status(self.client, "closing")
-        await super()._close()
+    async def __aexit__(self, *args):
+        _log_pool_status(self.client, "before close")
+        await self.teardown_client()
