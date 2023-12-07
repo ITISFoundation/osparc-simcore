@@ -149,10 +149,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             maxHeight: 30,
             alignY: "middle"
           });
-          control.getChildControl("label").set({
-            allowGrowX: true,
-            textAlign: "right"
-          });
           control.addListener("execute", () => this.fireDataEvent("toggleFavourite", {
             walletId: this.getKey()
           }), this);
@@ -270,16 +266,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
         favouriteButton.set({
-          label: this.tr("Primary"),
           toolTipText: this.tr("Default Credit Account"),
-          icon: "@FontAwesome5Solid/toggle-on/20"
+          icon: "@FontAwesome5Solid/check-circle/20"
         });
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
         favouriteButton.set({
-          label: this.tr("Secondary"),
           toolTipText: this.tr("Make it Default Credit Account"),
-          icon: "@FontAwesome5Solid/toggle-off/20"
+          icon: "@FontAwesome5Solid/circle/20"
         });
         favouriteButtonIcon.setTextColor("text");
       }
