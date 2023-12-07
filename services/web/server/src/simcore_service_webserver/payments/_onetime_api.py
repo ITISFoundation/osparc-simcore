@@ -34,30 +34,7 @@ _logger = logging.getLogger(__name__)
 
 
 MSG_WALLET_NO_ACCESS_ERROR = "User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
-
-
-async def raise_for_wallet_payments_permissions(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    wallet_id: WalletID,
-    product_name: ProductName,
-):
-    """
-    NOTE: payments can only be done to owned wallets therefore
-    we cannot allow users with read-only access to even read any
-    payment information associated to this wallet.
-    SEE some context about this in https://github.com/ITISFoundation/osparc-simcore/pull/4897
-    """
-    permissions = await get_wallet_with_permissions_by_user(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-    if not permissions.read or not permissions.write:
-        raise WalletAccessForbiddenError(
-            reason=MSG_WALLET_NO_ACCESS_ERROR.format(
-                user_id=user_id, wallet_id=wallet_id
-            )
-        )
+_FAKE_PAYMENT_TRANSACTION_ID_PREFIX = "fpt"
 
 
 def _to_api_model(
@@ -96,7 +73,7 @@ async def _fake_init_payment(
     comment,
 ):
     # (1) Init payment
-    payment_id = f"{uuid4()}"
+    payment_id = f"{_FAKE_PAYMENT_TRANSACTION_ID_PREFIX}_{uuid4()}"
     # get_form_payment_url
     settings: PaymentsSettings = get_plugin_settings(app)
     external_form_link = (
@@ -106,84 +83,21 @@ async def _fake_init_payment(
     )
     # (2) Annotate INIT transaction
     async with get_database_engine(app).acquire() as conn:
-        assert (  # nosec
-            await insert_init_payment_transaction(
-                conn,
-                payment_id=payment_id,
-                price_dollars=amount_dollars,
-                osparc_credits=target_credits,
-                product_name=product_name,
-                user_id=user_id,
-                user_email=user_email,
-                wallet_id=wallet_id,
-                comment=comment,
-                initiated_at=arrow.utcnow().datetime,
-            )
-            == payment_id
+        await insert_init_payment_transaction(
+            conn,
+            payment_id=payment_id,
+            price_dollars=amount_dollars,
+            osparc_credits=target_credits,
+            product_name=product_name,
+            user_id=user_id,
+            user_email=user_email,
+            wallet_id=wallet_id,
+            comment=comment,
+            initiated_at=arrow.utcnow().datetime,
         )
     return WalletPaymentInitiated(
         payment_id=payment_id, payment_form_url=f"{external_form_link}"
     )
-
-
-async def init_creation_of_wallet_payment(
-    app: web.Application,
-    *,
-    price_dollars: Decimal,
-    osparc_credits: Decimal,
-    product_name: str,
-    user_id: UserID,
-    wallet_id: WalletID,
-    comment: str | None,
-) -> WalletPaymentInitiated:
-    """
-
-    Raises:
-        UserNotFoundError
-        WalletAccessForbiddenError
-    """
-
-    # wallet: check permissions
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-    user_wallet = await get_wallet_by_user(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-    assert user_wallet.wallet_id == wallet_id  # nosec
-
-    # user info
-    user = await get_user_name_and_email(app, user_id=user_id)
-    settings: PaymentsSettings = get_plugin_settings(app)
-    payment_inited: WalletPaymentInitiated
-    if settings.PAYMENTS_FAKE_COMPLETION:
-        payment_inited = await _fake_init_payment(
-            app,
-            price_dollars,
-            osparc_credits,
-            product_name,
-            wallet_id,
-            user_id,
-            user.email,
-            comment,
-        )
-    else:
-        # call to payment-service
-        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-        payment_inited = await _rpc.init_payment(
-            app,
-            amount_dollars=price_dollars,
-            target_credits=osparc_credits,
-            product_name=product_name,
-            wallet_id=wallet_id,
-            wallet_name=user_wallet.name,
-            user_id=user_id,
-            user_name=user.name,
-            user_email=user.email,
-            comment=comment,
-        )
-
-    return payment_inited
 
 
 async def _ack_creation_of_wallet_payment(
@@ -249,29 +163,6 @@ async def _fake_cancel_payment(app, payment_id) -> None:
     )
 
 
-async def cancel_payment_to_wallet(
-    app: web.Application,
-    *,
-    payment_id: PaymentID,
-    user_id: UserID,
-    wallet_id: WalletID,
-    product_name: ProductName,
-) -> None:
-    await raise_for_wallet_payments_permissions(
-        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
-    )
-
-    settings: PaymentsSettings = get_plugin_settings(app)
-    if settings.PAYMENTS_FAKE_COMPLETION:
-        await _fake_cancel_payment(app, payment_id)
-
-    else:
-        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-        await _rpc.cancel_payment(
-            app, payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
-        )
-
-
 async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-many-arguments
     app,
     amount_dollars,
@@ -303,10 +194,134 @@ async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-ma
         app,
         payment_id=inited.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
-        message=f"Fake payment completed with payment-id = {payment_method_id}",
+        message=f"Fake payment completed with {payment_method_id=}",
         invoice_url=f"https://fake-invoice.com/?id={inited.payment_id}",  # type: ignore
         notify_enabled=False,
     )
+
+
+async def _fake_get_payments_page(
+    app: web.Application,
+    user_id: UserID,
+    limit: int,
+    offset: int,
+):
+
+    (
+        total_number_of_items,
+        transactions,
+    ) = await _onetime_db.list_user_payment_transactions(
+        app, user_id=user_id, offset=offset, limit=limit
+    )
+
+    return total_number_of_items, [_to_api_model(t) for t in transactions]
+
+
+async def raise_for_wallet_payments_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
+):
+    """
+    NOTE: payments can only be done to owned wallets therefore
+    we cannot allow users with read-only access to even read any
+    payment information associated to this wallet.
+    SEE some context about this in https://github.com/ITISFoundation/osparc-simcore/pull/4897
+    """
+    permissions = await get_wallet_with_permissions_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    if not permissions.read or not permissions.write:
+        raise WalletAccessForbiddenError(
+            reason=MSG_WALLET_NO_ACCESS_ERROR.format(
+                user_id=user_id, wallet_id=wallet_id
+            )
+        )
+
+
+async def init_creation_of_wallet_payment(
+    app: web.Application,
+    *,
+    price_dollars: Decimal,
+    osparc_credits: Decimal,
+    product_name: str,
+    user_id: UserID,
+    wallet_id: WalletID,
+    comment: str | None,
+) -> WalletPaymentInitiated:
+    """
+
+    Raises:
+        UserNotFoundError
+        WalletAccessForbiddenError
+    """
+
+    # wallet: check permissions
+    await raise_for_wallet_payments_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    user_wallet = await get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+    assert user_wallet.wallet_id == wallet_id  # nosec
+
+    # user info
+    user = await get_user_name_and_email(app, user_id=user_id)
+    settings: PaymentsSettings = get_plugin_settings(app)
+    payment_inited: WalletPaymentInitiated
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        payment_inited = await _fake_init_payment(
+            app,
+            price_dollars,
+            osparc_credits,
+            product_name,
+            wallet_id,
+            user_id,
+            user.email,
+            comment,
+        )
+    else:
+        # call to payment-service
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        payment_inited = await _rpc.init_payment(
+            app,
+            amount_dollars=price_dollars,
+            target_credits=osparc_credits,
+            product_name=product_name,
+            wallet_id=wallet_id,
+            wallet_name=user_wallet.name,
+            user_id=user_id,
+            user_name=user.name,
+            user_email=user.email,
+            comment=comment,
+        )
+
+    return payment_inited
+
+
+async def cancel_payment_to_wallet(
+    app: web.Application,
+    *,
+    payment_id: PaymentID,
+    user_id: UserID,
+    wallet_id: WalletID,
+    product_name: ProductName,
+) -> None:
+    await raise_for_wallet_payments_permissions(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
+
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        await _fake_cancel_payment(app, payment_id)
+
+    else:
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        await _rpc.cancel_payment(
+            app, payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
+        )
 
 
 async def pay_with_payment_method(
@@ -364,23 +379,6 @@ async def pay_with_payment_method(
         user_email=user.email,
         comment=comment,
     )
-
-
-async def _fake_get_payments_page(
-    app: web.Application,
-    user_id: UserID,
-    limit: int,
-    offset: int,
-):
-
-    (
-        total_number_of_items,
-        transactions,
-    ) = await _onetime_db.list_user_payment_transactions(
-        app, user_id=user_id, offset=offset, limit=limit
-    )
-
-    return total_number_of_items, [_to_api_model(t) for t in transactions]
 
 
 async def list_user_payments_page(
