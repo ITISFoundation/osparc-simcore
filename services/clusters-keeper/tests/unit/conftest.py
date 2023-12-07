@@ -130,6 +130,9 @@ def app_environment(
             ),
             "WORKERS_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+                {"osparc-tag": "the pytest worker tag value is here"}
+            ),
         },
     )
     return mock_env_devel_environment | envs
