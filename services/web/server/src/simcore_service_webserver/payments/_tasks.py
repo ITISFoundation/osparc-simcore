@@ -64,7 +64,9 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     )
 
     _logger.info("Faking payment completion as %s", kwargs)
-    await _ack_creation_of_wallet_payment(app, payment_id=payment_id, **kwargs)
+    await _ack_creation_of_wallet_payment(
+        app, payment_id=payment_id, notify_enabled=True, **kwargs
+    )
 
 
 _POSSIBLE_PAYMENTS_METHODS_OUTCOMES = _create_possible_outcomes(
