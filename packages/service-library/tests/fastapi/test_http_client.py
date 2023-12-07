@@ -13,7 +13,12 @@ import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from models_library.healthchecks import IsResponsive
-from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi, to_curl_command
+from servicelib.fastapi.http_client import (
+    AppStateMixin,
+    BaseHTTPApi,
+    HealthMixinMixin,
+    to_curl_command,
+)
 
 
 def test_using_app_state_mixin():
@@ -70,7 +75,7 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
-    class MyClientApi(BaseHttpApi, AppStateMixin):
+    class MyClientApi(BaseHTTPApi, HealthMixinMixin, AppStateMixin):
         app_state_name: str = "my_client_api"
 
     new_app = FastAPI()

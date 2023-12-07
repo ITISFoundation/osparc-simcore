@@ -14,7 +14,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from .http_client import BaseHTTPClient
+from .http_client import BaseHTTPApi
 
 _logger = logging.getLogger(__name__)
 
@@ -171,7 +171,7 @@ def expect_status(expected_code: int):
     return decorator
 
 
-class BaseThinClient(BaseHTTPClient):
+class BaseThinClient(BaseHTTPApi):
     SKIP_METHODS: ClassVar[set[str]] = {
         "close",
         "attach_lifespan_to",

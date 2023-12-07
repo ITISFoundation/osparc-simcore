@@ -1,11 +1,19 @@
 import contextlib
+from abc import ABC, abstractmethod
 
 import httpx
 from fastapi import FastAPI
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 
 
-class BaseHTTPClient:
+class HasClientProtocol(ABC):
+    @property
+    @abstractmethod
+    def client(self) -> httpx.AsyncClient:
+        ...
+
+
+class BaseHTTPApi:
     def __init__(self, client: httpx.AsyncClient):
         self._client = client
         # Controls all resources lifespan in sync
@@ -30,7 +38,7 @@ class BaseHTTPClient:
         app.add_event_handler("shutdown", self._close)
 
 
-class BaseHttpApi(BaseHTTPClient):
+class HealthMixinMixin(HasClientProtocol):
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
