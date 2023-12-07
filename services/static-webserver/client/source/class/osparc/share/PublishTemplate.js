@@ -49,7 +49,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
           }
           if (rb.contextId === this.self().SharingOpts["productAll"].contextId) {
             // Only users  the product group can share for everyone
-            if (groupProductEveryone) {
+            if (osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll")) {
               rb.gid = groupProductEveryone["gid"];
               rb.show();
             }

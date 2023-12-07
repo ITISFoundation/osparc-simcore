@@ -261,7 +261,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
       return buyBtn;
     },
 
-    __buyingCredits: function(isBuying) {
+    __setBuyBtnFetching: function(isBuying) {
       const buyBtn = this.getChildControl("buy-button");
       buyBtn.set({
         fetching: isBuying,
@@ -270,7 +270,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     },
 
     __paymentCompleted: function(paymentData) {
-      this.__buyingCredits(false);
+      this.__setBuyBtnFetching(false);
 
       if (paymentData["completedStatus"]) {
         const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
@@ -294,7 +294,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     },
 
     __cancelPayment: function(paymentId) {
-      this.__buyingCredits(false);
+      this.__setBuyBtnFetching(false);
 
       const wallet = this.getWallet();
       // inform backend
@@ -314,7 +314,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
     },
 
     __startPayment: function() {
-      this.__buyingCredits(true);
+      this.__setBuyBtnFetching(true);
 
       const wallet = this.getWallet();
       const nCredits = this.getNCredits();
@@ -346,14 +346,13 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");
           })
-          .finally(() => this.__buyingCredits(false));
+          .finally(() => this.__setBuyBtnFetching(false));
       } else {
         osparc.data.Resources.fetch("payments", "startPayment", params)
           .then(data => {
             const paymentId = data["paymentId"];
             const url = data["paymentFormUrl"];
-            const stayWithinApp = true;
-            const pgWindow = stayWithinApp ? this.__popUpPaymentGateway(paymentId, url) : this.__popUpPaymentGatewayOld(paymentId, url);
+            const pgWindow = this.__popUpPaymentGateway(paymentId, url);
 
             // Listen to socket event
             const socket = osparc.wrapper.WebSocket.getInstance();
@@ -369,7 +368,7 @@ qx.Class.define("osparc.desktop.credits.OneTimePayment", {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");
           })
-          .finally(() => this.__buyingCredits(false));
+          .finally(() => this.__setBuyBtnFetching(false));
       }
     },
 
