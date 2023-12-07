@@ -4,7 +4,7 @@ import functools
 import json
 from typing import Any, Final
 
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
@@ -31,7 +31,9 @@ def _docker_compose_yml_base64_encoded() -> str:
 
 
 def create_startup_script(
-    app_settings: ApplicationSettings, cluster_machines_name_prefix: str
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    ec2_boot_specific: EC2InstanceBootSpecific,
 ) -> str:
     assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
@@ -59,13 +61,15 @@ def create_startup_script(
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
     ]
 
-    return "\n".join(
+    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
+    startup_commands.extend(
         [
             f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
             "docker swarm init",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",
         ]
     )
+    return "\n".join(startup_commands)
 
 
 def _convert_ec2_state_to_cluster_state(
