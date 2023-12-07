@@ -65,7 +65,7 @@ InstancePrivateDNSName: TypeAlias = str
 
 
 class AWSTagKey(ConstrainedStr):
-    regex = re.compile(r"^(?!.*(\.{1,2}|_index))[a-zA-Z0-9\+\-=\._:@]{1,128}$")
+    regex = re.compile(r"^(?!(_index|\.{1,2})$)[a-zA-Z0-9\+\-=\._:@]{1,128}$")
 
 
 class AWSTagValue(ConstrainedStr):
