@@ -72,10 +72,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         this._form.add(company, this.tr("Company Name"), null, "company");
       }
 
-      const address = new qx.ui.form.TextField();
+      const address = new qx.ui.form.TextField().set({
+        required: true
+      });
       this._form.add(address, this.tr("Address"), null, "address");
 
-      const country = new qx.ui.form.TextField();
+      const country = new qx.ui.form.TextField().set({
+        required: true
+      });
       this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox();
