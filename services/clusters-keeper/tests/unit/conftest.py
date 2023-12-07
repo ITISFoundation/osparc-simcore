@@ -114,7 +114,7 @@ def app_environment(
                 }
             ),
             "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
-                {"osparc-tag": "clusters-keeper-machine"}
+                {"osparc-tag": "the pytest tag is here"}
             ),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
