@@ -51,7 +51,7 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
     return {
         AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
         AWSTagKey("io.simcore.autoscaling.dask-scheduler_url"): AWSTagValue(
-            json.dumps(app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL)
+            f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
         AWSTagKey("Name"): AWSTagValue(

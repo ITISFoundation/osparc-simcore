@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, cast
 
-from aws_library.ec2.models import EC2InstanceBootSpecific
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -100,6 +100,11 @@ class EC2InstancesSettings(BaseCustomSettings):
         default=datetime.timedelta(minutes=1),
         description="Time after which an EC2 instance may be terminated (0<=T<=59 minutes, is automatically capped)"
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+    EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
+        ...,
+        description="Allows to define tags that should be added to the created EC2 instance default tags. "
+        "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
