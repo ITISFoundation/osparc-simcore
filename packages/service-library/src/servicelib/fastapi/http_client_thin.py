@@ -216,6 +216,6 @@ class BaseThinClient(BaseHTTPClient):
             if signature.return_annotation != Response:
                 raise WrongReturnTypeError(method, signature.return_annotation)
 
-    async def _close(self):
+    async def close(self):
         _log_pool_status(self.client, "closing")
         await super()._close()

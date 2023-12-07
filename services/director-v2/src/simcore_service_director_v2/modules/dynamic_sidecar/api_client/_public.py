@@ -57,7 +57,10 @@ class SidecarsClient:
 
     def __init__(self, app: FastAPI):
         self._app = app
-        self._thin_client: ThinSidecarsClient = ThinSidecarsClient(app)
+        self._thin_client = ThinSidecarsClient(app)
+
+    async def close(self) -> None:
+        await self._thin_client.close()
 
     @cached_property
     def _async_client(self) -> AsyncClient:
@@ -498,10 +501,7 @@ async def setup(app: FastAPI) -> None:
 async def shutdown(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
         await logged_gather(
-            *(
-                x._thin_client._close()  # pylint: disable=protected-access  # noqa: SLF001
-                for x in app.state.sidecars_api_clients.values()
-            ),
+            *(client.close() for client in app.state.sidecars_api_clients.values()),
             reraise=False,
         )
 
