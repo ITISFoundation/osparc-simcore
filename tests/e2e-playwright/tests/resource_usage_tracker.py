@@ -6,15 +6,16 @@
 # pylint: disable=unnecessary-lambda
 
 import os
+from datetime import datetime, timezone
+from http import HTTPStatus
 from typing import Iterator
+
 import pytest
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from datetime import datetime, timezone
-from http import HTTPStatus
 
 PRODUCT_URL = os.environ["PRODUCT_URL"]
 PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
