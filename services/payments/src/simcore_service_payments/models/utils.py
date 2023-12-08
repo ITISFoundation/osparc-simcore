@@ -6,6 +6,7 @@ from .payments_gateway import GetPaymentMethod
 
 def merge_models(got: GetPaymentMethod, acked: PaymentsMethodsDB) -> PaymentMethodGet:
     assert acked.completed_at  # nosec
+    assert got.id == acked.payment_method_id  # nosec
 
     return PaymentMethodGet(
         idr=acked.payment_method_id,
