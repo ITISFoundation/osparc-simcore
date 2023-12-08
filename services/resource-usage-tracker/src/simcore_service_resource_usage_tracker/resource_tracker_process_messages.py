@@ -156,6 +156,15 @@ async def _process_heartbeat_event(
             msg.service_run_id,
         )
         return
+    if service_run_db.service_run_status in {
+        ServiceRunStatus.SUCCESS,
+        ServiceRunStatus.ERROR,
+    }:
+        _logger.error(
+            "Recieved process heartbeat event for service_run_id: %s, but it was already closed, INVESTIGATE!",
+            msg.service_run_id,
+        )
+        return
 
     # Update `service run` record (if billable `credit transaction`) in the DB
     update_service_run_last_heartbeat = ServiceRunLastHeartbeatUpdate(
@@ -212,7 +221,16 @@ async def _process_stop_event(
     )
     if not service_run_db:
         _logger.error(
-            "Recieved stop heartbeat event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+            "Recieved stop event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+            msg.service_run_id,
+        )
+        return
+    if service_run_db.service_run_status in {
+        ServiceRunStatus.SUCCESS,
+        ServiceRunStatus.ERROR,
+    }:
+        _logger.error(
+            "Recieved stop event for service_run_id: %s, but it was already closed, INVESTIGATE!",
             msg.service_run_id,
         )
         return
