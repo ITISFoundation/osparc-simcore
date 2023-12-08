@@ -73,6 +73,7 @@ class RabbitMQClient(RabbitMQClientBase):
         *,
         exclusive_queue: bool = True,
         topics: list[str] | None = None,
+        message_ttl: int | None = None,
     ) -> str:
         """subscribe to exchange_name calling message_handler for every incoming message
         - exclusive_queue: True means that every instance of this application will receive the incoming messages
@@ -114,6 +115,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=exclusive_queue,
+                message_ttl=message_ttl,
             )
             if topics is None:
                 await queue.bind(exchange, routing_key="")

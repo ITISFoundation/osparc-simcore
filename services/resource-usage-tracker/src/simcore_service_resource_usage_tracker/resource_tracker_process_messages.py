@@ -63,12 +63,25 @@ async def _process_start_event(
     msg: RabbitResourceTrackingStartedMessage,
     rabbitmq_client: RabbitMQClient,
 ):
+    service_run_db = await resource_tracker_repo.get_service_run_by_id(
+        service_run_id=msg.service_run_id
+    )
+    if service_run_db:
+        # NOTE: After we find out why sometimes RUT recieves multiple start events and fix it, we can change it to log level `error`
+        _logger.warning(
+            "On process start event the service run id %s already exists in DB, INVESTIGATE! Current msg created_at: %s, already stored msg created_at: %s",
+            msg.service_run_id,
+            msg.created_at,
+            service_run_db.started_at,
+        )
+        return
+
+    # Prepare `service run` record (if billable `credit transaction`) in the DB
     service_type = (
         ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
         if msg.service_type == ServiceType.COMPUTATIONAL
         else ResourceTrackerServiceType.DYNAMIC_SERVICE
     )
-
     pricing_unit_cost = None
     if msg.pricing_unit_cost_id:
         pricing_unit_cost_db = await resource_tracker_repo.get_pricing_unit_cost_by_id(
@@ -134,10 +147,20 @@ async def _process_heartbeat_event(
     msg: RabbitResourceTrackingHeartbeatMessage,
     rabbitmq_client: RabbitMQClient,
 ):
+    service_run_db = await resource_tracker_repo.get_service_run_by_id(
+        service_run_id=msg.service_run_id
+    )
+    if not service_run_db:
+        _logger.error(
+            "Recieved process heartbeat event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+            msg.service_run_id,
+        )
+        return
+
+    # Update `service run` record (if billable `credit transaction`) in the DB
     update_service_run_last_heartbeat = ServiceRunLastHeartbeatUpdate(
         service_run_id=msg.service_run_id, last_heartbeat_at=msg.created_at
     )
-
     running_service = await resource_tracker_repo.update_service_run_last_heartbeat(
         update_service_run_last_heartbeat
     )
@@ -184,6 +207,17 @@ async def _process_stop_event(
     msg: RabbitResourceTrackingStoppedMessage,
     rabbitmq_client: RabbitMQClient,
 ):
+    service_run_db = await resource_tracker_repo.get_service_run_by_id(
+        service_run_id=msg.service_run_id
+    )
+    if not service_run_db:
+        _logger.error(
+            "Recieved stop heartbeat event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+            msg.service_run_id,
+        )
+        return
+
+    # Update `service run` record (if billable `credit transaction`) in the DB
     _run_status, _run_status_msg = ServiceRunStatus.SUCCESS, None
     if msg.simcore_platform_status is SimcorePlatformStatus.BAD:
         _run_status, _run_status_msg = (
