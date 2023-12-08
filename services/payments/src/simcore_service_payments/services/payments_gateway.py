@@ -28,7 +28,11 @@ from servicelib.fastapi.httpx_utils import to_curl_command
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPaymentWithPaymentMethod,
 )
+from tenacity import AsyncRetrying, stop_after_delay, wait_exponential
+from tenacity.retry import retry_if_exception_type
+from tenacity.wait import wait_exponential
 
+from ..core.errors import PaymentGatewayNotReadyError
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
     BatchGetPaymentMethods,
@@ -216,3 +220,22 @@ def setup_payments_gateway(app: FastAPI):
     )
     api.attach_lifespan_to(app)
     api.set_to_app_state(app)
+
+    # NOTE: start policy:
+    #  - this service will not be able to start if payments-gateway is alive
+    #
+    async def _check_service_liveness() -> None:
+        results = []
+        async for attempt in AsyncRetrying(
+            wait=wait_exponential(max=2),
+            stop=stop_after_delay(max_delay=5),
+            retry=retry_if_exception_type(PaymentGatewayNotReadyError),
+            reraise=True,
+        ):
+            with attempt:
+                alive = await api.check_liveness()
+                results.append(alive)
+                if not alive:
+                    raise PaymentGatewayNotReadyError(checks=results)
+
+    app.add_event_handler("startup", _check_service_liveness)
