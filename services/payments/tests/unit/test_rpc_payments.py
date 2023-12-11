@@ -140,8 +140,6 @@ async def test_webserver_one_time_payment_workflow(
 
 async def test_cancel_invalid_payment_id(
     is_pdb_enabled: bool,
-    app: FastAPI,
-    rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
