@@ -4,6 +4,7 @@ from models_library.api_schemas_payments.errors import (
     PaymentMethodNotFoundError,
     PaymentMethodUniqueViolationError,
     PaymentNotFoundError,
+    PaymentServiceUnavailableError,
 )
 from pydantic.errors import PydanticErrorMixin
 
@@ -13,6 +14,7 @@ __all__ = (
     "PaymentMethodNotFoundError",
     "PaymentMethodUniqueViolationError",
     "PaymentNotFoundError",
+    "PaymentServiceUnavailableError",
 )
 
 
