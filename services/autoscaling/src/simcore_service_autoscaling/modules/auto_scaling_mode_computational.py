@@ -2,7 +2,7 @@ import collections
 import logging
 from collections.abc import Iterable
 
-from aws_library.ec2.models import EC2InstanceData, Resources
+from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
@@ -42,7 +42,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
         return await utils_docker.get_worker_nodes(get_docker_client(app))
 
     @staticmethod
-    def get_ec2_tags(app: FastAPI) -> dict[str, str]:
+    def get_ec2_tags(app: FastAPI) -> EC2Tags:
         app_settings = get_application_settings(app)
         return utils_ec2.get_ec2_tags_computational(app_settings)
 

@@ -77,6 +77,7 @@ def test_dynamic_sidecar_env_vars(
         scheduler_data_from_http_request,
         app_settings,
         allow_internet_access=False,
+        metrics_collection_allowed=True,
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 

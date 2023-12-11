@@ -1,5 +1,8 @@
 from typing import Final
 
+from models_library.shared_user_preferences import (
+    AllowMetricsCollectionFrontendUserPreference,
+)
 from models_library.user_preferences import (
     FrontendUserPreference,
     PreferenceIdentifier,
@@ -67,7 +70,7 @@ class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
 
 class CreditsWarningThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "creditsWarningThreshold"
-    value: int | None = 200
+    value: int = 200
 
 
 class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
@@ -77,7 +80,8 @@ class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
 
 class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "userInactivityThreshold"
-    value: int | None = 30 * _MINUTE  # in seconds
+    value: int = 30 * _MINUTE  # in seconds
+
 
 class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "jobConcurrencyLimit"
@@ -100,6 +104,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     WalletIndicatorVisibilityFrontendUserPreference,
     UserInactivityThresholdFrontendUserPreference,
     JobConcurrencyLimitFrontendUserPreference,
+    AllowMetricsCollectionFrontendUserPreference,
 ]
 
 
