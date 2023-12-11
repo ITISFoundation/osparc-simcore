@@ -9,7 +9,10 @@ from typing import Any
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_payments.errors import PaymentNotFoundError
+from models_library.api_schemas_payments.errors import (
+    PaymentNotFoundError,
+    PaymentServiceUnavailableError,
+)
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
@@ -17,7 +20,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 
@@ -87,7 +90,7 @@ async def test_rpc_init_payment_fail(
 ):
     assert app
 
-    with pytest.raises(RPCServerError) as exc_info:
+    with pytest.raises(PaymentServiceUnavailableError) as exc_info:
         await rpc_client.request(
             PAYMENTS_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "init_payment"),
@@ -101,6 +104,8 @@ async def test_rpc_init_payment_fail(
     assert error.method_name == "init_payment"
     assert error.exc_message
     assert error.traceback
+    # FIXME: should raise
+    assert isinstance(exc_info.value, PaymentServiceUnavailableError)
 
 
 async def test_webserver_one_time_payment_workflow(

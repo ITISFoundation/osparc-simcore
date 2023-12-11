@@ -17,8 +17,8 @@ from simcore_service_payments.models.payments_gateway import (
 )
 from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
-    PaymentsGatewayError,
-    _raise_as_payments_gateway_error,
+    PaymentsGatewayApiError,
+    _reraise_as_service_errors_context,
     setup_payments_gateway,
 )
 
@@ -187,7 +187,7 @@ async def test_payment_methods_workflow(
     # delete payment-method
     await payments_gateway_api.delete_payment_method(payment_method_id)
 
-    with pytest.raises(PaymentsGatewayError) as err_info:
+    with pytest.raises(PaymentsGatewayApiError) as err_info:
         await payments_gateway_api.get_payment_method(payment_method_id)
 
     assert str(err_info.value)
@@ -205,7 +205,7 @@ async def test_payment_methods_workflow(
 
 async def test_payments_gateway_error_exception():
     async def _go():
-        with _raise_as_payments_gateway_error(operation_id="foo"):
+        with _reraise_as_service_errors_context(operation_id="foo"):
             async with httpx.AsyncClient(
                 app=FastAPI(),
                 base_url="http://payments.testserver.io",
@@ -213,10 +213,10 @@ async def test_payments_gateway_error_exception():
                 response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
                 response.raise_for_status()
 
-    with pytest.raises(PaymentsGatewayError) as err_info:
+    with pytest.raises(PaymentsGatewayApiError) as err_info:
         await _go()
     err = err_info.value
-    assert isinstance(err, PaymentsGatewayError)
+    assert isinstance(err, PaymentsGatewayApiError)
 
     assert "curl -X POST" in err.get_detailed_message()
 
