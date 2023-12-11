@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+
 import pytest
 from simcore_service_resource_usage_tracker.resource_tracker_utils import (
     compute_service_run_credit_costs,
