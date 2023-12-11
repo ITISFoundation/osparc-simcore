@@ -144,10 +144,4 @@ async def test_cancel_invalid_payment_id(
             timeout_s=20,  # for tests
         )
     error = exc_info.value
-
-    assert isinstance(error, RPCServerError)
-    assert error.exc_type == PaymentNotFoundError.get_full_class_name()
-    assert error.method_name == "cancel_payment"
-    assert error.msg == PaymentNotFoundError.msg_template.format(
-        payment_id=invalid_payment_id
-    )
+    assert isinstance(error, PaymentNotFoundError)
