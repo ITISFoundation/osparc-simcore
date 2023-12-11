@@ -70,7 +70,7 @@ def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
 
 
 @pytest.fixture
-def _disable_startup(mocker: MockerFixture):
+def _with_disabled_payments_gateway_startup(mocker: MockerFixture):
     mocker.patch(
         "simcore_service_payments.services.payments_gateway._create_start_policy",
         return_value=lambda: print("on-startup"),
@@ -79,7 +79,7 @@ def _disable_startup(mocker: MockerFixture):
 
 async def test_rpc_init_payment_fail(
     is_pdb_enabled: bool,
-    _disable_startup,
+    _with_disabled_payments_gateway_startup: None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     init_payment_kwargs: dict[str, Any],
@@ -143,6 +143,8 @@ async def test_cancel_invalid_payment_id(
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
     init_payment_kwargs: dict[str, Any],
     faker: Faker,
     payments_clean_db: None,
