@@ -56,7 +56,7 @@ def app(
 
 
 async def test_add_credits_to_wallet(
-    app: FastAPI, faker: Faker, mock_resoruce_usage_tracker_service_api: MockRouter
+    app: FastAPI, faker: Faker, mock_resource_usage_tracker_service_api: MockRouter
 ):
     # test
     rut_api = ResourceUsageTrackerApi.get_from_app_state(app)

@@ -89,9 +89,9 @@ def amount_dollars(request: pytest.FixtureRequest) -> float:
     "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
 )
 async def test_one_time_payment_workflow(
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     faker: Faker,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     amount_dollars: float,
 ):
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)

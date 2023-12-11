@@ -31,6 +31,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     postgres_env_vars_dict: EnvVarsDict,
     with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_gateway: None,
     wait_for_postgres_ready_and_db_migrated: None,
 ):
     # set environs

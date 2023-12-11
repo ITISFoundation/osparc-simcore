@@ -59,12 +59,12 @@ def app_environment(
 
 
 async def test_fails_to_pay_with_payment_method_without_funds(
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     create_fake_payment_method_in_db: Callable[
         [PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]
     ],
     no_funds_payment_method_id: PaymentMethodID,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     wallet_id: WalletID,
     wallet_name: IDStr,
     user_id: UserID,

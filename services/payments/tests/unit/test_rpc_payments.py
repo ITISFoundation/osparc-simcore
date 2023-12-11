@@ -13,6 +13,7 @@ from models_library.api_schemas_payments.errors import PaymentNotFoundError
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
@@ -68,7 +69,17 @@ def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
     }
 
 
+@pytest.fixture
+def _disable_startup(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_payments.services.payments_gateway._create_start_policy",
+        return_value=lambda: print("on-startup"),
+    )
+
+
 async def test_rpc_init_payment_fail(
+    is_pdb_enabled: bool,
+    _disable_startup,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     init_payment_kwargs: dict[str, Any],
@@ -81,6 +92,7 @@ async def test_rpc_init_payment_fail(
             PAYMENTS_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "init_payment"),
             **init_payment_kwargs,
+            timeout_s=None if is_pdb_enabled else 5,
         )
 
     error = exc_info.value
@@ -95,7 +107,6 @@ async def test_webserver_one_time_payment_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
     payments_clean_db: None,
 ):

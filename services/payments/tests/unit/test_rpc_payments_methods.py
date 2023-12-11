@@ -120,9 +120,9 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
 
 async def test_webserver_crud_payment_method_workflow(
     is_pdb_enabled: bool,
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,
@@ -201,10 +201,10 @@ async def test_webserver_crud_payment_method_workflow(
 
 async def test_webserver_pay_with_payment_method_workflow(
     is_pdb_enabled: bool,
+    mock_resource_usage_tracker_service_api: None,
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
-    mock_resoruce_usage_tracker_service_api: None,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
     product_name: ProductName,
     user_id: UserID,
