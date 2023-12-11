@@ -336,11 +336,27 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "transparent"
       }
     },
+    "form-button-danger": {
+      include:"form-button-outlined",
+      style: {
+        color: "error",
+        width: 1,
+        style: "solid"
+      }
+    },
+    "form-button-danger-hover": {
+      include:"form-button-outlined",
+      style: {
+        color: "error",
+        width: 1,
+        style: "solid"
+      }
+    },
     "form-button-hover": {
       include: "form-button",
       style: {
         color: "default-button-hover",
-        backgroundColor: "default-button-hover"
+        backgroundColor: "default-button-hover-background"
       }
     },
     "form-button-focus": {

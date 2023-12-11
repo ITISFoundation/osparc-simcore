@@ -40,13 +40,13 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "default-button"
         };
         if (states.hovered) {
-          style.backgroundColor = "default-button-hover";
+          style.backgroundColor = "default-button-hover-background";
         }
         if (states.focused) {
-          style.decorator = "form-button-focus";
+          style.backgroundColor = "default-button-hover-background";
         }
         if (states.disabled) {
-          style.backgroundColor = "transparent";
+          style.backgroundColor = "default-button-disabled-background";
         }
         return style;
       }
@@ -655,7 +655,8 @@ qx.Theme.define("osparc.theme.Appearance", {
     "danger-button": {
       include: "material-button",
       style: state => ({
-        backgroundColor: state.hovered || state.focused ? "info" : "error",
+        decorator: state.hovered || state.focused ? "form-button-danger-hover" : "form-button-danger",
+        backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "error",
         textColor: state.hovered || state.focused ? "default-button-text" : "default-button-text" // dark theme's text color
       })
     },
