@@ -98,13 +98,6 @@ async def test_rpc_init_payment_fail(
             timeout_s=None if is_pdb_enabled else 5,
         )
 
-    error = exc_info.value
-    assert isinstance(error, RPCServerError)
-    assert error.exc_type == "httpx.ConnectError"
-    assert error.method_name == "init_payment"
-    assert error.exc_message
-    assert error.traceback
-    # FIXME: should raise
     assert isinstance(exc_info.value, PaymentServiceUnavailableError)
 
 

@@ -94,7 +94,7 @@ def _reraise_as_service_errors_context(operation_id: str):
     except httpx.RequestError as err:
         _logger.exception("%s: request error", PAG)
         raise PaymentServiceUnavailableError(
-            human_reason=MSG_GATEWAY_UNAVAILABLE_ERROR
+            human_readable_detail=MSG_GATEWAY_UNAVAILABLE_ERROR
         ) from err
 
     except httpx.HTTPStatusError as err:
@@ -110,7 +110,7 @@ def _reraise_as_service_errors_context(operation_id: str):
             # 5XX in server -> turn into unavailable
             _logger.exception(error.get_detailed_message())
             raise PaymentServiceUnavailableError(
-                human_reason=MSG_GATEWAY_UNAVAILABLE_ERROR
+                human_readable_detail=MSG_GATEWAY_UNAVAILABLE_ERROR
             ) from err
 
 

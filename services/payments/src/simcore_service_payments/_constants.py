@@ -6,4 +6,4 @@ PGDB: Final[str] = "Postgres service"
 RUT: Final[str] = "Resource Usage Tracker service"
 
 
-MSG_GATEWAY_UNAVAILABLE_ERROR = "Our payments provider is temporary unavailable"
+MSG_GATEWAY_UNAVAILABLE_ERROR = "Our payments provider is temporary innoperative"
