@@ -1,11 +1,19 @@
-from models_library.api_schemas_payments.errors import BaseServiceError
+from pydantic.errors import PydanticErrorMixin
+
+
+class _BaseServiceInternalError(PydanticErrorMixin, ValueError):
+    @classmethod
+    def get_full_class_name(cls) -> str:
+        # Can be used as unique code identifier
+        return f"{cls.__module__}.{cls.__name__}"
+
 
 #
 # gateway  errors
 #
 
 
-class PaymentsGatewayError(BaseServiceError):
+class PaymentsGatewayError(_BaseServiceInternalError):
     ...
 
 
