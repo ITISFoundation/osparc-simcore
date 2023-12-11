@@ -72,7 +72,7 @@ class AWSTagKey(ConstrainedStr):
 class AWSTagValue(ConstrainedStr):
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
-    regex = re.compile(r"^[a-zA-Z0-9\s\+\-=\._:/@\"\'\[\]\{\}]{0,256}$")
+    regex = re.compile(r"^[a-zA-Z0-9\s\+\-=\.,_:/@\"\'\[\]\{\}]{0,256}$")
 
 
 EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
