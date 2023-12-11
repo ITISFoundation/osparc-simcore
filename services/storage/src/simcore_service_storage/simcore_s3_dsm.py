@@ -263,7 +263,20 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
             # ensure file is deleted first in case it already exists
-            await self.delete_file(user_id=user_id, file_id=file_id)
+
+            #   _   _  ___ _____ _____
+            #  | \ | |/ _ \_   _| ____|
+            #  |  \| | | | || | |  _|
+            #  | |\  | |_| || | | |___
+            #  |_| \_|\___/ |_| |_____|
+            # NOTE: (a very big one)
+            # `enforce_access_rights` is set to False because if the service is shared
+            # with a collaborator, the collaborator does not have access to delete
+            # the file. This happened because we are using project access rights to enforce
+            # them on the data. This should change and we should be using data access rights
+            await self.delete_file(
+                user_id=user_id, file_id=file_id, enforce_access_rights=False
+            )
 
             # initiate the file meta data table
             fmd = await self._create_fmd_for_upload(
@@ -486,13 +499,20 @@ class SimcoreS3DataManager(BaseDataManager):
             raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
         return await self.__get_link(parse_obj_as(SimcoreS3FileID, file_id), link_type)
 
-    async def delete_file(self, user_id: UserID, file_id: StorageFileID):
+    async def delete_file(
+        self,
+        user_id: UserID,
+        file_id: StorageFileID,
+        *,
+        enforce_access_rights: bool = True,
+    ):
         async with self.engine.acquire() as conn, conn.begin():
-            can: AccessRights | None = await get_file_access_rights(
-                conn, user_id, file_id
-            )
-            if not can.delete:
-                raise FileAccessRightError(access_right="delete", file_id=file_id)
+            if enforce_access_rights:
+                can: AccessRights | None = await get_file_access_rights(
+                    conn, user_id, file_id
+                )
+                if not can.delete:
+                    raise FileAccessRightError(access_right="delete", file_id=file_id)
 
             with suppress(FileMetaDataNotFoundError):
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
