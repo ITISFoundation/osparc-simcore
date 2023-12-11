@@ -35,6 +35,12 @@ from simcore_service_resource_usage_tracker.resource_tracker_utils import (
         ),
         (
             datetime.now(tz=timezone.utc),
+            datetime.now(tz=timezone.utc) - timedelta(days=45),
+            Decimal(13.5),
+            Decimal(14580),
+        ),
+        (
+            datetime.now(tz=timezone.utc),
             datetime.now(tz=timezone.utc) - timedelta(minutes=37),
             Decimal(25),
             round(Decimal(15.42), 2),
