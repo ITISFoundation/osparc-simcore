@@ -5,7 +5,7 @@ from fastapi import FastAPI
 _logger = logging.getLogger(__name__)
 
 
-class AppStateMixin:
+class SingletonInAppStateMixin:
     """
     Mixin to get, set and delete an instance of 'self' from/to app.state
     """

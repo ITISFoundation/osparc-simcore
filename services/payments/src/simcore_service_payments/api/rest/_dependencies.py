@@ -4,7 +4,7 @@ from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.security import OAuth2PasswordBearer
-from servicelib.fastapi.app_state import AppStateMixin
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -44,7 +44,9 @@ def get_rut_api(request: Request) -> ResourceUsageTrackerApi:
     )
 
 
-def get_from_app_state(app_state_mixin_subclass: type[AppStateMixin]) -> Callable:
+def get_from_app_state(
+    app_state_mixin_subclass: type[SingletonInAppStateMixin],
+) -> Callable:
     """Generic getter of app.state objects"""
 
     def _(app: Annotated[FastAPI, Depends(get_app)]):

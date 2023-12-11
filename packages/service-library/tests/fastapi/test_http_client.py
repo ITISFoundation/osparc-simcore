@@ -13,12 +13,12 @@ import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from models_library.healthchecks import IsResponsive
-from servicelib.fastapi.app_state import AppStateMixin
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHttpApi
 
 
 def test_using_app_state_mixin():
-    class SomeData(AppStateMixin):
+    class SomeData(SingletonInAppStateMixin):
         app_state_name: str = "my_data"
         frozen: bool = True
 
@@ -71,7 +71,7 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
-    class MyClientApi(BaseHttpApi, AppStateMixin):
+    class MyClientApi(BaseHttpApi, SingletonInAppStateMixin):
         app_state_name: str = "my_client_api"
 
     new_app = FastAPI()
