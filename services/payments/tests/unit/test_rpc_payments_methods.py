@@ -52,7 +52,8 @@ def app_environment(
     postgres_env_vars_dict: EnvVarsDict,
     wait_for_postgres_ready_and_db_migrated: None,
     external_environment: EnvVarsDict,
-):
+) -> EnvVarsDict:
+
     # set environs
     monkeypatch.delenv("PAYMENTS_RABBITMQ", raising=False)
     monkeypatch.delenv("PAYMENTS_POSTGRES", raising=False)
@@ -71,9 +72,9 @@ def app_environment(
 
 async def test_webserver_init_and_cancel_payment_method_workflow(
     is_pdb_enabled: bool,
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,

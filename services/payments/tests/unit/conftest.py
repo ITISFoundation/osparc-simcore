@@ -190,15 +190,16 @@ async def app(
 
 
 @pytest.fixture
-def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
+def mock_payments_gateway_service_api_base(
+    app_environment: EnvVarsDict,
+) -> Iterator[MockRouter]:
     """
     If external_environment is present, then this mock is not really used
     and instead the test runs against some real services
     """
-    settings: ApplicationSettings = app.state.settings
 
     with respx.mock(
-        base_url=settings.PAYMENTS_GATEWAY_URL,
+        base_url=app_environment["PAYMENTS_GATEWAY_URL"],
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
@@ -422,6 +423,9 @@ def mock_payments_gateway_service_or_none(
         return None
 
     # OR tests against mock payments-gateway
+    mock_payments_gateway_service_api_base.get("/", name="healthcheck").mock(
+        return_value=httpx.Response(status_code=status.HTTP_200_OK, text="OK")
+    )
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base

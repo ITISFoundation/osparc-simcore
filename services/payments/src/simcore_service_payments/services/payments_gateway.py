@@ -10,6 +10,7 @@ import functools
 import logging
 from collections.abc import Callable
 from contextlib import suppress
+from typing import Coroutine
 
 import httpx
 from fastapi import FastAPI
@@ -32,7 +33,7 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_exponential
 from tenacity.retry import retry_if_exception_type
 from tenacity.wait import wait_exponential
 
-from ..core.errors import PaymentGatewayNotReadyError
+from ..core.errors import PaymentsGatewayNotReadyError
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
     BatchGetPaymentMethods,
@@ -206,6 +207,27 @@ class PaymentsGatewayApi(
         return AckPaymentWithPaymentMethod.parse_obj(response.json())
 
 
+def _create_start_policy(api: PaymentsGatewayApi) -> Callable[[], Coroutine]:
+    # Start policy:
+    #  - this service will not be able to start if payments-gateway is alive
+    #
+    async def _():
+        results = []
+        async for attempt in AsyncRetrying(
+            wait=wait_exponential(max=3),
+            stop=stop_after_delay(max_delay=6),
+            retry=retry_if_exception_type(PaymentsGatewayNotReadyError),
+            reraise=True,
+        ):
+            with attempt:
+                alive = await api.check_liveness()
+                results.append(alive)
+                if not alive:
+                    raise PaymentsGatewayNotReadyError(checks=results)
+
+    return _
+
+
 def setup_payments_gateway(app: FastAPI):
     assert app.state  # nosec
     settings: ApplicationSettings = app.state.settings
@@ -221,21 +243,4 @@ def setup_payments_gateway(app: FastAPI):
     api.attach_lifespan_to(app)
     api.set_to_app_state(app)
 
-    # NOTE: start policy:
-    #  - this service will not be able to start if payments-gateway is alive
-    #
-    async def _check_service_liveness() -> None:
-        results = []
-        async for attempt in AsyncRetrying(
-            wait=wait_exponential(max=2),
-            stop=stop_after_delay(max_delay=5),
-            retry=retry_if_exception_type(PaymentGatewayNotReadyError),
-            reraise=True,
-        ):
-            with attempt:
-                alive = await api.check_liveness()
-                results.append(alive)
-                if not alive:
-                    raise PaymentGatewayNotReadyError(checks=results)
-
-    app.add_event_handler("startup", _check_service_liveness)
+    app.add_event_handler("startup", _create_start_policy(api))
