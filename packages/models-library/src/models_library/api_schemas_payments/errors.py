@@ -1,7 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class _BaseServiceApiError(PydanticErrorMixin, ValueError):
+class _BaseRpcApiError(PydanticErrorMixin, ValueError):
     @classmethod
     def get_full_class_name(cls) -> str:
         # Can be used as unique code identifier
@@ -13,7 +13,7 @@ class _BaseServiceApiError(PydanticErrorMixin, ValueError):
 #
 
 
-class PaymentServiceUnavailableError(_BaseServiceApiError):
+class PaymentServiceUnavailableError(_BaseRpcApiError):
     msg_template = "Payments are currently unavailable: {human_reason}"
 
 
@@ -22,7 +22,7 @@ class PaymentServiceUnavailableError(_BaseServiceApiError):
 #
 
 
-class PaymentsError(_BaseServiceApiError):
+class PaymentsError(_BaseRpcApiError):
     msg_template = "Error in payment transaction '{payment_id}'"
 
 
@@ -43,7 +43,7 @@ class PaymentAlreadyAckedError(PaymentsError):
 #
 
 
-class PaymentsMethodsError(_BaseServiceApiError):
+class PaymentsMethodsError(_BaseRpcApiError):
     ...
 
 

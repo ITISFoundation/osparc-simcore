@@ -1,7 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class _BaseServiceInternalError(PydanticErrorMixin, ValueError):
+class _BaseAppError(PydanticErrorMixin, ValueError):
     @classmethod
     def get_full_class_name(cls) -> str:
         # Can be used as unique code identifier
@@ -13,7 +13,7 @@ class _BaseServiceInternalError(PydanticErrorMixin, ValueError):
 #
 
 
-class PaymentsGatewayError(_BaseServiceInternalError):
+class PaymentsGatewayError(_BaseAppError):
     ...
 
 
