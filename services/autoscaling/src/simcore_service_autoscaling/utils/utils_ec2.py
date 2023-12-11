@@ -8,7 +8,13 @@ from collections import OrderedDict
 from collections.abc import Callable
 from textwrap import dedent
 
-from aws_library.ec2.models import EC2InstanceType, Resources
+from aws_library.ec2.models import (
+    AWSTagKey,
+    AWSTagValue,
+    EC2InstanceType,
+    EC2Tags,
+    Resources,
+)
 
 from .._meta import VERSION
 from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
@@ -17,32 +23,40 @@ from ..core.settings import ApplicationSettings
 logger = logging.getLogger(__name__)
 
 
-def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> dict[str, str]:
+def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        "io.simcore.autoscaling.version": f"{VERSION}",
-        "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
+        AWSTagKey("io.simcore.autoscaling.monitored_nodes_labels"): AWSTagValue(
+            json.dumps(
+                app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            )
         ),
-        "io.simcore.autoscaling.monitored_services_labels": json.dumps(
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+        AWSTagKey("io.simcore.autoscaling.monitored_services_labels"): AWSTagValue(
+            json.dumps(
+                app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+            )
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        "Name": f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}",
+        AWSTagKey("Name"): AWSTagValue(
+            f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
+        ),
     }
 
 
-def get_ec2_tags_computational(app_settings: ApplicationSettings) -> dict[str, str]:
+def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_DASK  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        "io.simcore.autoscaling.version": f"{VERSION}",
-        "io.simcore.autoscaling.dask-scheduler_url": json.dumps(
-            app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL
+        AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
+        AWSTagKey("io.simcore.autoscaling.dask-scheduler_url"): AWSTagValue(
+            f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        "Name": f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}",
+        AWSTagKey("Name"): AWSTagValue(
+            f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
+        ),
     }
 
 

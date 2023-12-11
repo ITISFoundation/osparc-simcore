@@ -418,6 +418,7 @@ def test_get_dynamic_proxy_spec(
             app_settings=minimal_app.state.settings,
             has_quota_support=False,
             allow_internet_access=False,
+            metrics_collection_allowed=True,
         )
 
         exclude_keys: Mapping[int | str, Any] = {
@@ -508,6 +509,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         app_settings=minimal_app.state.settings,
         has_quota_support=False,
         allow_internet_access=False,
+        metrics_collection_allowed=True,
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
