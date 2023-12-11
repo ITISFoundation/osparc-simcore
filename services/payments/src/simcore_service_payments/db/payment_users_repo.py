@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from models_library.users import GroupID, UserID
+from pydantic import EmailStr
 from simcore_postgres_database.models.users import users
 
 from .base import BaseRepository
@@ -20,3 +21,14 @@ class PaymentsUsersRepo(BaseRepository):
                 msg = f"{user_id=} not found"
                 raise ValueError(msg)
             return GroupID(row.primary_gid)
+
+    async def get_name_and_email(self, user_id: UserID) -> tuple[str, EmailStr]:
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                sa.select(users.c.name, users.c.email).where(users.c.id == user_id)
+            )
+            row = result.first()
+            if row is None:
+                msg = f"{user_id=} not found"
+                raise ValueError(msg)
+            return row.name, EmailStr(row.email)
