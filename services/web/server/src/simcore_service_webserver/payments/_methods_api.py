@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
@@ -65,6 +66,7 @@ def _to_api_model(
     )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_init_creation_of_wallet_payment_method(
     app, settings, user_id, wallet_id
 ):
@@ -131,6 +133,7 @@ async def _ack_creation_of_wallet_payment_method(
     return updated
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_cancel_creation_of_wallet_payment_method(
     app, payment_method_id, user_id, wallet_id
 ):
@@ -156,6 +159,7 @@ async def _fake_cancel_creation_of_wallet_payment_method(
     )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_list_wallet_payment_methods(
     app, user_id, wallet_id
 ) -> list[PaymentMethodGet]:
@@ -190,6 +194,7 @@ async def _fake_list_wallet_payment_methods(
     return payments_methods
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_get_wallet_payment_method(app, user_id, wallet_id, payment_method_id):
     acked = await get_successful_payment_method(
         app,
@@ -214,6 +219,7 @@ async def _fake_get_wallet_payment_method(app, user_id, wallet_id, payment_metho
     )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_delete_wallet_payment_method(
     app, user_id, wallet_id, payment_method_id
 ) -> None:
@@ -322,6 +328,7 @@ async def list_wallet_payment_methods(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
+    payments_methods: list[PaymentMethodGet] = []
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
         payments_methods = await _fake_list_wallet_payment_methods(
@@ -335,7 +342,10 @@ async def list_wallet_payment_methods(
             wallet_id=wallet_id,
         )
 
+    # sets auto-recharge flag
+    assert all(not pm.auto_recharge for pm in payments_methods)  # nosec
     if auto_rechage := await get_wallet_autorecharge(app, wallet_id=wallet_id):
+        assert payments_methods  # nosec
         for pm in payments_methods:
             pm.auto_recharge = pm.idr == auto_rechage.primary_payment_method_id
 
