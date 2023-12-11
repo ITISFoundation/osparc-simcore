@@ -2,6 +2,11 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import sqlalchemy as sa
+from models_library.api_schemas_payments.errors import (
+    PaymentAlreadyAckedError,
+    PaymentAlreadyExistsError,
+    PaymentNotFoundError,
+)
 from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -12,11 +17,6 @@ from simcore_postgres_database.models.payments_transactions import (
     payments_transactions,
 )
 
-from ..core.errors import (
-    PaymentAlreadyAckedError,
-    PaymentAlreadyExistsError,
-    PaymentNotFoundError,
-)
 from ..models.db import PaymentsTransactionsDB
 from .base import BaseRepository
 

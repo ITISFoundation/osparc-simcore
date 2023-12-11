@@ -10,6 +10,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_payments.errors import PaymentNotFoundError
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
@@ -18,7 +19,6 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
-from simcore_service_payments.core.errors import PaymentNotFoundError
 
 pytest_simcore_core_services_selection = [
     "postgres",

@@ -13,7 +13,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
 )
 from models_library.users import UserID
-from servicelib.fastapi.http_client import AppStateMixin
+from servicelib.fastapi.app_state import AppStateMixin
 
 from ..db.payment_users_repo import PaymentsUsersRepo
 from .postgres import get_engine

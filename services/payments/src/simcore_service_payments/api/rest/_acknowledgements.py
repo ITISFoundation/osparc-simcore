@@ -2,10 +2,13 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from models_library.api_schemas_payments.errors import (
+    PaymentMethodNotFoundError,
+    PaymentNotFoundError,
+)
 from servicelib.logging_utils import log_context
 
 from ..._constants import ACKED, PGDB
-from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
