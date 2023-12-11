@@ -105,6 +105,7 @@ async def test_rpc_init_payment_fail(
 
 async def test_webserver_one_time_payment_workflow(
     is_pdb_enabled: bool,
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     init_payment_kwargs: dict[str, Any],
