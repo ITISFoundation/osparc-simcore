@@ -4,10 +4,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Iterator
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Awaitable, Iterator
 from unittest import mock
 
 import pytest
