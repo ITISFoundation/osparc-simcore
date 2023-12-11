@@ -6,7 +6,6 @@
 
 from typing import Any
 
-import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -83,10 +82,11 @@ async def test_rpc_init_payment_fail(
             **init_payment_kwargs,
         )
 
-    exc = exc_info.value
-    assert exc.exc_type == f"{httpx.ConnectError}"
-    assert exc.method_name == "init_payment"
-    assert exc.msg
+    error = exc_info.value
+    assert isinstance(error, RPCServerError)
+    assert error.exc_type == "httpx.ConnectError"
+    assert error.method_name == "init_payment"
+    assert error.msg
 
 
 async def test_webserver_one_time_payment_workflow(
@@ -125,6 +125,7 @@ async def test_webserver_one_time_payment_workflow(
 
 
 async def test_cancel_invalid_payment_id(
+    app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
@@ -145,7 +146,7 @@ async def test_cancel_invalid_payment_id(
     error = exc_info.value
 
     assert isinstance(error, RPCServerError)
-    assert error.exc_type == f"{PaymentNotFoundError}"
+    assert error.exc_type == PaymentNotFoundError.get_full_class_name()
     assert error.method_name == "cancel_payment"
     assert error.msg == PaymentNotFoundError.msg_template.format(
         payment_id=invalid_payment_id
