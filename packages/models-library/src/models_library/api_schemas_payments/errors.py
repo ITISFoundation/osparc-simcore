@@ -14,7 +14,7 @@ class _BaseRpcApiError(PydanticErrorMixin, ValueError):
 
 
 class PaymentServiceUnavailableError(_BaseRpcApiError):
-    msg_template = "Payments are currently unavailable: {human_reason}"
+    msg_template = "Payments are currently unavailable: {human_readable_detail}"
 
 
 #

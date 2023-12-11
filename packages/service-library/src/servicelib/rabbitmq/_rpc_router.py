@@ -16,7 +16,7 @@ DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 _logger = logging.getLogger("rpc.access")
 
 
-def _create_func_msg(func, args: list[Any], kwargs: dict[str, Any]) -> str:
+def _create_func_msg(func, args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
     msg = f"{func.__name__}("
 
     if args_msg := ", ".join(map(str, args)):
