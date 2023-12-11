@@ -4,6 +4,7 @@ import socket
 from typing import Final
 
 import aio_pika
+from pydantic import NonNegativeInt
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -16,8 +17,7 @@ _logger = logging.getLogger(__file__)
 
 _MINUTE: Final[int] = 60
 
-
-_RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
+RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
 
 
 class RabbitMQRetryPolicyUponInitialization:
@@ -55,7 +55,7 @@ async def declare_queue(
     exchange_name: str,
     *,
     exclusive_queue: bool,
-    message_ttl: int = _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
+    message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
 ) -> aio_pika.abc.AbstractRobustQueue:
     queue_parameters = {
         "durable": True,
