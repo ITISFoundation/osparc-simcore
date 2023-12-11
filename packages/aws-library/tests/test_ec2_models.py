@@ -4,8 +4,8 @@
 
 
 import pytest
-from aws_library.ec2.models import Resources
-from pydantic import ByteSize
+from aws_library.ec2.models import AWSTagKey, AWSTagValue, Resources
+from pydantic import ByteSize, ValidationError, parse_obj_as
 
 
 @pytest.mark.parametrize(
@@ -122,3 +122,13 @@ def test_resources_sub(a: Resources, b: Resources, result: Resources):
     assert a - b == result
     a -= b
     assert a == result
+
+
+@pytest.mark.parametrize("ec2_tag_key", ["", "/", " ", ".", "..", "_index"])
+def test_aws_tag_key_invalid(ec2_tag_key: str):
+    # for a key it raises
+    with pytest.raises(ValidationError):
+        parse_obj_as(AWSTagKey, ec2_tag_key)
+
+    # for a value it does not
+    parse_obj_as(AWSTagValue, ec2_tag_key)
