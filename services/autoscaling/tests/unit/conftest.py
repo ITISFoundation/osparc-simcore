@@ -132,6 +132,13 @@ def app_environment(
                     for ec2_type_name in ec2_instances
                 }
             ),
+            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+                {
+                    "user_id": "32",
+                    "wallet_id": "3245",
+                    "osparc-tag": "some whatever value",
+                }
+            ),
         },
     )
     return mock_env_devel_environment | envs
