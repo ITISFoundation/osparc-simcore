@@ -4,11 +4,16 @@ from dataclasses import dataclass, field
 from typing import Final
 
 import aio_pika
+from pydantic import NonNegativeInt
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
 from ._models import MessageHandler, RabbitMessage
-from ._utils import declare_queue, get_rabbitmq_client_unique_name
+from ._utils import (
+    RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
+    declare_queue,
+    get_rabbitmq_client_unique_name,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -73,6 +78,7 @@ class RabbitMQClient(RabbitMQClientBase):
         *,
         exclusive_queue: bool = True,
         topics: list[str] | None = None,
+        message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
     ) -> str:
         """subscribe to exchange_name calling message_handler for every incoming message
         - exclusive_queue: True means that every instance of this application will receive the incoming messages
@@ -114,6 +120,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=exclusive_queue,
+                message_ttl=message_ttl,
             )
             if topics is None:
                 await queue.bind(exchange, routing_key="")
