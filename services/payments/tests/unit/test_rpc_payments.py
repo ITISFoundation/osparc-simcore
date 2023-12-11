@@ -17,6 +17,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
+from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 
 pytest_simcore_core_services_selection = [
@@ -90,6 +91,7 @@ async def test_rpc_init_payment_fail(
 
 
 async def test_webserver_one_time_payment_workflow(
+    is_pdb_enabled: bool,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
@@ -115,7 +117,7 @@ async def test_webserver_one_time_payment_workflow(
         payment_id=result.payment_id,
         user_id=init_payment_kwargs["user_id"],
         wallet_id=init_payment_kwargs["wallet_id"],
-        timeout_s=20,  # for tests
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
     assert result is None
@@ -125,6 +127,7 @@ async def test_webserver_one_time_payment_workflow(
 
 
 async def test_cancel_invalid_payment_id(
+    is_pdb_enabled: bool,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
@@ -134,14 +137,14 @@ async def test_cancel_invalid_payment_id(
 ):
     invalid_payment_id = faker.uuid4()
 
-    with pytest.raises(RPCServerError) as exc_info:
+    with pytest.raises(PaymentNotFoundError) as exc_info:
         await rpc_client.request(
             PAYMENTS_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "cancel_payment"),
             payment_id=invalid_payment_id,
             user_id=init_payment_kwargs["user_id"],
             wallet_id=init_payment_kwargs["wallet_id"],
-            timeout_s=20,  # for tests
+            timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
     error = exc_info.value
     assert isinstance(error, PaymentNotFoundError)
