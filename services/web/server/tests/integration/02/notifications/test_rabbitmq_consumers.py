@@ -246,7 +246,7 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
 
     """
     mocked_send_messages = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_consumers.send_messages",
+        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_messages",
         autospec=True,
     )
 
@@ -436,7 +436,7 @@ async def test_instrumentation_workflow(
     """
 
     mocked_metrics_method = mocker.patch(
-        f"simcore_service_webserver.notifications._rabbitmq_consumers.{metrics_name}"
+        f"simcore_service_webserver.notifications._rabbitmq_nonexclusive_queue_consumers.{metrics_name}"
     )
 
     random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
