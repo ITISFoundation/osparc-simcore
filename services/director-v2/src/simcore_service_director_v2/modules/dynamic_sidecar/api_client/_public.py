@@ -15,7 +15,7 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.http_client_thin import (
-    BaseClientHTTPError,
+    BaseHttpClientError,
     UnexpectedStatusError,
 )
 from servicelib.fastapi.long_running_tasks.client import (
@@ -90,7 +90,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
                 )
             result: bool = response.json()["is_healthy"]
             return result
-        except BaseClientHTTPError:
+        except BaseHttpClientError:
             return False
 
     async def containers_inspect(
@@ -200,7 +200,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except BaseClientHTTPError:
+        except BaseHttpClientError:
             # if no containers are found it is ok to skip the operations,
             # there are no containers to attach the network to
             return
@@ -254,7 +254,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except BaseClientHTTPError:
+        except BaseHttpClientError:
             # if no containers are found it is ok to skip the operations,
             # there are no containers to detach the network from
             return

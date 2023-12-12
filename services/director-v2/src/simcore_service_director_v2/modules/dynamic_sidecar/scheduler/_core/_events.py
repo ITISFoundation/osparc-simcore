@@ -16,7 +16,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
-from servicelib.fastapi.http_client_thin import BaseClientHTTPError
+from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -363,7 +363,7 @@ class GetStatus(DynamicSchedulerEvent):
             containers_inspect: dict[
                 str, Any
             ] = await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
-        except BaseClientHTTPError as e:
+        except BaseHttpClientError as e:
             were_service_containers_previously_present = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
             )

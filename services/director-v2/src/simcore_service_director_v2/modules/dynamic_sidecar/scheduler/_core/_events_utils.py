@@ -18,7 +18,7 @@ from models_library.shared_user_preferences import (
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
-from servicelib.fastapi.http_client_thin import BaseClientHTTPError
+from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -117,7 +117,7 @@ async def service_remove_containers(
         await sidecars_client.stop_service(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
-    except (BaseClientHTTPError, TaskClientResultError) as e:
+    except (BaseHttpClientError, TaskClientResultError) as e:
         _logger.warning(
             (
                 "Could not remove service containers for "
@@ -296,7 +296,7 @@ async def attempt_pod_removal_and_data_saving(
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
             _logger.info("dynamic-sidecar saved: state and output ports")
-        except (BaseClientHTTPError, TaskClientResultError) as e:
+        except (BaseHttpClientError, TaskClientResultError) as e:
             _logger.error(  # noqa: TRY400
                 (
                     "Could not contact dynamic-sidecar to save service "

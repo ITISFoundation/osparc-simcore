@@ -140,17 +140,17 @@ async def test_is_healthy_times_out(
     [
         pytest.param(
             UnexpectedStatusError(
-                Response(
+                response=Response(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     content="some mocked error",
                     request=AsyncMock(),
                 ),
-                status.HTTP_200_OK,
+                expecting=status.HTTP_200_OK,
             ),
             id="UnexpectedStatusError",
         ),
         pytest.param(
-            ClientHttpError(HTTPError("another mocked error")), id="HTTPError"
+            ClientHttpError(error=HTTPError("another mocked error")), id="HTTPError"
         ),
     ],
 )
@@ -196,12 +196,12 @@ async def test_containers_docker_status_api_error(
     with get_patched_client(
         "get_containers",
         side_effect=UnexpectedStatusError(
-            Response(
+            response=Response(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content="some mocked error",
                 request=AsyncMock(),
             ),
-            status.HTTP_200_OK,
+            expecting=status.HTTP_200_OK,
         ),
     ) as client:
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == {}
@@ -272,8 +272,10 @@ async def test_get_entrypoint_container_name_api_not_found(
     with get_patched_client(
         "get_containers_name",
         side_effect=UnexpectedStatusError(
-            Response(status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()),
-            status.HTTP_204_NO_CONTENT,
+            response=Response(
+                status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()
+            ),
+            expecting=status.HTTP_204_NO_CONTENT,
         ),
     ) as client:
         with pytest.raises(EntrypointContainerNotFoundError):

@@ -7,6 +7,7 @@ from typing import Any
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
+from pydantic.errors import PydanticErrorMixin
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -29,34 +30,29 @@ Exception hierarchy:
 """
 
 
-class BaseClientError(Exception):
-    """
-    Used as based for all the raised errors
-    """
+class BaseClientError(PydanticErrorMixin, Exception):
+    """Used as based for all the raised errors"""
+
+    msg_template: str = "{message}"
 
 
-class BaseClientHTTPError(BaseClientError):
+class BaseHttpClientError(BaseClientError):
     """Base class to wrap all http related client errors"""
 
 
-class ClientHttpError(BaseClientHTTPError):
+class ClientHttpError(BaseHttpClientError):
     """used to captures all httpx.HttpError"""
 
-    def __init__(self, error: Exception) -> None:
-        super().__init__()
-        self.error: Exception = error
+    msg_template: str = "Received httpx.HTTPError: {error}"
 
 
-class UnexpectedStatusError(BaseClientHTTPError):
+class UnexpectedStatusError(BaseHttpClientError):
     """raised when the status of the request is not the one it was expected"""
 
-    def __init__(self, response: Response, expecting: int) -> None:
-        message = (
-            f"Expected status: {expecting}, got {response.status_code} for: {response.url}: "
-            f"headers={response.headers}, body='{response.text}'"
-        )
-        super().__init__(message)
-        self.response = response
+    msg_template: str = (
+        "Expected status: {expecting}, got {response.status_code} for: {response.url}: "
+        "headers={response.headers}, body='{response.text}'"
+    )
 
 
 def _log_pool_status(client: AsyncClient, event_name: str) -> None:
@@ -148,7 +144,7 @@ def retry_on_errors(
         except HTTPError as e:
             if isinstance(e, PoolTimeout):
                 _log_pool_status(zelf.client, "pool timeout")
-            raise ClientHttpError(e) from e
+            raise ClientHttpError(error=e) from e
 
     return request_wrapper
 
@@ -173,7 +169,7 @@ def expect_status(expected_code: int):
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
             response = await request_func(zelf, *args, **kwargs)
             if response.status_code != expected_code:
-                raise UnexpectedStatusError(response, expected_code)
+                raise UnexpectedStatusError(response=response, expecting=expected_code)
 
             return response
 
