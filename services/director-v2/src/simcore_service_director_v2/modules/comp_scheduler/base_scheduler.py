@@ -597,7 +597,7 @@ class BaseCompScheduler(ABC):
                 )
             # 4. timeout if waiting for cluster has been there for more than X minutes
             comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
-                project_id, comp_tasks
+                user_id, project_id, comp_tasks
             )
             # 5. send a heartbeat
             await self._send_running_tasks_heartbeat(
