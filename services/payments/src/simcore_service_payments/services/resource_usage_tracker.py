@@ -19,14 +19,15 @@ from models_library.products import ProductName
 from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.fastapi.http_client import BaseHttpApi
 
 from ..core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
 
-class ResourceUsageTrackerApi(BaseHttpApi, AppStateMixin):
+class ResourceUsageTrackerApi(BaseHttpApi, SingletonInAppStateMixin):
     app_state_name: str = "source_usage_tracker_api"
 
     async def create_credit_transaction(
