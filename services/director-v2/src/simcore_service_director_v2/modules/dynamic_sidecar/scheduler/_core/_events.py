@@ -62,6 +62,7 @@ from ._events_utils import (
     are_all_user_services_containers_running,
     attach_project_networks,
     attempt_pod_removal_and_data_saving,
+    get_allow_metrics_collection,
     get_director_v0_client,
     parse_containers_inspect,
     prepare_services_environment,
@@ -180,6 +181,12 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
 
+        metrics_collection_allowed: bool = await get_allow_metrics_collection(
+            app,
+            user_id=scheduler_data.user_id,
+            product_name=scheduler_data.product_name,
+        )
+
         # start dynamic-sidecar and run the proxy on the same node
 
         # Each time a new dynamic-sidecar service is created
@@ -197,6 +204,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             app_settings=app.state.settings,
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
+            metrics_collection_allowed=metrics_collection_allowed,
         )
 
         catalog_client = CatalogClient.instance(app)

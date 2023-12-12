@@ -29,7 +29,7 @@ class ProjectsNetworksRepository(BaseRepository):
         self, project_id: ProjectID, networks_with_aliases: NetworksWithAliases
     ) -> None:
         projects_networks_to_insert = ProjectsNetworks.parse_obj(
-            dict(project_uuid=project_id, networks_with_aliases=networks_with_aliases)
+            {"project_uuid": project_id, "networks_with_aliases": networks_with_aliases}
         )
 
         async with self.db_engine.acquire() as conn:

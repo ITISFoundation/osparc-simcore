@@ -126,6 +126,6 @@ async def compute_service_run_credit_costs(
 ) -> Decimal:
     if start <= stop:
         time_delta = stop - start
-        return round(Decimal(time_delta.seconds / 3600) * cost_per_unit, 2)
+        return round(Decimal(time_delta.total_seconds() / 3600) * cost_per_unit, 2)
     msg = f"Stop {stop} is smaller then {start} this should not happen. Investigate."
     raise ValueError(msg)

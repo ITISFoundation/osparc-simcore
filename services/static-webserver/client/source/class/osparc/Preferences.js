@@ -114,6 +114,14 @@ qx.Class.define("osparc.Preferences", {
       init: 4,
       event: "changeJobConcurrencyLimit",
       apply: "__patchPreference"
+    },
+
+    allowMetricsCollection: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeAllowMetricsCollection",
+      apply: "__patchPreference"
     }
   },
 

@@ -176,6 +176,19 @@ class ResourceTrackerRepository(BaseRepository):
             return None
         return ServiceRunDB.from_orm(row)
 
+    async def get_service_run_by_id(
+        self, service_run_id: ServiceRunId
+    ) -> ServiceRunDB | None:
+        async with self.db_engine.begin() as conn:
+            stmt = sa.select(resource_tracker_service_runs).where(
+                resource_tracker_service_runs.c.service_run_id == service_run_id
+            )
+            result = await conn.execute(stmt)
+        row = result.first()
+        if row is None:
+            return None
+        return ServiceRunDB.from_orm(row)
+
     async def list_service_runs_by_product_and_user_and_wallet(
         self,
         product_name: ProductName,

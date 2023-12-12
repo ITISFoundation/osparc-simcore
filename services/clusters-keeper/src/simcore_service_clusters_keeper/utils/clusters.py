@@ -4,7 +4,7 @@ import functools
 import json
 from typing import Any, Final
 
-from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
@@ -32,8 +32,10 @@ def _docker_compose_yml_base64_encoded() -> str:
 
 def create_startup_script(
     app_settings: ApplicationSettings,
+    *,
     cluster_machines_name_prefix: str,
     ec2_boot_specific: EC2InstanceBootSpecific,
+    additional_custom_tags: EC2Tags,
 ) -> str:
     assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
@@ -58,6 +60,7 @@ def create_startup_script(
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
         f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
+        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
     ]
 

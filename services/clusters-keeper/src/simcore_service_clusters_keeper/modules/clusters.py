@@ -3,6 +3,8 @@ import logging
 
 from aws_library.ec2.client import SimcoreEC2API
 from aws_library.ec2.models import (
+    AWSTagKey,
+    AWSTagValue,
     EC2InstanceBootSpecific,
     EC2InstanceConfig,
     EC2InstanceData,
@@ -69,10 +71,14 @@ async def create_cluster(
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
         startup_script=create_startup_script(
             app_settings,
-            get_cluster_name(
+            cluster_machines_name_prefix=get_cluster_name(
                 app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
             ),
-            ec2_instance_boot_specs,
+            ec2_boot_specific=ec2_instance_boot_specs,
+            additional_custom_tags={
+                AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
+                AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
+            },
         ),
         ami_id=ec2_instance_boot_specs.ami_id,
         key_name=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME,
