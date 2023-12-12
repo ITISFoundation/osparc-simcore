@@ -32,6 +32,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
   },
 
+  properties: {
+    multiSelection: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelection",
+      apply: "__applyMultiSelection"
+    }
+  },
+
   members: {
     __servicesAll: null,
     __sortBy: null,
@@ -105,6 +115,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("servicesList");
       cards.forEach(card => {
+        card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("execute", () => this.__itemClicked(card), this);
         this._populateCardMenu(card);
       });
@@ -166,6 +177,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __addNewServiceButtons: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
       if (platformName === "dev") {
         const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
         testDataButton.addListener("execute", () => {
@@ -178,21 +190,26 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
+      addServiceButton.set({
+        appearance: "form-button-outlined",
+        visibility: hasRights ? "visible" : "excluded"
+      });
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._toolbar.add(addServiceButton);
     },
 
     __addSortingButtons: function() {
       const containerSortButtons = new osparc.service.SortServicesButtons();
+      containerSortButtons.set({
+        appearance: "form-button-outlined"
+      });
       containerSortButtons.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);
       }, this);
       this._toolbar.add(containerSortButtons);
     },
-    // LAYOUT //
 
-    // MENU //
     _populateCardMenu: function(card) {
       const menu = card.getMenu();
       const serviceData = card.getResourceData();
