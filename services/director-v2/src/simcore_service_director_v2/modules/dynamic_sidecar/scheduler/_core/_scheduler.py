@@ -579,3 +579,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             self._observation_counter += 1
+
+    async def free_emergency_disk_space(self, node_id: NodeID) -> None:
+        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
+        return await sidecars_client.free_emergency_disk_space(node_id)
