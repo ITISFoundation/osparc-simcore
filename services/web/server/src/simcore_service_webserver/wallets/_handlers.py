@@ -31,6 +31,7 @@ from ..payments.errors import (
     PaymentMethodNotFoundError,
     PaymentMethodUniqueViolationError,
     PaymentNotFoundError,
+    PaymentServiceUnavailableError,
     PaymentUniqueViolationError,
 )
 from ..products.errors import ProductPriceNotDefinedError
@@ -67,11 +68,14 @@ def handle_wallets_exceptions(handler: Handler):
         ) as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 
+        except PaymentServiceUnavailableError as exc:
+            raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
         except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
         except ProductPriceNotDefinedError as exc:
-            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR)
+            raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR) from exc
 
     return wrapper
 

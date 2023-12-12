@@ -10,6 +10,11 @@ import uuid
 from decimal import Decimal
 
 import arrow
+from models_library.api_schemas_payments.errors import (
+    PaymentAlreadyAckedError,
+    PaymentAlreadyExistsError,
+    PaymentNotFoundError,
+)
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
@@ -29,11 +34,6 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
-from ..core.errors import (
-    PaymentAlreadyAckedError,
-    PaymentAlreadyExistsError,
-    PaymentNotFoundError,
-)
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
