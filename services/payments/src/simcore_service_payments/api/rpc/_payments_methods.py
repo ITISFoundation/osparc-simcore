@@ -2,6 +2,11 @@ import logging
 from decimal import Decimal
 
 from fastapi import FastAPI
+from models_library.api_schemas_payments.errors import (
+    PaymentsError,
+    PaymentServiceUnavailableError,
+    PaymentsMethodsError,
+)
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
@@ -26,7 +31,9 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
+)
 async def init_creation_of_payment_method(
     app: FastAPI,
     *,
@@ -54,7 +61,9 @@ async def init_creation_of_payment_method(
         )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
+)
 async def cancel_creation_of_payment_method(
     app: FastAPI,
     *,
@@ -78,7 +87,9 @@ async def cancel_creation_of_payment_method(
         )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
+)
 async def list_payment_methods(
     app: FastAPI,
     *,
@@ -93,7 +104,9 @@ async def list_payment_methods(
     )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
+)
 async def get_payment_method(
     app: FastAPI,
     *,
@@ -110,7 +123,9 @@ async def get_payment_method(
     )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(PaymentsMethodsError, PaymentServiceUnavailableError)
+)
 async def delete_payment_method(
     app: FastAPI,
     *,
@@ -127,7 +142,13 @@ async def delete_payment_method(
     )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(
+        PaymentsMethodsError,
+        PaymentsError,
+        PaymentServiceUnavailableError,
+    )
+)
 async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     app: FastAPI,
     *,
