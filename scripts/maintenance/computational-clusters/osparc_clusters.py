@@ -2,8 +2,9 @@
 
 import asyncio
 import datetime
+import json
 import re
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
@@ -45,6 +46,11 @@ class ComputationalInstance(AutoscaledInstance):
 @dataclass
 class DynamicService:
     node_id: str
+    user_id: int
+    project_id: str
+    service_name: str
+    service_version: str
+    created_at: datetime.datetime
     needs_manual_intervention: bool
     containers: list[str]
 
@@ -75,7 +81,7 @@ def _get_last_heartbeat(instance) -> datetime.datetime | None:
 
 
 def _timedelta_formatting(time_diff: datetime.timedelta) -> str:
-    formatted_time_diff = f"{time_diff.days} days, " if time_diff.days else ""
+    formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days else ""
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
     return formatted_time_diff
 
@@ -114,8 +120,22 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     return None
 
 
+# NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
 _DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
-    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*$"
+    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
+)
+
+DockerContainer = namedtuple(  # noqa: PYI024
+    "docker_container",
+    [
+        "node_id",
+        "user_id",
+        "project_id",
+        "created_at",
+        "name",
+        "service_name",
+        "service_version",
+    ],
 )
 
 
@@ -125,30 +145,53 @@ def _ssh_and_list_running_dyn_services(
     # Establish SSH connection with key-based authentication
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(
-        instance.public_ip_address,
-        username=username,
-        key_filename=f"{private_key_path}",
-    )
-
     try:
-        # Run the Docker command to list containers
-        _stdin, stdout, _stderr = client.exec_command(
-            "docker ps --format '{{.Names}}' --filter name=dy-"
+        client.connect(
+            instance.public_ip_address,
+            username=username,
+            key_filename=f"{private_key_path}",
         )
-        output = stdout.read().decode("utf-8")
+        # Run the Docker command to list containers
+        _stdin, stdout, stderr = client.exec_command(
+            'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}\t{{.Label "io.simcore.version"}}\' --filter=name=dy-',
+        )
+        error = stderr.read().decode()
+        if error:
+            print(error)
+            raise typer.Abort(error)
 
+        output = stdout.read().decode("utf-8")
         # Extract containers that follow the naming convention
-        running_service: dict[str, list[str]] = defaultdict(list)
+        running_service: dict[str, list[DockerContainer]] = defaultdict(list)
         for container in output.splitlines():
             if match := re.match(_DYN_SERVICES_NAMING_CONVENTION, container):
-                running_service[match["node_id"]].append(container)
+                named_container = DockerContainer(
+                    match["node_id"],
+                    int(match["user_id"]),
+                    match["project_id"],
+                    arrow.get(
+                        match["created_at"],
+                        "YYYY-MM-DD HH:mm:ss",
+                        tzinfo=datetime.timezone.utc,
+                    ).datetime,
+                    container,
+                    json.loads(match["service_name"])["name"]
+                    if match["service_name"]
+                    else "",
+                    json.loads(match["service_version"])["version"]
+                    if match["service_version"]
+                    else "",
+                )
+                running_service[match["node_id"]].append(named_container)
 
-        def _needs_manual_intervention(running_containers: list[str]) -> bool:
+        def _needs_manual_intervention(
+            running_containers: list[DockerContainer],
+        ) -> bool:
             valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
             for prefix in valid_prefixes:
                 found = any(
-                    container.startswith(prefix) for container in running_containers
+                    container.name.startswith(prefix)
+                    for container in running_containers
                 )
                 if not found:
                     return True
@@ -157,12 +200,18 @@ def _ssh_and_list_running_dyn_services(
         return [
             DynamicService(
                 node_id=node_id,
+                user_id=containers[0].user_id,
+                project_id=containers[0].project_id,
+                created_at=containers[0].created_at,
                 needs_manual_intervention=_needs_manual_intervention(containers),
-                containers=containers,
+                containers=[c.name for c in containers],
+                service_name=containers[0].service_name,
+                service_version=containers[0].service_version,
             )
             for node_id, containers in running_service.items()
         ]
-
+    except (paramiko.AuthenticationException, paramiko.SSHException) as exc:
+        raise typer.Abort from exc
     finally:
         # Close the SSH connection
         client.close()
@@ -189,12 +238,27 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
             if instance.ec2_instance.state["Name"] == "running"
             else f"[yellow]{instance.ec2_instance.state['Name']}[/yellow]"
         )
-        instance_running_services_cell_text = "\n".join(
-            [
-                f"NodeID: {service.node_id} - Manual intervention needed: [bold]{service.needs_manual_intervention}[/bold]"
-                for service in instance.running_services
-            ]
-        )
+        service_table = "n/a"
+        if instance.running_services:
+            service_table = Table(
+                "UserID",
+                "ProjectID",
+                "NodeID",
+                "ServiceName",
+                "ServiceVersion",
+                "Created Since",
+                "Need intervention",
+            )
+            for service in instance.running_services:
+                service_table.add_row(
+                    f"{service.user_id}",
+                    service.project_id,
+                    service.node_id,
+                    service.service_name,
+                    service.service_version,
+                    _timedelta_formatting(time_now - service.created_at),
+                    f"{service.needs_manual_intervention}",
+                )
 
         table.add_row(
             instance.ec2_instance.id,
@@ -202,11 +266,9 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
             instance.ec2_instance.public_ip_address,
             instance.ec2_instance.private_ip_address,
             instance.name,
-            _timedelta_formatting(
-                time_now - arrow.get(instance.ec2_instance.launch_time)
-            ),
+            _timedelta_formatting(time_now - instance.ec2_instance.launch_time),
             instance_state,
-            instance_running_services_cell_text,
+            service_table,
             end_section=True,
         )
     print(table, flush=True)
@@ -245,14 +307,12 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
             cluster.primary.ec2_instance.public_ip_address,
             cluster.primary.ec2_instance.private_ip_address,
             cluster.primary.name,
-            _timedelta_formatting(
-                time_now - arrow.get(cluster.primary.ec2_instance.launch_time)
-            ),
+            _timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time),
             instance_state,
             f"{cluster.primary.user_id}",
             f"{cluster.primary.wallet_id}",
             f"http://{cluster.primary.ec2_instance.public_ip_address}:8787",
-            _timedelta_formatting(time_now - arrow.get(cluster.primary.last_heartbeat)),
+            _timedelta_formatting(time_now - cluster.primary.last_heartbeat),
         )
         # now add the workers
         for worker in cluster.workers:
@@ -358,6 +418,11 @@ def summary(repo_file: Path, ssh_key_path: Path | None = None) -> None:
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
             {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
         ]
+    )
+
+    global dynamic_parser
+    dynamic_parser = parse.compile(
+        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
     )
 
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
