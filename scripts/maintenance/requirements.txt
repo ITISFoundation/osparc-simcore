@@ -4,6 +4,7 @@ boto3
 types-boto3
 httpx
 parse
+paramiko
 psycopg2-binary
 pydantic[email]
 pylint

@@ -1,17 +1,21 @@
 #! /usr/bin/env python3
 
 import datetime
+import re
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
 import arrow
 import boto3
+import paramiko
 import parse
 import typer
 from dotenv import dotenv_values
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from rich import print
+from rich.progress import track
 from rich.table import Column, Table
 
 app = typer.Typer()
@@ -100,7 +104,69 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     return None
 
 
-def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
+@dataclass
+class DynamicService:
+    node_id: str
+    needs_manual_intervention: bool
+    containers: list[str]
+
+
+def _ssh_and_list_running_dyn_services(
+    instance: Instance, username: str, private_key_path: Path
+) -> list[DynamicService]:
+    # Create an SSH key object
+    naming_convention = (
+        r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*$"
+    )
+    # Establish SSH connection with key-based authentication
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(
+        instance.public_ip_address,
+        username=username,
+        key_filename=f"{private_key_path}",
+    )
+
+    try:
+        # Run the Docker command to list containers
+        stdin, stdout, stderr = client.exec_command(
+            "docker ps --format '{{.Names}}' --filter name=dy-"
+        )
+        output = stdout.read().decode("utf-8")
+
+        # Extract containers that follow the naming convention
+        running_service: dict[str, list[str]] = defaultdict(list)
+        for container in output.splitlines():
+            if match := re.match(naming_convention, container):
+                running_service[match["node_id"]].append(container)
+
+        def _needs_manual_intervention(running_containers: list[str]) -> bool:
+            valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
+            for prefix in valid_prefixes:
+                found = any(
+                    container.startswith(prefix) for container in running_containers
+                )
+                if not found:
+                    return True
+            return False
+
+        return [
+            DynamicService(
+                node_id=node_id,
+                needs_manual_intervention=_needs_manual_intervention(containers),
+                containers=containers,
+            )
+            for node_id, containers in running_service.items()
+        ]
+
+    finally:
+        # Close the SSH connection
+        client.close()
+
+
+def _print_dynamic_instances(
+    instances: list[DynamicInstance], ssh_key_path: Path | None
+) -> None:
     time_now = arrow.utcnow()
     table = Table(
         "Instance",
@@ -112,12 +178,31 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
         "State",
         title="dynamic autoscaled instances",
     )
-    for instance in instances:
+    if ssh_key_path:
+        table.add_column("Running services")
+    for instance in track(
+        instances, description="Collecting dynamic autoscaled instances details..."
+    ):
         instance_state = (
             f"[green]{instance.ec2_instance.state['Name']}[/green]"
             if instance.ec2_instance.state["Name"] == "running"
             else f"[yellow]{instance.ec2_instance.state['Name']}[/yellow]"
         )
+        list_running_services = []
+        if ssh_key_path:
+            list_running_services = _ssh_and_list_running_dyn_services(
+                instance.ec2_instance,
+                username="ubuntu",
+                private_key_path=ssh_key_path,
+            )
+
+        instance_running_services_cell_text = "\n".join(
+            [
+                f"NodeID: {service.node_id} - Manual intervention needed: [bold]{service.needs_manual_intervention}[/bold]"
+                for service in list_running_services
+            ]
+        )
+
         table.add_row(
             instance.ec2_instance.id,
             instance.ec2_instance.instance_type,
@@ -128,8 +213,10 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
                 time_now - arrow.get(instance.ec2_instance.launch_time)
             ),
             instance_state,
+            instance_running_services_cell_text,
+            end_section=True,
         )
-    print(table)
+    print(table, flush=True)
 
 
 def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
@@ -149,7 +236,9 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
         title="computational clusters",
     )
 
-    for cluster in clusters:
+    for cluster in track(
+        clusters, "Collecting information about computational clusters..."
+    ):
         # first print primary machine info
         instance_state = (
             f"[green]{cluster.primary.ec2_instance.state['Name']}[/green]"
@@ -204,7 +293,7 @@ def _detect_instances(
 ) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
     dynamic_instances = []
     computational_instances = []
-    for instance in instances:
+    for instance in track(instances, description="Detecting running instances..."):
         if comp_instance := _parse_computational(instance):
             computational_instances.append(comp_instance)
         elif dyn_instance := _parse_dynamic(instance):
@@ -214,7 +303,9 @@ def _detect_instances(
         for instance in computational_instances
         if instance.role is InstanceRole.manager
     ]
-    for instance in computational_instances:
+    for instance in track(
+        computational_instances, description="Getting clusters together..."
+    ):
         if instance.role is InstanceRole.worker:
             # assign the worker to correct cluster
             for cluster in computational_clusters:
@@ -228,7 +319,7 @@ def _detect_instances(
 
 
 @app.command()
-def summary(repo_file: Path) -> None:
+def summary(repo_file: Path, ssh_key_path: Path | None = None) -> None:
     environment = dotenv_values(repo_file)
     assert environment
     # connect to ec2
@@ -250,7 +341,7 @@ def summary(repo_file: Path) -> None:
 
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(instances)
 
-    _print_dynamic_instances(dynamic_autoscaled_instances)
+    _print_dynamic_instances(dynamic_autoscaled_instances, ssh_key_path)
     _print_computational_clusters(computational_clusters)
 
 
