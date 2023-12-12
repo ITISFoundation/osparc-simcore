@@ -120,9 +120,6 @@ async def test_regression_collaborator_creates_file_upload_links(
     collaborator_id: UserID,
     share_with_collaborator: Callable[[], Awaitable[None]],
 ):
-    """In this test we create valid upload links and check that once
-    expired they get properly deleted"""
-
     file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
 
     await simcore_s3_dsm.create_file_upload_links(
