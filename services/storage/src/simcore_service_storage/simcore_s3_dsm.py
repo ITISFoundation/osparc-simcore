@@ -223,7 +223,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.acquire() as conn, conn.begin():
-            can: AccessRights | None = await get_file_access_rights(
+            can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if can.read:
@@ -249,9 +249,7 @@ class SimcoreS3DataManager(BaseDataManager):
         is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
-            can: AccessRights | None = await get_file_access_rights(
-                conn, user_id, file_id
-            )
+            can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
 
@@ -263,19 +261,13 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
             # ensure file is deleted first in case it already exists
-
-            #   _   _  ___ _____ _____
-            #  | \ | |/ _ \_   _| ____|
-            #  |  \| | | | || | |  _|
-            #  | |\  | |_| || | | |___
-            #  |_| \_|\___/ |_| |_____|
-            # NOTE: (a very big one)
-            # `enforce_access_rights` is set to False because if the service is shared
-            # with a collaborator, the collaborator does not have access to delete
-            # the file. This happened because we are using project access rights to enforce
-            # them on the data. This should change and we should be using data access rights
             await self.delete_file(
-                user_id=user_id, file_id=file_id, enforce_access_rights=False
+                user_id=user_id,
+                file_id=file_id,
+                # NOTE: bypassing check since the project access rights don't play well
+                # with collaborators
+                # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
+                enforce_access_rights=False,
             )
 
             # initiate the file meta data table
@@ -344,7 +336,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
     ) -> None:
         async with self.engine.acquire() as conn, conn.begin():
-            can: AccessRights | None = await get_file_access_rights(
+            can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if not can.delete or not can.write:
@@ -380,7 +372,7 @@ class SimcoreS3DataManager(BaseDataManager):
         uploaded_parts: list[UploadedPart],
     ) -> FileMetaData:
         async with self.engine.acquire() as conn:
-            can: AccessRights | None = await get_file_access_rights(
+            can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if not can.write:
@@ -440,9 +432,7 @@ class SimcoreS3DataManager(BaseDataManager):
     async def __ensure_read_access_rights(
         conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
     ) -> None:
-        can: AccessRights | None = await get_file_access_rights(
-            conn, user_id, storage_file_id
-        )
+        can: AccessRights = await get_file_access_rights(conn, user_id, storage_file_id)
         if not can.read:
             # NOTE: this is tricky. A user with read access can download and data!
             # If write permission would be required, then shared projects as views cannot
@@ -506,11 +496,20 @@ class SimcoreS3DataManager(BaseDataManager):
         *,
         enforce_access_rights: bool = True,
     ):
+        #   _   _  ___ _____ _____
+        #  | \ | |/ _ \_   _| ____|
+        #  |  \| | | | || | |  _|
+        #  | |\  | |_| || | | |___
+        #  |_| \_|\___/ |_| |_____|
+        # NOTE: (a very big one)
+        # `enforce_access_rights` is set to False because permissions are based on "project access rights"
+        # they should be based on data access rights (which is currently not present)
+        # Only use this in those circumstances where a collaborator requires to delete a file (the current
+        # permissions model will not allow him to do so, even though this is a legitimate action)
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
         async with self.engine.acquire() as conn, conn.begin():
             if enforce_access_rights:
-                can: AccessRights | None = await get_file_access_rights(
-                    conn, user_id, file_id
-                )
+                can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
