@@ -23,6 +23,16 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     this.base(arguments);
   },
 
+  properties: {
+    multiSelection: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelection",
+      apply: "__applyMultiSelection"
+    }
+  },
+
   members: {
     __updateAllButton: null,
 
@@ -112,6 +122,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("templatesList");
       cards.forEach(card => {
+        card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", () => this.__itemClicked(card), this);
         card.addListener("changeUpdatable", () => this.__evaluateUpdateAllButton(), this);
         card.addListener("changeVisibility", () => this.__evaluateUpdateAllButton(), this);

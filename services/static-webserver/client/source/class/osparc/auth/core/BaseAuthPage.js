@@ -89,11 +89,12 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
         const formItem = formItems[fieldKey];
         formItem.set({
           width: this.self().FORM_WIDTH,
-          backgroundColor: "transparent"
+          appearance: "form-input"
         });
         if (formItem.classname === "osparc.ui.form.PasswordField") {
           formItem.getChildControl("passwordField").set({
-            backgroundColor: "transparent"
+            backgroundColor: "transparent",
+            appearance: "form-password"
           });
         }
       });
