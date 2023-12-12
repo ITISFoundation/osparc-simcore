@@ -142,6 +142,8 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
         "Name",
         Column("Created since", justify="right"),
         "State",
+        "UserID",
+        "WalletID",
         "DaskSchedulerUI",
         "last heartbeat since",
         title="computational clusters",
@@ -165,6 +167,8 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
                 time_now - arrow.get(cluster.primary.ec2_instance.launch_time)
             ),
             instance_state,
+            f"{cluster.primary.user_id}",
+            f"{cluster.primary.wallet_id}",
             f"http://{cluster.primary.ec2_instance.public_ip_address}:8787",
             _timedelta_formatting(time_now - arrow.get(cluster.primary.last_heartbeat)),
         )
@@ -186,6 +190,8 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
                     time_now - arrow.get(worker.ec2_instance.launch_time)
                 ),
                 instance_state,
+                "",
+                "",
                 "",
                 "",
             )
