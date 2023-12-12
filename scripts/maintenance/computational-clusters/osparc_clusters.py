@@ -228,8 +228,12 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
         "Name",
         Column("Created since", justify="right"),
         "State",
-        Column("Running services", footer="(need ssh access)"),
+        Column(
+            "Running services",
+            footer="[red](need ssh access) - Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
+        ),
         title="dynamic autoscaled instances",
+        show_footer=True,
     )
     for instance in track(
         instances, description="Preparing dynamic autoscaled instances details..."
@@ -248,11 +252,7 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
                 "ServiceName",
                 "ServiceVersion",
                 "Created Since",
-                Column(
-                    "Need intervention",
-                    footer="transient state cannot be detected, be careful and always double-check!!",
-                ),
-                show_footer=True,
+                Column("Need intervention"),
             )
             for service in instance.running_services:
                 service_table.add_row(
@@ -405,8 +405,19 @@ def _detect_instances(
 
 
 @app.command()
-def summary(repo_file: Path, ssh_key_path: Path | None = None) -> None:
-    environment = dotenv_values(repo_file)
+def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
+    """Show a summary of the current situation of autoscaled EC2 instances.
+
+    Gives a list of all the instances used for dynamic services, and optionally shows what runs in them.
+    Gives alist of all the instances used for computational services (e.g. primary + worker(s) instances)
+
+    Arguments:
+        repo_config -- path that shall point to a repo.config type of file (see osparc-ops-deployment-configuration repository)
+
+    Keyword Arguments:
+        ssh_key_path -- the ssh key that corresponds to above deployment to ssh into the autoscaled machines (e.g. ) (default: {None})
+    """
+    environment = dotenv_values(repo_config)
     assert environment
     # connect to ec2
     ec2_resource = boto3.resource(
