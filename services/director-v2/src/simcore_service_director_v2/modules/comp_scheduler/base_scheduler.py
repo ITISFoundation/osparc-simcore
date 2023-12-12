@@ -800,6 +800,7 @@ class BaseCompScheduler(ABC):
 
     async def _timeout_if_waiting_for_cluster_too_long(
         self,
+        user_id: UserID,
         project_id: ProjectID,
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
@@ -822,6 +823,15 @@ class BaseCompScheduler(ABC):
                     RunningState.FAILED,
                     optional_progress=1.0,
                     optional_stopped=arrow.utcnow().datetime,
+                )
+                msg = "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
+                _logger.error(msg)
+                await publish_project_log(
+                    self.rabbitmq_client,
+                    user_id,
+                    project_id,
+                    log=msg,
+                    log_level=logging.ERROR,
                 )
         return comp_tasks
 
