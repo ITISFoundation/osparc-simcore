@@ -23,6 +23,8 @@ _logger = logging.getLogger(__name__)
 _TASK_NAME_START_PERIODIC_TASK = "start_background_task"
 _TASK_NAME_PERIODICALY_CHECK_RUNNING_SERVICES = "periodic_check_of_running_services"
 
+_RUT_MESSAGE_TTL_IN_MS = 2 * 60 * 60 * 1000  # 2 hours
+
 
 async def _subscribe_to_rabbitmq(app) -> str:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channel"):
@@ -31,6 +33,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
             RabbitResourceTrackingBaseMessage.get_channel_name(),
             message_handler=functools.partial(process_message, app),
             exclusive_queue=False,
+            message_ttl=_RUT_MESSAGE_TTL_IN_MS,
         )
         return subscribed_queue
 
