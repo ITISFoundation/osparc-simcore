@@ -48,10 +48,7 @@ async def _debug_progress_callback(
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
-# TODO: finish up the initialization of all the thing clients! setp and teardown
-
-
-class SidecarsClient:
+class SidecarsClient:  # pylint: disable=too-many-public-methods
     """
     API client used for talking with:
         - dynamic-sidecar
