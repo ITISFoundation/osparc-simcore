@@ -625,6 +625,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _applyLocked: function(locked) {
       this.__enableCard(!locked);
       this.getChildControl("lock-status").set({
+        appearance: "form-button-outlined/disabled",
+        textColor: "text-disabled",
         opacity: 1.0,
         visibility: locked ? "visible" : "excluded"
       });

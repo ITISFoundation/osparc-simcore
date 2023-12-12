@@ -16,6 +16,9 @@ from simcore_service_webserver.scicrunch._resolver import ResolvedItem, resolve_
 from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 
+@pytest.mark.skip(
+    "requires a fix see case https://github.com/ITISFoundation/osparc-simcore/issues/5160"
+)
 @pytest.mark.parametrize(
     "name,rrid",
     TOOL_CITATIONS + ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS,
