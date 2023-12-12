@@ -582,4 +582,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
     async def free_emergency_disk_space(self, node_id: NodeID) -> None:
         sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
-        return await sidecars_client.free_emergency_disk_space(node_id)
+        service_name = self._inverse_search_mapping[node_id]
+        scheduler_data: SchedulerData = self._to_observe[service_name]
+
+        return await sidecars_client.free_emergency_disk_space(scheduler_data.endpoint)
