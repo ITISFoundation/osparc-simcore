@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import asyncio
 import datetime
 import re
 from collections import defaultdict
@@ -291,17 +292,28 @@ def _detect_instances(
             dynamic_instances.append(dyn_instance)
 
     if ssh_key_path:
+        all_running_services = asyncio.get_event_loop().run_until_complete(
+            asyncio.gather(
+                *(
+                    asyncio.get_event_loop().run_in_executor(
+                        None,
+                        _ssh_and_list_running_dyn_services,
+                        instance.ec2_instance,
+                        "ubuntu",
+                        ssh_key_path,
+                    )
+                    for instance in dynamic_instances
+                )
+            )
+        )
+
         more_detailed_instances = [
             replace(
                 instance,
-                running_services=_ssh_and_list_running_dyn_services(
-                    instance.ec2_instance,
-                    username="ubuntu",
-                    private_key_path=ssh_key_path,
-                ),
+                running_services=running_services,
             )
-            for instance in track(
-                dynamic_instances, description="Collecting dynamic services..."
+            for instance, running_services in zip(
+                dynamic_instances, all_running_services, strict=True
             )
         ]
         dynamic_instances = more_detailed_instances
