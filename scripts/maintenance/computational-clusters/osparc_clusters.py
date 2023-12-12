@@ -3,7 +3,7 @@
 import datetime
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 
@@ -14,7 +14,7 @@ import parse
 import typer
 from dotenv import dotenv_values
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
-from rich import print
+from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
 from rich.table import Column, Table
 
@@ -40,9 +40,16 @@ class ComputationalInstance(AutoscaledInstance):
     last_heartbeat: datetime.datetime | None
 
 
+@dataclass
+class DynamicService:
+    node_id: str
+    needs_manual_intervention: bool
+    containers: list[str]
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class DynamicInstance(AutoscaledInstance):
-    ...
+    running_services: list[DynamicService]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -100,15 +107,9 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
     if result := dynamic_parser.search(name):
         assert isinstance(result, parse.Result)
-        return DynamicInstance(name=name, ec2_instance=instance)
+
+        return DynamicInstance(name=name, ec2_instance=instance, running_services=[])
     return None
-
-
-@dataclass
-class DynamicService:
-    node_id: str
-    needs_manual_intervention: bool
-    containers: list[str]
 
 
 def _ssh_and_list_running_dyn_services(
@@ -129,7 +130,7 @@ def _ssh_and_list_running_dyn_services(
 
     try:
         # Run the Docker command to list containers
-        stdin, stdout, stderr = client.exec_command(
+        _stdin, stdout, _stderr = client.exec_command(
             "docker ps --format '{{.Names}}' --filter name=dy-"
         )
         output = stdout.read().decode("utf-8")
@@ -164,9 +165,7 @@ def _ssh_and_list_running_dyn_services(
         client.close()
 
 
-def _print_dynamic_instances(
-    instances: list[DynamicInstance], ssh_key_path: Path | None
-) -> None:
+def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
     time_now = arrow.utcnow()
     table = Table(
         "Instance",
@@ -176,36 +175,27 @@ def _print_dynamic_instances(
         "Name",
         Column("Created since", justify="right"),
         "State",
+        Column("Running services", footer="(need ssh access)"),
         title="dynamic autoscaled instances",
     )
-    if ssh_key_path:
-        table.add_column("Running services")
     for instance in track(
-        instances, description="Collecting dynamic autoscaled instances details..."
+        instances, description="Preparing dynamic autoscaled instances details..."
     ):
         instance_state = (
             f"[green]{instance.ec2_instance.state['Name']}[/green]"
             if instance.ec2_instance.state["Name"] == "running"
             else f"[yellow]{instance.ec2_instance.state['Name']}[/yellow]"
         )
-        list_running_services = []
-        if ssh_key_path:
-            list_running_services = _ssh_and_list_running_dyn_services(
-                instance.ec2_instance,
-                username="ubuntu",
-                private_key_path=ssh_key_path,
-            )
-
         instance_running_services_cell_text = "\n".join(
             [
                 f"NodeID: {service.node_id} - Manual intervention needed: [bold]{service.needs_manual_intervention}[/bold]"
-                for service in list_running_services
+                for service in instance.running_services
             ]
         )
 
         table.add_row(
             instance.ec2_instance.id,
-            instance.ec2_instance.instance_type,
+            f"{instance.ec2_instance.instance_type}",
             instance.ec2_instance.public_ip_address,
             instance.ec2_instance.private_ip_address,
             instance.name,
@@ -248,7 +238,7 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
         assert cluster.primary.last_heartbeat
         table.add_row(
             cluster.primary.ec2_instance.id,
-            cluster.primary.ec2_instance.instance_type,
+            f"{cluster.primary.ec2_instance.instance_type}",
             cluster.primary.ec2_instance.public_ip_address,
             cluster.primary.ec2_instance.private_ip_address,
             cluster.primary.name,
@@ -271,7 +261,7 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
 
             table.add_row(
                 worker.ec2_instance.id,
-                worker.ec2_instance.instance_type,
+                f"{worker.ec2_instance.instance_type}",
                 worker.ec2_instance.public_ip_address,
                 worker.ec2_instance.private_ip_address,
                 worker.name,
@@ -289,23 +279,39 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
 
 
 def _detect_instances(
-    instances: ServiceResourceInstancesCollection,
+    instances: ServiceResourceInstancesCollection, ssh_key_path: Path | None
 ) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
     dynamic_instances = []
     computational_instances = []
+
     for instance in track(instances, description="Detecting running instances..."):
         if comp_instance := _parse_computational(instance):
             computational_instances.append(comp_instance)
         elif dyn_instance := _parse_dynamic(instance):
             dynamic_instances.append(dyn_instance)
+
+    if ssh_key_path:
+        more_detailed_instances = [
+            replace(
+                instance,
+                running_services=_ssh_and_list_running_dyn_services(
+                    instance.ec2_instance,
+                    username="ubuntu",
+                    private_key_path=ssh_key_path,
+                ),
+            )
+            for instance in track(
+                dynamic_instances, description="Collecting dynamic services..."
+            )
+        ]
+        dynamic_instances = more_detailed_instances
+
     computational_clusters = [
         ComputationalCluster(primary=instance, workers=[])
         for instance in computational_instances
         if instance.role is InstanceRole.manager
     ]
-    for instance in track(
-        computational_instances, description="Getting clusters together..."
-    ):
+    for instance in computational_instances:
         if instance.role is InstanceRole.worker:
             # assign the worker to correct cluster
             for cluster in computational_clusters:
@@ -339,9 +345,11 @@ def summary(repo_file: Path, ssh_key_path: Path | None = None) -> None:
         ]
     )
 
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(instances)
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, ssh_key_path
+    )
 
-    _print_dynamic_instances(dynamic_autoscaled_instances, ssh_key_path)
+    _print_dynamic_instances(dynamic_autoscaled_instances)
     _print_computational_clusters(computational_clusters)
 
 
