@@ -21,10 +21,10 @@ class DirectorV2Client(AppStateMixin, AttachLifespanMixin, HasClientSetupProtoco
         self.thin_client = DirectorV2ThinClient(app)
 
     async def setup_client(self) -> None:
-        return await self.thin_client.setup_client()
+        await self.thin_client.setup_client()
 
     async def teardown_client(self) -> None:
-        return await self.thin_client.teardown_client()
+        await self.thin_client.teardown_client()
 
     async def get_status(
         self, node_id: NodeID
