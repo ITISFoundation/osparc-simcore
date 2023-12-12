@@ -3,7 +3,7 @@ import functools
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any, Final
+from typing import Any
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
@@ -92,14 +92,18 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     return log_it
 
 
-def _assert_public_interface(obj: object) -> None:
+def _assert_public_interface(
+    obj: object, extra_allowed_method_names: set[str] | None = None
+) -> None:
     # makes sure all user public defined methods return `httpx.Response`
 
-    _allowed_names: Final[set[str]] = {
+    _allowed_names: set[str] = {
         "setup_client",
         "teardown_client",
         "from_client_kwargs",
     }
+    if extra_allowed_method_names:
+        _allowed_names |= extra_allowed_method_names
 
     public_methods = [
         t[1]
@@ -185,8 +189,9 @@ class BaseThinClient(BaseHTTPApi):
         request_timeout: float,
         base_url: URLTypes | None = None,
         timeout: TimeoutTypes | None = None,
+        extra_allowed_method_names: set[str] | None = None,
     ) -> None:
-        _assert_public_interface(self)
+        _assert_public_interface(self, extra_allowed_method_names)
 
         self.request_timeout: float = request_timeout
 

@@ -19,6 +19,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             request_timeout=10,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
             timeout=Timeout(10),
+            extra_allowed_method_names={"attach_lifespan_to"},
         )
 
     @retry_on_errors
