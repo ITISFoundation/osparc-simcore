@@ -361,3 +361,20 @@ async def test_get_containers_inactivity(
 
     response = await thin_client.get_containers_inactivity(dynamic_sidecar_endpoint)
     assert_responses(mock_response, response)
+
+
+async def test_post_disk_emergency_free(
+    thin_client: ThinSidecarsClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+) -> None:
+    mock_response = Response(status.HTTP_204_NO_CONTENT)
+    mock_request(
+        "POST",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/disk/emergency:free",
+        mock_response,
+        None,
+    )
+
+    response = await thin_client.post_disk_emergency_free(dynamic_sidecar_endpoint)
+    assert_responses(mock_response, response)
