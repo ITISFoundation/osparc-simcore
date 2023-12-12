@@ -292,6 +292,7 @@ def _detect_instances(
             dynamic_instances.append(dyn_instance)
 
     if ssh_key_path:
+        # this construction makes the retrieval much faster
         all_running_services = asyncio.get_event_loop().run_until_complete(
             asyncio.gather(
                 *(
