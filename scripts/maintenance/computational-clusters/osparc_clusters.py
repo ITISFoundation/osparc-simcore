@@ -16,8 +16,35 @@ from rich.table import Column, Table
 
 app = typer.Typer()
 
-tag_key = "dynamic-cluster"
-tag_value = "master"
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AutoscaledInstance:
+    name: str
+    ec2_instance: Instance
+
+
+class InstanceRole(str, Enum):
+    manager = "manager"
+    worker = "worker"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ComputationalInstance(AutoscaledInstance):
+    role: InstanceRole
+    user_id: int
+    wallet_id: int
+    last_heartbeat: datetime.datetime | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DynamicInstance(AutoscaledInstance):
+    ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ComputationalCluster:
+    primary: ComputationalInstance
+    workers: list[ComputationalInstance]
 
 
 def _get_instance_name(instance) -> str:
@@ -43,30 +70,6 @@ def _timedelta_formatting(time_diff: datetime.timedelta) -> str:
 computational_parser = parse.compile(
     "osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
 )
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class AutoscaledInstance:
-    name: str
-    ec2_instance: Instance
-
-
-class InstanceRole(str, Enum):
-    manager = "manager"
-    worker = "worker"
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ComputationalInstance(AutoscaledInstance):
-    role: InstanceRole
-    user_id: int
-    wallet_id: int
-    last_heartbeat: datetime.datetime | None
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class DynamicInstance(AutoscaledInstance):
-    ...
 
 
 def _parse_computational(instance: Instance) -> ComputationalInstance | None:
@@ -107,6 +110,7 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
         "Name",
         Column("Created since", justify="right"),
         "State",
+        title="dynamic autoscaled instances",
     )
     for instance in instances:
         instance_state = (
@@ -128,15 +132,8 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
     print(table)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ComputationalCluster:
-    primary: ComputationalInstance
-    workers: list[ComputationalInstance]
-
-
 def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
     time_now = arrow.utcnow()
-    table = Table(title="computational clusters")
     table = Table(
         "Instance",
         Column("Type", justify="right"),
@@ -147,6 +144,7 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
         "State",
         "DaskSchedulerUI",
         "last heartbeat since",
+        title="computational clusters",
     )
 
     for cluster in clusters:
@@ -224,23 +222,23 @@ def _detect_instances(
 
 
 @app.command()
-def summary(env_file: Path) -> None:
+def summary(repo_file: Path) -> None:
+    environment = dotenv_values(repo_file)
+    assert environment
     # connect to ec2
-    env_key_values = dotenv_values(env_file)
-    assert env_key_values
     ec2_resource = boto3.resource(
         "ec2",
-        region_name=env_key_values["AUTOSCALING_EC2_REGION_NAME"],
-        aws_access_key_id=env_key_values["AUTOSCALING_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=env_key_values["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
+        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
+        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
 
     # get all the running instances
-    assert env_key_values["EC2_INSTANCES_KEY_NAME"]
+    assert environment["EC2_INSTANCES_KEY_NAME"]
     instances = ec2_resource.instances.filter(
         Filters=[
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [env_key_values["EC2_INSTANCES_KEY_NAME"]]},
+            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
         ]
     )
 
