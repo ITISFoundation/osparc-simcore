@@ -19,7 +19,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
 
     "strong-main": "rgba(0, 144, 208, 1)", // override in product
-    "strong-text": "c02",
+    "strong-text":  "background-main-1",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
     // main
@@ -36,126 +36,143 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "primary-background-color": "rgba(255, 255, 255, 1)",
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
     "modal-backdrop": "rgba(247, 248, 252, 0.4)",
-    "fab_background": "rgba(208, 211, 230, 1)",
+    "fab_text": "contrasted-text-dark",
+    "fab_background": "rgba(230, 235, 255, 1)",
     "input_background": "rgba(209, 214, 218, 1)",
     "window-popup-background": "rgba(255,255,255, 1)",
+    "transparent_overlay": "rgba(1, 18, 26, 0.1)",
 
     "flash_message_bg": "input_background",
 
     // text
-    "text": "c13",
-    "text-disabled": "c07",
-    "text-selected": "c12",
-    "text-placeholder": "c07",
-    "text-darker": "c07",
-    "contrasted-text-dark": "c01",
-    "contrasted-text-light": "c13",
-    "link": "c11",
+    "text": "rgba(40, 40, 40, 1)",
+    "text-disabled": "rgba(113, 157, 181, 1)",
+    "text-selected": "rgba(10, 182, 255, 1)",
+    "text-placeholder": "rgba(90, 100, 110, 1)",
+    "text-darker": "rgba(20, 20, 20, 1)",
+    "contrasted-text-dark": "rgba(20, 20, 20, 1)",
+    "contrasted-text-light": "rgba(40, 40, 40, 1)",
+    "link": "rgba(10, 182, 255, 1)",
+
+    // button
+    "default-button-text": "contrasted-text-light",
+    "default-button-text-outline": "contrasted-text-dark",
+    "default-button-text-action": "contrasted-text-dark",
+    "default-button-text-disabled": "text-disabled",
+    "default-button": "rgba(10, 182, 255, 1)",
+    "default-button-hover": "rgba(4, 73, 102, 1)",
+    "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
+    "default-button-active": "rgba(9, 89, 122, 1)",
+    "default-button-active-background": "rgba(4, 73, 102, 0.04)",
+    "default-button-focus": "rgba(10, 182, 255, 1)",
+    "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
+    "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
     // shadows
-    "bg-shadow": "c06",
+    "bg-shadow":  "background-main-5",
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    "window-caption-background": "c01",
-    "window-caption-background-active": "c04",
+    "window-caption-background": "background-main",
+    "window-caption-background-active":  "background-main-3",
     "window-caption-text": "text",
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background": "c04",
-    "material-button-background-disabled": "c03",
-    "material-button-background-hovered": "c05",
-    "material-button-background-pressed": "c05",
-    "material-button-text-disabled": "c07",
-    "material-button-text": "text",
+    "material-button-background":  "fab_background",
+    "material-button-background-disabled":  "transparent",
+    "material-button-background-hovered":  "default-button-hover-background",
+    "material-button-background-pressed":  "default-button-active-background",
+    "material-button-text-disabled": "default-button-text-disabled",
+    "material-button-text": "default-button-text",
 
     // material-textfield
-    "material-textfield": "c07",
-    "material-textfield-focused": "text",
-    "material-textfield-disabled": "c05",
-    "material-textfield-invalid": "failed-red",
-    "invalid": "failed-red",
+    "material-textfield": "input_background",
+    "material-textfield-focused": "success",
+    "material-textfield-disabled": "default-button-text-disabled",
+    "material-textfield-invalid": "error",
+    "invalid": "error",
 
     // backgrounds
-    "background-selected": "c05",
-    "background-selected-disabled": "c02",
-    "background-selected-dark": "c04",
-    "background-disabled": "c01",
-    "background-disabled-checked": "c02",
-    "background-pane": "c01",
+    "background-selected": "success_bg",
+    "background-selected-disabled":  "default-button-text-disabled",
+    "background-selected-dark":  "success_bg",
+    "background-disabled": "background-main",
+    "background-disabled-checked":  "background-main-1",
+    "background-pane": "background-main",
 
     // tabview
     "tabview-unselected": "c14",
     "tabview-button-border": "c14",
     "tabview-label-active-disabled": "c10",
-    "tabview-pane-background": "c01",
+    "tabview-pane-background": "transparent",
     "tabview-button-background": "transparent",
 
     // scrollbar
-    "scrollbar-passive": "c05",
-    "scrollbar-active": "c06",
+    "scrollbar-passive":  "background-main-4",
+    "scrollbar-active":  "background-main-5",
 
     // form
-    "button": "c05",
-    "button-border": "c06",
+    "button":  "background-main-4",
+    "button-border":  "background-main-5",
     "button-border-hovered": "c07",
-    "button-box": "c04",
-    "button-box-pressed": "c05",
+    "button-box":  "background-main-3",
+    "button-box-pressed":  "background-main-4",
     "border-lead": "c07",
 
     // window
-    "window-border": "c03",
-    "window-border-inner": "c02",
+    "window-border":  "background-main-2",
+    "window-border-inner":  "background-main-1",
 
     // group box
-    "white-box-border": "c03",
+    "white-box-border":  "background-main-2",
 
     // borders
     // 'border-main' is an alias of 'background-selected' (compatibility reasons)
-    "border": "c04",
+    "border":  "background-main-3",
     "border-focused": "c09",
     "border-invalid": "failed-red",
-    "border-disabled": "c01",
+    "border-disabled": "background-main",
 
     // separator
     "border-separator": "c07",
 
     // tooltip
-    "tooltip": "c07",
-    "tooltip-text": "c12",
+    "tooltip": "flash_message_bg",
+    "tooltip-text": "text",
+
 
     // table
-    "table-header": "c01",
+    "table-header": "background-main",
     "table-header-foreground": "c09",
     "table-header-border": "c07",
-    "table-focus-indicator": "c06",
+    "table-focus-indicator":  "background-main-5",
 
     // used in table code
-    "table-header-cell": "c01",
-    "table-row-background-focused-selected": "c05",
-    "table-row-background-focused": "c04",
-    "table-row-background-selected": "c05",
-    "table-row-background-even": "c01",
-    "table-row-background-odd": "c01",
+    "table-header-cell": "background-main",
+    "table-row-background-focused-selected":  "background-main-4",
+    "table-row-background-focused":  "background-main-3",
+    "table-row-background-selected":  "background-main-4",
+    "table-row-background-even": "background-main",
+    "table-row-background-odd": "background-main",
 
     // foreground
     "table-row-selected": "c12",
     "table-row": "c09",
 
     // table grid color
-    "table-row-line": "c01",
-    "table-column-line": "c01",
+    "table-row-line": "background-main",
+    "table-column-line": "background-main",
 
     // used in progressive code
     "progressive-table-header": "c08",
-    "progressive-table-row-background-even": "c01",
-    "progressive-table-row-background-odd": "c01",
-    "progressive-progressbar-background": "c00",
-    "progressive-progressbar-indicator-done": "c01",
-    "progressive-progressbar-indicator-undone": "c02",
-    "progressive-progressbar-percent-background": "c00",
-    "progressive-progressbar-percent-text": "c02",
+    "progressive-table-row-background-even": "background-main",
+    "progressive-table-row-background-odd": "background-main",
+    "progressive-progressbar-background":  "background-main",
+    "progressive-progressbar-indicator-done": "background-main",
+    "progressive-progressbar-indicator-undone":  "background-main-1",
+    "progressive-progressbar-percent-background":  "background-main",
+    "progressive-progressbar-percent-text":  "background-main-1",
 
 
 
@@ -164,7 +181,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-selected-background": "background-main-4",
+    "node-selected-background": "success_bg",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 

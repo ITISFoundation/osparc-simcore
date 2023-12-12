@@ -29,3 +29,10 @@
 .rotated {
   transform: rotateZ(180deg);
 }
+
+.qx-form-button,
+.qx-form-button-hover,
+.qx-form-button-focus,
+.qx-form-button-active {
+  background-clip: border-box;
+}

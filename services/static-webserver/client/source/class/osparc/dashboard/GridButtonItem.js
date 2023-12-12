@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 32
+    MENU_BTN_DIMENSIONS: 24
   },
 
   members: {
@@ -90,8 +90,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_DIMENSIONS
           });
           control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
+            padding: [0, 8, 0, 8],
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
@@ -101,22 +105,44 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
-            top: 5,
-            right: 5
+            top: 8,
+            right: 8
           });
           break;
         case "tick-unselected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
+          control = new qx.ui.basic.Atom().set({
+            appearance: "form-button-outlined",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            focusable: false
+          });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
           this._add(control, {
-            top: 4,
-            right: 4
+            top: 8,
+            right: 8
           });
           break;
         case "tick-selected":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
+          control = new qx.ui.basic.Image().set({
+            appearance: "form-button",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            padding: 5,
+            alignX: "center",
+            alignY: "middle",
+            source: "@FontAwesome5Solid/check/12",
+            focusable: false
+          });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
           this._add(control, {
-            top: 4,
-            right: 4
+            top: 8,
+            right: 8
           });
           break;
         case "lock-status":
