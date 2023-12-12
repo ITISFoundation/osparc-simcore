@@ -7,6 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
+from typing import Final
 
 import arrow
 import boto3
@@ -113,13 +114,14 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     return None
 
 
+_DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
+    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*$"
+)
+
+
 def _ssh_and_list_running_dyn_services(
     instance: Instance, username: str, private_key_path: Path
 ) -> list[DynamicService]:
-    # Create an SSH key object
-    naming_convention = (
-        r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*$"
-    )
     # Establish SSH connection with key-based authentication
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -139,7 +141,7 @@ def _ssh_and_list_running_dyn_services(
         # Extract containers that follow the naming convention
         running_service: dict[str, list[str]] = defaultdict(list)
         for container in output.splitlines():
-            if match := re.match(naming_convention, container):
+            if match := re.match(_DYN_SERVICES_NAMING_CONVENTION, container):
                 running_service[match["node_id"]].append(container)
 
         def _needs_manual_intervention(running_containers: list[str]) -> bool:
