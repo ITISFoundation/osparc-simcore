@@ -150,6 +150,7 @@ def _ssh_and_list_running_dyn_services(
             instance.public_ip_address,
             username=username,
             key_filename=f"{private_key_path}",
+            timeout=5,
         )
         # Run the Docker command to list containers
         _stdin, stdout, stderr = client.exec_command(
@@ -247,7 +248,11 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
                 "ServiceName",
                 "ServiceVersion",
                 "Created Since",
-                "Need intervention",
+                Column(
+                    "Need intervention",
+                    footer="transient state cannot be detected, be careful and always double-check!!",
+                ),
+                show_footer=True,
             )
             for service in instance.running_services:
                 service_table.add_row(
