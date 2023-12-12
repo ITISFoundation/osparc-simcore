@@ -81,10 +81,10 @@ qx.Theme.define("osparc.theme.ColorLight", {
     // material-button
     "material-button-background":  "fab_background",
     "material-button-background-disabled":  "transparent",
-    "material-button-background-hovered":  "default-button-hover",
-    "material-button-background-pressed":  "default-button-active",
+    "material-button-background-hovered":  "default-button-hover-background",
+    "material-button-background-pressed":  "default-button-active-background",
     "material-button-text-disabled": "default-button-text-disabled",
-    "material-button-text": "text",
+    "material-button-text": "default-button-text",
 
     // material-textfield
     "material-textfield": "input_background",

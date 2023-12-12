@@ -177,6 +177,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __addNewServiceButtons: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
       if (platformName === "dev") {
         const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
         testDataButton.addListener("execute", () => {
@@ -190,7 +191,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.set({
-        appearance: "form-button-outlined"
+        appearance: "form-button-outlined",
+        visibility: hasRights ? "visible" : "excluded"
       });
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._toolbar.add(addServiceButton);

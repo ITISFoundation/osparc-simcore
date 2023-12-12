@@ -21,6 +21,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "default-button-text": "rgba(255, 255, 255, 1)",
     "default-button-text-outline": "rgba(229, 229, 229, 1)",
     "default-button-text-disabled": "rgba(113, 157, 181, 1)",
+    "default-button-disabled-background": "transparent",
     "default-button": "rgba(10, 182, 255, 1)",
     "default-button-hover": "rgba(4, 73, 102, 1)",
     "default-button-active": "rgba(9, 89, 122, 1)",
