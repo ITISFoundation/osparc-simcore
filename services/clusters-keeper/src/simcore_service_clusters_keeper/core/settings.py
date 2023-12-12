@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, cast
 
-from aws_library.ec2.models import EC2InstanceBootSpecific
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -85,6 +85,12 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
+    WORKERS_EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
+        ...,
+        description="Allows to define tags that should be added to the created EC2 instance default tags. "
+        "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
+    )
+
     @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
@@ -128,6 +134,11 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         description="SSH key filename (without ext) to access the instance through SSH"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
         "this is required to start a new EC2 instance",
+    )
+    PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
+        ...,
+        description="Allows to define tags that should be added to the created EC2 instance default tags. "
+        "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
 
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
