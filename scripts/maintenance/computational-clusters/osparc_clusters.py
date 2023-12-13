@@ -122,9 +122,11 @@ def _create_graylog_permalinks(
 ) -> str:
     # https://monitoring.sim4life.io/graylog/search/6552235211aee4262e7f9f21?q=source%3A%22ip-10-0-1-67%22&rangetype=relative&from=28800
     source_name = instance.private_ip_address.replace(".", "-")
-    time_span = (
-        arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)
-    ).total_seconds()
+    time_span = int(
+        (
+            arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)
+        ).total_seconds()
+    )
     return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
 
 
