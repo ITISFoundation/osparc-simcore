@@ -1,9 +1,14 @@
 aiopg
 black
+boto3
+types-boto3
 httpx
+parse
+paramiko
 psycopg2-binary
-pydantic[email,dotenv]
+pydantic[email]
 pylint
 python-dateutil
+python-dotenv
 tenacity
 typer[all]

@@ -1,6 +1,6 @@
 from aiohttp import web
 from models_library.products import ProductName
-from models_library.user_preferences import AnyUserPreference, PreferenceName
+from models_library.user_preferences import FrontendUserPreference, PreferenceName
 from models_library.users import UserID
 from simcore_postgres_database.utils_user_preferences import FrontendUserPreferencesRepo
 
@@ -16,8 +16,8 @@ async def get_user_preference(
     *,
     user_id: UserID,
     product_name: ProductName,
-    preference_class: type[AnyUserPreference],
-) -> AnyUserPreference | None:
+    preference_class: type[FrontendUserPreference],
+) -> FrontendUserPreference | None:
     async with get_database_engine(app).acquire() as conn:
         preference_payload: dict | None = await FrontendUserPreferencesRepo.load(
             conn,
@@ -40,7 +40,7 @@ async def set_user_preference(
     *,
     user_id: UserID,
     product_name: ProductName,
-    preference: AnyUserPreference,
+    preference: FrontendUserPreference,
 ) -> None:
     async with get_database_engine(app).acquire() as conn:
         await FrontendUserPreferencesRepo.save(
