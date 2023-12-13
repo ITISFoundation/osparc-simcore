@@ -12,7 +12,7 @@ from http import HTTPStatus
 
 import pytest
 from playwright.sync_api import APIRequestContext
-from pydantic import URL
+from pydantic import AnyUrl
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -35,7 +35,7 @@ def stop_pipeline(
 def test_resource_usage_tracker(
     log_in_and_out: None,
     api_request_context: APIRequestContext,
-    product_url: URL,
+    product_url: AnyUrl,
     stop_pipeline: None,
 ):
     # 1. Resource usage before

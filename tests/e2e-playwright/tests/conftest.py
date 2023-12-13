@@ -9,7 +9,7 @@ from collections.abc import Iterator
 
 import pytest
 from playwright.sync_api import APIRequestContext, BrowserContext, Page
-from pydantic import URL, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 
 
 @pytest.fixture
@@ -24,8 +24,8 @@ def api_request_context(context: BrowserContext):
 
 
 @pytest.fixture
-def product_url() -> URL:
-    return parse_obj_as(URL, os.environ["PRODUCT_URL"])
+def product_url() -> AnyUrl:
+    return TypeAdapter(AnyUrl).validate_python(os.environ["PRODUCT_URL"])
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def user_password() -> str:
 
 @pytest.fixture
 def product_billable() -> bool:
-    return parse_obj_as(bool, os.environ["PRODUCT_BILLABLE"])
+    return TypeAdapter(bool).validate_python(os.environ["PRODUCT_BILLABLE"])
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ def log_in_and_out(
     osparc_test_id_attribute: None,
     api_request_context: APIRequestContext,
     page: Page,
-    product_url: URL,
+    product_url: AnyUrl,
     user_name: str,
     user_password: str,
 ) -> Iterator[None]:

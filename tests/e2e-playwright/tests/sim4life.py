@@ -9,7 +9,7 @@ import re
 from http import HTTPStatus
 
 from playwright.sync_api import APIRequestContext, Page
-from pydantic import URL
+from pydantic import AnyUrl
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -27,7 +27,7 @@ def test_sim4life(
     page: Page,
     log_in_and_out: None,
     api_request_context: APIRequestContext,
-    product_url: URL,
+    product_url: AnyUrl,
     product_billable: bool,
     service_key: str,
     service_test_id: str,
