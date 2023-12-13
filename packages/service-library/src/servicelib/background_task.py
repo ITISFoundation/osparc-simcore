@@ -12,7 +12,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
@@ -34,7 +34,7 @@ async def _periodic_scheduled_task(
     wait_interval: float = interval.total_seconds()
     if wait_before_running:
         with log_context(
-            _logger, logging.DEBUG, f"waiting {wait_interval} seconds before running"
+            logger, logging.DEBUG, f"waiting {wait_interval} seconds before running"
         ):
             await asyncio.sleep(wait_interval)
 
@@ -42,10 +42,10 @@ async def _periodic_scheduled_task(
     async for attempt in AsyncRetrying(wait=wait_fixed(wait_interval)):
         with attempt:
             with log_context(
-                _logger,
+                logger,
                 logging.INFO,
                 msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
-            ), log_catch(_logger):
+            ), log_catch(logger):
                 await task(**task_kwargs)
 
             raise TryAgain
@@ -60,7 +60,7 @@ def start_periodic_task(
     **kwargs,
 ) -> asyncio.Task:
     with log_context(
-        _logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
+        logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
         return asyncio.create_task(
             _periodic_scheduled_task(
@@ -97,7 +97,7 @@ async def cancel_task(
             _, pending = await asyncio.wait((task,), timeout=timeout)
             if pending:
                 task_name = task.get_name()
-                _logger.info(
+                logger.info(
                     "tried to cancel '%s' but timed-out! %s", task_name, pending
                 )
                 raise PeriodicTaskCancellationError(task_name=task_name)
@@ -107,7 +107,7 @@ async def stop_periodic_task(
     asyncio_task: asyncio.Task, *, timeout: float | None = None
 ) -> None:
     with log_context(
-        _logger,
+        logger,
         logging.DEBUG,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):
