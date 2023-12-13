@@ -117,6 +117,17 @@ def _parse_computational(instance: Instance) -> ComputationalInstance | None:
 dynamic_parser = parse.compile("osparc-dynamic-autoscaled-worker-{key_name}")
 
 
+def _create_graylog_permalinks(
+    environment: dict[str, str | None], instance: Instance
+) -> str:
+    # https://monitoring.sim4life.io/graylog/search/6552235211aee4262e7f9f21?q=source%3A%22ip-10-0-1-67%22&rangetype=relative&from=28800
+    source_name = instance.private_ip_address.replace(".", "-")
+    time_span = (
+        arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)
+    ).total_seconds()
+    return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
+
+
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
     if result := dynamic_parser.search(name):
@@ -226,7 +237,9 @@ def _ssh_and_list_running_dyn_services(
         client.close()
 
 
-def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
+def _print_dynamic_instances(
+    instances: list[DynamicInstance], environment: dict[str, str | None]
+) -> None:
     time_now = arrow.utcnow()
     table = Table(
         "Instance",
@@ -260,7 +273,7 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
                 "ServiceName",
                 "ServiceVersion",
                 "Created Since",
-                Column("Need intervention"),
+                "Need intervention",
             )
             for service in instance.running_services:
                 service_table.add_row(
@@ -278,7 +291,7 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
             f"{instance.ec2_instance.instance_type}",
             instance.ec2_instance.public_ip_address,
             instance.ec2_instance.private_ip_address,
-            instance.name,
+            f"{instance.name}\n{_create_graylog_permalinks(environment, instance.ec2_instance)}",
             _timedelta_formatting(time_now - instance.ec2_instance.launch_time),
             instance_state,
             service_table,
@@ -287,7 +300,9 @@ def _print_dynamic_instances(instances: list[DynamicInstance]) -> None:
     print(table, flush=True)
 
 
-def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
+def _print_computational_clusters(
+    clusters: list[ComputationalCluster], environment: dict[str, str | None]
+) -> None:
     time_now = arrow.utcnow()
     table = Table(
         "Instance",
@@ -321,7 +336,7 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
             f"{cluster.primary.ec2_instance.instance_type}",
             cluster.primary.ec2_instance.public_ip_address,
             cluster.primary.ec2_instance.private_ip_address,
-            cluster.primary.name,
+            f"{cluster.primary.name}\n{_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
             _timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time),
             instance_state,
             f"{cluster.primary.user_id}",
@@ -344,7 +359,7 @@ def _print_computational_clusters(clusters: list[ComputationalCluster]) -> None:
                 f"{worker.ec2_instance.instance_type}",
                 worker.ec2_instance.public_ip_address,
                 worker.ec2_instance.private_ip_address,
-                worker.name,
+                f"{worker.name}\n{_create_graylog_permalinks(environment, worker.ec2_instance)}",
                 _timedelta_formatting(
                     time_now - arrow.get(worker.ec2_instance.launch_time)
                 ),
@@ -495,8 +510,8 @@ def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
         instances, ssh_key_path
     )
 
-    _print_dynamic_instances(dynamic_autoscaled_instances)
-    _print_computational_clusters(computational_clusters)
+    _print_dynamic_instances(dynamic_autoscaled_instances, environment)
+    _print_computational_clusters(computational_clusters, environment)
 
 
 if __name__ == "__main__":
