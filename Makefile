@@ -561,14 +561,6 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 	@$(MAKE_C) services/web/server $@
 
 
-.PHONY: code-analysis
-code-analysis: .codeclimate.yml ## runs code-climate analysis
-	# Validates $<
-	./scripts/code-climate.bash validate-config
-	# Running analysis
-	./scripts/code-climate.bash analyze
-
-
 .PHONY: auto-doc
 auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
 	# Parsing docker compose config $< and creating graph
