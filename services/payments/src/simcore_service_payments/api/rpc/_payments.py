@@ -2,6 +2,10 @@ import logging
 from decimal import Decimal
 
 from fastapi import FastAPI
+from models_library.api_schemas_payments.errors import (
+    PaymentsError,
+    PaymentServiceUnavailableError,
+)
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentTransaction,
@@ -23,7 +27,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
 async def init_payment(
     app: FastAPI,
     *,
@@ -60,7 +64,7 @@ async def init_payment(
         )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
 async def cancel_payment(
     app: FastAPI,
     *,
@@ -85,7 +89,7 @@ async def cancel_payment(
         )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
 async def get_payments_page(
     app: FastAPI,
     *,

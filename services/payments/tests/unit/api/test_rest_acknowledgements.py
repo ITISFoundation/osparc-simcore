@@ -11,13 +11,13 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pytest_mock import MockerFixture
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_payments.core.errors import (
+from models_library.api_schemas_payments.errors import (
     PaymentMethodNotFoundError,
     PaymentNotFoundError,
 )
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
