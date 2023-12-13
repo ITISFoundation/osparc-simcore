@@ -12,7 +12,7 @@ from simcore_service_dynamic_sidecar.core.emergency_space import (
 
 
 def test_emergency_disk_space_workflow(
-    mock_environment: EnvVarsDict, cleanup_emergency_disk_space: None
+    cleanup_emergency_disk_space: None, mock_environment: EnvVarsDict
 ):
     assert not _EMERGENCY_DISK_SPACE_NAME.exists()
     create_base_app()

@@ -305,5 +305,6 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
 
 @pytest.fixture
 def cleanup_emergency_disk_space() -> AsyncIterable[None]:
+    remove_emergency_disk_space()
     yield
     remove_emergency_disk_space()

@@ -9,7 +9,7 @@ from simcore_service_dynamic_sidecar.core.emergency_space import (
 
 
 async def test_emergency_disk_space_freed(
-    test_client: TestClient, cleanup_emergency_disk_space: None
+    cleanup_emergency_disk_space: None, test_client: TestClient
 ):
     assert _EMERGENCY_DISK_SPACE_NAME.exists()
     response = await test_client.post(f"/{API_VTAG}/disk/emergency:free")
