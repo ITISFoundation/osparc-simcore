@@ -46,7 +46,11 @@ _logger = logging.getLogger(__name__)
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
     rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
-    _logger.info("Process msg service_run_id: %s", rabbit_message.service_run_id)
+    _logger.info(
+        "Process %s msg service_run_id: %s",
+        rabbit_message.message_type,
+        rabbit_message.service_run_id,
+    )
     resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=app.state.engine
     )
@@ -220,8 +224,10 @@ async def _process_stop_event(
         service_run_id=msg.service_run_id
     )
     if not service_run_db:
-        _logger.error(
-            "Recieved stop event for service_run_id: %s, but we do not have the started record in the DB, INVESTIGATE!",
+        # NOTE: ANE/MD discussed. When RUT recieves stop event and he didn't recieved before any start or heartbeat event it probably means
+        # that container was not able to start. https://github.com/ITISFoundation/osparc-simcore/issues/5169
+        _logger.warning(
+            "Recieved stop event for service_run_id: %s, but we do not have any record in the DB, therefore the service probably didn't start correctly.",
             msg.service_run_id,
         )
         return
