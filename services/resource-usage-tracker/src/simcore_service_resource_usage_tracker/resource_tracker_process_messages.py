@@ -224,8 +224,8 @@ async def _process_stop_event(
         service_run_id=msg.service_run_id
     )
     if not service_run_db:
-        # NOTE: ANE/MD discussed. When RUT recieves stop event and he didn't recieved before any start or heartbeat event it probably means
-        # that container was not able to start. https://github.com/ITISFoundation/osparc-simcore/issues/5169
+        # NOTE: ANE/MD discussed. When the RUT receives a stop event and has not received before any start or heartbeat event, it probably means that
+        # we failed to start container. https://github.com/ITISFoundation/osparc-simcore/issues/5169
         _logger.warning(
             "Recieved stop event for service_run_id: %s, but we do not have any record in the DB, therefore the service probably didn't start correctly.",
             msg.service_run_id,
