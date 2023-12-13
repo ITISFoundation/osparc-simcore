@@ -8,8 +8,8 @@ from pydantic import ByteSize, parse_obj_as
 from .settings import ApplicationSettings
 
 _EMERGENCY_DISK_SPACE_NAME: Final[Path] = Path(
-    "/tmp/emergency_disk_space"
-)  # noqa: S108
+    "/tmp/emergency_disk_space"  # nosec # noqa: S108
+)
 _DEFAULT_CHUNK_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "8k")
 
 
