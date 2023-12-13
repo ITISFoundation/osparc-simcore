@@ -1,6 +1,8 @@
+arrow
 black
 boto3
 dask[distributed]
+mypy_boto3_ec2
 types-boto3
 parse
 paramiko
