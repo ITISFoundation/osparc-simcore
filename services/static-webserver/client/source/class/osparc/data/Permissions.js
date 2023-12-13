@@ -126,6 +126,7 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "tester": [
           "studies.template.create.all",
+          "studies.template.create.productAll",
           "services.all.read",
           "services.all.reupdate",
           "services.filePicker.read.all",

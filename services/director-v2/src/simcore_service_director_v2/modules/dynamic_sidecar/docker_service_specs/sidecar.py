@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -29,6 +30,8 @@ from .settings import (
     update_service_params_from_settings,
 )
 
+_logger = logging.getLogger(__name__)
+
 
 def extract_service_port_service_settings(
     settings: SimcoreServiceSettingsLabel,
@@ -42,6 +45,7 @@ def _get_environment_variables(
     app_settings: AppSettings,
     *,
     allow_internet_access: bool,
+    metrics_collection_allowed: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -52,6 +56,16 @@ def _get_environment_variables(
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
         state_exclude = scheduler_data.paths_mapping.state_exclude
+
+    callbacks_mapping: CallbacksMapping = scheduler_data.callbacks_mapping
+
+    if not metrics_collection_allowed:
+        _logger.info(
+            "user=%s disabled metrics collection, disable prometheus metrics for node_id=%s",
+            scheduler_data.user_id,
+            scheduler_data.node_uuid,
+        )
+        callbacks_mapping.metrics = None
 
     return {
         # These environments will be captured by
@@ -64,7 +78,7 @@ def _get_environment_variables(
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
-        "DY_SIDECAR_CALLBACKS_MAPPING": scheduler_data.callbacks_mapping.json(),
+        "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
@@ -139,9 +153,11 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
+    *,
     has_quota_support: bool,
     allow_internet_access: bool,
     hardware_info: HardwareInfo | None,
+    metrics_collection_allowed: bool,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -345,6 +361,7 @@ def get_dynamic_sidecar_spec(
                     scheduler_data,
                     app_settings,
                     allow_internet_access=allow_internet_access,
+                    metrics_collection_allowed=metrics_collection_allowed,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

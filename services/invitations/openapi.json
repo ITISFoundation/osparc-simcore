@@ -163,7 +163,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 40,
             "minLength": 1,
             "title": "Issuer",
             "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
@@ -221,7 +221,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 40,
             "minLength": 1,
             "title": "Issuer",
             "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"
@@ -289,7 +289,7 @@
         "properties": {
           "issuer": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 40,
             "minLength": 1,
             "title": "Issuer",
             "description": "Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum"

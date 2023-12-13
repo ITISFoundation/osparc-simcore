@@ -98,6 +98,30 @@ qx.Class.define("osparc.Preferences", {
       init: "always",
       event: "changeWalletIndicatorVisibility",
       apply: "__patchPreference"
+    },
+
+    userInactivityThreshold: {
+      check: "Number",
+      nullable: false,
+      init: 1800,
+      event: "changeUserInactivityThreshold",
+      apply: "__patchPreference"
+    },
+
+    jobConcurrencyLimit: {
+      check: "Number",
+      nullable: false,
+      init: 4,
+      event: "changeJobConcurrencyLimit",
+      apply: "__patchPreference"
+    },
+
+    allowMetricsCollection: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeAllowMetricsCollection",
+      apply: "__patchPreference"
     }
   },
 

@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import logging
 import tempfile
@@ -222,7 +223,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.acquire() as conn, conn.begin():
-            can: AccessRights | None = await get_file_access_rights(
+            can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if can.read:
@@ -248,9 +249,7 @@ class SimcoreS3DataManager(BaseDataManager):
         is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
-            can: AccessRights | None = await get_file_access_rights(
-                conn, user_id, file_id
-            )
+            can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
 
@@ -259,6 +258,16 @@ class SimcoreS3DataManager(BaseDataManager):
             # cancelled to prevent unwanted costs in AWS
             await self._clean_pending_upload(
                 conn, parse_obj_as(SimcoreS3FileID, file_id)
+            )
+
+            # ensure file is deleted first in case it already exists
+            await self.delete_file(
+                user_id=user_id,
+                file_id=file_id,
+                # NOTE: bypassing check since the project access rights don't play well
+                # with collaborators
+                # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
+                enforce_access_rights=False,
             )
 
             # initiate the file meta data table
@@ -327,7 +336,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
     ) -> None:
         async with self.engine.acquire() as conn, conn.begin():
-            can: AccessRights | None = await get_file_access_rights(
+            can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if not can.delete or not can.write:
@@ -343,14 +352,18 @@ class SimcoreS3DataManager(BaseDataManager):
                     file_id=fmd.file_id,
                     upload_id=fmd.upload_id,
                 )
+            # try to recover a file if it existed
+            with contextlib.suppress(S3KeyNotFoundError):
+                await get_s3_client(self.app).undelete_file(
+                    bucket=fmd.bucket_name, file_id=fmd.file_id
+                )
 
             try:
                 # try to revert to what we had in storage if any
                 await self._update_database_from_storage(conn, fmd)
             except S3KeyNotFoundError:
                 # the file does not exist, so we delete the entry in the db
-                async with self.engine.acquire() as conn:
-                    await db_file_meta_data.delete(conn, [fmd.file_id])
+                await db_file_meta_data.delete(conn, [fmd.file_id])
 
     async def complete_file_upload(
         self,
@@ -359,7 +372,7 @@ class SimcoreS3DataManager(BaseDataManager):
         uploaded_parts: list[UploadedPart],
     ) -> FileMetaData:
         async with self.engine.acquire() as conn:
-            can: AccessRights | None = await get_file_access_rights(
+            can: AccessRights = await get_file_access_rights(
                 conn, int(user_id), file_id
             )
             if not can.write:
@@ -419,9 +432,7 @@ class SimcoreS3DataManager(BaseDataManager):
     async def __ensure_read_access_rights(
         conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
     ) -> None:
-        can: AccessRights | None = await get_file_access_rights(
-            conn, user_id, storage_file_id
-        )
+        can: AccessRights = await get_file_access_rights(conn, user_id, storage_file_id)
         if not can.read:
             # NOTE: this is tricky. A user with read access can download and data!
             # If write permission would be required, then shared projects as views cannot
@@ -478,13 +489,29 @@ class SimcoreS3DataManager(BaseDataManager):
             raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
         return await self.__get_link(parse_obj_as(SimcoreS3FileID, file_id), link_type)
 
-    async def delete_file(self, user_id: UserID, file_id: StorageFileID):
+    async def delete_file(
+        self,
+        user_id: UserID,
+        file_id: StorageFileID,
+        *,
+        enforce_access_rights: bool = True,
+    ):
+        #   _   _  ___ _____ _____
+        #  | \ | |/ _ \_   _| ____|
+        #  |  \| | | | || | |  _|
+        #  | |\  | |_| || | | |___
+        #  |_| \_|\___/ |_| |_____|
+        # NOTE: (a very big one)
+        # `enforce_access_rights` is set to False because permissions are based on "project access rights"
+        # they should be based on data access rights (which is currently not present)
+        # Only use this in those circumstances where a collaborator requires to delete a file (the current
+        # permissions model will not allow him to do so, even though this is a legitimate action)
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
         async with self.engine.acquire() as conn, conn.begin():
-            can: AccessRights | None = await get_file_access_rights(
-                conn, user_id, file_id
-            )
-            if not can.delete:
-                raise FileAccessRightError(access_right="delete", file_id=file_id)
+            if enforce_access_rights:
+                can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
+                if not can.delete:
+                    raise FileAccessRightError(access_right="delete", file_id=file_id)
 
             with suppress(FileMetaDataNotFoundError):
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
@@ -783,7 +810,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return file_ids_to_remove
 
-    async def _clean_pending_upload(self, conn: SAConnection, file_id: SimcoreS3FileID):
+    async def _clean_pending_upload(
+        self, conn: SAConnection, file_id: SimcoreS3FileID
+    ) -> None:
         with suppress(FileMetaDataNotFoundError):
             fmd = await db_file_meta_data.get(conn, file_id)
             if is_valid_managed_multipart_upload(fmd.upload_id):
@@ -794,7 +823,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     upload_id=fmd.upload_id,
                 )
 
-    async def _clean_expired_uploads(self):
+    async def _clean_expired_uploads(self) -> None:
         """this method will check for all incomplete updates by checking
         the upload_expires_at entry in file_meta_data table.
         1. will try to update the entry from S3 backend if exists
@@ -805,14 +834,15 @@ class SimcoreS3DataManager(BaseDataManager):
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
             )
-        _logger.debug(
-            "found following pending uploads: [%s]",
-            [fmd.file_id for fmd in list_of_expired_uploads],
-        )
+
         if not list_of_expired_uploads:
             return
+        _logger.debug(
+            "found following expired uploads: [%s]",
+            [fmd.file_id for fmd in list_of_expired_uploads],
+        )
 
-        # try first to upload these from S3 (conservative)
+        # try first to upload these from S3, they might have finished and the client forgot to tell us (conservative)
         updated_fmds = await logged_gather(
             *(
                 self._update_database_from_storage_no_connection(fmd)
@@ -829,6 +859,30 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             if not isinstance(updated_fmd, FileMetaDataAtDB)
         ]
+
+        # try to revert the files if they exist
+        async def _revert_file(
+            conn: SAConnection, fmd: FileMetaDataAtDB
+        ) -> FileMetaDataAtDB:
+            await s3_client.undelete_file(fmd.bucket_name, fmd.file_id)
+            return await self._update_database_from_storage(conn, fmd)
+
+        s3_client = get_s3_client(self.app)
+        async with self.engine.acquire() as conn:
+            reverted_fmds = await logged_gather(
+                *(_revert_file(conn, fmd) for fmd in list_of_fmds_to_delete),
+                reraise=False,
+                log=_logger,
+                max_concurrency=MAX_CONCURRENT_DB_TASKS,
+            )
+        list_of_fmds_to_delete = [
+            fmd
+            for fmd, reverted_fmd in zip(
+                list_of_fmds_to_delete, reverted_fmds, strict=True
+            )
+            if not isinstance(reverted_fmd, FileMetaDataAtDB)
+        ]
+
         if list_of_fmds_to_delete:
             # delete the remaining ones
             _logger.debug(

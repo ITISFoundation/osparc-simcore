@@ -3,6 +3,11 @@ import datetime
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from arrow import utcnow
+from models_library.api_schemas_payments.errors import (
+    PaymentMethodAlreadyAckedError,
+    PaymentMethodNotFoundError,
+    PaymentMethodUniqueViolationError,
+)
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -12,11 +17,6 @@ from simcore_postgres_database.models.payments_methods import (
     payments_methods,
 )
 
-from ..core.errors import (
-    PaymentMethodAlreadyAckedError,
-    PaymentMethodNotFoundError,
-    PaymentMethodUniqueViolationError,
-)
 from ..models.db import PaymentsMethodsDB
 from .base import BaseRepository
 

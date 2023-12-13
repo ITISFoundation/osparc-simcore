@@ -10,18 +10,18 @@ import asyncio
 import sys
 import urllib.parse
 import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from time import perf_counter
-from typing import AsyncIterator, Awaitable, Callable, Iterator, cast
+from typing import cast
 
+import aioresponses
 import dotenv
 import pytest
 import simcore_service_storage
-from aiobotocore.session import get_session
 from aiohttp import web
-from aiohttp.test_utils import TestClient, unused_port
+from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
-from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
@@ -39,10 +39,8 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from moto.server import ThreadedMotoServer
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_host import get_localhost_ip
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
 from simcore_service_storage.dsm import get_dsm_provider
@@ -61,6 +59,7 @@ from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
+    "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
@@ -95,9 +94,8 @@ def package_dir(here) -> Path:
 @pytest.fixture(scope="session")
 def osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent
-    assert root_dir.exists() and any(
-        root_dir.glob("services")
-    ), "Is this service within osparc-simcore repo?"
+    assert root_dir.exists()
+    assert any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
     return root_dir
 
 
@@ -125,7 +123,7 @@ def project_env_devel_dict(project_slug_dir: Path) -> dict:
     return environ
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
@@ -134,7 +132,7 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
 ## FAKE DATA FIXTURES ----------------------------------------------
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_files_factory(tmpdir_factory) -> Callable[[int], list[Path]]:
     def _create_files(count: int) -> list[Path]:
         filepaths = []
@@ -166,76 +164,6 @@ def simcore_s3_dsm(client) -> SimcoreS3DataManager:
     )
 
 
-@pytest.fixture(scope="module")
-def mocked_s3_server() -> Iterator[ThreadedMotoServer]:
-    """creates a moto-server that emulates AWS services in place
-    NOTE: Never use a bucket with underscores it fails!!
-    """
-    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=unused_port())
-    # pylint: disable=protected-access
-    print(f"--> started mock S3 server on {server._ip_address}:{server._port}")
-    print(
-        f"--> Dashboard available on [http://{server._ip_address}:{server._port}/moto-api/]"
-    )
-    server.start()
-    yield server
-    server.stop()
-    print(f"<-- stopped mock S3 server on {server._ip_address}:{server._port}")
-
-
-@pytest.fixture
-async def mocked_s3_server_envs(
-    mocked_s3_server: ThreadedMotoServer, monkeypatch: pytest.MonkeyPatch
-) -> AsyncIterator[None]:
-    monkeypatch.setenv("S3_SECURE", "false")
-    monkeypatch.setenv(
-        "S3_ENDPOINT",
-        f"{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
-    )
-    monkeypatch.setenv("S3_ACCESS_KEY", "xxx")
-    monkeypatch.setenv("S3_SECRET_KEY", "xxx")
-    monkeypatch.setenv("S3_BUCKET_NAME", "pytestbucket")
-
-    yield
-
-    # cleanup the buckets
-    session = get_session()
-    async with session.create_client(
-        "s3",
-        endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # pylint: disable=protected-access
-        aws_secret_access_key="xxx",
-        aws_access_key_id="xxx",
-    ) as client:
-        await _remove_all_buckets(client)
-
-
-async def _clean_bucket_content(aiobotore_s3_client, bucket: S3BucketName):
-    response = await aiobotore_s3_client.list_objects_v2(Bucket=bucket)
-    while response["KeyCount"] > 0:
-        await aiobotore_s3_client.delete_objects(
-            Bucket=bucket,
-            Delete={
-                "Objects": [
-                    {"Key": obj["Key"]} for obj in response["Contents"] if "Key" in obj
-                ]
-            },
-        )
-        response = await aiobotore_s3_client.list_objects_v2(Bucket=bucket)
-
-
-async def _remove_all_buckets(aiobotore_s3_client):
-    response = await aiobotore_s3_client.list_buckets()
-    bucket_names = [
-        bucket["Name"] for bucket in response["Buckets"] if "Name" in bucket
-    ]
-    await asyncio.gather(
-        *(_clean_bucket_content(aiobotore_s3_client, bucket) for bucket in bucket_names)
-    )
-    await asyncio.gather(
-        *(aiobotore_s3_client.delete_bucket(Bucket=bucket) for bucket in bucket_names)
-    )
-
-
 @pytest.fixture
 async def storage_s3_client(
     client: TestClient,
@@ -255,7 +183,7 @@ def mock_config(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs,
-    datcore_adapter_service_mock: AioResponsesMock,
+    datcore_adapter_service_mock: aioresponses.aioresponses,
 ):
     # NOTE: this can be overriden in tests that do not need all dependencies up
     ...
@@ -514,7 +442,8 @@ def upload_file(
                 assert data
                 future = FileUploadCompleteFutureResponse.parse_obj(data)
                 if future.state == FileUploadCompleteState.NOK:
-                    raise ValueError(f"{data=}")
+                    msg = f"{data=}"
+                    raise ValueError(msg)
                 assert future.state == FileUploadCompleteState.OK
                 assert future.e_tag is not None
                 completion_etag = future.e_tag

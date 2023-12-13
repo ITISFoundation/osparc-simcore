@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from simcore_service_payments.services.notifier import setup_notifier
+from simcore_service_payments.services.socketio import setup_socketio
 
 from .._meta import (
     API_VERSION,
@@ -54,6 +56,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # Listening to Rabbitmq
     setup_auto_recharge_listener(app)
+    setup_socketio(app)
+    setup_notifier(app)
 
     # ERROR HANDLERS
     # ... add here ...

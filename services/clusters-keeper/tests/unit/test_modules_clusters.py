@@ -71,7 +71,7 @@ async def _assert_cluster_instance_created(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_ec2_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_ec2_tags) == 5
+    assert len(instance_ec2_tags) == 6
     assert all("Key" in x for x in instance_ec2_tags)
     assert all("Value" in x for x in instance_ec2_tags)
 
@@ -81,6 +81,7 @@ async def _assert_cluster_instance_created(
         "Name": f"{CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
         "user_id": f"{user_id}",
         "wallet_id": f"{wallet_id}",
+        "osparc-tag": "the pytest tag is here",
     }
     for tag in instances["Reservations"][0]["Instances"][0]["Tags"]:
         assert "Key" in tag
@@ -213,7 +214,7 @@ async def _assert_cluster_heartbeat_on_instance(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_tags) == 6
+    assert len(instance_tags) == 7
     assert all("Key" in x for x in instance_tags)
     list_of_heartbeats = list(
         filter(lambda x: x["Key"] == HEARTBEAT_TAG_KEY, instance_tags)  # type:ignore

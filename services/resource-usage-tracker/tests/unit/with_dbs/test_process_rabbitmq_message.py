@@ -59,7 +59,7 @@ async def test_process_event_functions(
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
     assert output.stopped_at is None
     assert output.service_run_status == "RUNNING"
-    first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
+    assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,

@@ -2,14 +2,13 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from servicelib.logging_utils import log_context
-from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
-from simcore_postgres_database.models.payments_transactions import (
-    PaymentTransactionState,
+from models_library.api_schemas_payments.errors import (
+    PaymentMethodNotFoundError,
+    PaymentNotFoundError,
 )
+from servicelib.logging_utils import log_context
 
 from ..._constants import ACKED, PGDB
-from ...core.errors import PaymentMethodNotFoundError, PaymentNotFoundError
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
@@ -20,8 +19,14 @@ from ...models.schemas.acknowledgements import (
     PaymentMethodID,
 )
 from ...services import payments, payments_methods
+from ...services.notifier import Notifier
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
-from ._dependencies import get_current_session, get_repository, get_rut_api
+from ._dependencies import (
+    create_repository,
+    get_current_session,
+    get_from_app_state,
+    get_rut_api,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -35,12 +40,13 @@ async def acknowledge_payment(
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
     repo_pay: Annotated[
-        PaymentsTransactionsRepo, Depends(get_repository(PaymentsTransactionsRepo))
+        PaymentsTransactionsRepo, Depends(create_repository(PaymentsTransactionsRepo))
     ],
     repo_methods: Annotated[
-        PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))
+        PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
     ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
+    notifier: Annotated[Notifier, Depends(get_from_app_state(Notifier))],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/init` on the payments-gateway API"""
@@ -54,34 +60,32 @@ async def acknowledge_payment(
         f"{payment_id=}",
     ):
         try:
-            transaction = await repo_pay.update_ack_payment_transaction(
-                payment_id=payment_id,
-                completion_state=(
-                    PaymentTransactionState.SUCCESS
-                    if ack.success
-                    else PaymentTransactionState.FAILED
-                ),
-                state_message=ack.message,
-                invoice_url=ack.invoice_url,
+            transaction = await payments.acknowledge_one_time_payment(
+                repo_pay, payment_id=payment_id, ack=ack
             )
         except PaymentNotFoundError as err:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if transaction.state == PaymentTransactionState.SUCCESS:
-        assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
-        background_tasks.add_task(payments.on_payment_completed, transaction, rut_api)
+    assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
+    background_tasks.add_task(
+        payments.on_payment_completed, transaction, rut_api, notifier=notifier
+    )
 
     if ack.saved:
-        created = await payments_methods.create_payment_method(
+        inserted = await payments_methods.insert_payment_method(
             repo=repo_methods,
             payment_method_id=ack.saved.payment_method_id,
             user_id=transaction.user_id,
             wallet_id=transaction.wallet_id,
             ack=ack.saved,
         )
-        background_tasks.add_task(payments_methods.on_payment_method_completed, created)
+        background_tasks.add_task(
+            payments_methods.on_payment_method_completed,
+            payment_method=inserted,
+            notifier=notifier,
+        )
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")
@@ -89,7 +93,10 @@ async def acknowledge_payment_method(
     payment_method_id: PaymentMethodID,
     ack: AckPaymentMethod,
     _session: Annotated[SessionData, Depends(get_current_session)],
-    repo: Annotated[PaymentsMethodsRepo, Depends(get_repository(PaymentsMethodsRepo))],
+    repo: Annotated[
+        PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
+    ],
+    notifier: Annotated[Notifier, Depends(get_from_app_state(Notifier))],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
@@ -102,7 +109,6 @@ async def acknowledge_payment_method(
         f"{payment_method_id=}",
     ):
         try:
-
             acked = await payments_methods.acknowledge_creation_of_payment_method(
                 repo=repo, payment_method_id=payment_method_id, ack=ack
             )
@@ -111,6 +117,9 @@ async def acknowledge_payment_method(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
             ) from err
 
-    if acked.state == InitPromptAckFlowState.SUCCESS:
         assert f"{payment_method_id}" == f"{acked.payment_method_id}"  # nosec
-        background_tasks.add_task(payments_methods.on_payment_method_completed, acked)
+        background_tasks.add_task(
+            payments_methods.on_payment_method_completed,
+            payment_method=acked,
+            notifier=notifier,
+        )

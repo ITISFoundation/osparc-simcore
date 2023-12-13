@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 25
+    MENU_BTN_DIMENSIONS: 24
   },
 
   members: {
@@ -140,11 +140,12 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           break;
         case "menu-selection-stack":
-          control = new qx.ui.container.Stack().set({
-            minWidth: this.self().MENU_BTN_DIMENSIONS,
-            minHeight: this.self().MENU_BTN_DIMENSIONS,
+          control = new qx.ui.container.Stack();
+          control.set({
+            alignX: "center",
             alignY: "middle"
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.OPTIONS
@@ -152,27 +153,46 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "tick-unselected": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
+          control = new qx.ui.basic.Atom().set({
+            appearance: "form-button-outlined",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            focusable: false
+          });
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
           menuSelectionStack.addAt(control, 1);
           break;
         }
         case "tick-selected": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/12").set({
+            appearance: "form-button-outlined",
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            padding: [6, 5],
+            focusable: false
+          });
+          control.getContentElement().setStyles({
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
+          });
           menuSelectionStack.addAt(control, 2);
           break;
         }
         case "menu-button": {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.form.MenuButton().set({
-            width: this.self().MENU_BTN_DIMENSIONS,
-            height: this.self().MENU_BTN_DIMENSIONS,
+            appearance: "form-button-outlined",
+            padding: [0, 8],
+            maxWidth: this.self().MENU_BTN_DIMENSIONS,
+            maxHeight: this.self().MENU_BTN_DIMENSIONS,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
           control.getContentElement().setStyles({
-            "border-radius": parseInt(this.self().MENU_BTN_DIMENSIONS/2) + "px"
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           menuSelectionStack.addAt(control, 0);

@@ -6,7 +6,12 @@ from collections.abc import Awaitable, Callable
 import pytest
 from faker import Faker
 from models_library.rabbitmq_basic_types import RPCMethodName
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCNamespace, RPCRouter
+from servicelib.rabbitmq import (
+    RabbitMQRPCClient,
+    RPCNamespace,
+    RPCRouter,
+    RPCServerError,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -14,6 +19,14 @@ pytest_simcore_core_services_selection = [
 
 
 router = RPCRouter()
+
+
+class MyBaseError(Exception):
+    ...
+
+
+class MyExpectedError(MyBaseError):
+    ...
 
 
 @router.expose()
@@ -28,10 +41,16 @@ async def an_int_method(a_global_arg: str, *, a_global_kwarg: str) -> int:
     return 34
 
 
+@router.expose(reraise_if_error_type=(MyBaseError,))
+async def raising_expected_error(a_global_arg: str, *, a_global_kwarg: str) -> int:
+    msg = "This could happen"
+    raise MyExpectedError(msg)
+
+
 @router.expose()
-async def a_raising_method(a_global_arg: str, *, a_global_kwarg: str) -> int:
+async def raising_unexpected_error(a_global_arg: str, *, a_global_kwarg: str) -> int:
     msg = "This is not good!"
-    raise RuntimeError(msg)
+    raise ValueError(msg)
 
 
 @pytest.fixture
@@ -71,8 +90,18 @@ async def test_exposed_methods(
     result = rpc_result
     assert result == 34
 
-    with pytest.raises(RuntimeError):
+    # unexpected errors are turned into RPCServerError
+    with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(
             router_namespace,
-            RPCMethodName(a_raising_method.__name__),
+            RPCMethodName(raising_unexpected_error.__name__),
         )
+
+    # This error was classified int he interface
+    with pytest.raises(MyBaseError) as exc_info:
+        await rpc_client.request(
+            router_namespace,
+            RPCMethodName(raising_expected_error.__name__),
+        )
+
+    assert isinstance(exc_info.value, MyExpectedError)

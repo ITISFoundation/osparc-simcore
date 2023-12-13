@@ -2,9 +2,10 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
+from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
@@ -12,7 +13,12 @@ from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.shared_user_preferences import (
+    AllowMetricsCollectionFrontendUserPreference,
+)
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
+from models_library.user_preferences import FrontendUserPreference
+from models_library.users import UserID
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -43,6 +49,9 @@ from .....utils.db import get_repository
 from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
+from ....db.repositories.user_preferences_frontend import (
+    UserPreferencesFrontendRepository,
+)
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
     BaseClientHTTPError,
@@ -460,3 +469,24 @@ async def get_hardware_info(
         return HardwareInfo(aws_ec2_instances=result.aws_ec2_instances)
     except PricingPlanUnitNotFoundError:
         return None
+
+
+async def get_allow_metrics_collection(
+    app: FastAPI, user_id: UserID, product_name: ProductName
+) -> bool:
+    repo = get_repository(app, UserPreferencesFrontendRepository)
+    preference: FrontendUserPreference | None = await repo.get_user_preference(
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=AllowMetricsCollectionFrontendUserPreference,
+    )
+
+    if preference is None:
+        return cast(
+            bool, AllowMetricsCollectionFrontendUserPreference.get_default_value()
+        )
+
+    allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.parse_obj(
+        preference
+    )
+    return cast(bool, allow_metrics_collection.value)

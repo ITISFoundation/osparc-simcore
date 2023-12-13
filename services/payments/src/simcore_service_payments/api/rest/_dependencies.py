@@ -2,8 +2,9 @@ import logging
 from collections.abc import AsyncGenerator, Callable
 from typing import Annotated, cast
 
-from fastapi import Depends, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.security import OAuth2PasswordBearer
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -43,19 +44,32 @@ def get_rut_api(request: Request) -> ResourceUsageTrackerApi:
     )
 
 
+def get_from_app_state(
+    app_state_mixin_subclass: type[SingletonInAppStateMixin],
+) -> Callable:
+    """Generic getter of app.state objects"""
+
+    def _(app: Annotated[FastAPI, Depends(get_app)]):
+        return app_state_mixin_subclass.get_from_app_state(app)
+
+    return _
+
+
 def get_db_engine(request: Request) -> AsyncEngine:
     engine: AsyncEngine = get_engine(request.app)
     assert engine  # nosec
     return engine
 
 
-def get_repository(repo_type: type[BaseRepository]) -> Callable:
-    async def _get_repo(
+def create_repository(repo_cls: type[BaseRepository]) -> Callable:
+    """Generic object factory of BaseRepository instances"""
+
+    async def _(
         engine: Annotated[AsyncEngine, Depends(get_db_engine)],
     ) -> AsyncGenerator[BaseRepository, None]:
-        yield repo_type(db_engine=engine)
+        yield repo_cls(db_engine=engine)
 
-    return _get_repo
+    return _
 
 
 # Implements `password` flow defined in OAuth2

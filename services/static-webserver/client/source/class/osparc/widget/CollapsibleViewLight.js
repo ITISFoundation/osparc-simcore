@@ -57,6 +57,7 @@ qx.Class.define("osparc.widget.CollapsibleViewLight", {
 
     styleCollapseExpandButton: function(btn) {
       btn.set({
+        appearance: "text-button",
         backgroundColor: "transparent",
         padding: 4,
         allowGrowX: false,
