@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Final
 
@@ -44,22 +43,13 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
         msg = f"Unexpected task={resource_tracking.heart_beat_task} already running!"
         raise RuntimeError(msg)
 
-    sleep_interval: float = (
-        resource_tracking_settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL.total_seconds()
-    )
-    with log_context(
-        _logger,
-        logging.DEBUG,
-        f"sleeping {sleep_interval} seconds before starting heart beat task",
-    ):
-        await asyncio.sleep(sleep_interval)
-
     with log_context(_logger, logging.DEBUG, "starting heart beat task"):
         resource_tracking.heart_beat_task = start_periodic_task(
             _heart_beat_task,
             app=app,
             interval=resource_tracking_settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
             task_name="resource_tracking_heart_beat",
+            wait_before_running=True,
         )
 
 
