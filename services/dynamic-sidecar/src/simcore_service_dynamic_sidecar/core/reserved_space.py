@@ -7,8 +7,8 @@ from pydantic import ByteSize, parse_obj_as
 
 from .settings import ApplicationSettings
 
-_EMERGENCY_DISK_SPACE_NAME: Final[Path] = Path(
-    "/tmp/emergency_disk_space"  # nosec # noqa: S108
+_RESERVED_DISK_SPACE_NAME: Final[Path] = Path(
+    "/tmp/reserved_disk_space"  # nosec # noqa: S108
 )
 _DEFAULT_CHUNK_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "8k")
 
@@ -28,13 +28,13 @@ def _write_random_binary_file(
             bytes_written += current_chunk_size
 
 
-def remove_emergency_disk_space() -> None:
-    _EMERGENCY_DISK_SPACE_NAME.unlink(missing_ok=True)
+def remove_reserved_disk_space() -> None:
+    _RESERVED_DISK_SPACE_NAME.unlink(missing_ok=True)
 
 
 def setup(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
 
     _write_random_binary_file(
-        _EMERGENCY_DISK_SPACE_NAME, settings.DYNAMIC_SIDECAR_EMERGENCY_SPACE_SIZE
+        _RESERVED_DISK_SPACE_NAME, settings.DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE
     )

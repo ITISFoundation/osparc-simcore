@@ -26,11 +26,11 @@ from ..modules.resource_tracking import setup_resource_tracking
 from ..modules.user_services_preferences import setup_user_services_preferences
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
-from .emergency_space import setup as setup_emergency_space
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
+from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import login_registry, volumes_fix_permissions
 
@@ -131,7 +131,7 @@ def create_base_app() -> FastAPI:
 
     app.include_router(get_main_router(app))
 
-    setup_emergency_space(app)
+    setup_reserved_space(app)
 
     return app
 

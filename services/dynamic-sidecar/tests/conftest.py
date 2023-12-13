@@ -26,8 +26,8 @@ from pytest_simcore.helpers.utils_envs import (
     setenvs_from_envfile,
 )
 from servicelib.json_serialization import json_dumps
-from simcore_service_dynamic_sidecar.core.emergency_space import (
-    remove_emergency_disk_space,
+from simcore_service_dynamic_sidecar.core.reserved_space import (
+    remove_reserved_disk_space,
 )
 
 logger = logging.getLogger(__name__)
@@ -304,7 +304,7 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
 
 
 @pytest.fixture
-def cleanup_emergency_disk_space() -> AsyncIterable[None]:
-    remove_emergency_disk_space()
+def cleanup_reserved_disk_space() -> AsyncIterable[None]:
+    remove_reserved_disk_space()
     yield
-    remove_emergency_disk_space()
+    remove_reserved_disk_space()

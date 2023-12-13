@@ -61,10 +61,10 @@ def mock_apply_observation_cycle(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_free_emergency_disk_space(mocker: MockerFixture) -> None:
+def mock_free_reserved_disk_space(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task"
     mocker.patch(
-        f"{module_base}.DynamicSidecarsScheduler.free_emergency_disk_space",
+        f"{module_base}.DynamicSidecarsScheduler.free_reserved_disk_space",
         autospec=True,
     )
 
@@ -213,13 +213,13 @@ async def test_409_response(
     assert "must be unique" in response.text
 
 
-async def test_free_emergency_disk_space(
+async def test_free_reserved_disk_space(
     mock_apply_observation_cycle: None,
-    mock_free_emergency_disk_space: None,
+    mock_free_reserved_disk_space: None,
     client: TestClient,
     observed_service: SchedulerData,
 ):
     response = client.post(
-        f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/disk/emergency:free",
+        f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/disk/reserved:free",
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT

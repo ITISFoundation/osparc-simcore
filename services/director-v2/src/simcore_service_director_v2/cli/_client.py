@@ -68,7 +68,7 @@ class ThinDV2LocalhostClient(BaseThinClient):
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
-    async def free_service_emergency_disk_space(self, node_uuid: str) -> Response:
+    async def free_service_reserved_disk_space(self, node_uuid: str) -> Response:
         return await self.client.post(
-            self._get_url(f"/services/{node_uuid}/disk/emergency:free")
+            self._get_url(f"/services/{node_uuid}/disk/reserved:free")
         )

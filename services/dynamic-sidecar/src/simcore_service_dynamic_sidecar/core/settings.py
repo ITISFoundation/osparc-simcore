@@ -94,7 +94,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=3000, description="ptsvd remote debugger starting port"
     )
 
-    DYNAMIC_SIDECAR_EMERGENCY_SPACE_SIZE: ByteSize = Field(
+    DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE: ByteSize = Field(
         parse_obj_as(ByteSize, "10Mib"),
         description=(
             "Disk space reserve when the dy-sidecar is started. Can be freed at "

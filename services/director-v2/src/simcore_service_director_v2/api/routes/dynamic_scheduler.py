@@ -259,14 +259,14 @@ async def delete_service_docker_resources(
 
 
 @router.post(
-    "/services/{node_uuid}/disk/emergency:free",
-    summary="Free up emergency disk space",
+    "/services/{node_uuid}/disk/reserved:free",
+    summary="Free up reserved disk space",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def free_emergency_disk_space(
+async def free_reserved_disk_space(
     node_uuid: NodeID,
     dynamic_sidecars_scheduler: Annotated[
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
 ):
-    await dynamic_sidecars_scheduler.free_emergency_disk_space(node_id=node_uuid)
+    await dynamic_sidecars_scheduler.free_reserved_disk_space(node_id=node_uuid)

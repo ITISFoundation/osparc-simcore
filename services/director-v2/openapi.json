@@ -1519,13 +1519,13 @@
         }
       }
     },
-    "/v2/dynamic_scheduler/services/{node_uuid}/disk/emergency:free": {
+    "/v2/dynamic_scheduler/services/{node_uuid}/disk/reserved:free": {
       "post": {
         "tags": [
           "dynamic scheduler"
         ],
-        "summary": "Free up emergency disk space",
-        "operationId": "free_emergency_disk_space_v2_dynamic_scheduler_services__node_uuid__disk_emergency_free_post",
+        "summary": "Free up reserved disk space",
+        "operationId": "free_reserved_disk_space_v2_dynamic_scheduler_services__node_uuid__disk_reserved_free_post",
         "parameters": [
           {
             "required": true,

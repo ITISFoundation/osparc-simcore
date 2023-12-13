@@ -64,9 +64,9 @@ def service_state(node_id: NodeID):
 
 
 @main.command()
-def free_emergency_disk_space(node_id: NodeID):
+def free_reserved_disk_space(node_id: NodeID):
     """
-    Frees service's emergency disk space
+    Frees service's reserved disk space
     """
     asyncio.run(async_free_service_disk_space(node_id))
 

@@ -268,9 +268,9 @@ class ThinSidecarsClient(BaseThinClient):
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_disk_emergency_free(
+    async def post_disk_reserved_free(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/disk/emergency:free")
+        url = self._get_url(dynamic_sidecar_endpoint, "/disk/reserved:free")
         return await self.client.post(url)

@@ -152,5 +152,5 @@ class SchedulerPublicInterface(ABC):
         """Restarts containers without saving or restoring the state or I/O ports"""
 
     @abstractmethod
-    async def free_emergency_disk_space(self, node_id: NodeID) -> None:
-        """Frees emergency disk space"""
+    async def free_reserved_disk_space(self, node_id: NodeID) -> None:
+        """Frees reserved disk space"""

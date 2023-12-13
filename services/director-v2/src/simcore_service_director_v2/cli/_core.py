@@ -284,5 +284,5 @@ async def async_service_state(node_id: NodeID) -> None:
 
 async def async_free_service_disk_space(node_id: NodeID) -> None:
     thin_dv2_localhost_client = ThinDV2LocalhostClient()
-    await thin_dv2_localhost_client.free_service_emergency_disk_space(node_id)
-    typer.echo("Done freeing emergency disk space!")
+    await thin_dv2_localhost_client.free_service_reserved_disk_space(node_id)
+    typer.echo("Done freeing reserved disk space!")

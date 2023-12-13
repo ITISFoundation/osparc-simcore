@@ -454,10 +454,10 @@ class SidecarsClient:  # pylint:disable=too-many-public-methods
         )
         return InactivityResponse.parse_obj(response.json())
 
-    async def free_emergency_disk_space(
+    async def free_reserved_disk_space(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.post_disk_emergency_free(dynamic_sidecar_endpoint)
+        await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
 
 
 def _get_proxy_configuration(
