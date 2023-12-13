@@ -1,5 +1,6 @@
 import logging
 from copy import deepcopy
+from typing import Any
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
@@ -146,31 +147,15 @@ def get_prometheus_monitoring_networks(
     )
 
 
-def get_dynamic_sidecar_spec(
+def _get_mounts(
+    *,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-    swarm_network_id: str,
-    settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
-    *,
     has_quota_support: bool,
-    allow_internet_access: bool,
-    hardware_info: HardwareInfo | None,
-    metrics_collection_allowed: bool,
-) -> AioDockerServiceSpec:
-    """
-    The dynamic-sidecar is responsible for managing the lifecycle
-    of the dynamic service. The director-v2 directly coordinates with
-    the dynamic-sidecar for this purpose.
-
-    returns: the compose the request body for service creation
-    SEE https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate
-    """
-    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
-
-    # MOUNTS -----------
-    mounts = [
+) -> list[dict[str, Any]]:
+    mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
         {
             "Source": "/var/run/docker.sock",
@@ -286,9 +271,13 @@ def get_dynamic_sidecar_spec(
                 has_quota_support=has_quota_support,
             )
         )
+    return mounts
 
-    # PORTS -----------
-    ports = []  # expose this service on an empty port
+
+def _get_ports(
+    *, dynamic_sidecar_settings: DynamicSidecarSettings, app_settings: AppSettings
+) -> list[dict[str, Any]]:
+    ports: list[dict[str, Any]] = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         ports.append(
             # server port
@@ -306,6 +295,43 @@ def get_dynamic_sidecar_spec(
                     "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUG_PORT,
                 }
             )
+    return ports
+
+
+def get_dynamic_sidecar_spec(
+    scheduler_data: SchedulerData,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    swarm_network_id: str,
+    settings: SimcoreServiceSettingsLabel,
+    app_settings: AppSettings,
+    *,
+    has_quota_support: bool,
+    allow_internet_access: bool,
+    hardware_info: HardwareInfo | None,
+    metrics_collection_allowed: bool,
+) -> AioDockerServiceSpec:
+    """
+    The dynamic-sidecar is responsible for managing the lifecycle
+    of the dynamic service. The director-v2 directly coordinates with
+    the dynamic-sidecar for this purpose.
+
+    returns: the compose the request body for service creation
+    SEE https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate
+    """
+    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
+
+    mounts = _get_mounts(
+        scheduler_data=scheduler_data,
+        dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        app_settings=app_settings,
+        has_quota_support=has_quota_support,
+    )
+
+    ports = _get_ports(
+        dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
+    )
 
     standard_simcore_docker_labels: dict[
         DockerLabelKey, str
