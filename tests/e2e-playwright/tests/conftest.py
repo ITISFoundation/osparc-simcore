@@ -8,7 +8,7 @@ import os
 from collections.abc import Iterator
 
 import pytest
-from playwright.sync_api import APIRequestContext, BrowserContext, Page
+from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from pydantic import AnyUrl, TypeAdapter
 
 
@@ -126,7 +126,7 @@ def log_in_and_out(
     product_url: AnyUrl,
     user_name: str,
     user_password: str,
-) -> Iterator[None]:
+) -> Iterator[WebSocket]:
     print(f"------> Logging in {product_url=} using {user_name=}/{user_password=}")
     page.goto(f"{product_url}")
 
@@ -146,7 +146,11 @@ def log_in_and_out(
     _user_password_box = page.get_by_test_id("loginPasswordFld")
     _user_password_box.click()
     _user_password_box.fill(user_password)
-    page.get_by_test_id("loginSubmitBtn").click()
+    # check the websocket got created
+    with page.expect_websocket() as ws_info:
+        page.get_by_test_id("loginSubmitBtn").click()
+    ws = ws_info.value
+    assert not ws.is_closed()
 
     # Welcome to Sim4Life
     page.wait_for_timeout(5000)
@@ -163,7 +167,7 @@ def log_in_and_out(
         f"------> Successfully logged in {product_url=} using {user_name=}/{user_password=}"
     )
 
-    yield
+    yield ws
 
     # TODO: this is not the UI way of logging out
     print(f"<------ Logging out of {product_url=} using {user_name=}/{user_password=}")
