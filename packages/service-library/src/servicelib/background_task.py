@@ -12,6 +12,8 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+from .decorators import async_delayed
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,18 +30,10 @@ async def _periodic_scheduled_task(
     *,
     interval: datetime.timedelta,
     task_name: str,
-    wait_before_running: bool,
     **task_kwargs,
 ) -> None:
-    wait_interval: float = interval.total_seconds()
-    if wait_before_running:
-        with log_context(
-            logger, logging.DEBUG, f"waiting {wait_interval} seconds before running"
-        ):
-            await asyncio.sleep(wait_interval)
-
     # NOTE: This retries forever unless cancelled
-    async for attempt in AsyncRetrying(wait=wait_fixed(wait_interval)):
+    async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt:
             with log_context(
                 logger,
@@ -56,20 +50,22 @@ def start_periodic_task(
     *,
     interval: datetime.timedelta,
     task_name: str,
-    wait_before_running: bool = False,
+    wait_before_running: datetime.timedelta = datetime.timedelta(0),
     **kwargs,
 ) -> asyncio.Task:
     with log_context(
         logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
-        return asyncio.create_task(
+        delayed_periodic_scheduled_task = async_delayed(wait_before_running)(
             _periodic_scheduled_task(
                 task,
                 interval=interval,
                 task_name=task_name,
-                wait_before_running=wait_before_running,
                 **kwargs,
-            ),
+            )
+        )
+        return asyncio.create_task(
+            delayed_periodic_scheduled_task(),
             name=task_name,
         )
 
