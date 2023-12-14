@@ -513,8 +513,9 @@ async def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsCl
     str_node_id = f"{node_id}"
 
     if str_node_id not in app.state.sidecars_api_clients:
-        app.state.sidecars_api_clients[str_node_id] = client = SidecarsClient(app)
-        await client.setup()
+        sidecars_client = SidecarsClient(app)
+        app.state.sidecars_api_clients[str_node_id] = sidecars_client
+        await sidecars_client.setup()
 
     client: SidecarsClient = app.state.sidecars_api_clients[str_node_id]
     return client
