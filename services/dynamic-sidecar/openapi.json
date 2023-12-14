@@ -1,0 +1,1349 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "simcore-service-dynamic-sidecar",
+    "description": " Implements a sidecar service to manage user's dynamic/interactive services",
+    "version": "1.1.1"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Default server: requests directed to serving url"
+    },
+    {
+      "url": "http://{host}:{port}",
+      "description": "Development server: can configure any base url",
+      "variables": {
+        "host": {
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "default": "8000"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Endpoint",
+        "operationId": "health_endpoint_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationHealth"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is unhealthy"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Metrics Endpoint",
+        "description": "Exposes metrics form the underlying user service.\n\nPossible responses:\n- HTTP 200 & empty body: user services did not start\n- HTTP 200 & prometheus metrics: was able to fetch data from user service\n- HTTP 500 & error message: something went wrong when fetching data from user service",
+        "operationId": "metrics_endpoint_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "error in recovering data from user service"
+          }
+        }
+      }
+    },
+    "/v1/containers": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Containers Docker Inspect",
+        "description": "Returns entire docker inspect data, if only_state is True,\nthe status of the containers is returned",
+        "operationId": "containers_docker_inspect_v1_containers_get",
+        "parameters": [
+          {
+            "description": "if True only show the status of the container",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "title": "Only Status",
+              "description": "if True only show the status of the container",
+              "default": false
+            },
+            "name": "only_status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Containers Docker Inspect V1 Containers Get"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- pulling the needed images\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
+        "operationId": "create_service_containers_task_v1_containers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainersCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Service Containers Task V1 Containers Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/inactivity": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Containers Inactivity",
+        "operationId": "get_containers_inactivity_v1_containers_inactivity_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InactivityResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}/logs": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Container Logs",
+        "description": "Returns the logs of a given container if found",
+        "operationId": "get_container_logs_v1_containers__id__logs_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            },
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "description": "Only return logs since this time, as a UNIX timestamp",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "title": "Timestamp",
+              "description": "Only return logs since this time, as a UNIX timestamp",
+              "default": 0
+            },
+            "name": "since",
+            "in": "query"
+          },
+          {
+            "description": "Only return logs before this time, as a UNIX timestamp",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "title": "Timestamp",
+              "description": "Only return logs before this time, as a UNIX timestamp",
+              "default": 0
+            },
+            "name": "until",
+            "in": "query"
+          },
+          {
+            "description": "Enabling this parameter will include timestamps in logs",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "title": "Display timestamps",
+              "description": "Enabling this parameter will include timestamps in logs",
+              "default": false
+            },
+            "name": "timestamps",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Container Logs V1 Containers  Id  Logs Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Container does not exists"
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/name": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Containers Name",
+        "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: matches against the exact network name\n        assigned to the container; `will include`\n        containers\n    exclude: matches if contained in the name of the\n        container; `will exclude` containers",
+        "operationId": "get_containers_name_v1_containers_name_get",
+        "parameters": [
+          {
+            "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filters",
+              "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
+            },
+            "name": "filters",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "title": "Response Get Containers Name V1 Containers Name Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No entrypoint container found or spec is not yet present"
+          },
+          "422": {
+            "description": "Filters could not be parsed"
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Inspect Container",
+        "description": "Returns information about the container, like docker inspect command",
+        "operationId": "inspect_container_v1_containers__id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Inspect Container V1 Containers  Id  Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Container does not exist"
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/io": {
+      "patch": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Enable/disable ports i/o",
+        "description": "enables or disables the following:\n- output ports pushing data\n- inputs ports from pulling data",
+        "operationId": "toggle_ports_io_v1_containers_ports_io_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPortsIOItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs/dirs": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Creates the output directories declared by the docker images's labels. It is more convenient to pass the labels from director-v2, since it already has all the machinery to call into director-v0 to retrieve them.",
+        "operationId": "create_output_dirs_v1_containers_ports_outputs_dirs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirsRequestItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}/networks:attach": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "attach container to a network, if not already attached",
+        "operationId": "attach_container_to_network_v1_containers__id__networks_attach_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachContainerToNetworkItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}/networks:detach": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "detach container from a network, if not already detached",
+        "operationId": "detach_container_from_network_v1_containers__id__networks_detach_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DetachContainerFromNetworkItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:down": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Remove the previously started containers",
+        "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Runs Docker Compose Down Task V1 Containers Down Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/state:restore": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restores the state of the dynamic service",
+        "operationId": "state_restore_task_v1_containers_state_restore_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response State Restore Task V1 Containers State Restore Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/state:save": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Stores the state of the dynamic service",
+        "operationId": "state_save_task_v1_containers_state_save_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response State Save Task V1 Containers State Save Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/inputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull input ports data",
+        "operationId": "ports_inputs_pull_task_v1_containers_ports_inputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "title": "Port Keys"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Ports Inputs Pull Task V1 Containers Ports Inputs Pull Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull output ports data",
+        "operationId": "ports_outputs_pull_task_v1_containers_ports_outputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "title": "Port Keys"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Ports Outputs Pull Task V1 Containers Ports Outputs Pull Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs:push": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Push output ports data",
+        "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Ports Outputs Push Task V1 Containers Ports Outputs Push Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:restart": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restarts previously started containers",
+        "operationId": "containers_restart_task_v1_containers_restart_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Containers Restart Task V1 Containers Restart Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/volumes/{id}": {
+      "put": {
+        "tags": [
+          "volumes"
+        ],
+        "summary": "Updates the state of the volume",
+        "operationId": "put_volume_state_v1_volumes__id__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/VolumeCategory"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutVolumeItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/disk/reserved:free": {
+      "post": {
+        "tags": [
+          "disk"
+        ],
+        "summary": "Frees up reserved disk space",
+        "operationId": "free_reserved_disk_space_v1_disk_reserved_free_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationHealth": {
+        "properties": {
+          "is_healthy": {
+            "type": "boolean",
+            "title": "Is Healthy",
+            "description": "returns True if the service sis running correctly",
+            "default": true
+          },
+          "error_message": {
+            "type": "string",
+            "title": "Error Message",
+            "description": "in case of error this gets set"
+          }
+        },
+        "type": "object",
+        "title": "ApplicationHealth"
+      },
+      "AttachContainerToNetworkItem": {
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "title": "Network Id"
+          },
+          "network_aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Network Aliases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "network_id",
+          "network_aliases"
+        ],
+        "title": "AttachContainerToNetworkItem"
+      },
+      "BootMode": {
+        "type": "string",
+        "enum": [
+          "CPU",
+          "GPU",
+          "MPI"
+        ],
+        "title": "BootMode",
+        "description": "An enumeration."
+      },
+      "ContainersCreate": {
+        "properties": {
+          "docker_compose_yaml": {
+            "type": "string",
+            "title": "Docker Compose Yaml"
+          },
+          "metrics_params": {
+            "$ref": "#/components/schemas/CreateServiceMetricsAdditionalParams"
+          }
+        },
+        "type": "object",
+        "required": [
+          "docker_compose_yaml",
+          "metrics_params"
+        ],
+        "title": "ContainersCreate"
+      },
+      "CreateDirsRequestItem": {
+        "properties": {
+          "outputs_labels": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceOutput"
+            },
+            "type": "object",
+            "title": "Outputs Labels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outputs_labels"
+        ],
+        "title": "CreateDirsRequestItem"
+      },
+      "CreateServiceMetricsAdditionalParams": {
+        "properties": {
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          },
+          "pricing_plan_id": {
+            "type": "integer",
+            "title": "Pricing Plan Id"
+          },
+          "pricing_unit_id": {
+            "type": "integer",
+            "title": "Pricing Unit Id"
+          },
+          "pricing_unit_cost_id": {
+            "type": "integer",
+            "title": "Pricing Unit Cost Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "simcore_user_agent": {
+            "type": "string",
+            "title": "Simcore User Agent"
+          },
+          "user_email": {
+            "type": "string",
+            "title": "User Email"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "service_key": {
+            "type": "string",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key"
+          },
+          "service_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version"
+          },
+          "service_resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ImageResources"
+            },
+            "type": "object",
+            "title": "Service Resources"
+          },
+          "service_additional_metadata": {
+            "type": "object",
+            "title": "Service Additional Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "simcore_user_agent",
+          "user_email",
+          "project_name",
+          "node_name",
+          "service_key",
+          "service_version",
+          "service_resources",
+          "service_additional_metadata"
+        ],
+        "title": "CreateServiceMetricsAdditionalParams",
+        "example": {
+          "wallet_id": 1,
+          "wallet_name": "a private wallet for me",
+          "pricing_plan_id": 1,
+          "pricing_unit_id": 1,
+          "pricing_unit_detail_id": 1,
+          "product_name": "osparc",
+          "simcore_user_agent": "undefined",
+          "user_email": "test@test.com",
+          "project_name": "_!New Study",
+          "node_name": "the service of a lifetime _ *!",
+          "service_key": "simcore/services/dynamic/test",
+          "service_version": "0.0.1",
+          "service_resources": {},
+          "service_additional_metadata": {}
+        }
+      },
+      "DetachContainerFromNetworkItem": {
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "title": "Network Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "network_id"
+        ],
+        "title": "DetachContainerFromNetworkItem"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImageResources": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
+            "title": "Image",
+            "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
+          },
+          "resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ResourceValue"
+            },
+            "type": "object",
+            "title": "Resources"
+          },
+          "boot_modes": {
+            "items": {
+              "$ref": "#/components/schemas/BootMode"
+            },
+            "type": "array",
+            "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+            "default": [
+              "CPU"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "image",
+          "resources"
+        ],
+        "title": "ImageResources",
+        "example": {
+          "image": "simcore/service/dynamic/pretty-intense:1.0.0",
+          "resources": {
+            "CPU": {
+              "limit": 4,
+              "reservation": 0.1
+            },
+            "RAM": {
+              "limit": 103079215104,
+              "reservation": 536870912
+            },
+            "VRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
+            }
+          }
+        }
+      },
+      "InactivityResponse": {
+        "properties": {
+          "seconds_inactive": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Seconds Inactive"
+          }
+        },
+        "type": "object",
+        "title": "InactivityResponse"
+      },
+      "PatchPortsIOItem": {
+        "properties": {
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_enabled"
+        ],
+        "title": "PatchPortsIOItem"
+      },
+      "PutVolumeItem": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/VolumeStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "PutVolumeItem"
+      },
+      "ResourceValue": {
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Limit"
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Reservation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit",
+          "reservation"
+        ],
+        "title": "ResourceValue"
+      },
+      "SelectBox": {
+        "properties": {
+          "structure": {
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Structure"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "structure"
+        ],
+        "title": "SelectBox"
+      },
+      "ServiceOutput": {
+        "properties": {
+          "displayOrder": {
+            "type": "number",
+            "title": "Displayorder",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "type": "string",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "title": "Type",
+            "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "contentSchema": {
+            "type": "object",
+            "title": "Contentschema",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
+          },
+          "fileToKeyMap": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            },
+            "type": "object",
+            "title": "Filetokeymap",
+            "description": "Place the data associated with the named keys in files"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "description": "Units, when it refers to a physical quantity"
+          },
+          "widget": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "title": "Widget",
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "title": "ServiceOutput",
+        "description": "Base class for service input/outputs"
+      },
+      "Structure": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "Structure"
+      },
+      "TextArea": {
+        "properties": {
+          "minHeight": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Minheight",
+            "description": "minimum Height of the textarea",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "minHeight"
+        ],
+        "title": "TextArea"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VolumeCategory": {
+        "type": "string",
+        "enum": [
+          "OUTPUTS",
+          "INPUTS",
+          "STATES",
+          "SHARED_STORE"
+        ],
+        "title": "VolumeCategory",
+        "description": "These uniquely identify volumes which are mounted by\nthe dynamic-sidecar and user services.\n\nThis is primarily used to keep track of the status of\neach individual volume on the volumes.\n\nThe status is ingested by the agent and processed\nwhen the volume is removed."
+      },
+      "VolumeStatus": {
+        "type": "string",
+        "enum": [
+          "CONTENT_NEEDS_TO_BE_SAVED",
+          "CONTENT_WAS_SAVED",
+          "CONTENT_NO_SAVE_REQUIRED"
+        ],
+        "title": "VolumeStatus",
+        "description": "Used by the agent to figure out what to do with the data\npresent on the volume."
+      },
+      "Widget": {
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WidgetType"
+              }
+            ],
+            "description": "type of the property"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextArea"
+              },
+              {
+                "$ref": "#/components/schemas/SelectBox"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "details"
+        ],
+        "title": "Widget"
+      },
+      "WidgetType": {
+        "type": "string",
+        "enum": [
+          "TextArea",
+          "SelectBox"
+        ],
+        "title": "WidgetType",
+        "description": "An enumeration."
+      }
+    }
+  }
+}
