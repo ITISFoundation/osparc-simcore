@@ -23,6 +23,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.set({
+      paddingBottom: 60
+    });
+
     this.__resourcesList = [];
 
     const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
@@ -189,6 +193,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
+        appearance: resourceData.type ? `pb-${resourceData.type}` : `pb-${resourceData.resourceType}`,
         resourceData: resourceData,
         tags
       });
@@ -210,20 +215,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "tagClicked",
         "emptyStudyClicked"
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
-
-      if (resourceData.resourceType === "study") {
-        card.setBackgroundColor("info_bg");
-      } else if (resourceData.resourceType === "service") {
-        if (resourceData.type === "computational") {
-          card.setBackgroundColor("info_bg");
-        } else if (resourceData.type === "dynamic") {
-          card.setBackgroundColor("success_bg");
-        } else {
-          card.setBackgroundColor("success_bg");
-        }
-      } else {
-        card.setBackgroundColor("warning_bg");
-      }
       return card;
     },
 

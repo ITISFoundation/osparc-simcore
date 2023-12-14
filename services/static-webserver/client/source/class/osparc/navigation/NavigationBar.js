@@ -123,7 +123,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         this.getChildControl("logo-powered");
       }
 
-      this.getChildControl("dashboard-label");
       this.getChildControl("dashboard-button");
 
       // center-items
@@ -193,16 +192,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
             ...this.self().BUTTON_OPTIONS
           });
+          control.set({
+            appearance: "fab-button"
+          });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
-          this.getChildControl("left-items").add(control);
-          break;
-        case "dashboard-label":
-          control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
-            paddingLeft: 10,
-            font: "text-14"
-          });
-          osparc.utils.Utils.setIdToWidget(control, "dashboardLabel");
           this.getChildControl("left-items").add(control);
           break;
         case "study-title-options":
@@ -232,6 +226,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "credits-menu-button": {
           const currentUsage = new osparc.desktop.credits.CurrentUsage();
           control = new osparc.navigation.CreditsMenuButton().set({
+            appearance: "fab-button",
             currentUsage,
             maxHeight: this.self().HEIGHT
           });
@@ -314,7 +309,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     _applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "dashboard":
-          this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("study-title-options").exclude();
           this.getChildControl("read-only-info").exclude();
@@ -325,7 +319,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "workbench":
         case "guided":
         case "app":
-          this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           this.getChildControl("study-title-options").show();
           if (this.__tabButtons) {

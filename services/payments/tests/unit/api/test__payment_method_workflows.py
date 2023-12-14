@@ -22,6 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 from simcore_service_payments.models.schemas.acknowledgements import AckPayment
 
@@ -93,7 +94,7 @@ async def test_successful_create_payment_method_workflow(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
-        timeout_s=None if is_pdb_enabled else 5,
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
     assert isinstance(inited, PaymentMethodInitiated)

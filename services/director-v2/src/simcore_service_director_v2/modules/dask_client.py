@@ -19,7 +19,6 @@ from http.client import HTTPException
 from typing import Any
 
 import distributed
-from dask_task_models_library.constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
@@ -30,6 +29,9 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerRemoteFct,
     ContainerTaskParameters,
     LogFileUploadURL,
+)
+from dask_task_models_library.resource_constraints import (
+    create_ec2_resource_constraint_key,
 )
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
@@ -228,7 +230,9 @@ class DaskClient:
             )
             if hardware_info.aws_ec2_instances:
                 dask_resources[
-                    f"{DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY}:{hardware_info.aws_ec2_instances[0]}"
+                    create_ec2_resource_constraint_key(
+                        hardware_info.aws_ec2_instances[0]
+                    )
                 ] = 1
 
             dask_utils.check_scheduler_is_still_the_same(

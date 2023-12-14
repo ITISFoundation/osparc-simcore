@@ -7,7 +7,12 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from aws_library.ec2.models import EC2InstanceData
+from aws_library.ec2.models import (
+    AWSTagKey,
+    AWSTagValue,
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+)
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
@@ -24,6 +29,18 @@ def cluster_machines_name_prefix(faker: Faker) -> str:
     return faker.pystr()
 
 
+@pytest.fixture
+def ec2_boot_specs(app_settings: ApplicationSettings) -> EC2InstanceBootSpecific:
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
+    ec2_boot_specs = next(
+        iter(
+            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.values()
+        )
+    )
+    assert isinstance(ec2_boot_specs, EC2InstanceBootSpecific)
+    return ec2_boot_specs
+
+
 def test_create_startup_script(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
@@ -31,9 +48,21 @@ def test_create_startup_script(
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
     clusters_keeper_docker_compose: dict[str, Any],
+    ec2_boot_specs: EC2InstanceBootSpecific,
 ):
-    startup_script = create_startup_script(app_settings, cluster_machines_name_prefix)
+    additional_custom_tags = {
+        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+    }
+    startup_script = create_startup_script(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        ec2_boot_specific=ec2_boot_specs,
+        additional_custom_tags=additional_custom_tags,
+    )
     assert isinstance(startup_script, str)
+    assert len(ec2_boot_specs.custom_boot_scripts) > 0
+    for boot_script in ec2_boot_specs.custom_boot_scripts:
+        assert boot_script in startup_script
     # we have commands to pipe into a docker-compose file
     assert " | base64 -d > docker-compose.yml" in startup_script
     # we have commands to init a docker-swarm
@@ -84,6 +113,22 @@ def test_create_startup_script(
     ]
     assert all(
         re.search(rf"{i}=\[(\\\".+\\\")*\]", startup_script) for i in list_settings
+    )
+
+    # check dicts have \' in front
+    dict_settings = [
+        "WORKERS_EC2_INSTANCES_ALLOWED_TYPES",
+        "WORKERS_EC2_INSTANCES_CUSTOM_TAGS",
+    ]
+    assert all(
+        re.search(rf"{i}=\'{{(\".+\":\s\".*\")+}}\'", startup_script)
+        for i in dict_settings
+    )
+
+    # check the additional tags are in
+    assert all(
+        f'"{key}": "{value}"' in startup_script
+        for key, value in additional_custom_tags.items()
     )
 
 

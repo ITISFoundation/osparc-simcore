@@ -28,7 +28,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from settings_library.rabbit import RabbitSettings
 from starlette import status
 from starlette.testclient import TestClient
@@ -49,6 +51,8 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 @pytest.fixture
 def mock_env(
+    mock_env: EnvVarsDict,
+    minimal_configuration: None,
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
@@ -78,7 +82,7 @@ def minimal_configuration(
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: dict[str, str],
+    postgres_host_config: PostgresTestConfig,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
@@ -164,7 +168,6 @@ COMPUTATION_URL: str = "v2/computations"
     ],
 )
 def test_invalid_computation(
-    minimal_configuration: None,
     client: TestClient,
     body: dict,
     exp_response: int,
@@ -180,7 +183,6 @@ def test_invalid_computation(
 
 
 async def test_start_empty_computation_is_refused(
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -384,7 +386,6 @@ class PartialComputationParams:
 )
 async def test_run_partial_computation(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -536,7 +537,6 @@ async def test_run_partial_computation(
 
 async def test_run_computation(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -655,7 +655,6 @@ async def test_run_computation(
 
 
 async def test_abort_computation(
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -734,7 +733,6 @@ async def test_abort_computation(
 
 
 async def test_update_and_delete_computation(
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -861,7 +859,6 @@ async def test_update_and_delete_computation(
 
 
 async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -905,7 +902,6 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
 
 
 async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
-    minimal_configuration: None,
     client: TestClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -974,7 +970,6 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
 
 
 async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
-    minimal_configuration: None,
     client: TestClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -1056,7 +1051,6 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
 
 
 async def test_burst_create_computations(
-    minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable[..., Awaitable[ProjectAtDB]],
