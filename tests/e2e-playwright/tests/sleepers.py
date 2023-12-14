@@ -1,3 +1,4 @@
+import functools
 import json
 import re
 from typing import Any
@@ -19,6 +20,22 @@ def _socketio_42_message(message: str) -> SocketIOEvent:
     return SocketIOEvent(name=data[0], obj=json.loads(data[1]))
 
 
+def _wait_for_project_state_updated(message: str, *, expected_state: str) -> bool:
+    print("<---- received websocket message:")
+    print(message)
+    if not message.startswith("42"):
+        # socket.io encodes messages like so
+        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+        return False
+    # now we have a message like ["messageEvent", data]
+    decoded_message = _socketio_42_message(message)
+    if decoded_message.name != "projectStateUpdated":
+        return False
+    assert decoded_message.obj["data"]["state"]["value"] == expected_state
+
+    return True
+
+
 def test_sleepers(page: Page, log_in_and_out: WebSocket, product_billable: bool):
     # open service tab and filter for sleeper
     page.get_by_test_id("servicesTabBtn").click()
@@ -33,23 +50,11 @@ def test_sleepers(page: Page, log_in_and_out: WebSocket, product_billable: bool)
         "studyBrowserListItem_simcore/services/comp/itis/sleeper"
     ).click()
 
-    def _received_websocket_message(message: str) -> bool:
-        print("<---- received websocket message:")
-        print(message)
-        if not message.startswith("42"):
-            # socket.io encodes messages like so
-            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            return False
-        # now we have a message like ["messageEvent", data]
-        decoded_message = _socketio_42_message(message)
-        if decoded_message.name != "projectStateUpdated":
-            return False
-        assert decoded_message.obj["data"]["state"]["value"] == "NOT_STARTED"
-
-        return True
-
     with log_in_and_out.expect_event(
-        "framereceived", _received_websocket_message
+        "framereceived",
+        functools.partial(
+            _wait_for_project_state_updated, expected_message="NOT_STARTED"
+        ),
     ) as event, page.expect_response(re.compile(r"/projects/")):
         # Project detail view pop-ups shows
         page.get_by_test_id("openResource").click()
