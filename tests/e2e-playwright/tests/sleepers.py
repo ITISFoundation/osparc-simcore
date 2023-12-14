@@ -1,4 +1,35 @@
-from playwright.sync_api import Page
+import re
+
+from playwright.sync_api import Page, WebSocket
+
+
+def on_web_socket(ws: WebSocket) -> None:
+    print(f"WebSocket opened: {ws.url}")
+    ws.on("framesent", lambda payload: print(payload))
+    ws.on("framereceived", lambda payload: print(payload))
+    ws.on("close", lambda payload: print("WebSocket closed"))
+
+
+def test_sleepers(page: Page, log_in_and_out: None, product_billable: bool):
+    # connect and listen to websocket
+    page.on("websocket", on_web_socket)
+
+    # open service tab and filter for sleeper
+    page.get_by_test_id("servicesTabBtn").click()
+    _textbox = page.get_by_role("textbox", name="search")
+    _textbox.fill("sleeper")
+    _textbox.press("Enter")
+    page.get_by_test_id(
+        "studyBrowserListItem_simcore/services/comp/itis/sleeper"
+    ).click()
+
+    with page.expect_response(re.compile(r"/projects/")) as response_info:
+        # Project detail view pop-ups shows
+        page.get_by_test_id("openResource").click()
+        if product_billable:
+            # Open project with default resources
+            page.get_by_test_id("openWithResources").click()
+        page.wait_for_timeout(1000)
 
 
 def test_example(page: Page) -> None:
