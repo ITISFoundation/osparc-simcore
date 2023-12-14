@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
                   studyId: this.__studyUuid
                 }
               }).then(({data}) => {
-                if (data) {
+                if (data["is_inactive"]) {
                   this.__userIdled();
                 } else {
                   this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
