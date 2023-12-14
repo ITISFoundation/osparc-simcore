@@ -63,7 +63,7 @@ def log_in_and_out(
     user_password: str,
 ) -> Iterator[None]:
     print(f"------> Logging in {product_url=} using {user_name=}/{user_password=}")
-    page.goto(product_url)
+    page.goto(f"{product_url}")
 
     # In case the accept cookies or new release window shows up, we accept
     page.wait_for_timeout(2000)
