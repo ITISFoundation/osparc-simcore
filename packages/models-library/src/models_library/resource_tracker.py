@@ -68,7 +68,7 @@ class HardwareInfo(BaseModel):
 
     @validator("aws_ec2_instances")
     @classmethod
-    def warn_if_too_many_instances_are_present(cls, v) -> list[str]:
+    def warn_if_too_many_instances_are_present(cls, v: list[str]) -> list[str]:
         if len(v) > 1:
             msg = f"Only 1 entry is supported at the moment, received {v}"
             raise ValueError(msg)
