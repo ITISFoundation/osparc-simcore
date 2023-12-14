@@ -21,7 +21,7 @@ from dotenv import dotenv_values
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
-from rich.table import Column, Table
+from rich.table import Column, Style, Table
 
 app = typer.Typer()
 
@@ -257,6 +257,8 @@ def _print_dynamic_instances(
         ),
         title="dynamic autoscaled instances",
         show_footer=True,
+        padding=(0, 0),
+        title_style=Style(color="red", encircle=True),
     )
     for instance in track(
         instances, description="Preparing dynamic autoscaled instances details..."
@@ -266,7 +268,7 @@ def _print_dynamic_instances(
             if instance.ec2_instance.state["Name"] == "running"
             else f"[yellow]{instance.ec2_instance.state['Name']}[/yellow]"
         )
-        service_table = "n/a"
+        service_table = "[i]n/a[/i]"
         if instance.running_services:
             service_table = Table(
                 "UserID",
@@ -285,7 +287,7 @@ def _print_dynamic_instances(
                     service.service_name,
                     service.service_version,
                     _timedelta_formatting(time_now - service.created_at),
-                    f"{service.needs_manual_intervention}",
+                    f"{'[red]' if service.needs_manual_intervention else ''}{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
                 )
 
         table.add_row(
@@ -321,6 +323,8 @@ def _print_computational_clusters(
         "known jobs",
         "processing jobs",
         title="computational clusters",
+        padding=(0, 0),
+        title_style=Style(color="red", encircle=True),
     )
 
     for cluster in track(

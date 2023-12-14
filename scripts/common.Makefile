@@ -148,18 +148,6 @@ mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy 
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src
 
 
-.PHONY: codeclimate
-codeclimate: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
-	# Copying config
-	cp $(REPO_BASE_DIR)/.codeclimate.yml $(CURDIR)/.codeclimate.yml
-	# Validates $< at ${PWD}
-	$(REPO_BASE_DIR)/scripts/code-climate.bash validate-config
-	# Running analysis
-	$(REPO_BASE_DIR)/scripts/code-climate.bash analyze
-	# Removing tmp config
-	@-rm $(CURDIR)/.codeclimate.yml
-
-
 .PHONY: codestyle
 codestyle codestyle-ci: ## enforces codestyle (isort & black) finally runs pylint & mypy
 	@$(SCRIPTS_DIR)/codestyle.bash $(if $(findstring -ci,$@),ci,development) $(shell basename "${SRC_DIR}")
