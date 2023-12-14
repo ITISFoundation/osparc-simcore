@@ -50,7 +50,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   },
 
   events: {
-    "promoteToCollaborator": "qx.event.type.Data",
+    "promoteToEditor": "qx.event.type.Data",
     "promoteToOwner": "qx.event.type.Data",
     "demoteToUser": "qx.event.type.Data",
     "demoteToEditor": "qx.event.type.Data",
