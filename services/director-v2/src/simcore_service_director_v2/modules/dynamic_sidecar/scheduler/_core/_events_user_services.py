@@ -204,3 +204,5 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     scheduler_data.dynamic_sidecar.were_containers_created = True
 
     scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
+
+    _logger.info("Internal state after creating user services %s", scheduler_data)
