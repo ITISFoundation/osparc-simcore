@@ -276,6 +276,12 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "pb-locked": {
+      style: {
+        backgroundColor: "pb-locked"
+      }
+    },
+
     "no-radius-button": {
       style: {
         radius: 0
@@ -329,6 +335,27 @@ qx.Theme.define("osparc.theme.Decoration", {
         radius: 5
       }
     },
+    "form-button-left": {
+      include: "form-button",
+      style: {
+        width: [1, 1, 1, 1],
+        radius: [5, 0, 0, 5]
+      }
+    },
+    "form-button-middle": {
+      include: "form-button",
+      style: {
+        width: [1, 0],
+        radius: 0
+      }
+    },
+    "form-button-right": {
+      include: "form-button",
+      style: {
+        width: [1, 1, 1, 0],
+        radius: [0, 5, 5, 0]
+      }
+    },
     "form-button-outlined": {
       include: "form-button",
       style: {
@@ -352,30 +379,75 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid"
       }
     },
-    "form-button-hover": {
+    "form-button-hovered": {
       include: "form-button",
       style: {
         color: "default-button-hover",
         backgroundColor: "default-button-hover-background"
       }
     },
-    "form-button-focus": {
+    "form-button-checked": {
+      include: "form-button",
+      style: {
+        color: "default-button-disabled",
+        backgroundColor: "default-button"
+      }
+    },
+    "form-button-hovered-checked": {
+      include: "form-button",
+      style: {
+        color: "default-button-disabled",
+        backgroundColor: "default-button"
+      }
+    },
+    "form-button-hovered-right": {
+      include: "form-button-right",
+      style: {
+        color: "default-button-hover",
+        backgroundColor: "default-button-hover-background"
+      }
+    },
+    "form-button-checked-right": {
+      include: "form-button-right",
+      style: {
+        color: "default-button",
+        backgroundColor: "default-button"
+      }
+    },
+    "form-button-hovered-left": {
+      include: "form-button-left",
+      style: {
+        color: "default-button-hover",
+        backgroundColor: "default-button-hover-background"
+      }
+    },
+    "form-button-checked-left": {
+      include: "form-button-left",
+      style: {
+        color: "default-button",
+        backgroundColor: "default-button"
+      }
+    },
+    "form-button-focused": {
       include: "form-button",
       style: {
         color: "default-button-focus",
-        backgroundColor: "default-button-focus"
+        backgroundColor: "default-button-focus-background"
       }
     },
     "form-button-active": {
       include: "form-button",
       style: {
-        color: "default-button-active"
+        color: "default-button-active",
+        backgroundColor: "default-button-focus-background"
       }
     },
+
     "form-button-disabled": {
       include: "form-button",
       style: {
-        color: "transparent"
+        color: "transparent",
+        backgroundColor: "transparent"
       }
     },
     "text-button": {
@@ -386,10 +458,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     },
 
     "toolbar-button": {
-      include: "form-button-outlined",
-      style: {
-        backgroundColor: "default-button"
-      }
+      include: "form-button"
     },
 
     "toolbar-button-hovered": {

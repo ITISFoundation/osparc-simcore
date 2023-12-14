@@ -19,6 +19,7 @@ qx.Theme.define("osparc.theme.products.osparc.ColorDark", {
   include: osparc.theme.ColorDark,
 
   colors: {
+    "default-button": "#8329bf",
     "strong-main": "#8329bf"
   }
 });

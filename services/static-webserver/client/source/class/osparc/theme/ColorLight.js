@@ -23,7 +23,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
     // main
-
     "background-main": "rgba(250,250,250, 1)", // Is manipulated
     "background-main-1": "c02",
     "background-main-2": "c03",
@@ -58,7 +57,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "default-button-text": "contrasted-text-light",
     "default-button-text-outline": "contrasted-text-dark",
     "default-button-text-action": "contrasted-text-dark",
-    "default-button-text-disabled": "text-disabled",
     "default-button": "rgba(10, 182, 255, 1)",
     "default-button-hover": "rgba(4, 73, 102, 1)",
     "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
@@ -66,6 +64,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "default-button-active-background": "rgba(4, 73, 102, 0.04)",
     "default-button-focus": "rgba(10, 182, 255, 1)",
     "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
+    "default-button-disabled": "text-disabled",
+    "default-button-disabled-background": "transparent",
     "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
     // shadows
@@ -83,19 +83,19 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "material-button-background-disabled":  "transparent",
     "material-button-background-hovered":  "default-button-hover-background",
     "material-button-background-pressed":  "default-button-active-background",
-    "material-button-text-disabled": "default-button-text-disabled",
+    "material-button-text-disabled": "default-button-disabled",
     "material-button-text": "default-button-text",
 
     // material-textfield
     "material-textfield": "input_background",
     "material-textfield-focused": "success",
-    "material-textfield-disabled": "default-button-text-disabled",
+    "material-textfield-disabled": "default-button-disabled",
     "material-textfield-invalid": "error",
     "invalid": "error",
 
     // backgrounds
     "background-selected": "success_bg",
-    "background-selected-disabled":  "default-button-text-disabled",
+    "background-selected-disabled":  "default-button-disabled",
     "background-selected-dark":  "success_bg",
     "background-disabled": "background-main",
     "background-disabled-checked":  "background-main-1",
@@ -181,7 +181,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-selected-background": "success_bg",
+    "node-background": "rgba(174, 191, 207, 0.8)",
+    "node-selected-background": "success",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 
