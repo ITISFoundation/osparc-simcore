@@ -12,6 +12,7 @@ from settings_library.rabbit import RabbitSettings
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
+from ._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from ._models import RPCNamespacedMethodName
 from ._rpc_router import RPCRouter
@@ -65,7 +66,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s: PositiveInt | None = 5,
+        timeout_s: PositiveInt | None = RPC_REQUEST_DEFAULT_TIMEOUT_S,
         **kwargs,
     ) -> Any:
         """

@@ -18,13 +18,13 @@ from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import ValidationError, parse_raw_as
 from pydantic.errors import PydanticErrorMixin
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
-    AppStateMixin,
     AttachLifespanMixin,
     BaseHTTPApi,
     HealthMixinMixin,
-    to_curl_command,
 )
+from servicelib.fastapi.httpx_utils import to_curl_command
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPaymentWithPaymentMethod,
 )
@@ -112,7 +112,7 @@ class _GatewayApiAuth(httpx.Auth):
 
 
 class PaymentsGatewayApi(
-    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, AppStateMixin
+    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
 ):
     app_state_name: str = "payment_gateway_api"
 

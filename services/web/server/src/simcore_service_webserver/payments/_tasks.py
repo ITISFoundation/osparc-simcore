@@ -8,6 +8,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import HttpUrl, parse_obj_as
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -33,6 +34,15 @@ _PERIODIC_TASK_NAME = f"{__name__}.fake_payment_completion"
 _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 
+async def _check_and_sleep(app: web.Application):
+    settings = get_plugin_settings(app)
+    if not settings.PAYMENTS_FAKE_COMPLETION:
+        msg = "PAYMENTS_FAKE_COMPLETION only allowed FOR TESTING PURPOSES"
+        raise ValueError(msg)
+
+    await asyncio.sleep(settings.PAYMENTS_FAKE_COMPLETION_DELAY_SEC)
+
+
 def _create_possible_outcomes(accepted, rejected):
     return [*(accepted for _ in range(9)), rejected]
 
@@ -53,17 +63,14 @@ _POSSIBLE_PAYMENTS_OUTCOMES = _create_possible_outcomes(
 )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
-    # Fakes processing time
-    settings = get_plugin_settings(app)
-    assert settings.PAYMENTS_FAKE_COMPLETION  # nosec
-    await asyncio.sleep(settings.PAYMENTS_FAKE_COMPLETION_DELAY_SEC)
+    await _check_and_sleep(app)
 
     kwargs: dict[str, Any] = random.choice(  # nosec # noqa: S311 # NOSONAR
         _POSSIBLE_PAYMENTS_OUTCOMES
     )
 
-    _logger.info("Faking payment completion as %s", kwargs)
     await _ack_creation_of_wallet_payment(
         app, payment_id=payment_id, notify_enabled=True, **kwargs
     )
@@ -80,19 +87,16 @@ _POSSIBLE_PAYMENTS_METHODS_OUTCOMES = _create_possible_outcomes(
 )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_payment_method_completion(
     app: web.Application, payment_method_id: PaymentMethodID
 ):
-    # Fakes processing time
-    settings = get_plugin_settings(app)
-    assert settings.PAYMENTS_FAKE_COMPLETION  # nosec
-    await asyncio.sleep(settings.PAYMENTS_FAKE_COMPLETION_DELAY_SEC)
+    await _check_and_sleep(app)
 
     kwargs: dict[str, Any] = random.choice(  # nosec # noqa: S311 # NOSONAR
         _POSSIBLE_PAYMENTS_METHODS_OUTCOMES
     )
 
-    _logger.info("Faking payment-method completion as %s", kwargs)
     await _ack_creation_of_wallet_payment_method(
         app, payment_method_id=payment_method_id, **kwargs
     )
@@ -108,12 +112,14 @@ async def _run_resilient_task(app: web.Application):
     pending = await get_pending_payment_transactions_ids(app)
     _logger.debug("Pending payment transactions: %s", pending)
     if pending:
-        asyncio.gather(*[_fake_payment_completion(app, id_) for id_ in pending])
+        await asyncio.gather(*(_fake_payment_completion(app, id_) for id_ in pending))
 
     pending = await get_pending_payment_methods_ids(app)
     _logger.debug("Pending payment-methods: %s", pending)
     if pending:
-        asyncio.gather(*[_fake_payment_method_completion(app, id_) for id_ in pending])
+        await asyncio.gather(
+            *(_fake_payment_method_completion(app, id_) for id_ in pending)
+        )
 
 
 async def _run_periodically(app: web.Application, wait_period_s: float):

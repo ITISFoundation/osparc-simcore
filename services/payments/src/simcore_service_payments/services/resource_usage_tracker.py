@@ -19,8 +19,8 @@ from models_library.products import ProductName
 from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
-    AppStateMixin,
     AttachLifespanMixin,
     BaseHTTPApi,
     HealthMixinMixin,
@@ -32,7 +32,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ResourceUsageTrackerApi(
-    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, AppStateMixin
+    BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
 ):
     app_state_name: str = "source_usage_tracker_api"
 
