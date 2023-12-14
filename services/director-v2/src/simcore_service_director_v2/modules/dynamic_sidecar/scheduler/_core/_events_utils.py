@@ -128,6 +128,13 @@ async def service_remove_containers(
         )
 
 
+async def service_free_reserved_disk_space(
+    app: FastAPI, node_id: NodeID, sidecars_client: SidecarsClient
+) -> None:
+    scheduler_data: SchedulerData = _get_scheduler_data(app, node_id)
+    await sidecars_client.free_reserved_disk_space(scheduler_data.endpoint)
+
+
 async def service_save_state(
     app: FastAPI,
     node_uuid: NodeID,
@@ -278,6 +285,11 @@ async def attempt_pod_removal_and_data_saving(
 
     if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
         _logger.info("Calling into dynamic-sidecar to save: state and output ports")
+
+        await service_free_reserved_disk_space(
+            app, scheduler_data.node_uuid, sidecars_client
+        )
+
         try:
             tasks = [
                 service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
