@@ -12,6 +12,54 @@ from playwright.sync_api import APIRequestContext, BrowserContext, Page
 from pydantic import AnyUrl, TypeAdapter
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    group = parser.getgroup(
+        "e2e-parameters", description="contains all e2e specific parameters"
+    )
+    group.addoption(
+        "--product-url",
+        action="store",
+        type=AnyUrl,
+        default=None,
+        help="URL pointing to the deployment to be tested",
+    )
+    group.addoption(
+        "--user-name",
+        action="store",
+        type=str,
+        default=None,
+        help="User name for logging into the deployment",
+    )
+    group.addoption(
+        "--password",
+        action="store",
+        type=str,
+        default=None,
+        help="Password for logging into the deployment",
+    )
+    group.addoption(
+        "--product-billable",
+        action="store",
+        type=bool,
+        default=None,
+        help="Whether product is billabel or not",
+    )
+    group.addoption(
+        "--service-test-id",
+        action="store",
+        type=str,
+        default=None,
+        help="Service test ID",
+    )
+    group.addoption(
+        "--service-key",
+        action="store",
+        type=str,
+        default=None,
+        help="Service Key",
+    )
+
+
 @pytest.fixture
 def osparc_test_id_attribute(playwright):
     # Set a custom test id attribute
@@ -24,32 +72,49 @@ def api_request_context(context: BrowserContext):
 
 
 @pytest.fixture
-def product_url() -> AnyUrl:
+def product_url(request: pytest.FixtureRequest) -> AnyUrl:
+    if passed_product_url := request.config.getoption("--product-url"):
+        return TypeAdapter(AnyUrl).validate_python(passed_product_url)
     return TypeAdapter(AnyUrl).validate_python(os.environ["PRODUCT_URL"])
 
 
 @pytest.fixture
-def user_name() -> str:
+def user_name(request: pytest.FixtureRequest) -> str:
+    if osparc_user_name := request.config.getoption("--user-name"):
+        assert isinstance(osparc_user_name, str)
+        return osparc_user_name
     return os.environ["USER_NAME"]
 
 
 @pytest.fixture
-def user_password() -> str:
+def user_password(request: pytest.FixtureRequest) -> str:
+    if osparc_password := request.config.getoption("--password"):
+        assert isinstance(osparc_password, str)
+        return osparc_password
     return os.environ["USER_PASSWORD"]
 
 
 @pytest.fixture
-def product_billable() -> bool:
+def product_billable(request: pytest.FixtureRequest) -> bool:
+    if billable := request.config.getoption("--product-billable"):
+        assert isinstance(billable, bool)
+        return billable
     return TypeAdapter(bool).validate_python(os.environ["PRODUCT_BILLABLE"])
 
 
 @pytest.fixture
-def service_test_id() -> str:
+def service_test_id(request: pytest.FixtureRequest) -> str:
+    if test_id := request.config.getoption("--service-test-id"):
+        assert isinstance(test_id, str)
+        return test_id
     return os.environ["SERVICE_TEST_ID"]
 
 
 @pytest.fixture
-def service_key() -> str:
+def service_key(request: pytest.FixtureRequest) -> str:
+    if key := request.config.getoption("--service-key"):
+        assert isinstance(key, str)
+        return key
     return os.environ["SERVICE_KEY"]
 
 
