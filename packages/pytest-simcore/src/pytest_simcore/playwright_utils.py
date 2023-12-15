@@ -28,7 +28,7 @@ class SocketIOProjectStateUpdatedWaiter:
     expected_states: tuple[str, ...]
 
     def __call__(self, message: str) -> bool:
-        print(f"<---- received websocket {message=}")
+        # print(f"<---- received websocket {message=}")
         # socket.io encodes messages like so
         # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
         if message.startswith("42"):

@@ -55,9 +55,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
     group.addoption(
         "--product-billable",
-        action="store",
-        type=str,
-        default=None,
+        action="store_true",
+        default=False,
         help="Whether product is billable or not",
     )
     group.addoption(
@@ -119,10 +118,8 @@ def user_password(
 
 @pytest.fixture
 def product_billable(request: pytest.FixtureRequest) -> bool:
-    if billable := request.config.getoption("--product-billable"):
-        assert isinstance(billable, str)
-        return TypeAdapter(bool).validate_python(billable)
-    return TypeAdapter(bool).validate_python(os.environ["PRODUCT_BILLABLE"])
+    billable = request.config.getoption("--product-billable")
+    return TypeAdapter(bool).validate_python(billable)
 
 
 @pytest.fixture
@@ -148,7 +145,6 @@ def auto_register(request: pytest.FixtureRequest) -> bool:
 
 @pytest.fixture
 def register(
-    api_request_context: APIRequestContext,
     page: Page,
     product_url: AnyUrl,
     user_name: str,
