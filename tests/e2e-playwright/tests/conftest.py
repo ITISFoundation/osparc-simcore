@@ -24,7 +24,7 @@ from pytest_simcore.playwright_utils import (
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup(
-        "oSparc e2e options", description="contains all e2e specific parameters"
+        "oSparc e2e options", description="oSPARC-e2e specific parameters"
     )
     group.addoption(
         "--product-url",
