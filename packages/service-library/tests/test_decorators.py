@@ -32,14 +32,16 @@ def test_safe_return_mutables():
 
 async def test_async_delayed():
     @async_delayed(timedelta(seconds=0.2))
-    async def decorated_function() -> int:
+    async def decorated_awaitable() -> int:
         return 42
 
-    assert await decorated_function() == 42
+    assert await decorated_awaitable() == 42
 
-    async def a_function() -> int:
+    async def another_awaitable() -> int:
         return 42
 
-    decorated_function = async_delayed(timedelta(seconds=0.2))(a_function)
+    decorated_another_awaitable = async_delayed(timedelta(seconds=0.2))(
+        another_awaitable
+    )
 
-    assert await decorated_function() == 42
+    assert await decorated_another_awaitable() == 42

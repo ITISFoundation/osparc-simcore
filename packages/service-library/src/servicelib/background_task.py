@@ -57,15 +57,15 @@ def start_periodic_task(
         logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
         delayed_periodic_scheduled_task = async_delayed(wait_before_running)(
-            _periodic_scheduled_task(
+            _periodic_scheduled_task
+        )
+        return asyncio.create_task(
+            delayed_periodic_scheduled_task(
                 task,
                 interval=interval,
                 task_name=task_name,
                 **kwargs,
-            )
-        )
-        return asyncio.create_task(
-            delayed_periodic_scheduled_task(),
+            ),
             name=task_name,
         )
 
