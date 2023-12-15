@@ -3,12 +3,12 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
+# pylint: disable=no-name-in-module
 
 import os
 import random
 import re
-from collections.abc import Iterator
-from typing import Callable
+from collections.abc import Callable, Iterator
 
 import pytest
 from faker import Faker
@@ -170,7 +170,7 @@ def register(
         assert response_info.value.ok, response_info.value.json()
         return AutoRegisteredUser(user_email=user_name, password=user_password)
 
-    yield _do
+    return _do
 
 
 @pytest.fixture
