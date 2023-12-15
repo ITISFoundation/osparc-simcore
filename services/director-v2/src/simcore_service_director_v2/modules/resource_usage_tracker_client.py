@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import cast
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
@@ -24,8 +24,8 @@ from models_library.resource_tracker import (
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
-from simcore_service_director_v2.core.errors import PricingPlanUnitNotFoundError
 
+from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
 
 _logger = logging.getLogger(__name__)
@@ -87,6 +87,10 @@ class ResourceUsageTrackerClient:
                 "product_name": product_name,
             },
         )
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            msg = "No pricing plan defined"
+            raise PricingPlanUnitNotFoundError(msg)
+
         response.raise_for_status()
         return parse_obj_as(ServicePricingPlanGet, response.json())
 
@@ -109,9 +113,8 @@ class ResourceUsageTrackerClient:
                     unit.current_cost_per_unit_id,
                     unit.specific_info.aws_ec2_instances,
                 )
-        raise PricingPlanUnitNotFoundError(
-            "Default pricing plan and unit does not exist"
-        )
+        msg = "Default pricing plan and unit does not exist"
+        raise PricingPlanUnitNotFoundError(msg)
 
     async def get_pricing_unit(
         self,

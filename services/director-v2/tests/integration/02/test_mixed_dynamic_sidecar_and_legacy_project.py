@@ -225,6 +225,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     mock_sidecars_client: mock.Mock,
     service_resources: ServiceResourcesDict,
     mocked_service_awaits_manual_interventions: None,
+    mock_resource_usage_tracker: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check
