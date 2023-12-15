@@ -101,11 +101,8 @@ class AppState:
         return self._shared_store.compose_spec
 
 
-def _silence_noisy_loggers() -> None:
+def _silence_noisy_loggers(noisy_loggers: list[str]) -> None:
     log_level_step = logging.CRITICAL - logging.ERROR
-    noisy_loggers = [
-        "servicelib.background_task",
-    ]
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
@@ -121,7 +118,11 @@ def setup_logger(settings: ApplicationSettings):
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
     config_all_loggers(settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    _silence_noisy_loggers()
+    _silence_noisy_loggers(
+        [
+            "servicelib.background_task",
+        ]
+    )
 
 
 def create_base_app() -> FastAPI:
