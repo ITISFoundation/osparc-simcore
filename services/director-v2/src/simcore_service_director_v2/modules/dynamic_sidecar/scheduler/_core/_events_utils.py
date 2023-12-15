@@ -10,6 +10,7 @@ from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.shared_user_preferences import (
@@ -36,12 +37,14 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
+from .....core.errors import PricingPlanUnitNotFoundError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
 )
+from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.db import get_repository
 from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
@@ -126,6 +129,13 @@ async def service_remove_containers(
             scheduler_data.service_name,
             f"{e}",
         )
+
+
+async def service_free_reserved_disk_space(
+    app: FastAPI, node_id: NodeID, sidecars_client: SidecarsClient
+) -> None:
+    scheduler_data: SchedulerData = _get_scheduler_data(app, node_id)
+    await sidecars_client.free_reserved_disk_space(scheduler_data.endpoint)
 
 
 async def service_save_state(
@@ -278,6 +288,11 @@ async def attempt_pod_removal_and_data_saving(
 
     if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
         _logger.info("Calling into dynamic-sidecar to save: state and output ports")
+
+        await service_free_reserved_disk_space(
+            app, scheduler_data.node_uuid, sidecars_client
+        )
+
         try:
             tasks = [
                 service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
@@ -451,6 +466,21 @@ async def prepare_services_environment(
     )
 
     scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+
+
+async def get_hardware_info(
+    app: FastAPI, scheduler_data: SchedulerData
+) -> HardwareInfo | None:
+    rut_client = ResourceUsageTrackerClient.get_from_state(app)
+    try:
+        result = await rut_client.get_default_pricing_and_hardware_info(
+            product_name=scheduler_data.product_name,
+            service_key=scheduler_data.key,
+            service_version=scheduler_data.version,
+        )
+        return HardwareInfo(aws_ec2_instances=result.aws_ec2_instances)
+    except PricingPlanUnitNotFoundError:
+        return None
 
 
 async def get_allow_metrics_collection(
