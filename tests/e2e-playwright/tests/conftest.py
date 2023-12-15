@@ -183,5 +183,5 @@ def log_in_and_out(
         page.get_by_test_id("userMenuLogoutBtn").click()
     assert response_info.value.ok, f"{response_info.value.json()}"
     # so we see the logout page
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(500)
     print(f"<------ Logged out of {product_url=} using {user_name=}/{user_password=}")
