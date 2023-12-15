@@ -45,7 +45,7 @@ async def _debug_progress_callback(
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
-class SidecarsClient:
+class SidecarsClient:  # pylint:disable=too-many-public-methods
     """
     API client used for talking with:
         - dynamic-sidecar
@@ -453,6 +453,11 @@ class SidecarsClient:
             dynamic_sidecar_endpoint
         )
         return InactivityResponse.parse_obj(response.json())
+
+    async def free_reserved_disk_space(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
 
 
 def _get_proxy_configuration(
