@@ -12,7 +12,7 @@ from copy import deepcopy
 from functools import wraps
 from typing import Any
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def safe_return(if_fails_return=False, catch=None, logger=None):  # noqa: FBT002
@@ -20,7 +20,7 @@ def safe_return(if_fails_return=False, catch=None, logger=None):  # noqa: FBT002
     if catch is None:
         catch = (RuntimeError,)
     if logger is None:
-        logger = log
+        logger = _logger
 
     def decorate(func):
         @wraps(func)
