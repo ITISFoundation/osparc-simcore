@@ -110,8 +110,8 @@ def test_sleepers(
         with page.expect_response(re.compile(r"files/metadata")):
             page.get_by_test_id("nodeOutputFilesBtn").click()
             output_file_names_found = []
-            # ensure the output window is up and filled.
-            page.wait_for_timeout(1000)
+            # ensure the output window is up and filled. this is very sad.
+            page.wait_for_timeout(2000)
             for file in page.get_by_test_id("FolderViewerItem").all():
                 file_name = file.text_content()
                 assert file_name
@@ -119,3 +119,6 @@ def test_sleepers(
                 output_file_names_found.append(file_name)
         assert output_file_names_found == expected_file_names
         page.get_by_test_id("nodeDataManagerCloseBtn").click()
+    print("------------------------------------------------------")
+    print("---> All good, we're done here! This was really great!")
+    print("------------------------------------------------------")
