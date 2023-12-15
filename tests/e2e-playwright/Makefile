@@ -23,6 +23,8 @@ requirements: ## compiles pip requirements (.in -> .txt)
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
+	# installing playwright dependencies
+	@playwright install
 
 
 .PHONY: test-dev
