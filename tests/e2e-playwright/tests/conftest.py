@@ -135,7 +135,9 @@ def log_in_and_out(
     user_password: str,
 ) -> Iterator[WebSocket]:
     print(f"------> Logging in {product_url=} using {user_name=}/{user_password=}")
-    page.goto(f"{product_url}")
+    response = page.goto(f"{product_url}")
+    assert response
+    assert response.ok, response.body()
 
     # In case the accept cookies or new release window shows up, we accept
     page.wait_for_timeout(2000)

@@ -27,6 +27,38 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	@playwright install
 
 
+get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+
+.PHONY: test-sleepers
+test-sleepers: _check_venv_active ## runs sleepers test on local deploy
+	# Note that you need a user
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--user-name=test \
+		--password=test123 \
+		--product-billable=false \
+		$(CURDIR)/tests/sleepers.py
+
+
+.PHONY: test-sleepers-dev
+test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
+	# Note that you need a user
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--user-name=test@email.com \
+		--password=testtest1234 \
+		--product-billable=false \
+		--headed \
+		$(CURDIR)/tests/sleepers.py
+
+
+
 .PHONY: test-dev
 test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	# WARNING:
