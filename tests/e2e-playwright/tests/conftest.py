@@ -248,7 +248,13 @@ def start_and_stop_pipeline(
     def _do() -> SocketIOEvent:
         print(f"------> Starting computation in {product_url=}...")
         waiter = SocketIOProjectStateUpdatedWaiter(
-            expected_states=("PUBLISHED", "PENDING", "STARTED")
+            expected_states=(
+                "PUBLISHED",
+                "PENDING",
+                "WAITING_FOR_CLUSTER",
+                "WAITING_FOR_RESOURCES",
+                "STARTED",
+            )
         )
         with page.expect_request(
             lambda request: re.search(r"/computations", request.url)

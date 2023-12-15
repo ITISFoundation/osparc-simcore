@@ -4,6 +4,7 @@
 # pylint:disable=protected-access
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-statements
 
 
 import re
@@ -12,17 +13,16 @@ from typing import Final
 
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.playwright_utils import (
+    MINUTE,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
 )
 
 _NUM_SLEEPERS = 12
-_SECOND: Final[int] = 1000
-_MINUTE: Final[int] = 60 * _SECOND
-_WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * _MINUTE
-_WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * _MINUTE
-_WAITING_FOR_SUCCESS_MAX_WAITING_TIME: Final[int] = 3 * _MINUTE
+_WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
+_WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
+_WAITING_FOR_SUCCESS_MAX_WAITING_TIME: Final[int] = _NUM_SLEEPERS * 1 * MINUTE
 
 
 def test_sleepers(
@@ -30,6 +30,7 @@ def test_sleepers(
     log_in_and_out: WebSocket,
     create_new_project_and_delete: Callable[..., None],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
+    product_billable: bool,
 ):
     # open service tab and filter for sleeper
     page.get_by_test_id("servicesTabBtn").click()
@@ -49,16 +50,16 @@ def test_sleepers(
         page.get_by_text("Add", exact=True).click()
 
     # start the pipeline (depending on the state of the cluster, we might receive one of
-    # in () are optional states depdending on the state of the clusters
+    # in [] are optional states depending on the state of the clusters and if we have external clusters
     # sometimes they may jump
-    # PUBLISHED -> (WAITING_FOR_CLUSTER) -> PENDING -> (WAITING_FOR_RESOURCES) -> (PENDING) -> STARTED -> SUCCESS/FAILED
+    # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
     socket_io_event = start_and_stop_pipeline()
 
     current_state = socket_io_event.obj["data"]["state"]["value"]
     print(f"---> pipeline is in {current_state=}")
 
     # check that we get waiting_for_cluster state for max 5 minutes
-    if current_state == "WAITING_FOR_CLUSTER":
+    if product_billable and current_state in ["PUBLISHED", "WAITING_FOR_CLUSTER"]:
         waiter = SocketIOProjectStateUpdatedWaiter(
             expected_states=("WAITING_FOR_RESOURCES",)
         )
