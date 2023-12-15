@@ -173,6 +173,11 @@ def log_in_and_out(
     yield ws
 
     print(f"<------ Logging out of {product_url=} using {user_name=}/{user_password=}")
+    # click anywher to remove modal windows
+    page.click(
+        "body",
+        position={"x": 0, "y": 0},
+    )
     page.get_by_test_id("userMenuBtn").click()
     with page.expect_response(re.compile(r"/auth/logout")) as response_info:
         page.get_by_test_id("userMenuLogoutBtn").click()
