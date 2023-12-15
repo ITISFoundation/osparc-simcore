@@ -858,6 +858,7 @@ async def test_nodeports_integration(
     cleanup_services_and_networks: None,
     projects_networks_db: None,
     mocked_service_awaits_manual_interventions: None,
+    mock_resource_usage_tracker: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
