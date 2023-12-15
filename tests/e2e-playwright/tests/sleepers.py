@@ -1,4 +1,3 @@
-import functools
 import json
 import re
 from typing import Any
@@ -15,25 +14,27 @@ class SocketIOEvent:
     obj: dict[str, Any]
 
 
-def _socketio_42_message(message: str) -> SocketIOEvent:
+def _decode_socketio_42_message(message: str) -> SocketIOEvent:
     data = json.loads(message.removeprefix("42"))
     return SocketIOEvent(name=data[0], obj=json.loads(data[1]))
 
 
-def _wait_for_project_state_updated(message: str, *, expected_state: str) -> bool:
-    print("<---- received websocket message:")
-    print(message)
-    if not message.startswith("42"):
+@dataclass
+class SocketIOProjectStateUpdatedWaiter:
+    expected_state: str
+
+    def __call__(self, message: str) -> bool:
+        print(f"<---- received websocket {message=}")
         # socket.io encodes messages like so
         # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-        return False
-    # now we have a message like ["messageEvent", data]
-    decoded_message = _socketio_42_message(message)
-    if decoded_message.name != "projectStateUpdated":
-        return False
-    assert decoded_message.obj["data"]["state"]["value"] == expected_state
+        if message.startswith("42"):
+            decoded_message = _decode_socketio_42_message(message)
+            if decoded_message.name == "projectStateUpdated":
+                return (
+                    decoded_message.obj["data"]["state"]["value"] == self.expected_state
+                )
 
-    return True
+        return False
 
 
 def test_sleepers(page: Page, log_in_and_out: WebSocket, product_billable: bool):
@@ -50,11 +51,9 @@ def test_sleepers(page: Page, log_in_and_out: WebSocket, product_billable: bool)
         "studyBrowserListItem_simcore/services/comp/itis/sleeper"
     ).click()
 
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_state="NOT_STARTED")
     with log_in_and_out.expect_event(
-        "framereceived",
-        functools.partial(
-            _wait_for_project_state_updated, expected_message="NOT_STARTED"
-        ),
+        "framereceived", waiter
     ) as event, page.expect_response(re.compile(r"/projects/")):
         # Project detail view pop-ups shows
         page.get_by_test_id("openResource").click()
@@ -63,7 +62,7 @@ def test_sleepers(page: Page, log_in_and_out: WebSocket, product_billable: bool)
             page.get_by_test_id("openWithResources").click()
 
     # this allows to get the value back
-    print(_socketio_42_message(event.value))
+    print(_decode_socketio_42_message(event.value))
 
     # we are now in the workbench
     for i in range(1, _NUM_SLEEPERS):
@@ -80,7 +79,7 @@ def test_sleepers(page: Page, log_in_and_out: WebSocket, product_billable: bool)
 
     # check that we get success state now
 
-    page.wait_for_timeout(10000)
+    page.wait_for_timeout(1000)
 
 
 # def test_example(page: Page) -> None:
