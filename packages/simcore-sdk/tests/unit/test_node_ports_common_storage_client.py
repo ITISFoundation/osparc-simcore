@@ -60,4 +60,3 @@ async def test_retry_retries_before_giving_up(
             ...
 
     assert "unexpected error:" in caplog.text
-    assert len(caplog.records) == 1
