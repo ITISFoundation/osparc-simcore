@@ -38,6 +38,7 @@ test-sleepers: _check_venv_active ## runs sleepers test on local deploy
 		--pdb \
 		--product-url=http://$(get_my_ip):9081 \
 		--autoregister \
+		--tracing=retain-on-failure \
 		$(CURDIR)/tests/sleepers.py
 
 
