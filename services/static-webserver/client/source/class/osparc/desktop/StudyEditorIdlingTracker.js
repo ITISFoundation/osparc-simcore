@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
                 url: {
                   studyId: this.__studyUuid
                 }
-              }).then(({data}) => {
+              }).then(data => {
                 if (data["is_inactive"]) {
                   this.__userIdled();
                 } else {
