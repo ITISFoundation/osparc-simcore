@@ -140,6 +140,9 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
     async def get_service_inactivity(self, node_id: NodeID) -> InactivityResponse:
         return await self.scheduler.get_service_inactivity(node_id)
 
+    async def free_reserved_disk_space(self, node_id: NodeID) -> None:
+        await self.scheduler.free_reserved_disk_space(node_id)
+
 
 async def setup_scheduler(app: FastAPI):
     settings: DynamicServicesSchedulerSettings = (

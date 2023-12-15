@@ -144,6 +144,10 @@ async def mock_close_service_routes(
             re.compile(f"{regex_base}/docker-resources"),
             name="delete_service_docker_resources",
         ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.post(
+            re.compile(f"{regex_base}/disk/reserved:free"),
+            name="free_reserved_disk_space",
+        ).respond(status_code=status.HTTP_204_NO_CONTENT)
 
         @asynccontextmanager
         async def _mocked_context_manger(
@@ -244,5 +248,13 @@ def test_service_state(
     mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
 ):
     result = cli_runner.invoke(main, ["service-state", f"{node_id}"])
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    print(result.stdout)
+
+
+def test_free_reserved_disk_space(
+    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
+):
+    result = cli_runner.invoke(main, ["free-reserved-disk-space", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)

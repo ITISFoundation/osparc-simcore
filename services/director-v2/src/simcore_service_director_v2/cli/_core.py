@@ -1,8 +1,8 @@
 import asyncio
 import sys
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import AsyncIterator
 
 import typer
 from fastapi import FastAPI, status
@@ -280,3 +280,9 @@ async def async_service_state(node_id: NodeID) -> None:
     async with ThinDV2LocalhostClient() as client:
         result = await client.get_service_state(node_id)
         typer.echo(f"Service state: {result.text}")
+
+
+async def async_free_service_disk_space(node_id: NodeID) -> None:
+    async with ThinDV2LocalhostClient() as client:
+        await client.free_service_reserved_disk_space(node_id)
+        typer.echo("Done freeing reserved disk space!")

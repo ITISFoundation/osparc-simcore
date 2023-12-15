@@ -768,6 +768,20 @@
           }
         }
       }
+    },
+    "/v1/disk/reserved:free": {
+      "post": {
+        "tags": [
+          "disk"
+        ],
+        "summary": "Frees up reserved disk space",
+        "operationId": "free_reserved_disk_space_v1_disk_reserved_free_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
     }
   },
   "components": {

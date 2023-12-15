@@ -64,6 +64,7 @@ from ._events_utils import (
     attempt_pod_removal_and_data_saving,
     get_allow_metrics_collection,
     get_director_v0_client,
+    get_hardware_info,
     parse_containers_inspect,
     prepare_services_environment,
     wait_for_sidecar_api,
@@ -181,6 +182,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
 
+        hardware_info = await get_hardware_info(app, scheduler_data)
+
         metrics_collection_allowed: bool = await get_allow_metrics_collection(
             app,
             user_id=scheduler_data.user_id,
@@ -202,6 +205,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
+            hardware_info=hardware_info,
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,

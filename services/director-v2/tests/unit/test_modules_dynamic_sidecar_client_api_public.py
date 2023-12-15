@@ -363,3 +363,19 @@ async def test_get_service_inactivity(
         assert (
             await client.get_service_inactivity(dynamic_sidecar_endpoint) == mock_json
         )
+
+
+async def test_free_reserved_disk_space(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+) -> None:
+    with get_patched_client(
+        "post_disk_reserved_free",
+        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
+    ) as client:
+        assert (
+            await client.free_reserved_disk_space(
+                dynamic_sidecar_endpoint,
+            )
+            is None
+        )
