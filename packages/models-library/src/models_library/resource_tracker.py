@@ -1,9 +1,12 @@
+import logging
 from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, PositiveInt, validator
 
 from .utils.enums import StrAutoEnum
+
+_logger = logging.getLogger(__name__)
 
 ServiceRunId: TypeAlias = str
 PricingPlanId: TypeAlias = PositiveInt
@@ -62,6 +65,14 @@ class HardwareInfo(BaseModel):
                 {"aws_ec2_instances": []},
             ]
         }
+
+    @validator("aws_ec2_instances")
+    @classmethod
+    def warn_if_too_many_instances_are_present(cls, v: list[str]) -> list[str]:
+        if len(v) > 1:
+            msg = f"Only 1 entry is supported at the moment, received {v}"
+            raise ValueError(msg)
+        return v
 
 
 class PricingAndHardwareInfoTuple(NamedTuple):
