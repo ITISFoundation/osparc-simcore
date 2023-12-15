@@ -1,3 +1,4 @@
+faker
 pydantic[email]
 pytest-html
 pytest-instafail

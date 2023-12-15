@@ -16,6 +16,8 @@ email-validator==2.1.0.post1
     # via pydantic
 exceptiongroup==1.2.0
     # via pytest
+faker==21.0.0
+    # via -r requirements/_test.in
 greenlet==3.0.1
     # via playwright
 idna==3.6
@@ -64,10 +66,14 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==0.9.7
     # via -r requirements/_test.in
+python-dateutil==2.8.2
+    # via faker
 python-slugify==8.0.1
     # via pytest-playwright
 requests==2.31.0
     # via pytest-base-url
+six==1.16.0
+    # via python-dateutil
 tenacity==8.2.3
     # via -r requirements/_test.in
 termcolor==2.4.0
