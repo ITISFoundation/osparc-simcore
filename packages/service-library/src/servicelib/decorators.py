@@ -7,10 +7,10 @@ IMPORTANT: lowest level module
 import asyncio
 import datetime
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from functools import wraps
-from typing import Any, Coroutine
+from typing import Any
 
 log = logging.getLogger(__name__)
 
