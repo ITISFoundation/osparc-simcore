@@ -121,7 +121,7 @@ async def retry_request(
         with attempt:
             async with _session_method(session, method, url, **kwargs) as response:
                 if response.status != expected_status:
-                    # emulate raise_for_status()
+                    # this is a more precise raise_for_status()
                     response.release()
                     raise ClientResponseError(
                         response.request_info,
@@ -138,10 +138,13 @@ async def retry_request(
 async def get_storage_locations(
     *, session: ClientSession, user_id: UserID
 ) -> FileLocationArray:
-    async with session.get(
-        f"{_base_url()}/locations", params={"user_id": f"{user_id}"}
+    async with retry_request(
+        session,
+        "GET",
+        f"{_base_url()}/locations",
+        expected_status=web.HTTPOk.status_code,
+        params={"user_id": f"{user_id}"},
     ) as response:
-        response.raise_for_status()
         locations_enveloped = Envelope[FileLocationArray].parse_obj(
             await response.json()
         )
@@ -164,12 +167,13 @@ async def get_download_file_link(
     :raises exceptions.StorageInvalidCall
     :raises exceptions.StorageServerIssue
     """
-    async with session.get(
+    async with retry_request(
+        session,
+        "GET",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        expected_status=web.HTTPOk.status_code,
         params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
-        response.raise_for_status()
-
         presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
             await response.json()
         )
@@ -208,11 +212,13 @@ async def get_upload_file_links(
     }
     if sha256_checksum:
         query_params["sha256_checksum"] = f"{sha256_checksum}"
-    async with session.put(
+    async with retry_request(
+        session,
+        "PUT",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        expected_status=web.HTTPOk.status_code,
         params=query_params,
     ) as response:
-        response.raise_for_status()
         file_upload_links_enveloped = Envelope[FileUploadSchema].parse_obj(
             await response.json()
         )
@@ -230,11 +236,13 @@ async def get_file_metadata(
     location_id: LocationID,
     user_id: UserID,
 ) -> FileMetaDataGet:
-    async with session.get(
+    async with retry_request(
+        session,
+        "GET",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
+        expected_status=web.HTTPOk.status_code,
         params={"user_id": f"{user_id}"},
     ) as response:
-        response.raise_for_status()
         file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
             await response.json()
         )
@@ -251,11 +259,13 @@ async def list_file_metadata(
     location_id: LocationID,
     uuid_filter: str,
 ) -> list[FileMetaDataGet]:
-    async with session.get(
+    async with retry_request(
+        session,
+        "GET",
         f"{_base_url()}/locations/{location_id}/files/metadata",
+        expected_status=web.HTTPOk.status_code,
         params={"user_id": f"{user_id}", "uuid_filter": uuid_filter},
     ) as resp:
-        resp.raise_for_status()
         envelope = Envelope[list[FileMetaDataGet]].parse_obj(await resp.json())
         assert envelope.data is not None  # nosec
         file_meta_data: list[FileMetaDataGet] = envelope.data
@@ -270,8 +280,11 @@ async def delete_file(
     location_id: LocationID,
     user_id: UserID,
 ) -> None:
-    async with session.delete(
+    async with retry_request(
+        session,
+        "DELETE",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        expected_status=web.HTTPNoContent.status_code,
         params={"user_id": f"{user_id}"},
-    ) as response:
-        response.raise_for_status()
+    ):
+        ...
