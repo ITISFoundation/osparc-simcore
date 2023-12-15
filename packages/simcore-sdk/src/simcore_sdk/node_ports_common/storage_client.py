@@ -1,10 +1,15 @@
-from collections.abc import Awaitable, Callable
+import datetime
+import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from functools import lru_cache, wraps
 from json import JSONDecodeError
-from typing import Any
+from typing import Any, Final, TypeAlias
 from urllib.parse import quote
 
-from aiohttp import ClientSession, web
+from aiohttp import ClientResponse, ClientSession
+from aiohttp import client as aiohttp_client_module
+from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     FileLocationArray,
@@ -18,11 +23,25 @@ from models_library.api_schemas_storage import (
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.users import UserID
-from pydantic import ByteSize
+from pydantic import ByteSize, NonNegativeInt
 from pydantic.networks import AnyUrl
+from tenacity import RetryCallState
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_exponential
 
 from . import exceptions
 from .settings import NodePortsSettings
+
+_logger = logging.getLogger(__name__)
+
+_ACCEPTABLE_STATUS_CODES: Final[NonNegativeInt] = 399
+
+RequestContextManager: TypeAlias = (
+    aiohttp_client_module._RequestContextManager  # pylint: disable=protected-access # noqa: SLF001
+)
 
 
 def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
@@ -32,21 +51,25 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
             return await handler(*args, **kwargs)
         except ClientResponseError as err:
             if err.status == web.HTTPNotFound.status_code:
-                raise exceptions.S3InvalidPathError(
-                    kwargs.get("file_id", "unknown file id")
-                )
+                msg = kwargs.get("file_id", "unknown file id")
+                raise exceptions.S3InvalidPathError(msg) from err
             if err.status == web.HTTPUnprocessableEntity.status_code:
-                raise exceptions.StorageInvalidCall(
-                    f"Invalid call to storage: {err.message}"
-                )
-            if 500 > err.status > 399:
+                msg = f"Invalid call to storage: {err.message}"
+                raise exceptions.StorageInvalidCall(msg) from err
+            if (
+                web.HTTPInternalServerError.status_code
+                > err.status
+                > _ACCEPTABLE_STATUS_CODES
+            ):
                 raise exceptions.StorageInvalidCall(err.message) from err
-            if err.status > 500:
+            if err.status > web.HTTPInternalServerError.status_code:
                 raise exceptions.StorageServerIssue(err.message) from err
         except ClientConnectionError as err:
-            raise exceptions.StorageServerIssue(f"{err}") from err
+            msg = f"{err}"
+            raise exceptions.StorageServerIssue(msg) from err
         except JSONDecodeError as err:
-            raise exceptions.StorageServerIssue(f"{err}") from err
+            msg = f"{err}"
+            raise exceptions.StorageServerIssue(msg) from err
 
     return wrapped
 
@@ -56,6 +79,59 @@ def _base_url() -> str:
     settings = NodePortsSettings.create_from_envs()
     base_url: str = settings.NODE_PORTS_STORAGE.api_base_url
     return base_url
+
+
+def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
+    def log_it(retry_state: RetryCallState) -> None:
+        assert retry_state.outcome  # nosec
+        e = retry_state.outcome.exception()
+        log.error(
+            "Request timed-out after %s attempts with an unexpected error: '%s'",
+            retry_state.attempt_number,
+            f"{e=}",
+        )
+
+    return log_it
+
+
+def _session_method(
+    session: ClientSession, method: str, url: str, **kwargs
+) -> RequestContextManager:
+    return session.request(method, url, **kwargs)
+
+
+@asynccontextmanager
+async def retry_request(
+    session: ClientSession,
+    method: str,
+    url: str,
+    *,
+    expected_status: int,
+    give_up_after: datetime.timedelta = datetime.timedelta(seconds=30),
+    **kwargs,
+) -> AsyncIterator[ClientResponse]:
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(give_up_after.total_seconds()),
+        wait=wait_exponential(min=1),
+        retry=retry_if_exception_type(ClientConnectionError),
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+        after=_after_log(_logger),
+        reraise=True,
+    ):
+        with attempt:
+            async with _session_method(session, method, url, **kwargs) as response:
+                if response.status != expected_status:
+                    # emulate raise_for_status()
+                    response.release()
+                    raise ClientResponseError(
+                        response.request_info,
+                        response.history,
+                        status=response.status,
+                        message=f"Received {response.status} but was attending {expected_status=}",
+                        headers=response.headers,
+                    )
+
+                yield response
 
 
 @handle_client_exception
