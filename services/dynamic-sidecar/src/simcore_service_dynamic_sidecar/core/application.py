@@ -102,28 +102,11 @@ class AppState:
         return self._shared_store.compose_spec
 
 
-def _silence_noisy_loggers(noisy_loggers: list[str]) -> None:
-    log_level_step = logging.CRITICAL - logging.ERROR
-
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + log_level_step, logging.CRITICAL), logging.WARNING
-    )
-
-    for name in noisy_loggers:
-        logging.getLogger(name).setLevel(quiet_level)
-
-
 def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
     config_all_loggers(settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED)
-    _silence_noisy_loggers(
-        [
-            "servicelib.background_task",
-        ]
-    )
 
 
 def create_base_app() -> FastAPI:
