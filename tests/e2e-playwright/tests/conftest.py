@@ -5,14 +5,17 @@
 # pylint: disable=too-many-statements
 
 import os
+import random
 import re
 from collections.abc import Iterator
 from typing import Callable
 
 import pytest
+from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.playwright_utils import (
+    AutoRegisteredUser,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
@@ -29,6 +32,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         type=AnyUrl,
         default=None,
         help="URL pointing to the deployment to be tested",
+    )
+    group.addoption(
+        "--autoregister",
+        action="store_true",
+        default=False,
+        help="User name for logging into the deployment",
     )
     group.addoption(
         "--user-name",
@@ -67,7 +76,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def osparc_test_id_attribute(playwright):
     # Set a custom test id attribute
     playwright.selectors.set_test_id_attribute("osparc-test-id")
@@ -86,7 +95,10 @@ def product_url(request: pytest.FixtureRequest) -> AnyUrl:
 
 
 @pytest.fixture
-def user_name(request: pytest.FixtureRequest) -> str:
+def user_name(request: pytest.FixtureRequest, auto_register: bool, faker: Faker) -> str:
+    if auto_register:
+        faker.seed_instance(random.randint(0, 10000000000))  # noqa: S311
+        return faker.email()
     if osparc_user_name := request.config.getoption("--user-name"):
         assert isinstance(osparc_user_name, str)
         return osparc_user_name
@@ -94,7 +106,11 @@ def user_name(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture
-def user_password(request: pytest.FixtureRequest) -> str:
+def user_password(
+    request: pytest.FixtureRequest, auto_register: bool, faker: Faker
+) -> str:
+    if auto_register:
+        return faker.password(length=12)
     if osparc_password := request.config.getoption("--password"):
         assert isinstance(osparc_password, str)
         return osparc_password
@@ -126,18 +142,57 @@ def service_key(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture
-def log_in_and_out(
-    osparc_test_id_attribute: None,
+def auto_register(request: pytest.FixtureRequest) -> bool:
+    return bool(request.config.getoption("--autoregister"))
+
+
+@pytest.fixture
+def register(
     api_request_context: APIRequestContext,
     page: Page,
     product_url: AnyUrl,
     user_name: str,
     user_password: str,
+) -> Iterator[Callable[[], AutoRegisteredUser]]:
+    def _do() -> AutoRegisteredUser:
+        print(
+            f"------> Registering in {product_url=} using {user_name=}/{user_password=}"
+        )
+        response = page.goto(f"{product_url}")
+        assert response
+        assert response.ok, response.body()
+        page.get_by_test_id("loginCreateAccountBtn").click()
+        user_email_box = page.get_by_test_id("registrationEmailFld")
+        user_email_box.click()
+        user_email_box.fill(user_name)
+        for pass_id in ["registrationPass1Fld", "registrationPass2Fld"]:
+            user_password_box = page.get_by_test_id(pass_id)
+            user_password_box.click()
+            user_password_box.fill(user_password)
+        with page.expect_response(re.compile(r"/auth/register")) as response_info:
+            page.get_by_test_id("registrationSubmitBtn").click()
+        assert response_info.value.ok, response_info.value.json()
+        return AutoRegisteredUser(user_email=user_name, password=user_password)
+
+    yield _do
+
+
+@pytest.fixture
+def log_in_and_out(
+    page: Page,
+    product_url: AnyUrl,
+    user_name: str,
+    user_password: str,
+    auto_register: bool,
+    register: Callable[[], AutoRegisteredUser],
 ) -> Iterator[WebSocket]:
-    print(f"------> Logging in {product_url=} using {user_name=}/{user_password=}")
+    print(
+        f"------> Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}"
+    )
     response = page.goto(f"{product_url}")
     assert response
     assert response.ok, response.body()
+    print(f"-----> Opened {product_url=} successfully")
 
     # In case the accept cookies or new release window shows up, we accept
     page.wait_for_timeout(2000)
@@ -149,17 +204,22 @@ def log_in_and_out(
         if newReleaseCloseBtnLocator.is_visible():
             newReleaseCloseBtnLocator.click()
 
-    _user_email_box = page.get_by_test_id("loginUserEmailFld")
-    _user_email_box.click()
-    _user_email_box.fill(user_name)
-    _user_password_box = page.get_by_test_id("loginPasswordFld")
-    _user_password_box.click()
-    _user_password_box.fill(user_password)
-    # check the websocket got created
     with page.expect_websocket() as ws_info:
-        with page.expect_response(re.compile(r"/login")) as response_info:
-            page.get_by_test_id("loginSubmitBtn").click()
-        assert response_info.value.ok, f"{response_info.value.json()}"
+        if auto_register:
+            register()
+        else:
+            print(
+                f"------> Logging in {product_url=} using {user_name=}/{user_password=}"
+            )
+            _user_email_box = page.get_by_test_id("loginUserEmailFld")
+            _user_email_box.click()
+            _user_email_box.fill(user_name)
+            _user_password_box = page.get_by_test_id("loginPasswordFld")
+            _user_password_box.click()
+            _user_password_box.fill(user_password)
+            with page.expect_response(re.compile(r"/login")) as response_info:
+                page.get_by_test_id("loginSubmitBtn").click()
+            assert response_info.value.ok, f"{response_info.value.json()}"
     ws = ws_info.value
     assert not ws.is_closed()
 

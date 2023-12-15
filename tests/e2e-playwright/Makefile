@@ -37,24 +37,21 @@ test-sleepers: _check_venv_active ## runs sleepers test on local deploy
 		--color=yes \
 		--pdb \
 		--product-url=http://$(get_my_ip):9081 \
-		--user-name=test \
-		--password=test123 \
 		--product-billable=false \
+		--autoregister \
 		$(CURDIR)/tests/sleepers.py
 
 
 .PHONY: test-sleepers-dev
 test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
-	# Note that you need a user
 	@pytest \
 		-sxvv \
 		--color=yes \
 		--pdb \
 		--product-url=http://$(get_my_ip):9081 \
-		--user-name=test@email.com \
-		--password=testtest1234 \
 		--product-billable=false \
 		--headed \
+		--autoregister \
 		$(CURDIR)/tests/sleepers.py
 
 

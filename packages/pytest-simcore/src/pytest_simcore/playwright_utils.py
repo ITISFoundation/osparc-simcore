@@ -7,6 +7,12 @@ MINUTE: Final[int] = 60 * SECOND
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AutoRegisteredUser:
+    user_email: str
+    password: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class SocketIOEvent:
     name: str
     obj: dict[str, Any]
