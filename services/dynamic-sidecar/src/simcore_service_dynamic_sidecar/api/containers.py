@@ -115,7 +115,7 @@ async def get_containers_inactivity(
         json.JSONDecodeError,
     ):
         _logger.warning(
-            "Could not run inactivity command '%s' in container '%s'",
+            "An issue occurred while running inactivity command '%s' in container '%s'",
             inactivity_command.command,
             container_name,
             exc_info=True,
