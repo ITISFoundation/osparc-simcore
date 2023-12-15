@@ -175,4 +175,6 @@ def log_in_and_out(
     with page.expect_response(re.compile(r"/auth/logout")) as response_info:
         page.get_by_test_id("userMenuLogoutBtn").click()
     assert response_info.value.ok
+    # so we see the logout page
+    page.wait_for_timeout(2000)
     print(f"<------ Logged out of {product_url=} using {user_name=}/{user_password=}")
