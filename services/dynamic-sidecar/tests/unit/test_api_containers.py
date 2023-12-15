@@ -778,3 +778,22 @@ async def test_containers_inactivity_inactive_since(
     response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
     assert response.status_code == 200, response.text
     assert response.json() == inactivity_response
+
+
+@pytest.fixture
+def mock_inactive_response_wrong_format(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.api.containers.run_command_in_container",
+        return_value="This is an unparsable json response {}",
+    )
+
+
+async def test_containers_inactivity_unexpected_response(
+    define_inactivity_command: None,
+    mock_inactive_response_wrong_format: None,
+    test_client: TestClient,
+    mock_shared_store: None,
+):
+    response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
+    assert response.status_code == 200, response.text
+    assert response.json() == InactivityResponse(seconds_inactive=None)

@@ -112,6 +112,7 @@ async def get_containers_inactivity(
         ContainerExecContainerNotFoundError,
         ContainerExecCommandFailedError,
         ContainerExecTimeoutError,
+        json.JSONDecodeError,
     ):
         _logger.warning(
             "Could not run inactivity command '%s' in container '%s'",
