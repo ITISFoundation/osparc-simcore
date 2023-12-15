@@ -35,7 +35,7 @@ async def _periodic_scheduled_task(
         with attempt:
             with log_context(
                 logger,
-                logging.INFO,
+                logging.DEBUG,
                 msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
             ), log_catch(logger):
                 await task(**task_kwargs)
