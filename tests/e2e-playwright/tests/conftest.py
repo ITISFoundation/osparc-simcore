@@ -7,10 +7,16 @@
 import os
 import re
 from collections.abc import Iterator
+from typing import Callable
 
 import pytest
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from pydantic import AnyUrl, TypeAdapter
+from pytest_simcore.playwright_utils import (
+    SocketIOEvent,
+    SocketIOProjectStateUpdatedWaiter,
+    decode_socketio_42_message,
+)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -185,3 +191,87 @@ def log_in_and_out(
     # so we see the logout page
     page.wait_for_timeout(500)
     print(f"<------ Logged out of {product_url=} using {user_name=}/{user_password=}")
+
+
+@pytest.fixture
+def create_new_project_and_delete(
+    page: Page,
+    log_in_and_out: WebSocket,
+    product_billable: bool,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+) -> Iterator[Callable[[bool], None]]:
+    """The first available service currently displayed in the dashboard will be opened"""
+    created_project_uuids = []
+
+    def _do(auto_delete: bool) -> None:
+        print(f"------> Opening project in {product_url=} as {product_billable=}")
+        waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("NOT_STARTED",))
+        with log_in_and_out.expect_event("framereceived", waiter), page.expect_response(
+            re.compile(r"/projects/[^:]+:open")
+        ) as response_info:
+            # Project detail view pop-ups shows
+            page.get_by_test_id("openResource").click()
+            if product_billable:
+                # Open project with default resources
+                page.get_by_test_id("openWithResources").click()
+        project_data = response_info.value.json()
+        assert project_data
+        project_uuid = project_data["data"]["uuid"]
+        print(
+            f"------> Opened project with {project_uuid=} in {product_url=} as {product_billable=}"
+        )
+        if auto_delete:
+            created_project_uuids.append(project_uuid)
+
+    yield _do
+
+    for project_uuid in created_project_uuids:
+        print(
+            f"<------ Deleting project with {project_uuid=} in {product_url=} as {product_billable=}"
+        )
+        api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
+        print(
+            f"<------ Deleted project with {project_uuid=} in {product_url=} as {product_billable=}"
+        )
+
+
+@pytest.fixture
+def start_and_stop_pipeline(
+    product_url: AnyUrl,
+    page: Page,
+    log_in_and_out: WebSocket,
+    api_request_context: APIRequestContext,
+) -> Iterator[Callable[[], SocketIOEvent]]:
+    started_pipeline_ids = []
+
+    def _do() -> SocketIOEvent:
+        print(f"------> Starting computation in {product_url=}...")
+        waiter = SocketIOProjectStateUpdatedWaiter(
+            expected_states=("PUBLISHED", "PENDING", "STARTED")
+        )
+        with page.expect_request(
+            lambda request: re.search(r"/computations", request.url)
+            and request.method.upper() == "POST"  # type: ignore
+        ) as request_info, log_in_and_out.expect_event(
+            "framereceived", waiter
+        ) as event:
+            page.get_by_test_id("runStudyBtn").click()
+        response = request_info.value.response()
+        assert response
+        assert response.ok, f"{response.json()}"
+        response_body = response.json()
+        assert "data" in response_body
+        assert "pipeline_id" in response_body["data"]
+        pipeline_id = response_body["data"]["pipeline_id"]
+        started_pipeline_ids.append(pipeline_id)
+        print(f"------> Started computation with {pipeline_id=} in {product_url=}...")
+        return decode_socketio_42_message(event.value)
+
+    yield _do
+
+    # ensure all the pipelines are stopped properly
+    for pipeline_id in started_pipeline_ids:
+        print(f"------> Stopping computation with {pipeline_id=} in {product_url=}...")
+        api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")
+        print(f"------> Stopped computation with {pipeline_id=} in {product_url=}...")
