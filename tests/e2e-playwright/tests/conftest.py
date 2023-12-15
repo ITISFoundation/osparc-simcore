@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 
 import os
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -14,7 +15,7 @@ from pydantic import AnyUrl, TypeAdapter
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup(
-        "e2e-parameters", description="contains all e2e specific parameters"
+        "oSparc e2e options", description="contains all e2e specific parameters"
     )
     group.addoption(
         "--product-url",
@@ -169,7 +170,9 @@ def log_in_and_out(
 
     yield ws
 
-    # TODO: this is not the UI way of logging out
     print(f"<------ Logging out of {product_url=} using {user_name=}/{user_password=}")
-    api_request_context.post(f"{product_url}v0/auth/logout")
+    page.get_by_test_id("userMenuBtn").click()
+    with page.expect_response(re.compile(r"/auth/logout")) as response_info:
+        page.get_by_test_id("userMenuLogoutBtn").click()
+    assert response_info.value.ok
     print(f"<------ Logged out of {product_url=} using {user_name=}/{user_password=}")
