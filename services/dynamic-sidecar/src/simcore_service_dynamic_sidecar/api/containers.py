@@ -101,13 +101,13 @@ async def get_containers_inactivity(
 
     container_name = inactivity_command.service
 
+    inactivity_response: str | None = None
     try:
         inactivity_response = await run_command_in_container(
             shared_store.original_to_container_names[inactivity_command.service],
             command=inactivity_command.command,
             timeout=inactivity_command.timeout,
         )
-        return parse_raw_as(InactivityResponse, inactivity_response)
     except (
         ContainerExecContainerNotFoundError,
         ContainerExecCommandFailedError,
@@ -117,6 +117,17 @@ async def get_containers_inactivity(
             "Could not run inactivity command '%s' in container '%s'",
             inactivity_command.command,
             container_name,
+            exc_info=True,
+        )
+        return InactivityResponse(seconds_inactive=None)
+
+    try:
+        return parse_raw_as(InactivityResponse, inactivity_response)
+    except json.JSONDecodeError:
+        _logger.warning(
+            "Could not parse command result '%s' as '%s'",
+            inactivity_response,
+            InactivityResponse.__name__,
             exc_info=True,
         )
 
