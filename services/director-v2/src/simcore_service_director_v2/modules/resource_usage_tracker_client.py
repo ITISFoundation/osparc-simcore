@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import cast
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
@@ -87,6 +87,10 @@ class ResourceUsageTrackerClient:
                 "product_name": product_name,
             },
         )
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            msg = "No pricing plan defined"
+            raise PricingPlanUnitNotFoundError(msg)
+
         response.raise_for_status()
         return parse_obj_as(ServicePricingPlanGet, response.json())
 
