@@ -41,9 +41,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     group.addoption(
         "--product-billable",
         action="store",
-        type=bool,
+        type=str,
         default=None,
-        help="Whether product is billabel or not",
+        help="Whether product is billable or not",
     )
     group.addoption(
         "--service-test-id",
@@ -98,8 +98,8 @@ def user_password(request: pytest.FixtureRequest) -> str:
 @pytest.fixture
 def product_billable(request: pytest.FixtureRequest) -> bool:
     if billable := request.config.getoption("--product-billable"):
-        assert isinstance(billable, bool)
-        return billable
+        assert isinstance(billable, str)
+        return TypeAdapter(bool).validate_python(billable)
     return TypeAdapter(bool).validate_python(os.environ["PRODUCT_BILLABLE"])
 
 
@@ -149,7 +149,9 @@ def log_in_and_out(
     _user_password_box.fill(user_password)
     # check the websocket got created
     with page.expect_websocket() as ws_info:
-        page.get_by_test_id("loginSubmitBtn").click()
+        with page.expect_response(re.compile(r"/login")) as response_info:
+            page.get_by_test_id("loginSubmitBtn").click()
+        assert response_info.value.ok, f"{response_info.value.json()}"
     ws = ws_info.value
     assert not ws.is_closed()
 
@@ -174,7 +176,7 @@ def log_in_and_out(
     page.get_by_test_id("userMenuBtn").click()
     with page.expect_response(re.compile(r"/auth/logout")) as response_info:
         page.get_by_test_id("userMenuLogoutBtn").click()
-    assert response_info.value.ok
+    assert response_info.value.ok, f"{response_info.value.json()}"
     # so we see the logout page
     page.wait_for_timeout(2000)
     print(f"<------ Logged out of {product_url=} using {user_name=}/{user_password=}")
