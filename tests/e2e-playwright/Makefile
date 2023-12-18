@@ -37,7 +37,6 @@ test-sleepers: _check_venv_active ## runs sleepers test on local deploy
 		--color=yes \
 		--pdb \
 		--product-url=http://$(get_my_ip):9081 \
-		--product-billable=false \
 		--autoregister \
 		$(CURDIR)/tests/sleepers.py
 
@@ -49,7 +48,6 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		--color=yes \
 		--pdb \
 		--product-url=http://$(get_my_ip):9081 \
-		--product-billable=false \
 		--headed \
 		--autoregister \
 		$(CURDIR)/tests/sleepers.py
