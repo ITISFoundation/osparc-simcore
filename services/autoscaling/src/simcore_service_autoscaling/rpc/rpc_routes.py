@@ -4,15 +4,14 @@ from fastapi import FastAPI
 from models_library.api_schemas_autoscaling import AUTOSCALING_RPC_NAMESPACE
 
 from ..modules.rabbitmq import get_rabbitmq_rpc_client, is_rabbitmq_enabled
-from .clusters import router as clusters_router
-from .ec2_instances import router as ec2_instances_router
+from .workers import router as workers_router
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _start() -> None:
         if is_rabbitmq_enabled(app):
             rpc_client = get_rabbitmq_rpc_client(app)
-            for router in [clusters_router, ec2_instances_router]:
+            for router in [workers_router]:
                 await rpc_client.register_router(router, AUTOSCALING_RPC_NAMESPACE, app)
 
     return _start
