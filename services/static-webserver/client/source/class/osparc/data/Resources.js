@@ -228,6 +228,11 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
+          },
+          getInactivity: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/inactivity"
           }
         }
       },

@@ -89,12 +89,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
         if (config["invitation_required"]) {
-          if (
-            osparc.product.Utils.isProduct("s4l") ||
-            osparc.product.Utils.isProduct("s4lacad") ||
-            osparc.product.Utils.isProduct("s4ldesktop") ||
-            osparc.product.Utils.isProduct("s4ldesktopacad")
-          ) {
+          if (osparc.product.Utils.isS4LProduct()) {
             this.fireEvent("toRequestAccount");
           } else {
             osparc.store.Support.openInvitationRequiredDialog();
