@@ -581,7 +581,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             self._observation_counter += 1
 
     async def free_reserved_disk_space(self, node_id: NodeID) -> None:
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
