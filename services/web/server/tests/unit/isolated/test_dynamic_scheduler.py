@@ -6,25 +6,16 @@ from unittest.mock import AsyncMock
 import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    CreateDynamicService,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
-from simcore_service_webserver.dynamic_scheduler.api import get_dynamic_service
-
-
-@pytest.fixture(
-    params=[
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
-        NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
-        DynamicServiceGet.parse_obj(
-            DynamicServiceGet.Config.schema_extra["examples"][0]
-        ),
-    ]
+from simcore_service_webserver.dynamic_scheduler.api import (
+    get_dynamic_service,
+    run_dynamic_service,
 )
-def expected_response(
-    request: pytest.FixtureRequest,
-) -> NodeGet | NodeGetIdle | DynamicServiceGet:
-    return request.param
 
 
 @pytest.fixture
@@ -49,6 +40,23 @@ def mock_rpc_client(
     )
 
 
+@pytest.fixture
+def create_dynamic_service() -> CreateDynamicService:
+    return CreateDynamicService.parse_obj(
+        CreateDynamicService.Config.schema_extra["example"]
+    )
+
+
+@pytest.mark.parametrize(
+    "expected_response",
+    [
+        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+        NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
+        DynamicServiceGet.parse_obj(
+            DynamicServiceGet.Config.schema_extra["examples"][0]
+        ),
+    ],
+)
 async def test_get_service_status(
     mock_rpc_client: None,
     mocked_app: AsyncMock,
@@ -56,3 +64,26 @@ async def test_get_service_status(
     expected_response: NodeGet | NodeGetIdle | DynamicServiceGet,
 ):
     assert await get_dynamic_service(mocked_app, node_id=node_id) == expected_response
+
+
+@pytest.mark.parametrize(
+    "expected_response",
+    [
+        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
+        DynamicServiceGet.parse_obj(
+            DynamicServiceGet.Config.schema_extra["examples"][0]
+        ),
+    ],
+)
+async def test_run_dynamic_service(
+    mock_rpc_client: None,
+    mocked_app: AsyncMock,
+    expected_response: NodeGet | NodeGetIdle | DynamicServiceGet,
+    create_dynamic_service: CreateDynamicService,
+):
+    assert (
+        await run_dynamic_service(
+            mocked_app, create_dynamic_service=create_dynamic_service
+        )
+        == expected_response
+    )
