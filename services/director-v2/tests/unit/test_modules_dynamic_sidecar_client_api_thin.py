@@ -3,7 +3,7 @@
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, AsyncIterable
 
 import pytest
 from fastapi import FastAPI, status
@@ -52,8 +52,9 @@ def mocked_app(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> FastAP
 
 
 @pytest.fixture
-def thin_client(mocked_app: FastAPI) -> ThinSidecarsClient:
-    return ThinSidecarsClient(mocked_app)
+async def thin_client(mocked_app: FastAPI) -> AsyncIterable[ThinSidecarsClient]:
+    async with ThinSidecarsClient(mocked_app) as client:
+        yield client
 
 
 @pytest.fixture
@@ -360,4 +361,21 @@ async def test_get_containers_inactivity(
     )
 
     response = await thin_client.get_containers_inactivity(dynamic_sidecar_endpoint)
+    assert_responses(mock_response, response)
+
+
+async def test_post_disk_reserved_free(
+    thin_client: ThinSidecarsClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+) -> None:
+    mock_response = Response(status.HTTP_204_NO_CONTENT)
+    mock_request(
+        "POST",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/disk/reserved:free",
+        mock_response,
+        None,
+    )
+
+    response = await thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
     assert_responses(mock_response, response)

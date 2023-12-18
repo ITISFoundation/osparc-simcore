@@ -581,6 +581,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeSelection", e => {
         const selection = e.getData();
         studiesDeleteButton.set({
+          appearance: "danger-button",
           visibility: selection.length ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
         });
@@ -593,6 +594,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addShowSharedWithButton: function() {
       const sharedWithButton = new osparc.dashboard.SharedWithMenuButton("study");
+      sharedWithButton.set({
+        appearance: "form-button-outlined"
+      });
       osparc.utils.Utils.setIdToWidget(sharedWithButton, "sharedWithButton");
 
       sharedWithButton.addListener("sharedWith", e => {
@@ -626,6 +630,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createImportButton: function() {
       const importButton = new qx.ui.form.Button(this.tr("Import"));
+      importButton.set({
+        appearance: "form-button-outlined"
+      });
       importButton.addListener("execute", () => {
         const importStudy = new osparc.study.Import();
         const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
@@ -676,6 +683,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createSelectButton: function() {
       const selectButton = new qx.ui.form.ToggleButton().set({
+        appearance: "form-button-outlined",
         marginRight: 8
       });
       selectButton.bind("value", this, "multiSelection");
@@ -949,6 +957,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDeleteStudyMenuButton: function(studyData) {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteButton.set({
+        appearance: "form-button-outlined"
+      });
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => this.__deleteStudyRequested(studyData), this);
       return deleteButton;

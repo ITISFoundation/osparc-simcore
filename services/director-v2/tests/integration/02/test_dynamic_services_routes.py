@@ -56,14 +56,11 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
 ]
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
+pytest_simcore_ops_services_selection = ["adminer", "minio"]
 
 
 @pytest.fixture
 def minimal_configuration(
-    mock_env: EnvVarsDict,
     redis_settings: RedisSettings,
     postgres_db,
     postgres_host_config: dict[str, str],
@@ -75,10 +72,8 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    monkeypatch.setenv("RABBIT_USER", "admin")
-    monkeypatch.setenv("RABBIT_PASSWORD", "adminadmin")
-    return mock_env | {"RABBIT_USER": "admin", "RABBIT_PASSWORD": "adminadmin"}
+def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None:
+    ...
 
 
 @pytest.fixture
@@ -150,7 +145,6 @@ def start_request_data(
 
 @pytest.fixture
 async def director_v2_client(
-    minimal_configuration: None,
     mock_env: EnvVarsDict,
     network_name: str,
     redis_settings: RedisSettings,
@@ -297,6 +291,7 @@ async def test_start_status_stop(
     mock_projects_networks_repository: None,
     mock_projects_repository: None,
     mocked_service_awaits_manual_interventions: None,
+    mock_resource_usage_tracker: None,
 ):
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 

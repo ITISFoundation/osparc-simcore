@@ -94,7 +94,7 @@ qx.Class.define("osparc.About", {
         contentPaddingLeft: 0,
         barPosition: "top"
       });
-      tabView.getChildControl("pane").setBackgroundColor("transparent_overlay");
+      tabView.getChildControl("pane").setBackgroundColor("transparent");
       this.add(tabView, {
         flex: 1
       });

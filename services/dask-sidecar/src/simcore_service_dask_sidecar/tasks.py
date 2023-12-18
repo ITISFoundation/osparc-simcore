@@ -90,7 +90,7 @@ async def _run_computational_sidecar_async(
 ) -> TaskOutputData:
     task_publishers = TaskPublisher(task_owner=task_parameters.task_owner)
 
-    _logger.debug(
+    _logger.info(
         "run_computational_sidecar %s",
         f"{task_parameters.dict()=}, {docker_auth=}, {log_file_url=}, {s3_settings=}",
     )
@@ -109,7 +109,7 @@ async def _run_computational_sidecar_async(
             task_publishers=task_publishers,
         ) as sidecar:
             output_data = await sidecar.run(command=task_parameters.command)
-        _logger.debug("completed run of sidecar with result %s", f"{output_data=}")
+        _logger.info("completed run of sidecar with result %s", f"{output_data=}")
         return output_data
 
 

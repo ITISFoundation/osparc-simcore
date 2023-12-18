@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Any, ClassVar, Final, cast
 
-from aws_library.ec2.models import EC2InstanceBootSpecific
+from aws_library.ec2.models import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -85,6 +85,12 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
+    WORKERS_EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
+        ...,
+        description="Allows to define tags that should be added to the created EC2 instance default tags. "
+        "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
+    )
+
     @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
@@ -100,16 +106,9 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):
-    PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
+    PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        min_items=1,
-        unique_items=True,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
-    )
-    PRIMARY_EC2_INSTANCES_AMI_ID: str = Field(
-        ...,
-        min_length=1,
-        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
     PRIMARY_EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
@@ -136,13 +135,34 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
         "this is required to start a new EC2 instance",
     )
+    PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: EC2Tags = Field(
+        ...,
+        description="Allows to define tags that should be added to the created EC2 instance default tags. "
+        "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
+    )
 
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_intance_names(cls, value):
+    def check_valid_instance_names(
+        cls, value: dict[str, EC2InstanceBootSpecific]
+    ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(tuple[InstanceTypeType, ...], value)
+        if all(parse_obj_as(InstanceTypeType, key) for key in value):
+            return value
+
+        msg = "Invalid instance type name"
+        raise ValueError(msg)
+
+    @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
+    @classmethod
+    def check_only_one_value(
+        cls, value: dict[str, EC2InstanceBootSpecific]
+    ) -> dict[str, EC2InstanceBootSpecific]:
+        if len(value) != 1:
+            msg = "Only one exact value is accepted (empty or multiple is invalid)"
+            raise ValueError(msg)
+
         return value
 
 

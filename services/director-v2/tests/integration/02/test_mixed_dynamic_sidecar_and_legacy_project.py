@@ -61,7 +61,7 @@ def mock_env(
     rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    minio_config: dict[str, Any],
+    minio_s3_settings_envs: EnvVarsDict,
     storage_service: URL,
     network_name: str,
 ) -> EnvVarsDict:
@@ -225,6 +225,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     mock_sidecars_client: mock.Mock,
     service_resources: ServiceResourcesDict,
     mocked_service_awaits_manual_interventions: None,
+    mock_resource_usage_tracker: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check

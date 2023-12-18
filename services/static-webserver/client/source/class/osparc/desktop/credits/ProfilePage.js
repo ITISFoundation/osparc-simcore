@@ -135,6 +135,8 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also empty last name
 
       const updateBtn = new qx.ui.form.Button("Update Profile").set({
+        appearance: "form-button",
+        alignX: "left",
         allowGrowX: false
       });
       box.add(updateBtn);
@@ -266,6 +268,8 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       });
 
       const resetBtn = new qx.ui.form.Button("Reset Password").set({
+        appearance: "form-button",
+        alignX: "left",
         allowGrowX: false
       });
       box.add(resetBtn);

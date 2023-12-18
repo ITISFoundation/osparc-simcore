@@ -14,6 +14,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
+from servicelib.fastapi.http_client_thin import (
+    BaseHttpClientError,
+    UnexpectedStatusError,
+)
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressCallback,
@@ -31,7 +35,6 @@ from ....core.dynamic_services_settings.scheduler import (
 from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
-from ._errors import BaseClientHTTPError, UnexpectedStatusError
 from ._thin import ThinSidecarsClient
 
 _logger = logging.getLogger(__name__)
@@ -45,7 +48,7 @@ async def _debug_progress_callback(
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
-class SidecarsClient:
+class SidecarsClient:  # pylint: disable=too-many-public-methods
     """
     API client used for talking with:
         - dynamic-sidecar
@@ -54,7 +57,13 @@ class SidecarsClient:
 
     def __init__(self, app: FastAPI):
         self._app = app
-        self._thin_client: ThinSidecarsClient = ThinSidecarsClient(app)
+        self._thin_client = ThinSidecarsClient(app)
+
+    async def teardown(self) -> None:
+        await self._thin_client.teardown_client()
+
+    async def setup(self) -> None:
+        await self._thin_client.setup_client()
 
     @cached_property
     def _async_client(self) -> AsyncClient:
@@ -81,7 +90,7 @@ class SidecarsClient:
                 )
             result: bool = response.json()["is_healthy"]
             return result
-        except BaseClientHTTPError:
+        except BaseHttpClientError:
             return False
 
     async def containers_inspect(
@@ -151,9 +160,12 @@ class SidecarsClient:
             container_name: str = response.json()
             return container_name
         except UnexpectedStatusError as e:
-            if e.response.status_code == status.HTTP_404_NOT_FOUND:
-                raise EntrypointContainerNotFoundError() from e
-            raise e
+            if (
+                e.response.status_code  # pylint: disable=no-member # type: ignore
+                == status.HTTP_404_NOT_FOUND
+            ):
+                raise EntrypointContainerNotFoundError from e
+            raise
 
     async def _attach_container_to_network(
         self,
@@ -191,7 +203,7 @@ class SidecarsClient:
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except BaseClientHTTPError:
+        except BaseHttpClientError:
             # if no containers are found it is ok to skip the operations,
             # there are no containers to attach the network to
             return
@@ -245,7 +257,7 @@ class SidecarsClient:
             containers_status = await self.containers_docker_status(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
-        except BaseClientHTTPError:
+        except BaseHttpClientError:
             # if no containers are found it is ok to skip the operations,
             # there are no containers to detach the network from
             return
@@ -454,6 +466,11 @@ class SidecarsClient:
         )
         return InactivityResponse.parse_obj(response.json())
 
+    async def free_reserved_disk_space(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
+
 
 def _get_proxy_configuration(
     entrypoint_container_name: str, service_port: PortInt
@@ -495,19 +512,18 @@ async def setup(app: FastAPI) -> None:
 async def shutdown(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, "dynamic-sidecar api client closing..."):
         await logged_gather(
-            *(
-                x._thin_client.close()  # pylint: disable=protected-access
-                for x in app.state.sidecars_api_clients.values()
-            ),
+            *(client.teardown() for client in app.state.sidecars_api_clients.values()),
             reraise=False,
         )
 
 
-def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsClient:
+async def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsClient:
     str_node_id = f"{node_id}"
 
     if str_node_id not in app.state.sidecars_api_clients:
-        app.state.sidecars_api_clients[str_node_id] = SidecarsClient(app)
+        sidecars_client = SidecarsClient(app)
+        app.state.sidecars_api_clients[str_node_id] = sidecars_client
+        await sidecars_client.setup()
 
     client: SidecarsClient = app.state.sidecars_api_clients[str_node_id]
     return client
@@ -520,10 +536,7 @@ def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
 async def get_dynamic_sidecar_service_health(
     app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
-    api_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    api_client = await get_sidecars_client(app, scheduler_data.node_uuid)
 
     # update service health
-    is_healthy = await api_client.is_healthy(
-        scheduler_data.endpoint, with_retry=with_retry
-    )
-    return is_healthy
+    return await api_client.is_healthy(scheduler_data.endpoint, with_retry=with_retry)

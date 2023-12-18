@@ -30,6 +30,7 @@ from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
+from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import login_registry, volumes_fix_permissions
 
@@ -129,6 +130,8 @@ def create_base_app() -> FastAPI:
     long_running_tasks.server.setup(app)
 
     app.include_router(get_main_router(app))
+
+    setup_reserved_space(app)
 
     return app
 

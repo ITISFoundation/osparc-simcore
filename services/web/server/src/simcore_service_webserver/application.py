@@ -19,6 +19,7 @@ from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics
 from .director_v2.plugin import setup_director_v2
+from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector.plugin import setup_garbage_collector
@@ -118,6 +119,7 @@ def create_application() -> web.Application:
 
     # interaction with other backend services
     setup_director_v2(app)
+    setup_dynamic_scheduler(app)
     setup_storage(app)
     setup_catalog(app)
 

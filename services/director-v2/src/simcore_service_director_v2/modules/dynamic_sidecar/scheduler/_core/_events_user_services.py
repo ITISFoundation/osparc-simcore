@@ -35,7 +35,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
         "Getting docker compose spec for service %s", scheduler_data.service_name
     )
 
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     # check values have been set by previous step
@@ -204,3 +204,5 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     scheduler_data.dynamic_sidecar.were_containers_created = True
 
     scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
+
+    _logger.info("Internal state after creating user services %s", scheduler_data)

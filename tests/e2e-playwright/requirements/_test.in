@@ -1,4 +1,8 @@
-
-pytest-playwright
+faker
+pydantic[email]
 pytest-html
+pytest-instafail
+pytest-playwright
+pytest-runner
+pytest-sugar
 tenacity

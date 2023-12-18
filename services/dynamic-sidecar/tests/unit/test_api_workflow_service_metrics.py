@@ -300,6 +300,9 @@ async def test_user_services_fail_to_stop_or_save_data(
 
     await _wait_for_containers_to_be_running(app)
 
+    # let a few heartbeats pass
+    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
+
     # in case of manual intervention multiple stops will be sent
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):

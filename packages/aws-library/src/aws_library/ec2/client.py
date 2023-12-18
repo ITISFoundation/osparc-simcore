@@ -7,7 +7,7 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from aiocache import cached
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
@@ -170,7 +170,9 @@ class SimcoreEC2API:
                     else None,
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
-                    tags={tag["Key"]: tag["Value"] for tag in instance["Tags"]},
+                    tags=parse_obj_as(
+                        EC2Tags, {tag["Key"]: tag["Value"] for tag in instance["Tags"]}
+                    ),
                     resources=Resources(
                         cpus=instance_config.type.cpus, ram=instance_config.type.ram
                     ),
@@ -236,7 +238,10 @@ class SimcoreEC2API:
                             cpus=ec2_instance_types[0].cpus,
                             ram=ec2_instance_types[0].ram,
                         ),
-                        tags={tag["Key"]: tag["Value"] for tag in instance["Tags"]},
+                        tags=parse_obj_as(
+                            EC2Tags,
+                            {tag["Key"]: tag["Value"] for tag in instance["Tags"]},
+                        ),
                     )
                 )
         _logger.debug(

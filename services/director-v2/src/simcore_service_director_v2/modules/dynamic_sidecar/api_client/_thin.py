@@ -7,11 +7,15 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
+from servicelib.fastapi.http_client_thin import (
+    BaseThinClient,
+    expect_status,
+    retry_on_errors,
+)
 
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from ._base import BaseThinClient, expect_status, retry_on_errors
 
 
 class ThinSidecarsClient(BaseThinClient):
@@ -265,3 +269,12 @@ class ThinSidecarsClient(BaseThinClient):
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/inactivity")
         return await self.client.get(url)
+
+    @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def post_disk_reserved_free(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/disk/reserved:free")
+        return await self.client.post(url)

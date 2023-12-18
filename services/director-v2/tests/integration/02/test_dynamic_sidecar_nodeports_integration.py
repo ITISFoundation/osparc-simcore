@@ -46,6 +46,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
@@ -154,6 +155,7 @@ async def minimal_configuration(
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
+    minio_s3_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
@@ -324,14 +326,12 @@ def dev_feature_r_clone_enabled(request) -> str:
 
 @pytest.fixture
 def mock_env(
+    mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    redis_service: RedisSettings,
     network_name: str,
     dev_feature_r_clone_enabled: str,
-    rabbit_service: RabbitSettings,
     dask_scheduler_service: str,
-    minio_config: dict[str, Any],
-    storage_service: URL,
+    minimal_configuration: None,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -364,15 +364,10 @@ def mock_env(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "R_CLONE_PROVIDER": "MINIO",
-            "S3_ENDPOINT": minio_config["client"]["endpoint"],
-            "S3_ACCESS_KEY": minio_config["client"]["access_key"],
-            "S3_SECRET_KEY": minio_config["client"]["secret_key"],
-            "S3_BUCKET_NAME": minio_config["bucket_name"],
-            "S3_SECURE": f"{minio_config['client']['secure']}",
             "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
+            "COMPUTATIONAL_BACKEND_ENABLED": "true",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
-            "REDIS_HOST": redis_service.REDIS_HOST,
-            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
@@ -860,10 +855,10 @@ async def _assert_retrieve_completed(
 
 @pytest.mark.flaky(max_runs=3)
 async def test_nodeports_integration(
-    minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
     mocked_service_awaits_manual_interventions: None,
+    mock_resource_usage_tracker: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,

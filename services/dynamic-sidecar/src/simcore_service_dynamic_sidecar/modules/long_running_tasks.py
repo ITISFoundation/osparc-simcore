@@ -277,15 +277,15 @@ async def task_runs_docker_compose_down(
             await send_service_stopped(app, simcore_platform_status)
 
     try:
-        with log_context(_logger, logging.INFO, "save user services preferences"):
-            if user_services_preferences.is_feature_enabled(app):
-                await user_services_preferences.save_user_services_preferences(app)
-
         progress.update(message="running docker-compose-down", percent=0.1)
 
         await run_before_shutdown_actions(
             shared_store, settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown
         )
+
+        with log_context(_logger, logging.INFO, "save user services preferences"):
+            if user_services_preferences.is_feature_enabled(app):
+                await user_services_preferences.save_user_services_preferences(app)
 
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")

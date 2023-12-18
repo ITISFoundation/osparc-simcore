@@ -86,8 +86,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
             gap: 10,
             padding: 10,
             paddingBottom: 5,
-            allowGrowX: false,
-            backgroundColor: "background-main-1"
+            allowGrowX: false
           });
           control.getChildControl("icon").set({
             scale: true,
@@ -134,8 +133,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       }
       contentContainer.set({
         padding: 5,
-        allowGrowX: false,
-        backgroundColor: "background-main-1"
+        allowGrowX: false
       });
       this._addAt(contentContainer, 1, {
         flex: 1

@@ -104,8 +104,18 @@ def app_environment(
                 faker.pylist(allowed_types=(str,))
             ),
             "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    random.choice(  # noqa: S311
+                        ec2_instances
+                    ): EC2InstanceBootSpecific.Config.schema_extra["examples"][
+                        1
+                    ]  # NOTE: we use example with custom script
+                }
+            ),
+            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+                {"osparc-tag": "the pytest tag is here"}
+            ),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
@@ -120,6 +130,9 @@ def app_environment(
             ),
             "WORKERS_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+                {"osparc-tag": "the pytest worker tag value is here"}
+            ),
         },
     )
     return mock_env_devel_environment | envs

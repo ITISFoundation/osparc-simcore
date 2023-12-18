@@ -30,6 +30,7 @@ from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
+from .dynamic_scheduler.settings import DynamicSchedulerSettings
 from .exporter.settings import ExporterSettings
 from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
@@ -168,6 +169,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     WEBSERVER_PAYMENTS: PaymentsSettings | None = Field(
         auto_default_from_env=True, description="payments plugin settings"
+    )
+
+    WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
+        auto_default_from_env=True, description="dynamic-scheduler plugin settings"
     )
 
     WEBSERVER_REDIS: RedisSettings | None = Field(auto_default_from_env=True)

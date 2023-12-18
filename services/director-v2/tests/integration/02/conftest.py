@@ -1,11 +1,14 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 from uuid import uuid4
 
 import aiodocker
 import pytest
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    ServicePricingPlanGet,
+)
 from models_library.projects_networks import ProjectsNetworks
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -62,7 +65,7 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
             "projects_networks.ProjectsNetworksRepository.get_projects_networks"
         ),
         return_value=ProjectsNetworks.parse_obj(
-            dict(project_uuid=uuid4(), networks_with_aliases={})
+            {"project_uuid": uuid4(), "networks_with_aliases": {}}
         ),
     )
 
@@ -72,4 +75,15 @@ def service_resources() -> ServiceResourcesDict:
     return parse_obj_as(
         ServiceResourcesDict,
         ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    )
+
+
+@pytest.fixture
+def mock_resource_usage_tracker(mocker: MockerFixture) -> None:
+    base_module = "simcore_service_director_v2.modules.resource_usage_tracker_client"
+    mocker.patch(
+        f"{base_module}.ResourceUsageTrackerClient.get_default_service_pricing_plan",
+        return_value=ServicePricingPlanGet.parse_obj(
+            ServicePricingPlanGet.Config.schema_extra["examples"][0]
+        ),
     )
