@@ -49,6 +49,7 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
             app=app,
             interval=resource_tracking_settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
             task_name="resource_tracking_heart_beat",
+            wait_before_running=resource_tracking_settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
         )
 
 

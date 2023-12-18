@@ -5,12 +5,12 @@ from collections.abc import AsyncIterable, Iterable
 
 import pytest
 from httpx import (
-    ConnectError,
     HTTPError,
     PoolTimeout,
     Request,
     RequestError,
     Response,
+    TransportError,
     codes,
 )
 from pydantic import AnyHttpUrl, parse_obj_as
@@ -79,7 +79,7 @@ async def test_connection_error(
         await thick_client.get_provided_url(test_url)
 
     assert isinstance(exe_info.value, ClientHttpError)
-    assert isinstance(exe_info.value.error, ConnectError)
+    assert isinstance(exe_info.value.error, TransportError)
 
 
 async def test_retry_on_errors(
@@ -95,7 +95,7 @@ async def test_retry_on_errors(
     _assert_messages(caplog_info_level.messages)
 
 
-@pytest.mark.parametrize("error_class", [ConnectError, PoolTimeout])
+@pytest.mark.parametrize("error_class", [TransportError, PoolTimeout])
 async def test_retry_on_errors_by_error_type(
     error_class: type[RequestError],
     caplog_info_level: pytest.LogCaptureFixture,
@@ -107,7 +107,7 @@ async def test_retry_on_errors_by_error_type(
         @retry_on_errors
         async def raises_request_error(self) -> Response:
             raise error_class(
-                "mock_connect_error",
+                "mock_connect_error",  # noqa: EM101
                 request=Request(method="GET", url=test_url),
             )
 
@@ -134,7 +134,8 @@ async def test_retry_on_errors_raises_client_http_error(
         # pylint: disable=no-self-use
         @retry_on_errors
         async def raises_http_error(self) -> Response:
-            raise HTTPError("mock_http_error")
+            msg = "mock_http_error"
+            raise HTTPError(msg)
 
     client = ATestClient(request_timeout=request_timeout)
 
