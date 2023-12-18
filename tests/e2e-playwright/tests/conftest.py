@@ -97,7 +97,7 @@ def product_url(request: pytest.FixtureRequest) -> AnyUrl:
 def user_name(request: pytest.FixtureRequest, auto_register: bool, faker: Faker) -> str:
     if auto_register:
         faker.seed_instance(random.randint(0, 10000000000))  # noqa: S311
-        return faker.email()
+        return f"pytest_autoregistered_{faker.email()}"
     if osparc_user_name := request.config.getoption("--user-name"):
         assert isinstance(osparc_user_name, str)
         return osparc_user_name
