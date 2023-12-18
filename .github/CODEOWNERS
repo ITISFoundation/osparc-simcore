@@ -37,6 +37,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/static-webserver/client/        @jsaq007 @ignapas
 /services/storage/                        @sanderegg
 /services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66
+/tests/e2e-playwright/                    @matusdrobuliak66
 /tests/environment-setup/                 @pcrespov
 /tests/performance/                       @pcrespov @sanderegg
 /tests/public-api/                        @pcrespov
