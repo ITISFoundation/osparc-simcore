@@ -66,7 +66,8 @@ qx.Class.define("osparc.notification.NotificationsButton", {
             backgroundColor: "error",
             textColor: "white",
             font: "text-12",
-            padding: [0, 4]
+            padding: [0, 4],
+            visibility: this.value > 0 ? "visible" : "hidden"
           });
           control.getContentElement().setStyles({
             "border-radius": "8px"
