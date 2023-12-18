@@ -3,8 +3,11 @@ from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_N
 from servicelib.rabbitmq import RPCRouter
 
 from ...services.rabbitmq import get_rabbitmq_rpc_server
+from . import _services
 
-ROUTERS: list[RPCRouter] = []
+ROUTERS: list[RPCRouter] = [
+    _services.router,
+]
 
 
 def setup_rpc_api_routes(app: FastAPI) -> None:

@@ -91,6 +91,14 @@ class NodeGetIdle(OutputSchema):
     service_state: Literal["idle"]
     service_uuid: NodeID
 
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "service_state": "idle",
+            }
+        }
+
 
 class NodeRetrieve(InputSchemaWithoutCameCase):
     port_keys: list[ServicePortKey] = []

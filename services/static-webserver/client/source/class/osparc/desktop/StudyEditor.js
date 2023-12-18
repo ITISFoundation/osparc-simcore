@@ -182,7 +182,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
-          if (osparc.product.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isS4LProduct()) {
             this.__startIdlingTracker();
           }
 
@@ -550,7 +550,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__studyEditorIdlingTracker.stop();
         this.__studyEditorIdlingTracker = null;
       }
-      const studyEditorIdlingTracker = this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker();
+      const studyEditorIdlingTracker = this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker(this.getStudy().getUuid());
       studyEditorIdlingTracker.addListener("userIdled", () => this.fireEvent("userIdled"));
       studyEditorIdlingTracker.start();
     },

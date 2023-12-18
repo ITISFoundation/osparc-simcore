@@ -19,6 +19,7 @@ from models_library.shared_user_preferences import (
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
+from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -54,7 +55,6 @@ from ....db.repositories.user_preferences_frontend import (
 )
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
-    BaseClientHTTPError,
     SidecarsClient,
     get_dynamic_sidecar_service_health,
     get_sidecars_client,
@@ -120,7 +120,7 @@ async def service_remove_containers(
         await sidecars_client.stop_service(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
-    except (BaseClientHTTPError, TaskClientResultError) as e:
+    except (BaseHttpClientError, TaskClientResultError) as e:
         _logger.warning(
             (
                 "Could not remove service containers for "
@@ -264,7 +264,9 @@ async def attempt_pod_removal_and_data_saving(
 
     _logger.debug("removing service; scheduler_data=%s", scheduler_data)
 
-    sidecars_client: SidecarsClient = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client: SidecarsClient = await get_sidecars_client(
+        app, scheduler_data.node_uuid
+    )
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
 
@@ -309,7 +311,7 @@ async def attempt_pod_removal_and_data_saving(
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
             _logger.info("dynamic-sidecar saved: state and output ports")
-        except (BaseClientHTTPError, TaskClientResultError) as e:
+        except (BaseHttpClientError, TaskClientResultError) as e:
             _logger.error(  # noqa: TRY400
                 (
                     "Could not contact dynamic-sidecar to save service "
@@ -357,7 +359,7 @@ async def attempt_pod_removal_and_data_saving(
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     _logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     projects_networks_repository: ProjectsNetworksRepository = get_repository(
@@ -411,7 +413,7 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     # Before starting, update the volume states. It is not always

@@ -1163,7 +1163,7 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - uses: actions/setup-node@v4.0.0
+      - uses: actions/setup-node@v4.0.1
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1555,7 +1555,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1609,7 +1609,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1663,7 +1663,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1719,7 +1719,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1775,7 +1775,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1832,7 +1832,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1900,7 +1900,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -1978,7 +1978,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -2031,7 +2031,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -2087,7 +2087,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v4.0.0
+      - uses: actions/setup-node@v4.0.1
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -2095,7 +2095,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -2213,7 +2213,7 @@ jobs:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build

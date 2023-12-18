@@ -32,6 +32,15 @@ qx.Class.define("osparc.product.Utils", {
       return (productName === product);
     },
 
+    isS4LProduct: function() {
+      return (
+        this.isProduct("s4l") ||
+        this.isProduct("s4lacad") ||
+        this.isProduct("s4ldesktop") ||
+        this.isProduct("s4ldesktopacad")
+      );
+    },
+
     getStudyAlias: function(options = {}) {
       let alias = null;
       if (this.getProductName().includes("s4l")) {

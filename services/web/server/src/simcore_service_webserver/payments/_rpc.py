@@ -21,36 +21,10 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
 from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
 
-from ..rabbitmq_settings import RabbitSettings
-from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
+from ..rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
-
-
-_APP_PAYMENTS_RPC_CLIENT_KEY = f"{__name__}.RabbitMQRPCClient"
-
-
-async def rabbitmq_rpc_client_lifespan(app: web.Application):
-    settings: RabbitSettings = get_rabbitmq_settings(app)
-    rpc_client = await RabbitMQRPCClient.create(
-        client_name="webserver_payments_client",
-        settings=settings,
-    )
-
-    assert rpc_client  # nosec
-
-    app[_APP_PAYMENTS_RPC_CLIENT_KEY] = rpc_client
-
-    yield
-
-    await rpc_client.close()
-
-
-#
-# rpc client functions
-#
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -67,7 +41,7 @@ async def init_payment(
     user_email: str,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     # NOTE: remote errors are aio_pika.MessageProcessError
     result = await rpc_client.request(
@@ -95,7 +69,7 @@ async def cancel_payment(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -114,7 +88,7 @@ async def get_payments_page(
     limit: int | None,
     offset: int | None,
 ) -> tuple[int, list[PaymentTransaction]]:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result: tuple[int, list[PaymentTransaction]] = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -139,7 +113,7 @@ async def init_creation_of_payment_method(
     user_name: IDStr,
     user_email: EmailStr,
 ) -> PaymentMethodInitiated:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -162,7 +136,7 @@ async def cancel_creation_of_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -181,7 +155,7 @@ async def list_payment_methods(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[PaymentMethodGet]:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -201,7 +175,7 @@ async def get_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentMethodGet:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -222,7 +196,7 @@ async def delete_payment_method(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
@@ -249,8 +223,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     user_email: EmailStr,
     comment: str | None = None,
 ) -> PaymentTransaction:
-
-    rpc_client = app[_APP_PAYMENTS_RPC_CLIENT_KEY]
+    rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
