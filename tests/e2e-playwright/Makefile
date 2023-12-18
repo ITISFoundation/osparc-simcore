@@ -12,6 +12,34 @@ leave build:
 	$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
+SIMCORE_DOT_ENV = $(abspath $(CURDIR)/../../.env)
+
+define _up_simcore
+# set some parameters to allow for e2e to run
+echo LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
+echo LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
+echo DEFAULT_MAX_NANO_CPUS=1000000000 >> $(SIMCORE_DOT_ENV)
+echo DEFAULT_MAX_MEMORY=134217728 >> $(SIMCORE_DOT_ENV)
+echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
+$(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
+endef
+
+define _transfer-images-to-registry
+# pushing sleeper image
+@docker pull itisfoundation/sleeper:1.0.0
+@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
+@docker push registry:5000/simcore/services/comp/itis/sleeper:1.0.0
+# completed transfer of images
+@curl -s registry:5000/v2/_catalog | jq '.repositories'
+@curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
+endef
+
+install-ci-no-build:
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_up_simcore)
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(_transfer-images-to-registry)
+
 # LOCAL ------------------
 
 .PHONY: requirements

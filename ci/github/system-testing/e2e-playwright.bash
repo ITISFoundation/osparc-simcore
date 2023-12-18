@@ -11,10 +11,8 @@ DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 install() {
-  pushd tests/e2e
-  make install-ci-no-build
-  popd
   pushd tests/e2e-playwright
+  make install-ci-no-build
   make install-dev
   popd
 }
