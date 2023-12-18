@@ -379,9 +379,9 @@ async def test_open_project(
                     hardware_info=None,
                 )
             )
-        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
-            calls
-        )
+        mocked_director_v2_api[
+            "dynamic_scheduler._rpc.get_service_status"
+        ].assert_has_calls(calls)
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -456,9 +456,9 @@ async def test_open_template_project_for_edition(
                     hardware_info=None,
                 )
             )
-        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_has_calls(
-            calls
-        )
+        mocked_director_v2_api[
+            "dynamic_scheduler._rpc.get_service_status"
+        ].assert_has_calls(calls)
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -536,9 +536,9 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
         assert mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].call_count == (num_of_dyn_services - num_service_already_running)
-        mocked_director_v2_api["director_v2.api.run_dynamic_service"].reset_mock()
+        mocked_director_v2_api["dynamic_scheduler._rpc.get_service_status"].reset_mock()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -579,7 +579,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].assert_not_called()
 
 
@@ -614,7 +614,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].assert_not_called()
 
 
@@ -654,7 +654,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
             client.app, ProjectID(project["uuid"])
         )
         mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called()
+        mocked_director_v2_api[
+            "dynamic_scheduler._rpc.get_service_status"
+        ].assert_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -679,7 +681,9 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(user_project["uuid"])
     )
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler._rpc.get_service_status"
+    ].assert_not_called()
 
 
 @pytest.fixture
@@ -946,17 +950,17 @@ async def test_project_node_lifetime(
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].assert_called_once()
         assert "node_id" in data
         node_id = data["node_id"]
     else:
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].assert_not_called()
 
     # create a new NOT dynamic node...
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler._rpc.get_service_status"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": "simcore/services/comp/key",
@@ -967,13 +971,13 @@ async def test_project_node_lifetime(
     node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].assert_not_called()
         assert "node_id" in data
         node_id_2 = data["node_id"]
     else:
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler._rpc.get_service_status"
         ].assert_not_called()
 
     # get the node state
