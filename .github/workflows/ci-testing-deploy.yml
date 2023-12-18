@@ -277,7 +277,7 @@ jobs:
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build
       - name: upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -626,7 +626,7 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
@@ -720,7 +720,7 @@ jobs:
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
@@ -803,7 +803,7 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1569,7 +1569,7 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
@@ -1623,7 +1623,7 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test 02
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
@@ -1677,7 +1677,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1735,7 +1735,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1791,7 +1791,7 @@ jobs:
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
@@ -1858,7 +1858,7 @@ jobs:
           make test-system
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1914,7 +1914,7 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
@@ -1994,7 +1994,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
@@ -2046,13 +2046,13 @@ jobs:
       - name: dump services setting schemas
         run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
       - name: upload services settings schemas
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_services_settings_schemas
           path: ./services/**/settings-schema.json
       - name: upload failed tests logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
@@ -2113,19 +2113,19 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_logs
           path: tests/e2e/logs
