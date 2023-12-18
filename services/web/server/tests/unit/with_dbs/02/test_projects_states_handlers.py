@@ -20,7 +20,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
-from models_library.api_schemas_webserver.projects_nodes import NodeGet
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner, PositiveIntWithExclusiveMinimumRemoved
 from models_library.projects_state import (
@@ -985,10 +985,14 @@ async def test_project_node_lifetime(
     )
 
     node_sample = deepcopy(NodeGet.Config.schema_extra["example"])
-    mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
-        **node_sample,
-        "service_state": "running",
-    }
+    mocked_director_v2_api[
+        "dynamic_scheduler._rpc.get_service_status"
+    ].return_value = NodeGet.parse_obj(
+        {
+            **node_sample,
+            "service_state": "running",
+        }
+    )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
@@ -1001,10 +1005,14 @@ async def test_project_node_lifetime(
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
-    mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
-        "service_uuid": node_sample["service_uuid"],
-        "service_state": "idle",
-    }
+    mocked_director_v2_api[
+        "dynamic_scheduler._rpc.get_service_status"
+    ].return_value = NodeGetIdle.parse_obj(
+        {
+            "service_uuid": node_sample["service_uuid"],
+            "service_state": "idle",
+        }
+    )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:

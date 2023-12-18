@@ -7,11 +7,15 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
+from servicelib.fastapi.http_client_thin import (
+    BaseThinClient,
+    expect_status,
+    retry_on_errors,
+)
 
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from ._base import BaseThinClient, expect_status, retry_on_errors
 
 
 class ThinSidecarsClient(BaseThinClient):

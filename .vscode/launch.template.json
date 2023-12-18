@@ -160,6 +160,19 @@
       ]
     },
     {
+      "name": "Python: Remote Attach dynamic-schduler (SCALE 1 replica first)",
+      "type": "python",
+      "request": "attach",
+      "port": 3016,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Debug tests/e2e/tutorials/{FILE}",
