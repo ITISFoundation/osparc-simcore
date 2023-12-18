@@ -38,7 +38,7 @@ async def test_retry_request_ok(mock_responses: None, session: ClientSession):
 async def test_retry_request_unexpected_code(
     mock_responses: None, session: ClientSession
 ):
-    with pytest.raises(ClientResponseError, match="but was attending"):
+    with pytest.raises(ClientResponseError, match="but was expecting"):
         async with retry_request(
             session, "GET", _ROUTE_ALWAYS_200_OK, expected_status=999
         ):
