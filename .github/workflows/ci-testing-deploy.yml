@@ -2215,7 +2215,7 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
@@ -2242,13 +2242,13 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload tracing if failed
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
