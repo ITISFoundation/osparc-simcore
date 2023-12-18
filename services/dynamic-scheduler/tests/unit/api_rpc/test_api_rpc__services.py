@@ -11,6 +11,9 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    CreateDynamicService,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -56,7 +59,7 @@ def fake_director_v0_base_url() -> str:
 
 
 @pytest.fixture
-def mock_director_v0(
+def mock_director_v0_service_state(
     fake_director_v0_base_url: str,
     node_id_legacy: NodeID,
     node_not_found: NodeID,
@@ -79,7 +82,7 @@ def mock_director_v0(
 
 
 @pytest.fixture
-def mock_director_v2(
+def mock_director_v2_service_state(
     node_id_new_style: NodeID,
     node_id_legacy: NodeID,
     node_not_found: NodeID,
@@ -126,8 +129,8 @@ def app_environment(
 @pytest.fixture
 async def rpc_client(
     app_environment: EnvVarsDict,
-    mock_director_v2: None,
-    mock_director_v0: None,
+    mock_director_v2_service_state: None,
+    mock_director_v0_service_state: None,
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
@@ -165,3 +168,72 @@ async def test_get_state(
         node_id=node_not_found,
     )
     assert result == NodeGetIdle(service_state="idle", service_uuid=node_not_found)
+
+
+@pytest.fixture
+def create_dynamic_services() -> CreateDynamicService:
+    # one for legacy and one for new style?
+    return CreateDynamicService.parse_obj(
+        CreateDynamicService.Config.schema_extra["example"]
+    )
+
+
+@pytest.fixture
+def mock_director_v0_service_run(
+    fake_director_v0_base_url: str, service_status_legacy: NodeGet
+) -> Iterator[None]:
+    with respx.mock(
+        base_url=fake_director_v0_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.post("/fake-service-run").respond(
+            status.HTTP_201_CREATED,
+            text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
+        )
+
+        yield None
+
+
+@pytest.fixture
+def mock_director_v2_service_run(
+    is_legacy: bool,
+    service_status_new_style: DynamicServiceGet,
+    service_status_legacy: NodeGet,
+    fake_director_v0_base_url: str,
+) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        if is_legacy:
+            mock.post("/dynamic_services").respond(
+                status.HTTP_307_TEMPORARY_REDIRECT,
+                headers={"Location": f"{fake_director_v0_base_url}/fake-service-run"},
+            )
+        else:
+            mock.post("/dynamic_services").respond(
+                status.HTTP_201_CREATED,
+                text=service_status_new_style.json(),
+            )
+        yield None
+
+
+@pytest.mark.parametrize("is_legacy", [True, False])
+async def test_run_dynamic_service(
+    mock_director_v0_service_run: None,
+    mock_director_v2_service_run: None,
+    rpc_client: RabbitMQRPCClient,
+    create_dynamic_services: CreateDynamicService,
+    is_legacy: bool,
+):
+    result = await rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        RPCMethodName("run_dynamic_service"),
+        create_dynamic_service=create_dynamic_services,
+    )
+    if is_legacy:
+        assert isinstance(result, NodeGet)
+    else:
+        assert isinstance(result, DynamicServiceGet)
