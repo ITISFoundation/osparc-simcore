@@ -2190,8 +2190,9 @@ jobs:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e-playwright"
     runs-on: ${{ matrix.os }}
-    container:
-      image: mcr.microsoft.com/playwright/python:v1.40.0-jammy
+    # NOTE: this is an interesting way, but generate a load of issues like not having docker installed, etc etc.
+    # container:
+    #   image: mcr.microsoft.com/playwright/python:v1.39.0-jammy
     strategy:
       matrix:
         python: ["3.10"]
@@ -2210,8 +2211,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          # cache: "pip"
-          # cache-dependency-path: "tests/e2e-playwright/requirements/dev.txt"
+          cache: "pip"
+          cache-dependency-path: "tests/e2e-playwright/requirements/dev.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2219,8 +2220,6 @@ jobs:
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
-      - name: install GNU make
-        run: apt-get update && apt-get install -y make
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: prepare devenv
@@ -2229,27 +2228,22 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
         run: |
-          ./ci/github/system-testing/e2e.bash install
-          source .venv/bin/activate
-          pushd tests/e2e-playwright
-          make install-dev
+          ./ci/github/system-testing/e2e-playwright.bash install
       - name: test
         run: |
-          source .venv/bin/activate
-          pushd tests/e2e-playwright
-          make test-sleepers
+          ./ci/github/system-testing/e2e-playwright.bash test
       - name: dump docker logs
         id: docker_logs_dump
         if: failure()
-        run: ./ci/github/system-testing/e2e.bash dump_docker_logs
+        run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
-          path: ./tests/e2e/test_failures
+          path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing
