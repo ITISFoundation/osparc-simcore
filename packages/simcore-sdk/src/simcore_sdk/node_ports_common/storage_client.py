@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from functools import lru_cache, wraps
 from json import JSONDecodeError
-from typing import Any, Final, TypeAlias
+from typing import Any, TypeAlias
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
@@ -23,7 +23,7 @@ from models_library.api_schemas_storage import (
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.users import UserID
-from pydantic import ByteSize, NonNegativeInt
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
@@ -37,7 +37,6 @@ from .settings import NodePortsSettings
 
 _logger = logging.getLogger(__name__)
 
-_ACCEPTABLE_STATUS_CODES: Final[NonNegativeInt] = 399
 
 RequestContextManager: TypeAlias = (
     aiohttp_client_module._RequestContextManager  # pylint: disable=protected-access # noqa: SLF001
@@ -59,7 +58,7 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
             if (
                 web.HTTPInternalServerError.status_code
                 > err.status
-                > _ACCEPTABLE_STATUS_CODES
+                >= web.HTTPBadRequest.status_code
             ):
                 raise exceptions.StorageInvalidCall(err.message) from err
             if err.status > web.HTTPInternalServerError.status_code:
@@ -127,7 +126,7 @@ async def retry_request(
                         response.request_info,
                         response.history,
                         status=response.status,
-                        message=f"Received {response.status} but was attending {expected_status=}",
+                        message=f"Received {response.status} but was expecting {expected_status=}",
                         headers=response.headers,
                     )
 
