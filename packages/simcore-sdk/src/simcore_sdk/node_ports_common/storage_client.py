@@ -148,7 +148,7 @@ async def get_storage_locations(
             await response.json()
         )
         if locations_enveloped.data is None:
-            msg = "Storage server is not reponding"
+            msg = "Storage server is not responding"
             raise exceptions.StorageServerIssue(msg)
         return locations_enveloped.data
 
