@@ -11,14 +11,14 @@ from ..logging_utils import log_context
 _logger = logging.getLogger(__name__)
 
 
-class HasClientProtocol(ABC):
+class HasClientInterface(ABC):
     @property
     @abstractmethod
     def client(self) -> httpx.AsyncClient:
         ...
 
 
-class HasClientSetupProtocol(ABC):
+class HasClientSetupInterface(ABC):
     @abstractmethod
     async def setup_client(self) -> None:
         ...
@@ -28,7 +28,7 @@ class HasClientSetupProtocol(ABC):
         ...
 
 
-class BaseHTTPApi(HasClientSetupProtocol):
+class BaseHTTPApi(HasClientSetupInterface):
     def __init__(self, client: httpx.AsyncClient):
         self._client = client
         # Controls all resources lifespan in sync
@@ -51,13 +51,13 @@ class BaseHTTPApi(HasClientSetupProtocol):
             await self._exit_stack.aclose()
 
 
-class AttachLifespanMixin(HasClientSetupProtocol):
+class AttachLifespanMixin(HasClientSetupInterface):
     def attach_lifespan_to(self, app: FastAPI) -> None:
         app.add_event_handler("startup", self.setup_client)
         app.add_event_handler("shutdown", self.teardown_client)
 
 
-class HealthMixinMixin(HasClientProtocol):
+class HealthMixinMixin(HasClientInterface):
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:

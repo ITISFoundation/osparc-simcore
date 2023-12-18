@@ -5,14 +5,14 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupProtocol
+from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 
 from ._thin_client import DirectorV2ThinClient
 
 
 class DirectorV2Client(
-    SingletonInAppStateMixin, AttachLifespanMixin, HasClientSetupProtocol
+    SingletonInAppStateMixin, AttachLifespanMixin, HasClientSetupInterface
 ):
     app_state_name: str = "director_v2_client"
 
