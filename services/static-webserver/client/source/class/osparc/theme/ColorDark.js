@@ -114,7 +114,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "scrollbar-active":  "background-main-5",
 
     // form
-    "button":  "red",
+    "button": "background-main-4",
     "button-border":  "background-main-5",
     "button-border-hovered": "c07",
     "button-box":  "background-main-3",
