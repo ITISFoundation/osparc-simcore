@@ -1,6 +1,6 @@
-import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Final
+from typing import Final
 
 import rich
 from fastapi import FastAPI
@@ -13,6 +13,7 @@ from rich.progress import (
     TextColumn,
     TimeElapsedColumn,
 )
+from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
@@ -26,13 +27,10 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from ..modules.dynamic_sidecar.api_client._errors import UnexpectedStatusError
 from ._client import ThinDV2LocalhostClient
 
 _MIN: Final[PositiveFloat] = 60
 HEADING: Final[str] = "[green]*[/green]"
-
-logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -88,12 +86,10 @@ async def async_close_and_save_service(
     update_interval: int,
 ) -> None:
     task_id: TaskId
-    async with _minimal_app() as app:
+    async with _minimal_app() as app, ThinDV2LocalhostClient() as thin_dv2_localhost_client:
         rich.print(
             f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
         )
-
-        thin_dv2_localhost_client = ThinDV2LocalhostClient()
 
         rich.print(f"{HEADING} disabling service observation")
         async for attempt in AsyncRetrying(

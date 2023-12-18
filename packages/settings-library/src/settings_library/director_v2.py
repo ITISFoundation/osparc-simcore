@@ -13,11 +13,11 @@ from settings_library.utils_service import (
 class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     DIRECTOR_V2_HOST: str = "director-v2"
     DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v1")
+    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v2")
 
     @cached_property
     def api_base_url(self) -> str:
-        # http://director-v2:8000/v1
+        # http://director-v2:8000/v2
         return self._compose_url(
             prefix="DIRECTOR_V2", port=URLPart.REQUIRED, vtag=URLPart.REQUIRED
         )
