@@ -52,7 +52,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Meta"
+                  "$ref": "#/components/schemas/BaseMeta"
                 }
               }
             }
@@ -1335,6 +1335,49 @@
         }
       }
     },
+    "/v2/dynamic_scheduler/services/{node_uuid}/state": {
+      "get": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Returns the internals of the scheduler for the given service",
+        "operationId": "get_service_state_v2_dynamic_scheduler_services__node_uuid__state_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v2/dynamic_scheduler/services/{node_uuid}/state:save": {
       "post": {
         "tags": [
@@ -1475,10 +1518,82 @@
           }
         }
       }
+    },
+    "/v2/dynamic_scheduler/services/{node_uuid}/disk/reserved:free": {
+      "post": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Free up reserved disk space",
+        "operationId": "free_reserved_disk_space_v2_dynamic_scheduler_services__node_uuid__disk_reserved_free_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "BaseMeta": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Version"
+          },
+          "released": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
+            "title": "Released",
+            "description": "Maps every route's path tag with a released version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "version"
+        ],
+        "title": "BaseMeta",
+        "example": {
+          "name": "simcore_service_foo",
+          "version": "2.4.45",
+          "released": {
+            "v1": "1.3.4",
+            "v2": "2.4.45"
+          }
+        }
+      },
       "BootMode": {
         "type": "string",
         "enum": [
@@ -1488,6 +1603,39 @@
         ],
         "title": "BootMode",
         "description": "An enumeration."
+      },
+      "CallbacksMapping": {
+        "properties": {
+          "metrics": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserServiceCommand"
+              }
+            ],
+            "title": "Metrics",
+            "description": "command to recover prometheus metrics from a specific user service"
+          },
+          "before_shutdown": {
+            "items": {
+              "$ref": "#/components/schemas/UserServiceCommand"
+            },
+            "type": "array",
+            "title": "Before Shutdown",
+            "description": "commands to run before shutting down the user servicescommands get executed first to last, multiple commands for the sameuser services are allowed"
+          },
+          "inactivity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserServiceCommand"
+              }
+            ],
+            "title": "Inactivity",
+            "description": "command used to figure out for how much time the user service(s) were inactive for"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CallbacksMapping"
       },
       "ClusterAccessRights": {
         "properties": {
@@ -1994,6 +2142,135 @@
         ],
         "title": "ComputationStop"
       },
+      "ContainerState": {
+        "properties": {
+          "Status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Status2"
+              }
+            ],
+            "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\".\n",
+            "example": "running"
+          },
+          "Running": {
+            "type": "boolean",
+            "title": "Running",
+            "description": "Whether this container is running.\n\nNote that a running container can be _paused_. The `Running` and `Paused`\nbooleans are not mutually exclusive:\n\nWhen pausing a container (on Linux), the freezer cgroup is used to suspend\nall processes in the container. Freezing the process requires the process to\nbe running. As a result, paused containers are both `Running` _and_ `Paused`.\n\nUse the `Status` field instead to determine if a container's state is \"running\".\n",
+            "example": true
+          },
+          "Paused": {
+            "type": "boolean",
+            "title": "Paused",
+            "description": "Whether this container is paused.",
+            "example": false
+          },
+          "Restarting": {
+            "type": "boolean",
+            "title": "Restarting",
+            "description": "Whether this container is restarting.",
+            "example": false
+          },
+          "OOMKilled": {
+            "type": "boolean",
+            "title": "Oomkilled",
+            "description": "Whether this container has been killed because it ran out of memory.\n",
+            "example": false
+          },
+          "Dead": {
+            "type": "boolean",
+            "title": "Dead",
+            "example": false
+          },
+          "Pid": {
+            "type": "integer",
+            "title": "Pid",
+            "description": "The process ID of this container",
+            "example": 1234
+          },
+          "ExitCode": {
+            "type": "integer",
+            "title": "Exitcode",
+            "description": "The last exit code of this container",
+            "example": 0
+          },
+          "Error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "StartedAt": {
+            "type": "string",
+            "title": "Startedat",
+            "description": "The time when this container was last started.",
+            "example": "2020-01-06T09:06:59.461876391Z"
+          },
+          "FinishedAt": {
+            "type": "string",
+            "title": "Finishedat",
+            "description": "The time when this container last exited.",
+            "example": "2020-01-06T09:07:59.461876391Z"
+          },
+          "Health": {
+            "$ref": "#/components/schemas/Health"
+          }
+        },
+        "type": "object",
+        "title": "ContainerState",
+        "description": "    ContainerState stores container's running state. It's part of ContainerJSONBase\nand will be returned by the \"inspect\" command."
+      },
+      "DNSResolver": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Address",
+            "description": "this is not an url address is derived from IP address"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": true,
+                "exclusiveMinimum": true,
+                "maximum": 65535,
+                "minimum": 0
+              },
+              {
+                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+              }
+            ],
+            "title": "Port"
+          }
+        },
+        "type": "object",
+        "required": [
+          "address",
+          "port"
+        ],
+        "title": "DNSResolver"
+      },
+      "DelayedExceptionHandler": {
+        "properties": {
+          "delay_for": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Delay For",
+            "description": "interval of time during which exceptions are ignored"
+          }
+        },
+        "type": "object",
+        "required": [
+          "delay_for"
+        ],
+        "title": "DelayedExceptionHandler",
+        "description": "Allows to ignore an exception for an established\nperiod of time after which it is raised.\n\nThis use case most commonly occurs when dealing with\nexternal systems.\nFor example, due to poor network  performance or\nnetwork congestion, an external system which is healthy,\ncurrently is not reachable any longer.\nA possible solution:\n- ignore exceptions for an interval in which the\n    system usually is reachable again by not\n    raising the error\n- if the error persist give up and raise it\n\nExample code usage:\n\n    delayed_handler_external_service = DelayedExceptionHandler(\n        delay_for=60\n    )\n    try:\n        function_called_periodically_accessing_external_service()\n    except TargetException as e:\n        delayed_handler_external_service.try_to_raise(e)\n    else:\n        delayed_handler_external_service.else_reset()"
+      },
       "DictModel_str__PositiveFloat_": {
         "additionalProperties": {
           "type": "number",
@@ -2002,6 +2279,36 @@
         },
         "type": "object",
         "title": "DictModel[str, PositiveFloat]"
+      },
+      "DockerContainerInspect": {
+        "properties": {
+          "container_state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerState"
+              }
+            ],
+            "title": "Container State",
+            "description": "current state of container"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "docker name of the container"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "docker id of the container"
+          }
+        },
+        "type": "object",
+        "required": [
+          "container_state",
+          "name",
+          "id"
+        ],
+        "title": "DockerContainerInspect"
       },
       "DynamicServiceCreate": {
         "properties": {
@@ -2139,6 +2446,153 @@
           }
         }
       },
+      "DynamicSidecar": {
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/simcore_service_director_v2__models__dynamic_services_scheduler__Status"
+              }
+            ],
+            "title": "Status",
+            "description": "status of the service sidecar also with additional information",
+            "default": {
+              "current": "ok",
+              "info": ""
+            }
+          },
+          "is_ready": {
+            "type": "boolean",
+            "title": "Is Ready",
+            "default": false,
+            "scription": "is True while the health check on the dynamic-sidecar is responding. Meaning that the dynamic-sidecar is reachable and can accept requests"
+          },
+          "was_compose_spec_submitted": {
+            "type": "boolean",
+            "title": "Was Compose Spec Submitted",
+            "description": "if the docker-compose spec was already submitted this fields is True",
+            "default": false
+          },
+          "containers_inspect": {
+            "items": {
+              "$ref": "#/components/schemas/DockerContainerInspect"
+            },
+            "type": "array",
+            "title": "Containers Inspect",
+            "default": [],
+            "scription": "docker inspect results from all the container ran at regular intervals"
+          },
+          "was_dynamic_sidecar_started": {
+            "type": "boolean",
+            "title": "Was Dynamic Sidecar Started",
+            "default": false
+          },
+          "is_healthy": {
+            "type": "boolean",
+            "title": "Is Healthy",
+            "default": false
+          },
+          "were_containers_created": {
+            "type": "boolean",
+            "title": "Were Containers Created",
+            "description": "when True no longer will the Docker api be used to check if the services were started",
+            "default": false
+          },
+          "is_project_network_attached": {
+            "type": "boolean",
+            "title": "Is Project Network Attached",
+            "description": "When True, all containers were in running state and project networks were attached. Waiting for the container sto be in running state guarantees all containers have been created",
+            "default": false
+          },
+          "is_service_environment_ready": {
+            "type": "boolean",
+            "title": "Is Service Environment Ready",
+            "description": "True when the environment setup required by the dynamic-sidecars created services was completed.Example: nodeports data downloaded, globally shared service data fetched, etc..",
+            "default": false
+          },
+          "service_removal_state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceRemovalState"
+              }
+            ],
+            "title": "Service Removal State",
+            "description": "stores information used during service removal from the dynamic-sidecar scheduler"
+          },
+          "wait_for_manual_intervention_after_error": {
+            "type": "boolean",
+            "title": "Wait For Manual Intervention After Error",
+            "description": "Marks the sidecar as untouchable since there was an error and important data might be lost. awaits for manual intervention.",
+            "default": false
+          },
+          "wait_for_manual_intervention_logged": {
+            "type": "boolean",
+            "title": "Wait For Manual Intervention Logged",
+            "description": "True if a relative message was logged",
+            "default": false
+          },
+          "were_state_and_outputs_saved": {
+            "type": "boolean",
+            "title": "Were State And Outputs Saved",
+            "description": "set True if the dy-sidecar saves the state and uploads the outputs",
+            "default": false
+          },
+          "dynamic_sidecar_id": {
+            "type": "string",
+            "maxLength": 25,
+            "pattern": "[A-Za-z0-9]{25}",
+            "title": "Dynamic Sidecar Id",
+            "description": "returned by the docker engine; used for starting the proxy"
+          },
+          "dynamic_sidecar_network_id": {
+            "type": "string",
+            "maxLength": 25,
+            "pattern": "[A-Za-z0-9]{25}",
+            "title": "Dynamic Sidecar Network Id",
+            "description": "returned by the docker engine; used for starting the proxy"
+          },
+          "swarm_network_id": {
+            "type": "string",
+            "maxLength": 25,
+            "pattern": "[A-Za-z0-9]{25}",
+            "title": "Swarm Network Id",
+            "description": "returned by the docker engine; used for starting the proxy"
+          },
+          "swarm_network_name": {
+            "type": "string",
+            "title": "Swarm Network Name",
+            "description": "used for starting the proxy"
+          },
+          "docker_node_id": {
+            "type": "string",
+            "title": "Docker Node Id",
+            "description": "contains node id of the docker node where all services and created containers are started"
+          },
+          "inspect_error_handler": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DelayedExceptionHandler"
+              }
+            ],
+            "title": "Inspect Error Handler",
+            "description": "Set when the dy-sidecar can no longer be reached by the director-v2. If it will be possible to reach the dy-sidecar again, this value will be set to None.",
+            "default": {
+              "delay_for": 0.0
+            }
+          }
+        },
+        "type": "object",
+        "title": "DynamicSidecar"
+      },
+      "DynamicSidecarStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "failing"
+        ],
+        "title": "DynamicSidecarStatus",
+        "description": "An enumeration."
+      },
       "GetProjectInactivityResponse": {
         "properties": {
           "is_inactive": {
@@ -2181,6 +2635,36 @@
         ],
         "title": "HardwareInfo"
       },
+      "Health": {
+        "properties": {
+          "Status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/models_library__generated_models__docker_rest_api__Status"
+              }
+            ],
+            "description": "Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- \"none\"      Indicates there is no healthcheck\n- \"starting\"  Starting indicates that the container is not yet ready\n- \"healthy\"   Healthy indicates that the container is running correctly\n- \"unhealthy\" Unhealthy indicates that the container has a problem\n",
+            "example": "healthy"
+          },
+          "FailingStreak": {
+            "type": "integer",
+            "title": "Failingstreak",
+            "description": "FailingStreak is the number of consecutive failures",
+            "example": 0
+          },
+          "Log": {
+            "items": {
+              "$ref": "#/components/schemas/HealthcheckResult"
+            },
+            "type": "array",
+            "title": "Log",
+            "description": "Log contains the last few results (oldest first)\n"
+          }
+        },
+        "type": "object",
+        "title": "Health",
+        "description": "Health stores information about the container's healthcheck results."
+      },
       "HealthCheckGet": {
         "properties": {
           "timestamp": {
@@ -2196,6 +2680,37 @@
         "example": {
           "timestamp": "simcore_service_directorv2.api.routes.health@2023-07-03T12:59:12.024551+00:00"
         }
+      },
+      "HealthcheckResult": {
+        "properties": {
+          "Start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start",
+            "description": "Date and time at which this check started in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
+            "example": "2020-01-04T10:44:24.496525531Z"
+          },
+          "End": {
+            "type": "string",
+            "title": "End",
+            "description": "Date and time at which this check ended in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
+            "example": "2020-01-04T10:45:21.364524523Z"
+          },
+          "ExitCode": {
+            "type": "integer",
+            "title": "Exitcode",
+            "description": "ExitCode meanings:\n\n- `0` healthy\n- `1` unhealthy\n- `2` reserved (considered unhealthy)\n- other values: error running probe\n",
+            "example": 0
+          },
+          "Output": {
+            "type": "string",
+            "title": "Output",
+            "description": "Output from last check"
+          }
+        },
+        "type": "object",
+        "title": "HealthcheckResult",
+        "description": "HealthcheckResult stores information about a single run of a healthcheck probe"
       },
       "ImageResources": {
         "properties": {
@@ -2292,41 +2807,57 @@
         "type": "object",
         "title": "KerberosAuthentication"
       },
-      "Meta": {
+      "NATRule": {
         "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
+          "hostname": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Hostname"
           },
-          "version": {
-            "type": "string",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "title": "Version"
-          },
-          "released": {
-            "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+          "tcp_ports": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMaximum": true,
+                  "exclusiveMinimum": true,
+                  "maximum": 65535,
+                  "minimum": 0
+                },
+                {
+                  "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                },
+                {
+                  "$ref": "#/components/schemas/_PortRange"
+                }
+              ]
             },
-            "type": "object",
-            "title": "Released",
-            "description": "Maps every route's path tag with a released version"
+            "type": "array",
+            "title": "Tcp Ports"
+          },
+          "dns_resolver": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DNSResolver"
+              }
+            ],
+            "title": "Dns Resolver",
+            "description": "specify a DNS resolver address and port"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "version"
+          "hostname",
+          "tcp_ports"
         ],
-        "title": "Meta",
-        "example": {
-          "name": "simcore_service_foo",
-          "version": "2.4.45",
-          "released": {
-            "v1": "1.3.4",
-            "v2": "2.4.45"
-          }
-        }
+        "title": "NATRule",
+        "description": "Content of \"simcore.service.containers-allowed-outgoing-permit-list\" label"
       },
       "NoAuthentication": {
         "properties": {
@@ -2395,6 +2926,62 @@
           "is_disabled"
         ],
         "title": "ObservationItem"
+      },
+      "OsparcVariableIdentifier": {
+        "type": "string",
+        "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$",
+        "title": "OsparcVariableIdentifier"
+      },
+      "PathMappingsLabel": {
+        "properties": {
+          "inputs_path": {
+            "type": "string",
+            "format": "path",
+            "title": "Inputs Path",
+            "description": "folder path where the service expects all the inputs"
+          },
+          "outputs_path": {
+            "type": "string",
+            "format": "path",
+            "title": "Outputs Path",
+            "description": "folder path where the service is expected to provide all its outputs"
+          },
+          "state_paths": {
+            "items": {
+              "type": "string",
+              "format": "path"
+            },
+            "type": "array",
+            "title": "State Paths",
+            "description": "optional list of paths which contents need to be persisted",
+            "default": []
+          },
+          "state_exclude": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true,
+            "title": "State Exclude",
+            "description": "optional list unix shell rules used to exclude files from the state"
+          },
+          "volume_size_limits": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Volume Size Limits",
+            "description": "Apply volume size limits to entries in: `inputs_path`, `outputs_path` and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inputs_path",
+          "outputs_path"
+        ],
+        "title": "PathMappingsLabel",
+        "description": "Content of \"simcore.service.paths-mapping\" label"
       },
       "PipelineDetails": {
         "properties": {
@@ -2500,6 +3087,15 @@
           "reservation"
         ],
         "title": "ResourceValue"
+      },
+      "RestartPolicy": {
+        "type": "string",
+        "enum": [
+          "no-restart",
+          "on-inputs-downloaded"
+        ],
+        "title": "RestartPolicy",
+        "description": "Content of \"simcore.service.restart-policy\" label"
       },
       "RetrieveDataIn": {
         "properties": {
@@ -2685,6 +3281,232 @@
         ],
         "title": "Scheduler"
       },
+      "SchedulerData": {
+        "properties": {
+          "paths_mapping": {
+            "$ref": "#/components/schemas/PathMappingsLabel"
+          },
+          "simcore.service.compose-spec": {
+            "type": "object",
+            "title": "Simcore.Service.Compose-Spec",
+            "description": "json encoded docker-compose specifications. see https://docs.docker.com/compose/compose-file/, only used by dynamic-sidecar."
+          },
+          "simcore.service.container-http-entrypoint": {
+            "type": "string",
+            "title": "Simcore.Service.Container-Http-Entrypoint",
+            "description": "When a docker-compose specifications is provided, the container where the traffic must flow has to be specified. Required by dynamic-sidecar when compose_spec is set."
+          },
+          "user_preferences_path": {
+            "type": "string",
+            "format": "path",
+            "title": "User Preferences Path"
+          },
+          "simcore.service.restart-policy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RestartPolicy"
+              }
+            ],
+            "description": "the dynamic-sidecar can restart all running containers on certain events. Supported events:\n- `no-restart` default\n- `on-inputs-downloaded` after inputs are downloaded\n",
+            "default": "no-restart"
+          },
+          "simcore.service.containers-allowed-outgoing-permit-list": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/NATRule"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Simcore.Service.Containers-Allowed-Outgoing-Permit-List",
+            "description": "allow internet access to certain domain names and ports per container"
+          },
+          "simcore.service.containers-allowed-outgoing-internet": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true,
+            "title": "Simcore.Service.Containers-Allowed-Outgoing-Internet",
+            "description": "allow complete internet access to containers in here"
+          },
+          "callbacks_mapping": {
+            "$ref": "#/components/schemas/CallbacksMapping"
+          },
+          "service_key": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version",
+            "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "service_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Service Uuid"
+          },
+          "service_name": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Service Name",
+            "description": "Name of the current dynamic-sidecar being observed"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id",
+            "description": "Uniquely identify the dynamic sidecar session (a.k.a. 2 subsequent exact same services will have a different run_id)"
+          },
+          "hostname": {
+            "type": "string",
+            "title": "Hostname",
+            "description": "dy-sidecar's service hostname (provided by docker-swarm)"
+          },
+          "port": {
+            "type": "integer",
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
+            "title": "Port",
+            "description": "dynamic-sidecar port",
+            "default": 8000,
+            "maximum": 65535,
+            "minimum": 0
+          },
+          "dynamic_sidecar": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DynamicSidecar"
+              }
+            ],
+            "title": "Dynamic Sidecar",
+            "description": "stores information fetched from the dynamic-sidecar"
+          },
+          "dynamic_sidecar_network_name": {
+            "type": "string",
+            "title": "Dynamic Sidecar Network Name",
+            "description": "overlay network biding the proxy to the container spaned by the dynamic-sidecar"
+          },
+          "simcore_traefik_zone": {
+            "type": "string",
+            "title": "Simcore Traefik Zone",
+            "description": "required for Traefik to correctly route requests to the spawned container"
+          },
+          "service_port": {
+            "type": "integer",
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
+            "title": "Service Port",
+            "description": "port where the service is exposed defined by the service; NOTE: temporary default because it will be changed once the service is started, this value is fetched from the service start spec",
+            "default": 65534,
+            "maximum": 65535,
+            "minimum": 0
+          },
+          "service_resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ImageResources"
+            },
+            "type": "object",
+            "title": "Service Resources",
+            "description": "service resources used to enforce limits"
+          },
+          "request_dns": {
+            "type": "string",
+            "title": "Request Dns",
+            "description": "used when configuring the CORS options on the proxy"
+          },
+          "request_scheme": {
+            "type": "string",
+            "title": "Request Scheme",
+            "description": "used when configuring the CORS options on the proxy"
+          },
+          "request_simcore_user_agent": {
+            "type": "string",
+            "title": "Request Simcore User Agent",
+            "description": "used as label to filter out the metrics from the cAdvisor prometheus metrics"
+          },
+          "proxy_service_name": {
+            "type": "string",
+            "title": "Proxy Service Name",
+            "description": "service name given to the proxy"
+          },
+          "proxy_admin_api_port": {
+            "type": "integer",
+            "exclusiveMaximum": true,
+            "exclusiveMinimum": true,
+            "title": "Proxy Admin Api Port",
+            "description": "used as the admin endpoint API port",
+            "maximum": 65535,
+            "minimum": 0
+          },
+          "wallet_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletInfo"
+              }
+            ],
+            "title": "Wallet Info",
+            "description": "contains information about the wallet used to bill the running service"
+          },
+          "pricing_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PricingInfo"
+              }
+            ],
+            "title": "Pricing Info",
+            "description": "contains pricing information so we know what is the cost of running of the service"
+          },
+          "hardware_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HardwareInfo"
+              }
+            ],
+            "title": "Hardware Info",
+            "description": "contains harware information so we know on which hardware to run the service"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Current product upon which this service is scheduled. If set to None, the current product is undefined. Mostly for backwards compatibility"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paths_mapping",
+          "service_key",
+          "service_version",
+          "user_id",
+          "project_id",
+          "service_uuid",
+          "service_name",
+          "hostname",
+          "dynamic_sidecar",
+          "dynamic_sidecar_network_name",
+          "simcore_traefik_zone",
+          "service_resources",
+          "request_dns",
+          "request_scheme",
+          "request_simcore_user_agent"
+        ],
+        "title": "SchedulerData",
+        "description": "All \"simcore.service.*\" labels including keys"
+      },
       "ServiceBootType": {
         "type": "string",
         "enum": [
@@ -2693,6 +3515,30 @@
         ],
         "title": "ServiceBootType",
         "description": "An enumeration."
+      },
+      "ServiceRemovalState": {
+        "properties": {
+          "can_remove": {
+            "type": "boolean",
+            "title": "Can Remove",
+            "description": "when True, marks the service as ready to be removed",
+            "default": false
+          },
+          "can_save": {
+            "type": "boolean",
+            "title": "Can Save",
+            "description": "when True, saves the internal state and upload outputs of the service",
+            "default": false
+          },
+          "was_removed": {
+            "type": "boolean",
+            "title": "Was Removed",
+            "description": "Will be True when the removal finished. Used primarily to cancel retrying long running operations.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ServiceRemovalState"
       },
       "ServiceState": {
         "enum": [
@@ -2735,6 +3581,20 @@
           "password"
         ],
         "title": "SimpleAuthentication"
+      },
+      "Status2": {
+        "type": "string",
+        "enum": [
+          "created",
+          "running",
+          "paused",
+          "restarting",
+          "removing",
+          "exited",
+          "dead"
+        ],
+        "title": "Status2",
+        "description": "    String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
       },
       "TaskCounts": {
         "properties": {
@@ -2786,6 +3646,44 @@
         },
         "type": "object",
         "title": "UsedResources"
+      },
+      "UserServiceCommand": {
+        "properties": {
+          "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "name of the docker-compose service in the docker-compose spec"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Command",
+            "description": "command to run in container"
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Timeout",
+            "description": "after this interval the command will be timed-out"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "service",
+          "command",
+          "timeout"
+        ],
+        "title": "UserServiceCommand"
       },
       "ValidationError": {
         "properties": {
@@ -2910,6 +3808,82 @@
           "task_counts"
         ],
         "title": "WorkerMetrics"
+      },
+      "_PortRange": {
+        "properties": {
+          "lower": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": true,
+                "exclusiveMinimum": true,
+                "maximum": 65535,
+                "minimum": 0
+              },
+              {
+                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+              }
+            ],
+            "title": "Lower"
+          },
+          "upper": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": true,
+                "exclusiveMinimum": true,
+                "maximum": 65535,
+                "minimum": 0
+              },
+              {
+                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+              }
+            ],
+            "title": "Upper"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lower",
+          "upper"
+        ],
+        "title": "_PortRange",
+        "description": "`lower` and `upper` are included"
+      },
+      "models_library__generated_models__docker_rest_api__Status": {
+        "type": "string",
+        "enum": [
+          "none",
+          "starting",
+          "healthy",
+          "unhealthy"
+        ],
+        "title": "Status",
+        "description": "    Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- \"none\"      Indicates there is no healthcheck\n- \"starting\"  Starting indicates that the container is not yet ready\n- \"healthy\"   Healthy indicates that the container is running correctly\n- \"unhealthy\" Unhealthy indicates that the container has a problem"
+      },
+      "simcore_service_director_v2__models__dynamic_services_scheduler__Status": {
+        "properties": {
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DynamicSidecarStatus"
+              }
+            ],
+            "description": "status of the service"
+          },
+          "info": {
+            "type": "string",
+            "title": "Info",
+            "description": "additional information for the user"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current",
+          "info"
+        ],
+        "title": "Status",
+        "description": "Generated from data from docker container inspect API"
       }
     }
   }
