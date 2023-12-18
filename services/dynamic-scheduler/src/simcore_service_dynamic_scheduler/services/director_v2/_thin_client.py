@@ -16,6 +16,7 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
+from servicelib.json_serialization import json_dumps
 
 from ...core.settings import ApplicationSettings
 
@@ -67,5 +68,8 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         }
 
         return await self.client.post(
-            "/dynamic_services", json=post_data, headers=headers, follow_redirects=True
+            "/dynamic_services",
+            content=json_dumps(post_data),
+            headers=headers,
+            follow_redirects=True,
         )
