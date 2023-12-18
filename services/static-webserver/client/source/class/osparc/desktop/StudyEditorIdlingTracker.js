@@ -20,7 +20,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
   construct: function(studyUuid) {
     this.base(arguments);
-    this.__studyUuid = studyUuid
+    this.__studyUuid = studyUuid;
     this.__resetIdlingTimeBound = this.__resetIdlingTime.bind(this);
   },
 
@@ -65,8 +65,8 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __startTimer: function() {
       const checkFn = () => {
-        const timeoutT = osparc.Preferences.getInstance().getUserInactivityThreshold()
-        const warningT = Math.round(timeoutT * 0.8)
+        const timeoutT = osparc.Preferences.getInstance().getUserInactivityThreshold();
+        const warningT = Math.round(timeoutT * 0.8);
         this.__idlingTime++;
         if (this.__idlingTime >= timeoutT) {
           if (!this.__frontendTimedout) {
@@ -77,26 +77,26 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
                 url: {
                   studyId: this.__studyUuid
                 }
-              }).then(({data}) => {
-                if (data) {
+              }).then(data => {
+                if (data["is_inactive"]) {
                   this.__userIdled();
                 } else {
-                  this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD)
+                  this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
                 }
               }).catch(err => {
-                console.error()
-                this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD)
-              })
-            }
-            checkInactivity()
+                console.error(err);
+                this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
+              });
+            };
+            checkInactivity();
           }
-          this.__frontendTimedout = true
+          this.__frontendTimedout = true;
         } else if (this.__idlingTime >= warningT) {
           this.__updateFlashMessage(timeoutT - this.__idlingTime);
         } else if (this.__idleFlashMessage) {
           this.__removeIdleFlashMessage();
         }
-      }
+      };
       this.__idleInterval = setInterval(checkFn, 1000);
     },
 
@@ -109,8 +109,8 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __resetIdlingTime: function() {
       this.__idlingTime = 0;
-      this.__frontendTimedout = false
-      clearTimeout(this.__inactivityInterval)
+      this.__frontendTimedout = false;
+      clearTimeout(this.__inactivityInterval);
     },
 
     start: function() {
@@ -130,7 +130,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       window.removeEventListener("mousedown", cb);
       window.removeEventListener("keydown", cb);
 
-      clearTimeout(this.__inactivityInterval)
+      clearTimeout(this.__inactivityInterval);
       this.__removeIdleFlashMessage();
       this.__stopTimer();
     },

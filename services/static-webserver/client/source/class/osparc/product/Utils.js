@@ -38,7 +38,7 @@ qx.Class.define("osparc.product.Utils", {
         this.isProduct("s4lacad") ||
         this.isProduct("s4ldesktop") ||
         this.isProduct("s4ldesktopacad")
-      )
+      );
     },
 
     getStudyAlias: function(options = {}) {
