@@ -21,10 +21,9 @@ from pytest_simcore.playwright_utils import (
 )
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
-_NUM_SLEEPERS = 12
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
-_WAITING_FOR_SUCCESS_MAX_WAITING_TIME: Final[int] = _NUM_SLEEPERS * 1 * MINUTE
+_WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
 _WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[
     datetime.timedelta
 ] = datetime.timedelta(seconds=30)
@@ -57,6 +56,8 @@ def test_sleepers(
     create_new_project_and_delete: Callable[..., None],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     product_billable: bool,
+    num_sleepers: int,
+    input_sleep_time: int | None,
 ):
     # open service tab and filter for sleeper
     page.get_by_test_id("servicesTabBtn").click()
@@ -70,10 +71,23 @@ def test_sleepers(
     create_new_project_and_delete(auto_delete=True)
 
     # we are now in the workbench
-    for _ in range(1, _NUM_SLEEPERS):
+    for _ in range(1, num_sleepers):
         page.get_by_text("New Node").click()
         page.get_by_text("sleeperA service which").click()
         page.get_by_text("Add", exact=True).click()
+
+    # set inputs if needed
+    if input_sleep_time:
+        for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+            print(f"---> setting sleeper {index} input time to {input_sleep_time}...")
+            sleeper.click()
+            sleep_interval_selector = page.get_by_role("textbox").nth(1)
+            sleep_interval_selector.click()
+            sleep_interval_selector.fill(f"{input_sleep_time}")
+            print(f"<--- sleeper {index} input time set to {input_sleep_time}")
+        workbench_selector = page.query_selector("#SvgjsSvg1001")
+        assert workbench_selector
+        workbench_selector.click()
 
     # start the pipeline (depending on the state of the cluster, we might receive one of
     # in [] are optional states depending on the state of the clusters and if we have external clusters
@@ -117,7 +131,9 @@ def test_sleepers(
     waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("SUCCESS", "FAILED"))
     print("---> waiting for SUCCESS state...")
     with log_in_and_out.expect_event(
-        "framereceived", waiter, timeout=_WAITING_FOR_SUCCESS_MAX_WAITING_TIME
+        "framereceived",
+        waiter,
+        timeout=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
     ) as event:
         ...
     current_state = decode_socketio_42_message(event.value).obj["data"]["state"][
@@ -129,7 +145,7 @@ def test_sleepers(
     # check the outputs (the first item is the title, so we skip it)
     expected_file_names = ["logs.zip", "single_number.txt"]
     print(
-        f"---> looking for {expected_file_names=} in all {_NUM_SLEEPERS} sleeper services..."
+        f"---> looking for {expected_file_names=} in all {num_sleepers} sleeper services..."
     )
 
     for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):

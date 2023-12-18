@@ -39,7 +39,7 @@ test-sleepers: _check_venv_active ## runs sleepers test on local deploy
 		--product-url=http://$(get_my_ip):9081 \
 		--autoregister \
 		--tracing=retain-on-failure \
-		$(CURDIR)/tests/sleepers.py
+		$(CURDIR)/tests/sleepers/sleepers.py
 
 
 .PHONY: test-sleepers-dev
@@ -51,7 +51,7 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		--product-url=http://$(get_my_ip):9081 \
 		--headed \
 		--autoregister \
-		$(CURDIR)/tests/sleepers.py
+		$(CURDIR)/tests/sleepers/sleepers.py
 
 
 
