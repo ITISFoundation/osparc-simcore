@@ -7,6 +7,7 @@
 # pylint:disable=too-many-statements
 
 
+import datetime
 import re
 from collections.abc import Callable
 from typing import Final
@@ -18,11 +19,36 @@ from pytest_simcore.playwright_utils import (
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
 )
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _NUM_SLEEPERS = 12
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME: Final[int] = _NUM_SLEEPERS * 1 * MINUTE
+_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[
+    datetime.timedelta
+] = datetime.timedelta(seconds=30)
+_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=1
+)
+
+
+@retry(
+    stop=stop_after_delay(_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_fixed(_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL),
+)
+def _get_file_names(page: Page) -> list[str]:
+    file_names_found = []
+    for file in page.get_by_test_id("FolderViewerItem").all():
+        file_name = file.text_content()
+        assert file_name
+        file_name = file_name.removesuffix("\ue24d")
+        file_names_found.append(file_name)
+    assert file_names_found
+
+    return file_names_found
 
 
 def test_sleepers(
@@ -105,21 +131,21 @@ def test_sleepers(
     print(
         f"---> looking for {expected_file_names=} in all {_NUM_SLEEPERS} sleeper services..."
     )
-    for sleeper in page.get_by_test_id("nodeTreeItem").all()[1:]:
+
+    for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
         sleeper.click()
         page.get_by_test_id("outputsTabButton").click()
+        # waiting for this response is not enough, the frontend needs some time to show the files
+        # therefore _get_file_names is wrapped with tenacity
         with page.expect_response(re.compile(r"files/metadata")):
             page.get_by_test_id("nodeOutputFilesBtn").click()
-            output_file_names_found = []
-            # ensure the output window is up and filled. this is very sad.
-            page.wait_for_timeout(2000)
-            for file in page.get_by_test_id("FolderViewerItem").all():
-                file_name = file.text_content()
-                assert file_name
-                file_name = file_name.removesuffix("\ue24d")
-                output_file_names_found.append(file_name)
+            output_file_names_found = _get_file_names(page)
+        print(
+            f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
+        )
         assert output_file_names_found == expected_file_names
         page.get_by_test_id("nodeDataManagerCloseBtn").click()
+
     print("------------------------------------------------------")
     print("---> All good, we're done here! This was really great!")
     print("------------------------------------------------------")
