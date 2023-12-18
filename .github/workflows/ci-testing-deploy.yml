@@ -2220,7 +2220,7 @@ jobs:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
       - name: install GNU make
-        run: apt-get install -y make
+        run: apt-get update && apt-get install -y make
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: prepare devenv
