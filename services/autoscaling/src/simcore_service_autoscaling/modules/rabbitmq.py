@@ -5,7 +5,11 @@ from typing import cast
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.logging_utils import log_catch
-from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import (
+    RabbitMQClient,
+    RabbitMQRPCClient,
+    wait_till_rabbitmq_responsive,
+)
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
@@ -39,6 +43,18 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
             msg="RabbitMQ client is not available. Please check the configuration."
         )
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+def is_rabbitmq_enabled(app: FastAPI) -> bool:
+    return app.state.rabbitmq_client is not None
+
+
+def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+    if not app.state.rabbitmq_rpc_server:
+        raise ConfigurationError(
+            msg="RabbitMQ client for RPC is not available. Please check the configuration."
+        )
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
 
 
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
