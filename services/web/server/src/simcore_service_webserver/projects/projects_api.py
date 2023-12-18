@@ -22,6 +22,9 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    CreateDynamicService,
+)
 from models_library.errors import ErrorDict
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
@@ -65,6 +68,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from ..application_settings import get_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products import api as products_api
 from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
@@ -397,24 +401,28 @@ async def _start_dynamic_service(
             )
             hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
 
-        await director_v2_api.run_dynamic_service(
+        await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
-            product_name=product_name,
-            save_state=save_state,
-            project_id=f"{project_uuid}",
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-            service_uuid=f"{node_uuid}",
-            request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-            simcore_user_agent=request.headers.get(
-                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            create_dynamic_service=CreateDynamicService(
+                product_name=product_name,
+                save_state=save_state,
+                project_id=f"{project_uuid}",
+                user_id=user_id,
+                service_key=service_key,
+                service_version=service_version,
+                service_uuid=f"{node_uuid}",
+                request_dns=extract_dns_without_default_port(request.url),
+                request_scheme=request.headers.get(
+                    X_FORWARDED_PROTO, request.url.scheme
+                ),
+                simcore_user_agent=request.headers.get(
+                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
+                service_resources=service_resources,
+                wallet_info=wallet_info,
+                pricing_info=pricing_info,
+                hardware_info=hardware_info,
             ),
-            service_resources=service_resources,
-            wallet_info=wallet_info,
-            pricing_info=pricing_info,
-            hardware_info=hardware_info,
         )
 
 

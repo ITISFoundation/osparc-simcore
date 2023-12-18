@@ -2,6 +2,9 @@ from typing import Any
 
 from fastapi import FastAPI, status
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    CreateDynamicService,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -45,6 +48,18 @@ class DirectorV2Client(
             ):
                 return NodeGetIdle(service_state="idle", service_uuid=node_id)
             raise
+
+    async def run_dynamic_service(
+        self, create_dynamic_service: CreateDynamicService
+    ) -> NodeGet | DynamicServiceGet:
+        response = await self.thin_client.post_dynamic_service(create_dynamic_service)
+        dict_response: dict[str, Any] = response.json()
+
+        # legacy services
+        if "data" in dict_response:
+            return NodeGet.parse_obj(dict_response["data"])
+
+        return DynamicServiceGet.parse_obj(dict_response)
 
 
 def setup_director_v2(app: FastAPI) -> None:
