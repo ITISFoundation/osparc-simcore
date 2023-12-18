@@ -18,7 +18,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
 
-    "strong-main": "rgba(0, 144, 208, 1)", // override in product
+    "product-color": "rgba(0, 144, 208, 1)", // override in product
+    "strong-main": "product-color",
     "strong-text":  "background-main-1",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
@@ -57,12 +58,12 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "default-button-text": "contrasted-text-light",
     "default-button-text-outline": "contrasted-text-dark",
     "default-button-text-action": "contrasted-text-dark",
-    "default-button": "rgba(10, 182, 255, 1)",
+    "default-button": "product-color",
     "default-button-hover": "rgba(4, 73, 102, 1)",
     "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
     "default-button-active": "rgba(9, 89, 122, 1)",
     "default-button-active-background": "rgba(4, 73, 102, 0.04)",
-    "default-button-focus": "rgba(10, 182, 255, 1)",
+    "default-button-focus": "product-color",
     "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
     "default-button-disabled": "text-disabled",
     "default-button-disabled-background": "transparent",
@@ -80,15 +81,15 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     // material-button
     "material-button-background":  "fab_background",
-    "material-button-background-disabled":  "transparent",
+    "material-button-background-disabled":  "default-button-disabled-background",
     "material-button-background-hovered":  "default-button-hover-background",
     "material-button-background-pressed":  "default-button-active-background",
-    "material-button-text-disabled": "default-button-disabled",
+    "material-button-text-disabled": "default-button-disabled-background",
     "material-button-text": "default-button-text",
 
     // material-textfield
     "material-textfield": "input_background",
-    "material-textfield-focused": "success",
+    "material-textfield-focused": "product-color",
     "material-textfield-disabled": "default-button-disabled",
     "material-textfield-invalid": "error",
     "invalid": "error",

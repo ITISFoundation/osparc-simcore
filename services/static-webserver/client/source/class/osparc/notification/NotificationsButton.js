@@ -63,11 +63,13 @@ qx.Class.define("osparc.notification.NotificationsButton", {
         }
         case "number":
           control = new qx.ui.basic.Label().set({
-            backgroundColor: "background-main-1",
-            font: "text-12"
+            backgroundColor: "error",
+            textColor: "white",
+            font: "text-12",
+            padding: [0, 4]
           });
           control.getContentElement().setStyles({
-            "border-radius": "4px"
+            "border-radius": "8px"
           });
           this._add(control, {
             bottom: 8,

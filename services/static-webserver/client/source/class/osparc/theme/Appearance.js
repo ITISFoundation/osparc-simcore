@@ -172,7 +172,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "input_background"
         };
         if (states.focused) {
-          style.backgroundColor = "success";
+          style.decorator = "form-focus";
         }
         return style;
       }

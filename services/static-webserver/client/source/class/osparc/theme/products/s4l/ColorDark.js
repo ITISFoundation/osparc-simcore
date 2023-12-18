@@ -19,7 +19,6 @@ qx.Theme.define("osparc.theme.products.s4l.ColorDark", {
   include: osparc.theme.ColorDark,
 
   colors: {
-    "default-button": "rgba(10, 182, 255, 1)",
-    "strong-main": "rgba(10, 182, 255, 1)"
+    "product-color": "rgba(0, 144, 208, 1)"
   }
 });

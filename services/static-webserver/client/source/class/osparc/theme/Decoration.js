@@ -51,7 +51,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-focus": {
       include: "form-input",
       style: {
-        color: "success"
+        color: "product-color"
       }
     },
 

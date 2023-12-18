@@ -193,7 +193,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
+          const resource = this.getResourceType();
           const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this._getResource(3).label}`));
+          promoteButton.setVisibility(resource === "service" ? "excluded" : "visible");
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToOwner", {
               gid: this.getKey(),
