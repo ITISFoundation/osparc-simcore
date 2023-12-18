@@ -15,6 +15,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import HttpUrl
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -62,6 +63,7 @@ def _to_api_model(
     return PaymentTransaction.parse_obj(data)
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_init_payment(
     app,
     amount_dollars,
@@ -154,6 +156,7 @@ async def _ack_creation_of_wallet_payment(
     return payment
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_cancel_payment(app, payment_id) -> None:
     await _ack_creation_of_wallet_payment(
         app,
@@ -163,6 +166,7 @@ async def _fake_cancel_payment(app, payment_id) -> None:
     )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-many-arguments
     app,
     amount_dollars,
@@ -200,6 +204,7 @@ async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-ma
     )
 
 
+@log_decorator(_logger, level=logging.INFO)
 async def _fake_get_payments_page(
     app: web.Application,
     user_id: UserID,

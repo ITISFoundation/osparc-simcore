@@ -23,7 +23,10 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import db_file_meta_data
-from simcore_service_storage.exceptions import FileMetaDataNotFoundError
+from simcore_service_storage.exceptions import (
+    FileAccessRightError,
+    FileMetaDataNotFoundError,
+)
 from simcore_service_storage.models import (
     FileMetaData,
     MultiPartUploadLinks,
@@ -84,6 +87,72 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
 
     # since there is no entry in the db, this upload shall be cleaned up
     assert not await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket)
+
+
+@pytest.mark.parametrize(
+    "file_size",
+    [ByteSize(0), parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
+    ids=byte_size_ids,
+)
+@pytest.mark.parametrize(
+    "link_type, is_directory",
+    [
+        # NOTE: directories are handled only as LinkType.S3
+        (LinkType.S3, True),
+        (LinkType.S3, False),
+        (LinkType.PRESIGNED, False),
+    ],
+)
+@pytest.mark.parametrize("checksum", [None, _faker.sha256()])
+async def test_regression_collaborator_creates_file_upload_links(
+    disabled_dsm_cleaner_task,
+    aiopg_engine: Engine,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    simcore_file_id: SimcoreS3FileID,
+    simcore_directory_id: SimcoreS3FileID,
+    user_id: UserID,
+    link_type: LinkType,
+    file_size: ByteSize,
+    is_directory: bool,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    checksum: SHA256Str | None,
+    collaborator_id: UserID,
+    share_with_collaborator: Callable[[], Awaitable[None]],
+):
+    file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
+
+    await simcore_s3_dsm.create_file_upload_links(
+        user_id,
+        file_or_directory_id,
+        link_type,
+        file_size,
+        sha256_checksum=checksum,
+        is_directory=is_directory,
+    )
+
+    # collaborators don't have access
+    with pytest.raises(FileAccessRightError):
+        await simcore_s3_dsm.create_file_upload_links(
+            collaborator_id,
+            file_or_directory_id,
+            link_type,
+            file_size,
+            sha256_checksum=checksum,
+            is_directory=is_directory,
+        )
+
+    await share_with_collaborator()
+
+    # collaborator have access
+    await simcore_s3_dsm.create_file_upload_links(
+        collaborator_id,
+        file_or_directory_id,
+        link_type,
+        file_size,
+        sha256_checksum=checksum,
+        is_directory=is_directory,
+    )
 
 
 @pytest.mark.parametrize(

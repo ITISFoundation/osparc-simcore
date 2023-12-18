@@ -70,6 +70,7 @@ def test_creation_ec2_tags(
         "Name",
         "user_id",
         "wallet_id",
+        "osparc-tag",
     ]
     assert all(
         tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES

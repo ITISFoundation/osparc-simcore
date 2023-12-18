@@ -2,10 +2,12 @@ import asyncio
 import functools
 import inspect
 import logging
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
+from pydantic.errors import PydanticErrorMixin
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -13,23 +15,59 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from ._errors import ClientHttpError, UnexpectedStatusError, _WrongReturnType
+from .http_client import BaseHTTPApi
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+"""
+Exception hierarchy:
+
+* BaseClientError
+  x BaseRequestError
+    + ClientHttpError
+    + UnexpectedStatusError
+"""
+
+
+class BaseClientError(PydanticErrorMixin, Exception):
+    """Used as based for all the raised errors"""
+
+    msg_template: str = "{message}"
+
+
+class BaseHttpClientError(BaseClientError):
+    """Base class to wrap all http related client errors"""
+
+
+class ClientHttpError(BaseHttpClientError):
+    """used to captures all httpx.HttpError"""
+
+    msg_template: str = "Received httpx.HTTPError: {error}"
+
+
+class UnexpectedStatusError(BaseHttpClientError):
+    """raised when the status of the request is not the one it was expected"""
+
+    msg_template: str = (
+        "Expected status: {expecting}, got {response.status_code} for: {response.url}: "
+        "headers={response.headers}, body='{response.text}'"
+    )
 
 
 def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
-    logger.warning(
+    pool = client._transport._pool  # noqa: SLF001
+    _logger.warning(
         "Pool status @ '%s': requests(%s)=%s, connections(%s)=%s",
         event_name.upper(),
-        len(client._transport._pool._requests),
+        len(pool._requests),  # noqa: SLF001
         [
             (id(r), r.request.method, r.request.url, r.request.headers)
-            for r in client._transport._pool._requests
+            for r in pool._requests  # noqa: SLF001
         ],
-        len(client._transport._pool.connections),
-        [(id(c), c.__dict__) for c in client._transport._pool.connections],
+        len(pool.connections),
+        [(id(c), c.__dict__) for c in pool.connections],
     )
 
 
@@ -50,6 +88,33 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     return log_it
 
 
+def _assert_public_interface(
+    obj: object, extra_allowed_method_names: set[str] | None = None
+) -> None:
+    # makes sure all user public defined methods return `httpx.Response`
+
+    _allowed_names: set[str] = {
+        "setup_client",
+        "teardown_client",
+        "from_client_kwargs",
+    }
+    if extra_allowed_method_names:
+        _allowed_names |= extra_allowed_method_names
+
+    public_methods = [
+        t[1]
+        for t in inspect.getmembers(obj, predicate=inspect.ismethod)
+        if not (t[0].startswith("_") or t[0] in _allowed_names)
+    ]
+
+    for method in public_methods:
+        signature = inspect.signature(method)
+        assert signature.return_annotation == Response, (
+            f"{method=} should return an instance "
+            f"of {Response}, not '{signature.return_annotation}'!"
+        )
+
+
 def retry_on_errors(
     request_func: Callable[..., Awaitable[Response]]
 ) -> Callable[..., Awaitable[Response]]:
@@ -61,8 +126,6 @@ def retry_on_errors(
     """
     assert asyncio.iscoroutinefunction(request_func)
 
-    RETRY_ERRORS = (ConnectError, PoolTimeout)
-
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
         # pylint: disable=protected-access
@@ -70,9 +133,9 @@ def retry_on_errors(
             async for attempt in AsyncRetrying(
                 stop=stop_after_delay(zelf.request_timeout),
                 wait=wait_exponential(min=1),
-                retry=retry_if_exception_type(RETRY_ERRORS),
-                before_sleep=before_sleep_log(logger, logging.WARNING),
-                after=_after_log(logger),
+                retry=retry_if_exception_type((ConnectError, PoolTimeout)),
+                before_sleep=before_sleep_log(_logger, logging.WARNING),
+                after=_after_log(_logger),
                 reraise=True,
             ):
                 with attempt:
@@ -81,7 +144,7 @@ def retry_on_errors(
         except HTTPError as e:
             if isinstance(e, PoolTimeout):
                 _log_pool_status(zelf.client, "pool timeout")
-            raise ClientHttpError(e) from e
+            raise ClientHttpError(error=e) from e
 
     return request_wrapper
 
@@ -106,7 +169,7 @@ def expect_status(expected_code: int):
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
             response = await request_func(zelf, *args, **kwargs)
             if response.status_code != expected_code:
-                raise UnexpectedStatusError(response, expected_code)
+                raise UnexpectedStatusError(response=response, expecting=expected_code)
 
             return response
 
@@ -115,16 +178,17 @@ def expect_status(expected_code: int):
     return decorator
 
 
-class BaseThinClient:
-    SKIP_METHODS: set[str] = {"close"}
-
+class BaseThinClient(BaseHTTPApi):
     def __init__(
         self,
         *,
         request_timeout: float,
         base_url: URLTypes | None = None,
         timeout: TimeoutTypes | None = None,
+        extra_allowed_method_names: set[str] | None = None,
     ) -> None:
+        _assert_public_interface(self, extra_allowed_method_names)
+
         self.request_timeout: float = request_timeout
 
         client_args: dict[str, Any] = {
@@ -140,27 +204,13 @@ class BaseThinClient:
             client_args["base_url"] = base_url
         if timeout:
             client_args["timeout"] = timeout
-        self.client = AsyncClient(**client_args)
 
-        # ensure all user defined public methods return `httpx.Response`
-        # NOTE: ideally these checks should be ran at import time!
-        public_methods = [
-            t[1]
-            for t in inspect.getmembers(self, predicate=inspect.ismethod)
-            if not (t[0].startswith("_") or t[0] in self.SKIP_METHODS)
-        ]
-
-        for method in public_methods:
-            signature = inspect.signature(method)
-            if signature.return_annotation != Response:
-                raise _WrongReturnType(method, signature.return_annotation)
-
-    async def close(self) -> None:
-        _log_pool_status(self.client, "closing")
-        await self.client.aclose()
+        super().__init__(client=AsyncClient(**client_args))
 
     async def __aenter__(self):
+        await self.setup_client()
         return self
 
-    async def __aexit__(self, exc_t, exc_v, exc_tb):
-        await self.close()
+    async def __aexit__(self, *args):
+        _log_pool_status(self.client, "before close")
+        await self.teardown_client()

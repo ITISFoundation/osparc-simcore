@@ -4,14 +4,18 @@
 
 
 import json
-from typing import Any, Mapping, cast
+from collections.abc import Mapping
+from typing import Any, cast
 
 import pytest
 import respx
 from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
@@ -19,7 +23,6 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID, ServiceKeyVersion
 from models_library.wallets import WalletInfo
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
@@ -39,7 +42,7 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 @pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
@@ -105,8 +108,16 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 @pytest.fixture
+def hardware_info() -> HardwareInfo:
+    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+
+
+@pytest.fixture
 def expected_dynamic_sidecar_spec(
-    run_id: RunID, osparc_product_name: str, request_simcore_user_agent: str
+    run_id: RunID,
+    osparc_product_name: str,
+    request_simcore_user_agent: str,
+    hardware_info: HardwareInfo,
 ) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -166,7 +177,7 @@ def expected_dynamic_sidecar_spec(
                     "restart_policy": "on-inputs-downloaded",
                     "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
                     "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
-                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
+                    "hardware_info": hardware_info,
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
                     "service_resources": {
@@ -193,6 +204,9 @@ def expected_dynamic_sidecar_spec(
             f"{to_simcore_runtime_docker_label_key('product-name')}": "osparc",
             f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": "python/test",
             f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "test_swarm_name",
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: hardware_info.aws_ec2_instances[
+                0
+            ],
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         "networks": [{"Target": "mocked_swarm_network_id"}],
@@ -258,7 +272,7 @@ def expected_dynamic_sidecar_spec(
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
                 },
-                "CapabilityAdd": ["CAP_LINUX_IMMUTABLE"],
+                "CapabilityAdd": None,
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
@@ -391,6 +405,7 @@ def test_get_dynamic_proxy_spec(
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
+    hardware_info: HardwareInfo,
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
 
@@ -416,8 +431,10 @@ def test_get_dynamic_proxy_spec(
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
+            hardware_info=hardware_info,
             has_quota_support=False,
             allow_internet_access=False,
+            metrics_collection_allowed=True,
         )
 
         exclude_keys: Mapping[int | str, Any] = {
@@ -497,6 +514,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
     mock_service_key_version: ServiceKeyVersion,
+    hardware_info: HardwareInfo,
     fake_service_specifications: dict[str, Any],
 ):
     dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
@@ -506,8 +524,10 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,
+        hardware_info=hardware_info,
         has_quota_support=False,
         allow_internet_access=False,
+        metrics_collection_allowed=True,
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()

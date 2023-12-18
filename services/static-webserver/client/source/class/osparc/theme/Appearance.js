@@ -29,23 +29,228 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
       }
     },
+    "form-button": {
+      style: function(states) {
+        const style = {
+          decorator: "form-button",
+          textColor: "default-button-text",
+          padding: 5,
+          alignY: "middle",
+          alignX: "center",
+          backgroundColor: "default-button"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.focused) {
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.disabled) {
+          style.backgroundColor = "default-button-disabled-background";
+        }
+        return style;
+      }
+    },
+    "form-button-outlined": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "form-button-outlined",
+          padding: 5,
+          textColor: "default-button-text-outline",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hover";
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focus";
+          style.backgroundColor = "default-button-focus-background";
+        }
+        if (states.active) {
+          style.decorator = "form-button-focus";
+          style.backgroundColor = "default-button-focus-background";
+        }
+        if (states.disabled) {
+          style.decorator = "form-button-disabled";
+          style.textColor = "default-button-text-disabled";
+          style.backgroundColor = "transparent";
+        }
+        return style;
+      }
+    },
+
+    "fab-button": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "fab-button",
+          cursor: "pointer",
+          padding: [8, 16],
+          textColor: "fab_text",
+          backgroundColor: "background-card-overlay"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hover";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focus";
+        }
+        if (states.active) {
+          style.decorator = "form-button-focus";
+        }
+        if (states.disabled) {
+          style.decorator = "form-button-disabled";
+        }
+        return style;
+      }
+    },
+
+    "text-button": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "text-button",
+          textColor: "default-button",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.textColor = "default-button-hover";
+        }
+        if (states.focused) {
+          style.textColor = "default-button-focus";
+        }
+        if (states.active) {
+          style.textColor = "default-button-active";
+        }
+        if (states.disabled) {
+          style.textColor = "default-button-text-disabled";
+        }
+        return style;
+      }
+    },
+
+    "form-input": {
+      style: function(states) {
+        const style = {
+          decorator: "form-input",
+          padding: 5,
+          backgroundColor: "input_background"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "info";
+        }
+        if (states.focused) {
+          style.decorator = "form-focus";
+        }
+        return style;
+      }
+    },
+    "form-password": {
+      include: "form-input",
+      style: function(states) {
+        const style = {
+          decorator: "form-input",
+          padding: 5,
+          backgroundColor: "input_background"
+        };
+        if (states.focused) {
+          style.backgroundColor = "success";
+        }
+        return style;
+      }
+    },
     "pb-listitem":  {
       include: "material-button",
       style: function(states) {
         const style = {
           decorator: "pb-listitem",
           padding: 5,
-          backgroundColor: "background-main-2"
+          backgroundColor: "background-card-overlay"
         };
         if (states.hovered) {
-          style.backgroundColor = "background-main-3";
+          style.backgroundColor = "default-button-hover-background";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "background-main-4";
+          style.backgroundColor = "default-button-active";
         }
         return style;
       }
     },
+
+    "pb-new":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "success_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.actived) {
+          style.backgroundColor = "info";
+        }
+        return style;
+      }
+    },
+
+    "pb-study":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "success_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "background-card-overlay";
+        }
+        if (states.selected || states.checked) {
+          style.backgroundColor = "background-selected";
+        }
+        return style;
+      }
+    },
+
+    "pb-template":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "warning_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover-background";
+        }
+
+        return style;
+      }
+    },
+
+    "pb-dynamic":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "info_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover-background";
+        }
+        return style;
+      }
+    },
+
+    "pb-computational":  {
+      include: "pb-listitem",
+      style: function(states) {
+        const style = {
+          backgroundColor: "success_bg"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "default-button-hover-background";
+        }
+        return style;
+      }
+    },
+
     "selectable": {
       include: "material-button",
       style: function(states) {
@@ -58,7 +263,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           style.backgroundColor = "background-main-2";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "background-main-3";
+          style.backgroundColor = "background-selected";
         }
         return style;
       }
@@ -74,7 +279,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "window", // redirect kids to window/kid
       style: function(states) {
         return {
-          backgroundColor: states.selected ? "node-selected-background" : "background-selected-dark",
+          backgroundColor: states.selected ? "node-selected-background" : "background-card-overlay",
           decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
@@ -169,7 +374,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "dialog-window-content": {
       style: () => ({
-        backgroundColor: "background-main-2"
+        backgroundColor: "transparent_overlay"
       })
     },
     /*
@@ -213,7 +418,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     ---------------------------------------------------------------------------
     */
     "toolbar-textfield": {
-      include: "material-textfield",
+      include: "form-input",
       style: state => ({
         backgroundColor: "transparent",
         marginTop: 8
@@ -263,17 +468,6 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "progressbar",
       style: () => ({
         margin: [7, 10]
-      })
-    },
-
-    /*
-    ---------------------------------------------------------------------------
-      SidePanel
-    ---------------------------------------------------------------------------
-    */
-    sidepanel: {
-      style: state => ({
-        backgroundColor: "background-main-1"
       })
     },
 
@@ -461,9 +655,9 @@ qx.Theme.define("osparc.theme.Appearance", {
     "danger-button": {
       include: "material-button",
       style: state => ({
-        decorator: "bordered-button",
-        backgroundColor: state.hovered || state.focused ? "danger-red" : null,
-        textColor: state.hovered || state.focused ? "#d2d8dc" : "danger-red" // dark theme's text color
+        decorator: state.hovered || state.focused ? "form-button-danger-hover" : "form-button-danger",
+        backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "error",
+        textColor: state.hovered || state.focused ? "default-button-text" : "default-button-text" // dark theme's text color
       })
     },
 

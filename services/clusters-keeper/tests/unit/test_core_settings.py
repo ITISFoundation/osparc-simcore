@@ -54,3 +54,48 @@ def test_multiple_primary_ec2_instances_raises(
     )
     with pytest.raises(ValidationError, match="Only one exact value"):
         ApplicationSettings.create_from_envs()
+
+
+@pytest.mark.parametrize(
+    "invalid_tag",
+    [
+        {".": "single dot is invalid"},
+        {"..": "single 2 dots is invalid"},
+        {"": "empty tag key"},
+        {"/": "slash is invalid"},
+        {" ": "space is invalid"},
+    ],
+    ids=str,
+)
+def test_invalid_primary_custom_tags_raises(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    invalid_tag: dict[str, str],
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(invalid_tag)},
+    )
+    with pytest.raises(ValidationError, match="string does not match regex"):
+        ApplicationSettings.create_from_envs()
+
+
+@pytest.mark.parametrize(
+    "valid_tag",
+    [
+        {"...": "3 dots is valid"},
+        {"..fdkjdlk..dsflkjsd=-lkjfie@": ""},
+        {"abcdef-lsaj+-=._:@": "values are able to take almost anything"},
+    ],
+    ids=str,
+)
+def test_valid_primary_custom_tags(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    valid_tag: dict[str, str],
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(valid_tag)},
+    )
+    ApplicationSettings.create_from_envs()

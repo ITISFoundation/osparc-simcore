@@ -83,6 +83,12 @@ qx.Theme.define("osparc.theme.Font", {
       size: 13
     },
 
+    "text-13-italic": {
+      include: "defaults",
+      size: 13,
+      italic: true
+    },
+
     "text-12": {
       include: "defaults",
       size: 12

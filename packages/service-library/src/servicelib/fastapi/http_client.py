@@ -1,14 +1,34 @@
 import contextlib
 import logging
+from abc import ABC, abstractmethod
 
 import httpx
 from fastapi import FastAPI
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 
+from ..logging_utils import log_context
+
 _logger = logging.getLogger(__name__)
 
 
-class BaseHttpApi:
+class HasClientInterface(ABC):
+    @property
+    @abstractmethod
+    def client(self) -> httpx.AsyncClient:
+        ...
+
+
+class HasClientSetupInterface(ABC):
+    @abstractmethod
+    async def setup_client(self) -> None:
+        ...
+
+    @abstractmethod
+    async def teardown_client(self) -> None:
+        ...
+
+
+class BaseHTTPApi(HasClientSetupInterface):
     def __init__(self, client: httpx.AsyncClient):
         self._client = client
         # Controls all resources lifespan in sync
@@ -22,19 +42,22 @@ class BaseHttpApi:
     def client(self) -> httpx.AsyncClient:
         return self._client
 
-    async def _start(self):
-        await self._exit_stack.enter_async_context(self.client)
+    async def setup_client(self) -> None:
+        with log_context(_logger, logging.INFO, "setup client"):
+            await self._exit_stack.enter_async_context(self.client)
 
-    async def _close(self):
-        await self._exit_stack.aclose()
+    async def teardown_client(self) -> None:
+        with log_context(_logger, logging.INFO, "teardown client"):
+            await self._exit_stack.aclose()
 
-    def attach_lifespan_to(self, app: FastAPI):
-        app.add_event_handler("startup", self._start)
-        app.add_event_handler("shutdown", self._close)
 
-    #
-    # service diagnostics
-    #
+class AttachLifespanMixin(HasClientSetupInterface):
+    def attach_lifespan_to(self, app: FastAPI) -> None:
+        app.add_event_handler("startup", self.setup_client)
+        app.add_event_handler("shutdown", self.teardown_client)
+
+
+class HealthMixinMixin(HasClientInterface):
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
@@ -43,7 +66,7 @@ class BaseHttpApi:
         except httpx.RequestError:
             return False
 
-    async def is_healhy(self) -> bool:
+    async def is_healthy(self) -> bool:
         """Service is reachable and ready"""
         try:
             response = await self.client.get("/")
@@ -58,73 +81,3 @@ class BaseHttpApi:
             return IsResponsive(elapsed=response.elapsed)
         except httpx.RequestError as err:
             return IsNonResponsive(reason=f"{err}")
-
-
-class AppStateMixin:
-    """
-    Mixin to get, set and delete an instance of 'self' from/to app.state
-    """
-
-    app_state_name: str  # Name used in app.state.$(app_state_name)
-    frozen: bool = True  # Will raise if set multiple times
-
-    @classmethod
-    def get_from_app_state(cls, app: FastAPI):
-        return getattr(app.state, cls.app_state_name)
-
-    def set_to_app_state(self, app: FastAPI):
-        if (exists := getattr(app.state, self.app_state_name, None)) and self.frozen:
-            msg = f"An instance of {type(self)} already in app.state.{self.app_state_name}={exists}"
-            raise ValueError(msg)
-
-        setattr(app.state, self.app_state_name, self)
-        return self.get_from_app_state(app)
-
-    @classmethod
-    def pop_from_app_state(cls, app: FastAPI):
-        """
-        Raises:
-            AttributeError: if instance is not in app.state
-        """
-        old = getattr(app.state, cls.app_state_name)
-        delattr(app.state, cls.app_state_name)
-        return old
-
-
-def to_curl_command(request: httpx.Request, *, use_short_options: bool = True) -> str:
-    """Composes a curl command from a given request
-
-    Can be used to reproduce a request in a separate terminal (e.g. debugging)
-    """
-    # Adapted from https://github.com/marcuxyz/curlify2/blob/master/curlify2/curlify.py
-    method = request.method
-    url = request.url
-
-    # https://curl.se/docs/manpage.html#-X
-    # -X, --request {method}
-    _x = "-X" if use_short_options else "--request"
-    request_option = f"{_x} {method}"
-
-    # https://curl.se/docs/manpage.html#-d
-    # -d, --data <data>          HTTP POST data
-    data_option = ""
-    if body := request.read().decode():
-        _d = "-d" if use_short_options else "--data"
-        data_option = f"{_d} '{body}'"
-
-    # https://curl.se/docs/manpage.html#-H
-    # H, --header <header/@file> Pass custom header(s) to server
-
-    headers_option = ""
-    headers = []
-    for key, value in request.headers.items():
-        if "secret" in key.lower() or "pass" in key.lower():
-            headers.append(f'"{key}: *****"')
-        else:
-            headers.append(f'"{key}: {value}"')
-
-    if headers:
-        _h = "-H" if use_short_options else "--header"
-        headers_option = f"{_h} {f' {_h} '.join(headers)}"
-
-    return f"curl {request_option} {headers_option} {data_option} {url}"

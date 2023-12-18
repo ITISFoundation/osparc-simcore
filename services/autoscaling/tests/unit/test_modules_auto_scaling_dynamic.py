@@ -381,6 +381,9 @@ async def _assert_ec2_instances(
                 "io.simcore.autoscaling.monitored_nodes_labels",
                 "io.simcore.autoscaling.monitored_services_labels",
                 "Name",
+                "user_id",
+                "wallet_id",
+                "osparc-tag",
             ]
             for tag_dict in instance["Tags"]:
                 assert "Key" in tag_dict

@@ -13,11 +13,16 @@ import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from models_library.healthchecks import IsResponsive
-from servicelib.fastapi.http_client import AppStateMixin, BaseHttpApi, to_curl_command
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.fastapi.http_client import (
+    AttachLifespanMixin,
+    BaseHTTPApi,
+    HealthMixinMixin,
+)
 
 
 def test_using_app_state_mixin():
-    class SomeData(AppStateMixin):
+    class SomeData(SingletonInAppStateMixin):
         app_state_name: str = "my_data"
         frozen: bool = True
 
@@ -70,7 +75,9 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
-    class MyClientApi(BaseHttpApi, AppStateMixin):
+    class MyClientApi(
+        BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
+    ):
         app_state_name: str = "my_client_api"
 
     new_app = FastAPI()
@@ -97,7 +104,7 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
         assert not api.client.is_closed
 
         assert await api.ping()
-        assert await api.is_healhy()
+        assert await api.is_healthy()
 
         alive = await api.check_liveness()
         assert bool(alive)
@@ -106,51 +113,3 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
 
     # shutdown event
     assert api.client.is_closed
-
-
-async def test_to_curl_command(mock_server_api: respx.MockRouter, base_url: str):
-
-    mock_server_api.post(path__startswith="/foo").respond(status.HTTP_200_OK)
-    mock_server_api.get(path__startswith="/foo").respond(status.HTTP_200_OK)
-    mock_server_api.delete(path__startswith="/foo").respond(status.HTTP_200_OK)
-
-    async with httpx.AsyncClient(base_url=base_url) as client:
-        response = await client.post(
-            "/foo",
-            params={"x": "3"},
-            json={"y": 12},
-            headers={"x-secret": "this should not display"},
-        )
-        assert response.status_code == 200
-
-        cmd_short = to_curl_command(response.request)
-
-        assert (
-            cmd_short
-            == 'curl -X POST -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0" -H "x-secret: *****" -H "content-length: 9" -H "content-type: application/json" -d \'{"y": 12}\' https://test_base_http_api/foo?x=3'
-        )
-
-        cmd_long = to_curl_command(response.request, use_short_options=False)
-        assert cmd_long == cmd_short.replace("-X", "--request",).replace(
-            "-H",
-            "--header",
-        ).replace(
-            "-d",
-            "--data",
-        )
-
-        # with GET
-        response = await client.get("/foo", params={"x": "3"})
-        cmd_long = to_curl_command(response.request)
-
-        assert (
-            cmd_long
-            == 'curl -X GET -H "host: test_base_http_api" -H "accept: */*" -H "accept-encoding: gzip, deflate" -H "connection: keep-alive" -H "user-agent: python-httpx/0.25.0"  https://test_base_http_api/foo?x=3'
-        )
-
-        # with DELETE
-        response = await client.delete("/foo", params={"x": "3"})
-        cmd_long = to_curl_command(response.request)
-
-        assert "DELETE" in cmd_long
-        assert " -d " not in cmd_long

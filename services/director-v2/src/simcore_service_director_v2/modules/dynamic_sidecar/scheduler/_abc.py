@@ -150,3 +150,7 @@ class SchedulerPublicInterface(ABC):
     @abstractmethod
     async def restart_containers(self, node_uuid: NodeID) -> None:
         """Restarts containers without saving or restoring the state or I/O ports"""
+
+    @abstractmethod
+    async def free_reserved_disk_space(self, node_id: NodeID) -> None:
+        """Frees reserved disk space"""

@@ -22,6 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -105,7 +106,7 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
         payment_method_id=initiated.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else 5,
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
     assert cancelled is None
@@ -161,7 +162,7 @@ async def test_webserver_crud_payment_method_workflow(
         parse_obj_as(RPCMethodName, "list_payment_methods"),
         user_id=user_id,
         wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else 5,
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert len(listed) == 1
 
@@ -176,7 +177,7 @@ async def test_webserver_crud_payment_method_workflow(
         payment_method_id=inited.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else 5,
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert got == listed[0]
     if mock_payments_gateway_service_or_none:
@@ -188,7 +189,7 @@ async def test_webserver_crud_payment_method_workflow(
         payment_method_id=inited.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else 5,
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
     if mock_payments_gateway_service_or_none:

@@ -1,13 +1,17 @@
 import logging
 from copy import deepcopy
+from typing import Any
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerLabelKey,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
+from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
@@ -27,7 +31,7 @@ from .settings import (
     update_service_params_from_settings,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def extract_service_port_service_settings(
@@ -42,6 +46,7 @@ def _get_environment_variables(
     app_settings: AppSettings,
     *,
     allow_internet_access: bool,
+    metrics_collection_allowed: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -52,6 +57,16 @@ def _get_environment_variables(
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
         state_exclude = scheduler_data.paths_mapping.state_exclude
+
+    callbacks_mapping: CallbacksMapping = scheduler_data.callbacks_mapping
+
+    if not metrics_collection_allowed:
+        _logger.info(
+            "user=%s disabled metrics collection, disable prometheus metrics for node_id=%s",
+            scheduler_data.user_id,
+            scheduler_data.node_uuid,
+        )
+        callbacks_mapping.metrics = None
 
     return {
         # These environments will be captured by
@@ -64,7 +79,7 @@ def _get_environment_variables(
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
-        "DY_SIDECAR_CALLBACKS_MAPPING": scheduler_data.callbacks_mapping.json(),
+        "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
@@ -132,28 +147,15 @@ def get_prometheus_monitoring_networks(
     )
 
 
-def get_dynamic_sidecar_spec(
+def _get_mounts(
+    *,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-    swarm_network_id: str,
-    settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
     has_quota_support: bool,
-    allow_internet_access: bool,
-) -> AioDockerServiceSpec:
-    """
-    The dynamic-sidecar is responsible for managing the lifecycle
-    of the dynamic service. The director-v2 directly coordinates with
-    the dynamic-sidecar for this purpose.
-
-    returns: the compose the request body for service creation
-    SEE https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate
-    """
-    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
-
-    # MOUNTS -----------
-    mounts = [
+) -> list[dict[str, Any]]:
+    mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
         {
             "Source": "/var/run/docker.sock",
@@ -269,9 +271,13 @@ def get_dynamic_sidecar_spec(
                 has_quota_support=has_quota_support,
             )
         )
+    return mounts
 
-    # PORTS -----------
-    ports = []  # expose this service on an empty port
+
+def _get_ports(
+    *, dynamic_sidecar_settings: DynamicSidecarSettings, app_settings: AppSettings
+) -> list[dict[str, Any]]:
+    ports: list[dict[str, Any]] = []  # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
         ports.append(
             # server port
@@ -289,11 +295,59 @@ def get_dynamic_sidecar_spec(
                     "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUG_PORT,
                 }
             )
+    return ports
 
-    #  -----------
-    create_service_params = {
-        "endpoint_spec": {"Ports": ports} if ports else {},
-        "labels": {
+
+def get_dynamic_sidecar_spec(
+    scheduler_data: SchedulerData,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    swarm_network_id: str,
+    settings: SimcoreServiceSettingsLabel,
+    app_settings: AppSettings,
+    *,
+    has_quota_support: bool,
+    allow_internet_access: bool,
+    hardware_info: HardwareInfo | None,
+    metrics_collection_allowed: bool,
+) -> AioDockerServiceSpec:
+    """
+    The dynamic-sidecar is responsible for managing the lifecycle
+    of the dynamic service. The director-v2 directly coordinates with
+    the dynamic-sidecar for this purpose.
+
+    returns: the compose the request body for service creation
+    SEE https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate
+    """
+    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
+
+    mounts = _get_mounts(
+        scheduler_data=scheduler_data,
+        dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
+        app_settings=app_settings,
+        has_quota_support=has_quota_support,
+    )
+
+    ports = _get_ports(
+        dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
+    )
+
+    standard_simcore_docker_labels: dict[
+        DockerLabelKey, str
+    ] = StandardSimcoreDockerLabels(
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        product_name=scheduler_data.product_name,
+        simcore_user_agent=scheduler_data.request_simcore_user_agent,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        memory_limit=ByteSize(0),  # this should get overwritten
+        cpu_limit=0,  # this should get overwritten
+    ).to_simcore_runtime_docker_labels()
+
+    service_labels: dict[str, str] = (
+        {
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             to_simcore_runtime_docker_label_key("service_key"): scheduler_data.key,
             to_simcore_runtime_docker_label_key(
@@ -304,16 +358,20 @@ def get_dynamic_sidecar_spec(
             dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS,
             scheduler_data.callbacks_mapping,
         )
-        | StandardSimcoreDockerLabels(
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-            product_name=scheduler_data.product_name,
-            simcore_user_agent=scheduler_data.request_simcore_user_agent,
-            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            memory_limit=ByteSize(0),  # this should get overwritten
-            cpu_limit=0,  # this should get overwritten
-        ).to_simcore_runtime_docker_labels(),
+        | standard_simcore_docker_labels
+    )
+
+    # if service has a pricing plan apply constraints for autoscaling
+    if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
+        ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
+        service_labels[
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
+        ] = ec2_instance_type
+
+    #  -----------
+    create_service_params = {
+        "endpoint_spec": {"Ports": ports} if ports else {},
+        "labels": service_labels,
         "name": scheduler_data.service_name,
         "networks": [
             {"Target": swarm_network_id},
@@ -329,23 +387,12 @@ def get_dynamic_sidecar_spec(
                     scheduler_data,
                     app_settings,
                     allow_internet_access=allow_internet_access,
+                    metrics_collection_allowed=metrics_collection_allowed,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
-                "CapabilityAdd": [
-                    "CAP_LINUX_IMMUTABLE",
-                ],
-                "Labels": StandardSimcoreDockerLabels(
-                    user_id=scheduler_data.user_id,
-                    project_id=scheduler_data.project_id,
-                    node_id=scheduler_data.node_uuid,
-                    product_name=scheduler_data.product_name,
-                    simcore_user_agent=scheduler_data.request_simcore_user_agent,
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    memory_limit=ByteSize(0),  # this should get overwritten
-                    cpu_limit=0,  # this should get overwritten
-                ).to_simcore_runtime_docker_labels(),
+                "Labels": standard_simcore_docker_labels,
                 "Mounts": mounts,
                 "Secrets": [
                     {

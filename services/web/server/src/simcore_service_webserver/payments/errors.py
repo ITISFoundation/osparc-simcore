@@ -1,49 +1,30 @@
+from models_library.api_schemas_payments.errors import (
+    InvalidPaymentMethodError,
+    PaymentMethodAlreadyAckedError,
+    PaymentMethodNotFoundError,
+    PaymentMethodUniqueViolationError,
+    PaymentNotFoundError,
+    PaymentServiceUnavailableError,
+)
 from pydantic.errors import PydanticErrorMixin
 
+__all__ = (
+    "InvalidPaymentMethodError",
+    "PaymentMethodAlreadyAckedError",
+    "PaymentMethodNotFoundError",
+    "PaymentMethodUniqueViolationError",
+    "PaymentNotFoundError",
+    "PaymentServiceUnavailableError",
+)
 
-class PaymentsError(PydanticErrorMixin, ValueError):
+
+class PaymentsPluginError(PydanticErrorMixin, ValueError):
     ...
 
 
-class PaymentNotFoundError(PaymentsError):
-    msg_template = "Invalid payment identifier '{payment_id}'"
-
-
-class PaymentCompletedError(PaymentsError):
+class PaymentCompletedError(PaymentsPluginError):
     msg_template = "Cannot complete payment '{payment_id}' that was already closed"
 
 
-class PaymentUniqueViolationError(PaymentsError):
+class PaymentUniqueViolationError(PaymentsPluginError):
     msg_template = "Payment transaction '{payment_id}' aready exists"
-
-
-#
-# payment methods
-#
-
-
-class PaymentsMethodsError(PydanticErrorMixin, ValueError):
-    ...
-
-
-class PaymentMethodNotFoundError(PaymentsMethodsError):
-    msg_template = "Cannot find payment method '{payment_method_id}'"
-
-
-class PaymentMethodAlreadyAckedError(PaymentsMethodsError):
-    msg_template = (
-        "Cannot create payment-method '{payment_method_id}' since it was already closed"
-    )
-
-
-class PaymentMethodUniqueViolationError(PaymentsMethodsError):
-    msg_template = "Payment method '{payment_method_id}' aready exists"
-
-
-#
-# autorecharge
-#
-
-
-class InvalidPaymentMethodError(PaymentsMethodsError):
-    msg_template = "Invalid payment method '{payment_method_id}'"

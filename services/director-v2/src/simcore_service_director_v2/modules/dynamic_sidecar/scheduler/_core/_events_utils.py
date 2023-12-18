@@ -2,16 +2,24 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
+from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.shared_user_preferences import (
+    AllowMetricsCollectionFrontendUserPreference,
+)
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
+from models_library.user_preferences import FrontendUserPreference
+from models_library.users import UserID
+from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -30,19 +38,23 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
+from .....core.errors import PricingPlanUnitNotFoundError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
 )
+from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.db import get_repository
 from ....api_keys_manager import safe_remove
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
+from ....db.repositories.user_preferences_frontend import (
+    UserPreferencesFrontendRepository,
+)
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
-    BaseClientHTTPError,
     SidecarsClient,
     get_dynamic_sidecar_service_health,
     get_sidecars_client,
@@ -108,7 +120,7 @@ async def service_remove_containers(
         await sidecars_client.stop_service(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
-    except (BaseClientHTTPError, TaskClientResultError) as e:
+    except (BaseHttpClientError, TaskClientResultError) as e:
         _logger.warning(
             (
                 "Could not remove service containers for "
@@ -117,6 +129,13 @@ async def service_remove_containers(
             scheduler_data.service_name,
             f"{e}",
         )
+
+
+async def service_free_reserved_disk_space(
+    app: FastAPI, node_id: NodeID, sidecars_client: SidecarsClient
+) -> None:
+    scheduler_data: SchedulerData = _get_scheduler_data(app, node_id)
+    await sidecars_client.free_reserved_disk_space(scheduler_data.endpoint)
 
 
 async def service_save_state(
@@ -245,7 +264,9 @@ async def attempt_pod_removal_and_data_saving(
 
     _logger.debug("removing service; scheduler_data=%s", scheduler_data)
 
-    sidecars_client: SidecarsClient = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client: SidecarsClient = await get_sidecars_client(
+        app, scheduler_data.node_uuid
+    )
 
     await service_remove_containers(app, scheduler_data.node_uuid, sidecars_client)
 
@@ -269,6 +290,11 @@ async def attempt_pod_removal_and_data_saving(
 
     if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
         _logger.info("Calling into dynamic-sidecar to save: state and output ports")
+
+        await service_free_reserved_disk_space(
+            app, scheduler_data.node_uuid, sidecars_client
+        )
+
         try:
             tasks = [
                 service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
@@ -285,7 +311,7 @@ async def attempt_pod_removal_and_data_saving(
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
             _logger.info("dynamic-sidecar saved: state and output ports")
-        except (BaseClientHTTPError, TaskClientResultError) as e:
+        except (BaseHttpClientError, TaskClientResultError) as e:
             _logger.error(  # noqa: TRY400
                 (
                     "Could not contact dynamic-sidecar to save service "
@@ -333,7 +359,7 @@ async def attempt_pod_removal_and_data_saving(
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     _logger.debug("Attaching project networks for %s", scheduler_data.service_name)
 
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     projects_networks_repository: ProjectsNetworksRepository = get_repository(
@@ -387,7 +413,7 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
-    sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
     # Before starting, update the volume states. It is not always
@@ -442,3 +468,39 @@ async def prepare_services_environment(
     )
 
     scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+
+
+async def get_hardware_info(
+    app: FastAPI, scheduler_data: SchedulerData
+) -> HardwareInfo | None:
+    rut_client = ResourceUsageTrackerClient.get_from_state(app)
+    try:
+        result = await rut_client.get_default_pricing_and_hardware_info(
+            product_name=scheduler_data.product_name,
+            service_key=scheduler_data.key,
+            service_version=scheduler_data.version,
+        )
+        return HardwareInfo(aws_ec2_instances=result.aws_ec2_instances)
+    except PricingPlanUnitNotFoundError:
+        return None
+
+
+async def get_allow_metrics_collection(
+    app: FastAPI, user_id: UserID, product_name: ProductName
+) -> bool:
+    repo = get_repository(app, UserPreferencesFrontendRepository)
+    preference: FrontendUserPreference | None = await repo.get_user_preference(
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=AllowMetricsCollectionFrontendUserPreference,
+    )
+
+    if preference is None:
+        return cast(
+            bool, AllowMetricsCollectionFrontendUserPreference.get_default_value()
+        )
+
+    allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.parse_obj(
+        preference
+    )
+    return cast(bool, allow_metrics_collection.value)

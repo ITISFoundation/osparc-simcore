@@ -50,6 +50,8 @@ services:
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
+    deploy:
+      replicas: 1
 
   catalog:
     environment:

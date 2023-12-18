@@ -161,14 +161,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       const registration = this.getChildControl("registration-view");
       const config = osparc.store.Store.getInstance().get("config");
       let requestAccount = null;
-      if (config["invitation_required"] &&
-        (
-          osparc.product.Utils.isProduct("s4l") ||
-          osparc.product.Utils.isProduct("s4lacad") ||
-          osparc.product.Utils.isProduct("s4ldesktop") ||
-          osparc.product.Utils.isProduct("s4ldesktopacad")
-        )
-      ) {
+      if (config["invitation_required"] && osparc.product.Utils.isS4LProduct()) {
         requestAccount = this.getChildControl("request-account");
       }
       const verifyPhoneNumber = this.getChildControl("verify-phone-number-view");

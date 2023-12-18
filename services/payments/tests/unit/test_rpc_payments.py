@@ -6,10 +6,10 @@
 
 from typing import Any
 
-import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_payments.errors import PaymentNotFoundError
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
@@ -17,8 +17,8 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
+from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
-from simcore_service_payments.core.errors import PaymentNotFoundError
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -83,13 +83,15 @@ async def test_rpc_init_payment_fail(
             **init_payment_kwargs,
         )
 
-    exc = exc_info.value
-    assert exc.exc_type == f"{httpx.ConnectError}"
-    assert exc.method_name == "init_payment"
-    assert exc.msg
+    error = exc_info.value
+    assert isinstance(error, RPCServerError)
+    assert error.exc_type == "httpx.ConnectError"
+    assert error.method_name == "init_payment"
+    assert error.msg
 
 
 async def test_webserver_one_time_payment_workflow(
+    is_pdb_enabled: bool,
     app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
@@ -115,7 +117,7 @@ async def test_webserver_one_time_payment_workflow(
         payment_id=result.payment_id,
         user_id=init_payment_kwargs["user_id"],
         wallet_id=init_payment_kwargs["wallet_id"],
-        timeout_s=20,  # for tests
+        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
     assert result is None
@@ -125,6 +127,8 @@ async def test_webserver_one_time_payment_workflow(
 
 
 async def test_cancel_invalid_payment_id(
+    is_pdb_enabled: bool,
+    app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
@@ -133,20 +137,14 @@ async def test_cancel_invalid_payment_id(
 ):
     invalid_payment_id = faker.uuid4()
 
-    with pytest.raises(RPCServerError) as exc_info:
+    with pytest.raises(PaymentNotFoundError) as exc_info:
         await rpc_client.request(
             PAYMENTS_RPC_NAMESPACE,
             parse_obj_as(RPCMethodName, "cancel_payment"),
             payment_id=invalid_payment_id,
             user_id=init_payment_kwargs["user_id"],
             wallet_id=init_payment_kwargs["wallet_id"],
-            timeout_s=20,  # for tests
+            timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
         )
     error = exc_info.value
-
-    assert isinstance(error, RPCServerError)
-    assert error.exc_type == f"{PaymentNotFoundError}"
-    assert error.method_name == "cancel_payment"
-    assert error.msg == PaymentNotFoundError.msg_template.format(
-        payment_id=invalid_payment_id
-    )
+    assert isinstance(error, PaymentNotFoundError)

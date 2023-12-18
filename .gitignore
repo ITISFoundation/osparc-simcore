@@ -151,9 +151,6 @@ prof/
 # outputs from make
 .stack-*.yml
 
-# copies
-services/**/.codeclimate.yml
-
 # WSL
 .fake_hostname_file
 .bash_history

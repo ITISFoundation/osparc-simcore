@@ -24,11 +24,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     const title = this.tr("General Settings");
     this.base(arguments, title, iconSrc);
 
-    const walletIndicatorSettings = this.__createCreditsIndicatorSettings();
-    this.add(walletIndicatorSettings);
-
+    this.add(this.__createCreditsIndicatorSettings());
     this.add(this.__createInactivitySetting());
     this.add(this.__createJobConcurrencySetting());
+    this.add(this.__createUserPrivacySettings());
   },
 
   statics: {
@@ -57,11 +56,6 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       // layout
       const box = this._createSectionBox(this.tr("Credits Indicator"));
 
-      const label = this._createHelpLabel(this.tr(
-        "Choose when you want the Credits Indicator to be shown in the navigation bar:"
-      ));
-      box.add(label);
-
       const form = new qx.ui.form.Form();
 
       const preferencesSettings = osparc.Preferences.getInstance();
@@ -89,7 +83,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         const selectable = e.getData();
         this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
       });
-      form.add(walletIndicatorVisibilitySB, this.tr("Show it"));
+      form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
       const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
         minimum: 100,
@@ -99,15 +93,15 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
       creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
-      form.add(creditsWarningThresholdField, this.tr("Warning threshold"));
+      form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
 
       box.add(new qx.ui.form.renderer.Single(form));
 
       return box;
     },
     __createInactivitySetting: function() {
-      const box = this._createSectionBox(this.tr("Inactivity shutdown"));
-      const label = this._createHelpLabel(this.tr("Choose after how long should inactive studies be closed. A value of zero disables this function."));
+      const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
+      const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
       box.add(label);
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
@@ -126,9 +120,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       return box;
     },
     __createJobConcurrencySetting: function() {
-      const box = this._createSectionBox(this.tr("Job concurrency"));
-      const label = this._createHelpLabel(this.tr("Choose how many jobs can run at the same time."));
-      box.add(label);
+      const box = this._createSectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
@@ -140,8 +132,23 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
-      form.add(jobConcurrencySpinner, this.tr("Maximum concurrent jobs"));
+      form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
+      return box;
+    },
+    __createUserPrivacySettings: function() {
+      const box = this._createSectionBox("Privacy Settings");
+
+      const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
+      box.add(label);
+
+      const preferencesSettings = osparc.Preferences.getInstance();
+
+      const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Share usage data"));
+      preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
+      cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
+      box.add(cbAllowMetricsCollection);
+
       return box;
     }
   }

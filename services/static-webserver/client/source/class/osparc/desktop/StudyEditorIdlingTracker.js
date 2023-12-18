@@ -18,9 +18,9 @@
 qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
   extend: qx.core.Object,
 
-  construct: function() {
+  construct: function(studyUuid) {
     this.base(arguments);
-
+    this.__studyUuid = studyUuid;
     this.__resetIdlingTimeBound = this.__resetIdlingTime.bind(this);
   },
 
@@ -29,8 +29,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
   },
 
   statics: {
-    IDLE_TIMEOUT: 30*60, // 30'
-    IDLE_WARNING: 15*60 // 15'
+    INACTIVITY_REQUEST_PERIOD: 60000
   },
 
   members: {
@@ -38,6 +37,8 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     __idlingTime: null,
     __idleInterval: null,
     __idleFlashMessage: null,
+    __frontendTimedout: false,
+    __inactivityInterval: null,
 
     __updateFlashMessage: function(timeoutSec) {
       if (this.__idleFlashMessage === null) {
@@ -45,7 +46,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       }
 
       let msg = qx.locale.Manager.tr("Are you still there?") + "<br>";
-      msg += qx.locale.Manager.tr("If not, the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" will be closed in: ");
+      msg += qx.locale.Manager.tr("If not, oSPARC will try to close the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" in: ");
       msg += osparc.utils.Utils.formatSeconds(timeoutSec);
       this.__idleFlashMessage.setMessage(msg);
     },
@@ -63,16 +64,40 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     },
 
     __startTimer: function() {
-      this.__idleInterval = setInterval(() => {
+      const checkFn = () => {
+        const timeoutT = osparc.Preferences.getInstance().getUserInactivityThreshold();
+        const warningT = Math.round(timeoutT * 0.8);
         this.__idlingTime++;
-        if (this.__idlingTime >= this.self().IDLE_TIMEOUT) {
-          this.__userIdled();
-        } else if (this.__idlingTime >= this.self().IDLE_WARNING) {
-          this.__updateFlashMessage(this.self().IDLE_TIMEOUT - this.__idlingTime);
+        if (this.__idlingTime >= timeoutT) {
+          if (!this.__frontendTimedout) {
+            // User was inactive in oSPARC, we can test services (ask every minute until response is true or we detect activity again)
+            this.__removeIdleFlashMessage();
+            const checkInactivity = () => {
+              osparc.data.Resources.fetch("studies", "getInactivity", {
+                url: {
+                  studyId: this.__studyUuid
+                }
+              }).then(data => {
+                if (data["is_inactive"]) {
+                  this.__userIdled();
+                } else {
+                  this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
+                }
+              }).catch(err => {
+                console.error(err);
+                this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
+              });
+            };
+            checkInactivity();
+          }
+          this.__frontendTimedout = true;
+        } else if (this.__idlingTime >= warningT) {
+          this.__updateFlashMessage(timeoutT - this.__idlingTime);
         } else if (this.__idleFlashMessage) {
           this.__removeIdleFlashMessage();
         }
-      }, 1000);
+      };
+      this.__idleInterval = setInterval(checkFn, 1000);
     },
 
     __stopTimer: function() {
@@ -84,6 +109,8 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __resetIdlingTime: function() {
       this.__idlingTime = 0;
+      this.__frontendTimedout = false;
+      clearTimeout(this.__inactivityInterval);
     },
 
     start: function() {
@@ -103,6 +130,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       window.removeEventListener("mousedown", cb);
       window.removeEventListener("keydown", cb);
 
+      clearTimeout(this.__inactivityInterval);
       this.__removeIdleFlashMessage();
       this.__stopTimer();
     },

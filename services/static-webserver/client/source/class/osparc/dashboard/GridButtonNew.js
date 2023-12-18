@@ -32,6 +32,10 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
+    this.set({
+      appearance: "pb-new"
+    });
+
     this._buildLayout();
 
     if (title) {
