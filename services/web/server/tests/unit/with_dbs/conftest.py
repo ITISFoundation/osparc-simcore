@@ -378,7 +378,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         "get_service_status",
         "run_dynamic_service",
     ):
-        name = f"dynamic_scheduler._rpc.{func_name}"
+        name = f"dynamic_scheduler.api.{func_name}"
         mock[name] = mocker.patch(
             f"simcore_service_webserver.{name}",
             autospec=True,
