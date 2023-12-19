@@ -10,15 +10,14 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from models_library.rabbitmq_basic_types import RPCMethodName
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [
@@ -146,27 +145,16 @@ async def test_get_state(
     service_status_legacy: NodeGet,
 ):
     # status from director-v2
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("get_service_status"),
-        node_id=node_id_new_style,
-    )
+
+    result = await services.get_service_status(rpc_client, node_id=node_id_new_style)
     assert result == service_status_new_style
 
     # status from director-v0
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("get_service_status"),
-        node_id=node_id_legacy,
-    )
+    result = await services.get_service_status(rpc_client, node_id=node_id_legacy)
     assert result == service_status_legacy
 
     # node not tracked any of the two directors
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("get_service_status"),
-        node_id=node_not_found,
-    )
+    result = await services.get_service_status(rpc_client, node_id=node_not_found)
     assert result == NodeGetIdle(service_state="idle", service_uuid=node_not_found)
 
 
@@ -228,11 +216,10 @@ async def test_run_dynamic_service(
     rpc_dynamic_service_create: RPCDynamicServiceCreate,
     is_legacy: bool,
 ):
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("run_dynamic_service"),
-        create_dynamic_service=rpc_dynamic_service_create,
+    result = await services.run_dynamic_service(
+        rpc_client, rpc_dynamic_service_create=rpc_dynamic_service_create
     )
+
     if is_legacy:
         assert isinstance(result, NodeGet)
     else:
