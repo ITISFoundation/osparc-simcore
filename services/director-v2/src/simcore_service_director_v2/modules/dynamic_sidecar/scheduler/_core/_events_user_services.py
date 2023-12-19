@@ -163,10 +163,10 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     )
 
     # NOTE: when in READ ONLY mode disable the outputs watcher
-    if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
-        await sidecars_client.enable_service_ports_io(dynamic_sidecar_endpoint)
-    else:
-        await sidecars_client.disable_service_ports_io(dynamic_sidecar_endpoint)
+    enable_outputs = not scheduler_data.dynamic_sidecar.service_removal_state.can_save
+    await sidecars_client.toggle_service_ports_io(
+        dynamic_sidecar_endpoint, enable_outputs=enable_outputs, enable_inputs=True
+    )
 
     # Starts PROXY -----------------------------------------------
     # The entrypoint container name was now computed

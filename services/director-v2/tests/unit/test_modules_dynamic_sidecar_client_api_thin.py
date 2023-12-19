@@ -123,12 +123,14 @@ async def test_get_containers(
     assert_responses(mock_response, response)
 
 
-@pytest.mark.parametrize("is_enabled", [False, True])
+@pytest.mark.parametrize("enable_outputs", [False, True])
+@pytest.mark.parametrize("enable_inputs", [False, True])
 async def test_post_patch_containers_ports_io(
     thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
-    is_enabled: bool,
+    enable_outputs: bool,
+    enable_inputs: bool,
 ) -> None:
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
@@ -139,7 +141,9 @@ async def test_post_patch_containers_ports_io(
     )
 
     response = await thin_client.patch_containers_ports_io(
-        dynamic_sidecar_endpoint, is_enabled=is_enabled
+        dynamic_sidecar_endpoint,
+        enable_outputs=enable_outputs,
+        enable_inputs=enable_inputs,
     )
     assert_responses(mock_response, response)
 
