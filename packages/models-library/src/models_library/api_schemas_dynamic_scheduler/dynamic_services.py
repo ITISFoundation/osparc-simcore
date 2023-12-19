@@ -6,7 +6,7 @@ from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.wallets import WalletInfo
 
 
-class CreateDynamicService(DynamicServiceCreate):
+class RPCDynamicServiceCreate(DynamicServiceCreate):
     request_dns: str
     request_scheme: str
     simcore_user_agent: str

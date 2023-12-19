@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import FastAPI, status
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -50,9 +50,11 @@ class DirectorV2Client(
             raise
 
     async def run_dynamic_service(
-        self, create_dynamic_service: CreateDynamicService
+        self, rpc_dynamic_service_create: RPCDynamicServiceCreate
     ) -> NodeGet | DynamicServiceGet:
-        response = await self.thin_client.post_dynamic_service(create_dynamic_service)
+        response = await self.thin_client.post_dynamic_service(
+            rpc_dynamic_service_create
+        )
         dict_response: dict[str, Any] = response.json()
 
         # legacy services

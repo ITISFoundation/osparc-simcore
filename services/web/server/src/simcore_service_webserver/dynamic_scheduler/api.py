@@ -1,7 +1,7 @@
 from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -16,8 +16,8 @@ async def get_dynamic_service(
 
 
 async def run_dynamic_service(
-    app: web.Application, *, create_dynamic_service: CreateDynamicService
+    app: web.Application, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
 ) -> DynamicServiceGet | NodeGet:
     return await _rpc.run_dynamic_service(
-        app, create_dynamic_service=create_dynamic_service
+        app, rpc_dynamic_service_create=rpc_dynamic_service_create
     )

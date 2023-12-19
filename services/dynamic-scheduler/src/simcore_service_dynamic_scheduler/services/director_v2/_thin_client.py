@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
@@ -42,29 +42,29 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     @retry_on_errors
     @expect_status(status.HTTP_201_CREATED)
     async def post_dynamic_service(
-        self, create_dynamic_service: CreateDynamicService
+        self, rpc_dynamic_service_create: RPCDynamicServiceCreate
     ) -> Response:
         post_data = {
-            "product_name": create_dynamic_service.product_name,
-            "can_save": create_dynamic_service.can_save,
-            "user_id": create_dynamic_service.user_id,
-            "project_id": create_dynamic_service.project_id,
-            "key": create_dynamic_service.key,
-            "version": create_dynamic_service.version,
-            "node_uuid": create_dynamic_service.node_uuid,
-            "basepath": f"/x/{create_dynamic_service.node_uuid}",
+            "product_name": rpc_dynamic_service_create.product_name,
+            "can_save": rpc_dynamic_service_create.can_save,
+            "user_id": rpc_dynamic_service_create.user_id,
+            "project_id": rpc_dynamic_service_create.project_id,
+            "key": rpc_dynamic_service_create.key,
+            "version": rpc_dynamic_service_create.version,
+            "node_uuid": rpc_dynamic_service_create.node_uuid,
+            "basepath": f"/x/{rpc_dynamic_service_create.node_uuid}",
             "service_resources": ServiceResourcesDictHelpers.create_jsonable(
-                create_dynamic_service.service_resources
+                rpc_dynamic_service_create.service_resources
             ),
-            "wallet_info": create_dynamic_service.wallet_info,
-            "pricing_info": create_dynamic_service.pricing_info,
-            "hardware_info": create_dynamic_service.hardware_info,
+            "wallet_info": rpc_dynamic_service_create.wallet_info,
+            "pricing_info": rpc_dynamic_service_create.pricing_info,
+            "hardware_info": rpc_dynamic_service_create.hardware_info,
         }
 
         headers = {
-            X_DYNAMIC_SIDECAR_REQUEST_DNS: create_dynamic_service.request_dns,
-            X_DYNAMIC_SIDECAR_REQUEST_SCHEME: create_dynamic_service.request_scheme,
-            X_SIMCORE_USER_AGENT: create_dynamic_service.simcore_user_agent,
+            X_DYNAMIC_SIDECAR_REQUEST_DNS: rpc_dynamic_service_create.request_dns,
+            X_DYNAMIC_SIDECAR_REQUEST_SCHEME: rpc_dynamic_service_create.request_scheme,
+            X_SIMCORE_USER_AGENT: rpc_dynamic_service_create.simcore_user_agent,
         }
 
         return await self.client.post(

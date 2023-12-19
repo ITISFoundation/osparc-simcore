@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -34,14 +34,14 @@ async def get_service_status(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def run_dynamic_service(
-    app: web.Application, *, create_dynamic_service: CreateDynamicService
+    app: web.Application, *, rpc_dynamic_service_create: RPCDynamicServiceCreate
 ) -> DynamicServiceGet | NodeGet:
     rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "run_dynamic_service"),
-        create_dynamic_service=create_dynamic_service,
+        create_dynamic_service=rpc_dynamic_service_create,
     )
     assert isinstance(result, DynamicServiceGet | NodeGet)  # nosec
     return result

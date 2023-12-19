@@ -12,7 +12,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -171,10 +171,10 @@ async def test_get_state(
 
 
 @pytest.fixture
-def create_dynamic_services() -> CreateDynamicService:
+def rpc_dynamic_service_create() -> RPCDynamicServiceCreate:
     # one for legacy and one for new style?
-    return CreateDynamicService.parse_obj(
-        CreateDynamicService.Config.schema_extra["example"]
+    return RPCDynamicServiceCreate.parse_obj(
+        RPCDynamicServiceCreate.Config.schema_extra["example"]
     )
 
 
@@ -225,13 +225,13 @@ async def test_run_dynamic_service(
     mock_director_v0_service_run: None,
     mock_director_v2_service_run: None,
     rpc_client: RabbitMQRPCClient,
-    create_dynamic_services: CreateDynamicService,
+    rpc_dynamic_service_create: RPCDynamicServiceCreate,
     is_legacy: bool,
 ):
     result = await rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         RPCMethodName("run_dynamic_service"),
-        create_dynamic_service=create_dynamic_services,
+        create_dynamic_service=rpc_dynamic_service_create,
     )
     if is_legacy:
         assert isinstance(result, NodeGet)

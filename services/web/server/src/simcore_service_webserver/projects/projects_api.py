@@ -23,7 +23,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.errors import ErrorDict
 from models_library.projects import Project, ProjectID, ProjectIDStr
@@ -402,7 +402,7 @@ async def _start_dynamic_service(
 
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
-            create_dynamic_service=CreateDynamicService(
+            rpc_dynamic_service_create=RPCDynamicServiceCreate(
                 product_name=product_name,
                 can_save=save_state,
                 project_id=project_uuid,

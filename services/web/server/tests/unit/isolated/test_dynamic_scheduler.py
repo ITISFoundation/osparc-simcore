@@ -7,7 +7,7 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    CreateDynamicService,
+    RPCDynamicServiceCreate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
@@ -41,9 +41,9 @@ def mock_rpc_client(
 
 
 @pytest.fixture
-def create_dynamic_service() -> CreateDynamicService:
-    return CreateDynamicService.parse_obj(
-        CreateDynamicService.Config.schema_extra["example"]
+def rpc_dynamic_service_create() -> RPCDynamicServiceCreate:
+    return RPCDynamicServiceCreate.parse_obj(
+        RPCDynamicServiceCreate.Config.schema_extra["example"]
     )
 
 
@@ -79,11 +79,11 @@ async def test_run_dynamic_service(
     mock_rpc_client: None,
     mocked_app: AsyncMock,
     expected_response: NodeGet | NodeGetIdle | DynamicServiceGet,
-    create_dynamic_service: CreateDynamicService,
+    rpc_dynamic_service_create: RPCDynamicServiceCreate,
 ):
     assert (
         await run_dynamic_service(
-            mocked_app, create_dynamic_service=create_dynamic_service
+            mocked_app, rpc_dynamic_service_create=rpc_dynamic_service_create
         )
         == expected_response
     )
