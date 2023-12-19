@@ -136,10 +136,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
       const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
-      paymentMethods.set({
-        margin: 10
-      });
-      page.add(paymentMethods);
+      page.add(paymentMethods, { flex: 1 });
       return page;
     },
 

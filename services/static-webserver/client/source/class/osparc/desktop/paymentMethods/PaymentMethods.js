@@ -25,6 +25,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     const store = osparc.store.Store.getInstance();
     store.bind("contextWallet", this, "contextWallet");
+
+    this.__buildLayout()
   },
 
   properties: {
@@ -32,7 +34,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: false,
-      apply: "__buildLayout"
+      // apply: "__buildLayout"
     },
 
     paymentMethods: {
@@ -46,49 +48,33 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
   members: {
     __allPaymentMethods: null,
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "intro-text":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("Credit cards used for payments in your personal Credit Account"),
-            font: "text-14",
-            rich: true,
-            wrap: true
-          });
-          this._add(control);
-          break;
-        case "payment-methods-list-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-          this._add(control, {
-            flex: 1
-          });
-          break;
-        case "add-payment-methods-button":
-          control = new qx.ui.form.Button().set({
-            appearance: "strong-button",
-            label: this.tr("Add Payment Method"),
-            icon: "@FontAwesome5Solid/plus/14",
-            allowGrowX: false
-          });
-          control.addListener("execute", () => this.__addNewPaymentMethod(), this);
-          this._add(control);
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
-
     __buildLayout: function() {
       this._removeAll();
-      const wallet = this.getContextWallet();
-      if (wallet.getMyAccessRights()["write"]) {
-        this._createChildControlImpl("intro-text");
-        this._createChildControlImpl("payment-methods-list-layout");
-        this._createChildControlImpl("add-payment-methods-button");
-        this.__fetchPaymentMethods();
-      } else {
-        this._add(osparc.desktop.credits.Utils.getNoWriteAccessOperationsLabel());
-      }
+      this.__introLabel = new qx.ui.basic.Label().set({
+        value: this.tr("Credit cards used for payments in your personal Credit Account"),
+        font: "text-14",
+        rich: true,
+        wrap: true
+      });
+      this._add(this.__introLabel);
+
+      this.__listContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        allowStretchY: true
+      });
+      this._add(this.__listContainer, {
+        flex: 1
+      });
+
+      this.__addPaymentMethodBtn = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("Add Payment Method"),
+        icon: "@FontAwesome5Solid/plus/14",
+        allowGrowX: false
+      });
+      this.__addPaymentMethodBtn.addListener("execute", () => this.__addNewPaymentMethod(), this);
+      this._add(this.__addPaymentMethodBtn);
+
+      this.__fetchPaymentMethods()
     },
 
     __addNewPaymentMethod: function() {
@@ -149,8 +135,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __fetchPaymentMethods: function() {
-      const listLayout = this.getChildControl("payment-methods-list-layout");
-      listLayout.removeAll();
+      this.__listContainer.removeAll();
 
       const fetchingLabel = new qx.ui.basic.Atom().set({
         label: this.tr("Fetching Payment Methods"),
@@ -158,7 +143,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         font: "text-14"
       });
       fetchingLabel.getChildControl("icon").getContentElement().addClass("rotate");
-      listLayout.add(fetchingLabel);
+      this.__listContainer.add(fetchingLabel);
 
       const walletId = this.getContextWallet().getWalletId();
       const params = {
@@ -168,11 +153,13 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       };
       osparc.data.Resources.fetch("paymentMethods", "get", params)
         .then(paymentMethods => {
-          listLayout.removeAll();
+          this.__listContainer.removeAll();
           if (paymentMethods.length) {
-            listLayout.add(this.__populatePaymentMethodsList(paymentMethods));
+            this.__listContainer.add(this.__populatePaymentMethodsList(paymentMethods), {
+              flex: 1
+            });
           } else {
-            listLayout.add(new qx.ui.basic.Label().set({
+            this.__listContainer.add(new qx.ui.basic.Label().set({
               value: this.tr("No Payment Methods found"),
               font: "text-14",
               rich: true,
@@ -218,10 +205,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         paymentMethodsModel.append(paymentMethodModel);
       });
 
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(paymentMethodsUIList);
-
-      return scrollContainer;
+      return paymentMethodsUIList;
     },
 
     __findPaymentMethod: function(idr) {
