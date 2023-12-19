@@ -136,7 +136,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
       const updateBtn = new qx.ui.form.Button("Update Profile").set({
         appearance: "form-button",
-        alignX: "left",
+        alignX: "right",
         allowGrowX: false
       });
       box.add(updateBtn);
@@ -269,7 +269,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
       const resetBtn = new qx.ui.form.Button("Reset Password").set({
         appearance: "form-button",
-        alignX: "left",
+        alignX: "right",
         allowGrowX: false
       });
       box.add(resetBtn);
@@ -312,6 +312,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
       const deleteBtn = new qx.ui.form.Button(this.tr("Delete Account")).set({
         appearance: "danger-button",
+        alignX: "right",
         allowGrowX: false
       });
       deleteBtn.addListener("execute", () => {
