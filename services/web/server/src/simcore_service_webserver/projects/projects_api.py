@@ -8,6 +8,7 @@
 """
 
 import asyncio
+import collections
 import contextlib
 import datetime
 import json
@@ -54,7 +55,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -274,10 +275,11 @@ async def _get_default_pricing_and_hardware_info(
     )
 
 
-_RAM_SAFE_MARGIN_RATIO: Final[
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
     float
 ] = 0.1  # NOTE: machines always have less available RAM than advertised
-_CPUS_SAFE_MARGIN: Final[float] = 0.1
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "512MiB")
+_CPUS_SAFE_MARGIN: Final[float] = 1
 
 
 async def update_project_node_resources_from_hardware_info(
@@ -326,7 +328,8 @@ async def update_project_node_resources_from_hardware_info(
             image_resources.resources["RAM"].set_value(
                 int(
                     selected_ec2_instance_type.ram
-                    - _RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+                    - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO
+                    * selected_ec2_instance_type.ram
                 )
             )
             await db.update_project_node(
@@ -341,14 +344,56 @@ async def update_project_node_resources_from_hardware_info(
             )
 
         else:
-            log.warning(
-                "Services resource override not implemented yet for multi-container services!!!"
+            # NOTE: we go for the largest sub-service and scale it up/down
+            hungry_service_name, hungry_service_resources = max(
+                node_resources.items(),
+                key=lambda service_to_resources: service_to_resources[1]
+                .resources["RAM"]
+                .limit,
+            )
+            other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
+            for service_name, sub_service_resources in node_resources.items():
+                if service_name != hungry_service_name:
+                    other_services_resources.update(
+                        {
+                            "RAM": sub_service_resources.resources["RAM"].limit,
+                            "CPU": sub_service_resources.resources["CPU"].limit,
+                        }
+                    )
+
+            # scale the hungry service
+            node_resources[hungry_service_name].resources["CPU"].set_value(
+                float(selected_ec2_instance_type.cpus)
+                - _CPUS_SAFE_MARGIN
+                - other_services_resources["CPU"]
+            )
+            node_resources[hungry_service_name].resources["RAM"].set_value(
+                int(
+                    selected_ec2_instance_type.ram
+                    - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO
+                    * selected_ec2_instance_type.ram
+                    - other_services_resources["RAM"]
+                    - _SIDECARS_OPS_SAFE_RAM_MARGIN
+                )
+            )
+            await db.update_project_node(
+                user_id,
+                project_id,
+                node_id,
+                product_name,
+                required_resources=ServiceResourcesDictHelpers.create_jsonable(
+                    node_resources
+                ),
+                check_update_allowed=False,
             )
     except StopIteration as exc:
         msg = (
             f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
             " TIP: adjust product configuration"
         )
+        raise ProjectNodeResourcesInvalidError(msg) from exc
+    except KeyError as exc:
+        msg = "Sub service is missing RAM/CPU resource keys!"
         raise ProjectNodeResourcesInvalidError(msg) from exc
     except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc
