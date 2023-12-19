@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -71,5 +73,25 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             "/dynamic_services",
             content=json_dumps(post_data),
             headers=headers,
+            follow_redirects=True,
+        )
+
+    @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def delete_dynamic_service(
+        self,
+        *,
+        node_id: NodeID,
+        simcore_user_agent: str,
+        save_state: bool,
+        timeout: datetime.timedelta,
+    ) -> Response:
+        headers = {X_SIMCORE_USER_AGENT: simcore_user_agent}
+
+        can_save: str = "true" if save_state else "false"
+        return await self.client.delete(
+            f"dynamic_services/{node_id}?can_save={can_save}",
+            headers=headers,
+            timeout=timeout.total_seconds(),
             follow_redirects=True,
         )

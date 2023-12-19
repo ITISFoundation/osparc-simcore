@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 from fastapi import FastAPI, status
@@ -10,6 +11,10 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+    ServiceWasNotFoundError,
+)
 
 from ._thin_client import DirectorV2ThinClient
 
@@ -62,6 +67,35 @@ class DirectorV2Client(
             return NodeGet.parse_obj(dict_response["data"])
 
         return DynamicServiceGet.parse_obj(dict_response)
+
+    async def stop_dynamic_service(
+        self,
+        *,
+        node_id: NodeID,
+        simcore_user_agent: str,
+        save_state: bool,
+        timeout: datetime.timedelta
+    ) -> None:
+        try:
+            await self.thin_client.delete_dynamic_service(
+                node_id=node_id,
+                simcore_user_agent=simcore_user_agent,
+                save_state=save_state,
+                timeout=timeout,
+            )
+        except UnexpectedStatusError as e:
+            if (
+                e.response.status_code  # pylint:disable=no-member # type: ignore
+                == status.HTTP_409_CONFLICT
+            ):
+                raise ServiceWaitingForManualInterventionError from None
+            if (
+                e.response.status_code  # pylint:disable=no-member # type: ignore
+                == status.HTTP_404_NOT_FOUND
+            ):
+                raise ServiceWasNotFoundError from None
+
+            raise
 
 
 def setup_director_v2(app: FastAPI) -> None:
