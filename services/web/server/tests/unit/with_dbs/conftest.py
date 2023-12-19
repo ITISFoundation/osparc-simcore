@@ -375,7 +375,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     # this fixture needs to be renamed to mocked_dynamic_scheduler
 
     for func_name in (
-        "get_service_status",
+        "get_dynamic_service",
         "run_dynamic_service",
     ):
         name = f"dynamic_scheduler.api.{func_name}"

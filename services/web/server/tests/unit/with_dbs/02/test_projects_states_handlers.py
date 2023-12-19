@@ -997,7 +997,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
     node_sample = deepcopy(NodeGet.Config.schema_extra["example"])
     mocked_director_v2_api[
-        "dynamic_scheduler.api.get_service_status"
+        "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = NodeGet.parse_obj(
         {
             **node_sample,
@@ -1017,7 +1017,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         project_id=user_project["uuid"], node_id=node_id_2
     )
     mocked_director_v2_api[
-        "dynamic_scheduler.api.get_service_status"
+        "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = NodeGetIdle.parse_obj(
         {
             "service_uuid": node_sample["service_uuid"],
