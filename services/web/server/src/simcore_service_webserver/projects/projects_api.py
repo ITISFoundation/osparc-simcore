@@ -47,7 +47,6 @@ from models_library.resource_tracker import (
 from models_library.services import DynamicServiceKey, ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
-    ImageResources,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
@@ -319,34 +318,15 @@ async def update_project_node_resources_from_hardware_info(
         db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
         node = await db.get_project_node(project_id, node_id)
         node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
-        if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
-            image_resources: ImageResources = node_resources[
-                DEFAULT_SINGLE_SERVICE_NAME
-            ]
-            image_resources.resources["CPU"].set_value(
-                float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
-            )
-            image_resources.resources["RAM"].set_value(
-                int(
-                    selected_ec2_instance_type.ram
-                    - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO
-                    * selected_ec2_instance_type.ram
-                )
-            )
-            await db.update_project_node(
-                user_id,
-                project_id,
-                node_id,
-                product_name,
-                required_resources=ServiceResourcesDictHelpers.create_jsonable(
-                    node_resources
-                ),
-                check_update_allowed=False,
-            )
-
-        else:
+        scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
+        new_cpus_value = float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
+        new_ram_value = int(
+            selected_ec2_instance_type.ram
+            - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+        )
+        if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
             # NOTE: we go for the largest sub-service and scale it up/down
-            hungry_service_name, hungry_service_resources = max(
+            scalable_service_name, hungry_service_resources = max(
                 node_resources.items(),
                 key=lambda service_to_resources: service_to_resources[1]
                 .resources["RAM"]
@@ -354,46 +334,42 @@ async def update_project_node_resources_from_hardware_info(
             )
             log.debug(
                 "the most hungry service is %s",
-                f"{hungry_service_name=}:{hungry_service_resources}",
+                f"{scalable_service_name=}:{hungry_service_resources}",
             )
             other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
             for service_name, sub_service_resources in node_resources.items():
-                if service_name != hungry_service_name:
+                if service_name != scalable_service_name:
                     other_services_resources.update(
                         {
                             "RAM": sub_service_resources.resources["RAM"].limit,
                             "CPU": sub_service_resources.resources["CPU"].limit,
                         }
                     )
-
-            # scale the hungry service
-            node_resources[hungry_service_name].resources["CPU"].set_value(
-                min(
-                    float(selected_ec2_instance_type.cpus)
-                    - _CPUS_SAFE_MARGIN
-                    - other_services_resources["CPU"],
-                    _MIN_NUM_CPUS,
-                )
+            new_cpus_value = max(
+                float(selected_ec2_instance_type.cpus)
+                - _CPUS_SAFE_MARGIN
+                - other_services_resources["CPU"],
+                _MIN_NUM_CPUS,
             )
-            node_resources[hungry_service_name].resources["RAM"].set_value(
-                int(
-                    selected_ec2_instance_type.ram
-                    - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO
-                    * selected_ec2_instance_type.ram
-                    - other_services_resources["RAM"]
-                    - _SIDECARS_OPS_SAFE_RAM_MARGIN
-                )
+            new_ram_value = int(
+                selected_ec2_instance_type.ram
+                - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+                - other_services_resources["RAM"]
+                - _SIDECARS_OPS_SAFE_RAM_MARGIN
             )
-            await db.update_project_node(
-                user_id,
-                project_id,
-                node_id,
-                product_name,
-                required_resources=ServiceResourcesDictHelpers.create_jsonable(
-                    node_resources
-                ),
-                check_update_allowed=False,
-            )
+        # scale the service
+        node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
+        node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
+        await db.update_project_node(
+            user_id,
+            project_id,
+            node_id,
+            product_name,
+            required_resources=ServiceResourcesDictHelpers.create_jsonable(
+                node_resources
+            ),
+            check_update_allowed=False,
+        )
     except StopIteration as exc:
         msg = (
             f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
