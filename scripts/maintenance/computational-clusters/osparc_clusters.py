@@ -230,10 +230,13 @@ def _ssh_and_list_running_dyn_services(
             )
             for node_id, containers in running_service.items()
         ]
-    except (paramiko.AuthenticationException, paramiko.SSHException) as exc:
-        raise typer.Abort from exc
-    except TimeoutError:
+    except (
+        paramiko.AuthenticationException,
+        paramiko.SSHException,
+        TimeoutError,
+    ):
         return []
+
     finally:
         # Close the SSH connection
         client.close()

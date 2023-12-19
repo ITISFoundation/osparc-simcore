@@ -256,3 +256,17 @@ async def delete_service_docker_resources(
         )
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@router.post(
+    "/services/{node_uuid}/disk/reserved:free",
+    summary="Free up reserved disk space",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def free_reserved_disk_space(
+    node_uuid: NodeID,
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
+):
+    await dynamic_sidecars_scheduler.free_reserved_disk_space(node_id=node_uuid)

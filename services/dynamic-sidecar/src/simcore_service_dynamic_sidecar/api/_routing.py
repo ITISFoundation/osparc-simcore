@@ -11,6 +11,7 @@ from . import (
     containers,
     containers_extension,
     containers_long_running_tasks,
+    disk,
     health,
     prometheus_metrics,
     volumes,
@@ -44,6 +45,11 @@ def get_main_router(app: FastAPI) -> APIRouter:
     main_router.include_router(
         volumes.router,
         tags=["volumes"],
+        prefix=f"/{API_VTAG}",
+    )
+    main_router.include_router(
+        disk.router,
+        tags=["disk"],
         prefix=f"/{API_VTAG}",
     )
 

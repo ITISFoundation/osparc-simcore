@@ -14,7 +14,11 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from models_library.healthchecks import IsResponsive
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import BaseHttpApi
+from servicelib.fastapi.http_client import (
+    AttachLifespanMixin,
+    BaseHTTPApi,
+    HealthMixinMixin,
+)
 
 
 def test_using_app_state_mixin():
@@ -71,7 +75,9 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
-    class MyClientApi(BaseHttpApi, SingletonInAppStateMixin):
+    class MyClientApi(
+        BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
+    ):
         app_state_name: str = "my_client_api"
 
     new_app = FastAPI()
@@ -98,7 +104,7 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
         assert not api.client.is_closed
 
         assert await api.ping()
-        assert await api.is_healhy()
+        assert await api.is_healthy()
 
         alive = await api.check_liveness()
         assert bool(alive)

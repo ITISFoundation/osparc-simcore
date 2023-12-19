@@ -5,12 +5,12 @@
 import asyncio
 import functools
 import logging
-from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -47,8 +47,9 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
-from ..director_v2 import api
+from ..director_v2 import api as director_v2_api
 from ..director_v2.exceptions import DirectorServiceError
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_role
@@ -151,52 +152,36 @@ async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    try:
-        # ensure the project exists
-        project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
+    # ensure the project exists
+    project = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+
+    if await projects_api.is_project_node_deprecated(
+        request.app,
+        req_ctx.user_id,
+        project,
+        path_params.node_id,
+        req_ctx.product_name,
+    ):
+        project_node = project["workbench"][f"{path_params.node_id}"]
+        raise web.HTTPNotAcceptable(
+            reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
         )
 
-        if await projects_api.is_project_node_deprecated(
-            request.app,
-            req_ctx.user_id,
-            project,
-            path_params.node_id,
-            req_ctx.product_name,
-        ):
-            project_node = project["workbench"][f"{path_params.node_id}"]
-            raise web.HTTPNotAcceptable(
-                reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
-            )
-
-        # NOTE: for legacy services a redirect to director-v0 is made
-        service_data: dict[str, Any] = await api.get_dynamic_service(
-            app=request.app, node_uuid=f"{path_params.node_id}"
+    service_data: NodeGetIdle | DynamicServiceGet | NodeGet = (
+        await dynamic_scheduler_api.get_dynamic_service(
+            app=request.app, node_id=path_params.node_id
         )
+    )
 
-        if "data" not in service_data:
-            # dynamic-service NODE STATE
-            assert (  # nosec
-                parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None
-            )
-            return envelope_json_response(service_data)
-
-        # LEGACY-service NODE STATE
-        assert parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None  # nosec
-        return envelope_json_response(service_data["data"])
-
-    except DirectorServiceError as exc:
-        if exc.status == web.HTTPNotFound.status_code:
-            # the service was not started, so it's state is not started or idle
-            return envelope_json_response(
-                {
-                    "service_state": "idle",
-                    "service_uuid": f"{path_params.node_id}",
-                }
-            )
-        raise
+    return envelope_json_response(
+        service_data.dict(by_alias=True)
+        if isinstance(service_data, DynamicServiceGet)
+        else service_data.dict()
+    )
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
@@ -235,7 +220,9 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await api.retrieve(request.app, f"{path_params.node_id}", retrieve.port_keys),
+        await director_v2_api.retrieve(
+            request.app, f"{path_params.node_id}", retrieve.port_keys
+        ),
         dumps=json_dumps,
     )
 
@@ -270,7 +257,7 @@ async def _stop_dynamic_service_with_progress(
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
-        await api.stop_dynamic_service(*args, **kwargs)
+        await director_v2_api.stop_dynamic_service(*args, **kwargs)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     except (ProjectNotFoundError, NodeNotFoundError) as exc:
@@ -329,9 +316,9 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await api.restart_dynamic_service(request.app, f"{path_params.node_id}")
+    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    raise web.HTTPNoContent()
+    raise web.HTTPNoContent
 
 
 #
@@ -544,7 +531,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
             nodes_previews.append(
                 _ProjectNodePreview(
                     project_id=path_params.project_id,
-                    node_id=node_id,
+                    node_id=NodeID(node_id),
                     screenshots=screenshots,
                 )
             )
@@ -572,7 +559,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
 
     project = Project.parse_obj(project_data)
 
-    node = project.workbench.get(f"{path_params.node_id}")
+    node = project.workbench.get(NodeIDStr(path_params.node_id))
     if node is None:
         raise NodeNotFoundError(
             project_uuid=f"{path_params.project_id}",

@@ -1,5 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import (
@@ -18,6 +19,8 @@ from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 from .rest.healthcheck import HealthCheck, HealthCheckError
 
 _logger = logging.getLogger(__name__)
+
+_RPC_CLIENT_KEY: Final[str] = f"{__name__}.RabbitMQRPCClient"
 
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
@@ -54,6 +57,21 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         await app[APP_RABBITMQ_RPC_SERVER_KEY].close()
 
 
+async def _rabbitmq_rpc_client_lifespan(app: web.Application):
+    settings: RabbitSettings = get_plugin_settings(app)
+    rpc_client = await RabbitMQRPCClient.create(
+        client_name="webserver_rpc_client", settings=settings
+    )
+
+    assert rpc_client  # nosec
+
+    app[_RPC_CLIENT_KEY] = rpc_client
+
+    yield
+
+    await rpc_client.close()
+
+
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
@@ -63,6 +81,11 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
 )
 def setup_rabbitmq(app: web.Application) -> None:
     app.cleanup_ctx.append(_rabbitmq_client_cleanup_ctx)
+    app.cleanup_ctx.append(_rabbitmq_rpc_client_lifespan)
+
+
+def get_rabbitmq_rpc_client(app: web.Application) -> RabbitMQRPCClient:
+    return app[_RPC_CLIENT_KEY]
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:

@@ -16,6 +16,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
+from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -39,11 +40,7 @@ from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
-from ...api_client import (
-    BaseClientHTTPError,
-    get_dynamic_sidecar_service_health,
-    get_sidecars_client,
-)
+from ...api_client import get_dynamic_sidecar_service_health, get_sidecars_client
 from ...docker_api import (
     constrain_service_to_node,
     create_network,
@@ -67,6 +64,7 @@ from ._events_utils import (
     attempt_pod_removal_and_data_saving,
     get_allow_metrics_collection,
     get_director_v0_client,
+    get_hardware_info,
     parse_containers_inspect,
     prepare_services_environment,
     wait_for_sidecar_api,
@@ -184,6 +182,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
 
+        hardware_info = await get_hardware_info(app, scheduler_data)
+
         metrics_collection_allowed: bool = await get_allow_metrics_collection(
             app,
             user_id=scheduler_data.user_id,
@@ -205,6 +205,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
+            hardware_info=hardware_info,
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
@@ -353,7 +354,7 @@ class GetStatus(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
+        sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecars_scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
@@ -366,7 +367,7 @@ class GetStatus(DynamicSchedulerEvent):
             containers_inspect: dict[
                 str, Any
             ] = await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
-        except BaseClientHTTPError as e:
+        except BaseHttpClientError as e:
             were_service_containers_previously_present = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
             )

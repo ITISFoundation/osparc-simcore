@@ -183,7 +183,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     async def remove_service_containers(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
         await service_remove_containers(
             app=self.app,
             node_uuid=node_uuid,
@@ -207,7 +207,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     async def save_service_state(
         self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
         await service_save_state(
             app=self.app,
             node_uuid=node_uuid,
@@ -434,7 +434,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
 
         transferred_bytes = await sidecars_client.pull_service_input_ports(
             dynamic_sidecar_endpoint, port_keys
@@ -455,7 +455,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data = self._to_observe[service_name]
 
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
 
         await sidecars_client.attach_service_containers_to_project_network(
             dynamic_sidecar_endpoint=scheduler_data.endpoint,
@@ -474,7 +474,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data = self._to_observe[service_name]
 
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
 
         await sidecars_client.detach_service_containers_from_project_network(
             dynamic_sidecar_endpoint=scheduler_data.endpoint,
@@ -490,7 +490,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name: ServiceName = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_uuid)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
 
         await sidecars_client.restart_containers(scheduler_data.endpoint)
 
@@ -498,7 +498,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name: ServiceName = self._inverse_search_mapping[node_id]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
-        sidecars_client: SidecarsClient = get_sidecars_client(self.app, node_id)
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
         return await sidecars_client.get_service_inactivity(scheduler_data.endpoint)
 
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
@@ -579,3 +579,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             self._observation_counter += 1
+
+    async def free_reserved_disk_space(self, node_id: NodeID) -> None:
+        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
+        service_name = self._inverse_search_mapping[node_id]
+        scheduler_data: SchedulerData = self._to_observe[service_name]
+
+        return await sidecars_client.free_reserved_disk_space(scheduler_data.endpoint)

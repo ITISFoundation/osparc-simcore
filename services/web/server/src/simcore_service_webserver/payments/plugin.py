@@ -10,7 +10,6 @@ from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
-from ._rpc import rabbitmq_rpc_client_lifespan
 from ._tasks import create_background_task_to_fake_payment_completion
 
 _logger = logging.getLogger(__name__)
@@ -27,8 +26,6 @@ def setup_payments(app: web.Application):
 
     setup_db(app)
     setup_rabbitmq(app)
-
-    app.cleanup_ctx.append(rabbitmq_rpc_client_lifespan)
 
     if settings.PAYMENTS_FAKE_COMPLETION:
         _logger.warning(

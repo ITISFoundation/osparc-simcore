@@ -36,7 +36,7 @@ async def push_service_outputs(
     node_uuid: NodeID,
     progress_callback: ProgressCallback | None = None,
 ) -> None:
-    sidecars_client: SidecarsClient = get_sidecars_client(app, node_uuid)
+    sidecars_client: SidecarsClient = await get_sidecars_client(app, node_uuid)
     await service_push_outputs(
         app=app,
         node_uuid=node_uuid,
