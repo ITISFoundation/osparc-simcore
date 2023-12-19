@@ -18,7 +18,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
@@ -490,17 +490,21 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     class _RunninServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        async def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        async def num_services(
+            self, *args, **kwargs
+        ) -> list[dict[str, Any]]:  # noqa: ARG002
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        async def inc_running_services(self, *args, **kwargs):
+        async def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
             # simulate delay when service is starting
             # reproduces real world conditions and makes test to fail
             await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
-            self.running_services_uuids.append(kwargs["service_uuid"])
+            self.running_services_uuids.append(
+                kwargs["create_dynamic_service"].service_uuid
+            )
 
     # let's count the started services
     running_services = _RunninServices()
@@ -701,7 +705,7 @@ async def test_start_node(
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -739,7 +743,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     ]
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -772,7 +776,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     ]
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -805,7 +809,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
 
     # start the node, with wrong project
     url = client.app.router["start_node"].url_for(
-        project_id=faker.uuid4(), node_id=choice(all_service_uuids)
+        project_id=faker.uuid4(), node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -879,7 +883,7 @@ def app_environment(
 
 
 @pytest.fixture
-def mock_storage_calls(aioresponses_mocker: AioResponsesMock, faker: Faker) -> None:
+def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
     _get_files_in_node_folder = re.compile(
         r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files/metadata.+$"
     )
