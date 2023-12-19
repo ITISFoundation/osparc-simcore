@@ -369,20 +369,22 @@ async def test_create_and_delete_many_nodes_in_parallel(
     assert client.app
 
     @dataclass
-    class _RunninServices:
+    class _RunningServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:  # noqa: ARG002
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        def inc_running_services(self, *args, **kwargs):
-            self.running_services_uuids.append(kwargs["service_uuid"])
+        def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
+            self.running_services_uuids.append(
+                kwargs["create_dynamic_service"].service_uuid
+            )
 
     # let's count the started services
-    running_services = _RunninServices()
+    running_services = _RunningServices()
     assert running_services.running_services_uuids == []
     mocked_director_v2_api[
         "director_v2.api.list_dynamic_services"
