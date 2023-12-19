@@ -22,6 +22,9 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    RPCDynamicServiceCreate,
+)
 from models_library.errors import ErrorDict
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
@@ -39,7 +42,7 @@ from models_library.resource_tracker import (
     PricingAndHardwareInfoTuple,
     PricingInfo,
 )
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import DynamicServiceKey, ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
@@ -65,6 +68,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 from ..application_settings import get_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products import api as products_api
 from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
@@ -220,8 +224,7 @@ def get_delete_project_task(
 ) -> asyncio.Task | None:
     if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
-        task = tasks[0]
-        return task
+        return tasks[0]
     return None
 
 
@@ -256,8 +259,8 @@ async def _get_default_pricing_and_hardware_info(
 async def _start_dynamic_service(
     request: web.Request,
     *,
-    service_key: str,
-    service_version: str,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     product_name: str,
     user_id: UserID,
     project_uuid: ProjectID,
@@ -397,24 +400,28 @@ async def _start_dynamic_service(
             )
             hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
 
-        await director_v2_api.run_dynamic_service(
+        await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
-            product_name=product_name,
-            save_state=save_state,
-            project_id=f"{project_uuid}",
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-            service_uuid=f"{node_uuid}",
-            request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.headers.get(X_FORWARDED_PROTO, request.url.scheme),
-            simcore_user_agent=request.headers.get(
-                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+            rpc_dynamic_service_create=RPCDynamicServiceCreate(
+                product_name=product_name,
+                can_save=save_state,
+                project_id=project_uuid,
+                user_id=user_id,
+                service_key=DynamicServiceKey(service_key),
+                service_version=service_version,
+                service_uuid=node_uuid,
+                request_dns=extract_dns_without_default_port(request.url),
+                request_scheme=request.headers.get(
+                    X_FORWARDED_PROTO, request.url.scheme
+                ),
+                simcore_user_agent=request.headers.get(
+                    X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
+                service_resources=service_resources,
+                wallet_info=wallet_info,
+                pricing_info=pricing_info,
+                hardware_info=hardware_info,
             ),
-            service_resources=service_resources,
-            wallet_info=wallet_info,
-            pricing_info=pricing_info,
-            hardware_info=hardware_info,
         )
 
 
@@ -423,8 +430,8 @@ async def add_project_node(
     project: dict[str, Any],
     user_id: UserID,
     product_name: str,
-    service_key: str,
-    service_version: str,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     service_id: str | None,
 ) -> NodeID:
     log.debug(
