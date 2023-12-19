@@ -34,11 +34,6 @@ define _transfer-images-to-registry
 @curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
 endef
 
-install-ci-no-build:
-	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
-	@$(_up_simcore)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
-	@$(_transfer-images-to-registry)
 
 # LOCAL ------------------
 
@@ -53,6 +48,12 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	pip-sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
 	@playwright install
+
+install-ci-up-simcore: install-ci
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_up_simcore)
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(_transfer-images-to-registry)
 
 
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)

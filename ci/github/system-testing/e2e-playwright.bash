@@ -12,8 +12,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   pushd tests/e2e-playwright
-  make install-ci-no-build
-  make install-dev
+  make install-ci-up-simcore
   popd
 }
 
