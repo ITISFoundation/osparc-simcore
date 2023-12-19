@@ -328,9 +328,9 @@ async def update_project_node_resources_from_hardware_info(
             # NOTE: we go for the largest sub-service and scale it up/down
             scalable_service_name, hungry_service_resources = max(
                 node_resources.items(),
-                key=lambda service_to_resources: service_to_resources[1]
-                .resources["RAM"]
-                .limit,
+                key=lambda service_to_resources: int(
+                    service_to_resources[1].resources["RAM"].limit
+                ),
             )
             log.debug(
                 "the most hungry service is %s",
