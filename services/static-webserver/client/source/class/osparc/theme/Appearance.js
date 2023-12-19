@@ -723,7 +723,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         }
         if (states.selected || states.checked) {
           textColor = "default-button-disabled";
-          cursor = "none";
+          cursor = "default";
           decorator = "form-button-checked";
         }
 
