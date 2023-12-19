@@ -232,10 +232,6 @@ async def test_run_dynamic_service(
         assert isinstance(result, DynamicServiceGet)
 
 
-def _bool_as_str(value: bool) -> str:
-    return f"{value}".lower()
-
-
 @pytest.fixture
 def simcore_user_agent(faker: Faker) -> str:
     return faker.pystr()
@@ -264,21 +260,22 @@ def mock_director_v0_service_stop(
     node_id_manual_intervention: NodeID,
     save_state: bool,
 ) -> Iterator[None]:
+    can_save_str = f"{save_state}".lower()
     with respx.mock(
         base_url=fake_director_v0_base_url,
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.delete(
-            f"/fake-service-stop-ok/{node_id}?can_save={_bool_as_str(save_state)}"
-        ).respond(status.HTTP_204_NO_CONTENT)
+        mock.delete(f"/fake-service-stop-ok/{node_id}?can_save={can_save_str}").respond(
+            status.HTTP_204_NO_CONTENT
+        )
 
         mock.delete(
-            f"/fake-service-stop-not-found/{node_id_not_found}?can_save={_bool_as_str(save_state)}"
+            f"/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
         ).respond(status.HTTP_404_NOT_FOUND)
 
         mock.delete(
-            f"/fake-service-stop-manual/{node_id_manual_intervention}?can_save={_bool_as_str(save_state)}"
+            f"/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
         ).respond(status.HTTP_409_CONFLICT)
 
         yield None
@@ -293,45 +290,44 @@ def mock_director_v2_service_stop(
     fake_director_v0_base_url: str,
     save_state: bool,
 ) -> Iterator[None]:
+    can_save_str = f"{save_state}".lower()
     with respx.mock(
         base_url="http://director-v2:8000/v2",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        request_ok = mock.delete(
-            f"/dynamic_services/{node_id}?can_save={_bool_as_str(save_state)}"
-        )
+        request_ok = mock.delete(f"/dynamic_services/{node_id}?can_save={can_save_str}")
         if is_legacy:
             request_ok.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-ok/{node_id}?can_save={_bool_as_str(save_state)}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-ok/{node_id}?can_save={can_save_str}"
                 },
             )
         else:
             request_ok.respond(status.HTTP_204_NO_CONTENT)
 
         request_not_found = mock.delete(
-            f"/dynamic_services/{node_id_not_found}?can_save={_bool_as_str(save_state)}"
+            f"/dynamic_services/{node_id_not_found}?can_save={can_save_str}"
         )
         if is_legacy:
             request_not_found.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found/{node_id_not_found}?can_save={_bool_as_str(save_state)}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
                 },
             )
         else:
             request_not_found.respond(status.HTTP_404_NOT_FOUND)
 
         request_manual_intervention = mock.delete(
-            f"/dynamic_services/{node_id_manual_intervention}?can_save={_bool_as_str(save_state)}"
+            f"/dynamic_services/{node_id_manual_intervention}?can_save={can_save_str}"
         )
         if is_legacy:
             request_manual_intervention.respond(
                 status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={
-                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual/{node_id_manual_intervention}?can_save={_bool_as_str(save_state)}"
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
                 },
             )
         else:

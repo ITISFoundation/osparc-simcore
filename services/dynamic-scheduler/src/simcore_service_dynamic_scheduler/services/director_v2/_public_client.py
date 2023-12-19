@@ -2,6 +2,7 @@ import datetime
 from typing import Any
 
 from fastapi import FastAPI, status
+from httpx import TimeoutException
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
@@ -95,6 +96,9 @@ class DirectorV2Client(
             ):
                 raise ServiceWasNotFoundError from None
 
+            raise
+        except TimeoutException:
+            # TODO: do we not raise it or we just leave it as is?
             raise
 
 
