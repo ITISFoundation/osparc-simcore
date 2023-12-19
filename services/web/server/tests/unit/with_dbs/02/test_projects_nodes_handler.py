@@ -380,7 +380,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
         def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
             self.running_services_uuids.append(
-                kwargs["create_dynamic_service"].service_uuid
+                kwargs["rpc_dynamic_service_create"].node_uuid
             )
 
     # let's count the started services
@@ -503,7 +503,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
             # reproduces real world conditions and makes test to fail
             await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
             self.running_services_uuids.append(
-                kwargs["create_dynamic_service"].service_uuid
+                kwargs["rpc_dynamic_service_create"].node_uuid
             )
 
     # let's count the started services
