@@ -35,7 +35,7 @@ def mock_rpc_client(
     mocked_rpc_client = AsyncMock()
     mocked_rpc_client.request = AsyncMock(return_value=expected_response)
     mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler._rpc.get_rabbitmq_rpc_client",
+        "simcore_service_webserver.dynamic_scheduler.api.get_rabbitmq_rpc_client",
         return_value=mocked_rpc_client,
     )
 
