@@ -120,19 +120,17 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             return {}
 
     @log_decorator(logger=_logger)
-    async def disable_service_ports_io(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    async def toggle_service_ports_io(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        *,
+        enable_outputs: bool,
+        enable_inputs: bool,
     ) -> None:
         await self._thin_client.patch_containers_ports_io(
-            dynamic_sidecar_endpoint, is_enabled=False
-        )
-
-    @log_decorator(logger=_logger)
-    async def enable_service_ports_io(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
-        await self._thin_client.patch_containers_ports_io(
-            dynamic_sidecar_endpoint, is_enabled=True
+            dynamic_sidecar_endpoint,
+            enable_outputs=enable_outputs,
+            enable_inputs=enable_inputs,
         )
 
     @log_decorator(logger=_logger)
