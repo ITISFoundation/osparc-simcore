@@ -119,15 +119,14 @@ async def test_project_wallets_full_workflow(
     expected: type[web.HTTPException],
     mock_rut_api_responses: AioResponsesMock,
 ):
-
     node_id = next(iter(user_project["workbench"]))
-
+    assert client.app
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will connect pricing unit to the project node
     base_url = client.app.router["connect_pricing_unit_to_project_node"].url_for(
@@ -136,13 +135,13 @@ async def test_project_wallets_full_workflow(
         pricing_plan_id=f"{_PRICING_PLAN_ID}",
         pricing_unit_id=f"{_PRICING_UNIT_ID_1}",
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, web.HTTPNoContent)
 
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["pricingUnitId"] == _PRICING_UNIT_ID_1
 
@@ -153,12 +152,12 @@ async def test_project_wallets_full_workflow(
         pricing_plan_id=f"{_PRICING_PLAN_ID}",
         pricing_unit_id=f"{_PRICING_UNIT_ID_2}",
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, web.HTTPNoContent)
 
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["pricingUnitId"] == _PRICING_UNIT_ID_2
