@@ -135,7 +135,7 @@ async def stop_dynamic_service(
     service_uuid: NodeIDStr,
     simcore_user_agent: str,
     *,
-    save_state: bool = True,
+    save_state: bool,
     progress: ProgressBarData | None = None,
 ) -> None:
     """
@@ -188,10 +188,11 @@ async def _post_progress_message(
 
 async def stop_dynamic_services_in_project(
     app: web.Application,
+    *,
     user_id: PositiveInt,
     project_id: str,
     simcore_user_agent: str,
-    save_state: bool = True,
+    save_state: bool,
 ) -> None:
     """Stops all dynamic services of either project_id or user_id in concurrently"""
     running_dynamic_services = await list_dynamic_services(
