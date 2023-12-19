@@ -182,7 +182,7 @@ qx.Class.define("osparc.ui.form.PasswordField", {
 
     __focusedBorder: function(focused = false) {
       this.set({
-        decorator: focused ? "form-focus": "form-input"
+        decorator: focused ? "form-input-focused": "form-input"
       });
     }
   }

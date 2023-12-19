@@ -48,10 +48,17 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "form-focus": {
+    "form-input-focused": {
       include: "form-input",
       style: {
         color: "product-color"
+      }
+    },
+
+    "form-input-invalid": {
+      include: "form-input",
+      style: {
+        color: "error"
       }
     },
 

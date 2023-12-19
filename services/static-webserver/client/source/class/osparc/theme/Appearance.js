@@ -29,156 +29,9 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
       }
     },
-    "form-button": {
-      style: function(states) {
-        const style = {
-          decorator: "form-button",
-          cursor: "pointer",
-          textColor: "default-button-text",
-          padding: 5,
-          alignY: "middle",
-          alignX: "center",
-          backgroundColor: "default-button"
-        };
-        if (states.hovered) {
-          style.decorator = "form-button-hovered";
-          style.backgroundColor = "default-button-hover-background";
-        }
-        if (states.focused) {
-          style.decorator = "form-button-focused";
-          style.backgroundColor = "default-button-focus-background";
-        }
-        if (states.disabled) {
-          style.cursor = "not-allowed";
-          style.decorator = "form-button-disabled";
-          style.textColor = "default-button-disabled";
-          style.backgroundColor = "transparent";
-        }
-        if (states.checked || states.selected) {
-          style.cursor = "not-allowed";
-          style.decorator = "form-button-checked";
-        }
-        return style;
-      }
-    },
-    "form-button-outlined": {
-      include: "form-button",
-      style: function(states) {
-        const style = {
-          decorator: "form-button-outlined",
-          padding: 5,
-          textColor: "default-button-text-outline",
-          backgroundColor: "transparent"
-        };
-        if (states.hovered) {
-          style.decorator = "form-button-hovered";
-        }
-        if (states.focused) {
-          style.decorator = "form-button-focused";
-        }
-        if (states.active) {
-          style.decorator = "form-button-focused";
-        }
-        if (states.disabled) {
-          style.decorator = "form-button-disabled";
-          style.textColor = "default-button-disabled";
-        }
-        if (states.checked || states.selected) {
-          style.cursor = "not-allowed";
-          style.decorator = "form-button-checked";
-        }
-        return style;
-      }
-    },
-
-    "fab-button": {
-      include: "form-button",
-      style: function(states) {
-        const style = {
-          decorator: "fab-button",
-          cursor: "pointer",
-          padding: [8, 16],
-          textColor: "fab_text",
-          backgroundColor: "background-card-overlay"
-        };
-        if (states.hovered) {
-          style.decorator = "form-button-hovered";
-        }
-        if (states.focused) {
-          style.decorator = "form-button-focused";
-        }
-        if (states.active) {
-          style.decorator = "form-button-active";
-        }
-        if (states.disabled) {
-          style.cursor = "not-allowed";
-          style.decorator = "form-button-disabled";
-        }
-        if (states.checked || states.selected) {
-          style.cursor = "not-allowed";
-          style.decorator = "form-button-checked";
-        }
-        return style;
-      }
-    },
-
-    "text-button": {
-      include: "form-button",
-      style: function(states) {
-        const style = {
-          decorator: "text-button",
-          textColor: "default-button",
-          backgroundColor: "transparent"
-        };
-        if (states.hovered) {
-          style.textColor = "default-button-hover";
-        }
-        if (states.focused) {
-          style.textColor = "default-button-focus";
-        }
-        if (states.active) {
-          style.textColor = "default-button-active";
-        }
-        if (states.disabled) {
-          style.textColor = "default-button-disabled";
-        }
-        return style;
-      }
-    },
-
-    "form-input": {
-      style: function(states) {
-        const style = {
-          decorator: "form-input",
-          padding: 5,
-          backgroundColor: "input_background"
-        };
-        if (states.hovered) {
-          style.backgroundColor = "info";
-        }
-        if (states.focused) {
-          style.decorator = "form-focus";
-        }
-        return style;
-      }
-    },
-
-    "form-password": {
-      include: "form-input",
-      style: function(states) {
-        const style = {
-          decorator: "form-input",
-          padding: 5,
-          backgroundColor: "input_background"
-        };
-        if (states.focused) {
-          style.decorator = "form-focus";
-        }
-        return style;
-      }
-    },
 
     "pb-listitem":  {
+      alias: "material-button",
       include: "material-button",
       style: function(states) {
         const style = {
@@ -584,9 +437,205 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     /*
     ---------------------------------------------------------------------------
+      Input Fields
+    ---------------------------------------------------------------------------
+    */
+
+    "form-input": {
+      style: function(states) {
+        const style = {
+          decorator: "form-input",
+          padding: 5,
+          backgroundColor: "input_background"
+        };
+        if (states.hovered) {
+          style.backgroundColor = "info";
+        }
+        if (states.focused) {
+          style.decorator = "form-input-focused";
+        }
+        return style;
+      }
+    },
+
+    "form-password": {
+      include: "form-input",
+      style: function(states) {
+        const style = {
+          decorator: "form-input",
+          padding: 5,
+          backgroundColor: "input_background"
+        };
+        if (states.focused) {
+          style.decorator = "form-input-focused";
+        }
+        return style;
+      }
+    },
+
+    "material-textfield": {
+      style: function(states) {
+        var textColor;
+
+        if (states.disabled) {
+          textColor = "text-disabled";
+        } else if (states.showingPlaceholder) {
+          textColor = "text-placeholder";
+        } else {
+          textColor = undefined;
+        }
+
+        var decorator;
+        var padding;
+        decorator = "form-input";
+        padding = [3, 5, 4, 5];
+        if (states.readonly) {
+          decorator += "-readonly";
+          padding = [3, 5, 5, 5];
+        } else if (states.disabled) {
+          decorator += "-disabled";
+        } else if (states.focused) {
+          decorator += "-focused";
+          if (states.invalid) {
+            decorator += "-invalid";
+          }
+          padding = [3, 5, 4, 5];
+        } else if (states.invalid) {
+          decorator += "-invalid";
+        }
+
+        return {
+          decorator: decorator,
+          padding: padding,
+          textColor: textColor,
+          backgroundColor: states.disabled ? "input_background_disable" : "input_background"
+        };
+      }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
       Buttons
     ---------------------------------------------------------------------------
     */
+
+    "form-button": {
+      style: function(states) {
+        const style = {
+          decorator: "form-button",
+          cursor: "pointer",
+          textColor: "default-button-text",
+          padding: 5,
+          alignY: "middle",
+          alignX: "center",
+          backgroundColor: "default-button"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hovered";
+          style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focused";
+          style.backgroundColor = "default-button-focus-background";
+        }
+        if (states.disabled) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-disabled";
+          style.textColor = "default-button-disabled";
+          style.backgroundColor = "transparent";
+        }
+        if (states.checked || states.selected) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-checked";
+        }
+        return style;
+      }
+    },
+    "form-button-outlined": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "form-button-outlined",
+          padding: 5,
+          textColor: "default-button-text-outline",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hovered";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focused";
+        }
+        if (states.active) {
+          style.decorator = "form-button-focused";
+        }
+        if (states.disabled) {
+          style.decorator = "form-button-disabled";
+          style.textColor = "default-button-disabled";
+        }
+        if (states.checked || states.selected) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-checked";
+        }
+        return style;
+      }
+    },
+
+    "fab-button": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "fab-button",
+          cursor: "pointer",
+          padding: [8, 16],
+          textColor: "fab_text",
+          backgroundColor: "background-card-overlay"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hovered";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focused";
+        }
+        if (states.active) {
+          style.decorator = "form-button-active";
+        }
+        if (states.disabled) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-disabled";
+        }
+        if (states.checked || states.selected) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-checked";
+        }
+        return style;
+      }
+    },
+
+    "text-button": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "text-button",
+          textColor: "default-button",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.textColor = "default-button-hover";
+        }
+        if (states.focused) {
+          style.textColor = "default-button-focus";
+        }
+        if (states.active) {
+          style.textColor = "default-button-active";
+        }
+        if (states.disabled) {
+          style.textColor = "default-button-disabled";
+        }
+        return style;
+      }
+    },
+
     "link-button": {
       include: "material-button",
       style: state => ({
