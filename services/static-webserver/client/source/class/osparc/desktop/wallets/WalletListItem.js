@@ -68,7 +68,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           });
           break;
         case "credits-indicator":
-          control = new osparc.desktop.credits.CreditsIndicator();
+          control = new osparc.desktop.credits.CreditsIndicator().set({
+            allowStretchY: false
+          });
           control.getChildControl("credits-text").set({
             alignX: "right"
           });
@@ -266,13 +268,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
         favouriteButton.set({
-          toolTipText: this.tr("Default Credit Account"),
+          toolTipText: this.tr("Currently being used"),
           icon: "@FontAwesome5Solid/check-circle/20"
         });
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
         favouriteButton.set({
-          toolTipText: this.tr("Make it Default Credit Account"),
+          toolTipText: this.tr("Switch to this credit account"),
           icon: "@FontAwesome5Solid/circle/20"
         });
         favouriteButtonIcon.setTextColor("text");

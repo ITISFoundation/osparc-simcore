@@ -23,26 +23,11 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const userWallets = new qx.ui.basic.Label().set({
-      value: this.tr("Personal"),
-      alignX: "left",
-      rich: true,
-      font: "text-14"
-    });
-    this._add(userWallets);
+    this.__addHeader("Personal")
+    this.__personalWalletsModel = this.__addWalletsList({ height: "25%" })
 
-    // this._add(this.__getWalletsFilter());
-    // this._add(osparc.data.Roles.createRolesWalletInfo());
-    this.__personalWalletsModel = this.__addWalletsList()
-
-    const sharedWallets = new qx.ui.basic.Label().set({
-      value: this.tr("Shared with me"),
-      alignX: "left",
-      rich: true,
-      font: "text-14"
-    });
-    this._add(sharedWallets);
-    this.__sharedWalletsModel = this.__addWalletsList()
+    this.__addHeader("Shared with me")
+    this.__sharedWalletsModel = this.__addWalletsList({ height: "75%" })
 
     this.loadWallets();
   },
@@ -62,13 +47,13 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
   },
 
   members: {
-    __walletsUIList: null,
     __personalWalletsModel: null,
     __sharedWalletsModel: null,
 
     getWalletModel: function(walletId) {
-      return this.__personalWalletsModel.concat(this.__sharedWalletsModel)
-        .find(walletModel => walletModel.getWalletId() === parseInt(walletId));
+      return this.__personalWalletsModel.concat(this.__sharedWalletsModel).toArray().find(
+        walletModel => walletModel.getWalletId() === parseInt(walletId)
+      );
     },
 
     __getWalletsFilter: function() {
@@ -79,12 +64,10 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       return filter;
     },
 
-    __addWalletsList: function() {
-      const walletsUIList = this.__walletsUIList = new qx.ui.form.List().set({
+    __addWalletsList: function(layoutOpts={}) {
+      const walletsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        height: 150,
-        width: 150,
         backgroundColor: "transparent"
       });
       walletsUIList.addListener("changeSelection", e => this.__walletSelected(e.getData()), this);
@@ -122,11 +105,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
 
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(walletsUIList);
-      this._add(scrollContainer, {
-        flex: 1
-      });
+      this._add(walletsUIList, layoutOpts);
       return walletsModel;
     },
 
@@ -138,8 +117,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     },
 
     loadWallets: function() {
-      // this.__walletsUIList.resetSelection();
-      console.log(this.__personalWalletsModel, this.__sharedWalletsModel)
       this.__personalWalletsModel.removeAll();
       this.__sharedWalletsModel.removeAll();
 
@@ -214,6 +191,25 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
       button.setFetching(false);
       win.close();
+    },
+
+    __addHeader: function(label) {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox())
+      const userWallets = new qx.ui.basic.Label().set({
+        value: this.tr(label),
+        alignX: "left",
+        rich: true,
+        font: "text-14"
+      });
+      header.add(userWallets)
+      header.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      const selectColumn = new qx.ui.basic.Label("Currently in use").set({
+        marginRight: 18
+      });
+      header.add(selectColumn)
+      this._add(header);
     }
   }
 });

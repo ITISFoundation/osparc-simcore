@@ -63,6 +63,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       });
     this.__createMainViewLayout();
 
+    const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow()
+    myAccountWindow.openWallets()
+
     // const buyView = new osparc.desktop.credits.BuyCredits2([{
     //   id: 1,
     //   label: "Method 1"
