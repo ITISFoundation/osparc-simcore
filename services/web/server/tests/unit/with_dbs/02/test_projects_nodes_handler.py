@@ -287,9 +287,7 @@ async def test_create_node_returns_422_if_body_is_missing(
         response = await client.post(url.path, json=partial_body)
         assert response.status == expected.unprocessable.status_code
     # this does not start anything in the backend
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -324,11 +322,11 @@ async def test_create_node(
         ].assert_called_once()
         if expect_run_service_call:
             mocked_director_v2_api[
-                "dynamic_scheduler._rpc.get_service_status"
+                "director_v2.api.run_dynamic_service"
             ].assert_called_once()
         else:
             mocked_director_v2_api[
-                "dynamic_scheduler._rpc.get_service_status"
+                "director_v2.api.run_dynamic_service"
             ].assert_not_called()
 
         # check database is updated
@@ -388,7 +386,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
         "director_v2.api.list_dynamic_services"
     ].side_effect = running_services.num_services
     mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
+        "director_v2.api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
     # let's create many nodes
@@ -407,7 +405,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
     # but only the allowed number of services should have started
     assert (
-        mocked_director_v2_api["dynamic_scheduler._rpc.get_service_status"].call_count
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].call_count
         == NUM_DY_SERVICES
     )
     assert len(running_services.running_services_uuids) == NUM_DY_SERVICES
@@ -461,9 +459,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -507,7 +503,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "director_v2.api.list_dynamic_services"
     ].side_effect = running_services.num_services
     mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
+        "director_v2.api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
     # let's create more than the allowed max amount in parallel
@@ -525,7 +521,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
 
     # but only the allowed number of services should have started
     assert (
-        mocked_director_v2_api["dynamic_scheduler._rpc.get_service_status"].call_count
+        mocked_director_v2_api["director_v2.api.run_dynamic_service"].call_count
         == max_amount_of_auto_started_dyn_services
     )
     assert (
@@ -569,9 +565,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_called_once()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -604,9 +598,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert error
     assert not data
     # this does not start anything in the backend since this node is deprecated
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -708,11 +700,11 @@ async def test_start_node(
     )
     if error is None:
         mocked_director_v2_api[
-            "dynamic_scheduler._rpc.get_service_status"
+            "director_v2.api.run_dynamic_service"
         ].assert_called_once()
     else:
         mocked_director_v2_api[
-            "dynamic_scheduler._rpc.get_service_status"
+            "director_v2.api.run_dynamic_service"
         ].assert_not_called()
 
 
@@ -746,9 +738,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     )
     assert not data
     assert error
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -779,9 +769,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     )
     assert not data
     assert not error
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_called_once()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -812,9 +800,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
     # start the node, with wrong node
     url = client.app.router["start_node"].url_for(
@@ -827,9 +813,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_director_v2_api[
-        "dynamic_scheduler._rpc.get_service_status"
-    ].assert_not_called()
+    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
