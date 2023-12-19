@@ -42,7 +42,7 @@ from models_library.resource_tracker import (
     PricingAndHardwareInfoTuple,
     PricingInfo,
 )
-from models_library.services import ServiceKey, ServiceVersion
+from models_library.services import DynamicServiceKey, ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
@@ -404,10 +404,10 @@ async def _start_dynamic_service(
             app=request.app,
             create_dynamic_service=CreateDynamicService(
                 product_name=product_name,
-                save_state=save_state,
+                can_save=save_state,
                 project_id=project_uuid,
                 user_id=user_id,
-                service_key=service_key,
+                service_key=DynamicServiceKey(service_key),
                 service_version=service_version,
                 service_uuid=node_uuid,
                 request_dns=extract_dns_without_default_port(request.url),

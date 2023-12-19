@@ -373,7 +373,7 @@ async def test_open_project(
                         request_scheme=request_scheme,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
-                        save_state=save_state,
+                        can_save=save_state,
                         product_name=osparc_product_name,
                         service_resources=ServiceResourcesDictHelpers.create_jsonable(
                             mock_service_resources
@@ -452,7 +452,7 @@ async def test_open_template_project_for_edition(
                         request_scheme=request_scheme,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
-                        save_state=save_state,
+                        can_save=save_state,
                         service_resources=ServiceResourcesDictHelpers.create_jsonable(
                             mock_service_resources
                         ),

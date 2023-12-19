@@ -46,13 +46,13 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     ) -> Response:
         post_data = {
             "product_name": create_dynamic_service.product_name,
-            "can_save": create_dynamic_service.save_state,
+            "can_save": create_dynamic_service.can_save,
             "user_id": create_dynamic_service.user_id,
             "project_id": create_dynamic_service.project_id,
-            "key": create_dynamic_service.service_key,
-            "version": create_dynamic_service.service_version,
-            "node_uuid": create_dynamic_service.service_uuid,
-            "basepath": f"/x/{create_dynamic_service.service_uuid}",
+            "key": create_dynamic_service.key,
+            "version": create_dynamic_service.version,
+            "node_uuid": create_dynamic_service.node_uuid,
+            "basepath": f"/x/{create_dynamic_service.node_uuid}",
             "service_resources": ServiceResourcesDictHelpers.create_jsonable(
                 create_dynamic_service.service_resources
             ),
