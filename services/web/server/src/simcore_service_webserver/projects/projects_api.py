@@ -224,8 +224,7 @@ def get_delete_project_task(
 ) -> asyncio.Task | None:
     if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
-        task = tasks[0]
-        return task
+        return tasks[0]
     return None
 
 
