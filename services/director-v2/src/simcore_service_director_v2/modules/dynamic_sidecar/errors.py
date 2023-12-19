@@ -2,10 +2,10 @@ from aiodocker.exceptions import DockerError
 from models_library.projects_nodes import NodeID
 from pydantic.errors import PydanticErrorMixin
 
-from ...core.errors import DirectorException
+from ...core.errors import DirectorError
 
 
-class DynamicSidecarError(DirectorException):
+class DynamicSidecarError(DirectorError):
     pass
 
 
@@ -17,14 +17,14 @@ class GenericDockerError(DynamicSidecarError):
         self.original_exception = original_exception
 
 
-class DynamicSidecarNotFoundError(DirectorException):
+class DynamicSidecarNotFoundError(DirectorError):
     """Dynamic sidecar was not found"""
 
     def __init__(self, node_uuid: NodeID):
         super().__init__(f"node {node_uuid} not found")
 
 
-class DockerServiceNotFoundError(DirectorException):
+class DockerServiceNotFoundError(DirectorError):
     """Raised when an expected docker service is not found"""
 
     def __init__(self, service_id: str):
@@ -35,7 +35,7 @@ class EntrypointContainerNotFoundError(DynamicSidecarError):
     """Raised while the entrypoint container was nto yet started"""
 
 
-class LegacyServiceIsNotSupportedError(DirectorException):
+class LegacyServiceIsNotSupportedError(DirectorError):
     """This API is not implemented by the director-v0"""
 
 

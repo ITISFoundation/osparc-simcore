@@ -357,7 +357,6 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     #  via the director_v2_api or director_v2_core_dynamic_services modules
     #
     for func_name in (
-        "get_dynamic_service",
         "list_dynamic_services",
         "run_dynamic_service",
         "stop_dynamic_service",
@@ -372,6 +371,18 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
                 autospec=True,
                 return_value={},
             )
+    # add here redirects from director-v2 via dynamic-scheduler
+    # NOTE: once all above are moved to dynamic-scheduler
+    # this fixture needs to be renamed to mocked_dynamic_scheduler
+
+    for func_name in ("get_service_status",):
+        name = f"dynamic_scheduler._rpc.{func_name}"
+        mock[name] = mocker.patch(
+            f"simcore_service_webserver.{name}",
+            autospec=True,
+            return_value={},
+        )
+
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
         "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         autospec=True,

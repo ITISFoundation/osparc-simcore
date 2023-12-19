@@ -10,7 +10,12 @@ from settings_library.utils_cli import create_settings_command
 from ..core.settings import AppSettings
 from ..meta import PROJECT_NAME
 from ._close_and_save_service import async_close_and_save_service
-from ._core import async_project_save_state, async_project_state, async_service_state
+from ._core import (
+    async_free_service_disk_space,
+    async_project_save_state,
+    async_project_state,
+    async_service_state,
+)
 
 DEFAULT_NODE_SAVE_ATTEMPTS: Final[int] = 3
 DEFAULT_STATE_UPDATE_INTERVAL_S: Final[int] = 5
@@ -56,6 +61,14 @@ def service_state(node_id: NodeID):
     Prints the state of a services as tracked by director-v2
     """
     asyncio.run(async_service_state(node_id))
+
+
+@main.command()
+def free_reserved_disk_space(node_id: NodeID):
+    """
+    Frees service's reserved disk space
+    """
+    asyncio.run(async_free_service_disk_space(node_id))
 
 
 @main.command()

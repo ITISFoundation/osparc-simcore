@@ -5,7 +5,7 @@
 """
 import logging
 from collections.abc import MutableMapping
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import ClientSession, ClientTimeout, web
 
@@ -19,7 +19,7 @@ from .application_keys import APP_CLIENT_SESSION_KEY
 
 _logger = logging.getLogger(__name__)
 
-_PERSISTENT_CLIENT_SESSION_STATE = "{__name__}.persistent_client_session"
+_PERSISTENT_CLIENT_SESSION_STATE: Final[str] = f"{__name__}.persistent_client_session"
 
 
 def get_client_session(app: MutableMapping[str, Any]) -> ClientSession:
@@ -29,7 +29,6 @@ def get_client_session(app: MutableMapping[str, Any]) -> ClientSession:
     """
     session = app.get(APP_CLIENT_SESSION_KEY)
     if session is None or session.closed:
-
         # Can be restarted if closed or not initialized,
         # but not if the session is done!
         if app.get(_PERSISTENT_CLIENT_SESSION_STATE, {}).get("done", False):

@@ -13,14 +13,12 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.exception_utils import _SKIPS_MESSAGE
+from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     ContainerState,
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
-    BaseClientHTTPError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import _events
 
@@ -58,8 +56,9 @@ def mock_sidecars_client_always_fail(mocker: MockerFixture) -> None:
     class MockedObj:
         @classmethod
         async def containers_inspect(cls, *args, **kwargs) -> None:
-            msg = "will always fail"
-            raise BaseClientHTTPError(msg)
+            _ = args
+            _ = kwargs
+            raise BaseHttpClientError(message="will always fail")
 
     mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
@@ -71,10 +70,11 @@ def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
             self.counter = 0
 
         async def containers_inspect(self, *args, **kwargs) -> None:
+            _ = args
+            _ = kwargs
             self.counter += 1
             if self.counter < STEPS / 2:
-                msg = "will always fail"
-                raise BaseClientHTTPError(msg)
+                raise BaseHttpClientError(message="will always fail")
 
     mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
@@ -82,7 +82,7 @@ def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
 @pytest.fixture
 def docker_container_inspect() -> DockerContainerInspect:
     return DockerContainerInspect(
-        status=DockerStatus.dead, container_state=ContainerState(**{}), name="", id=""
+        status=DockerStatus.dead, container_state=ContainerState(), name="", id=""
     )
 
 
@@ -111,7 +111,7 @@ async def test_event_get_status_network_connectivity(
     caplog_debug: pytest.LogCaptureFixture,
 ):
     caplog_debug.clear()
-    with pytest.raises(BaseClientHTTPError):
+    with pytest.raises(BaseHttpClientError):  # noqa: PT012
         for _ in range(REPEAT_COUNT):
             await _events.GetStatus.action(minimal_app, scheduler_data)
             await asyncio.sleep(SLEEP_BETWEEN_CALLS)

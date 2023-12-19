@@ -14,11 +14,8 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
-    ClientHttpError,
-    UnexpectedStatusError,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
     get_sidecars_client,
@@ -65,7 +62,7 @@ async def sidecars_client(
 
     # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
     await api_client_setup(app)
-    yield get_sidecars_client(app, faker.uuid4())
+    yield await get_sidecars_client(app, faker.uuid4())
     await shutdown(app)
 
 
@@ -143,17 +140,17 @@ async def test_is_healthy_times_out(
     [
         pytest.param(
             UnexpectedStatusError(
-                Response(
+                response=Response(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     content="some mocked error",
                     request=AsyncMock(),
                 ),
-                status.HTTP_200_OK,
+                expecting=status.HTTP_200_OK,
             ),
             id="UnexpectedStatusError",
         ),
         pytest.param(
-            ClientHttpError(HTTPError("another mocked error")), id="HTTPError"
+            ClientHttpError(error=HTTPError("another mocked error")), id="HTTPError"
         ),
     ],
 )
@@ -199,12 +196,12 @@ async def test_containers_docker_status_api_error(
     with get_patched_client(
         "get_containers",
         side_effect=UnexpectedStatusError(
-            Response(
+            response=Response(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content="some mocked error",
                 request=AsyncMock(),
             ),
-            status.HTTP_200_OK,
+            expecting=status.HTTP_200_OK,
         ),
     ) as client:
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == {}
@@ -275,8 +272,10 @@ async def test_get_entrypoint_container_name_api_not_found(
     with get_patched_client(
         "get_containers_name",
         side_effect=UnexpectedStatusError(
-            Response(status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()),
-            status.HTTP_204_NO_CONTENT,
+            response=Response(
+                status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()
+            ),
+            expecting=status.HTTP_204_NO_CONTENT,
         ),
     ) as client:
         with pytest.raises(EntrypointContainerNotFoundError):
@@ -363,4 +362,20 @@ async def test_get_service_inactivity(
     ) as client:
         assert (
             await client.get_service_inactivity(dynamic_sidecar_endpoint) == mock_json
+        )
+
+
+async def test_free_reserved_disk_space(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+) -> None:
+    with get_patched_client(
+        "post_disk_reserved_free",
+        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
+    ) as client:
+        assert (
+            await client.free_reserved_disk_space(
+                dynamic_sidecar_endpoint,
+            )
+            is None
         )

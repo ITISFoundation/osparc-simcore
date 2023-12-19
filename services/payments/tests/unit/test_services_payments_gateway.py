@@ -64,7 +64,7 @@ async def test_payment_gateway_responsiveness(
     ).respond(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     assert await payment_gateway_api.ping()
-    assert not await payment_gateway_api.is_healhy()
+    assert not await payment_gateway_api.is_healthy()
 
     mock_payments_gateway_service_api_base.get(
         path="/",
@@ -72,7 +72,7 @@ async def test_payment_gateway_responsiveness(
     ).respond(status.HTTP_200_OK)
 
     assert await payment_gateway_api.ping()
-    assert await payment_gateway_api.is_healhy()
+    assert await payment_gateway_api.is_healthy()
 
 
 @pytest.fixture(

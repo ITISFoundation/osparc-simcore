@@ -6,51 +6,41 @@
 # pylint: disable=unnecessary-lambda
 
 import os
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from http import HTTPStatus
-from typing import Iterator
 
 import pytest
 from playwright.sync_api import APIRequestContext
+from pydantic import AnyUrl
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-PRODUCT_URL = os.environ["PRODUCT_URL"]
-PRODUCT_BILLABLE = os.environ["PRODUCT_BILLABLE"]
-USER_NAME = os.environ["USER_NAME"]
-USER_PASSWORD = os.environ["USER_PASSWORD"]
 NUM_OF_SLEEPERS = os.environ["NUM_OF_SLEEPERS"]
 WALLET_ID = os.environ["WALLET_ID"]
 STUDY_ID = os.environ["STUDY_ID"]
 
 
 @pytest.fixture
-def product_and_user() -> tuple:
-    product_url = PRODUCT_URL
-    user_name = USER_NAME
-    user_password = USER_PASSWORD
-    return (product_url, user_name, user_password)
-
-
-@pytest.fixture
-def stop_pipeline(api_request_context) -> Iterator[None]:
-
+def stop_pipeline(
+    api_request_context: APIRequestContext, product_url: str
+) -> Iterator[None]:
     yield
 
-    api_request_context.post(f"{PRODUCT_URL}v0/computations/{STUDY_ID}:stop")
+    api_request_context.post(f"{product_url}v0/computations/{STUDY_ID}:stop")
 
 
 def test_resource_usage_tracker(
     log_in_and_out: None,
     api_request_context: APIRequestContext,
-    product_and_user: tuple,
+    product_url: AnyUrl,
     stop_pipeline: None,
 ):
     # 1. Resource usage before
     rut_before = api_request_context.get(
-        f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
+        f"{product_url}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
     )
     assert rut_before.status == HTTPStatus.OK
     service_runs_before = rut_before.json()["data"]
@@ -62,7 +52,7 @@ def test_resource_usage_tracker(
     # 2. Start computations
     data = {"subgraph": [], "force_restart": True}
     resp = api_request_context.post(
-        f"{PRODUCT_URL}v0/computations/{STUDY_ID}:start",
+        f"{product_url}v0/computations/{STUDY_ID}:start",
         data=data,
     )
     assert resp.status == HTTPStatus.CREATED
@@ -77,7 +67,7 @@ def test_resource_usage_tracker(
             print(
                 f"====================={datetime.now(tz=timezone.utc)}============================="
             )
-            output = api_request_context.get(f"{PRODUCT_URL}v0/projects/{STUDY_ID}")
+            output = api_request_context.get(f"{product_url}v0/projects/{STUDY_ID}")
             assert output.status == HTTPStatus.OK
             workbench = output.json()["data"]["workbench"]
             assert len(workbench.keys()) == int(NUM_OF_SLEEPERS)
@@ -92,7 +82,7 @@ def test_resource_usage_tracker(
 
     # 3. Check Resource usage after
     rut_after = api_request_context.get(
-        f"{PRODUCT_URL}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
+        f"{product_url}v0/services/-/resource-usages?wallet_id={WALLET_ID}&offset=0&limit={NUM_OF_SLEEPERS}"
     )
     assert rut_after.status == HTTPStatus.OK
     service_runs_after = rut_after.json()["data"]

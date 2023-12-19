@@ -1,27 +1,26 @@
 # pylint:disable=redefined-outer-name
 
+import logging
+from collections.abc import AsyncIterable, Iterable
+
 import pytest
 from httpx import (
-    ConnectError,
     HTTPError,
     PoolTimeout,
     Request,
     RequestError,
     Response,
+    TransportError,
     codes,
 )
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import LogCaptureFixture
 from respx import MockRouter
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._base import (
+from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
-    expect_status,
-    retry_on_errors,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors import (
     ClientHttpError,
     UnexpectedStatusError,
-    _WrongReturnType,
+    expect_status,
+    retry_on_errors,
 )
 
 # UTILS
@@ -48,6 +47,14 @@ def _assert_messages(messages: list[str]) -> None:
         unexpected_counter += 1
 
 
+@pytest.fixture()
+def caplog_info_level(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
+    with caplog.at_level(logging.INFO):
+        yield caplog
+
+
 @pytest.fixture
 def request_timeout() -> int:
     # below refer to exponential wait step duration
@@ -55,21 +62,14 @@ def request_timeout() -> int:
 
 
 @pytest.fixture
-def thick_client(request_timeout: int) -> FakeThickClient:
-    return FakeThickClient(request_timeout=request_timeout)
+async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
+    async with FakeThickClient(request_timeout=request_timeout) as client:
+        yield client
 
 
 @pytest.fixture
 def test_url() -> AnyHttpUrl:
     return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
-
-
-async def test_base_with_async_context_manager(
-    test_url: AnyHttpUrl, request_timeout: int
-) -> None:
-    async with FakeThickClient(request_timeout=request_timeout) as client:
-        with pytest.raises(ClientHttpError):
-            await client.get_provided_url(test_url)
 
 
 async def test_connection_error(
@@ -79,13 +79,13 @@ async def test_connection_error(
         await thick_client.get_provided_url(test_url)
 
     assert isinstance(exe_info.value, ClientHttpError)
-    assert isinstance(exe_info.value.error, ConnectError)
+    assert isinstance(exe_info.value.error, TransportError)
 
 
 async def test_retry_on_errors(
     request_timeout: int,
     test_url: AnyHttpUrl,
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     client = FakeThickClient(request_timeout=request_timeout)
 
@@ -95,10 +95,10 @@ async def test_retry_on_errors(
     _assert_messages(caplog_info_level.messages)
 
 
-@pytest.mark.parametrize("error_class", [ConnectError, PoolTimeout])
+@pytest.mark.parametrize("error_class", [TransportError, PoolTimeout])
 async def test_retry_on_errors_by_error_type(
     error_class: type[RequestError],
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_level: pytest.LogCaptureFixture,
     request_timeout: int,
     test_url: AnyHttpUrl,
 ) -> None:
@@ -107,7 +107,7 @@ async def test_retry_on_errors_by_error_type(
         @retry_on_errors
         async def raises_request_error(self) -> Response:
             raise error_class(
-                "mock_connect_error",
+                "mock_connect_error",  # noqa: EM101
                 request=Request(method="GET", url=test_url),
             )
 
@@ -134,7 +134,8 @@ async def test_retry_on_errors_raises_client_http_error(
         # pylint: disable=no-self-use
         @retry_on_errors
         async def raises_http_error(self) -> Response:
-            raise HTTPError("mock_http_error")
+            msg = "mock_http_error"
+            raise HTTPError(msg)
 
     client = ATestClient(request_timeout=request_timeout)
 
@@ -156,14 +157,14 @@ async def test_methods_do_not_return_response(
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
-    with pytest.raises(_WrongReturnType):
+    with pytest.raises(AssertionError, match="should return an instance"):
         FailWrongAnnotationTestClient(request_timeout=request_timeout)
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
-    with pytest.raises(_WrongReturnType):
+    with pytest.raises(AssertionError, match="should return an instance"):
         FailNoAnnotationTestClient(request_timeout=request_timeout)
 
 
