@@ -280,6 +280,7 @@ _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
 ] = 0.1  # NOTE: machines always have less available RAM than advertised
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "512MiB")
 _CPUS_SAFE_MARGIN: Final[float] = 1
+_MIN_NUM_CPUS: Final[float] = 0.5
 
 
 async def update_project_node_resources_from_hardware_info(
@@ -351,6 +352,10 @@ async def update_project_node_resources_from_hardware_info(
                 .resources["RAM"]
                 .limit,
             )
+            log.debug(
+                "the most hungry service is %s",
+                f"{hungry_service_name=}:{hungry_service_resources}",
+            )
             other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
             for service_name, sub_service_resources in node_resources.items():
                 if service_name != hungry_service_name:
@@ -363,9 +368,12 @@ async def update_project_node_resources_from_hardware_info(
 
             # scale the hungry service
             node_resources[hungry_service_name].resources["CPU"].set_value(
-                float(selected_ec2_instance_type.cpus)
-                - _CPUS_SAFE_MARGIN
-                - other_services_resources["CPU"]
+                min(
+                    float(selected_ec2_instance_type.cpus)
+                    - _CPUS_SAFE_MARGIN
+                    - other_services_resources["CPU"],
+                    _MIN_NUM_CPUS,
+                )
             )
             node_resources[hungry_service_name].resources["RAM"].set_value(
                 int(
