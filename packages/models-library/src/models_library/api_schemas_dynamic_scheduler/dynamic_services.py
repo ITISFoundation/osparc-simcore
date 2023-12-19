@@ -1,6 +1,9 @@
 from typing import Any, ClassVar
 
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -14,10 +17,10 @@ class CreateDynamicService(BaseModel):
     product_name: str
     save_state: bool
     user_id: UserID
-    project_id: str
-    service_key: str
-    service_version: str
-    service_uuid: str
+    project_id: ProjectID
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    service_uuid: NodeID
     request_dns: str
     request_scheme: str
     simcore_user_agent: str
