@@ -302,14 +302,6 @@ async def _start_dynamic_service(
             user_id=user_id,
             project_uuid=project_uuid,
         )
-        service_resources: ServiceResourcesDict = await get_project_node_resources(
-            request.app,
-            user_id=user_id,
-            project_id=project_uuid,
-            node_id=node_uuid,
-            service_key=service_key,
-            service_version=service_version,
-        )
 
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
@@ -400,6 +392,14 @@ async def _start_dynamic_service(
             )
             hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
 
+        service_resources: ServiceResourcesDict = await get_project_node_resources(
+            request.app,
+            user_id=user_id,
+            project_id=project_uuid,
+            node_id=node_uuid,
+            service_key=service_key,
+            service_version=service_version,
+        )
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
             rpc_dynamic_service_create=RPCDynamicServiceCreate(
