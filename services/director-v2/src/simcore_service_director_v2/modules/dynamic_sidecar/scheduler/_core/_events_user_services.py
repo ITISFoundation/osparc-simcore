@@ -163,7 +163,7 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     )
 
     # NOTE: when in READ ONLY mode disable the outputs watcher
-    enable_outputs = not scheduler_data.dynamic_sidecar.service_removal_state.can_save
+    enable_outputs = scheduler_data.dynamic_sidecar.service_removal_state.can_save
     await sidecars_client.toggle_service_ports_io(
         dynamic_sidecar_endpoint, enable_outputs=enable_outputs, enable_inputs=True
     )
