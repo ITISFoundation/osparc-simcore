@@ -21,11 +21,9 @@ cryptography
 fastapi-pagination
 fastapi[all]
 httpx
-opentelemetry-exporter-prometheus
-opentelemetry-instrumentation-fastapi
 orjson
 packaging
-prometheus-client
+prometheus-fastapi-instrumentator
 pydantic[dotenv]
 pyyaml
 tenacity
