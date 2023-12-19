@@ -11,14 +11,16 @@ DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 install() {
+  make devenv
+  bash .venv/bin/activate
   pushd tests/e2e-playwright
   make install-ci-up-simcore
   popd
 }
 
 test() {
-  pushd tests/e2e-playwright
   bash .venv/bin/activate
+  pushd tests/e2e-playwright
   make test-sleepers
   popd
 }
