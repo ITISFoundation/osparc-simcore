@@ -15,10 +15,11 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from pprint import pformat
-from typing import Any
+from typing import Any, Final
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
@@ -43,7 +44,12 @@ from models_library.resource_tracker import (
     PricingInfo,
 )
 from models_library.services import DynamicServiceKey, ServiceKey, ServiceVersion
-from models_library.services_resources import ServiceResourcesDict
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ImageResources,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -57,6 +63,10 @@ from servicelib.common_headers import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
+    get_instance_type_details,
+)
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -71,6 +81,7 @@ from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..products import api as products_api
 from ..products.api import get_product_name
+from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
@@ -100,9 +111,11 @@ from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_re
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
+    ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectLockError,
+    ProjectNodeResourcesInvalidError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
@@ -234,7 +247,12 @@ def get_delete_project_task(
 
 
 async def _get_default_pricing_and_hardware_info(
-    app, product_name, service_key, service_version, project_uuid, node_uuid
+    app: web.Application,
+    product_name: str,
+    service_key: str,
+    service_version: str,
+    project_uuid: ProjectID,
+    node_uuid: NodeID,
 ) -> PricingAndHardwareInfoTuple:
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
@@ -254,6 +272,84 @@ async def _get_default_pricing_and_hardware_info(
     raise DefaultPricingUnitNotFoundError(
         project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
     )
+
+
+_RAM_SAFE_MARGIN_RATIO: Final[
+    float
+] = 0.1  # NOTE: machines always have less available RAM than advertised
+_CPUS_SAFE_MARGIN: Final[float] = 0.1
+
+
+async def update_project_node_resources_from_hardware_info(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    product_name: str,
+    hardware_info: HardwareInfo,
+) -> None:
+    try:
+        rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
+        unordered_list_ec2_instance_types: list[
+            EC2InstanceTypeGet
+        ] = await get_instance_type_details(
+            rabbitmq_rpc_client,
+            instance_type_names=set(hardware_info.aws_ec2_instances),
+        )
+
+        assert unordered_list_ec2_instance_types  # nosec
+
+        # NOTE: with the current implementation, there is no use to get the instance past the first one
+        def _by_type_name(ec2: EC2InstanceTypeGet) -> bool:
+            return bool(ec2.name == hardware_info.aws_ec2_instances[0])
+
+        selected_ec2_instance_type = next(
+            iter(filter(_by_type_name, unordered_list_ec2_instance_types))
+        )
+
+        # now update the project node required resources
+        # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
+        # less memory than the machine theoretical amount
+        db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
+        node = await db.get_project_node(project_id, node_id)
+        node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
+        if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
+            image_resources: ImageResources = node_resources[
+                DEFAULT_SINGLE_SERVICE_NAME
+            ]
+            image_resources.resources["CPU"].set_value(
+                float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
+            )
+            image_resources.resources["RAM"].set_value(
+                int(
+                    selected_ec2_instance_type.ram
+                    - _RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+                )
+            )
+            await db.update_project_node(
+                user_id,
+                project_id,
+                node_id,
+                product_name,
+                required_resources=ServiceResourcesDictHelpers.create_jsonable(
+                    node_resources
+                ),
+                check_update_allowed=False,
+            )
+
+        else:
+            log.warning(
+                "Services resource override not implemented yet for multi-container services!!!"
+            )
+    except StopIteration as exc:
+        msg = (
+            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
+            " TIP: adjust product configuration"
+        )
+        raise ProjectNodeResourcesInvalidError(msg) from exc
+    except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
+        raise ClustersKeeperNotAvailableError from exc
 
 
 async def _start_dynamic_service(
@@ -1149,6 +1245,7 @@ async def update_project_node_resources(
             node_id=node_id,
             product_name=product_name,
             required_resources=jsonable_encoder(resources),
+            check_update_allowed=True,
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     except ProjectNodesNodeNotFound as exc:

@@ -143,4 +143,20 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
         path_params.pricing_unit_id,
     )
 
+    pricing_unit_get = await rut_api.get_pricing_plan_unit(
+        request.app,
+        req_ctx.product_name,
+        path_params.pricing_plan_id,
+        path_params.pricing_unit_id,
+    )
+    if pricing_unit_get.specific_info.aws_ec2_instances:
+        await projects_api.update_project_node_resources_from_hardware_info(
+            request.app,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            product_name=req_ctx.product_name,
+            hardware_info=pricing_unit_get.specific_info,
+        )
+
     return envelope_json_response(None, web.HTTPNoContent)
