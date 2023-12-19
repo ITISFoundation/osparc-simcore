@@ -12,14 +12,14 @@ export DOCKER_IMAGE_TAG
 
 install() {
   make devenv
-  bash .venv/bin/activate
+  source .venv/bin/activate
   pushd tests/e2e-playwright
   make install-ci-up-simcore
   popd
 }
 
 test() {
-  bash .venv/bin/activate
+  source .venv/bin/activate
   pushd tests/e2e-playwright
   make test-sleepers
   popd
