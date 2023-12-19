@@ -20,6 +20,9 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    CreateDynamicService,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner, PositiveIntWithExclusiveMinimumRemoved
@@ -149,7 +152,7 @@ async def _open_project(
             try:
                 data, error = await assert_status(resp, e)
                 return data, error
-            except AssertionError:
+            except AssertionError:  # noqa: PERF203
                 # re-raise if last item
                 if e == expected[-1]:
                     raise
@@ -361,22 +364,24 @@ async def test_open_project(
             calls.append(
                 call(
                     app=client.app,
-                    project_id=user_project["uuid"],
-                    service_key=service["key"],
-                    service_uuid=service_uuid,
-                    service_version=service["version"],
-                    user_id=logged_user["id"],
-                    request_scheme=request_scheme,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    request_dns=request_dns,
-                    save_state=save_state,
-                    product_name=osparc_product_name,
-                    service_resources=ServiceResourcesDictHelpers.create_jsonable(
-                        mock_service_resources
+                    create_dynamic_service=CreateDynamicService(
+                        project_id=user_project["uuid"],
+                        service_key=service["key"],
+                        service_uuid=service_uuid,
+                        service_version=service["version"],
+                        user_id=logged_user["id"],
+                        request_scheme=request_scheme,
+                        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                        request_dns=request_dns,
+                        save_state=save_state,
+                        product_name=osparc_product_name,
+                        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+                            mock_service_resources
+                        ),
+                        wallet_info=None,
+                        pricing_info=None,
+                        hardware_info=None,
                     ),
-                    wallet_info=None,
-                    pricing_info=None,
-                    hardware_info=None,
                 )
             )
         mocked_director_v2_api[
@@ -438,22 +443,24 @@ async def test_open_template_project_for_edition(
             calls.append(
                 call(
                     app=client.app,
-                    project_id=template_project["uuid"],
-                    service_key=service["key"],
-                    service_uuid=service_uuid,
-                    service_version=service["version"],
-                    user_id=logged_user["id"],
-                    request_scheme=request_scheme,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    request_dns=request_dns,
-                    save_state=save_state,
-                    service_resources=ServiceResourcesDictHelpers.create_jsonable(
-                        mock_service_resources
+                    create_dynamic_service=CreateDynamicService(
+                        project_id=template_project["uuid"],
+                        service_key=service["key"],
+                        service_uuid=service_uuid,
+                        service_version=service["version"],
+                        user_id=logged_user["id"],
+                        request_scheme=request_scheme,
+                        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                        request_dns=request_dns,
+                        save_state=save_state,
+                        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+                            mock_service_resources
+                        ),
+                        product_name=osparc_product_name,
+                        wallet_info=None,
+                        pricing_info=None,
+                        hardware_info=None,
                     ),
-                    product_name=osparc_product_name,
-                    wallet_info=None,
-                    pricing_info=None,
-                    hardware_info=None,
                 )
             )
         mocked_director_v2_api[
@@ -909,7 +916,7 @@ async def test_get_active_project(
 
 
 @pytest.mark.parametrize(
-    "user_role, expected_response_on_Create, expected_response_on_Get, expected_response_on_Delete",
+    "user_role, expected_response_on_create, expected_response_on_get, expected_response_on_delete",
     [
         (
             UserRole.USER,
@@ -925,13 +932,13 @@ async def test_get_active_project(
         ),
     ],
 )
-async def test_project_node_lifetime(
+async def test_project_node_lifetime(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project,
-    expected_response_on_Create,
-    expected_response_on_Get,
-    expected_response_on_Delete,
+    expected_response_on_create,
+    expected_response_on_get,
+    expected_response_on_delete,
     mocked_director_v2_api: dict[str, mock.Mock],
     storage_subsystem_mock,
     mock_catalog_api: dict[str, mock.Mock],
@@ -948,7 +955,7 @@ async def test_project_node_lifetime(
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url.path, json=body)
-    data, errors = await assert_status(resp, expected_response_on_Create)
+    data, errors = await assert_status(resp, expected_response_on_create)
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
@@ -969,7 +976,7 @@ async def test_project_node_lifetime(
         "service_version": "1.3.4",
     }
     resp = await client.post(f"{url}", json=body)
-    data, errors = await assert_status(resp, expected_response_on_Create)
+    data, errors = await assert_status(resp, expected_response_on_create)
     node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
@@ -1000,7 +1007,7 @@ async def test_project_node_lifetime(
         }
     )
     resp = await client.get(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_Get)
+    data, errors = await assert_status(resp, expected_response_on_get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
         assert data["service_state"] == "running"
@@ -1020,7 +1027,7 @@ async def test_project_node_lifetime(
         }
     )
     resp = await client.get(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_Get)
+    data, errors = await assert_status(resp, expected_response_on_get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
         assert data["service_state"] == "idle"
@@ -1033,7 +1040,7 @@ async def test_project_node_lifetime(
         project_id=user_project["uuid"], node_id=node_id
     )
     resp = await client.delete(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_Delete)
+    data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
             "director_v2.api.stop_dynamic_service"
@@ -1053,7 +1060,7 @@ async def test_project_node_lifetime(
         project_id=user_project["uuid"], node_id=node_id_2
     )
     resp = await client.delete(f"{url}")
-    data, errors = await assert_status(resp, expected_response_on_Delete)
+    data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
             "director_v2.api.stop_dynamic_service"
@@ -1090,13 +1097,13 @@ def client_on_running_server_factory(
 
     async def close_client_but_not_server(cli: TestClient):
         # pylint: disable=protected-access
-        if not cli._closed:
-            for resp in cli._responses:
+        if not cli._closed:  # noqa: SLF001
+            for resp in cli._responses:  # noqa: SLF001
                 resp.close()
-            for ws in cli._websockets:
+            for ws in cli._websockets:  # noqa: SLF001
                 await ws.close()
-            await cli._session.close()
-            cli._closed = True
+            await cli._session.close()  # noqa: SLF001
+            cli._closed = True  # noqa: SLF001
 
     async def finalize():
         while clients:
