@@ -29,7 +29,6 @@ from ._core_dynamic_services import (
     request_retrieve_dyn_service,
     restart_dynamic_service,
     retrieve,
-    run_dynamic_service,
     update_dynamic_service_networks_in_project,
 )
 from ._core_utils import is_healthy
