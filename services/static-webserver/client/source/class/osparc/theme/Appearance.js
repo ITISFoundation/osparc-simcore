@@ -733,7 +733,8 @@ qx.Theme.define("osparc.theme.Appearance", {
           textColor: textColor,
           cursor: cursor,
           decorator: decorator,
-          margin: margin
+          margin: margin,
+          padding: 5
         };
       }
     },
