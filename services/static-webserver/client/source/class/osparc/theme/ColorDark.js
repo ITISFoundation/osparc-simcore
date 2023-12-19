@@ -18,7 +18,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
 
-    "strong-main": "rgba(0, 144, 208, 1)", // override in product
+    "product-color": "rgba(0, 144, 208, 1)", // override in product
+    "strong-main": "product-color",
     "strong-text": "c12",
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
@@ -38,6 +39,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "fab_text": "contrasted-text-dark",
     "fab_background": "rgba(47, 50, 69, 1)",
     "input_background": "#213248",
+    "input_background_disable": "rgba(113, 157, 181, 0.25)",
     "window-popup-background": "rgba(66, 66, 66, 1)",
     "transparent_overlay": "rgba(1, 18, 26, 0.1)",
 
@@ -57,14 +59,15 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "default-button-text": "contrasted-text-light",
     "default-button-text-outline": "contrasted-text-dark",
     "default-button-text-action": "contrasted-text-dark",
-    "default-button-text-disabled": "text-disabled",
-    "default-button": "rgba(10, 182, 255, 1)",
+    "default-button": "product-color",
     "default-button-hover": "rgba(4, 73, 102, 1)",
-    "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
+    "default-button-hover-background": "rgba(4, 73, 102, 0.4)",
     "default-button-active": "rgba(9, 89, 122, 1)",
-    "default-button-active-background": "rgba(4, 73, 102, 0.04)",
-    "default-button-focus": "rgba(10, 182, 255, 0.5)",
-    "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
+    "default-button-active-background": "rgba(4, 73, 102, 0.4)",
+    "default-button-focus": "product-color",
+    "default-button-focus-background": "rgba(4, 73, 102, 0.4)",
+    "default-button-disabled": "text-disabled",
+    "default-button-disabled-background": "rgba(113, 157, 181, 0.25)",
     "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
     // shadows
@@ -79,23 +82,23 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     // material-button
     "material-button-background":  "fab_background",
-    "material-button-background-disabled":  "transparent",
-    "material-button-background-hovered":  "default-button-hover",
-    "material-button-background-pressed":  "default-button-active",
-    "material-button-text-disabled": "default-button-text-disabled",
+    "material-button-background-disabled":  "default-button-disabled-background",
+    "material-button-background-hovered":  "default-button-hover-background",
+    "material-button-background-pressed":  "default-button-active-background",
+    "material-button-text-disabled": "default-button-disabled-background",
     "material-button-text": "default-button-text",
 
     // material-textfield
     "material-textfield": "input_background",
-    "material-textfield-focused": "success",
-    "material-textfield-disabled": "default-button-text-disabled",
+    "material-textfield-focused": "product-color",
+    "material-textfield-disabled": "default-button-disabled",
     "material-textfield-invalid": "error",
     "invalid": "error",
 
     // backgrounds
     "background-selected": "success_bg",
-    "background-selected-disabled":  "default-button-text-disabled",
-    "background-selected-dark":  "success_bg",
+    "background-selected-disabled":  "default-button-disabled",
+    "background-selected-dark":  "product-color",
     "background-disabled": "background-main",
     "background-disabled-checked":  "background-main-1",
     "background-pane": "background-main",
@@ -112,7 +115,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "scrollbar-active":  "background-main-5",
 
     // form
-    "button":  "background-main-4",
+    "button": "background-main-4",
     "button-border":  "background-main-5",
     "button-border-hovered": "c07",
     "button-box":  "background-main-3",
@@ -179,9 +182,10 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
 
-    "node-selected-background": "background-main-4",
-    "node-title-text": "#DCDCDC",
-    "node-port-text": "#BABABA",
+    "node-background": "rgba(174, 191, 207, 0.8)",
+    "node-selected-background": "product-color",
+    "node-title-text": "#232323",
+    "node-port-text": "#454545",
 
     "logger-debug-message": "#FFFFFF",
     "logger-info-message": "#FFFFFF",

@@ -18,7 +18,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
@@ -287,7 +287,9 @@ async def test_create_node_returns_422_if_body_is_missing(
         response = await client.post(url.path, json=partial_body)
         assert response.status == expected.unprocessable.status_code
     # this does not start anything in the backend
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -322,11 +324,11 @@ async def test_create_node(
         ].assert_called_once()
         if expect_run_service_call:
             mocked_director_v2_api[
-                "director_v2.api.run_dynamic_service"
+                "dynamic_scheduler.api.run_dynamic_service"
             ].assert_called_once()
         else:
             mocked_director_v2_api[
-                "director_v2.api.run_dynamic_service"
+                "dynamic_scheduler.api.run_dynamic_service"
             ].assert_not_called()
 
         # check database is updated
@@ -367,26 +369,28 @@ async def test_create_and_delete_many_nodes_in_parallel(
     assert client.app
 
     @dataclass
-    class _RunninServices:
+    class _RunningServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:  # noqa: ARG002
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        def inc_running_services(self, *args, **kwargs):
-            self.running_services_uuids.append(kwargs["service_uuid"])
+        def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
+            self.running_services_uuids.append(
+                kwargs["rpc_dynamic_service_create"].node_uuid
+            )
 
     # let's count the started services
-    running_services = _RunninServices()
+    running_services = _RunningServices()
     assert running_services.running_services_uuids == []
     mocked_director_v2_api[
         "director_v2.api.list_dynamic_services"
     ].side_effect = running_services.num_services
     mocked_director_v2_api[
-        "director_v2.api.run_dynamic_service"
+        "dynamic_scheduler.api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
     # let's create many nodes
@@ -405,7 +409,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
     # but only the allowed number of services should have started
     assert (
-        mocked_director_v2_api["director_v2.api.run_dynamic_service"].call_count
+        mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].call_count
         == NUM_DY_SERVICES
     )
     assert len(running_services.running_services_uuids) == NUM_DY_SERVICES
@@ -459,7 +463,9 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -484,17 +490,21 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     class _RunninServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
-        async def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+        async def num_services(
+            self, *args, **kwargs
+        ) -> list[dict[str, Any]]:  # noqa: ARG002
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
             ]
 
-        async def inc_running_services(self, *args, **kwargs):
+        async def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
             # simulate delay when service is starting
             # reproduces real world conditions and makes test to fail
             await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
-            self.running_services_uuids.append(kwargs["service_uuid"])
+            self.running_services_uuids.append(
+                kwargs["rpc_dynamic_service_create"].node_uuid
+            )
 
     # let's count the started services
     running_services = _RunninServices()
@@ -503,7 +513,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "director_v2.api.list_dynamic_services"
     ].side_effect = running_services.num_services
     mocked_director_v2_api[
-        "director_v2.api.run_dynamic_service"
+        "dynamic_scheduler.api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
     # let's create more than the allowed max amount in parallel
@@ -521,7 +531,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
 
     # but only the allowed number of services should have started
     assert (
-        mocked_director_v2_api["director_v2.api.run_dynamic_service"].call_count
+        mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].call_count
         == max_amount_of_auto_started_dyn_services
     )
     assert (
@@ -565,7 +575,9 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called_once()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -598,7 +610,9 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert error
     assert not data
     # this does not start anything in the backend since this node is deprecated
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -691,7 +705,7 @@ async def test_start_node(
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -700,11 +714,11 @@ async def test_start_node(
     )
     if error is None:
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler.api.run_dynamic_service"
         ].assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2.api.run_dynamic_service"
+            "dynamic_scheduler.api.run_dynamic_service"
         ].assert_not_called()
 
 
@@ -729,7 +743,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     ]
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -738,7 +752,9 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     )
     assert not data
     assert error
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -760,7 +776,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     ]
     # start the node, shall work as expected
     url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -769,7 +785,9 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     )
     assert not data
     assert not error
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_called_once()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -791,7 +809,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
 
     # start the node, with wrong project
     url = client.app.router["start_node"].url_for(
-        project_id=faker.uuid4(), node_id=choice(all_service_uuids)
+        project_id=faker.uuid4(), node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -800,7 +818,9 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
     # start the node, with wrong node
     url = client.app.router["start_node"].url_for(
@@ -813,7 +833,9 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_director_v2_api["director_v2.api.run_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -861,7 +883,7 @@ def app_environment(
 
 
 @pytest.fixture
-def mock_storage_calls(aioresponses_mocker: AioResponsesMock, faker: Faker) -> None:
+def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
     _get_files_in_node_folder = re.compile(
         r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files/metadata.+$"
     )
