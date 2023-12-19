@@ -63,7 +63,6 @@ __all__: tuple[str, ...] = (
     "request_retrieve_dyn_service",
     "restart_dynamic_service",
     "retrieve",
-    "run_dynamic_service",
     "set_project_run_policy",
     "update_cluster",
     "update_dynamic_service_networks_in_project",
