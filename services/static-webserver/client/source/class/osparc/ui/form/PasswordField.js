@@ -45,7 +45,10 @@ qx.Class.define("osparc.ui.form.PasswordField", {
 
     // forward the focusin and focusout events to the passwordField. The passwordField
     // is not focusable so the events need to be forwarded manually.
-    this.addListener("focusin", () => passwordField.fireNonBubblingEvent("focusin", qx.event.type.Focus), this);
+    this.addListener("focusin", () => {
+      this.__focusedBorder(true);
+      passwordField.fireNonBubblingEvent("focusin", qx.event.type.Focus);
+    }, this);
     this.addListener("focusout", () => {
       this.__focusedBorder(false);
       passwordField.fireNonBubblingEvent("focusout", qx.event.type.Focus);
@@ -178,9 +181,8 @@ qx.Class.define("osparc.ui.form.PasswordField", {
     },
 
     __focusedBorder: function(focused = false) {
-      this.getContentElement().setStyles({
-        "border-bottom-width": focused ? "2px" : "1px",
-        "border-color": "text"
+      this.set({
+        decorator: focused ? "form-input-focused": "form-input"
       });
     }
   }
