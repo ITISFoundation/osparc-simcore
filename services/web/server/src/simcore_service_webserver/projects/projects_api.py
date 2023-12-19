@@ -289,6 +289,8 @@ async def update_project_node_resources_from_hardware_info(
     product_name: str,
     hardware_info: HardwareInfo,
 ) -> None:
+    if not hardware_info.aws_ec2_instances:
+        return
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         unordered_list_ec2_instance_types: list[
@@ -487,6 +489,14 @@ async def _start_dynamic_service(
                 pricing_unit_cost_id=pricing_unit_cost_id,
             )
             hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
+            await update_project_node_resources_from_hardware_info(
+                request.app,
+                user_id=user_id,
+                project_id=project_uuid,
+                node_id=node_uuid,
+                product_name=product_name,
+                hardware_info=hardware_info,
+            )
 
         service_resources: ServiceResourcesDict = await get_project_node_resources(
             request.app,
