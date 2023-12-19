@@ -390,7 +390,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button",
       style: {
         color: "default-button-disabled",
-        backgroundColor: "default-button"
+        backgroundColor: "default-button-disabled-background"
       }
     },
     "form-button-hovered-checked": {
@@ -462,7 +462,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     },
 
     "toolbar-button-hovered": {
-      include: "form-button-outlined",
+      include: "form-button",
       style: {
         backgroundColor: "default-button-hover-background"
       }

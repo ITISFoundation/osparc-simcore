@@ -66,7 +66,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "default-button-focus": "product-color",
     "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
     "default-button-disabled": "text-disabled",
-    "default-button-disabled-background": "transparent",
+    "default-button-disabled-background": "rgba(113, 157, 181, 0.04)",
     "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
     // shadows

@@ -205,8 +205,11 @@ qx.Theme.define("osparc.theme.Appearance", {
         if (states.hovered) {
           style.backgroundColor = "default-button-hover-background";
         }
-        if (states.actived) {
-          style.backgroundColor = "info";
+        if (states.pressed) {
+          style.backgroundColor = "default-button-active-background";
+        }
+        if (states.focused || states.selected || states.checked) {
+          style.backgroundColor = "default-button-active-background";
         }
         return style;
       }
@@ -219,10 +222,13 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "pb-study"
         };
         if (states.hovered) {
-          style.backgroundColor = "background-card-overlay";
+          style.backgroundColor = "default-button-hover-background";
         }
-        if (states.selected || states.checked) {
-          style.backgroundColor = "background-selected";
+        if (states.pressed) {
+          style.backgroundColor = "default-button-active-background";
+        }
+        if (states.focused || states.selected || states.checked) {
+          style.backgroundColor = "default-button-active-background";
         }
         return style;
       }
@@ -237,7 +243,12 @@ qx.Theme.define("osparc.theme.Appearance", {
         if (states.hovered) {
           style.backgroundColor = "default-button-hover-background";
         }
-
+        if (states.pressed) {
+          style.backgroundColor = "default-button-active-background";
+        }
+        if (states.focused || states.selected || states.checked) {
+          style.backgroundColor = "default-button-active-background";
+        }
         return style;
       }
     },
@@ -250,6 +261,12 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
         if (states.hovered) {
           style.backgroundColor = "default-button-hover-background";
+        }
+        if (states.pressed) {
+          style.backgroundColor = "default-button-active-background";
+        }
+        if (states.focused || states.selected || states.checked) {
+          style.backgroundColor = "default-button-active-background";
         }
         return style;
       }
@@ -264,12 +281,17 @@ qx.Theme.define("osparc.theme.Appearance", {
         if (states.hovered) {
           style.backgroundColor = "default-button-hover-background";
         }
+        if (states.pressed) {
+          style.backgroundColor = "default-button-active-background";
+        }
+        if (states.focused || states.selected || states.checked) {
+          style.backgroundColor = "default-button-active-background";
+        }
         return style;
       }
     },
 
     "pb-study/lock-status":  {
-      include: "pb-study",
       style: function() {
         return {
           decorator: "pb-locked",
@@ -279,7 +301,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
 
     "pb-template/lock-status":  {
-      include: "pb-template",
       style: function() {
         return {
           decorator: "pb-locked",
@@ -289,7 +310,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
 
     "pb-computational/lock-status":  {
-      include: "pb-computational",
       style: function() {
         return {
           decorator: "pb-locked",
@@ -299,7 +319,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
 
     "pb-dynamic/lock-status":  {
-      include: "pb-dynamic",
       style: function() {
         return {
           decorator: "pb-locked",
@@ -632,32 +651,37 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "toolbar-button": {
       alias: "atom",
-      include: "form-button-outlined",
       style: function(states) {
         // set the margin
+        let textColor = "default-button-text";
+        let decorator = "form-button";
+        let cursor = "pointer";
         let margin = [7, 0, 7, 10];
         if (states.left || states.middle || states.right) {
           margin = [7, 0, 7, 3];
         }
-        let decorator = "form-button";
-        let cursor = "pointer";
         if (states.hovered) {
+          textColor = "default-button-text-action";
           decorator = "form-button-hovered";
         }
         if (states.pressed) {
+          textColor = "default-button-text-action";
           decorator = "form-button-active";
         }
         if (states.focused) {
+          textColor = "default-button-focus";
           decorator = "form-button-focused";
         }
         if (states.selected || states.checked) {
-          cursor = "default";
+          textColor = "default-button-disabled";
+          cursor = "none";
           decorator = "form-button-checked";
         }
 
         decorator;
 
         return {
+          textColor: textColor,
           cursor: cursor,
           decorator: decorator,
           margin: margin
