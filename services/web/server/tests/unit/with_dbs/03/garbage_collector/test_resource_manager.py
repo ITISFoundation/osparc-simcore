@@ -174,6 +174,10 @@ def client(
 
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
+        autospec=True,
+    )
     return mocker.patch(
         "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
         return_value=None,

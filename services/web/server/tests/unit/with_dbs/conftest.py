@@ -680,7 +680,7 @@ def mock_progress_bar(mocker: MockerFixture) -> Any:
     mock_bar = MockedProgress()
 
     mocker.patch(
-        "simcore_service_webserver.director_v2._core_dynamic_services.ProgressBarData",
+        "simcore_service_webserver.dynamic_scheduler.api.ProgressBarData",
         autospec=True,
         return_value=mock_bar,
     )
