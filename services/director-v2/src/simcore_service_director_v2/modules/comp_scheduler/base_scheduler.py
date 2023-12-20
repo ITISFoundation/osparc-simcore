@@ -670,6 +670,8 @@ class BaseCompScheduler(ABC):
                 user_id, project_id, iteration, RunningState.ABORTED
             )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+        except ComputationalBackendNotConnectedError:
+            _logger.exception("Computational backend is not connected!")
 
     async def _schedule_tasks_to_stop(
         self,
