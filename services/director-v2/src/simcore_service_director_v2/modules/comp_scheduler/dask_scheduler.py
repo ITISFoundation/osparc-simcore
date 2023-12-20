@@ -115,7 +115,9 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
-            results: list[list[tuple[NodeID, str]] | Exception] = await asyncio.gather(
+            results: list[
+                list[tuple[NodeID, str]] | BaseException
+            ] = await asyncio.gather(
                 *(
                     client.send_computation_tasks(
                         user_id=user_id,
@@ -138,7 +140,7 @@ class DaskScheduler(BaseCompScheduler):
                         project_id, tasks_sent[0][0], tasks_sent[0][1]
                     )
                     for tasks_sent in results
-                    if not isinstance(tasks_sent, Exception)
+                    if not isinstance(tasks_sent, BaseException)
                 ]
             )
             return results
