@@ -38,6 +38,7 @@ from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
+    DaskClientAcquisisitonError,
     InvalidPipelineError,
     PipelineNotFoundError,
     SchedulerError,
@@ -666,6 +667,29 @@ class BaseCompScheduler(ABC):
             )
             await self._set_run_result(
                 user_id, project_id, iteration, RunningState.ABORTED
+            )
+            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+        except DaskClientAcquisisitonError:
+            _logger.exception(
+                "Unexpected error while connecting with computational backend, aborting pipeline"
+            )
+            dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
+            tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
+                project_id, dag
+            )
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            await asyncio.gather(
+                *(
+                    comp_tasks_repo.update_project_tasks_state(
+                        t.project_id,
+                        [t.node_id],
+                        RunningState.FAILED,
+                    )
+                    for t in tasks.values()
+                )
+            )
+            await self._set_run_result(
+                user_id, project_id, iteration, RunningState.FAILED
             )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
         except ComputationalBackendNotConnectedError:

@@ -23,6 +23,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
 
 from ...core.errors import (
+    ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
@@ -281,6 +282,8 @@ class DaskScheduler(BaseCompScheduler):
                                 "type": "runtime",
                             }
                         )
+                        if isinstance(result, ComputationalBackendNotConnectedError):
+                            simcore_platform_status = SimcorePlatformStatus.BAD
                     # we need to remove any invalid files in the storage
                     await clean_task_output_and_log_files_if_invalid(
                         self.db_engine, user_id, project_id, node_id
