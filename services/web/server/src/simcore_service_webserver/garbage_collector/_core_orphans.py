@@ -5,14 +5,16 @@ from typing import Any
 from aiohttp import web
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+    ServiceWasNotFoundError,
+)
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.users import UserRole
 
-from ..director_v2 import api
-from ..director_v2.exceptions import (
-    DirectorServiceError,
-    ServiceWaitingForManualIntervention,
-)
+from ..director_v2 import api as director_v2_api
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..projects.db import ProjectDBAPI
 from ..projects.projects_api import (
     get_workbench_node_ids_from_project_uuid,
@@ -46,13 +48,17 @@ async def _remove_single_service_if_orphan(
             f"{service_host=}",
         )
         try:
-            await api.stop_dynamic_service(
+            await dynamic_scheduler_api.stop_dynamic_service(
                 app,
-                service_uuid,
+                node_id=service_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=False,
             )
-        except DirectorServiceError as err:
+        except (
+            RPCServerError,
+            ServiceWaitingForManualInterventionError,
+            ServiceWasNotFoundError,
+        ) as err:
             _logger.warning("Error while stopping service: %s", err)
         return
 
@@ -105,15 +111,15 @@ async def _remove_single_service_if_orphan(
                 save_state = False
             # -------------------------------------------
 
-            with contextlib.suppress(ServiceWaitingForManualIntervention):
-                await api.stop_dynamic_service(
+            with contextlib.suppress(ServiceWaitingForManualInterventionError):
+                await dynamic_scheduler_api.stop_dynamic_service(
                     app,
-                    service_uuid,
-                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    node_id=service_uuid,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state=save_state,
                 )
 
-        except DirectorServiceError as err:
+        except (RPCServerError, ServiceWasNotFoundError) as err:
             _logger.warning("Error while stopping service: %s", err)
 
 
@@ -146,8 +152,8 @@ async def remove_orphaned_services(
 
     running_dynamic_services: list[dict[str, Any]] = []
     try:
-        running_dynamic_services = await api.list_dynamic_services(app)
-    except api.DirectorServiceError:
+        running_dynamic_services = await director_v2_api.list_dynamic_services(app)
+    except director_v2_api.DirectorServiceError:
         _logger.debug("Could not fetch list_dynamic_services")
 
     _logger.info(
