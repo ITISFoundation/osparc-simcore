@@ -47,7 +47,6 @@ COMPLETED_STATES: set[RunningState] = {
     RunningState.ABORTED,
     RunningState.SUCCESS,
     RunningState.FAILED,
-    RunningState.UNKNOWN,
 }
 
 
