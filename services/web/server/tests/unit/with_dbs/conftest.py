@@ -641,9 +641,9 @@ async def all_group(
 
 
 @pytest.fixture
-def mock_rabbitmq(mocker: MockerFixture) -> None:
+def mock_dynamic_scheduler_rabbitmq(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_webserver.director_v2._core_dynamic_services.get_rabbitmq_client",
+        "simcore_service_webserver.dynamic_scheduler.api.get_rabbitmq_client",
         autospec=True,
         return_value=AsyncMock(),
     )

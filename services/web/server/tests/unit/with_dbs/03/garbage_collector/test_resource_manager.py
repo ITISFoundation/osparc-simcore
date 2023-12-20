@@ -123,7 +123,7 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mock_progress_bar: Any,
 ) -> TestClient:
     cfg = deepcopy(app_cfg)

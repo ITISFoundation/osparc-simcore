@@ -759,7 +759,7 @@ async def test_close_project(
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     fake_services,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
@@ -1130,7 +1130,7 @@ async def test_open_shared_project_2_users_locked(
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table: None,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -1312,7 +1312,7 @@ async def test_open_shared_project_at_same_time(
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10

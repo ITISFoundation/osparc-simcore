@@ -54,7 +54,7 @@ async def test_delete_project(
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mock_progress_bar: Any,
 ):
     assert client.app
