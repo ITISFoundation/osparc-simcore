@@ -9,7 +9,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import NonNegativeFloat, parse_obj_as
+from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 
@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 # To avoid any side effects using the same timeout as the
 # aiohttp client that was calling into director-v2 from webserver
-_DEFAULT_LEGACY_TIMEOUT_S: Final[NonNegativeFloat] = 20
+_DEFAULT_LEGACY_TIMEOUT_S: Final[NonNegativeInt] = 20
 
 
 @log_decorator(_logger, level=logging.DEBUG)
