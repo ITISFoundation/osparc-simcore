@@ -35,7 +35,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     this.base(arguments);
 
     this.setSpacing(10);
-    this.setAppearance("sidepanel");
 
     this.__initDefault();
     this.__attachEventHandlers();
@@ -95,7 +94,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __createRadioButton: function(label, icon, widgetId, singalName) {
       const button = new qx.ui.toolbar.RadioButton(label);
-      // button.setIcon("@FontAwesome5Solid/"+icon+"/14");
       osparc.utils.Utils.setIdToWidget(button, widgetId);
       button.addListener("execute", () => {
         this.fireEvent(singalName);

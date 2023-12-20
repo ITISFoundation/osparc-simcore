@@ -36,7 +36,7 @@ from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_state_pulling
+from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
@@ -531,7 +531,7 @@ async def test_container_pull_input_ports(
     mock_nodeports: None,
 ):
     if inputs_pulling_enabled:
-        enable_inputs_state_pulling(app)
+        enable_inputs_pulling(app)
 
     async with periodic_task_result(
         client=client,

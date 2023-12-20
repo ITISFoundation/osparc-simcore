@@ -94,10 +94,16 @@ class ThinSidecarsClient(BaseThinClient):
     @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def patch_containers_ports_io(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        *,
+        enable_outputs: bool,
+        enable_inputs: bool,
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/io")
-        return await self.client.patch(url, json={"is_enabled": is_enabled})
+        return await self.client.patch(
+            url, json={"enable_outputs": enable_outputs, "enable_inputs": enable_inputs}
+        )
 
     @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
