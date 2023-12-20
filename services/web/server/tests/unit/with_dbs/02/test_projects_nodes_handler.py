@@ -22,6 +22,7 @@ from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
 from models_library.generics import Envelope
+from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
@@ -665,7 +666,7 @@ async def test_delete_node(
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
-                node_id,
+                node_id=NodeID(node_id),
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=False,
             )
