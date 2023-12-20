@@ -522,10 +522,10 @@ async def test_interactive_services_removed_after_logout(
                 f"--> Waiting for stop_dynamic_service with: {service['service_uuid']}, {expected_save_state=}",
             )
             mocked_director_v2_api[
-                "director_v2._core_dynamic_services.stop_dynamic_service"
+                "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_awaited_with(
                 app=client.app,
-                service_uuid=service["service_uuid"],
+                node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 progress=mock_progress_bar.sub_progress(1),
@@ -646,12 +646,12 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
             app=client.server.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            service_uuid=service["service_uuid"],
+            node_id=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
 
 
@@ -730,25 +730,23 @@ async def test_interactive_services_removed_per_project(
     calls = [
         call(
             app=client.server.app,
-            service_uuid=service1["service_uuid"],
+            node_id=service1["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
-    mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
-    ].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
 
     # disconnect websocket2
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic services are still around
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
@@ -757,25 +755,23 @@ async def test_interactive_services_removed_per_project(
     calls = [
         call(
             app=client.server.app,
-            service_uuid=service2["service_uuid"],
+            node_id=service2["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
         call(
             app=client.server.app,
-            service_uuid=service3["service_uuid"],
+            node_id=service3["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
-    mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
-    ].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
 
 
 @pytest.mark.xfail(
@@ -892,12 +888,12 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             app=client.server.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            service_uuid=service["service_uuid"],
+            node_id=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
 
     # this call is done async, so wait a bit here to ensure it is correctly done
