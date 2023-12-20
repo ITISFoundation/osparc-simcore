@@ -6,7 +6,7 @@ from models_library.api_schemas_directorv2.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...modules.rabbitmq import get_rabbitmq_client_from_request
+from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 
 
 class HealthCheckError(RuntimeError):

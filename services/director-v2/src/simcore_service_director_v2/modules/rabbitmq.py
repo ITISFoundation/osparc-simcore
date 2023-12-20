@@ -3,7 +3,6 @@ from functools import partial
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi.requests import Request
 from models_library.rabbitmq_messages import (
     CreditsLimit,
     WalletCreditsLimitReachedMessage,
@@ -72,10 +71,6 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
         msg = "RabbitMQ client is not available. Please check the configuration."
         raise ConfigurationError(msg)
     return cast(RabbitMQClient, app.state.rabbitmq_client)
-
-
-def get_rabbitmq_client_from_request(request: Request):
-    return get_rabbitmq_client(request.app)
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
