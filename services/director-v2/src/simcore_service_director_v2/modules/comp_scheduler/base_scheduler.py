@@ -77,9 +77,17 @@ _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 _MAX_WAITING_FOR_UNKNOWN_TIMEOUT_IN_MIN: Final[int] = 5
 
 
+@dataclass(frozen=True, slots=True)
+class SortedTasks:
+    started: list[CompTaskAtDB]
+    completed: list[CompTaskAtDB]
+    waiting: list[CompTaskAtDB]
+    potentially_lost: list[CompTaskAtDB]
+
+
 async def _triage_changed_tasks(
     changed_tasks: list[tuple[_Previous, _Current]]
-) -> tuple:
+) -> SortedTasks:
     started_tasks = [
         current
         for previous, current in changed_tasks
@@ -101,15 +109,21 @@ async def _triage_changed_tasks(
         if current.state in WAITING_FOR_START_STATES
     ]
 
-    if lost_or_momentarily_lost_tasks := [
+    lost_or_momentarily_lost_tasks = [
         current for _, current in changed_tasks if current.state is RunningState.UNKNOWN
-    ]:
+    ]
+    if lost_or_momentarily_lost_tasks:
         _logger.warning(
             "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
-            lost_or_momentarily_lost_tasks,
+            [t.node_id for t in lost_or_momentarily_lost_tasks],
         )
 
-    return (started_tasks, completed_tasks, waiting_for_resources_tasks)
+    return SortedTasks(
+        started_tasks,
+        completed_tasks,
+        waiting_for_resources_tasks,
+        lost_or_momentarily_lost_tasks,
+    )
 
 
 @dataclass(kw_only=True)
@@ -259,6 +273,11 @@ class BaseCompScheduler(ABC):
     ) -> RunningState:
         pipeline_state_from_tasks: RunningState = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
+        )
+        _logger.debug(
+            "pipeline %s is currently in %s",
+            f"{user_id=}_{project_id=}_{iteration=}",
+            f"{pipeline_state_from_tasks}",
         )
         await self._set_run_result(
             user_id, project_id, iteration, pipeline_state_from_tasks
@@ -463,11 +482,7 @@ class BaseCompScheduler(ABC):
             )
         )
 
-    async def _process_reverted_tasks(self, tasks: list[CompTaskAtDB]) -> None:
-        _logger.warning(
-            "Tasks were reverted, this should not happen! TIP: Check %s",
-            f"{[t.job_id for t in tasks]}",
-        )
+    async def _process_waiting_tasks(self, tasks: list[CompTaskAtDB]) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
@@ -501,33 +516,34 @@ class BaseCompScheduler(ABC):
         # NOT_STARTED (initial state) -> PUBLISHED (user press run/API call) -> PENDING -> WAITING_FOR_CLUSTER (cluster creation) ->
         # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing) -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
         # or ABORTED (user cancelled) or UNKNOWN (lost task - it might be transient, be careful with this one)
-        (
-            tasks_started,
-            tasks_stopped,
-            tasks_reverted,
-        ) = await _triage_changed_tasks(tasks_with_changed_states)
+        sorted_tasks = await _triage_changed_tasks(tasks_with_changed_states)
 
         # now process the tasks
-        if tasks_started:
+        if sorted_tasks.started:
             # NOTE: the dask-scheduler cannot differentiate between tasks that are effectively computing and
             # tasks that are only queued and accepted by a dask-worker.
             # tasks_started should therefore be mostly empty but for cases where
             # - dask Pub/Sub mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
             # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
-                tasks_started,
+                sorted_tasks.started,
                 user_id=user_id,
                 iteration=iteration,
                 run_metadata=pipeline_params.run_metadata,
             )
 
-        if tasks_stopped:
+        if sorted_tasks.completed:
             await self._process_completed_tasks(
-                user_id, tasks_stopped, iteration, pipeline_params=pipeline_params
+                user_id,
+                sorted_tasks.completed,
+                iteration,
+                pipeline_params=pipeline_params,
             )
 
-        if tasks_reverted:
-            await self._process_reverted_tasks(tasks_reverted)
+        if sorted_tasks.waiting or sorted_tasks.potentially_lost:
+            await self._process_waiting_tasks(
+                sorted_tasks.waiting + sorted_tasks.potentially_lost
+            )
 
     @abstractmethod
     async def _start_tasks(
