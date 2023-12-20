@@ -767,7 +767,7 @@ async def test_close_project(
     fake_dynamic_services = fake_services(number_services=5)
     assert len(fake_dynamic_services) == 5
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.list_dynamic_services"
+        "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
     # open project
@@ -806,13 +806,13 @@ async def test_close_project(
             ),
         ]
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.list_dynamic_services"
+            "dynamic_scheduler.api.list_dynamic_services"
         ].assert_has_calls(calls)
 
         calls = [
             call(
                 app=client.server.app,
-                service_uuid=service["service_uuid"],
+                node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
@@ -820,7 +820,7 @@ async def test_close_project(
             for service in fake_dynamic_services
         ]
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_has_calls(calls)
 
         # should not be callsed request_retrieve_dyn_service

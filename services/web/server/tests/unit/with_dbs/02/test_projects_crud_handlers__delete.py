@@ -62,7 +62,7 @@ async def test_delete_project(
     # DELETE /v0/projects/{project_id}
     fakes = fake_services(5)
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.list_dynamic_services"
+        "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fakes
 
     await _request_delete_project(client, user_project, expected.no_content)
@@ -80,13 +80,13 @@ async def test_delete_project(
         await tasks[0]
 
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.list_dynamic_services"
+            "dynamic_scheduler.api.list_dynamic_services"
         ].assert_called_once()
 
         expected_calls = [
             call(
                 app=client.app,
-                service_uuid=service["service_uuid"],
+                node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
@@ -94,7 +94,7 @@ async def test_delete_project(
             for service in fakes
         ]
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_has_calls(expected_calls)
 
         await assert_get_same_project_caller(client, user_project, web.HTTPNotFound)
