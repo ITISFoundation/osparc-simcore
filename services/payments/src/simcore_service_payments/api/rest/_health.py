@@ -4,6 +4,7 @@ from typing import Annotated
 import arrow
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
 from ...services.rabbitmq import get_rabbitmq_client_from_request
@@ -26,7 +27,6 @@ async def healthcheck(
 ) -> str:
     _logger.info("Checking rabbit health check %s", rabbitmq_client.healthy)
     if not rabbitmq_client.healthy:
-        msg = "RabbitMQ client is in a bad state!"
-        raise HealthCheckError(msg)
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     return f"{__name__}@{arrow.utcnow().isoformat()}"

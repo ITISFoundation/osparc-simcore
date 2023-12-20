@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_directorv2.health import HealthCheckGet
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
 from ...modules.rabbitmq import get_rabbitmq_client_from_request
@@ -22,8 +23,7 @@ async def check_service_health(
     ]
 ):
     if not rabbitmq_client.healthy:
-        msg = "RabbitMQ client is in a bad state!"
-        raise HealthCheckError(msg)
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     return {
         "timestamp": f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
