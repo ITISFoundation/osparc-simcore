@@ -1041,17 +1041,17 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
@@ -1061,12 +1061,12 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 

@@ -662,17 +662,19 @@ async def test_delete_node(
 
         if node_id in running_dy_services:
             mocked_director_v2_api[
-                "director_v2.api.stop_dynamic_service"
+                "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
                 node_id,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=False,
             )
-            mocked_director_v2_api["director_v2.api.stop_dynamic_service"].reset_mock()
+            mocked_director_v2_api[
+                "dynamic_scheduler.api.stop_dynamic_service"
+            ].reset_mock()
         else:
             mocked_director_v2_api[
-                "director_v2.api.stop_dynamic_service"
+                "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_not_called()
 
         # ensure the node is gone
@@ -865,11 +867,11 @@ async def test_stop_node(
     )
     if error is None:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
 
 

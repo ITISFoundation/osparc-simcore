@@ -607,19 +607,25 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # reconnect websocket
     sio2 = await socketio_client_factory(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
 
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # now really disconnect
     await sio2.disconnect()
     await sio2.wait()
@@ -710,7 +716,9 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
@@ -813,13 +821,17 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_has_calls(
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_has_calls(
         [call(client.server.app, service["service_uuid"], expected_save_state)]
     )
 
