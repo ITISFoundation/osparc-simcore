@@ -14,12 +14,12 @@ from pydantic import BaseModel, Extra
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..resource_usage import api as rut_api
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._common_models import RequestContext
 from ._nodes_handlers import NodePathParams
@@ -141,6 +141,21 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
         path_params.node_id,
         path_params.pricing_plan_id,
         path_params.pricing_unit_id,
+    )
+
+    pricing_unit_get = await rut_api.get_pricing_plan_unit(
+        request.app,
+        req_ctx.product_name,
+        path_params.pricing_plan_id,
+        path_params.pricing_unit_id,
+    )
+    await projects_api.update_project_node_resources_from_hardware_info(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+        product_name=req_ctx.product_name,
+        hardware_info=pricing_unit_get.specific_info,
     )
 
     return envelope_json_response(None, web.HTTPNoContent)

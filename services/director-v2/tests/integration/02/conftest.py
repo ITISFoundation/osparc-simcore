@@ -81,9 +81,12 @@ def service_resources() -> ServiceResourcesDict:
 @pytest.fixture
 def mock_resource_usage_tracker(mocker: MockerFixture) -> None:
     base_module = "simcore_service_director_v2.modules.resource_usage_tracker_client"
+    service_pricing_plan = ServicePricingPlanGet.parse_obj(
+        ServicePricingPlanGet.Config.schema_extra["examples"][1]
+    )
+    for unit in service_pricing_plan.pricing_units:
+        unit.specific_info.aws_ec2_instances.clear()
     mocker.patch(
         f"{base_module}.ResourceUsageTrackerClient.get_default_service_pricing_plan",
-        return_value=ServicePricingPlanGet.parse_obj(
-            ServicePricingPlanGet.Config.schema_extra["examples"][0]
-        ),
+        return_value=service_pricing_plan,
     )

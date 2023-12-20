@@ -25,9 +25,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
-from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
-    DynamicServicesSchedulerSettings,
-)
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -39,6 +36,7 @@ from tenacity.wait import wait_fixed
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
+from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
