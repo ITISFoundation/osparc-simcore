@@ -235,7 +235,7 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_task_result(
         self,
         task: CompTaskAtDB,
-        result: Exception | TaskOutputData,
+        result: BaseException | TaskOutputData,
         run_metadata: RunMetadataDict,
         iteration: Iteration,
     ) -> None:

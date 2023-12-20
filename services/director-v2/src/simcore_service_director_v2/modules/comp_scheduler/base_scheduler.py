@@ -532,18 +532,16 @@ class BaseCompScheduler(ABC):
                 run_metadata=pipeline_params.run_metadata,
             )
 
-        if sorted_tasks.completed:
+        if sorted_tasks.completed or sorted_tasks.potentially_lost:
             await self._process_completed_tasks(
                 user_id,
-                sorted_tasks.completed,
+                sorted_tasks.completed + sorted_tasks.potentially_lost,
                 iteration,
                 pipeline_params=pipeline_params,
             )
 
-        if sorted_tasks.waiting or sorted_tasks.potentially_lost:
-            await self._process_waiting_tasks(
-                sorted_tasks.waiting + sorted_tasks.potentially_lost
-            )
+        if sorted_tasks.waiting:
+            await self._process_waiting_tasks(sorted_tasks.waiting)
 
     @abstractmethod
     async def _start_tasks(
