@@ -354,6 +354,7 @@ async def test_stop_dynamic_service(
         node_id=node_id,
         simcore_user_agent=simcore_user_agent,
         save_state=save_state,
+        timeout_s=5,
     )
     assert result is None
 
@@ -364,6 +365,7 @@ async def test_stop_dynamic_service(
             node_id=node_id_not_found,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            timeout_s=5,
         )
 
     # service awaits for manual intervention
@@ -373,6 +375,7 @@ async def test_stop_dynamic_service(
             node_id=node_id_manual_intervention,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            timeout_s=5,
         )
 
 
@@ -404,4 +407,5 @@ async def test_stop_dynamic_service_serializes_generic_errors(
             node_id=node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            timeout_s=5,
         )
