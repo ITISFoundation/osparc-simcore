@@ -30,6 +30,9 @@ class ErrorDict(_ErrorDictRequired, total=False):
     ctx: dict[str, Any]
 
 
+RABBITMQ_CLIENT_UNHEALTHY_MSG = "RabbitMQ client is in a bad state!"
+
+
 # NOTE: Here we do not just import as 'from pydantic.error_wrappers import ErrorDict'
 # because that only works if TYPE_CHECKING=True.
 __all__ = ("ErrorDict",)

@@ -37,7 +37,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ...api.dependencies.database import get_repository
-from ...api.dependencies.rabbitmq import get_rabbitmq_client
+from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
@@ -330,7 +330,9 @@ async def update_projects_networks(
     ],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
-    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
+    rabbitmq_client: Annotated[
+        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
+    ],
 ) -> None:
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,

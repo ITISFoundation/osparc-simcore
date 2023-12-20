@@ -2,6 +2,7 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi.requests import Request
 from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.rabbitmq import (
     RabbitMQClient,
@@ -54,6 +55,10 @@ def setup_rabbitmq(app: FastAPI) -> None:
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     assert app.state.rabbitmq_client  # nosec
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+def get_rabbitmq_client_from_request(request: Request):
+    return get_rabbitmq_client(request.app)
 
 
 def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
