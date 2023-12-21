@@ -207,24 +207,26 @@ async def test_containers_docker_status_api_error(
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == {}
 
 
-async def test_disable_service_ports_io(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
+@pytest.mark.parametrize("enable_outputs", [True, False])
+@pytest.mark.parametrize("enable_inputs", [True, False])
+async def test_toggle_service_ports_io(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    enable_outputs: bool,
+    enable_inputs: bool,
 ) -> None:
     with get_patched_client(
         "patch_containers_ports_io",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
-        assert await client.disable_service_ports_io(dynamic_sidecar_endpoint) is None
-
-
-async def test_enable_service_ports_io(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
-    with get_patched_client(
-        "patch_containers_ports_io",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert await client.enable_service_ports_io(dynamic_sidecar_endpoint) is None
+        assert (
+            await client.toggle_service_ports_io(
+                dynamic_sidecar_endpoint,
+                enable_outputs=enable_outputs,
+                enable_inputs=enable_inputs,
+            )
+            is None
+        )
 
 
 @pytest.mark.parametrize("outputs_labels", [{}, {"ok": "data"}])

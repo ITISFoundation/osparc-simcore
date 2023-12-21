@@ -69,17 +69,19 @@ def _create_network_aliases(network_name: str) -> list[str]:
     return [f"alias_{i}_{network_name}" for i in range(10)]
 
 
-async def _assert_enable_ports_io(test_client: TestClient) -> None:
+async def _assert_enable_output_ports(test_client: TestClient) -> None:
     response = await test_client.patch(
-        f"/{API_VTAG}/containers/ports/io", json={"is_enabled": True}
+        f"/{API_VTAG}/containers/ports/io",
+        json={"enable_outputs": True, "enable_inputs": False},
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 
 
-async def _assert_disable_ports_io(test_client: TestClient) -> None:
+async def _assert_disable_output_ports(test_client: TestClient) -> None:
     response = await test_client.patch(
-        f"/{API_VTAG}/containers/ports/io", json={"is_enabled": False}
+        f"/{API_VTAG}/containers/ports/io",
+        json={"enable_outputs": False, "enable_inputs": False},
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
@@ -534,20 +536,20 @@ async def test_outputs_watcher_disabling(
     await _create_port_key_events(is_propagation_enabled=False)
     _assert_events_generated(expected_events=0)
 
-    # after enabling new vents will be generated
-    await _assert_enable_ports_io(test_client)
+    # after enabling new events will be generated
+    await _assert_enable_output_ports(test_client)
     _assert_events_generated(expected_events=0)
     await _create_port_key_events(is_propagation_enabled=True)
     _assert_events_generated(expected_events=1)
 
     # disabling again, no longer generate events
-    await _assert_disable_ports_io(test_client)
+    await _assert_disable_output_ports(test_client)
     _assert_events_generated(expected_events=1)
     await _create_port_key_events(is_propagation_enabled=False)
     _assert_events_generated(expected_events=1)
 
     # enabling once more time, events are once again generated
-    await _assert_enable_ports_io(test_client)
+    await _assert_enable_output_ports(test_client)
     _assert_events_generated(expected_events=1)
     for i in range(10):
         await _create_port_key_events(is_propagation_enabled=True)
@@ -563,7 +565,7 @@ async def test_container_create_outputs_dirs(
     mounted_volumes = AppState(test_client.application).mounted_volumes
 
     # by default outputs-watcher it is disabled
-    await _assert_enable_ports_io(test_client)
+    await _assert_enable_output_ports(test_client)
     await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
 
     assert mock_event_filter_enqueue.call_count == 0

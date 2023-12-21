@@ -10,7 +10,7 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..modules.inputs import disable_inputs_state_pulling, enable_inputs_state_pulling
+from ..modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import (
     OutputsContext,
@@ -27,7 +27,8 @@ class CreateDirsRequestItem(BaseModel):
 
 
 class PatchPortsIOItem(BaseModel):
-    is_enabled: bool
+    enable_outputs: bool
+    enable_inputs: bool
 
 
 class _BaseNetworkItem(BaseModel):
@@ -58,16 +59,15 @@ async def toggle_ports_io(
     patch_ports_io_item: PatchPortsIOItem,
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> None:
-    """enables or disables the following:
-    - output ports pushing data
-    - inputs ports from pulling data
-    """
-    if patch_ports_io_item.is_enabled:
+    if patch_ports_io_item.enable_outputs:
         await enable_event_propagation(app)
-        enable_inputs_state_pulling(app)
     else:
         await disable_event_propagation(app)
-        disable_inputs_state_pulling(app)
+
+    if patch_ports_io_item.enable_inputs:
+        enable_inputs_pulling(app)
+    else:
+        disable_inputs_pulling(app)
 
 
 @router.post(

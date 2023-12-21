@@ -372,7 +372,6 @@
           "containers"
         ],
         "summary": "Enable/disable ports i/o",
-        "description": "enables or disables the following:\n- output ports pushing data\n- inputs ports from pulling data",
         "operationId": "toggle_ports_io_v1_containers_ports_io_patch",
         "requestBody": {
           "content": {
@@ -1060,14 +1059,19 @@
       },
       "PatchPortsIOItem": {
         "properties": {
-          "is_enabled": {
+          "enable_outputs": {
             "type": "boolean",
-            "title": "Is Enabled"
+            "title": "Enable Outputs"
+          },
+          "enable_inputs": {
+            "type": "boolean",
+            "title": "Enable Inputs"
           }
         },
         "type": "object",
         "required": [
-          "is_enabled"
+          "enable_outputs",
+          "enable_inputs"
         ],
         "title": "PatchPortsIOItem"
       },
