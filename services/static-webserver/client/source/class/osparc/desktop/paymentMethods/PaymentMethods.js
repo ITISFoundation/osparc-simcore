@@ -24,19 +24,15 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     this._setLayout(new qx.ui.layout.VBox(20));
 
     const store = osparc.store.Store.getInstance();
-    store.bind("contextWallet", this, "contextWallet");
-
-    this.__buildLayout()
+    store.getGroupsMe()
+      .then(personalGroup => {
+        const personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid)
+        this.__personalWalletId = personalWallet.getWalletId()
+        this.__buildLayout()
+      });
   },
 
   properties: {
-    contextWallet: {
-      check: "osparc.data.model.Wallet",
-      init: null,
-      nullable: false,
-      // apply: "__buildLayout"
-    },
-
     paymentMethods: {
       check: "Array",
       init: [],
@@ -88,11 +84,11 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __addNewPaymentMethod: function() {
-      const walletId = this.getContextWallet().getWalletId();
+      const walletId = this.__personalWalletId;
       if (walletId) {
         const params = {
           url: {
-            walletId: walletId
+            walletId
           }
         };
         osparc.data.Resources.fetch("paymentMethods", "init", params)
@@ -113,7 +109,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       // inform backend
       const params = {
         url: {
-          walletId: this.getContextWallet().getWalletId(),
+          walletId: this.__personalWalletId,
           paymentMethodId
         }
       };
@@ -146,7 +142,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     __fetchPaymentMethods: function() {
       this.__fetchingMsg.setVisibility("visible");
-      const walletId = this.getContextWallet().getWalletId();
+      const walletId = this.__personalWalletId;
       const params = {
         url: {
           walletId
