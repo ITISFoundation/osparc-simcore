@@ -204,9 +204,6 @@ def expected_dynamic_sidecar_spec(
             f"{to_simcore_runtime_docker_label_key('product-name')}": "osparc",
             f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": "python/test",
             f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "test_swarm_name",
-            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: hardware_info.aws_ec2_instances[
-                0
-            ],
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         "networks": [{"Target": "mocked_swarm_network_id"}],
@@ -376,7 +373,12 @@ def expected_dynamic_sidecar_spec(
                     },
                 ],
             },
-            "Placement": {"Constraints": ["node.platform.os == linux"]},
+            "Placement": {
+                "Constraints": [
+                    f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={hardware_info.aws_ec2_instances[0]}",
+                    "node.platform.os == linux",
+                ]
+            },
             "Resources": {
                 "Limits": {"MemoryBytes": 8589934592, "NanoCPUs": 4000000000},
                 "Reservations": {

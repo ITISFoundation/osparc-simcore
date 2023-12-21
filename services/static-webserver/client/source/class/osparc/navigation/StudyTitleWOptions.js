@@ -77,10 +77,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           optionsMenu.add(this.getChildControl("study-menu-info"));
           optionsMenu.add(this.getChildControl("study-menu-download-logs"));
           control = new qx.ui.form.MenuButton().set({
+            appearance: "fab-button",
             menu: optionsMenu,
             icon: "@FontAwesome5Solid/ellipsis-v/14",
-            width: 28,
-            height: 28,
             allowGrowY: false
           });
           this._add(control);

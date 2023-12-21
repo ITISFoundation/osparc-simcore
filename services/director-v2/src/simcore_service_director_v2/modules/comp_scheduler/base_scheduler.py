@@ -38,6 +38,7 @@ from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
+    DaskClientAcquisisitonError,
     InvalidPipelineError,
     PipelineNotFoundError,
     SchedulerError,
@@ -76,9 +77,17 @@ _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 
 
+@dataclass(frozen=True, slots=True)
+class SortedTasks:
+    started: list[CompTaskAtDB]
+    completed: list[CompTaskAtDB]
+    waiting: list[CompTaskAtDB]
+    potentially_lost: list[CompTaskAtDB]
+
+
 async def _triage_changed_tasks(
     changed_tasks: list[tuple[_Previous, _Current]]
-) -> tuple:
+) -> SortedTasks:
     started_tasks = [
         current
         for previous, current in changed_tasks
@@ -100,7 +109,21 @@ async def _triage_changed_tasks(
         if current.state in WAITING_FOR_START_STATES
     ]
 
-    return (started_tasks, completed_tasks, waiting_for_resources_tasks)
+    lost_or_momentarily_lost_tasks = [
+        current for _, current in changed_tasks if current.state is RunningState.UNKNOWN
+    ]
+    if lost_or_momentarily_lost_tasks:
+        _logger.warning(
+            "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
+            [t.node_id for t in lost_or_momentarily_lost_tasks],
+        )
+
+    return SortedTasks(
+        started_tasks,
+        completed_tasks,
+        waiting_for_resources_tasks,
+        lost_or_momentarily_lost_tasks,
+    )
 
 
 @dataclass(kw_only=True)
@@ -250,6 +273,11 @@ class BaseCompScheduler(ABC):
     ) -> RunningState:
         pipeline_state_from_tasks: RunningState = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
+        )
+        _logger.debug(
+            "pipeline %s is currently in %s",
+            f"{user_id=}_{project_id=}_{iteration=}",
+            f"{pipeline_state_from_tasks}",
         )
         await self._set_run_result(
             user_id, project_id, iteration, pipeline_state_from_tasks
@@ -454,11 +482,7 @@ class BaseCompScheduler(ABC):
             )
         )
 
-    async def _process_reverted_tasks(self, tasks: list[CompTaskAtDB]) -> None:
-        _logger.warning(
-            "Tasks were reverted, this should not happen! TIP: Check %s",
-            f"{[t.job_id for t in tasks]}",
-        )
+    async def _process_waiting_tasks(self, tasks: list[CompTaskAtDB]) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
@@ -488,34 +512,36 @@ class BaseCompScheduler(ABC):
         tasks_with_changed_states = await self._get_changed_tasks_from_backend(
             user_id, tasks_inprocess, pipeline_params
         )
-
-        (
-            tasks_started,
-            tasks_stopped,
-            tasks_reverted,
-        ) = await _triage_changed_tasks(tasks_with_changed_states)
+        # NOTE: typical states a task goes through
+        # NOT_STARTED (initial state) -> PUBLISHED (user press run/API call) -> PENDING -> WAITING_FOR_CLUSTER (cluster creation) ->
+        # PENDING -> WAITING_FOR_RESOURCES (workers creation or missing) -> PENDING -> STARTED (worker started processing the task) -> SUCCESS/FAILED
+        # or ABORTED (user cancelled) or UNKNOWN (lost task - it might be transient, be careful with this one)
+        sorted_tasks = await _triage_changed_tasks(tasks_with_changed_states)
 
         # now process the tasks
-        if tasks_started:
+        if sorted_tasks.started:
             # NOTE: the dask-scheduler cannot differentiate between tasks that are effectively computing and
             # tasks that are only queued and accepted by a dask-worker.
             # tasks_started should therefore be mostly empty but for cases where
             # - dask Pub/Sub mechanism failed, the tasks goes from PENDING -> SUCCESS/FAILED/ABORTED without STARTED
             # - the task finished so fast that the STARTED state was skipped between 2 runs of the dv-2 comp scheduler
             await self._process_started_tasks(
-                tasks_started,
+                sorted_tasks.started,
                 user_id=user_id,
                 iteration=iteration,
                 run_metadata=pipeline_params.run_metadata,
             )
 
-        if tasks_stopped:
+        if sorted_tasks.completed or sorted_tasks.potentially_lost:
             await self._process_completed_tasks(
-                user_id, tasks_stopped, iteration, pipeline_params=pipeline_params
+                user_id,
+                sorted_tasks.completed + sorted_tasks.potentially_lost,
+                iteration,
+                pipeline_params=pipeline_params,
             )
 
-        if tasks_reverted:
-            await self._process_reverted_tasks(tasks_reverted)
+        if sorted_tasks.waiting:
+            await self._process_waiting_tasks(sorted_tasks.waiting)
 
     @abstractmethod
     async def _start_tasks(
@@ -570,9 +596,9 @@ class BaseCompScheduler(ABC):
             f"{iteration=}",
             f"{user_id=}",
         )
-
+        dag: nx.DiGraph = nx.DiGraph()
         try:
-            dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
+            dag = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(
                 user_id, project_id, iteration, dag, pipeline_params=pipeline_params
@@ -603,10 +629,12 @@ class BaseCompScheduler(ABC):
             await self._send_running_tasks_heartbeat(
                 user_id, project_id, iteration, dag
             )
+
             # 6. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
                 user_id, project_id, iteration, comp_tasks
             )
+
             # 7. Are we done scheduling that pipeline?
             if not dag.nodes() or pipeline_result in COMPLETED_STATES:
                 # there is nothing left, the run is completed, we're done here
@@ -635,6 +663,25 @@ class BaseCompScheduler(ABC):
                 user_id, project_id, iteration, RunningState.ABORTED
             )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+        except DaskClientAcquisisitonError:
+            _logger.exception(
+                "Unexpected error while connecting with computational backend, aborting pipeline"
+            )
+            tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
+                project_id, dag
+            )
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            await comp_tasks_repo.update_project_tasks_state(
+                project_id,
+                [t.node_id for t in tasks.values()],
+                RunningState.FAILED,
+            )
+            await self._set_run_result(
+                user_id, project_id, iteration, RunningState.FAILED
+            )
+            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+        except ComputationalBackendNotConnectedError:
+            _logger.exception("Computational backend is not connected!")
 
     async def _schedule_tasks_to_stop(
         self,
@@ -819,11 +866,13 @@ class BaseCompScheduler(ABC):
                     self.db_engine
                 ).update_project_tasks_state(
                     project_id,
-                    list(comp_tasks.keys()),
+                    [NodeID(idstr) for idstr in comp_tasks],
                     RunningState.FAILED,
                     optional_progress=1.0,
                     optional_stopped=arrow.utcnow().datetime,
                 )
+                for task in comp_tasks.values():
+                    task.state = RunningState.FAILED
                 msg = "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
                 _logger.error(msg)
                 await publish_project_log(
