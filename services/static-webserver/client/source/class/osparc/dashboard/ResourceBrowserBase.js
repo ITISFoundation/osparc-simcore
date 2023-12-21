@@ -404,7 +404,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       moreOpts.addListener("openStudy", e => {
         const openCB = () => win.close();
-        const studyId = e.getData();
+        const studyId = e.getData()["uuid"];
         this._startStudyById(studyId, openCB, null);
       });
       moreOpts.addListener("openTemplate", e => {
