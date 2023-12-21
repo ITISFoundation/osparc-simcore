@@ -23,6 +23,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
 
 from ...core.errors import (
+    ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
@@ -115,7 +116,9 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
-            results: list[list[tuple[NodeID, str]] | Exception] = await asyncio.gather(
+            results: list[
+                list[tuple[NodeID, str]] | BaseException
+            ] = await asyncio.gather(
                 *(
                     client.send_computation_tasks(
                         user_id=user_id,
@@ -138,7 +141,7 @@ class DaskScheduler(BaseCompScheduler):
                         project_id, tasks_sent[0][0], tasks_sent[0][1]
                     )
                     for tasks_sent in results
-                    if not isinstance(tasks_sent, Exception)
+                    if not isinstance(tasks_sent, BaseException)
                 ]
             )
             return results
@@ -233,7 +236,7 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_task_result(
         self,
         task: CompTaskAtDB,
-        result: Exception | TaskOutputData,
+        result: BaseException | TaskOutputData,
         run_metadata: RunMetadataDict,
         iteration: Iteration,
     ) -> None:
@@ -279,6 +282,8 @@ class DaskScheduler(BaseCompScheduler):
                                 "type": "runtime",
                             }
                         )
+                        if isinstance(result, ComputationalBackendNotConnectedError):
+                            simcore_platform_status = SimcorePlatformStatus.BAD
                     # we need to remove any invalid files in the storage
                     await clean_task_output_and_log_files_if_invalid(
                         self.db_engine, user_id, project_id, node_id
