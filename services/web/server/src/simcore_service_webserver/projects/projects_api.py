@@ -278,7 +278,7 @@ _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
     float
 ] = 0.1  # NOTE: machines always have less available RAM than advertised
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "1GiB")
-_CPUS_SAFE_MARGIN: Final[float] = 1.2
+_CPUS_SAFE_MARGIN: Final[float] = 1.4
 _MIN_NUM_CPUS: Final[float] = 0.5
 
 
