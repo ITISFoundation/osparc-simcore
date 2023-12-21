@@ -58,13 +58,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       });
       this._add(this.__introLabel);
 
-      this.__listContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        allowStretchY: true
-      });
-      this._add(this.__listContainer, {
-        flex: 1
-      });
-
+      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10))
       this.__addPaymentMethodBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("Add Payment Method"),
@@ -72,7 +66,23 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         allowGrowX: false
       });
       this.__addPaymentMethodBtn.addListener("execute", () => this.__addNewPaymentMethod(), this);
-      this._add(this.__addPaymentMethodBtn);
+      buttonContainer.add(this.__addPaymentMethodBtn);
+      this.__fetchingMsg = new qx.ui.basic.Atom().set({
+        label: this.tr("Fetching Payment Methods"),
+        icon: "@FontAwesome5Solid/circle-notch/12",
+        font: "text-14",
+        visibility: "excluded"
+      });
+      this.__fetchingMsg.getChildControl("icon").getContentElement().addClass("rotate");
+      buttonContainer.add(this.__fetchingMsg);
+      this._add(buttonContainer);
+
+      this.__listContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        allowStretchY: true
+      });
+      this._add(this.__listContainer, {
+        flex: 1
+      });
 
       this.__fetchPaymentMethods()
     },
@@ -135,16 +145,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __fetchPaymentMethods: function() {
-      this.__listContainer.removeAll();
-
-      const fetchingLabel = new qx.ui.basic.Atom().set({
-        label: this.tr("Fetching Payment Methods"),
-        icon: "@FontAwesome5Solid/circle-notch/12",
-        font: "text-14"
-      });
-      fetchingLabel.getChildControl("icon").getContentElement().addClass("rotate");
-      this.__listContainer.add(fetchingLabel);
-
+      this.__fetchingMsg.setVisibility("visible");
       const walletId = this.getContextWallet().getWalletId();
       const params = {
         url: {
@@ -167,6 +168,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
             }));
           }
         })
+        .finally(() => this.__fetchingMsg.setVisibility("excluded"))
         .catch(err => console.error(err));
     },
 
