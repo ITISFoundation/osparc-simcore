@@ -11,7 +11,7 @@ def instrument_app(app: FastAPI):
     @app.get(
         "/metrics",
         response_class=PlainTextResponse,
-        include_in_schema=True,
+        include_in_schema=False,
     )
     def _metrics():
         return PlainTextResponse(generate_latest())
