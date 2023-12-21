@@ -11,7 +11,7 @@ from servicelib.async_utils import run_sequentially_in_context
 from ..._client_rpc import RabbitMQRPCClient
 from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 
-_TTL_CACHE_ON_CLUSTERS_S: Final[int] = 15
+_TTL_CACHE_ON_CLUSTERS_S: Final[int] = 5
 
 
 @run_sequentially_in_context(target_args=["user_id", "wallet_id"])
