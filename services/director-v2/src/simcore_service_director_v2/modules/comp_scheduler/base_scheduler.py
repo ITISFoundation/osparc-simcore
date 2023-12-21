@@ -597,7 +597,7 @@ class BaseCompScheduler(ABC):
             f"{iteration=}",
             f"{user_id=}",
         )
-
+        dag: nx.DiGraph = nx.DiGraph()
         try:
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
@@ -673,20 +673,14 @@ class BaseCompScheduler(ABC):
             _logger.exception(
                 "Unexpected error while connecting with computational backend, aborting pipeline"
             )
-            dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
                 project_id, dag
             )
             comp_tasks_repo = CompTasksRepository(self.db_engine)
-            await asyncio.gather(
-                *(
-                    comp_tasks_repo.update_project_tasks_state(
-                        t.project_id,
-                        [t.node_id],
-                        RunningState.FAILED,
-                    )
-                    for t in tasks.values()
-                )
+            await comp_tasks_repo.update_project_tasks_state(
+                project_id,
+                [t.node_id for t in tasks.values()],
+                RunningState.FAILED,
             )
             await self._set_run_result(
                 user_id, project_id, iteration, RunningState.FAILED
