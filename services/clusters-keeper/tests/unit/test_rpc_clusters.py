@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 import datetime
 from dataclasses import dataclass
 from unittest.mock import MagicMock
@@ -135,3 +136,26 @@ async def test_get_or_create_cluster(
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
 
     assert created_cluster == returned_cluster
+
+
+async def test_get_or_create_cluster_massive_calls(
+    _base_configuration: None,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    num_calls = 2000
+    results = await asyncio.gather(
+        *(
+            get_or_create_cluster(
+                clusters_keeper_rabbitmq_rpc_client,
+                user_id=user_id,
+                wallet_id=wallet_id,
+            )
+            for i in range(num_calls)
+        )
+    )
+
+    assert results
+    assert all(isinstance(response, OnDemandCluster) for response in results)
