@@ -1,8 +1,5 @@
-from typing import Annotated
-
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from prometheus_client import generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -16,5 +13,5 @@ def instrument_app(app: FastAPI):
         response_class=PlainTextResponse,
         include_in_schema=True,
     )
-    def _metrics(credentials: Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]):
+    def _metrics():
         return PlainTextResponse(generate_latest())
