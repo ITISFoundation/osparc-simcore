@@ -24,10 +24,10 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__addHeader("Personal")
-    this.__personalWalletsModel = this.__addWalletsList({ height: "25%" })
+    this.__personalWalletsModel = this.__addWalletsList()
 
     this.__addHeader("Shared with me")
-    this.__sharedWalletsModel = this.__addWalletsList({ height: "75%" })
+    this.__sharedWalletsModel = this.__addWalletsList({ flex: 1 })
 
     this.loadWallets();
   },
@@ -68,7 +68,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       const walletsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
-        backgroundColor: "transparent"
+        backgroundColor: "transparent",
+        height: null
       });
       walletsUIList.addListener("changeSelection", e => this.__walletSelected(e.getData()), this);
       const walletsModel = new qx.data.Array();
