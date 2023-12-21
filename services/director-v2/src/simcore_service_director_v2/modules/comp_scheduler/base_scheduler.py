@@ -75,7 +75,6 @@ _logger = logging.getLogger(__name__)
 _Previous = CompTaskAtDB
 _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
-_MAX_WAITING_FOR_UNKNOWN_TIMEOUT_IN_MIN: Final[int] = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -635,11 +634,6 @@ class BaseCompScheduler(ABC):
             pipeline_result = await self._update_run_result_from_tasks(
                 user_id, project_id, iteration, comp_tasks
             )
-            # 7. timeout if we have tasks in UNKNOWN task for too long
-            if pipeline_result is RunningState.UNKNOWN:
-                comp_tasks = await self._timeout_if_unknown_state_for_too_long(
-                    user_id, project_id, iteration, comp_tasks
-                )
 
             # 7. Are we done scheduling that pipeline?
             if not dag.nodes() or pipeline_result in COMPLETED_STATES:
@@ -849,46 +843,6 @@ class BaseCompScheduler(ABC):
             for task in comp_tasks.values():
                 task.state = RunningState.FAILED
 
-        return comp_tasks
-
-    async def _timeout_if_unknown_state_for_too_long(
-        self,
-        user_id: UserID,
-        project_id: ProjectID,
-        iteration: Iteration,
-        comp_tasks: dict[NodeIDStr, CompTaskAtDB],
-    ) -> dict[NodeIDStr, CompTaskAtDB]:
-        comp_runs_repo = CompRunsRepository.instance(self.db_engine)
-        comp_run = await comp_runs_repo.get(user_id, project_id, iteration)
-        latest_modified_comp_run = comp_run.modified
-        if (arrow.utcnow().datetime - latest_modified_comp_run) > datetime.timedelta(
-            minutes=_MAX_WAITING_FOR_UNKNOWN_TIMEOUT_IN_MIN
-        ):
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
-                project_id,
-                [
-                    NodeID(idstr)
-                    for idstr, task in comp_tasks.items()
-                    if task.state is RunningState.UNKNOWN
-                ],
-                RunningState.FAILED,
-                optional_progress=1.0,
-                optional_stopped=arrow.utcnow().datetime,
-            )
-            for task in comp_tasks.values():
-                if task.state is RunningState.UNKNOWN:
-                    task.state = RunningState.FAILED
-            msg = "Timed-out waiting for tasks in cluster! Cluster probably lost tasks! Please try again and/or contact Osparc support."
-            _logger.error(msg)
-            await publish_project_log(
-                self.rabbitmq_client,
-                user_id,
-                project_id,
-                log=msg,
-                log_level=logging.ERROR,
-            )
         return comp_tasks
 
     async def _timeout_if_waiting_for_cluster_too_long(
