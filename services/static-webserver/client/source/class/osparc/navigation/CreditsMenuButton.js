@@ -50,9 +50,8 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
 
     this.addListener("execute", () => {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
       if (walletsEnabled) {
-        myAccountWindow.openOverview();
+        osparc.desktop.credits.BillingCenterWindow.openWindow();
       }
     }, this);
   },
