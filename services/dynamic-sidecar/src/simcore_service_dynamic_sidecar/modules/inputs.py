@@ -8,12 +8,12 @@ class InputsState(BaseModel):
     )
 
 
-def enable_inputs_state_pulling(app: FastAPI) -> None:
+def enable_inputs_pulling(app: FastAPI) -> None:
     inputs_state: InputsState = app.state.inputs_state
     inputs_state.inputs_pulling_enabled = True
 
 
-def disable_inputs_state_pulling(app: FastAPI) -> None:
+def disable_inputs_pulling(app: FastAPI) -> None:
     inputs_state: InputsState = app.state.inputs_state
     inputs_state.inputs_pulling_enabled = False
 

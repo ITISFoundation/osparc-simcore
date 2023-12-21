@@ -754,21 +754,24 @@ class ProjectDBAPI(BaseProjectDB):
         project_id: ProjectID,
         node_id: NodeID,
         product_name: str,
+        *,
+        check_update_allowed: bool,
         **values,
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            user_extra_properties = (
-                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                    conn, user_id=user_id, product_name=product_name
+            if check_update_allowed:
+                user_extra_properties = (
+                    await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                        conn, user_id=user_id, product_name=product_name
+                    )
                 )
-            )
-            if not user_extra_properties.override_services_specifications:
-                msg = (
-                    "User not allowed to modify node resources! "
-                    "TIP: Ask your administrator or contact support"
-                )
-                raise ProjectNodeResourcesInsufficientRightsError(msg)
+                if not user_extra_properties.override_services_specifications:
+                    msg = (
+                        "User not allowed to modify node resources! "
+                        "TIP: Ask your administrator or contact support"
+                    )
+                    raise ProjectNodeResourcesInsufficientRightsError(msg)
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:

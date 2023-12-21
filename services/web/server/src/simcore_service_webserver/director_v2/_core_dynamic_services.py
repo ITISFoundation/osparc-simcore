@@ -12,20 +12,10 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
-from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services import ServicePortKey
-from models_library.services_resources import (
-    ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
-)
-from models_library.wallets import WalletInfo
 from pydantic import BaseModel
 from pydantic.types import NonNegativeFloat, PositiveInt
-from servicelib.common_headers import (
-    X_DYNAMIC_SIDECAR_REQUEST_DNS,
-    X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
-    X_SIMCORE_USER_AGENT,
-)
+from servicelib.common_headers import X_SIMCORE_USER_AGENT
 from servicelib.logging_utils import log_decorator
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
@@ -68,66 +58,6 @@ async def list_dynamic_services(
         services = []
     assert isinstance(services, list)  # nosec
     return services
-
-
-async def run_dynamic_service(  # pylint: disable=too-many-arguments # noqa: PLR0913
-    *,
-    app: web.Application,
-    product_name: str,
-    save_state: bool,
-    user_id: PositiveInt,
-    project_id: str,
-    service_key: str,
-    service_version: str,
-    service_uuid: str,
-    request_dns: str,
-    request_scheme: str,
-    simcore_user_agent: str,
-    service_resources: ServiceResourcesDict,
-    wallet_info: WalletInfo | None,
-    pricing_info: PricingInfo | None,
-    hardware_info: HardwareInfo | None,
-) -> DataType:
-    """
-    Requests to run (i.e. create and start) a dynamic service:
-    - legacy services request is redirected to `director-v0`
-    - dynamic-sidecar `director-v2` will handle the request
-    """
-    data = {
-        "product_name": product_name,
-        "can_save": save_state,
-        "user_id": user_id,
-        "project_id": project_id,
-        "key": service_key,
-        "version": service_version,
-        "node_uuid": service_uuid,
-        "basepath": f"/x/{service_uuid}",
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
-            service_resources
-        ),
-        "wallet_info": wallet_info,
-        "pricing_info": pricing_info,
-        "hardware_info": hardware_info,
-    }
-
-    headers = {
-        X_DYNAMIC_SIDECAR_REQUEST_DNS: request_dns,
-        X_DYNAMIC_SIDECAR_REQUEST_SCHEME: request_scheme,
-        X_SIMCORE_USER_AGENT: simcore_user_agent,
-    }
-
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    started_service = await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / "dynamic_services",
-        data=data,
-        headers=headers,
-        expected_status=web.HTTPCreated,
-    )
-
-    assert isinstance(started_service, dict)  # nosec
-    return started_service
 
 
 async def stop_dynamic_service(

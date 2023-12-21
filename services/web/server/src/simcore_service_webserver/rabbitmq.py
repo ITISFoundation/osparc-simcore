@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Final
 
 from aiohttp import web
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.aiohttp.application_keys import (
     APP_RABBITMQ_CLIENT_KEY,
     APP_RABBITMQ_RPC_SERVER_KEY,
@@ -26,8 +27,7 @@ _RPC_CLIENT_KEY: Final[str] = f"{__name__}.RabbitMQRPCClient"
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
     if not rabbit_client.healthy:
-        msg = "RabbitMQ client is in a bad state! TIP: check if network was cut between server and clients?"
-        raise HealthCheckError(msg)
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
 
 async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:

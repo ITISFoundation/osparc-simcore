@@ -43,16 +43,16 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
   statics: {
     POS: {
       STATE: {
-        row: 3,
+        row: 5,
         column: 0,
         rowSpan: 1,
-        colSpan: 3
+        colSpan: 4
       },
       PROGRESS: {
-        row: 4,
+        row: 6,
         column: 0,
         rowSpan: 1,
-        colSpan: 3
+        colSpan: 4
       }
     }
   },
@@ -67,7 +67,9 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
           break;
         case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
-            height: 10
+            height: 10,
+            maxWidth: 150,
+            alignX: "center"
           });
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
@@ -112,7 +114,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         const checks = [
           this.getChildControl("title").getValue().toString()
         ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
+        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length === 0) {
           return true;
         }
       }
