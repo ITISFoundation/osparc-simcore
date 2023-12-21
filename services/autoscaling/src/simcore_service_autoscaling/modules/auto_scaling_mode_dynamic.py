@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import Node, Task
+from models_library.generated_models.docker_rest_api import Availability, Node, Task
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -132,4 +132,11 @@ class DynamicAutoscaling(BaseAutoscaling):
         assert app  # nosec
         return await utils_docker.compute_cluster_total_resources(
             [i.node for i in instances]
+        )
+
+    @staticmethod
+    def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+        assert app  # nosec
+        return utils_docker.is_node_ready_and_available(
+            instance.node, Availability.active
         )

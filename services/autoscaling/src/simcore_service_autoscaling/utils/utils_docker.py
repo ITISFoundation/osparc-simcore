@@ -20,6 +20,7 @@ from models_library.docker import (
     DockerLabelKey,
 )
 from models_library.generated_models.docker_rest_api import (
+    Availability,
     Node,
     NodeState,
     Service,
@@ -536,4 +537,12 @@ def get__new_node_docker_tags(
             for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
         }
         | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+    )
+
+
+def is_node_ready_and_available(node: Node, availability: Availability) -> bool:
+    assert node.Status  # nosec
+    assert node.Spec  # nosec
+    return bool(
+        node.Status.State == NodeState.ready and node.Spec.Availability == availability
     )

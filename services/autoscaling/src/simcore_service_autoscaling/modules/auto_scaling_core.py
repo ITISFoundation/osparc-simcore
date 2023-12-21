@@ -15,11 +15,7 @@ from aws_library.ec2.models import (
     Resources,
 )
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import (
-    Availability,
-    Node,
-    NodeState,
-)
+from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -78,29 +74,17 @@ async def _analyze_current_cluster(
         docker_nodes, existing_ec2_instances
     )
 
-    def _is_node_up_and_available(node: Node, availability: Availability) -> bool:
-        assert node.Status  # nosec
-        assert node.Spec  # nosec
-        return bool(
-            node.Status.State == NodeState.ready
-            and node.Spec.Availability == availability
-        )
-
     def _node_not_ready(node: Node) -> bool:
         assert node.Status  # nosec
         return bool(node.Status.State != NodeState.ready)
 
     all_drained_nodes = [
-        i
-        for i in attached_ec2s
-        if _is_node_up_and_available(i.node, Availability.drain)
+        i for i in attached_ec2s if auto_scaling_mode.is_instance_drained(i)
     ]
 
     cluster = Cluster(
         active_nodes=[
-            i
-            for i in attached_ec2s
-            if _is_node_up_and_available(i.node, Availability.active)
+            i for i in attached_ec2s if auto_scaling_mode.is_instance_active(app, i)
         ],
         drained_nodes=all_drained_nodes[
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :

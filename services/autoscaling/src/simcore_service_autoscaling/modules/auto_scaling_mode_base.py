@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
+from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -13,6 +14,7 @@ from ..models import (
     AssignedTasksToInstanceType,
     AssociatedInstance,
 )
+from ..utils import utils_docker
 
 
 @dataclass
@@ -109,3 +111,14 @@ class BaseAutoscaling(ABC):  # pragma: no cover
         app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
         ...
+
+    @staticmethod
+    @abstractmethod
+    def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+        ...
+
+    @staticmethod
+    def is_instance_drained(instance: AssociatedInstance) -> bool:
+        return utils_docker.is_node_ready_and_available(
+            instance.node, Availability.drain
+        )
