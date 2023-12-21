@@ -37,13 +37,15 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "pb-listitem",
           padding: 5,
-          backgroundColor: "background-card-overlay"
+          backgroundColor: "pb-study",
+          opacity: 1
         };
         if (states.hovered) {
-          style.backgroundColor = "default-button-hover-background";
+          style.opacity = 0.5;
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "default-button-active-background";
+          style.opacity = 1;
+          style.backgroundColor = "success";
         }
         return style;
       }
@@ -53,16 +55,14 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "pb-listitem",
       style: function(states) {
         const style = {
-          backgroundColor: "success_bg"
+          backgroundColor: "pb-new"
         };
-        if (states.hovered) {
-          style.backgroundColor = "default-button-hover-background";
-        }
-        if (states.pressed) {
-          style.backgroundColor = "default-button-active-background";
-        }
         if (states.focused || states.selected || states.checked) {
           style.backgroundColor = "default-button-active-background";
+        }
+        if (states.locked || states.disabled) {
+          style.cursor = "not-allowed";
+          style.backgroundColor = "pb-locked";
         }
         return style;
       }
@@ -74,14 +74,8 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           backgroundColor: "pb-study"
         };
-        if (states.hovered) {
-          style.backgroundColor = "default-button-hover-background";
-        }
-        if (states.pressed) {
-          style.backgroundColor = "default-button-active-background";
-        }
         if (states.focused || states.selected || states.checked) {
-          style.backgroundColor = "default-button-active-background";
+          style.backgroundColor = "success";
         }
         return style;
       }
@@ -93,15 +87,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           backgroundColor: "pb-template"
         };
-        if (states.hovered) {
-          style.backgroundColor = "default-button-hover-background";
-        }
-        if (states.pressed) {
-          style.backgroundColor = "default-button-active-background";
-        }
-        if (states.focused || states.selected || states.checked) {
-          style.backgroundColor = "default-button-active-background";
-        }
         return style;
       }
     },
@@ -112,15 +97,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           backgroundColor: "pb-dynamic"
         };
-        if (states.hovered) {
-          style.backgroundColor = "default-button-hover-background";
-        }
-        if (states.pressed) {
-          style.backgroundColor = "default-button-active-background";
-        }
-        if (states.focused || states.selected || states.checked) {
-          style.backgroundColor = "default-button-active-background";
-        }
         return style;
       }
     },
@@ -131,15 +107,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           backgroundColor: "pb-computational"
         };
-        if (states.hovered) {
-          style.backgroundColor = "default-button-hover-background";
-        }
-        if (states.pressed) {
-          style.backgroundColor = "default-button-active-background";
-        }
-        if (states.focused || states.selected || states.checked) {
-          style.backgroundColor = "default-button-active-background";
-        }
         return style;
       }
     },
