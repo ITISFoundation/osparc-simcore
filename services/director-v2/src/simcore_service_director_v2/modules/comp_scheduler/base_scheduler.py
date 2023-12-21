@@ -598,7 +598,7 @@ class BaseCompScheduler(ABC):
         )
         dag: nx.DiGraph = nx.DiGraph()
         try:
-            dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
+            dag = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(
                 user_id, project_id, iteration, dag, pipeline_params=pipeline_params
