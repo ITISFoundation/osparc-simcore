@@ -73,7 +73,7 @@ def test_sleepers(
     # we are now in the workbench
     for _ in range(1, num_sleepers):
         page.get_by_text("New Node").click()
-        page.get_by_text("sleeper").click()
+        page.get_by_text("sleeperA").click()
         page.get_by_text("Add", exact=True).click()
 
     # set inputs if needed
