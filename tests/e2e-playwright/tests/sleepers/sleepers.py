@@ -50,7 +50,7 @@ def _get_file_names(page: Page) -> list[str]:
     return file_names_found
 
 
-def test_sleepers(
+def test_sleepers(  # noqa: PLR0915
     page: Page,
     log_in_and_out: WebSocket,
     create_new_project_and_delete: Callable[..., None],
@@ -73,8 +73,9 @@ def test_sleepers(
     # we are now in the workbench
     for _ in range(1, num_sleepers):
         page.get_by_text("New Node").click()
-        page.get_by_text("sleeperA").click()
-        page.get_by_text("Add", exact=True).click()
+        page.get_by_placeholder("Filter").click()
+        page.get_by_placeholder("Filter").fill("sleeper")
+        page.get_by_placeholder("Filter").press("Enter")
 
     # set inputs if needed
     if input_sleep_time:
