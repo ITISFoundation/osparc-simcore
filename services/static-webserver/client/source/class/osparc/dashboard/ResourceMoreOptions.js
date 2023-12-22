@@ -150,7 +150,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       openButton.addListener("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
-            this.fireDataEvent("openStudy", this.__resourceData["uuid"]);
+            this.fireDataEvent("openStudy", this.__resourceData);
             break;
           case "template":
             this.fireDataEvent("openTemplate", this.__resourceData);
