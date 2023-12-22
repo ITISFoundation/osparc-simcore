@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final, Optional, TypeAlias
 
 import arrow
 import boto3
@@ -536,9 +536,7 @@ state = {
 @app.callback()
 def main(
     repo_config: Annotated[Path, typer.Option(help="path to the repo.config file")],
-    ssh_key_path: Annotated[
-        Path | None, typer.Option(help="path to the repo ssh key")
-    ] = None,
+    ssh_key_path: Annotated[Path, typer.Option(help="path to the repo ssh key")] = None,
 ):
     """Manages external clusters"""
     environment = dotenv_values(repo_config)
@@ -598,7 +596,7 @@ def summary() -> None:
 @app.command()
 def clear_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int | None, typer.Option(help="the wallet ID")] = None,
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,
 ) -> None:
     """remove any dask jobs from the cluster. Use WITH CARE!!!
 
@@ -647,3 +645,5 @@ def clear_jobs(
 
 if __name__ == "__main__":
     app()
+
+# nopycln: file
