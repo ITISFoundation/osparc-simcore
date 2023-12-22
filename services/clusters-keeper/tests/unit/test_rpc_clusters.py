@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 import datetime
 from dataclasses import dataclass
 from unittest.mock import MagicMock
@@ -48,6 +49,7 @@ def _base_configuration(
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_primary_ec2_instances_envs: EnvVarsDict,
     initialized_app: FastAPI,
+    ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
     ...
 
@@ -95,8 +97,14 @@ def mocked_dask_ping_scheduler(mocker: MockerFixture) -> MockedDaskModule:
     )
 
 
+@pytest.fixture
+def disable_get_or_create_cluster_caching(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
 @pytest.mark.parametrize("use_wallet_id", [True, False])
 async def test_get_or_create_cluster(
+    disable_get_or_create_cluster_caching: None,
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
     ec2_client: EC2Client,
@@ -135,3 +143,32 @@ async def test_get_or_create_cluster(
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
 
     assert created_cluster == returned_cluster
+
+
+async def test_get_or_create_cluster_massive_calls(
+    _base_configuration: None,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    # NOTE: when a user starts many computational jobs in parallel
+    # the get_or_create_cluster is flooded with a lot of calls for the
+    # very same cluster (user_id/wallet_id) (e.g. for 256 jobs, that means 256 calls every 5 seconds)
+    # that means locking the distributed lock 256 times, then calling AWS API 256 times for the very same information
+    # therefore these calls are sequentialized *and* cached! Just sequentializing would make the call last
+    # forever otherwise. In effect this creates a rate limiter on this call.
+    num_calls = 2000
+    results = await asyncio.gather(
+        *(
+            get_or_create_cluster(
+                clusters_keeper_rabbitmq_rpc_client,
+                user_id=user_id,
+                wallet_id=wallet_id,
+            )
+            for i in range(num_calls)
+        )
+    )
+
+    assert results
+    assert all(isinstance(response, OnDemandCluster) for response in results)

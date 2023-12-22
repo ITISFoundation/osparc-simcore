@@ -98,7 +98,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     // backgrounds
     "background-selected": "success_bg",
     "background-selected-disabled":  "default-button-disabled",
-    "background-selected-dark":  "success_bg",
+    "background-selected-dark":  "product-color",
     "background-disabled": "background-main",
     "background-disabled-checked":  "background-main-1",
     "background-pane": "background-main",
@@ -177,14 +177,13 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "progressive-progressbar-percent-text":  "background-main-1",
 
 
-
     // OSPARC
     "workbench-edge-comp-active": "#888888",
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
     "node-background": "rgba(174, 191, 207, 0.8)",
-    "node-selected-background": "success",
+    "node-selected-background": "product-color",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 
