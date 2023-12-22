@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Any, Final, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 import arrow
 import boto3
@@ -18,6 +18,7 @@ import paramiko
 import parse
 import typer
 from dotenv import dotenv_values
+from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
@@ -95,7 +96,7 @@ def _get_last_heartbeat(instance) -> datetime.datetime | None:
 
 
 def _timedelta_formatting(
-    time_diff: datetime.timedelta, color_code: bool = False
+    time_diff: datetime.timedelta, *, color_code: bool = False
 ) -> str:
     formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days else ""
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
@@ -128,9 +129,6 @@ def _parse_computational(instance: Instance) -> ComputationalInstance | None:
     return None
 
 
-dynamic_parser = parse.compile("osparc-dynamic-autoscaled-worker-{key_name}")
-
-
 def _create_graylog_permalinks(
     environment: dict[str, str | None], instance: Instance
 ) -> str:
@@ -146,7 +144,7 @@ def _create_graylog_permalinks(
 
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
-    if result := dynamic_parser.search(name):
+    if result := state["dynamic_parser"].search(name):
         assert isinstance(result, parse.Result)
 
         return DynamicInstance(name=name, ec2_instance=instance, running_services=[])
@@ -345,7 +343,7 @@ def _print_computational_clusters(
     time_now = arrow.utcnow()
     table = Table(
         Column(""),
-        Column("Instance", justify="left"),
+        Column("Instance", justify="left", overflow="fold"),
         Column("Links", justify="left", overflow="fold"),
         Column("Computational details"),
         title="computational clusters",
@@ -527,8 +525,45 @@ def _detect_instances(
     return dynamic_instances, computational_clusters
 
 
+state = {
+    "environment": {},
+    "ec2_resource": None,
+    "dynamic_parser": parse.compile("osparc-dynamic-autoscaled-worker-{key_name}"),
+    "ssh_key_path": None,
+}
+
+
+@app.callback()
+def main(
+    repo_config: Annotated[Path, typer.Option(help="path to the repo.config file")],
+    ssh_key_path: Annotated[
+        Path | None, typer.Option(help="path to the repo ssh key")
+    ] = None,
+):
+    """Manages external clusters"""
+    environment = dotenv_values(repo_config)
+    assert environment
+    state["environment"] = environment
+    # connect to ec2
+    state["ec2_resource"] = boto3.resource(
+        "ec2",
+        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
+        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
+    )
+
+    # get all the running instances
+    assert environment["EC2_INSTANCES_KEY_NAME"]
+
+    state["dynamic_parser"] = parse.compile(
+        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    )
+
+    state["ssh_key_path"] = ssh_key_path.expanduser() if ssh_key_path else None
+
+
 @app.command()
-def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
+def summary() -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
     Gives a list of all the instances used for dynamic services, and optionally shows what runs in them.
@@ -540,18 +575,11 @@ def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
     Keyword Arguments:
         ssh_key_path -- the ssh key that corresponds to above deployment to ssh into the autoscaled machines (e.g. ) (default: {None})
     """
-    environment = dotenv_values(repo_config)
-    assert environment
-    # connect to ec2
-    ec2_resource = boto3.resource(
-        "ec2",
-        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
-        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
-    )
 
     # get all the running instances
+    environment = state["environment"]
     assert environment["EC2_INSTANCES_KEY_NAME"]
+    ec2_resource: EC2ServiceResource = state["ec2_resource"]
     instances = ec2_resource.instances.filter(
         Filters=[
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
@@ -559,17 +587,62 @@ def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
         ]
     )
 
-    global dynamic_parser
-    dynamic_parser = parse.compile(
-        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
-    )
-
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, ssh_key_path
+        instances, state["ssh_key_path"]
     )
 
     _print_dynamic_instances(dynamic_autoscaled_instances, environment)
     _print_computational_clusters(computational_clusters, environment)
+
+
+@app.command()
+def clear_jobs(
+    user_id: Annotated[int, typer.Option(help="the user ID")],
+    wallet_id: Annotated[int | None, typer.Option(help="the wallet ID")] = None,
+) -> None:
+    """remove any dask jobs from the cluster. Use WITH CARE!!!
+
+    Arguments:
+        user_id -- the user ID
+        wallet_id -- the wallet ID
+    """
+    environment = state["environment"]
+    ec2_resource: EC2ServiceResource = state["ec2_resource"]
+    instances = ec2_resource.instances.filter(
+        Filters=[
+            {"Name": "instance-state-name", "Values": ["running", "pending"]},
+            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+            {"Name": "tag:user_id", "Values": [f"{user_id}"]},
+            {"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]},
+        ]
+    )
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, state["ssh_key_path"]
+    )
+    assert not dynamic_autoscaled_instances
+    assert computational_clusters
+    assert (
+        len(computational_clusters) == 1
+    ), "too many clusters found! TIP: fix this code"
+
+    _print_computational_clusters(computational_clusters, environment)
+
+    if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
+        print("proceeding with reseting jobs from cluster...")
+        the_cluster = computational_clusters[0]
+        with distributed.Client(
+            f"tcp://{the_cluster.primary.ec2_instance.public_ip_address}:8786",
+            timeout="5",
+        ) as client:
+            client.datasets.clear()
+        print("proceeding with reseting jobs from cluster done.")
+        print("Refreshing...")
+        dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+            instances, state["ssh_key_path"]
+        )
+        _print_computational_clusters(computational_clusters, environment)
+    else:
+        print("not deleting anything")
 
 
 if __name__ == "__main__":
