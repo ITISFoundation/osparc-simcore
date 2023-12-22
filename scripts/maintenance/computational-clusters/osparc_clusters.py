@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, TypeAlias
 
 import arrow
 import boto3
@@ -62,8 +62,11 @@ class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
 
-TaskId = str
-TaskState = str
+TaskId: TypeAlias = str
+TaskState: TypeAlias = str
+
+MINUTE: Final[int] = 60
+HOUR: Final[int] = 60 * MINUTE
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -91,9 +94,15 @@ def _get_last_heartbeat(instance) -> datetime.datetime | None:
     return None
 
 
-def _timedelta_formatting(time_diff: datetime.timedelta) -> str:
+def _timedelta_formatting(
+    time_diff: datetime.timedelta, color_code: bool = False
+) -> str:
     formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days else ""
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
+    if time_diff.days and color_code:
+        formatted_time_diff = f"[red]{formatted_time_diff}[/red]"
+    elif time_diff.seconds > 5 * HOUR and color_code:
+        formatted_time_diff = f"[orange]{formatted_time_diff}[/orange]"
     return formatted_time_diff
 
 
@@ -322,6 +331,14 @@ def _get_worker_metrics(scheduler_info: dict[str, Any]) -> dict[str, Any]:
     return worker_metrics
 
 
+def _color_encode_with_state(string: str, ec2_instance: Instance) -> str:
+    return (
+        f"[green]{string}[/green]"
+        if ec2_instance.state["Name"] == "running"
+        else f"[yellow]{string}[/yellow]"
+    )
+
+
 def _print_computational_clusters(
     clusters: list[ComputationalCluster], environment: dict[str, str | None]
 ) -> None:
@@ -336,13 +353,6 @@ def _print_computational_clusters(
         title_style=Style(color="red", encircle=True),
     )
 
-    def _color_encode_with_state(string: str, ec2_instance: Instance) -> str:
-        return (
-            f"[green]{string}[/green]"
-            if ec2_instance.state["Name"] == "running"
-            else f"[yellow]{string}[/yellow]"
-        )
-
     for cluster in track(
         clusters, "Collecting information about computational clusters..."
     ):
@@ -354,7 +364,7 @@ def _print_computational_clusters(
                     f"Name: {cluster.primary.name}",
                     cluster.primary.ec2_instance.id,
                     cluster.primary.ec2_instance.instance_type,
-                    f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time)}",
+                    f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
                     f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
                     f"UserID: {cluster.primary.user_id}",
@@ -385,7 +395,7 @@ def _print_computational_clusters(
                     [
                         worker.ec2_instance.id,
                         worker.ec2_instance.instance_type,
-                        f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time)}",
+                        f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
                         f"Name: {worker.name}",
