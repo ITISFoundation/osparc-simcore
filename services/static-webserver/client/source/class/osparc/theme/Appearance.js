@@ -421,6 +421,10 @@ qx.Theme.define("osparc.theme.Appearance", {
         if (states.focused) {
           style.decorator = "form-input-focused";
         }
+        if (states.disabled) {
+          style.decorator = "form-input-disabled";
+          style.backgroundColor = "default-button-disabled-background";
+        }
         return style;
       }
     },
