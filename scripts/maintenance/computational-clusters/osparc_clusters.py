@@ -412,7 +412,6 @@ def _analyze_dynamic_instances_running_services(
     dynamic_instances: list[DynamicInstance],
     ssh_key_path: Path,
     user_id: int | None,
-    wallet_id: int | None,
 ) -> list[DynamicInstance]:
     # this construction makes the retrieval much faster
     all_running_services = asyncio.get_event_loop().run_until_complete(
@@ -526,7 +525,7 @@ def _detect_instances(
 
     if dynamic_instances and ssh_key_path:
         dynamic_instances = _analyze_dynamic_instances_running_services(
-            dynamic_instances, ssh_key_path, user_id, wallet_id
+            dynamic_instances, ssh_key_path, user_id
         )
 
     computational_clusters = _analyze_computational_instances(computational_instances)
@@ -545,7 +544,7 @@ state = {
 @app.callback()
 def main(
     repo_config: Annotated[Path, typer.Option(help="path to the repo.config file")],
-    ssh_key_path: Annotated[Path, typer.Option(help="path to the repo ssh key")] = None,
+    ssh_key_path: Annotated[Path, typer.Option(help="path to the repo ssh key")] = None,  # type: ignore
 ):
     """Manages external clusters"""
     environment = dotenv_values(repo_config)
@@ -571,8 +570,8 @@ def main(
 
 @app.command()
 def summary(
-    user_id: Annotated[int, typer.Option(help="the user ID")] = None,
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,
+    user_id: Annotated[int, typer.Option(help="the user ID")] = None,  # type: ignore
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,  # type: ignore
 ) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
@@ -590,15 +589,12 @@ def summary(
     environment = state["environment"]
     assert environment["EC2_INSTANCES_KEY_NAME"]
     ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    instance_filters = [
-        {"Name": "instance-state-name", "Values": ["running", "pending"]},
-        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-    ]
-    # if user_id is not None:
-    #     instance_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
-    # if wallet_id is not None:
-    #     instance_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-    instances = ec2_resource.instances.filter(Filters=instance_filters)
+    instances = ec2_resource.instances.filter(
+        Filters=[
+            {"Name": "instance-state-name", "Values": ["running", "pending"]},
+            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+        ]
+    )
 
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
         instances, state["ssh_key_path"], user_id, wallet_id
@@ -621,6 +617,7 @@ def clear_jobs(
     """
     environment = state["environment"]
     ec2_resource: EC2ServiceResource = state["ec2_resource"]
+    # Here we can filter like so since computational clusters have these as tags on the machines
     instances = ec2_resource.instances.filter(
         Filters=[
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
@@ -630,7 +627,7 @@ def clear_jobs(
         ]
     )
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"]
+        instances, state["ssh_key_path"], None, None
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
@@ -651,7 +648,7 @@ def clear_jobs(
         print("proceeding with reseting jobs from cluster done.")
         print("Refreshing...")
         dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-            instances, state["ssh_key_path"]
+            instances, state["ssh_key_path"], None, None
         )
         _print_computational_clusters(computational_clusters, environment)
     else:
