@@ -1,7 +1,9 @@
 arrow
 black
 boto3
-dask[distributed]
+# NOTE: these must be in sync with osparc
+cloudpickle==2.2.1
+dask[distributed]==2023.3.2
 mypy_boto3_ec2
 types-boto3
 parse
