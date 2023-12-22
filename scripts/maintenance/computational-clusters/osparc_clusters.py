@@ -307,77 +307,87 @@ def _print_dynamic_instances(
     print(table, flush=True)
 
 
+def _get_worker_metrics(scheduler_info: dict[str, Any]) -> dict[str, Any]:
+    worker_metrics = {}
+    for worker_name, worker_data in scheduler_info.get("workers", {}).items():
+        worker_metrics[worker_name] = {
+            "resources": worker_data["resources"],
+            "tasks": worker_data["metrics"].get("task_counts", {}),
+        }
+    return worker_metrics
+
+
 def _print_computational_clusters(
     clusters: list[ComputationalCluster], environment: dict[str, str | None]
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
-        "Instance",
-        Column("Type", justify="right"),
-        Column("publicIP", justify="right"),
-        Column("privateIP", justify="right"),
-        "Name",
-        Column("Created since", justify="right"),
-        "State",
-        "UserID",
-        "WalletID",
+        Column(""),
+        Column("Instance", justify="left"),
+        Column("IPs", justify="left", overflow="fold"),
+        Column("Name", overflow="fold"),
+        Column("Tags"),
         "Dask (UI+scheduler)",
         "last heartbeat since",
         "known jobs",
         "processing jobs",
+        "scheduler_info",
         title="computational clusters",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
     )
 
+    def _color_encode_with_state(string: str, ec2_instance: Instance) -> str:
+        return (
+            f"[green]{string}[/green]"
+            if ec2_instance.state["Name"] == "running"
+            else f"[yellow]{string}[/yellow]"
+        )
+
     for cluster in track(
         clusters, "Collecting information about computational clusters..."
     ):
         # first print primary machine info
-        instance_state = (
-            f"[green]{cluster.primary.ec2_instance.state['Name']}[/green]"
-            if cluster.primary.ec2_instance.state["Name"] == "running"
-            else f"[yellow]{cluster.primary.ec2_instance.state['Name']}[/yellow]"
-        )
-        assert cluster.primary.last_heartbeat
         table.add_row(
-            cluster.primary.ec2_instance.id,
-            f"{cluster.primary.ec2_instance.instance_type}",
-            cluster.primary.ec2_instance.public_ip_address,
-            cluster.primary.ec2_instance.private_ip_address,
-            f"{cluster.primary.name}\n{_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-            _timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time),
-            instance_state,
-            f"{cluster.primary.user_id}",
-            f"{cluster.primary.wallet_id}",
+            f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
+            "\n".join(
+                [
+                    cluster.primary.ec2_instance.id,
+                    cluster.primary.ec2_instance.instance_type,
+                    f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time)}",
+                    f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
+                    f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
+                    f"Name: {cluster.primary.name}",
+                    f"UserID: {cluster.primary.user_id}",
+                    f"WalletID: {cluster.primary.wallet_id}",
+                ]
+            ),
+            f"{_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
             f"http://{cluster.primary.ec2_instance.public_ip_address}:8787\ntcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
-            _timedelta_formatting(time_now - cluster.primary.last_heartbeat),
+            _timedelta_formatting(time_now - cluster.primary.last_heartbeat)
+            if cluster.primary.last_heartbeat
+            else "n/a",
             f"{len(cluster.datasets)}",
             json.dumps(cluster.processing_jobs),
+            json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2),
         )
+
         # now add the workers
         for worker in cluster.workers:
-            instance_state = (
-                f"[green]{worker.ec2_instance.state['Name']}[/green]"
-                if worker.ec2_instance.state["Name"] == "running"
-                else f"[yellow]{worker.ec2_instance.state['Name']}[/yellow]"
-            )
-
             table.add_row(
-                worker.ec2_instance.id,
-                f"{worker.ec2_instance.instance_type}",
-                worker.ec2_instance.public_ip_address,
-                worker.ec2_instance.private_ip_address,
+                f"[bold]{_color_encode_with_state('Worker', worker.ec2_instance)}",
+                f"{worker.ec2_instance.id}\n{worker.ec2_instance.instance_type}",
+                f"Ext: {worker.ec2_instance.public_ip_address}\nInt: {worker.ec2_instance.private_ip_address}",
                 f"{worker.name}\n{_create_graylog_permalinks(environment, worker.ec2_instance)}",
                 _timedelta_formatting(
                     time_now - arrow.get(worker.ec2_instance.launch_time)
                 ),
-                instance_state,
                 "",
                 "",
                 "",
                 "",
             )
+        table.add_row(end_section=True)
         table.add_row(end_section=True)
     print(table)
 
