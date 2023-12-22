@@ -324,14 +324,8 @@ def _print_computational_clusters(
     table = Table(
         Column(""),
         Column("Instance", justify="left"),
-        Column("IPs", justify="left", overflow="fold"),
-        Column("Name", overflow="fold"),
-        Column("Tags"),
-        "Dask (UI+scheduler)",
-        "last heartbeat since",
-        "known jobs",
-        "processing jobs",
-        "scheduler_info",
+        Column("Links", justify="left", overflow="fold"),
+        Column("Computational details"),
         title="computational clusters",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
@@ -352,24 +346,31 @@ def _print_computational_clusters(
             f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
             "\n".join(
                 [
+                    f"Name: {cluster.primary.name}",
                     cluster.primary.ec2_instance.id,
                     cluster.primary.ec2_instance.instance_type,
                     f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time)}",
                     f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
                     f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
-                    f"Name: {cluster.primary.name}",
                     f"UserID: {cluster.primary.user_id}",
                     f"WalletID: {cluster.primary.wallet_id}",
+                    f"Heartbeat: {_timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
                 ]
             ),
-            f"{_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-            f"http://{cluster.primary.ec2_instance.public_ip_address}:8787\ntcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
-            _timedelta_formatting(time_now - cluster.primary.last_heartbeat)
-            if cluster.primary.last_heartbeat
-            else "n/a",
-            f"{len(cluster.datasets)}",
-            json.dumps(cluster.processing_jobs),
-            json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2),
+            "\n".join(
+                [
+                    f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
+                    f"Dask Scheduler TCP: tcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
+                    f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
+                ]
+            ),
+            "\n".join(
+                [
+                    f"Known jobs: {len(cluster.datasets)}",
+                    f"Processing jobs: {json.dumps(cluster.processing_jobs)}",
+                    f"Worker metrics: {json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2)}",
+                ]
+            ),
         )
 
         # now add the workers
@@ -386,13 +387,12 @@ def _print_computational_clusters(
                         f"Name: {worker.name}",
                     ]
                 ),
-                f"{_create_graylog_permalinks(environment, worker.ec2_instance)}",
-                "",
-                "",
-                "",
-                "",
+                "\n".join(
+                    [
+                        f"Graylog: {_create_graylog_permalinks(environment, worker.ec2_instance)}",
+                    ]
+                ),
             )
-        table.add_row(end_section=True)
         table.add_row(end_section=True)
     print(table)
 
