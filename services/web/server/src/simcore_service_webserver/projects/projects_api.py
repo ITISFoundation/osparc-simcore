@@ -288,6 +288,8 @@ async def update_project_node_resources_from_hardware_info(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     product_name: str,
     hardware_info: HardwareInfo,
 ) -> None:
@@ -315,9 +317,9 @@ async def update_project_node_resources_from_hardware_info(
         # now update the project node required resources
         # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
         # less memory than the machine theoretical amount
-        db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
-        node = await db.get_project_node(project_id, node_id)
-        node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
+        node_resources = await get_project_node_resources(
+            app, user_id, project_id, node_id, service_key, service_version
+        )
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
         new_cpus_value = float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
         new_ram_value = int(
@@ -360,6 +362,7 @@ async def update_project_node_resources_from_hardware_info(
         # scale the service
         node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
         node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
+        db = ProjectDBAPI.get_from_app_context(app)
         await db.update_project_node(
             user_id,
             project_id,
@@ -525,6 +528,8 @@ async def _start_dynamic_service(
                 node_id=node_uuid,
                 product_name=product_name,
                 hardware_info=hardware_info,
+                service_key=service_key,
+                service_version=service_version,
             )
 
         service_resources: ServiceResourcesDict = await get_project_node_resources(

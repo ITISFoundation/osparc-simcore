@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from pydantic import BaseModel, Extra
 from pydantic.errors import PydanticErrorMixin
@@ -119,7 +119,7 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    project = await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -143,19 +143,17 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
         path_params.pricing_unit_id,
     )
 
-    pricing_unit_get = await rut_api.get_pricing_plan_unit(
-        request.app,
-        req_ctx.product_name,
-        path_params.pricing_plan_id,
-        path_params.pricing_unit_id,
-    )
+    node_data = project["workbench"][NodeIDStr(f"{path_params.node_id}")]
+
     await projects_api.update_project_node_resources_from_hardware_info(
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
         product_name=req_ctx.product_name,
-        hardware_info=pricing_unit_get.specific_info,
+        hardware_info=rut_pricing_unit.specific_info,
+        service_key=node_data["key"],
+        service_version=node_data["version"],
     )
 
     return envelope_json_response(None, web.HTTPNoContent)
