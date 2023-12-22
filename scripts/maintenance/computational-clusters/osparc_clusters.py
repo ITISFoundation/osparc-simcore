@@ -62,6 +62,10 @@ class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
 
+TaskId = str
+TaskState = str
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ComputationalCluster:
     primary: ComputationalInstance
@@ -70,6 +74,7 @@ class ComputationalCluster:
     scheduler_info: dict[str, Any]
     datasets: tuple[str, ...]
     processing_jobs: dict[str, str]
+    task_states_to_tasks: dict[TaskId, list[TaskState]]
 
 
 def _get_instance_name(instance) -> str:
@@ -366,8 +371,7 @@ def _print_computational_clusters(
             ),
             "\n".join(
                 [
-                    f"Known jobs: {len(cluster.datasets)}",
-                    f"Processing jobs: {json.dumps(cluster.processing_jobs)}",
+                    f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
                     f"Worker metrics: {json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2)}",
                 ]
             ),
@@ -427,6 +431,23 @@ def _analyze_dynamic_instances_running_services(
     ]
 
 
+def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[TaskId]]:
+    def _list_tasks(
+        dask_scheduler: distributed.Scheduler,
+    ) -> dict[TaskId, TaskState]:
+        from collections import defaultdict
+
+        task_state_to_tasks = defaultdict(list)
+        for task in dask_scheduler.tasks.values():
+            task_state_to_tasks[task.state].append(task.key)
+        return dict(task_state_to_tasks)
+
+    list_of_tasks: dict[TaskState, list[TaskId]] = dask_client.run_on_scheduler(
+        _list_tasks
+    )
+    return list_of_tasks
+
+
 def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
 ) -> list[ComputationalCluster]:
@@ -438,13 +459,15 @@ def _analyze_computational_instances(
             scheduler_info = {}
             datasets_on_cluster = ()
             processing_jobs = {}
+            unrunnable_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
                 client = distributed.Client(
-                    f"tcp://{instance.ec2_instance.public_ip_address}:8786", timeout=5
+                    f"tcp://{instance.ec2_instance.public_ip_address}:8786", timeout="5"
                 )
                 scheduler_info = client.scheduler_info()
                 datasets_on_cluster = client.list_datasets()
                 processing_jobs = client.processing()
+                unrunnable_tasks = _dask_list_tasks(client)
 
             assert isinstance(datasets_on_cluster, tuple)
             assert isinstance(processing_jobs, dict)
@@ -455,6 +478,7 @@ def _analyze_computational_instances(
                     scheduler_info=scheduler_info,
                     datasets=datasets_on_cluster,
                     processing_jobs=processing_jobs,
+                    task_states_to_tasks=unrunnable_tasks,
                 )
             )
 
