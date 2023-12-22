@@ -26,9 +26,9 @@ endef
 
 define _transfer-images-to-registry
 # pushing sleeper image
-@docker pull itisfoundation/sleeper:1.0.0
-@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
-@docker push registry:5000/simcore/services/comp/itis/sleeper:1.0.0
+@docker pull itisfoundation/sleeper:2.1.6
+@docker tag itisfoundation/sleeper:2.1.6 registry:5000/simcore/services/comp/itis/sleeper:2.1.6
+@docker push registry:5000/simcore/services/comp/itis/sleeper:2.1.6
 # completed transfer of images
 @curl -s registry:5000/v2/_catalog | jq '.repositories'
 @curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
