@@ -259,13 +259,8 @@ def _print_dynamic_instances(
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
-        "Instance",
-        Column("Type", justify="right"),
-        Column("publicIP", justify="right"),
-        Column("privateIP", justify="right"),
-        "Name",
-        Column("Created since", justify="right"),
-        "State",
+        Column("Instance"),
+        Column("Links", overflow="fold"),
         Column(
             "Running services",
             footer="[red](need ssh access) - Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
@@ -306,13 +301,17 @@ def _print_dynamic_instances(
                 )
 
         table.add_row(
-            instance.ec2_instance.id,
-            f"{instance.ec2_instance.instance_type}",
-            instance.ec2_instance.public_ip_address,
-            instance.ec2_instance.private_ip_address,
-            f"{instance.name}\n{_create_graylog_permalinks(environment, instance.ec2_instance)}",
-            _timedelta_formatting(time_now - instance.ec2_instance.launch_time),
-            instance_state,
+            "\n".join(
+                [
+                    f"{_color_encode_with_state(instance.name, instance.ec2_instance)}",
+                    instance.ec2_instance.id,
+                    instance.ec2_instance.instance_type,
+                    f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
+                    f"ExtIP: {instance.ec2_instance.public_ip_address}",
+                    f"IntIP: {instance.ec2_instance.private_ip_address}",
+                ]
+            ),
+            f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
             service_table,
             end_section=True,
         )
@@ -410,7 +409,10 @@ def _print_computational_clusters(
 
 
 def _analyze_dynamic_instances_running_services(
-    dynamic_instances: list[DynamicInstance], ssh_key_path: Path
+    dynamic_instances: list[DynamicInstance],
+    ssh_key_path: Path,
+    user_id: int | None,
+    wallet_id: int | None,
 ) -> list[DynamicInstance]:
     # this construction makes the retrieval much faster
     all_running_services = asyncio.get_event_loop().run_until_complete(
@@ -436,6 +438,7 @@ def _analyze_dynamic_instances_running_services(
         for instance, running_services in zip(
             dynamic_instances, all_running_services, strict=True
         )
+        if (user_id is None or any(s.user_id == user_id for s in running_services))
     ]
 
 
@@ -504,20 +507,26 @@ def _analyze_computational_instances(
 
 
 def _detect_instances(
-    instances: ServiceResourceInstancesCollection, ssh_key_path: Path | None
+    instances: ServiceResourceInstancesCollection,
+    ssh_key_path: Path | None,
+    user_id: int | None,
+    wallet_id: int | None,
 ) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
     dynamic_instances = []
     computational_instances = []
 
     for instance in track(instances, description="Detecting running instances..."):
         if comp_instance := _parse_computational(instance):
-            computational_instances.append(comp_instance)
+            if (user_id is None or comp_instance.user_id == user_id) and (
+                wallet_id is None or comp_instance.wallet_id == wallet_id
+            ):
+                computational_instances.append(comp_instance)
         elif dyn_instance := _parse_dynamic(instance):
             dynamic_instances.append(dyn_instance)
 
     if dynamic_instances and ssh_key_path:
         dynamic_instances = _analyze_dynamic_instances_running_services(
-            dynamic_instances, ssh_key_path
+            dynamic_instances, ssh_key_path, user_id, wallet_id
         )
 
     computational_clusters = _analyze_computational_instances(computational_instances)
@@ -585,14 +594,14 @@ def summary(
         {"Name": "instance-state-name", "Values": ["running", "pending"]},
         {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
     ]
-    if user_id is not None:
-        instance_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
-    if wallet_id is not None:
-        instance_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+    # if user_id is not None:
+    #     instance_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+    # if wallet_id is not None:
+    #     instance_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
     instances = ec2_resource.instances.filter(Filters=instance_filters)
 
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"]
+        instances, state["ssh_key_path"], user_id, wallet_id
     )
 
     _print_dynamic_instances(dynamic_autoscaled_instances, environment)
