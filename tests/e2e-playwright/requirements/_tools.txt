@@ -81,6 +81,7 @@ pyproject-hooks==1.0.0
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_test.txt
     #   pre-commit
 ruff==0.1.8
     # via -r requirements/../../../requirements/devenv.txt

@@ -73,6 +73,8 @@ python-dateutil==2.8.2
     # via faker
 python-slugify==8.0.1
     # via pytest-playwright
+pyyaml==6.0.1
+    # via -r requirements/_test.in
 requests==2.31.0
     # via
     #   docker
