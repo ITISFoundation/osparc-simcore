@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Final, Optional, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 import arrow
 import boto3
@@ -452,7 +452,7 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
 
     list_of_tasks: dict[TaskState, list[TaskId]] = dask_client.run_on_scheduler(
         _list_tasks
-    )
+    )  # type: ignore
     return list_of_tasks
 
 
@@ -515,7 +515,7 @@ def _detect_instances(
         elif dyn_instance := _parse_dynamic(instance):
             dynamic_instances.append(dyn_instance)
 
-    if ssh_key_path:
+    if dynamic_instances and ssh_key_path:
         dynamic_instances = _analyze_dynamic_instances_running_services(
             dynamic_instances, ssh_key_path
         )
@@ -561,7 +561,10 @@ def main(
 
 
 @app.command()
-def summary() -> None:
+def summary(
+    user_id: Annotated[int, typer.Option(help="the user ID")] = None,
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,
+) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
     Gives a list of all the instances used for dynamic services, and optionally shows what runs in them.
@@ -578,12 +581,15 @@ def summary() -> None:
     environment = state["environment"]
     assert environment["EC2_INSTANCES_KEY_NAME"]
     ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    instances = ec2_resource.instances.filter(
-        Filters=[
-            {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-        ]
-    )
+    instance_filters = [
+        {"Name": "instance-state-name", "Values": ["running", "pending"]},
+        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+    ]
+    if user_id is not None:
+        instance_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+    if wallet_id is not None:
+        instance_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+    instances = ec2_resource.instances.filter(Filters=instance_filters)
 
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
         instances, state["ssh_key_path"]
@@ -596,7 +602,7 @@ def summary() -> None:
 @app.command()
 def clear_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
 ) -> None:
     """remove any dask jobs from the cluster. Use WITH CARE!!!
 
@@ -645,5 +651,3 @@ def clear_jobs(
 
 if __name__ == "__main__":
     app()
-
-# nopycln: file
