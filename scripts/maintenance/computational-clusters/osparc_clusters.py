@@ -375,13 +375,18 @@ def _print_computational_clusters(
         # now add the workers
         for worker in cluster.workers:
             table.add_row(
-                f"[bold]{_color_encode_with_state('Worker', worker.ec2_instance)}",
-                f"{worker.ec2_instance.id}\n{worker.ec2_instance.instance_type}",
-                f"Ext: {worker.ec2_instance.public_ip_address}\nInt: {worker.ec2_instance.private_ip_address}",
-                f"{worker.name}\n{_create_graylog_permalinks(environment, worker.ec2_instance)}",
-                _timedelta_formatting(
-                    time_now - arrow.get(worker.ec2_instance.launch_time)
+                f"[italic]{_color_encode_with_state('Worker', worker.ec2_instance)}[/italic]",
+                "\n".join(
+                    [
+                        worker.ec2_instance.id,
+                        worker.ec2_instance.instance_type,
+                        f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time)}",
+                        f"ExtIP: {worker.ec2_instance.public_ip_address}",
+                        f"IntIP: {worker.ec2_instance.private_ip_address}",
+                        f"Name: {worker.name}",
+                    ]
                 ),
+                f"{_create_graylog_permalinks(environment, worker.ec2_instance)}",
                 "",
                 "",
                 "",
