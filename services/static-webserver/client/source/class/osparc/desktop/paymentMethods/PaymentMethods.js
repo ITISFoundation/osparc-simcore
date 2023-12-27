@@ -46,6 +46,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     __buildLayout: function() {
       this._removeAll();
+
       this.__introLabel = new qx.ui.basic.Label().set({
         value: this.tr("Credit cards used for payments in your personal Credit Account"),
         font: "text-14",

@@ -23,17 +23,20 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    const store = osparc.store.Store.getInstance();
-    store.bind("contextWallet", this, "contextWallet");
-  },
-
-  properties: {
-    contextWallet: {
-      check: "osparc.data.model.Wallet",
-      init: null,
-      nullable: false,
-      apply: "__buildLayout"
+    this.__params = {
+      filters: {
+        from: null,
+        until: null
+      }
     }
+
+    const store = osparc.store.Store.getInstance();
+    store.getGroupsMe()
+      .then(personalGroup => {
+        this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid)
+        this.__personalWalletId = this.__personalWallet.getWalletId()
+        this.__buildLayout()
+      });
   },
 
   members: {
@@ -50,7 +53,20 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
     __buildLayout: function() {
       this._removeAll();
-      const wallet = this.getContextWallet();
+
+      this.__introLabel = new qx.ui.basic.Label().set({
+        value: this.tr("Top-up and refunds in US Dollars associated to your personal account show up here."),
+        font: "text-14",
+        rich: true,
+        wrap: true
+      });
+      this._add(this.__introLabel);
+
+      this.__dateFilters = new osparc.desktop.credits.DateFilters();
+      this.__dateFilters.addListener("change", e => this.__saveFilters(e.getData()));
+      this._add(this.__dateFilters);
+
+      const wallet = this.__personalWallet;
       if (wallet && wallet.getMyAccessRights()["write"]) {
         const transactionsTable = this._createChildControlImpl("transactions-table");
         osparc.data.Resources.fetch("payments", "get")
@@ -66,7 +82,15 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
     },
 
     refresh: function() {
-      this.__buildLayout();
+      console.log(this.__params);
+    },
+
+    __saveFilters: function(filters) {
+      this.__params = {
+        ...this.__params,
+        filters
+      };
+      this.refresh();
     }
   }
 });
