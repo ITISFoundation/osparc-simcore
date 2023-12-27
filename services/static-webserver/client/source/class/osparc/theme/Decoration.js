@@ -55,6 +55,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "form-input-disabled": {
+      include: "form-input",
+      style: {
+        color: "default-button-text-disabled"
+      }
+    },
+
     "form-input-invalid": {
       include: "form-input",
       style: {

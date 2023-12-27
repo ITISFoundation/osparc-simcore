@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Any, Final
+from typing import Annotated, Any, Final, TypeAlias
 
 import arrow
 import boto3
@@ -18,6 +18,7 @@ import paramiko
 import parse
 import typer
 from dotenv import dotenv_values
+from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
@@ -62,6 +63,13 @@ class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
 
+TaskId: TypeAlias = str
+TaskState: TypeAlias = str
+
+MINUTE: Final[int] = 60
+HOUR: Final[int] = 60 * MINUTE
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ComputationalCluster:
     primary: ComputationalInstance
@@ -70,6 +78,7 @@ class ComputationalCluster:
     scheduler_info: dict[str, Any]
     datasets: tuple[str, ...]
     processing_jobs: dict[str, str]
+    task_states_to_tasks: dict[TaskId, list[TaskState]]
 
 
 def _get_instance_name(instance) -> str:
@@ -86,9 +95,15 @@ def _get_last_heartbeat(instance) -> datetime.datetime | None:
     return None
 
 
-def _timedelta_formatting(time_diff: datetime.timedelta) -> str:
+def _timedelta_formatting(
+    time_diff: datetime.timedelta, *, color_code: bool = False
+) -> str:
     formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days else ""
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
+    if time_diff.days and color_code:
+        formatted_time_diff = f"[red]{formatted_time_diff}[/red]"
+    elif time_diff.seconds > 5 * HOUR and color_code:
+        formatted_time_diff = f"[orange]{formatted_time_diff}[/orange]"
     return formatted_time_diff
 
 
@@ -114,9 +129,6 @@ def _parse_computational(instance: Instance) -> ComputationalInstance | None:
     return None
 
 
-dynamic_parser = parse.compile("osparc-dynamic-autoscaled-worker-{key_name}")
-
-
 def _create_graylog_permalinks(
     environment: dict[str, str | None], instance: Instance
 ) -> str:
@@ -132,7 +144,7 @@ def _create_graylog_permalinks(
 
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
-    if result := dynamic_parser.search(name):
+    if result := state["dynamic_parser"].search(name):
         assert isinstance(result, parse.Result)
 
         return DynamicInstance(name=name, ec2_instance=instance, running_services=[])
@@ -247,13 +259,8 @@ def _print_dynamic_instances(
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
-        "Instance",
-        Column("Type", justify="right"),
-        Column("publicIP", justify="right"),
-        Column("privateIP", justify="right"),
-        "Name",
-        Column("Created since", justify="right"),
-        "State",
+        Column("Instance"),
+        Column("Links", overflow="fold"),
         Column(
             "Running services",
             footer="[red](need ssh access) - Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
@@ -294,17 +301,39 @@ def _print_dynamic_instances(
                 )
 
         table.add_row(
-            instance.ec2_instance.id,
-            f"{instance.ec2_instance.instance_type}",
-            instance.ec2_instance.public_ip_address,
-            instance.ec2_instance.private_ip_address,
-            f"{instance.name}\n{_create_graylog_permalinks(environment, instance.ec2_instance)}",
-            _timedelta_formatting(time_now - instance.ec2_instance.launch_time),
-            instance_state,
+            "\n".join(
+                [
+                    f"{_color_encode_with_state(instance.name, instance.ec2_instance)}",
+                    instance.ec2_instance.id,
+                    instance.ec2_instance.instance_type,
+                    f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
+                    f"ExtIP: {instance.ec2_instance.public_ip_address}",
+                    f"IntIP: {instance.ec2_instance.private_ip_address}",
+                ]
+            ),
+            f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
             service_table,
             end_section=True,
         )
     print(table, flush=True)
+
+
+def _get_worker_metrics(scheduler_info: dict[str, Any]) -> dict[str, Any]:
+    worker_metrics = {}
+    for worker_name, worker_data in scheduler_info.get("workers", {}).items():
+        worker_metrics[worker_name] = {
+            "resources": worker_data["resources"],
+            "tasks": worker_data["metrics"].get("task_counts", {}),
+        }
+    return worker_metrics
+
+
+def _color_encode_with_state(string: str, ec2_instance: Instance) -> str:
+    return (
+        f"[green]{string}[/green]"
+        if ec2_instance.state["Name"] == "running"
+        else f"[yellow]{string}[/yellow]"
+    )
 
 
 def _print_computational_clusters(
@@ -312,19 +341,10 @@ def _print_computational_clusters(
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
-        "Instance",
-        Column("Type", justify="right"),
-        Column("publicIP", justify="right"),
-        Column("privateIP", justify="right"),
-        "Name",
-        Column("Created since", justify="right"),
-        "State",
-        "UserID",
-        "WalletID",
-        "Dask (UI+scheduler)",
-        "last heartbeat since",
-        "known jobs",
-        "processing jobs",
+        Column(""),
+        Column("Instance", justify="left", overflow="fold"),
+        Column("Links", justify="left", overflow="fold"),
+        Column("Computational details"),
         title="computational clusters",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
@@ -334,56 +354,64 @@ def _print_computational_clusters(
         clusters, "Collecting information about computational clusters..."
     ):
         # first print primary machine info
-        instance_state = (
-            f"[green]{cluster.primary.ec2_instance.state['Name']}[/green]"
-            if cluster.primary.ec2_instance.state["Name"] == "running"
-            else f"[yellow]{cluster.primary.ec2_instance.state['Name']}[/yellow]"
-        )
-        assert cluster.primary.last_heartbeat
         table.add_row(
-            cluster.primary.ec2_instance.id,
-            f"{cluster.primary.ec2_instance.instance_type}",
-            cluster.primary.ec2_instance.public_ip_address,
-            cluster.primary.ec2_instance.private_ip_address,
-            f"{cluster.primary.name}\n{_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-            _timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time),
-            instance_state,
-            f"{cluster.primary.user_id}",
-            f"{cluster.primary.wallet_id}",
-            f"http://{cluster.primary.ec2_instance.public_ip_address}:8787\ntcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
-            _timedelta_formatting(time_now - cluster.primary.last_heartbeat),
-            f"{len(cluster.datasets)}",
-            json.dumps(cluster.processing_jobs),
+            f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
+            "\n".join(
+                [
+                    f"Name: {cluster.primary.name}",
+                    cluster.primary.ec2_instance.id,
+                    cluster.primary.ec2_instance.instance_type,
+                    f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
+                    f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
+                    f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
+                    f"UserID: {cluster.primary.user_id}",
+                    f"WalletID: {cluster.primary.wallet_id}",
+                    f"Heartbeat: {_timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
+                ]
+            ),
+            "\n".join(
+                [
+                    f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
+                    f"Dask Scheduler TCP: tcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
+                    f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
+                ]
+            ),
+            "\n".join(
+                [
+                    f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
+                    f"Worker metrics: {json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2)}",
+                ]
+            ),
         )
+
         # now add the workers
         for worker in cluster.workers:
-            instance_state = (
-                f"[green]{worker.ec2_instance.state['Name']}[/green]"
-                if worker.ec2_instance.state["Name"] == "running"
-                else f"[yellow]{worker.ec2_instance.state['Name']}[/yellow]"
-            )
-
             table.add_row(
-                worker.ec2_instance.id,
-                f"{worker.ec2_instance.instance_type}",
-                worker.ec2_instance.public_ip_address,
-                worker.ec2_instance.private_ip_address,
-                f"{worker.name}\n{_create_graylog_permalinks(environment, worker.ec2_instance)}",
-                _timedelta_formatting(
-                    time_now - arrow.get(worker.ec2_instance.launch_time)
+                f"[italic]{_color_encode_with_state('Worker', worker.ec2_instance)}[/italic]",
+                "\n".join(
+                    [
+                        worker.ec2_instance.id,
+                        worker.ec2_instance.instance_type,
+                        f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
+                        f"ExtIP: {worker.ec2_instance.public_ip_address}",
+                        f"IntIP: {worker.ec2_instance.private_ip_address}",
+                        f"Name: {worker.name}",
+                    ]
                 ),
-                instance_state,
-                "",
-                "",
-                "",
-                "",
+                "\n".join(
+                    [
+                        f"Graylog: {_create_graylog_permalinks(environment, worker.ec2_instance)}",
+                    ]
+                ),
             )
         table.add_row(end_section=True)
     print(table)
 
 
 def _analyze_dynamic_instances_running_services(
-    dynamic_instances: list[DynamicInstance], ssh_key_path: Path
+    dynamic_instances: list[DynamicInstance],
+    ssh_key_path: Path,
+    user_id: int | None,
 ) -> list[DynamicInstance]:
     # this construction makes the retrieval much faster
     all_running_services = asyncio.get_event_loop().run_until_complete(
@@ -409,7 +437,25 @@ def _analyze_dynamic_instances_running_services(
         for instance, running_services in zip(
             dynamic_instances, all_running_services, strict=True
         )
+        if (user_id is None or any(s.user_id == user_id for s in running_services))
     ]
+
+
+def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[TaskId]]:
+    def _list_tasks(
+        dask_scheduler: distributed.Scheduler,
+    ) -> dict[TaskId, TaskState]:
+        from collections import defaultdict
+
+        task_state_to_tasks = defaultdict(list)
+        for task in dask_scheduler.tasks.values():
+            task_state_to_tasks[task.state].append(task.key)
+        return dict(task_state_to_tasks)
+
+    list_of_tasks: dict[TaskState, list[TaskId]] = dask_client.run_on_scheduler(
+        _list_tasks
+    )  # type: ignore
+    return list_of_tasks
 
 
 def _analyze_computational_instances(
@@ -423,13 +469,15 @@ def _analyze_computational_instances(
             scheduler_info = {}
             datasets_on_cluster = ()
             processing_jobs = {}
+            unrunnable_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
                 client = distributed.Client(
-                    f"tcp://{instance.ec2_instance.public_ip_address}:8786", timeout=5
+                    f"tcp://{instance.ec2_instance.public_ip_address}:8786", timeout="5"
                 )
                 scheduler_info = client.scheduler_info()
                 datasets_on_cluster = client.list_datasets()
                 processing_jobs = client.processing()
+                unrunnable_tasks = _dask_list_tasks(client)
 
             assert isinstance(datasets_on_cluster, tuple)
             assert isinstance(processing_jobs, dict)
@@ -440,6 +488,7 @@ def _analyze_computational_instances(
                     scheduler_info=scheduler_info,
                     datasets=datasets_on_cluster,
                     processing_jobs=processing_jobs,
+                    task_states_to_tasks=unrunnable_tasks,
                 )
             )
 
@@ -457,20 +506,26 @@ def _analyze_computational_instances(
 
 
 def _detect_instances(
-    instances: ServiceResourceInstancesCollection, ssh_key_path: Path | None
+    instances: ServiceResourceInstancesCollection,
+    ssh_key_path: Path | None,
+    user_id: int | None,
+    wallet_id: int | None,
 ) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
     dynamic_instances = []
     computational_instances = []
 
     for instance in track(instances, description="Detecting running instances..."):
         if comp_instance := _parse_computational(instance):
-            computational_instances.append(comp_instance)
+            if (user_id is None or comp_instance.user_id == user_id) and (
+                wallet_id is None or comp_instance.wallet_id == wallet_id
+            ):
+                computational_instances.append(comp_instance)
         elif dyn_instance := _parse_dynamic(instance):
             dynamic_instances.append(dyn_instance)
 
-    if ssh_key_path:
+    if dynamic_instances and ssh_key_path:
         dynamic_instances = _analyze_dynamic_instances_running_services(
-            dynamic_instances, ssh_key_path
+            dynamic_instances, ssh_key_path, user_id
         )
 
     computational_clusters = _analyze_computational_instances(computational_instances)
@@ -478,8 +533,46 @@ def _detect_instances(
     return dynamic_instances, computational_clusters
 
 
+state = {
+    "environment": {},
+    "ec2_resource": None,
+    "dynamic_parser": parse.compile("osparc-dynamic-autoscaled-worker-{key_name}"),
+    "ssh_key_path": None,
+}
+
+
+@app.callback()
+def main(
+    repo_config: Annotated[Path, typer.Option(help="path to the repo.config file")],
+    ssh_key_path: Annotated[Path, typer.Option(help="path to the repo ssh key")] = None,  # type: ignore
+):
+    """Manages external clusters"""
+    environment = dotenv_values(repo_config)
+    assert environment
+    state["environment"] = environment
+    # connect to ec2
+    state["ec2_resource"] = boto3.resource(
+        "ec2",
+        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
+        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
+    )
+
+    # get all the running instances
+    assert environment["EC2_INSTANCES_KEY_NAME"]
+
+    state["dynamic_parser"] = parse.compile(
+        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    )
+
+    state["ssh_key_path"] = ssh_key_path.expanduser() if ssh_key_path else None
+
+
 @app.command()
-def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
+def summary(
+    user_id: Annotated[int, typer.Option(help="the user ID")] = None,  # type: ignore
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,  # type: ignore
+) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
     Gives a list of all the instances used for dynamic services, and optionally shows what runs in them.
@@ -491,18 +584,11 @@ def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
     Keyword Arguments:
         ssh_key_path -- the ssh key that corresponds to above deployment to ssh into the autoscaled machines (e.g. ) (default: {None})
     """
-    environment = dotenv_values(repo_config)
-    assert environment
-    # connect to ec2
-    ec2_resource = boto3.resource(
-        "ec2",
-        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
-        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
-    )
 
     # get all the running instances
+    environment = state["environment"]
     assert environment["EC2_INSTANCES_KEY_NAME"]
+    ec2_resource: EC2ServiceResource = state["ec2_resource"]
     instances = ec2_resource.instances.filter(
         Filters=[
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
@@ -510,17 +596,63 @@ def summary(repo_config: Path, ssh_key_path: Path | None = None) -> None:
         ]
     )
 
-    global dynamic_parser
-    dynamic_parser = parse.compile(
-        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
-    )
-
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, ssh_key_path
+        instances, state["ssh_key_path"], user_id, wallet_id
     )
 
     _print_dynamic_instances(dynamic_autoscaled_instances, environment)
     _print_computational_clusters(computational_clusters, environment)
+
+
+@app.command()
+def clear_jobs(
+    user_id: Annotated[int, typer.Option(help="the user ID")],
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+) -> None:
+    """remove any dask jobs from the cluster. Use WITH CARE!!!
+
+    Arguments:
+        user_id -- the user ID
+        wallet_id -- the wallet ID
+    """
+    environment = state["environment"]
+    ec2_resource: EC2ServiceResource = state["ec2_resource"]
+    # Here we can filter like so since computational clusters have these as tags on the machines
+    instances = ec2_resource.instances.filter(
+        Filters=[
+            {"Name": "instance-state-name", "Values": ["running", "pending"]},
+            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+            {"Name": "tag:user_id", "Values": [f"{user_id}"]},
+            {"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]},
+        ]
+    )
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, state["ssh_key_path"], None, None
+    )
+    assert not dynamic_autoscaled_instances
+    assert computational_clusters
+    assert (
+        len(computational_clusters) == 1
+    ), "too many clusters found! TIP: fix this code"
+
+    _print_computational_clusters(computational_clusters, environment)
+
+    if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
+        print("proceeding with reseting jobs from cluster...")
+        the_cluster = computational_clusters[0]
+        with distributed.Client(
+            f"tcp://{the_cluster.primary.ec2_instance.public_ip_address}:8786",
+            timeout="5",
+        ) as client:
+            client.datasets.clear()
+        print("proceeding with reseting jobs from cluster done.")
+        print("Refreshing...")
+        dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+            instances, state["ssh_key_path"], None, None
+        )
+        _print_computational_clusters(computational_clusters, environment)
+    else:
+        print("not deleting anything")
 
 
 if __name__ == "__main__":
