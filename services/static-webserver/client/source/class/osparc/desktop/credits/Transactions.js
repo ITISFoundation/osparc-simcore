@@ -62,9 +62,25 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       });
       this._add(this.__introLabel);
 
+      const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
       this.__dateFilters = new osparc.desktop.credits.DateFilters();
       this.__dateFilters.addListener("change", e => this.__saveFilters(e.getData()));
-      this._add(this.__dateFilters);
+      filterContainer.add(this.__dateFilters);
+
+      filterContainer.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this.__exportButton = new qx.ui.form.Button(this.tr("Export")).set({
+        allowStretchY: false,
+        alignY: "bottom"
+      });
+      this.__exportButton.addListener("execute", () => {
+        console.log("export", this.__params);
+      });
+      filterContainer.add(this.__exportButton);
+
+      this._add(filterContainer);
 
       const wallet = this.__personalWallet;
       if (wallet && wallet.getMyAccessRights()["write"]) {
