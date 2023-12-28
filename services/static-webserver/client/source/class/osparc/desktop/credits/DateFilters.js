@@ -69,17 +69,12 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
       return datepicker;
     },
     _changeHandler() {
-      const from =  this._getFormattedDate(this.__from.getValue());
-      const until =  this._getFormattedDate(this.__until.getValue());
+      const from =  osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue());
+      const until =  osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue());
       this.fireDataEvent("change", {
         from,
         until
       });
-    },
-    _getFormattedDate(date) {
-      const offset = date.getTimezoneOffset();
-      const ret = new Date(date.getTime() - (offset*60*1000));
-      return ret.toISOString().split("T")[0]
     }
   }
 });

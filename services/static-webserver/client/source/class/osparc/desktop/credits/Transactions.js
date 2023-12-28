@@ -23,10 +23,11 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    const today = osparc.utils.Utils.formatDateYyyyMmDd(new Date())
     this.__params = {
       filters: {
-        from: null,
-        until: null
+        from: today,
+        until: today
       }
     }
 
