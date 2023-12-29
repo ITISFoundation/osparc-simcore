@@ -5,16 +5,20 @@
 # pylint: disable=unused-variable
 
 
+from uuid import uuid4
+
 import pytest
 from pydantic import ValidationError
 from servicelib.utils_secrets import (
     _MIN_SECRET_NUM_BYTES,
+    _PLACEHOLDER,
     MIN_PASSCODE_LENGTH,
     MIN_PASSWORD_LENGTH,
     are_secrets_equal,
     generate_passcode,
     generate_password,
     generate_token_secret_key,
+    mask_sensitive_data,
     secure_randint,
 )
 
@@ -80,3 +84,30 @@ async def test_secure_randint(start: int, end: int):
 async def test_secure_randint_called_with_wrong_tupes():
     with pytest.raises(ValidationError):
         secure_randint(1.1, 2)
+
+
+def test_mask_sensitive_data():
+    sensitive_data = {
+        "username": "john_doe",
+        "password": "sensitive_password",
+        "details": {
+            "secret_key": "super_secret_key",
+            "nested": {"nested_password": "nested_sensitive_password"},
+        },
+        "credit-card": "12345",
+        uuid4(): object(),
+    }
+
+    masked_data = mask_sensitive_data(
+        sensitive_data, extra_sensitive_keywords={"credit-card"}
+    )
+
+    assert masked_data == {
+        "username": "john_doe",
+        "password": _PLACEHOLDER,
+        "details": {
+            "secret_key": _PLACEHOLDER,
+            "nested": {"nested_password": _PLACEHOLDER},
+        },
+        "credit-card": _PLACEHOLDER,
+    }
