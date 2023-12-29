@@ -87,6 +87,11 @@ async def test_secure_randint_called_with_wrong_tupes():
 
 
 def test_mask_sensitive_data():
+
+    # NOTE: any hasahble object can be a dict key
+    uuid_obj = uuid4()
+    other_obj = object()
+
     sensitive_data = {
         "username": "john_doe",
         "password": "sensitive_password",
@@ -95,7 +100,7 @@ def test_mask_sensitive_data():
             "nested": {"nested_password": "nested_sensitive_password"},
         },
         "credit-card": "12345",
-        uuid4(): object(),
+        uuid_obj: other_obj,
     }
 
     masked_data = mask_sensitive_data(
@@ -110,4 +115,5 @@ def test_mask_sensitive_data():
             "nested": {"nested_password": _PLACEHOLDER},
         },
         "credit-card": _PLACEHOLDER,
+        uuid_obj: other_obj,
     }

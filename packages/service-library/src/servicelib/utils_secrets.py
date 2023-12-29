@@ -1,6 +1,6 @@
 import secrets
 import string
-from typing import Any, Final
+from typing import Final
 
 from pydantic import StrictInt, validate_arguments
 
@@ -68,11 +68,11 @@ def _is_possibly_sensitive(name: str, sensitive_keywords: set[str]) -> bool:
 
 
 def mask_sensitive_data(
-    data: dict[str, Any], *, extra_sensitive_keywords: set[str] | None = None
-) -> dict[str, Any]:
+    data: dict, *, extra_sensitive_keywords: set[str] | None = None
+) -> dict:
     """Replaces the sensitive values in the dict with a placeholder  before logging
 
-    Sensitive values are detected checking the key name against a list of sensitive keywords (defaults are `pass` or `secret`)
+    Sensitive values are detected testing the key name (i.e. a str(key) ) againts sensitive keywords `pass` or `secret`.
 
     NOTE: this function is used to avoid logging sensitive information like passwords or secrets
     """
