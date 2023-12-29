@@ -6,7 +6,7 @@
 --constraint _base.txt
 
 
-aioresponses
+aioresponses>=0.7.6  # https://github.com/pnuckowski/aioresponses/pull/248
 coverage
 docker
 faker
