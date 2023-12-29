@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/requirements.txt --strip-extras requirements/requirements.in
 #
-aiohttp==3.8.6
+aiohttp==3.9.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -25,8 +25,6 @@ attrs==23.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-charset-normalizer==3.3.2
-    # via aiohttp
 click==8.1.7
     # via typer
 dnspython==2.4.2

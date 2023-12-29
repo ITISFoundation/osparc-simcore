@@ -6,7 +6,7 @@
 #
 aiodocker==0.21.0
     # via -r requirements/_test.in
-aiohttp==3.8.6
+aiohttp==3.9.1
     # via
     #   -c requirements/../../../../../requirements/constraints.txt
     #   aiodocker
@@ -22,9 +22,7 @@ certifi==2023.7.22
     #   -c requirements/../../../../../requirements/constraints.txt
     #   requests
 charset-normalizer==3.3.2
-    # via
-    #   aiohttp
-    #   requests
+    # via requests
 click==8.1.7
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt

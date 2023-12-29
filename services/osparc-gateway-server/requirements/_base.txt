@@ -6,7 +6,7 @@
 #
 aiodocker==0.21.0
     # via -r requirements/_base.in
-aiohttp==3.8.5
+aiohttp==3.9.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
@@ -25,8 +25,6 @@ certifi==2023.7.22
     #   httpcore
 cffi==1.15.1
     # via cryptography
-charset-normalizer==3.2.0
-    # via aiohttp
 colorlog==6.7.0
     # via dask-gateway-server
 cryptography==41.0.7
