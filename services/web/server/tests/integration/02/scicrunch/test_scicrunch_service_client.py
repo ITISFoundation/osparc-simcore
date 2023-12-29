@@ -107,9 +107,6 @@ async def fake_app(mock_env_devel_environment):
     await client.close()
 
 
-#
-
-
 def test_setup_scicrunch_submodule(fake_app):
     # scicruch should be init
     scicrunch = SciCrunch.get_instance(fake_app)
@@ -118,7 +115,6 @@ def test_setup_scicrunch_submodule(fake_app):
 
 
 async def test_get_research_resource(fake_app, mock_scicrunch_service_resolver):
-    # mock_scicrunch_service_api):
     scicrunch = SciCrunch.get_instance(fake_app)
     resource: ResearchResource = await scicrunch.get_resource_fields(rrid="SCR_018997")
 
