@@ -83,7 +83,6 @@ async def resolve_and_substitute_session_variables_in_model(
         ):
             # checks before to avoid unnecessary calls to pg
             # if it raises an error vars need replacement
-            _logger.debug("model in which to replace model=%s", model)
             raise_if_unresolved_osparc_variable_identifier_found(model)
     except UnresolvedOsparcVariableIdentifierError:
         table: OsparcVariablesTable = app.state.session_variables_table
