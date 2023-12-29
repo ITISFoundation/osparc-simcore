@@ -130,10 +130,6 @@ async def substitute_vendor_secrets_in_specs(
             service_version=service_version,
             product_name=product_name,
         )
-        _logger.debug(
-            "substitute_vendor_secrets_in_specs stored_vendor_secrets=%s",
-            vendor_secrets,
-        )
 
         # resolve substitutions
         resolver.set_substitutions(mappings=vendor_secrets)
