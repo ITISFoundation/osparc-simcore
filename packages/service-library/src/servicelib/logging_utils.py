@@ -143,7 +143,7 @@ def _log_arguments(
     # SEE https://github.com/ITISFoundation/osparc-simcore/security/code-scanning/18
     args_passed_in_function = [repr(a) for a in args]
     masked_kwargs = mask_sensitive_data(kwargs)
-    kwargs_passed_in_function = [f"{k}={v!r}" for k, v in masked_kwargs]
+    kwargs_passed_in_function = [f"{k}={v!r}" for k, v in masked_kwargs.items()]
 
     # The lists of positional and keyword arguments is joined together to form final string
     formatted_arguments = ", ".join(args_passed_in_function + kwargs_passed_in_function)
