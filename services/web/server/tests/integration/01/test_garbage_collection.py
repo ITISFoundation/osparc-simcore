@@ -427,7 +427,9 @@ async def assert_one_owner_for_project(
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -453,7 +455,9 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -501,7 +505,9 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     client: TestClient,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     aiopg_engine: aiopg.sa.engine.Engine,
     fake_project: dict,
     tests_data_dir: Path,

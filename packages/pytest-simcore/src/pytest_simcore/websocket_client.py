@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
 from collections.abc import AsyncIterable, Awaitable, Callable
 from uuid import uuid4
 
@@ -10,10 +9,9 @@ import pytest
 import socketio
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_assert import assert_status
 from yarl import URL
 
-logger = logging.getLogger(__name__)
+from .helpers.utils_assert import assert_status
 
 
 @pytest.fixture
@@ -25,7 +23,7 @@ def client_session_id_factory() -> Callable[[], str]:
 
 
 @pytest.fixture
-def socketio_url_factory(client) -> Callable[[TestClient | None], str]:
+def socketio_url_factory(client: TestClient) -> Callable[[TestClient | None], str]:
     def _create(client_override: TestClient | None = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
@@ -55,9 +53,10 @@ async def security_cookie_factory(
 
 @pytest.fixture
 async def socketio_client_factory(
-    socketio_url_factory: Callable,
-    security_cookie_factory: Callable,
-    client_session_id_factory: Callable,
+    is_pdb_enabled: bool,
+    socketio_url_factory: Callable[[TestClient | None], str],
+    security_cookie_factory: Callable[[TestClient | None], Awaitable[str]],
+    client_session_id_factory: Callable[[], str],
 ) -> AsyncIterable[
     Callable[[str | None, TestClient | None], Awaitable[socketio.AsyncClient]]
 ]:
@@ -69,24 +68,29 @@ async def socketio_client_factory(
         if client_session_id is None:
             client_session_id = client_session_id_factory()
 
-        sio = socketio.AsyncClient(ssl_verify=False)
-        # enginio 3.10.0 introduced ssl verification
-        assert client_session_id
-        url = str(
-            URL(socketio_url_factory(client)).with_query(
-                {"client_session_id": client_session_id}
-            )
+        sio = socketio.AsyncClient(
+            ssl_verify=False, logger=is_pdb_enabled, engineio_logger=is_pdb_enabled
         )
+
+        # engineio 3.10.0 introduced ssl verification
+        assert client_session_id
+
+        url = URL(socketio_url_factory(client)).with_query(
+            {"client_session_id": client_session_id}
+        )
+
         headers = {}
-        cookie = await security_cookie_factory(client)
-        if cookie:
+        if cookie := await security_cookie_factory(client):
             # WARNING: engineio fails with empty cookies. Expects "key=value"
             headers.update({"Cookie": cookie})
 
         print(f"--> Connecting socketio client to {url} ...")
-        await sio.connect(url, headers=headers, wait_timeout=10)
+        await sio.connect(
+            f"{url}", headers=headers, wait_timeout=3600 if is_pdb_enabled else 10
+        )
         assert sio.sid
         print("... connection done")
+
         clients.append(sio)
         return sio
 

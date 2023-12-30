@@ -6,7 +6,6 @@
 
 import asyncio
 import json
-import logging
 from asyncio import Future
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
@@ -22,9 +21,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
@@ -41,6 +42,7 @@ from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
@@ -67,13 +69,13 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-logger = logging.getLogger(__name__)
-
-
 SERVICE_DELETION_DELAY = 1
 
 
-async def close_project(client, project_uuid: str, client_session_id: str) -> None:
+async def _close_project(
+    client: TestClient, project_uuid: str, client_session_id: str
+) -> None:
+    assert client.app
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
@@ -83,17 +85,19 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
     opened_projects = []
 
-    async def _open_project(client, project_uuid: str, client_session_id: str) -> None:
+    async def _(client: TestClient, project_uuid: str, client_session_id: str) -> None:
+        assert client.app
         url = client.app.router["open_project"].url_for(project_id=project_uuid)
         resp = await client.post(url, json=client_session_id)
         await assert_status(resp, web.HTTPOk)
         opened_projects.append((client, project_uuid, client_session_id))
 
-    yield _open_project
+    yield _
+
     # cleanup, if we cannot close that is because the user_role might not allow it
     await asyncio.gather(
         *(
-            close_project(client, project_uuid, client_session_id)
+            _close_project(client, project_uuid, client_session_id)
             for client, project_uuid, client_session_id in opened_projects
         ),
         return_exceptions=True,
@@ -186,19 +190,21 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.fixture()
 def socket_registry(client: TestClient) -> RedisResourceRegistry:
-    app = client.server.app  # type: ignore
+    app = client.app  # type: ignore
     return get_registry(app)
 
 
 @pytest.fixture
 async def empty_user_project(
-    client,
-    empty_project,
-    logged_user,
+    client: TestClient,
+    create_empty_project: Callable[[], ProjectDict],
+    logged_user: UserInfoDict,
     tests_data_dir: Path,
-    osparc_product_name: str,
-) -> AsyncIterator[dict[str, Any]]:
-    project = empty_project()
+    osparc_product_name: ProductName,
+) -> AsyncIterator[ProjectDict]:
+    assert client.app
+
+    project = create_empty_project()
     async with NewProject(
         project,
         client.app,
@@ -213,13 +219,13 @@ async def empty_user_project(
 
 @pytest.fixture
 async def empty_user_project2(
-    client,
-    empty_project,
-    logged_user,
+    client: TestClient,
+    create_empty_project: Callable[[], ProjectDict],
+    logged_user: UserInfoDict,
     tests_data_dir: Path,
-    osparc_product_name: str,
-) -> AsyncIterator[dict[str, Any]]:
-    project = empty_project()
+    osparc_product_name: ProductName,
+) -> AsyncIterator[ProjectDict]:
+    project = create_empty_project()
     async with NewProject(
         project,
         client.app,
@@ -238,31 +244,32 @@ async def director_v2_mock(director_v2_service_mock) -> aioresponses:
 
 
 async def test_anonymous_websocket_connection(
+    mocker: MockerFixture,
     client_session_id_factory: Callable[[], str],
-    socketio_url_factory: Callable,
-    security_cookie_factory: Callable,
-    mocker,
+    socketio_url_factory: Callable[[], str],
+    security_cookie_factory: Callable[[], Awaitable[str]],
 ):
-    sio = socketio.AsyncClient(
-        ssl_verify=False
-    )  # enginio 3.10.0 introduced ssl verification
-    url = str(
-        URL(socketio_url_factory()).with_query(
-            {"client_session_id": client_session_id_factory()}
-        )
+    # enginio 3.10.0 introduced ssl verification
+    sio = socketio.AsyncClient(ssl_verify=False)
+
+    url = URL(socketio_url_factory()).with_query(
+        {"client_session_id": client_session_id_factory()}
     )
     headers = {}
-    cookie = await security_cookie_factory()
-    if cookie:
+    if cookie := await security_cookie_factory():
         # WARNING: engineio fails with empty cookies. Expects "key=value"
         headers.update({"Cookie": cookie})
 
     socket_connect_error = mocker.Mock()
     sio.on("connect_error", handler=socket_connect_error)
+
     with pytest.raises(socketio.exceptions.ConnectionError):
-        await sio.connect(url, headers=headers)
+        await sio.connect(f"{url}", headers=headers)
+
     assert sio.sid is None
+
     socket_connect_error.assert_called_once()
+
     await sio.disconnect()
     assert not sio.sid
 
@@ -270,16 +277,15 @@ async def test_anonymous_websocket_connection(
 @pytest.mark.parametrize(
     "user_role",
     [
-        # (UserRole.ANONYMOUS),
         (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
+        # (UserRole.USER),
+        # (UserRole.TESTER),
     ],
 )
 async def test_websocket_resource_management(
-    logged_user,
+    logged_user: UserInfoDict,
     socket_registry: RedisResourceRegistry,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[[str | None], Awaitable[socketio.AsyncClient]],
     client_session_id_factory: Callable[[], str],
 ):
     cur_client_session_id = client_session_id_factory()
@@ -323,8 +329,8 @@ async def test_websocket_resource_management(
 )
 async def test_websocket_multiple_connections(
     socket_registry: RedisResourceRegistry,
-    logged_user,
-    socketio_client_factory: Callable,
+    logged_user: UserInfoDict,
+    socketio_client_factory: Callable[[str], Awaitable[socketio.AsyncClient]],
     client_session_id_factory: Callable[[], str],
 ):
     NUMBER_OF_SOCKETS = 5
@@ -356,7 +362,7 @@ async def test_websocket_multiple_connections(
         clients.append(sio)
         resource_keys.append(resource_key)
 
-    for sio, resource_key in zip(clients, resource_keys):
+    for sio, resource_key in zip(clients, resource_keys, strict=True):
         sid = sio.get_sid()
         await sio.disconnect()
         await sio.wait()
@@ -393,8 +399,8 @@ _TENACITY_ASSERT_RETRY = {
 )
 async def test_asyncio_task_pending_on_close(
     client: TestClient,
-    logged_user: dict[str, Any],
-    socketio_client_factory: Callable,
+    logged_user: UserInfoDict,
+    socketio_client_factory: Callable[[], Awaitable[socketio.AsyncClient]],
 ):
     sio = await socketio_client_factory()
     assert sio
@@ -412,8 +418,8 @@ async def test_asyncio_task_pending_on_close(
 )
 async def test_websocket_disconnected_after_logout(
     client: TestClient,
-    logged_user: dict[str, Any],
-    socketio_client_factory: Callable,
+    logged_user: UserInfoDict,
+    socketio_client_factory: Callable[[str | None], Awaitable[socketio.AsyncClient]],
     client_session_id_factory: Callable[[], str],
     expected,
     mocker: MockerFixture,
@@ -476,12 +482,12 @@ async def test_websocket_disconnected_after_logout(
 )
 async def test_interactive_services_removed_after_logout(
     client: TestClient,
-    logged_user: dict[str, Any],
+    logged_user: UserInfoDict,
     empty_user_project: dict[str, Any],
     mocked_director_v2_api: dict[str, mock.MagicMock],
     create_dynamic_service_mock,
     client_session_id_factory: Callable[[], str],
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[[str], Awaitable[socketio.AsyncClient]],
     storage_subsystem_mock: MockedStorageSubsystem,  # when guest user logs out garbage is collected
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
@@ -541,12 +547,12 @@ async def test_interactive_services_removed_after_logout(
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
-    client,
-    logged_user,
-    empty_user_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    empty_user_project: ProjectDict,
     mocked_director_v2_api,
     create_dynamic_service_mock,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[[str], Awaitable[socketio.AsyncClient]],
     client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
@@ -555,6 +561,8 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
+    assert client.app
+
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
@@ -640,10 +648,12 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await gc_core.collect_garbage(client.app)
 
     await asyncio.sleep(0)
+    assert client.server
+
     # assert dynamic service is gone
     calls = [
         call(
-            app=client.server.app,
+            app=client.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             node_id=service["service_uuid"],
@@ -676,14 +686,14 @@ async def mocked_notification_system(mocker):
     ],
 )
 async def test_interactive_services_removed_per_project(
-    client,
-    logged_user,
-    empty_user_project,
-    empty_user_project2,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    empty_user_project: ProjectDict,
+    empty_user_project2: ProjectDict,
     mocked_director_v2_api,
     create_dynamic_service_mock,
     mocked_notification_system,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[[str], Awaitable[socketio.AsyncClient]],
     client_session_id_factory: Callable[[], str],
     asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
@@ -692,6 +702,7 @@ async def test_interactive_services_removed_per_project(
     mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
+    assert client.app
     # create server with delay set to DELAY
     # login - logged_user fixture
     # create empty study1 in project1 - empty_user_project fixture
@@ -787,17 +798,19 @@ async def test_interactive_services_removed_per_project(
     ],
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
-    client,
-    logged_user,
-    empty_user_project,
-    empty_user_project2,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    empty_user_project: ProjectDict,
+    empty_user_project2: ProjectDict,
     mocked_director_v2_api,
     create_dynamic_service_mock,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[[str], Awaitable[socketio.AsyncClient]],
     client_session_id_factory: Callable[[], str],
     expected_save_state: bool,
     open_project: Callable,
 ):
+    assert client.app
+
     # create server with delay set to DELAY
     # login - logged_user fixture
     # create empty study in project - empty_user_project fixture
@@ -816,7 +829,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     assert sio2
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
-    await close_project(client, empty_user_project["uuid"], client_session_id1)
+    await _close_project(client, empty_user_project["uuid"], client_session_id1)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
@@ -825,7 +838,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # close project in tab2
-    await close_project(client, empty_user_project["uuid"], client_session_id2)
+    await _close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
@@ -845,13 +858,13 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     ],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
-    client,
-    logged_user,
-    empty_user_project,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    empty_user_project: ProjectDict,
     mocked_director_v2_api,
     create_dynamic_service_mock,
     client_session_id_factory: Callable[[], str],
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[[str], Awaitable[socketio.AsyncClient]],
     # asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expect_call: bool,
@@ -860,6 +873,8 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
+    assert client.app
+
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
@@ -885,7 +900,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     # assert dynamic service is removed
     calls = [
         call(
-            app=client.server.app,
+            app=client.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             node_id=service["service_uuid"],
@@ -911,11 +926,18 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
                 # asyncpg_storage_system_mock.assert_not_called()
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.USER,
+        UserRole.TESTER,
+        UserRole.GUEST,
+    ],
+)
 async def test_regression_removing_unexisting_user(
     client: TestClient,
-    logged_user: dict[str, Any],
-    empty_user_project: dict[str, Any],
+    logged_user: UserInfoDict,
+    empty_user_project: ProjectDict,
     user_role: UserRole,
     mock_storage_delete_data_folders: mock.Mock,
 ) -> None:

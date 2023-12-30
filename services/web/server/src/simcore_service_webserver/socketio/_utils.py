@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from aiohttp import web
 from socketio import AsyncServer
@@ -32,6 +33,7 @@ SocketioDisconnectEventHandler = Callable[[SocketID, web.Application], Awaitable
 AnyData = Any
 SocketioEventHandler = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
 
+# Global registry
 _socketio_handlers_registry: list[
     (
         SocketioEventHandler
@@ -75,11 +77,15 @@ def register_socketio_handlers(app: web.Application, module: ModuleType):
     partial_fcts = [
         _socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
-    app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
+
+    assert "connect" in {f.__name__ for f in partial_fcts}  # nosec
+    assert "disconnect" in {f.__name__ for f in partial_fcts}  # nosec
 
     # register the fcts
     for func in partial_fcts:
         sio.on(func.__name__, handler=func)
+
+    app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
 
 
 def register_socketio_handler(func: Callable) -> Callable:
@@ -103,7 +109,6 @@ def register_socketio_handler(func: Callable) -> Callable:
     if is_handler:
         _socketio_handlers_registry.append(func)
     else:
-        raise SyntaxError(
-            "the function shall be of type fct(*args, app: web.Application"
-        )
+        msg = "the function shall be of type fct(*args, app: web.Application"
+        raise SyntaxError(msg)
     return func

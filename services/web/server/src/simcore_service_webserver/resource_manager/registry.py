@@ -116,7 +116,9 @@ class RedisResourceRegistry:
                 resources.append(await self.client.hget(scanned_key, resource_name))
         return resources
 
-    async def find_keys(self, resource: tuple[str, str]) -> list[UserSessionDict]:
+    async def find_keys(
+        self, resource: tuple[str, str | None]
+    ) -> list[UserSessionDict]:
         keys: list[UserSessionDict] = []
         if not resource:
             return keys

@@ -12,7 +12,6 @@
 
 
 import json
-import logging
 import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -23,15 +22,13 @@ import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.rest._utils import (
     get_openapi_specs_path,
     load_openapi_specs,
 )
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -43,7 +40,7 @@ def here() -> Path:
 
 @pytest.fixture(scope="session")
 def api_version_prefix() -> str:
-    return "v0"
+    return API_VTAG
 
 
 @pytest.fixture(scope="session")
@@ -62,7 +59,7 @@ def default_app_cfg(default_app_config_unit_file: Path) -> ConfigDict:
 
 
 @pytest.fixture
-def empty_project() -> Callable:
+def create_empty_project() -> Callable:
     def factory():
         return empty_project_data()
 

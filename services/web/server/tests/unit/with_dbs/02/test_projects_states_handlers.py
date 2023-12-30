@@ -118,7 +118,9 @@ async def _replace_project(
 
 
 async def _connect_websocket(
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     check_connection: bool,
     client: TestClient,
     client_id: str,
@@ -515,7 +517,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -553,7 +555,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -595,7 +597,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -632,7 +634,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -671,7 +673,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     client: TestClient,
     logged_user,
     user_project,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -723,7 +725,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     one_max_open_studies_per_user: None,
     client: TestClient,
     logged_user,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     user_project: ProjectDict,
     shared_project: ProjectDict,
     expected: ExpectedResponse,
@@ -754,7 +756,7 @@ async def test_close_project(
     client: TestClient,
     logged_user,
     user_project,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -839,9 +841,11 @@ async def test_get_active_project(
     client: TestClient,
     logged_user,
     user_project,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected,
-    socketio_client_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     mocked_notifications_plugin: dict[str, mock.Mock],
@@ -1121,8 +1125,10 @@ async def test_open_shared_project_2_users_locked(
     client_on_running_server_factory: Callable,
     logged_user: dict,
     shared_project: dict,
-    socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
+    client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
     mocker,
@@ -1304,8 +1310,10 @@ async def test_open_shared_project_at_same_time(
     client_on_running_server_factory: Callable,
     logged_user: dict,
     shared_project: dict,
-    socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
+    client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
@@ -1389,8 +1397,10 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     client: TestClient,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
-    client_session_id_factory: Callable,
-    socketio_client_factory: Callable,
+    client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     user_role: UserRole,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],

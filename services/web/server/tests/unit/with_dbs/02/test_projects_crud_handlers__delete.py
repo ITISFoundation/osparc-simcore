@@ -4,12 +4,13 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
+import socketio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -122,8 +123,10 @@ async def test_delete_multiple_opened_project_forbidden(
     user_project,
     mocked_director_v2_api,
     create_dynamic_service_mock,
-    socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
+    client_session_id_factory: Callable[[], str],
     user_role,
     expected_ok,
     expected_forbidden,
