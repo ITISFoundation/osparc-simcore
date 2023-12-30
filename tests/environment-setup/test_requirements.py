@@ -19,8 +19,9 @@ assert SERVICES_DIR.exists()
         "coverage",
         "flaky",
         "hypothesis",
-        "pytest",  # NOTE: this includes all pytest plugins since they are named as pytest-*
         "moto",
+        "playwright",
+        "pytest",  # NOTE: this includes all pytest plugins since they are named as pytest-*
         "respx",
     ],
 )

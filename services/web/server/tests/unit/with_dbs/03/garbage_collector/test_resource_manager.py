@@ -278,8 +278,8 @@ async def test_anonymous_websocket_connection(
     "user_role",
     [
         (UserRole.GUEST),
-        # (UserRole.USER),
-        # (UserRole.TESTER),
+        (UserRole.USER),
+        (UserRole.TESTER),
     ],
 )
 async def test_websocket_resource_management(
