@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import traceback
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
@@ -42,7 +43,6 @@ class RPCRouter:
         def _decorator(func: DecoratedCallable) -> DecoratedCallable:
             @functools.wraps(func)
             async def _wrapper(*args, **kwargs):
-
                 with log_context(
                     # NOTE: this is intentionally analogous to the http access log traces.
                     # To change log-level use getLogger("rpc.access").set_level(...)
@@ -66,10 +66,13 @@ class RPCRouter:
 
                         _logger.exception("Unhandled exception:")
                         # NOTE: we do not return internal exceptions over RPC
+                        formatted_traceback = "\n".join(
+                            traceback.format_tb(exc.__traceback__)
+                        )
                         raise RPCServerError(
                             method_name=func.__name__,
                             exc_type=f"{exc.__class__.__module__}.{exc.__class__.__name__}",
-                            msg=f"{exc}",
+                            msg=f"{formatted_traceback}",
                         ) from None
 
             self.routes[RPCMethodName(func.__name__)] = _wrapper
