@@ -117,3 +117,7 @@ class DefaultPricingUnitNotFoundError(BaseProjectError):
         )
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
+
+
+class ClustersKeeperNotAvailableError(BaseProjectError):
+    """Clusters-keeper service is not available"""

@@ -18,6 +18,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "error": "rgba(255, 108, 108, 1)", // #FF6C6C
     "error_bg": "rgba(255, 108, 108, 0.1)", // #FF6C6C1A
 
+    "pb-new": "rgba(10, 182, 255, 0.25)",
     "pb-study": "rgba(10, 182, 255, 0.5)",
     "pb-template": "rgba(9, 89, 122, 0.5)",
     "pb-service": "rgba(248, 219, 31, 0.5)",
@@ -28,7 +29,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "default-button-text": "rgba(255, 255, 255, 1)",
     "default-button-text-outline": "rgba(229, 229, 229, 1)",
     "default-button-text-disabled": "rgba(113, 157, 181, 1)",
-    "default-button-disabled-background": "transparent",
+    "default-button-disabled-background": "rgba(113, 157, 181, 0.5)",
     "default-button": "rgba(10, 182, 255, 1)",
     "default-button-hover": "rgba(4, 73, 102, 1)",
     "default-button-active": "rgba(9, 89, 122, 1)",

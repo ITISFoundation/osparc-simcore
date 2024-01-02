@@ -61,7 +61,7 @@ async def get_frontend_user_preference(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-    preference_class: AnyUserPreference,
+    preference_class: type[FrontendUserPreference],
 ) -> AnyUserPreference | None:
     return await _preferences_db.get_user_preference(
         app,
