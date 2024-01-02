@@ -407,6 +407,7 @@ services:
       - REDIS_PORT=${REDIS_PORT}
       - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST}
       - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT}
+      - DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT=${DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
