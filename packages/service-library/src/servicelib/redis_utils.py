@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import Optional, Union
 
 from .redis import RedisClientSDK
 
@@ -8,10 +7,7 @@ log = logging.getLogger(__file__)
 
 
 def exclusive(
-    redis: RedisClientSDK,
-    *,
-    lock_key: str,
-    lock_value: Optional[Union[bytes, str]] = None
+    redis: RedisClientSDK, *, lock_key: str, lock_value: bytes | str | None = None
 ):
     """
     Define a method to run exclusively accross
