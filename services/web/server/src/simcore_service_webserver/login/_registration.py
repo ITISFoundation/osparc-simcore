@@ -13,9 +13,18 @@ from aiohttp import web
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, validator
+from pydantic import (
+    BaseModel,
+    Field,
+    Json,
+    PositiveInt,
+    ValidationError,
+    parse_obj_as,
+    validator,
+)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
+from simcore_postgres_database.models.users import UserStatus
 from yarl import URL
 
 from ..groups.api import is_user_by_email_in_group
@@ -27,10 +36,13 @@ from ..invitations.api import (
 from ..invitations.errors import InvalidInvitation, InvitationsServiceUnavailable
 from ..products.api import Product
 from ._confirmation import is_confirmation_expired, validate_confirmation_code
-from ._constants import MSG_EMAIL_ALREADY_REGISTERED, MSG_INVITATIONS_CONTACT_SUFFIX
+from ._constants import (
+    MSG_EMAIL_ALREADY_REGISTERED,
+    MSG_INVITATIONS_CONTACT_SUFFIX,
+    MSG_USER_DISABLED,
+)
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
-from .utils import CONFIRMATION_PENDING
 
 _logger = logging.getLogger(__name__)
 
@@ -75,6 +87,17 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, type | None] = {
 }
 
 
+async def _raise_if_registered_in_product(app: web.Application, user_email, product):
+    # NOTE on `product.group_id is None`: A user can be registered in one of more products only if product groups are defined
+    if product.group_id is None or await is_user_by_email_in_group(
+        app, user_email=user_email, group_id=product.group_id
+    ):
+        raise web.HTTPConflict(
+            reason=MSG_EMAIL_ALREADY_REGISTERED,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+
 async def check_other_registrations(
     app: web.Application,
     email: str,
@@ -82,49 +105,63 @@ async def check_other_registrations(
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-    user = await db.get_user({"email": email})
+    # An account is already registered with this email
+    if user := await db.get_user({"email": email}):
+        user_status = UserStatus(user["status"])
+        match user_status:
 
-    # An account already registered with this email
-    #
-    #  RULE 'drop_previous_registration': any unconfirmed account w/o confirmation or
-    #  w/ an expired confirmation will get deleted and its account (i.e. email)
-    #  can be overtaken by this new registration
-    #
-    if user and user["status"] == CONFIRMATION_PENDING:
-        _confirmation = await db.get_confirmation(
-            filter_dict={
-                "user": user,
-                "action": ConfirmationAction.REGISTRATION.value,
-            }
-        )
-        drop_previous_registration = not _confirmation or is_confirmation_expired(
-            cfg, _confirmation
-        )
-        if drop_previous_registration:
-            if not _confirmation:
-                await db.delete_user(user=user)
-            else:
-                await db.delete_confirmation_and_user(
-                    user=user, confirmation=_confirmation
+            case UserStatus.ACTIVE:
+                await _raise_if_registered_in_product(
+                    app, user_email=user["email"], product=product
                 )
 
-            _logger.warning(
-                "Re-registration of %s with expired %s"
-                "Deleting user and proceeding to a new registration",
-                f"{user=}",
-                f"{_confirmation=}",
-            )
+            case UserStatus.CONFIRMATION_PENDING:
+                # An account already registered with this email
+                #
+                #  RULE 'drop_previous_registration': any unconfirmed account w/o confirmation or
+                #  w/ an expired confirmation will get deleted and its account (i.e. email)
+                #  can be overtaken by this new registration
+                #
+                # resend confirmation ??
+                _confirmation = await db.get_confirmation(
+                    filter_dict={
+                        "user": user,
+                        "action": ConfirmationAction.REGISTRATION.value,
+                    }
+                )
+                drop_previous_registration = (
+                    not _confirmation or is_confirmation_expired(cfg, _confirmation)
+                )
+                if drop_previous_registration:
+                    if not _confirmation:
+                        await db.delete_user(user=user)
+                    else:
+                        await db.delete_confirmation_and_user(
+                            user=user, confirmation=_confirmation
+                        )
 
-    if user and (
-        product.group_id is None
-        or await is_user_by_email_in_group(
-            app, user_email=user["email"], group_id=product.group_id
-        )
-    ):
-        # NOTE on `product.group_id is None`: A user can be registered in one of more products only if product groups are defined
-        raise web.HTTPConflict(
-            reason=MSG_EMAIL_ALREADY_REGISTERED, content_type=MIMETYPE_APPLICATION_JSON
-        )
+                    _logger.warning(
+                        "Re-registration of %s with expired %s"
+                        "Deleting user and proceeding to a new registration",
+                        f"{user=}",
+                        f"{_confirmation=}",
+                    )
+
+                # FIXME: what if confirmation still pending? resend?
+
+            case _:
+                assert user_status.is_disabled()  # nosec
+                assert user_status in (  # nosec
+                    UserStatus.EXPIRED,
+                    UserStatus.BANNED,
+                    UserStatus.DELETED,
+                )
+                raise web.HTTPConflict(
+                    reason=MSG_USER_DISABLED.format(
+                        support_email=product.support_email
+                    ),
+                    content_type=MIMETYPE_APPLICATION_JSON,
+                )
 
 
 async def create_invitation_token(
@@ -197,7 +234,7 @@ async def extract_email_from_invitation(
     """Returns associated email"""
     with _invitations_request_context(invitation_code=invitation_code) as url:
         content = await extract_invitation(app, invitation_url=f"{url}")
-        return content.guest
+        return parse_obj_as(LowerCaseEmailStr, content.guest)
 
 
 async def check_and_consume_invitation(
