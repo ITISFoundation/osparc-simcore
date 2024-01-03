@@ -14,3 +14,6 @@ pyinstrument<4
 
 # SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
 yarl<1.6
+
+
+aiohttp<3.9
