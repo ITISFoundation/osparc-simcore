@@ -115,9 +115,13 @@ async def check_other_registrations(
                 f"{_confirmation=}",
             )
 
-    if user and await is_user_by_email_in_group(
-        app, user_email=user["email"], group_id=product.group_id
+    if user and (
+        product.group_id is None
+        or await is_user_by_email_in_group(
+            app, user_email=user["email"], group_id=product.group_id
+        )
     ):
+        # NOTE on `product.group_id is None`: A user can be registered in one of more products only if product groups are defined
         raise web.HTTPConflict(
             reason=MSG_EMAIL_ALREADY_REGISTERED, content_type=MIMETYPE_APPLICATION_JSON
         )
