@@ -635,7 +635,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
         if (states.hovered || states.selected) {
           style.textColor = "default-button-text";
-          style.backgroundColor = states.selected ? "error" : undefined
+          style.backgroundColor = states.selected ? "error" : undefined;
         }
         if (states.focused) {
           style.textColor = "default-button-focus";
