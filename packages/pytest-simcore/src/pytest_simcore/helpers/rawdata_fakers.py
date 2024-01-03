@@ -77,8 +77,8 @@ def random_user(**overrides) -> dict[str, Any]:
 
     # transform password in hash
     password = overrides.pop("password", None)
-    assert len(password) >= 12
     if password:
+        assert len(password) >= 12
         overrides["password_hash"] = _compute_hash(password)
 
     data.update(overrides)
