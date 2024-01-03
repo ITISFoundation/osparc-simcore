@@ -131,10 +131,8 @@ class BaseDistributedIdentifierManager(
         _logger.info("Will remove unused  %s", list(tracked_data.keys()))
 
         for identifier, cleanup_context in tracked_data.items():
-            if await self.is_used(identifier, cleanup_context):
-                continue
-
-            await self.remove(identifier)
+            if not await self.is_used(identifier, cleanup_context):
+                await self.remove(identifier)
 
     async def create(
         self, *, cleanup_context: CleanupContext, **extra_kwargs
