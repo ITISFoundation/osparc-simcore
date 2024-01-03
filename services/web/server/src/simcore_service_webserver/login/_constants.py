@@ -55,6 +55,11 @@ MSG_USER_BANNED: Final[
 MSG_USER_EXPIRED: Final[
     str
 ] = "This account has expired and does not have anymore access. Please contact support for further details: {support_email}"
+
+MSG_USER_DISABLED: Final[
+    str
+] = "This account was disabled and cannot be registered. Please contact support for further details: {support_email}"
+
 MSG_WRONG_2FA_CODE: Final[str] = "Invalid code (wrong or expired)"
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
 MSG_WEAK_PASSWORD: Final[

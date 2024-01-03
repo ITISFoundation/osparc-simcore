@@ -72,6 +72,9 @@ class UserStatus(Enum):
     BANNED = "BANNED"
     DELETED = "DELETED"
 
+    def is_disabled(self) -> bool:
+        return self not in (self.ACTIVE, self.CONFIRMATION_PENDING)
+
 
 users = sa.Table(
     "users",
