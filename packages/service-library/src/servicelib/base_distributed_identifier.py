@@ -5,10 +5,11 @@ from datetime import timedelta
 from typing import Final, Generic, TypeVar
 
 from pydantic import NonNegativeInt
-from servicelib.background_task import start_periodic_task, stop_periodic_task
-from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientSDK, RedisDatabase
-from servicelib.utils import logged_gather
+
+from .background_task import start_periodic_task, stop_periodic_task
+from .logging_utils import log_catch, log_context
+from .redis import RedisClientSDK, RedisDatabase
+from .utils import logged_gather
 
 _logger = logging.getLogger(__name__)
 
