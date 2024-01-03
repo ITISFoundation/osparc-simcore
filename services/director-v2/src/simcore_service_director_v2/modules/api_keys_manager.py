@@ -63,7 +63,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
         )
         return bool(scheduler.is_service_tracked(cleanup_context.node_id))
 
-    async def _create(  # type:ignore [override] # pylint:disable=arguments-differ
+    async def _create(  # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> tuple[str, ApiKeyGet]:
         result = await self.rpc_client.request(
@@ -75,7 +75,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
         )
         return identifier, ApiKeyGet.parse_obj(result)
 
-    async def get(  # type:ignore [override] # pylint:disable=arguments-differ
+    async def get(  # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
         result: Any | None = await self.rpc_client.request(
