@@ -88,12 +88,14 @@ class DirectorV2Client(
                 e.response.status_code  # pylint:disable=no-member # type: ignore
                 == status.HTTP_409_CONFLICT
             ):
-                raise ServiceWaitingForManualInterventionError from None
+                raise ServiceWaitingForManualInterventionError(
+                    node_id=node_id
+                ) from None
             if (
                 e.response.status_code  # pylint:disable=no-member # type: ignore
                 == status.HTTP_404_NOT_FOUND
             ):
-                raise ServiceWasNotFoundError from None
+                raise ServiceWasNotFoundError(node_id=node_id) from None
 
             raise
 
