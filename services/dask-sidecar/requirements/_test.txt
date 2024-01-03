@@ -64,7 +64,7 @@ coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==41.0.5
+cryptography==41.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
@@ -240,7 +240,9 @@ python-dotenv==1.0.0
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 python-jose==3.3.0
-    # via moto
+    # via
+    #   moto
+    #   python-jose
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
