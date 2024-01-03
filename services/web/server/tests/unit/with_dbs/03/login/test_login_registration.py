@@ -116,21 +116,14 @@ async def test_registration_is_not_get(client: TestClient):
     await assert_error(response, web.HTTPMethodNotAllowed)
 
 
-@pytest.fixture
-def product_name(default_product_name: ProductName) -> ProductName:
-    # NOTE: db includes a row in `products` table with this product by default
-    assert default_product_name == "osparc"
-    return default_product_name
-
-
 async def test_registration_with_registered_user(
-    client: TestClient, product_name: ProductName, cleanup_db_tables: None
+    client: TestClient, default_product_name: ProductName, cleanup_db_tables: None
 ):
     assert client.app
 
     async with NewUser(app=client.app) as user:
         await auto_add_user_to_product_group(
-            client.app, user_id=user["id"], product_name=product_name
+            client.app, user_id=user["id"], product_name=default_product_name
         )
 
         url = client.app.router["auth_register"].url_for()
@@ -152,7 +145,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,
-    product_name: str,
+    default_product_name: ProductName,
     fake_weak_password: str,
     cleanup_db_tables: None,
 ):
@@ -173,7 +166,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     #
     # Front end then creates the following request
     #
-    session_settings = get_plugin_settings(client.app, product_name)
+    session_settings = get_plugin_settings(client.app, default_product_name)
     async with NewInvitation(client) as f:
         confirmation = f.confirmation
         assert confirmation
@@ -212,13 +205,13 @@ async def test_registration_with_weak_password_fails(
     client: TestClient,
     mocker: MockerFixture,
     cleanup_db_tables: None,
-    product_name: str,
+    default_product_name: ProductName,
     fake_user_email: str,
     fake_weak_password: str,
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
-    session_settings = get_plugin_settings(client.app, product_name)
+    session_settings = get_plugin_settings(client.app, default_product_name)
     response = await client.post(
         url.path,
         json={
