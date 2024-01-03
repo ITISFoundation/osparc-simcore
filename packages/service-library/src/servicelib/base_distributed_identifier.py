@@ -133,8 +133,6 @@ class BaseDistributedIdentifierManager(
         }
 
     async def _cleanup_unused_identifiers(self) -> None:
-        # TODO: this needs to run under an exclusive lock, right?
-
         # removes no longer used identifiers
         tracked_data: dict[Identifier, CleanupContext] = await self._get_tracked()
         _logger.info("Will remove unused  %s", list(tracked_data.keys()))
