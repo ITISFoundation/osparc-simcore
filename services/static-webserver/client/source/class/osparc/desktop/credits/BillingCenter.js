@@ -186,6 +186,10 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       } else {
         this.__openPage(this.__transactionsPage);
       }
-    }
+    },
+
+    __openUsage: function() {
+      this.__openPage(this.__usagePage);
+    },
   }
 });
