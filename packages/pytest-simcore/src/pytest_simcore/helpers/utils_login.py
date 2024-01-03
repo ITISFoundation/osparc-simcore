@@ -55,7 +55,9 @@ def parse_link(text):
 async def create_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
     """Creates a fake user and inserts it in the users table in the database"""
     data = data or {}
-    data.setdefault("password", "secret")
+    data.setdefault(
+        "password", "secret" * 3
+    )  # Password must be at least 12 characters long
     data.setdefault("status", UserStatus.ACTIVE.name)
     data.setdefault("role", UserRole.USER.name)
     params = random_user(**data)
