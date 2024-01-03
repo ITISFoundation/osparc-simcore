@@ -149,8 +149,7 @@ async def check_other_registrations(
 
                 # FIXME: what if confirmation still pending? resend?
 
-            case _:
-                assert user_status.is_disabled()  # nosec
+            case _:  # Account was disabled
                 assert user_status in (  # nosec
                     UserStatus.EXPIRED,
                     UserStatus.BANNED,
