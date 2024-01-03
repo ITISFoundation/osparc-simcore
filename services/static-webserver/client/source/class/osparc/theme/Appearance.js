@@ -516,17 +516,18 @@ qx.Theme.define("osparc.theme.Appearance", {
           style.backgroundColor = "transparent";
         }
         if (states.checked || states.selected) {
-          style.cursor = "not-allowed";
           style.decorator = "form-button-checked";
         }
         return style;
       }
     },
+
     "form-button-outlined": {
       include: "form-button",
       style: function(states) {
         const style = {
           decorator: "form-button-outlined",
+          cursor: "pointer",
           padding: 5,
           textColor: "default-button-text-outline",
           backgroundColor: "transparent"
@@ -541,11 +542,11 @@ qx.Theme.define("osparc.theme.Appearance", {
           style.decorator = "form-button-focused";
         }
         if (states.disabled) {
+          style.cursor = "not-allowed";
           style.decorator = "form-button-disabled";
           style.textColor = "default-button-disabled";
         }
         if (states.checked || states.selected) {
-          style.cursor = "not-allowed";
           style.decorator = "form-button-checked";
         }
         return style;
@@ -576,7 +577,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           style.decorator = "form-button-disabled";
         }
         if (states.checked || states.selected) {
-          style.cursor = "not-allowed";
           style.decorator = "form-button-checked";
         }
         return style;
@@ -588,6 +588,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: function(states) {
         const style = {
           decorator: "text-button",
+          cursor: "pointer",
           textColor: "default-button",
           backgroundColor: "transparent"
         };
@@ -601,6 +602,49 @@ qx.Theme.define("osparc.theme.Appearance", {
           style.textColor = "default-button-active";
         }
         if (states.disabled) {
+          style.cursor = "not-allowed";
+          style.textColor = "default-button-disabled";
+        }
+        return style;
+      }
+    },
+
+    "menu-button":
+        {
+          alias: "atom",
+
+          style: function(states) {
+            return {
+              cursor: states.disabled ? "not-allowed" : "pointer",
+              backgroundColor: states.selected ? "background-selected" : undefined,
+              textColor: states.selected ? "text-selected" : "text",
+              padding: [2, 6]
+            };
+          }
+        },
+
+    "menu-button-danger": {
+      include: "menu-button",
+      alias: "atom",
+      style: function(states) {
+        const style = {
+          decorator: "text-button",
+          cursor: "pointer",
+          textColor: "error",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered || states.selected) {
+          style.textColor = "default-button-text";
+          style.backgroundColor = states.selected ? "error" : undefined
+        }
+        if (states.focused) {
+          style.textColor = "default-button-focus";
+        }
+        if (states.active) {
+          style.textColor = "default-button-active";
+        }
+        if (states.disabled) {
+          style.cursor = "not-allowed";
           style.textColor = "default-button-disabled";
         }
         return style;
