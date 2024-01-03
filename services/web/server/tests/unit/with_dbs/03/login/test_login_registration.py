@@ -119,7 +119,7 @@ async def test_registration_is_not_get(client: TestClient):
 @pytest.fixture
 def product_name(default_product_name: ProductName) -> ProductName:
     # NOTE: db includes a row in `products` table with this product by default
-    assert "osparc" == default_product_name
+    assert default_product_name == "osparc"
     return default_product_name
 
 
