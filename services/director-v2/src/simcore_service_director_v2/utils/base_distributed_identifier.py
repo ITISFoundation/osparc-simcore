@@ -69,7 +69,7 @@ class BaseDistributedIdentifierManager(
         self._cleanup_task = start_periodic_task(
             self._cleanup_unused_identifiers,
             interval=self.cleanup_interval,
-            task_name="cleanup_unused_identifiers_task",
+            task_name=f"{self.class_path()}_cleanup_unused_identifiers_task",
         )
 
     async def shutdown(self) -> None:
