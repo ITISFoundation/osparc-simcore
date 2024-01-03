@@ -1,7 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class BaseDynamicSchedulerRPCError(Exception, PydanticErrorMixin):
+class BaseDynamicSchedulerRPCError(PydanticErrorMixin, Exception):
     ...
 
 
